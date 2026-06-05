@@ -45,6 +45,7 @@ npm i -g @davidorex/pi-context-cli
 /context init <substrate-dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
 /context accept-all  # adopt the packaged conception (samples/conception.json) as config.json
 /context install     # reconciles the substrate against installed_schemas + installed_blocks in config.json
+/context install --plan  # read-only: preview installed-vs-catalog schema drift (writes nothing)
 /workflow init       # creates .workflows/ for run state
 ```
 
@@ -98,7 +99,7 @@ After initialization, three directories coexist in a project:
 **Commands:**
 - `/context init <substrate-dir>` — write the substrate skeleton (bootstrap pointer + dirs; no config, no schemas, no blocks); refuses with loud error when the existing pointer's `contextDir` differs from the caller's argument (points to `/context switch -c <new-dir>` as the correct command for that operation)
 - `/context accept-all` — adopt the packaged conception (samples/conception.json) as config.json
-- `/context install [--update]` — reconcile `<substrate-dir>/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry. `--update` refreshes installed schemas; populated block data is never overwritten (reported as `preserved`), and empty or absent blocks get the catalog starter. Install also records an install baseline (`config.installed_from`: catalog source + per-schema fingerprint of the installed schemas) used for installed-vs-catalog drift detection; the baseline covers schemas only and a re-install on an unchanged substrate is idempotent
+- `/context install [--update | --plan]` — reconcile `<substrate-dir>/` against `installed_schemas` / `installed_blocks` declared in `config.json` from the package registry. `--update` refreshes installed schemas; populated block data is never overwritten (reported as `preserved`), and empty or absent blocks get the catalog starter. `--plan` is a read-only drift preview comparing the installed schemas against the catalog (`in-sync` / `catalog-ahead` / `locally-modified` / `both-diverged` / `no-baseline` / `missing-*`); it writes nothing and takes precedence over `--update`. Install also records an install baseline (`config.installed_from`: catalog source + per-schema fingerprint of the installed schemas) used for installed-vs-catalog drift detection; the baseline covers schemas only and a re-install on an unchanged substrate is idempotent
 - `/context switch <dir> | -c <new-dir> | -` — substrate-management primitive: flip pointer to existing dir, bootstrap-and-flip in one op, or round-trip to `previous_contextDir`
 - `/context list` — enumerate substrate dirs with `config.json` (active marked)
 - `/context archive <dir>` — move a (non-active) substrate dir to `archive/`

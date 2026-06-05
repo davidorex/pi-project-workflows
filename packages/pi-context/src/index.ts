@@ -324,6 +324,30 @@ export interface InstallResult {
 }
 
 /**
+ * Resolve the package samples catalog once: the absolute `samplesRoot` plus a
+ * `byId` map from each block_kind's `canonical_id` to its declared
+ * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
+ * extracted from `installContext` so the installer and the read-only
+ * `planInstall` drift detector resolve the catalog identically (no divergence).
+ *
+ * lazy fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined under
+ * tsx's CJS-interop dist-load; import.meta.url is not. Reads the conception once
+ * for the canonical_id→paths map so callers resolve sources by the same
+ * block_kind declarations the accept-all conception ships (DEC-0037/0038).
+ */
+function resolveCatalog(): { samplesRoot: string; byId: Map<string, { schema_path: string; data_path: string }> } {
+	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
+	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
+		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
+	};
+	const byId = new Map<string, { schema_path: string; data_path: string }>();
+	for (const bk of conception.block_kinds ?? []) {
+		byId.set(bk.canonical_id, { schema_path: bk.schema_path, data_path: bk.data_path });
+	}
+	return { samplesRoot, byId };
+}
+
+/**
  * /context install opt-in mechanism (DEC-0011). Reads config.installed_schemas
  * and config.installed_blocks, copies declared assets from the package
  * samples catalog (samples/, keyed by conception.json's block_kinds) into the
@@ -359,18 +383,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
-	// lazy fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined under
-	// tsx's CJS-interop dist-load; import.meta.url is not. Read the conception once for
-	// the canonical_id→paths map so install resolves sources by the same
-	// block_kind declarations the accept-all conception ships (DEC-0037/0038).
-	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
-	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
-		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
-	};
-	const byId = new Map<string, { schema_path: string; data_path: string }>();
-	for (const bk of conception.block_kinds ?? []) {
-		byId.set(bk.canonical_id, { schema_path: bk.schema_path, data_path: bk.data_path });
-	}
+	// Catalog resolution (samplesRoot + canonical_id→paths map) is shared with
+	// the read-only planInstall drift detector via resolveCatalog so installer
+	// and detector cannot drift in how they resolve sources.
+	const { samplesRoot, byId } = resolveCatalog();
 
 	for (const name of (config as ConfigBlock).installed_schemas ?? []) {
 		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
@@ -503,6 +519,198 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	writeConfig(cwd, { ...(config as ConfigBlock), installed_from });
 
 	return result;
+}
+
+/**
+ * One installed-schema's drift classification, produced by the read-only
+ * `planInstall` detector. `state` summarizes the three-way comparison between
+ * the S2 install baseline (config.installed_from.assets[name].content_hash),
+ * the catalog's current schema file, and the currently-installed schema file:
+ *
+ *   - `in-sync`         — baseline === catalog-now === installed-now
+ *   - `catalog-ahead`   — catalog-now ≠ baseline, installed-now === baseline
+ *                         (the package shipped a newer schema; local copy
+ *                          still matches the baseline it was installed from)
+ *   - `locally-modified`— installed-now ≠ baseline, catalog-now === baseline
+ *                         (someone edited the installed schema on disk)
+ *   - `both-diverged`   — both catalog-now and installed-now ≠ baseline
+ *   - `no-baseline`     — no baseline recorded for this schema (pre-S2 install,
+ *                          or never installed) — drift is undecidable
+ *   - `missing-catalog` — the catalog source file is absent / unhashable
+ *   - `missing-installed` — the installed dest file is absent / unhashable
+ *
+ * `baseline_version` is the version captured in the baseline asset;
+ * `catalog_version` is the catalog schema file's own declared `version`;
+ * `installed_modified` is true when the installed file differs from the
+ * baseline content (covers locally-modified + both-diverged).
+ */
+export interface InstallPlanAsset {
+	name: string;
+	state:
+		| "in-sync"
+		| "catalog-ahead"
+		| "locally-modified"
+		| "both-diverged"
+		| "no-baseline"
+		| "missing-catalog"
+		| "missing-installed";
+	baseline_version?: string;
+	catalog_version?: string;
+	installed_modified?: boolean;
+}
+
+/**
+ * Result of the read-only `planInstall` drift detector: a per-schema
+ * classification plus a state-keyed summary count (with a `total`). Writes
+ * nothing.
+ */
+export interface InstallPlan {
+	perAsset: InstallPlanAsset[];
+	summary: Record<InstallPlanAsset["state"], number> & { total: number };
+}
+
+/**
+ * PURE-READ drift detector for `/context install --plan` (FGAP-029 safe
+ * re-sync, slice S3). Compares, per installed schema, the S2 install baseline
+ * against the catalog's current schema file and the currently-installed schema
+ * file, classifies the drift, and RETURNS the plan. Writes NOTHING anywhere —
+ * no config write, no file copy, no mkdir; only reads.
+ *
+ * For each `config.installed_schemas` entry:
+ *   - baseline      = config.installed_from?.assets?.[name]?.content_hash
+ *   - catalog-now   = computeFileContentHash(samplesRoot/<kind.schema_path>)
+ *                     (state `missing-catalog` when the source file is absent
+ *                      or unhashable)
+ *   - installed-now = computeFileContentHash(installedSchemaDestPath(destRoot,name))
+ *                     (state `missing-installed` when the dest file is absent
+ *                      or unhashable)
+ *
+ * Each file-hash read is wrapped in try/catch so a corrupt file degrades to a
+ * `missing-*` / diverged classification rather than throwing — mirroring S2's
+ * safety default. A schema whose name has no catalog block_kind is reported
+ * `missing-catalog`.
+ */
+export function planInstall(cwd: string): InstallPlan {
+	const emptySummary = (): InstallPlan["summary"] => ({
+		"in-sync": 0,
+		"catalog-ahead": 0,
+		"locally-modified": 0,
+		"both-diverged": 0,
+		"no-baseline": 0,
+		"missing-catalog": 0,
+		"missing-installed": 0,
+		total: 0,
+	});
+
+	const perAsset: InstallPlanAsset[] = [];
+
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		return { perAsset, summary: emptySummary() };
+	}
+	const config = loadConfig(cwd);
+	if (!config) {
+		return { perAsset, summary: emptySummary() };
+	}
+
+	const { samplesRoot, byId } = resolveCatalog();
+
+	for (const name of config.installed_schemas ?? []) {
+		const baselineAsset = config.installed_from?.assets?.[name];
+		const baseline = baselineAsset?.content_hash;
+
+		const kind = byId.get(name);
+		// Catalog-now hash (undefined when the source is absent/unhashable).
+		let catalogHash: string | undefined;
+		let catalogVersion: string | undefined;
+		if (kind) {
+			const sourceFile = path.join(samplesRoot, kind.schema_path);
+			try {
+				catalogHash = computeFileContentHash(sourceFile);
+				const parsed = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as { version?: string };
+				catalogVersion = typeof parsed.version === "string" ? parsed.version : undefined;
+			} catch {
+				catalogHash = undefined;
+			}
+		}
+
+		// Installed-now hash (undefined when the dest is absent/unhashable).
+		let installedHash: string | undefined;
+		try {
+			installedHash = computeFileContentHash(installedSchemaDestPath(destRoot, name));
+		} catch {
+			installedHash = undefined;
+		}
+
+		const installed_modified = baseline !== undefined && installedHash !== undefined && installedHash !== baseline;
+
+		let state: InstallPlanAsset["state"];
+		if (installedHash === undefined) {
+			state = "missing-installed";
+		} else if (catalogHash === undefined) {
+			state = "missing-catalog";
+		} else if (baseline === undefined) {
+			state = "no-baseline";
+		} else {
+			const catalogDrift = catalogHash !== baseline;
+			const installedDrift = installedHash !== baseline;
+			if (!catalogDrift && !installedDrift) {
+				state = "in-sync";
+			} else if (catalogDrift && !installedDrift) {
+				state = "catalog-ahead";
+			} else if (!catalogDrift && installedDrift) {
+				state = "locally-modified";
+			} else {
+				state = "both-diverged";
+			}
+		}
+
+		perAsset.push({
+			name,
+			state,
+			baseline_version: baselineAsset?.version,
+			catalog_version: catalogVersion,
+			installed_modified,
+		});
+	}
+
+	const summary = emptySummary();
+	for (const a of perAsset) {
+		summary[a.state] += 1;
+		summary.total += 1;
+	}
+
+	return { perAsset, summary };
+}
+
+/**
+ * Render an `InstallPlan` (from the read-only `planInstall` detector) as a
+ * scannable per-state grouping for `/context install --plan`. Groups the
+ * affected schema names under each non-empty state, then a total line. Mirrors
+ * the install-handler `lines.push` style.
+ */
+export function renderInstallPlan(plan: InstallPlan): string {
+	const lines: string[] = [];
+	lines.push("Install drift plan (read-only — no writes):");
+	const order: InstallPlanAsset["state"][] = [
+		"in-sync",
+		"catalog-ahead",
+		"locally-modified",
+		"both-diverged",
+		"no-baseline",
+		"missing-catalog",
+		"missing-installed",
+	];
+	for (const state of order) {
+		const names = plan.perAsset.filter((a) => a.state === state).map((a) => a.name);
+		if (names.length === 0) continue;
+		lines.push(`  ${state} (${names.length}): ${names.join(", ")}`);
+	}
+	if (plan.perAsset.length === 0) {
+		lines.push("  (no installed schemas declared — nothing to compare)");
+	}
+	lines.push(`Total: ${plan.summary.total} schema(s).`);
+	return lines.join("\n");
 }
 
 /**
@@ -996,8 +1204,16 @@ const extension = (pi: ExtensionAPI) => {
 		},
 		install: {
 			description:
-				"Copy schemas and starter blocks declared in the substrate dir's config.json from the package samples catalog",
+				"Copy schemas and starter blocks declared in the substrate dir's config.json from the package samples catalog (--plan: read-only drift preview, writes nothing)",
 			handler: (args, ctx) => {
+				// --plan is a read-only drift preview: it compares the install baseline
+				// against the catalog + the installed schema files and writes NOTHING.
+				// It wins over --update (return before any mutation path is reached).
+				if (/(^|\s)--plan(\s|$)/.test(args)) {
+					const plan = planInstall(ctx.cwd);
+					ctx.ui.notify(renderInstallPlan(plan), "info");
+					return;
+				}
 				const overwrite = /(^|\s)--update(\s|$)/.test(args);
 				const result = installContext(ctx.cwd, { overwrite });
 				if (result.error) {

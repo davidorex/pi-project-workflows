@@ -6,7 +6,7 @@ import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { installContext } from "./index.js";
+import { installContext, planInstall } from "./index.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
@@ -257,5 +257,88 @@ describe("installContext", () => {
 		const config = loadConfig(tmpRoot);
 		assert.ok(config, "a pre-baseline config (no installed_from) must load + validate");
 		assert.equal(config?.installed_from, undefined, "no installed_from present before install");
+	});
+});
+
+// FGAP-029 safe re-sync (slice S3): /context install --plan is a PURE-READ drift
+// detector — it compares the S2 install baseline against the catalog + the
+// currently-installed schema files, classifies per-schema drift, and writes NOTHING.
+describe("planInstall (read-only drift detector)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("reports every installed schema in-sync immediately after install", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot); // records the baseline
+		const plan = planInstall(tmpRoot);
+		assert.equal(plan.summary.total, 2);
+		assert.equal(plan.summary["in-sync"], 2);
+		for (const a of plan.perAsset) {
+			assert.equal(a.state, "in-sync", `${a.name} must be in-sync directly after install`);
+			assert.equal(a.installed_modified, false, `${a.name} must not be flagged installed_modified`);
+		}
+	});
+
+	it("flags a locally-mutated installed schema as locally-modified; siblings stay in-sync", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		// Mutate the INSTALLED dest schema file (not the catalog source) so its content
+		// hash diverges from the recorded baseline while the catalog stays equal.
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__local_edit_marker = true;
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		const plan = planInstall(tmpRoot);
+		const byName = Object.fromEntries(plan.perAsset.map((a) => [a.name, a]));
+		assert.equal(byName.tasks.state, "locally-modified", "the mutated schema must be locally-modified");
+		assert.equal(byName.tasks.installed_modified, true, "the mutated schema must be installed_modified");
+		assert.equal(byName.decisions.state, "in-sync", "the untouched sibling must stay in-sync");
+		assert.equal(plan.summary["locally-modified"], 1);
+		assert.equal(plan.summary["in-sync"], 1);
+	});
+
+	it("reports no-baseline for every installed schema when config has no installed_from", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// Materialize the schema files (so installed-now is hashable) but strip the
+		// baseline so drift is undecidable → no-baseline.
+		installContext(tmpRoot);
+		const cfgPath = path.join(tmpRoot, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
+		delete cfg.installed_from;
+		fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+		const plan = planInstall(tmpRoot);
+		assert.equal(plan.summary["no-baseline"], 2);
+		for (const a of plan.perAsset) assert.equal(a.state, "no-baseline", `${a.name} must be no-baseline`);
+	});
+
+	it("simulated catalog-ahead — installed === baseline but catalog source differs", () => {
+		// installContext baselines FROM the installed dest file. To model catalog-ahead
+		// (catalog ≠ baseline, installed === baseline): install, mutate the installed
+		// schema so it diverges from the true catalog, then RE-install. The re-install
+		// re-baselines against the now-stale installed file (baseline === installed),
+		// while the catalog source on disk is unchanged → catalog ≠ baseline.
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__stale_marker = true; // installed now diverges from the true catalog source
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		installContext(tmpRoot); // re-baseline FROM the stale installed file → baseline === installed
+		const plan = planInstall(tmpRoot);
+		const tasks = plan.perAsset.find((a) => a.name === "tasks");
+		assert.ok(tasks);
+		assert.equal(tasks.state, "catalog-ahead", "installed === stale baseline but catalog differs → catalog-ahead");
+		assert.equal(tasks.installed_modified, false, "installed matches the (stale) baseline → not installed_modified");
+	});
+
+	it("writes nothing — config.json bytes are byte-identical before and after planInstall", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		const cfgPath = path.join(tmpRoot, ".project", "config.json");
+		const before = fs.readFileSync(cfgPath);
+		planInstall(tmpRoot);
+		const after = fs.readFileSync(cfgPath);
+		assert.ok(before.equals(after), "planInstall must not modify config.json (byte-identical before/after)");
 	});
 });

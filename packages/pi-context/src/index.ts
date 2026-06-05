@@ -328,7 +328,7 @@ export interface InstallResult {
  * `byId` map from each block_kind's `canonical_id` to its declared
  * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
  * extracted from `installContext` so the installer and the read-only
- * `planInstall` drift detector resolve the catalog identically (no divergence).
+ * `checkStatus` drift detector resolve the catalog identically (no divergence).
  *
  * lazy fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined under
  * tsx's CJS-interop dist-load; import.meta.url is not. Reads the conception once
@@ -384,7 +384,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
 	// Catalog resolution (samplesRoot + canonical_id→paths map) is shared with
-	// the read-only planInstall drift detector via resolveCatalog so installer
+	// the read-only checkStatus drift detector via resolveCatalog so installer
 	// and detector cannot drift in how they resolve sources.
 	const { samplesRoot, byId } = resolveCatalog();
 
@@ -523,7 +523,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 
 /**
  * One installed-schema's drift classification, produced by the read-only
- * `planInstall` detector. `state` summarizes the three-way comparison between
+ * `checkStatus` detector. `state` summarizes the three-way comparison between
  * the S2 install baseline (config.installed_from.assets[name].content_hash),
  * the catalog's current schema file, and the currently-installed schema file:
  *
@@ -544,7 +544,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
  * `installed_modified` is true when the installed file differs from the
  * baseline content (covers locally-modified + both-diverged).
  */
-export interface InstallPlanAsset {
+export interface CheckStatusAsset {
 	name: string;
 	state:
 		| "in-sync"
@@ -560,20 +560,20 @@ export interface InstallPlanAsset {
 }
 
 /**
- * Result of the read-only `planInstall` drift detector: a per-schema
+ * Result of the read-only `checkStatus` drift detector: a per-schema
  * classification plus a state-keyed summary count (with a `total`). Writes
  * nothing.
  */
-export interface InstallPlan {
-	perAsset: InstallPlanAsset[];
-	summary: Record<InstallPlanAsset["state"], number> & { total: number };
+export interface CheckStatusReport {
+	perAsset: CheckStatusAsset[];
+	summary: Record<CheckStatusAsset["state"], number> & { total: number };
 }
 
 /**
- * PURE-READ drift detector for `/context install --plan` (FGAP-029 safe
+ * PURE-READ drift detector for `/context check-status` (FGAP-029 safe
  * re-sync, slice S3). Compares, per installed schema, the S2 install baseline
  * against the catalog's current schema file and the currently-installed schema
- * file, classifies the drift, and RETURNS the plan. Writes NOTHING anywhere —
+ * file, classifies the drift, and RETURNS the report. Writes NOTHING anywhere —
  * no config write, no file copy, no mkdir; only reads.
  *
  * For each `config.installed_schemas` entry:
@@ -590,8 +590,8 @@ export interface InstallPlan {
  * safety default. A schema whose name has no catalog block_kind is reported
  * `missing-catalog`.
  */
-export function planInstall(cwd: string): InstallPlan {
-	const emptySummary = (): InstallPlan["summary"] => ({
+export function checkStatus(cwd: string): CheckStatusReport {
+	const emptySummary = (): CheckStatusReport["summary"] => ({
 		"in-sync": 0,
 		"catalog-ahead": 0,
 		"locally-modified": 0,
@@ -602,7 +602,7 @@ export function planInstall(cwd: string): InstallPlan {
 		total: 0,
 	});
 
-	const perAsset: InstallPlanAsset[] = [];
+	const perAsset: CheckStatusAsset[] = [];
 
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
@@ -644,7 +644,7 @@ export function planInstall(cwd: string): InstallPlan {
 
 		const installed_modified = baseline !== undefined && installedHash !== undefined && installedHash !== baseline;
 
-		let state: InstallPlanAsset["state"];
+		let state: CheckStatusAsset["state"];
 		if (installedHash === undefined) {
 			state = "missing-installed";
 		} else if (catalogHash === undefined) {
@@ -684,15 +684,15 @@ export function planInstall(cwd: string): InstallPlan {
 }
 
 /**
- * Render an `InstallPlan` (from the read-only `planInstall` detector) as a
- * scannable per-state grouping for `/context install --plan`. Groups the
+ * Render a `CheckStatusReport` (from the read-only `checkStatus` detector) as a
+ * scannable per-state grouping for `/context check-status`. Groups the
  * affected schema names under each non-empty state, then a total line. Mirrors
  * the install-handler `lines.push` style.
  */
-export function renderInstallPlan(plan: InstallPlan): string {
+export function renderCheckStatus(report: CheckStatusReport): string {
 	const lines: string[] = [];
-	lines.push("Install drift plan (read-only — no writes):");
-	const order: InstallPlanAsset["state"][] = [
+	lines.push("Schema drift — installed vs catalog (read-only; no writes):");
+	const order: CheckStatusAsset["state"][] = [
 		"in-sync",
 		"catalog-ahead",
 		"locally-modified",
@@ -702,14 +702,14 @@ export function renderInstallPlan(plan: InstallPlan): string {
 		"missing-installed",
 	];
 	for (const state of order) {
-		const names = plan.perAsset.filter((a) => a.state === state).map((a) => a.name);
+		const names = report.perAsset.filter((a) => a.state === state).map((a) => a.name);
 		if (names.length === 0) continue;
 		lines.push(`  ${state} (${names.length}): ${names.join(", ")}`);
 	}
-	if (plan.perAsset.length === 0) {
+	if (report.perAsset.length === 0) {
 		lines.push("  (no installed schemas declared — nothing to compare)");
 	}
-	lines.push(`Total: ${plan.summary.total} schema(s).`);
+	lines.push(`Total: ${report.summary.total} schema(s).`);
 	return lines.join("\n");
 }
 
@@ -1204,16 +1204,8 @@ const extension = (pi: ExtensionAPI) => {
 		},
 		install: {
 			description:
-				"Copy schemas and starter blocks declared in the substrate dir's config.json from the package samples catalog (--plan: read-only drift preview, writes nothing)",
+				"Copy schemas and starter blocks declared in the substrate dir's config.json from the package samples catalog",
 			handler: (args, ctx) => {
-				// --plan is a read-only drift preview: it compares the install baseline
-				// against the catalog + the installed schema files and writes NOTHING.
-				// It wins over --update (return before any mutation path is reached).
-				if (/(^|\s)--plan(\s|$)/.test(args)) {
-					const plan = planInstall(ctx.cwd);
-					ctx.ui.notify(renderInstallPlan(plan), "info");
-					return;
-				}
 				const overwrite = /(^|\s)--update(\s|$)/.test(args);
 				const result = installContext(ctx.cwd, { overwrite });
 				if (result.error) {
@@ -1247,6 +1239,12 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				const level = result.notFound.length > 0 ? "warning" : "info";
 				ctx.ui.notify(lines.join("\n"), level);
+			},
+		},
+		"check-status": {
+			description: "Preview installed-vs-catalog schema drift (read-only; writes nothing)",
+			handler: (_args, ctx) => {
+				ctx.ui.notify(renderCheckStatus(checkStatus(ctx.cwd)), "info");
 			},
 		},
 		"accept-all": {

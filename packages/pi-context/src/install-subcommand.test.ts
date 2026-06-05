@@ -6,7 +6,7 @@ import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { installContext, planInstall } from "./index.js";
+import { checkStatus, installContext } from "./index.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
@@ -260,10 +260,10 @@ describe("installContext", () => {
 	});
 });
 
-// FGAP-029 safe re-sync (slice S3): /context install --plan is a PURE-READ drift
+// FGAP-029 safe re-sync (slice S3): /context check-status is a PURE-READ drift
 // detector — it compares the S2 install baseline against the catalog + the
 // currently-installed schema files, classifies per-schema drift, and writes NOTHING.
-describe("planInstall (read-only drift detector)", () => {
+describe("checkStatus (read-only drift detector)", () => {
 	afterEach(() => {
 		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
 	});
@@ -271,7 +271,7 @@ describe("planInstall (read-only drift detector)", () => {
 	it("reports every installed schema in-sync immediately after install", () => {
 		tmpRoot = makeProject(["tasks", "decisions"], []);
 		installContext(tmpRoot); // records the baseline
-		const plan = planInstall(tmpRoot);
+		const plan = checkStatus(tmpRoot);
 		assert.equal(plan.summary.total, 2);
 		assert.equal(plan.summary["in-sync"], 2);
 		for (const a of plan.perAsset) {
@@ -289,7 +289,7 @@ describe("planInstall (read-only drift detector)", () => {
 		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
 		obj.__local_edit_marker = true;
 		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
-		const plan = planInstall(tmpRoot);
+		const plan = checkStatus(tmpRoot);
 		const byName = Object.fromEntries(plan.perAsset.map((a) => [a.name, a]));
 		assert.equal(byName.tasks.state, "locally-modified", "the mutated schema must be locally-modified");
 		assert.equal(byName.tasks.installed_modified, true, "the mutated schema must be installed_modified");
@@ -307,7 +307,7 @@ describe("planInstall (read-only drift detector)", () => {
 		const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
 		delete cfg.installed_from;
 		fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
-		const plan = planInstall(tmpRoot);
+		const plan = checkStatus(tmpRoot);
 		assert.equal(plan.summary["no-baseline"], 2);
 		for (const a of plan.perAsset) assert.equal(a.state, "no-baseline", `${a.name} must be no-baseline`);
 	});
@@ -325,20 +325,20 @@ describe("planInstall (read-only drift detector)", () => {
 		obj.__stale_marker = true; // installed now diverges from the true catalog source
 		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
 		installContext(tmpRoot); // re-baseline FROM the stale installed file → baseline === installed
-		const plan = planInstall(tmpRoot);
+		const plan = checkStatus(tmpRoot);
 		const tasks = plan.perAsset.find((a) => a.name === "tasks");
 		assert.ok(tasks);
 		assert.equal(tasks.state, "catalog-ahead", "installed === stale baseline but catalog differs → catalog-ahead");
 		assert.equal(tasks.installed_modified, false, "installed matches the (stale) baseline → not installed_modified");
 	});
 
-	it("writes nothing — config.json bytes are byte-identical before and after planInstall", () => {
+	it("writes nothing — config.json bytes are byte-identical before and after checkStatus", () => {
 		tmpRoot = makeProject(["tasks", "decisions"], []);
 		installContext(tmpRoot);
 		const cfgPath = path.join(tmpRoot, ".project", "config.json");
 		const before = fs.readFileSync(cfgPath);
-		planInstall(tmpRoot);
+		checkStatus(tmpRoot);
 		const after = fs.readFileSync(cfgPath);
-		assert.ok(before.equals(after), "planInstall must not modify config.json (byte-identical before/after)");
+		assert.ok(before.equals(after), "checkStatus must not modify config.json (byte-identical before/after)");
 	});
 });

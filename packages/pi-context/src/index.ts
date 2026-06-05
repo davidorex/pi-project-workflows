@@ -8,6 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { forEachBlockArray, readBlock, readBlockForDir } from "./block-api.js";
+import { computeFileContentHash } from "./content-hash.js";
 import {
 	type AdoptResult,
 	adoptConception,
@@ -17,6 +18,7 @@ import {
 	loadConfig,
 	loadContext,
 	reconcileActiveSubstrateRegistration,
+	writeConfig,
 	writeSkeletonConfig,
 } from "./context.js";
 import {
@@ -443,6 +445,62 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		fs.copyFileSync(sourceFile, destFile);
 		result.installed.push(relDest);
 	}
+
+	// ── Install baseline of the installed SCHEMAS (FGAP-029 safe re-sync) ──────
+	// Record where the installed schema model came from + a per-schema content
+	// fingerprint, so a later slice can detect installed-vs-catalog drift. BLOCKS
+	// are user data and are deliberately NOT baselined (only the re-syncable model
+	// — schemas — is fingerprinted). The fingerprint is taken from the INSTALLED
+	// dest file (via the SAME `installedSchemaDestPath` derivation the copy loop
+	// uses), not the catalog source, so the baseline reflects what is actually on
+	// disk. `version` is the installed schema file's own declared `version` field.
+	const assets: Record<string, { content_hash: string; version: string }> = {};
+	for (const name of (config as ConfigBlock).installed_schemas ?? []) {
+		const destSchemaFile = installedSchemaDestPath(destRoot, name);
+		if (!fs.existsSync(destSchemaFile)) continue;
+		// Safety default (mirror of the block-preservation try/catch above): a
+		// declared schema file present-but-corrupt (not valid JSON, unreadable, or
+		// not hashable) must NOT crash installContext. Skip baselining it — it is
+		// simply omitted from `installed_from.assets`; drift tracking resumes once
+		// the file is valid. Install proceeds for all other declared schemas.
+		try {
+			const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
+			assets[name] = {
+				content_hash: computeFileContentHash(destSchemaFile),
+				version: typeof schemaJson.version === "string" ? schemaJson.version : "",
+			};
+		} catch {}
+	}
+
+	// `catalog` is the pi-context package "name@version", resolved from the SAME
+	// package root `samplesRoot` is derived from (one dir up from this module).
+	const pkgRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+	const pkgJson = JSON.parse(fs.readFileSync(path.join(pkgRoot, "package.json"), "utf-8")) as {
+		name?: string;
+		version?: string;
+	};
+	const catalog = `${pkgJson.name ?? ""}@${pkgJson.version ?? ""}`;
+	// `catalog_version` is the conception's own schema_version (samplesRoot resolved above).
+	const conceptionVersion = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
+		schema_version?: string;
+	};
+	const catalog_version = conceptionVersion.schema_version ?? "";
+
+	// Idempotency: when the EXISTING baseline has deep-equal catalog + catalog_version
+	// + assets, PRESERVE it verbatim (including its `at`) so a re-run on an unchanged
+	// substrate produces a byte-identical config.json. Only refresh `at` when the
+	// baseline content differs.
+	const existingFrom = (config as ConfigBlock).installed_from;
+	const sameBaseline =
+		existingFrom !== undefined &&
+		existingFrom.catalog === catalog &&
+		existingFrom.catalog_version === catalog_version &&
+		JSON.stringify(existingFrom.assets) === JSON.stringify(assets);
+	const installed_from = sameBaseline
+		? (existingFrom as NonNullable<ConfigBlock["installed_from"]>)
+		: { catalog, catalog_version, at: new Date().toISOString(), assets };
+
+	writeConfig(cwd, { ...(config as ConfigBlock), installed_from });
 
 	return result;
 }

@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { installContext } from "./index.js";
 
@@ -186,5 +187,75 @@ describe("installContext", () => {
 		assert.deepEqual(result.updated, ["schemas/tasks.schema.json"], "schema must still be updated under overwrite");
 		assert.deepEqual(result.preserved, [], "schemas are never in the preserved set");
 		assert.notEqual(fs.readFileSync(dest, "utf-8"), "{}", "schema must be refreshed from the samples catalog");
+	});
+
+	// FGAP-029 safe re-sync (slice S2): /context install records an install baseline
+	// (config.installed_from) of the installed SCHEMAS so later slices can detect
+	// installed-vs-catalog drift.
+	it("records an installed_from baseline with a per-schema fingerprint", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		const config = loadConfig(tmpRoot);
+		assert.ok(config, "config must load after install");
+		const from = config?.installed_from;
+		assert.ok(from, "config.installed_from must be recorded");
+		// catalog/catalog_version/at populated.
+		assert.match(from.catalog, /^@davidorex\/pi-context@\d+\.\d+\.\d+$/, "catalog is name@version");
+		assert.match(from.catalog_version, /^\d+\.\d+\.\d+$/, "catalog_version is the conception schema_version");
+		assert.ok(Date.parse(from.at) > 0, "at is a parseable ISO-8601 timestamp");
+		// One assets entry per installed schema (each a 64-hex hash + a version).
+		assert.deepEqual(Object.keys(from.assets).sort(), ["decisions", "tasks"]);
+		for (const name of ["tasks", "decisions"]) {
+			const entry = from.assets[name];
+			assert.match(entry.content_hash, /^[0-9a-f]{64}$/, `${name} content_hash is 64-hex`);
+			assert.match(entry.version, /^\d+\.\d+\.\d+$/, `${name} version populated`);
+		}
+	});
+
+	it("baseline covers schemas only — no block names appear in installed_from.assets", () => {
+		tmpRoot = makeProject(["tasks"], ["decisions"]);
+		installContext(tmpRoot);
+		const from = loadConfig(tmpRoot)?.installed_from;
+		assert.ok(from);
+		assert.deepEqual(Object.keys(from.assets), ["tasks"], "only the installed SCHEMA is baselined, not the block");
+	});
+
+	it("is idempotent — a second install on an unchanged substrate produces a byte-identical config.json", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		const cfgPath = path.join(tmpRoot, ".project", "config.json");
+		installContext(tmpRoot);
+		const first = fs.readFileSync(cfgPath, "utf-8");
+		const firstAt = loadConfig(tmpRoot)?.installed_from?.at;
+		installContext(tmpRoot);
+		const second = fs.readFileSync(cfgPath, "utf-8");
+		assert.equal(second, first, "second install must produce a byte-identical config.json");
+		assert.equal(loadConfig(tmpRoot)?.installed_from?.at, firstAt, "`at` must be preserved across an unchanged re-run");
+	});
+
+	it("a corrupt installed schema file is skipped from the baseline — install does not throw", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// Pre-place a CORRUPT (non-JSON) file at the `tasks` schema dest. With the
+		// default (no-overwrite) install, the copy loop skips an existing dest, so the
+		// corrupt content survives to the baseline loop — exercising the throw path
+		// (JSON.parse / computeFileContentHash) the safety-default try/catch guards.
+		// `decisions` is left for install to copy valid from the samples catalog.
+		const corruptDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		fs.writeFileSync(corruptDest, "{ not json");
+		assert.doesNotThrow(() => installContext(tmpRoot), "a corrupt installed schema must not crash installContext");
+		const from = loadConfig(tmpRoot)?.installed_from;
+		assert.ok(from, "config.installed_from must still be recorded despite the corrupt schema");
+		assert.ok(!("tasks" in from.assets), "the corrupt schema must be ABSENT from installed_from.assets");
+		assert.ok(
+			"decisions" in from.assets,
+			"a sibling VALID schema must still be baselined (loop continues past the corrupt one)",
+		);
+	});
+
+	it("back-compat — a config without installed_from still loads/validates", () => {
+		tmpRoot = makeProject([], []);
+		// makeProject writes a config with NO installed_from; loadConfig AJV-validates it.
+		const config = loadConfig(tmpRoot);
+		assert.ok(config, "a pre-baseline config (no installed_from) must load + validate");
+		assert.equal(config?.installed_from, undefined, "no installed_from present before install");
 	});
 });

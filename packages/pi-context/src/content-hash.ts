@@ -17,6 +17,7 @@
  * (like block-api) and is intentionally not re-exported from `index.ts`.
  */
 import { createHash } from "node:crypto";
+import fs from "node:fs";
 import { createRequire } from "node:module";
 
 // `canonicalize` ships CJS (`module.exports = fn`) but types it as an ESM
@@ -64,4 +65,20 @@ export function sha256Hex(canonical: string): string {
  */
 export function computeContentHash(content: Record<string, unknown>): string {
 	return sha256Hex(canonicalJson(content));
+}
+
+/**
+ * Content hash of the JSON value stored at `filePath`:
+ * `sha256Hex(canonicalJson(JSON.parse(fs.readFileSync(filePath, "utf8"))))`.
+ *
+ * Reads the file, parses it as JSON, and hashes its CONTENT via JCS (RFC 8785),
+ * so the digest is byte-layout-insensitive — two files whose JSON differs only
+ * in key order or whitespace produce the same hash. Used to fingerprint an
+ * installed schema file for the install baseline (`config.installed_from.assets`)
+ * so later slices can detect installed-vs-catalog drift. Distinct from
+ * `computeContentHash`, which takes an already-parsed record; this variant owns
+ * the read + parse so callers pass a path.
+ */
+export function computeFileContentHash(filePath: string): string {
+	return sha256Hex(canonicalJson(JSON.parse(fs.readFileSync(filePath, "utf8"))));
 }

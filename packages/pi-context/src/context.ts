@@ -59,6 +59,25 @@ export interface ConfigBlock {
 	invariants?: InvariantDecl[];
 	installed_schemas?: string[];
 	installed_blocks?: string[];
+	/**
+	 * Install baseline of the installed SCHEMAS (FGAP-029 safe re-sync). Records
+	 * the catalog source + per-schema content fingerprint at install time so later
+	 * slices can detect installed-vs-catalog drift. Blocks are user DATA and are
+	 * NOT baselined — only the re-syncable model (schemas) is fingerprinted.
+	 * Written by `installContext` after the schema-copy loop; preserved verbatim
+	 * (including `at`) on an idempotent re-install whose catalog + assets are
+	 * unchanged. Optional so pre-baseline configs remain valid.
+	 */
+	installed_from?: {
+		/** pi-context package "name@version" the install baseline was taken from. */
+		catalog: string;
+		/** `samples/conception.json` `schema_version` at baseline time. */
+		catalog_version: string;
+		/** ISO-8601 timestamp of when THIS baseline content was established. */
+		at: string;
+		/** Per installed schema: its content fingerprint + own declared version. */
+		assets: Record<string, { content_hash: string; version: string }>;
+	};
 	tool_operations?: ToolOperationDecl[];
 	tool_operations_forbidden?: string[];
 }

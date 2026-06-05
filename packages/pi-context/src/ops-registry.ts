@@ -1885,6 +1885,11 @@ export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
 		reason:
 			"workflow-executor transactional rollback (graduated-failure undo); internal recovery path with no operator-facing op by design",
 	},
+	{
+		libraryFn: "installContext",
+		reason:
+			"the /context install command engine — operator-facing via the install command handler, not the op-registry; writes config.json to record the install baseline",
+	},
 ];
 
 /**

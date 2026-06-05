@@ -55,7 +55,7 @@ Re-run after any active-substrate `*.json` change to refresh the rendered view.
 - GitHub Actions CI runs check + build + test on Node 22/23 for push/PR to main
 - SKILL.md is generated build artifact (`npm run skills`) — do not edit by hand. Edit `skill-narrative.md` instead; uses YAML frontmatter + XML-tagged sections (no markdown headings).
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
-- **Op surface (DEC-0011 — supersedes the op+script dual-surface)**: the reflecting `pi-context-cli` IS the Claude Code-side shell surface over the op-registry. A **new substrate op is op-ONLY** = library fn + Pi tool (CLI-reflected); do **NOT** author a `scripts/orchestrator/<op>.ts` twin — that is a born-obsolete artifact. Existing op-twin scripts stay only until the cli-parity release (FGAP-019..026) gives the CLI their ergonomics, then retire. **Non-op scripts stay**: composers (`compile-*-context.ts` / `compile-task-context.ts` / `inject-context-items.ts` / `file-block-item.ts`), runtime-demos, launch-support — hand-authored briefs forbidden, use these. Substrate-projection script `build-html-views.ts` reads the active substrate's `*.json` via canonical pi-context block-api + emits self-contained HTML view at `html-views/substrate-overview.html`.
+- **Op surface**: the reflecting `pi-context-cli` (`pi-context <op> …`) is the Claude Code-side shell surface over the op-registry — a substrate op is a library fn + a Pi tool the CLI reflects. The hand-written `scripts/orchestrator/*.ts` are composers (`compile-*-context.ts`, `inject-context-items.ts`), runtime-demos, and launch-support — hand-authored briefs forbidden, use these. `build-html-views.ts` projects the active substrate's `*.json` (via canonical pi-context block-api) to a self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
 ## Completion Sequence (mandatory after every code change)
@@ -105,17 +105,12 @@ After writing an analysis markdown (`analysis/*.md`), propose to the user surfac
 
 Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on the active substrate's `*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 
-**Canonical filing patterns**:
+**Canonical filing patterns** — via the reflecting CLI (`node packages/pi-context-cli/dist/bin.js <op>`; target form `pi-context <op>` per FGAP-031), one write per Bash call, `--writer '{"kind":"human","user":"davidryan@gmail.com"}' --json`:
 
-- **Append** (new item): write JSON to `/tmp/<id>.json` heredoc, then
-  ```bash
-  npx tsx scripts/orchestrator/file-block-item.ts \
-    --block <name> --writer human:davidryan@gmail.com --auto-id --item @/tmp/<id>.json
-  ```
-  Use `--show-schema` first when unfamiliar with the block's required fields; `--dry-run` to validate without writing.
-- **Status mutation / field update**: `npx tsx -e` with `updateItemInBlock` from `@davidorex/pi-context/block-api`. Pass `DispatchContext` for attestation stamping.
-- **Separate Bash invocations per operation** — one write per Bash call (chained heredoc + mutate fails on string-termination).
-- **Per-item dispatch:** each block-api write is one item; loops happen at the orchestrator level, not inside one tsx-eval invocation.
+- **Append** (new item): write JSON to `/tmp/<id>.json`, then `append-block-item --block <name> --arrayKey <key> --autoId true --item @/tmp/<id>.json --writer … --json`. Use `read-schema --schemaName <name> --path properties.<key>.items.required` first when unfamiliar with the block's fields; `--arrayKey` is the block's `array_key` (`read-config --registry block_kinds --id <name>`).
+- **Status mutation / field update**: `update-block-item --block <name> --arrayKey <key> --match '{"id":"…"}' --updates '{…}' --writer …`.
+- **Edges**: `append-relation` / `append-relations`. **Task closure**: file a `verification` item + `append-relation --relation_type verification_verifies_item` + `complete-task --taskId … --verificationId …`. **Integrity**: `context-validate` after relation writes.
+- `--item`/`--updates` `@file` for apostrophe/newline-heavy payloads; verify every write by reading back (`read-block-item` / `read-block-page`). (Library functions with no CLI op — e.g. `flipBootstrapPointer` — still go via `npx tsx -e`.)
 
 **Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json`; legacy `registry/`+`defaults/` are unshipped on-disk test fixtures only:
 - `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults)

@@ -948,6 +948,61 @@
       "id": "FGAP-027",
       "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
       "content_hash": "1309f0e4f1f0aed133996dec521130191b4b20d9b49bd34840eafc78f89544f9"
+    },
+    {
+      "title": "Installable schema descriptions hardcode this project (package names / Muni / in-pi / .project/) — non-portable",
+      "status": "identified",
+      "package": "pi-context",
+      "description": "The packaged installable vocabulary that /context install copies (packages/pi-context/samples/schemas/*.schema.json) leaks THIS monorepo into description text: 8 lines across 5 of 16 schemas hardcode monorepo package names (pi-workflows, pi-project, pi-behavior-monitors, pi-jit-agents), the 'in-pi' runtime assumption, the '.project/' directory, and 'Muni' as the canonical layer model. An installed or exported model therefore carries this repo's identity into other projects, presuming the installer IS this monorepo — directly undercutting the portability arc (R-0002). conception.json + the other 11 schemas are clean. Separately, layer-plans + work-orders are whole-purpose project-specific (their entire subject is this repo's storage-restructuring / JIT-agent machinery), so for them the question is keep-or-drop from a generic catalog, not just description-stripping.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/issues.schema.json",
+          "lines": "46",
+          "reference": "properties.location.description: 'File path + line number, e.g. packages/pi-workflows/src/dag.ts:219'"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/issues.schema.json",
+          "lines": "77",
+          "reference": "properties.package.description: 'Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)'"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+          "lines": "6",
+          "reference": "description: '...drives the in-pi bounded code-change loop...' — whole description is this repo's JIT-agent/orchestrator machinery"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+          "lines": "60",
+          "reference": "properties.context_blocks.description: '...per the existing ContextBlockRef shape in packages/pi-jit-agents/src/types.ts'"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/framework-gaps.schema.json",
+          "lines": "6",
+          "reference": "description: 'Capability gaps in the pi-project-workflows framework — ...'"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+          "lines": "6",
+          "reference": "description: 'restructuring the .project/ directory ... conceptual source (e.g. Muni five-layer)' — whole-purpose project-specific"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+          "lines": "48",
+          "reference": "properties.model.description: \"Conceptual source — e.g. 'Muni five-layer'\""
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/research.schema.json",
+          "lines": "58",
+          "reference": "properties.layer.description: 'Which Muni layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory.'"
+        }
+      ],
+      "impact": "Any /context install (or a future export) carries this repo's package names + Muni + .project/ + in-pi into the installing project's schema descriptions — the model presents itself as project-agnostic but is not. Repeats across every consuming project; the leak is the catalog's, so it propagates by design.",
+      "proposed_resolution": "Genericize the 8 leaking description substrings in samples/schemas/ per a from->to strip-list (package names -> placeholder/'your agent layer'; 'in-pi' -> dropped; '.project/' -> 'substrate storage'; 'Muni five-layer'/'Muni layer' -> 'layered architecture model'/'architecture layer'). Decide keep-or-drop structurally for layer-plans + work-orders (whole-purpose project-specific) — flag, do not silently drop. Produce a portable disinfect markdown other projects can apply to their own installed schema copies. Adversarial re-grep the catalog to zero residual named-term leaks. Class-check conception.json (clean per scan). Run through the canonical pipeline.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "FGAP-028",
+      "oid": "93ee78687c71e6d609695e4919f9a4ac",
+      "content_hash": "f953058039ef3f4a5177fd06f053a3864f48cd0c8de9a6625c0a90d7515f3f2f"
     }
   ]
 }

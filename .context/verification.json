@@ -161,6 +161,39 @@
       "id": "VER-012",
       "oid": "bf3a5d1bd7f842fbff79d6b6861fab8a",
       "content_hash": "ad0e94ff270dc3fdcc9a892864b5061584da24692f492d6ea19b9c9eb05404f8"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Slice S3 — READ-ONLY /context install --plan drift detector (planInstall compares baseline vs catalog-now vs installed-now per installed schema). build/check/test green (pi-context 1037 tests, +5 planInstall tests incl. a byte-identical-config writes-nothing assertion; fail 0 all suites; parity-check clean — planInstall is pure-read, not enumerated). Runtime demo on a DUPLICATE of .context (safety protocol; live untouched + backed up): planInstall writes nothing (config.json byte-identical before/after) and truthfully reports all 16 installed schemas catalog-ahead — this substrate's installed schema model is entirely stale vs the catalog (the condition the arc exists to fix); a local edit on an already-drifted schema classifies both-diverged (correct). Fresh adversarial audit: CLEAN (zero writes confirmed at byte level; resolveCatalog extraction behavior-preserving for installContext; state machine + precedence correct; --plan wins over --update with safe regex boundaries; tests non-tautological). Committed cdf3a84.",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "criteria_results": [
+        {
+          "criterion": "--plan reports per-asset drift (version + content_hash) and the would-change set; writes nothing",
+          "status": "passed",
+          "evidence": "demo: writes-nothing byte-identical; 16 catalog-ahead reported; unit test asserts byte-identical config"
+        },
+        {
+          "criterion": "output usable by human + parseable by script",
+          "status": "passed",
+          "evidence": "structured InstallPlan {perAsset, summary} + renderInstallPlan text"
+        },
+        {
+          "criterion": "CHANGELOG + usage-only docs",
+          "status": "passed",
+          "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL, usage-only"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build/check/test + runtime demo on dup + fresh adversarial audit (CLEAN)"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "VER-013",
+      "oid": "c894add8ed226592637aaee334da01cc",
+      "content_hash": "e3ea533db9e5cd57772a0f5717d8dde5af5e5f0b6dfcc08413c756d631fea020"
     }
   ]
 }

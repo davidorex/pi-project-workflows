@@ -424,7 +424,7 @@
     },
     {
       "description": "Slice S3 (FGAP-029): a read-only --plan / drift detector. From the S2 baseline, report installed-vs-catalog skew per asset (version + content_hash) and what a re-sync WOULD change; mutate nothing (survey Option C as Option B's preview; cruft-check / terraform-plan flavor). Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
-      "status": "planned",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/CHANGELOG.md",
@@ -443,7 +443,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-025",
       "oid": "a3587c4629e8b928c2dcc788119b4e53",
-      "content_hash": "37f0cf7556822a69632400de587380c4f5d462196c293267b6969382a3ab2f84"
+      "content_hash": "8828a777f921cc63df0ad03401d46805f99fb7645d60b41c4cc052e0176b00d0",
+      "content_parent": "849eef1f5102c3d85a3a03400f52d801cebbbed0bca06a80dacc8935121a1e3c"
     },
     {
       "description": "Slice S4 (FGAP-029): schema re-sync via the existing migration registry (forward-migrate, NOT blind copy) + cleaning propagation. Refresh installed schemas through migrations.json / validateBlockWithMigration; identity-migration for shape-compatible / description-only bumps. Running it on this repo propagates the genericized catalog descriptions into .context/schemas/ (FGAP-028 residual) with ZERO data loss and resolves the layer-plans 1.0.0->1.0.1 skew. Closes FGAP-029 (data-loss closed at S1; safe schema re-sync closed here). Per DEC-0010: CHANGELOG + usage-only docs.",

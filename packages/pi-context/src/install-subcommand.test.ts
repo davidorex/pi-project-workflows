@@ -145,4 +145,46 @@ describe("installContext", () => {
 		assert.deepEqual(result.notFound, ["schemas/config.schema.json", "schemas/relations.schema.json"]);
 		assert.deepEqual(result.installed, []);
 	});
+
+	// FGAP-029 safe re-sync (slice S1): --update must never overwrite a populated
+	// block — the catalog block starter is empty ({"tasks": []}), so copying it over
+	// a block holding filed items would delete them. Populated blocks are preserved.
+	it("preserves a populated block under overwrite (byte-identical, reported as preserved)", () => {
+		tmpRoot = makeProject([], ["tasks"]);
+		const dest = path.join(tmpRoot, ".project", "tasks.json");
+		// Pre-existing populated block (no schema installed → no migration path).
+		const populated = JSON.stringify({ tasks: [{ id: "TASK-001", title: "filed item" }] }, null, 2);
+		fs.writeFileSync(dest, populated);
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.preserved, ["tasks.json"], "populated block must be reported as preserved");
+		assert.deepEqual(result.updated, [], "populated block must not be reported as updated");
+		assert.deepEqual(result.installed, []);
+		assert.equal(
+			fs.readFileSync(dest, "utf-8"),
+			populated,
+			"populated block file must be byte-identical after --update (never overwritten)",
+		);
+	});
+
+	it("overwrites an empty existing block under overwrite (reported as updated, not preserved)", () => {
+		tmpRoot = makeProject([], ["tasks"]);
+		const dest = path.join(tmpRoot, ".project", "tasks.json");
+		// Pre-existing EMPTY block — all arrays empty → eligible for --update overwrite.
+		fs.writeFileSync(dest, JSON.stringify({ tasks: [], extra_marker: true }, null, 2));
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.updated, ["tasks.json"], "empty block must be reported as updated");
+		assert.deepEqual(result.preserved, [], "empty block must not be preserved");
+		const after = fs.readFileSync(dest, "utf-8");
+		assert.ok(!after.includes("extra_marker"), "empty block must be replaced by the catalog starter on --update");
+	});
+
+	it("a schema under overwrite is still updated (block preservation does not regress schema --update)", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		fs.writeFileSync(dest, "{}"); // pre-existing schema
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.updated, ["schemas/tasks.schema.json"], "schema must still be updated under overwrite");
+		assert.deepEqual(result.preserved, [], "schemas are never in the preserved set");
+		assert.notEqual(fs.readFileSync(dest, "utf-8"), "{}", "schema must be refreshed from the samples catalog");
+	});
 });

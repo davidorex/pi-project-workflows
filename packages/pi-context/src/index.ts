@@ -7,7 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
-import { readBlock } from "./block-api.js";
+import { forEachBlockArray, readBlock, readBlockForDir } from "./block-api.js";
 import {
 	type AdoptResult,
 	adoptConception,
@@ -318,6 +318,7 @@ export interface InstallResult {
 	updated: string[];
 	skipped: string[];
 	notFound: string[];
+	preserved: string[];
 }
 
 /**
@@ -332,7 +333,7 @@ export interface InstallResult {
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
 export function installContext(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
-	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [] };
+	const result: InstallResult = { installed: [], updated: [], skipped: [], notFound: [], preserved: [] };
 	const overwrite = options.overwrite === true;
 
 	const destRoot = tryResolveContextDir(cwd);
@@ -407,12 +408,40 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 			continue;
 		}
 		const destExists = fs.existsSync(destFile);
-		if (destExists && !overwrite) {
-			result.skipped.push(relDest);
+		if (destExists) {
+			// Block-data preservation (FGAP-029 safe re-sync): never copy a catalog
+			// starter over a block that already holds items, even under --update.
+			// Catalog block starters are empty ({"tasks": []}); copying one over a
+			// populated block would delete the filed items. Read the existing block
+			// and treat ANY top-level (or nested) array with length > 0 as populated.
+			// Safety default: if the block can't be read/confirmed-empty (throw, or
+			// migration-validation failure), treat it as POPULATED — never overwrite
+			// something we could not read.
+			let populated = true;
+			try {
+				const existing = readBlockForDir(destRoot, name);
+				let hasItems = false;
+				forEachBlockArray(existing, (_arrayKey, arr) => {
+					if (arr.length > 0) hasItems = true;
+				});
+				populated = hasItems;
+			} catch {
+				populated = true;
+			}
+			if (populated) {
+				result.preserved.push(relDest);
+				continue;
+			}
+			if (!overwrite) {
+				result.skipped.push(relDest);
+				continue;
+			}
+			fs.copyFileSync(sourceFile, destFile);
+			result.updated.push(relDest);
 			continue;
 		}
 		fs.copyFileSync(sourceFile, destFile);
-		(destExists ? result.updated : result.installed).push(relDest);
+		result.installed.push(relDest);
 	}
 
 	return result;
@@ -923,6 +952,11 @@ const extension = (pi: ExtensionAPI) => {
 				}
 				if (result.updated.length > 0) {
 					lines.push(`Updated (${result.updated.length}): ${result.updated.join(", ")}`);
+				}
+				if (result.preserved.length > 0) {
+					lines.push(
+						`Preserved (${result.preserved.length}, populated — block data is never overwritten): ${result.preserved.join(", ")}`,
+					);
 				}
 				if (result.skipped.length > 0) {
 					lines.push(

@@ -35,7 +35,7 @@ Every block write validates against `<root>/schemas/<blockname>.schema.json`. If
 </context_accept_all>
 
 <context_install>
-`/context install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits); pass `--update` to overwrite and report the asset as `updated`. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
+`/context install` reconciles the substrate against the `installed_schemas` and `installed_blocks` lists declared in `config.json`. For each declared name it copies the matching asset from the package-shipped samples catalog (`samples/schemas/` for schemas, `samples/blocks/` for starter blocks) into the substrate. Default behavior is skip-if-exists (preserves user edits). Pass `--update` to overwrite installed SCHEMAS and report them as `updated`; populated block data is never overwritten — a block holding items is preserved (reported as `preserved`) regardless of `--update`, while empty or absent blocks receive the catalog starter. Sources missing from the catalog are reported as `notFound`. Empty install lists are not an error — the result is a clean no-op message instructing the user to edit `config.json`.
 
 The installable catalog IS the packaged conception (`samples/conception.json`): its `block_kinds` enumerate the available kinds, each carrying its schema (`samples/schemas/`) and starter block (`samples/blocks/`). The generated installable-catalog table below lists the authoritative names — declare any subset in `installed_*` and run `/context install`, or take the whole conception via `/context accept-all`.
 </context_install>
@@ -139,7 +139,7 @@ On `session_start`, checks npm registry for newer versions of `@davidorex/pi-pro
 
 <success_criteria>
 - `<substrate-dir>/`, `<substrate-dir>/schemas/`, and the `.pi-context.json` bootstrap pointer exist after `/context init <substrate-dir>` (init is skeleton-only: no `config.json`, no schemas, no blocks until accept-all + install). Phases are not a directory — they live as an in-block array under `phase.json` (plural `phases` key); there is no `phases/` dir.
-- `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites
+- `installed_schemas` / `installed_blocks` declared in `config.json` are reified by `/context install`; `--update` overwrites installed schemas, but populated block data is never overwritten (preserved) — only empty or absent blocks receive the catalog starter
 - Block writes validate against schemas — invalid data rejected with specific error
 - `/context status` returns current derived state without errors
 - `/context validate` returns no errors for well-formed cross-block references

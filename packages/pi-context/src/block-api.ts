@@ -1010,7 +1010,7 @@ function assertNoDuplicateIdsInArray(arr: unknown[], labelForArray: string): voi
  * object-valued properties that are NOT array elements are not descended into —
  * block items live in arrays, so only array elements are recursion frontiers.
  */
-function forEachBlockArray(data: unknown, visit: (arrayKey: string, array: unknown[]) => void): void {
+export function forEachBlockArray(data: unknown, visit: (arrayKey: string, array: unknown[]) => void): void {
 	if (!data || typeof data !== "object" || Array.isArray(data)) return;
 	for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
 		if (!Array.isArray(value)) continue;

@@ -372,7 +372,7 @@
     },
     {
       "description": "Slice S1 (FGAP-029 P0 safety): /context install --update must NEVER overwrite a populated block. In installContext's blocks loop (packages/pi-context/src/index.ts:396-416), when destExists && overwrite, read the existing block via readBlockForDir and test for items via forEachBlockArray; if any array is non-empty, push to a new InstallResult.preserved[] and skip the copyFileSync. Empty/absent blocks behave as today; the schemas loop is UNCHANGED (schemas still honor --update). Render preserved in the install handler (index.ts:910-942). Add a regression test (none exists today). Per DEC-0010: also add a CHANGELOG [Unreleased] entry + usage-only docs (pkg README, monorepo README, SKILL via skill-narrative.md). Reuse readBlockForDir + forEachBlockArray (block-api.ts); installContext is the sole block-writer.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/index.test.ts",
@@ -393,7 +393,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-023",
       "oid": "853bc69292962c1f61556111073909f4",
-      "content_hash": "154fc9886f0ab37dbddc91306546a736e8fa88c68270e8d77411fb22e5b36e44"
+      "content_hash": "407209563ab741d1a98aeb060d038095d7db77bb3ca5d86e2237544e57c6dfdd",
+      "content_parent": "154fc9886f0ab37dbddc91306546a736e8fa88c68270e8d77411fb22e5b36e44"
     },
     {
       "description": "Slice S2 (FGAP-029): record an install BASELINE at install/accept-all — installed_from (catalog ref) + catalog_version + per-asset content_hash in config.json — the merge-base (git %O analog) primitive shared by catalog re-sync (S3/S4) and the git-merge engine (FGAP-004). No behavior change to existing reads. Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",

@@ -1634,5 +1634,18 @@
       "refname": "FGAP-004"
     },
     "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "42214b6cb767a447312c3f37398c5873",
+      "refname": "VER-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "853bc69292962c1f61556111073909f4",
+      "refname": "TASK-023"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

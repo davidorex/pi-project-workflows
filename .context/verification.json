@@ -85,6 +85,44 @@
       "evidence": "TASK-011 (upsert dry-run parity, landed 4b72b86): the last dry-run divergence. upsertItemInBlock + op gain a shared dryRun preview; the script delegates. build/check/test green; runtime demo (upsert --dryRun previews, block file byte-unchanged; real writes); parity-check now at 0 divergences (all 5 cleared). Fresh adversarial audit: no dryRun write, validation parity exact, lock correct, stdout preserved, deterministic.",
       "oid": "01d5b8ce7f5a540881111acf785416fb",
       "content_hash": "06bf2d37f8b0fa1f0f6f4327d4c0101eafd4128232ee4bdc477eeb7b05cac1da"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Slice S1 — /context install --update preserves populated blocks. build + check + test green (pi-context 1027 tests, +3 new regression tests: populated-preserved / empty-overwritten / schema-still-updated; fail 0 across all suites). Runtime demo on a DUPLICATE of .context (safety protocol; live .context untouched + backed up): all 6 populated blocks byte-identical + reported preserved, 16 schemas + 10 empty blocks refreshed under --update. Fresh adversarial audit: CLEAN (no populated block can reach copyFileSync under --update; 3 mutually-exclusive continue branches; detection correct for the object-shape blocks; safety-default preserves on read failure; schemas unaffected; tests non-tautological). Committed 0c444cf.",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "criteria_results": [
+        {
+          "criterion": "--update against a populated block: byte-identical + reported preserved",
+          "status": "passed",
+          "evidence": "regression test + runtime demo on dup: 6 populated blocks unchanged, all in result.preserved"
+        },
+        {
+          "criterion": "empty block still overwritten; schema under --update still updated",
+          "status": "passed",
+          "evidence": "demo: 10 empty blocks + 16 schemas in result.updated; regression tests 2 + 3"
+        },
+        {
+          "criterion": "no other path overwrites a populated block; detection correct",
+          "status": "passed",
+          "evidence": "adversarial audit CLEAN; installContext sole block-writer; object-shape detection verified"
+        },
+        {
+          "criterion": "CHANGELOG + usage-only docs",
+          "status": "passed",
+          "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL regen, usage-only no fix-reference"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build/check/test + runtime demo + fresh adversarial audit all passed"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "VER-011",
+      "oid": "42214b6cb767a447312c3f37398c5873",
+      "content_hash": "a882533dc982acdff44288ed84ec96be8d67f467537dc889ef7ef3c1a334f477"
     }
   ]
 }

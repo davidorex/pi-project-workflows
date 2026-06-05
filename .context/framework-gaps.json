@@ -951,7 +951,7 @@
     },
     {
       "title": "Installable schema descriptions hardcode this project (package names / Muni / in-pi / .project/) — non-portable",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "The packaged installable vocabulary that /context install copies (packages/pi-context/samples/schemas/*.schema.json) leaks THIS monorepo into description text: 8 lines across 5 of 16 schemas hardcode monorepo package names (pi-workflows, pi-project, pi-behavior-monitors, pi-jit-agents), the 'in-pi' runtime assumption, the '.project/' directory, and 'Muni' as the canonical layer model. An installed or exported model therefore carries this repo's identity into other projects, presuming the installer IS this monorepo — directly undercutting the portability arc (R-0002). conception.json + the other 11 schemas are clean. Separately, layer-plans + work-orders are whole-purpose project-specific (their entire subject is this repo's storage-restructuring / JIT-agent machinery), so for them the question is keep-or-drop from a generic catalog, not just description-stripping.",
       "evidence": [
@@ -997,12 +997,15 @@
         }
       ],
       "impact": "Any /context install (or a future export) carries this repo's package names + Muni + .project/ + in-pi into the installing project's schema descriptions — the model presents itself as project-agnostic but is not. Repeats across every consuming project; the leak is the catalog's, so it propagates by design.",
-      "proposed_resolution": "Genericize the 8 leaking description substrings in samples/schemas/ per a from->to strip-list (package names -> placeholder/'your agent layer'; 'in-pi' -> dropped; '.project/' -> 'substrate storage'; 'Muni five-layer'/'Muni layer' -> 'layered architecture model'/'architecture layer'). Decide keep-or-drop structurally for layer-plans + work-orders (whole-purpose project-specific) — flag, do not silently drop. Produce a portable disinfect markdown other projects can apply to their own installed schema copies. Adversarial re-grep the catalog to zero residual named-term leaks. Class-check conception.json (clean per scan). Run through the canonical pipeline.",
+      "proposed_resolution": "Genericize the 8 leaking description substrings in samples/schemas/ per a from->to strip-list (package names -> placeholder/'your agent layer'; 'in-pi' -> dropped; '.project/' -> 'substrate storage'; project layer-model proper noun -> 'layered architecture model'/'architecture layer'); preserve the model's intrinsic vocabulary (relations.json, L1-L5 mapping, substrate); produce a portable disinfect markdown; adversarial re-grep to zero residual named-term leaks. RESOLVED at b1cdccc: the 8 substrings genericized across issues/work-orders/framework-gaps/layer-plans/research; zero residual named-term leaks (grep); read-samples-catalog parses all 16 kinds; check + test green; portable strip-list at analysis/2026-06-05-disinfect-schema-descriptions.md. An adversarial re-audit additionally flagged model-intrinsic vocabulary (relations.json / L1-L5 / substrate / feature-story-task) as 'leakage' — dismissed as scope over-reach (that vocabulary describes what the shipped model IS, not which project authored it). Follow-ons NOT part of this closure: .context/schemas/ installed copies carry the same leaks (re-sync via /context install --update); .context/schemas/layer-plans.schema.json is version-skewed (1.0.0, missing layers[]/migration_phases[]).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-028",
       "oid": "93ee78687c71e6d609695e4919f9a4ac",
-      "content_hash": "f953058039ef3f4a5177fd06f053a3864f48cd0c8de9a6625c0a90d7515f3f2f"
+      "content_hash": "dedec7c29a8b75dcca9ba4904686017e368d007b17ae8afdc74c8025d5539dc1",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-06-05T00:00:00.000Z",
+      "content_parent": "f953058039ef3f4a5177fd06f053a3864f48cd0c8de9a6625c0a90d7515f3f2f"
     }
   ]
 }

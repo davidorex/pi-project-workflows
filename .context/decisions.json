@@ -348,6 +348,50 @@
       "id": "DEC-0011",
       "oid": "365db911e6b4a6769223eca788f9eed0",
       "content_hash": "328bf7238cb28687e6e1f8b4c1b85e8676801f0583bf07ce569af31f0c40e3e4"
+    },
+    {
+      "id": "DEC-0012",
+      "title": "Revert the unplanned pre-identity-OID escape hatch (skipIdentityStamp / tryReadSubstrateIdForDir); any pre-identity re-sync support must be designed via canonical process",
+      "status": "open",
+      "context": "Commit 0fcba9c added three artifacts — tryReadSubstrateIdForDir (context-dir.ts), the skipIdentityStamp option on writeBlockForDir (block-api.ts), and its use in resyncSchema (index.ts:574-575) — to work around an identity-stamping throw when /context install --update's migration-aware schema re-sync runs against a substrate with no established substrate_id. It addressed a real migrate-path test failure in TASK-026 (S4 / FGAP-029). The change was made ad-hoc inside the TASK-026 work via an over-scoped sub-agent brief, with no declared gap, no DEC, and no scoped plan — the unplanned-entry pattern canonical process exists to prevent. Whether the change is technically correct is not the question; correctness does not authorize unplanned architectural surface.",
+      "decision": "Revert all three artifacts: remove tryReadSubstrateIdForDir from context-dir.ts, remove the skipIdentityStamp option and its gate from writeBlockForDir in block-api.ts, and remove the probe and flag usage from resyncSchema in index.ts. Restore mandatory identity-stamping on every write, including schema re-sync. The migrate-path test that the escape hatch satisfied will fail again; restoring it green is a separate, canonically-planned implementation. Any genuine requirement for resync to support a pre-identity substrate will be designed via canonical process — a declared gap, a dedicated DEC, and a scoped plan — not folded into another task's brief.",
+      "consequences": [
+        "The three artifacts are removed; identity stamping is again mandatory on every write, with a loud throw on a pre-identity substrate (guards against mis-provisioning).",
+        "TASK-026's migrate-path test fails again, re-surfacing the pre-identity schema-re-sync problem as an explicit, unmasked open problem.",
+        "Closing TASK-026 / S4 now requires a canonical decision on how (or whether) pre-identity re-sync is supported, governed by a future DEC and plan.",
+        "issue-001 (the migrations.json stray-decl rollback defect) is orthogonal and remains open; unaffected by this reversal."
+      ],
+      "references": [
+        {
+          "label": "the reverted commit",
+          "commit": "0fcba9c"
+        },
+        {
+          "label": "tryReadSubstrateIdForDir (to be removed)",
+          "path": "packages/pi-context/src/context-dir.ts"
+        },
+        {
+          "label": "skipIdentityStamp option on writeBlockForDir (to be removed)",
+          "path": "packages/pi-context/src/block-api.ts"
+        },
+        {
+          "label": "resyncSchema probe + flag usage (to be removed)",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "574-575"
+        },
+        {
+          "label": "the in-progress S4 task this decision governs",
+          "path": ".context/tasks.json (TASK-026)"
+        },
+        {
+          "label": "the canonically-derived issue this arc surfaced",
+          "path": ".context/issues.json (issue-001)"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "dc5a41c94719c9d97eb3213522574f78",
+      "content_hash": "234e61066f053c6ceb29f4ad128dabd50ae7dc006c6606333cc580ac79dc26db"
     }
   ]
 }

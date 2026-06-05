@@ -1699,5 +1699,31 @@
       "refname": "issue-001"
     },
     "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "dc5a41c94719c9d97eb3213522574f78",
+      "refname": "DEC-0012"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "dc5a41c94719c9d97eb3213522574f78",
+      "refname": "DEC-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8585cfde13ec83732bbaecd9878b9ff6",
+      "refname": "issue-001"
+    },
+    "relation_type": "decision_addresses_issue"
   }
 ]

@@ -43,7 +43,7 @@
           },
           "location": {
             "type": "string",
-            "description": "File path + line number, e.g. packages/pi-workflows/src/dag.ts:219"
+            "description": "File path + line number, e.g. src/module/file.ts:NNN"
           },
           "status": {
             "type": "string",
@@ -74,7 +74,7 @@
           },
           "package": {
             "type": "string",
-            "description": "Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)"
+            "description": "Which package/module this issue touches (e.g. package-a, package-b)"
           },
           "source": {
             "type": "string",

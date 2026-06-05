@@ -3,7 +3,7 @@
   "$id": "pi-context://schemas/layer-plans",
   "version": "1.0.1",
   "title": "Layer Restructure Plans",
-  "description": "Plans for restructuring the .project/ directory from flat-block storage into a layered artifact-ownership model. Each plan names its conceptual source (e.g. Muni five-layer), describes each layer's purpose and its current-vs-target block mapping, and sequences the enactment into phases with exit criteria. Layer plans are themselves L2 specification-layer artifacts — they are spec-level decisions about how the framework organizes project state.",
+  "description": "Plans for restructuring substrate storage into a layered artifact-ownership model. Each plan names its conceptual source (e.g. a layered architecture model), describes each layer's purpose and its current-vs-target block mapping, and sequences the enactment into phases with exit criteria. Layer plans are themselves L2 specification-layer artifacts — they are spec-level decisions about how the framework organizes project state.",
   "type": "object",
   "required": [
     "plans"
@@ -45,7 +45,7 @@
           },
           "model": {
             "type": "string",
-            "description": "Conceptual source — e.g. 'Muni five-layer'"
+            "description": "Conceptual source — e.g. 'a layered architecture model'"
           },
           "description": {
             "type": "string",

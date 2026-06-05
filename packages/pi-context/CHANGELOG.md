@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- Genericized originating-project identity out of the installable sample schema descriptions (`samples/schemas/` — issues, work-orders, framework-gaps, layer-plans, research): hardcoded monorepo package names, the project layer-model proper noun, the `in-pi` runtime qualifier, and the internal `.project/` directory are replaced with generic placeholders, so an installed or exported context model no longer carries this repo's identity into the installing project. Description text only; no structural/schema-shape change. The model's own intrinsic vocabulary (closure-table `relations.json`, the L1–L5 layer mapping, substrate terms) is deliberately preserved. A portable strip-list (`analysis/2026-06-05-disinfect-schema-descriptions.md`) lets other projects sanitize their own installed copies.
+
 ## [0.30.0] - 2026-06-04
 
 ### Added

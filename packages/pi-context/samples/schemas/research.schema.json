@@ -55,7 +55,7 @@
               "L4",
               "L5"
             ],
-            "description": "Which Muni layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory."
+            "description": "Which architecture layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory."
           },
           "type": {
             "type": "string",

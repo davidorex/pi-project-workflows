@@ -82,13 +82,17 @@ describe("installContext", () => {
 		assert.equal(fs.readFileSync(dest, "utf-8"), "{}", "destination must be untouched on skip");
 	});
 
-	it("overwrites and reports as updated when overwrite=true and destination exists", () => {
+	it("re-syncs a versionless existing schema under overwrite=true (reported as resynced)", () => {
+		// S4: a pre-existing schema with no `version` field has no migration contract,
+		// so the --update path treats it as a same-version (description-only) re-sync →
+		// verbatim overwrite reported as `resynced` (not `updated`).
 		tmpRoot = makeProject(["tasks"], []);
 		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
-		fs.writeFileSync(dest, "{}"); // pre-existing
+		fs.writeFileSync(dest, "{}"); // pre-existing, versionless
 		const result = installContext(tmpRoot, { overwrite: true });
 		assert.deepEqual(result.installed, []);
-		assert.deepEqual(result.updated, ["schemas/tasks.schema.json"]);
+		assert.deepEqual(result.resynced, ["schemas/tasks.schema.json"]);
+		assert.deepEqual(result.updated, []);
 		assert.deepEqual(result.skipped, []);
 		assert.notEqual(
 			fs.readFileSync(dest, "utf-8"),
@@ -179,12 +183,13 @@ describe("installContext", () => {
 		assert.ok(!after.includes("extra_marker"), "empty block must be replaced by the catalog starter on --update");
 	});
 
-	it("a schema under overwrite is still updated (block preservation does not regress schema --update)", () => {
+	it("a schema under overwrite is still re-synced (block preservation does not regress schema --update)", () => {
 		tmpRoot = makeProject(["tasks"], []);
 		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
-		fs.writeFileSync(dest, "{}"); // pre-existing schema
+		fs.writeFileSync(dest, "{}"); // pre-existing schema (versionless → resync path)
 		const result = installContext(tmpRoot, { overwrite: true });
-		assert.deepEqual(result.updated, ["schemas/tasks.schema.json"], "schema must still be updated under overwrite");
+		assert.deepEqual(result.resynced, ["schemas/tasks.schema.json"], "schema must still be re-synced under overwrite");
+		assert.deepEqual(result.updated, [], "S4 routes schema --update into resynced/migrated/blocked, not updated");
 		assert.deepEqual(result.preserved, [], "schemas are never in the preserved set");
 		assert.notEqual(fs.readFileSync(dest, "utf-8"), "{}", "schema must be refreshed from the samples catalog");
 	});
@@ -340,5 +345,213 @@ describe("checkStatus (read-only drift detector)", () => {
 		checkStatus(tmpRoot);
 		const after = fs.readFileSync(cfgPath);
 		assert.ok(before.equals(after), "checkStatus must not modify config.json (byte-identical before/after)");
+	});
+});
+
+// FGAP-029 safe re-sync (slice S4): /context install --update re-syncs installed
+// SCHEMAS through the migration registry — same-version overwrite, version-bump
+// forward-migration, or refuse-and-leave-unchanged. Never strands block items
+// under a schema they fail.
+describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Pre-place an installed schema dest = the catalog schema body with its `version`
+	// overridden, modelling an older (or unbumped) installed copy against the catalog.
+	function installSchemaFixture(dir: string, name: string, version: string, extra?: Record<string, unknown>): string {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		Object.assign(catalog, extra ?? {});
+		const dest = path.join(dir, ".project", "schemas", `${name}.schema.json`);
+		fs.writeFileSync(dest, JSON.stringify(catalog, null, 2));
+		return dest;
+	}
+
+	function writeBlockFixture(dir: string, name: string, data: unknown): string {
+		const dest = path.join(dir, ".project", `${name}.json`);
+		fs.writeFileSync(dest, JSON.stringify(data, null, 2));
+		return dest;
+	}
+
+	function catalogTasksVersion(): string {
+		return (
+			JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8")) as {
+				version: string;
+			}
+		).version;
+	}
+
+	it("same-version schema body change under --update → schema overwritten (resynced), block items unchanged", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		// Installed schema dest at the SAME version as the catalog but with a drifted
+		// description (so the bytes differ but no migration contract changes).
+		const dest = installSchemaFixture(tmpRoot, "tasks", catVer, { description: "DRIFTED LOCAL DESCRIPTION" });
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "open" }],
+		});
+		const blockBefore = fs.readFileSync(blockDest);
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.resynced, ["schemas/tasks.schema.json"], "same-version drift must be resynced");
+		assert.deepEqual(result.migrated, []);
+		assert.deepEqual(result.blocked, []);
+		const installedNow = fs.readFileSync(dest, "utf-8");
+		const catalogNow = fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8");
+		assert.equal(installedNow, catalogNow, "schema must be overwritten byte-equal to the catalog source");
+		assert.ok(
+			fs.readFileSync(blockDest).equals(blockBefore),
+			"block file must be byte-unchanged on a same-version resync",
+		);
+	});
+
+	it("version bump WITH a shipped identity migration + populated block → migrated, item fields intact", () => {
+		const catVer = catalogTasksVersion(); // 1.0.1 — catalog ships the 1.0.0→1.0.1 identity decl
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", "1.0.0"); // installed at the older version
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "1.0.0",
+			tasks: [
+				{ id: "TASK-001", description: "alpha", status: "planned" },
+				{ id: "TASK-002", description: "beta", status: "completed" },
+			],
+		});
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.migrated, ["schemas/tasks.schema.json"], "version bump with a shipped chain must migrate");
+		assert.deepEqual(result.blocked, []);
+		assert.deepEqual(result.resynced, []);
+		// Schema advanced to the catalog version.
+		const installedSchema = JSON.parse(
+			fs.readFileSync(path.join(tmpRoot, ".project", "schemas", "tasks.schema.json"), "utf-8"),
+		) as { version: string };
+		assert.equal(installedSchema.version, catVer, "installed schema must advance to the catalog version");
+		// Block items preserved (identity migration → field values unchanged); envelope advanced.
+		const block = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as {
+			schema_version?: string;
+			tasks: Array<Record<string, unknown>>;
+		};
+		assert.equal(block.schema_version, catVer, "block envelope schema_version must advance to the catalog version");
+		assert.equal(block.tasks.length, 2, "item count must be preserved");
+		assert.deepEqual(
+			block.tasks.map((t) => ({ id: t.id, description: t.description, status: t.status })),
+			[
+				{ id: "TASK-001", description: "alpha", status: "planned" },
+				{ id: "TASK-002", description: "beta", status: "completed" },
+			],
+			"identity migration must preserve every item's domain field values",
+		);
+	});
+
+	it("version bump with NO shipped migration → blocked: schema AND block byte-unchanged, no throw", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// Installed at a version with no `X→catalog` chain in samples/migrations.json.
+		const schemaDest = installSchemaFixture(tmpRoot, "tasks", "0.9.0");
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "0.9.0",
+			tasks: [{ id: "TASK-001", description: "filed", status: "open" }],
+		});
+		const mp = path.join(tmpRoot, ".project", "migrations.json");
+		const schemaBefore = fs.readFileSync(schemaDest);
+		const blockBefore = fs.readFileSync(blockDest);
+		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+		let result!: ReturnType<typeof installContext>;
+		assert.doesNotThrow(() => {
+			result = installContext(tmpRoot, { overwrite: true });
+		}, "an unmigratable version bump must not throw");
+		assert.deepEqual(result.blocked, ["schemas/tasks.schema.json"], "no chain → blocked");
+		assert.deepEqual(result.migrated, []);
+		assert.deepEqual(result.resynced, []);
+		assert.ok(fs.readFileSync(schemaDest).equals(schemaBefore), "blocked schema file must be byte-unchanged");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "blocked block file must be byte-unchanged");
+		if (migrationsBefore === null) {
+			assert.ok(!fs.existsSync(mp), "migrations.json must be absent after a blocked outcome when absent pre-call");
+		} else {
+			assert.ok(
+				fs.readFileSync(mp).equals(migrationsBefore),
+				"migrations.json must be byte-unchanged after a blocked outcome",
+			);
+		}
+	});
+
+	it("version bump whose migrated items would FAIL the new schema → blocked, both files byte-unchanged", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// Installed at 1.0.0 (catalog 1.0.1, identity chain exists), but the block holds
+		// an item that VIOLATES the catalog 1.0.1 item schema (id fails the TASK-\d{3,}
+		// pattern + missing required `status`). Identity migration is a no-op, so AJV
+		// validation against the new schema fails → blocked + rollback.
+		const schemaDest = installSchemaFixture(tmpRoot, "tasks", "1.0.0");
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "1.0.0",
+			tasks: [{ id: "not-a-valid-task-id", description: "breaks the new schema" }],
+		});
+		const mp = path.join(tmpRoot, ".project", "migrations.json");
+		const schemaBefore = fs.readFileSync(schemaDest);
+		const blockBefore = fs.readFileSync(blockDest);
+		// Load-bearing: this path appends the shipped decls into migrations.json
+		// BEFORE the validate throw, so a blocked outcome must restore them.
+		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+		let result!: ReturnType<typeof installContext>;
+		assert.doesNotThrow(() => {
+			result = installContext(tmpRoot, { overwrite: true });
+		}, "an items-fail-new-schema bump must not throw");
+		assert.deepEqual(result.blocked, ["schemas/tasks.schema.json"], "items failing the new schema → blocked");
+		assert.deepEqual(result.migrated, []);
+		assert.ok(
+			fs.readFileSync(schemaDest).equals(schemaBefore),
+			"blocked schema file must be rolled back byte-identical to its pre-call bytes",
+		);
+		assert.ok(
+			fs.readFileSync(blockDest).equals(blockBefore),
+			"blocked block file must be byte-unchanged (never written)",
+		);
+		if (migrationsBefore === null) {
+			assert.ok(!fs.existsSync(mp), "migrations.json must be absent after a blocked outcome when absent pre-call");
+		} else {
+			assert.ok(
+				fs.readFileSync(mp).equals(migrationsBefore),
+				"migrations.json must be byte-unchanged after a blocked outcome",
+			);
+		}
+	});
+
+	it("idempotent — re-run --update on an in-sync substrate yields no schema changes", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		// First install lands the catalog schema (1.0.1) fresh.
+		installContext(tmpRoot);
+		writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "open" }],
+		});
+		const schemaDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		const schemaBefore = fs.readFileSync(schemaDest);
+		const blockBefore = fs.readFileSync(blockDest);
+		// Re-run with --update: installed === catalog version → resynced (verbatim
+		// re-copy), block untouched. Nothing is migrated or blocked.
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.resynced, ["schemas/tasks.schema.json"], "in-sync schema re-syncs verbatim");
+		assert.deepEqual(result.migrated, []);
+		assert.deepEqual(result.blocked, []);
+		assert.ok(fs.readFileSync(schemaDest).equals(schemaBefore), "schema bytes unchanged on an in-sync re-run");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "block bytes unchanged on an in-sync re-run");
+	});
+
+	it("after a migrate, check-status reports the schema in-sync (baseline refreshed)", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", "1.0.0");
+		writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "1.0.0",
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+		});
+		const migrate = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(migrate.migrated, ["schemas/tasks.schema.json"]);
+		const plan = checkStatus(tmpRoot);
+		const tasks = plan.perAsset.find((a) => a.name === "tasks");
+		assert.ok(tasks);
+		assert.equal(tasks.state, "in-sync", "post-migrate baseline must report the schema in-sync");
 	});
 });

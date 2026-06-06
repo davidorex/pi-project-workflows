@@ -1334,11 +1334,11 @@
     },
     {
       "id": "FGAP-040",
-      "title": "Story schema reduced to id, description, status (draft|set)",
+      "title": "Story schema: id, description, status (draft|set), type (open string)",
       "status": "identified",
       "priority": "P2",
       "package": "pi-context",
-      "description": "A story holds id, a one-sentence description, and status draft|set. Fields title, acceptance_criteria, and the status values proposed/ready/in-progress/in-review/complete/blocked are removed. Stories carry no criteria.",
+      "description": "A story holds id, a one-sentence description, status draft|set, and a type. type is a free-form string (not an enum) so values such as user or llm-user are admitted without a schema change. title and acceptance_criteria are not present; stories carry no criteria.",
       "evidence": [
         {
           "file": "packages/pi-context/samples/schemas/story.schema.json",
@@ -1346,11 +1346,12 @@
         }
       ],
       "impact": "Story schema carries criteria and a multi-state lifecycle; the model treats a story as a theme with no done-ness of its own.",
-      "proposed_resolution": "Reduce story to id + description + status(draft|set); drop title, acceptance_criteria, and the surplus status values.",
+      "proposed_resolution": "Set story fields to id + description + status(draft|set) + type, where type is a free-form string (not an enum) admitting values like user or llm-user; drop title, acceptance_criteria, and the surplus status values proposed/ready/in-progress/in-review/complete/blocked.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5fb8c651598f008d8526a291a7806673",
-      "content_hash": "21be52cd27953738bf614fb3a6f86839e18e893896e5a400025c55224c69a79b"
+      "content_hash": "7088e439ebf55580b5bf98bbec1c32d8e4da561d8bf1cbd8ace45a6bfe8ce7d7",
+      "content_parent": "21be52cd27953738bf614fb3a6f86839e18e893896e5a400025c55224c69a79b"
     },
     {
       "id": "FGAP-041",

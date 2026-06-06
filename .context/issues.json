@@ -18,7 +18,7 @@
     {
       "id": "issue-002",
       "title": "layer-plans schema nests id-bearing arrays (plans.layers, plans.migration_phases) instead of top-level entities + membership edges",
-      "body": "The layer-plans 1.0.1 schema declares plans[].layers[] and plans[].migration_phases[] as nested id-bearing arrays, violating the edges-not-inline rule (id-bearing items must be top-level, joined by membership edges). context-validate emits two warnings (code nested_id_bearing_array). Entered live by promoting layer-plans 1.0.0->1.0.1 (commit c6434db); the 1.0.0 schema did not nest these. layer-plans holds 0 items, so the fix is schema-only (no data migration): promote layers and migration_phases to top-level entity kinds, link each to its parent plan via a membership relation_type, and remove the nested arrays from the layer-plans item schema — in both the samples catalog (packages/pi-context/samples/schemas/layer-plans.schema.json) and the promoted live .context/schemas/layer-plans.schema.json.",
+      "body": "plans[].layers[] and plans[].migration_phases[] are nested id-bearing arrays; id-bearing items must be top-level entities joined by membership edges (edges-not-inline). context-validate flags both (code nested_id_bearing_array). Fix (schema-only; layer-plans has 0 items, no data migration): promote layers and migration_phases to top-level entity kinds, link each to its parent plan via a membership relation_type, drop the nested arrays from the layer-plans item schema; apply to the samples catalog and the live installed copy.",
       "location": "packages/pi-context/samples/schemas/layer-plans.schema.json",
       "status": "open",
       "category": "cleanup",
@@ -26,7 +26,8 @@
       "package": "pi-context",
       "source": "agent",
       "oid": "0c48b7f89b4e10b192908e90e6001fe8",
-      "content_hash": "fdec4278d966ea73b00914ccb0d6adf6dbd8bf58dba51e4a92d3a90b48362658"
+      "content_hash": "04e269c0617a2a9d99f1a9e9a90d63e9c06beade247aff2d14d7bf47f52afbd8",
+      "content_parent": "fdec4278d966ea73b00914ccb0d6adf6dbd8bf58dba51e4a92d3a90b48362658"
     }
   ]
 }

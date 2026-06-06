@@ -1,0 +1,16 @@
+{
+  "title": "install --update rewrites an existing catalog-origin empty block file with the starter (unguarded, currently benign)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Under --update the block branch overwrites a catalog-origin block file that exists on disk but holds no items with the catalog's empty starter, with no short-circuit for the already-present-and-equal case. No data is lost today (empty -> empty), but the rewrite is unguarded and runs on every update.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "the block branch overwrites an existing empty catalog-origin block with the starter under --update rather than skipping an already-equal file"
+    }
+  ],
+  "impact": "Benign today (no item data lost). Filed for completeness of the update path's clobber semantics and to make the update idempotent at the file level — an unguarded rewrite of an on-disk file is a latent surface for loss if empty blocks ever carry non-item content.",
+  "canonical_vocabulary": "idempotent skip of an unchanged on-disk block",
+  "proposed_resolution": "Skip rewriting an existing catalog-origin block whose content already equals the starter; delivered within the unified update command (FEAT-006)."
+}

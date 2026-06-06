@@ -1542,6 +1542,73 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "371e3a81b13ab6db63959580a0962ab9",
       "content_hash": "48b45497709705e1057f61d421afe57852f6f989a01b11cde728cedf8dc70ba7"
+    },
+    {
+      "id": "FGAP-049",
+      "title": "install --update overwrites a locally-modified schema without consulting the checkStatus drift classification",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "The update path overwrites installed schemas (resyncSchema) without first consulting the checkStatus drift detector, which already classifies each installed schema as in-sync / catalog-ahead / locally-modified / both-diverged. A locally-modified (user-edited) schema is clobbered with no detection or warning, even though the classification that would flag it is computable and shipped.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "resyncSchema overwrites the installed schema (verbatim same-version, migrate-or-refuse on bump) without reading the checkStatus locally-modified classification"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "checkStatus computes the drift classification but the --update write path never calls it before clobbering"
+        }
+      ],
+      "impact": "User schema edits are destroyed silently on update; the drift signal needed to prevent it exists but is not consulted in the write path.",
+      "canonical_vocabulary": "drift-aware update (detect locally-modified before overwrite)",
+      "proposed_resolution": "The update path consults checkStatus before re-syncing each schema and refuses-or-merges (per FGAP-046) any locally-modified schema instead of overwriting it; delivered within the unified update command (FEAT-006).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "ad54150945add17479f99d15cee3619b",
+      "content_hash": "c304e37ab3246ecf06d39c068d825100f42337dff58f1e5bb765d96df47a9a21"
+    },
+    {
+      "id": "FGAP-050",
+      "title": "install --update appends catalog migration declarations into the user's migrations.json without surfacing them",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "On a schema version bump, the update path registers the shipped catalog migration chain into the substrate's migrations.json before forward-validating the block, but the install summary does not report which declarations were added. The user's migrations.json is mutated with no surfaced record of the additions.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "resyncSchema registers each shipped migration declaration into migrations.json on a version bump; the install summary does not enumerate the registered declarations"
+        }
+      ],
+      "impact": "A user cannot see, from the update output, which migration declarations were written into their migrations.json; the mutation is silent.",
+      "canonical_vocabulary": "surfaced mutation reporting",
+      "proposed_resolution": "The update output enumerates every migration declaration registered into migrations.json; --dry-run lists them without writing; delivered within the unified update command (FEAT-006).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "3ddeff09fe364adbd381ecd321493064",
+      "content_hash": "bc8f88f7d3c029f35dc1959f8821ae259dcc7a8915a19f1484cf4220afcab7aa"
+    },
+    {
+      "id": "FGAP-051",
+      "title": "install --update rewrites an existing catalog-origin empty block file with the starter (unguarded, currently benign)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "Under --update the block branch overwrites a catalog-origin block file that exists on disk but holds no items with the catalog's empty starter, with no short-circuit for the already-present-and-equal case. No data is lost today (empty -> empty), but the rewrite is unguarded and runs on every update.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "the block branch overwrites an existing empty catalog-origin block with the starter under --update rather than skipping an already-equal file"
+        }
+      ],
+      "impact": "Benign today (no item data lost). Filed for completeness of the update path's clobber semantics and to make the update idempotent at the file level — an unguarded rewrite of an on-disk file is a latent surface for loss if empty blocks ever carry non-item content.",
+      "canonical_vocabulary": "idempotent skip of an unchanged on-disk block",
+      "proposed_resolution": "Skip rewriting an existing catalog-origin block whose content already equals the starter; delivered within the unified update command (FEAT-006).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "136d4b378729d6ac5a4891b0d79d416c",
+      "content_hash": "0be5d9d549c0866e0ab6c16204744e75a9c8875b86b36475a06f1adab0903f32"
     }
   ]
 }

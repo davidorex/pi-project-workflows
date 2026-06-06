@@ -1253,6 +1253,34 @@
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "8d71055d9de89506bbaafe2eb946260e",
       "content_hash": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98"
+    },
+    {
+      "id": "FGAP-037",
+      "title": "No milestones block — add a milestone block kind (samples catalog + active .context)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "There is no milestone block kind, yet the phase and story schemas already name 'milestone' as a cross-altitude edge target. Add a milestone block. Fields: id (MILE-NNN), name, binary outcome-based success_criteria, status (planned | reached — NO 'missed', which is useless), and an OPTIONAL release field so various gaps / issues / tasks / phases can be rolled into a release (e.g. 'and this is 0.30.1'). No intent field — instead a milestone has edges to stories. Relationships are closure-table edges, not inline. The milestone block must exist in BOTH the packaged samples catalog AND the active .context substrate here; pi-context update (the CLI) adds it into samples.",
+      "evidence": [
+        {
+          "file": ".context/config.json",
+          "reference": "block_kinds registry lists 17 kinds (decisions, framework-gaps, tasks, verification, issues, features, research, rationale, spec-reviews, layer-plans, requirements, conventions, context-contracts, phase, story, work-orders, session-notes) — none is 'milestone'"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/phase.schema.json",
+          "reference": "phase description references story -> milestone/phase/project-goal edges, but no milestone block kind exists"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/story.schema.json",
+          "reference": "story description names milestone as a cross-altitude edge target; no milestone block backs it"
+        }
+      ],
+      "impact": "Phases and stories reference milestones as edge targets with nothing to point at, and there is no block to roll gaps/issues/tasks/phases into a release — milestones cannot be represented in the substrate.",
+      "proposed_resolution": "Add a milestone block kind with fields id (MILE-NNN), name, binary outcome-based success_criteria, status (planned | reached, no missed), and optional release; no intent field, edges to stories instead; relationships as closure-table edges. Land it in BOTH the packaged samples catalog (added via the pi-context update CLI) AND the active .context substrate.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "eb340f2333abb437c6cff7e8036499a1",
+      "content_hash": "29182b87440c57b09c50b44c5d2825b8abd987b77a80cd808392b0b6fb50ec02"
     }
   ]
 }

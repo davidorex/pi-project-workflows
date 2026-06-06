@@ -85,22 +85,23 @@
     },
     {
       "id": "FEAT-005",
-      "title": "pi-context --pi-bound: launch a pi session bound to the composed extension tool surface",
+      "title": "pi-context pi-bound: launch a pi session bound to the composed extension tool surface",
       "status": "proposed",
       "layer": "L4",
-      "description": "A globally-runnable `pi-context --pi-bound` command launches an interactive pi session restricted to the composed extension tool surface — the static SKILL.md tool union plus the config-declared per-target composites — reproducing scripts/launch-constrained-pi.sh as a first-class CLI command and subsuming it.",
+      "description": "A globally-runnable `pi-context pi-bound` command launches an interactive pi session restricted to the composed extension tool surface — the static SKILL.md tool union plus the config-declared per-target composites — reproducing scripts/launch-constrained-pi.sh as a first-class CLI command and subsuming it.",
       "motivation": "The constrained-launch capability exists only as an out-of-tree shell script that needs the repo checkout. As a command on a globally installed pi-context, it runs from any project with the published packages present.",
       "acceptance_criteria": [
-        "[orchestrator] From a cwd outside the repo with the packages installed, `pi-context --pi-bound` launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh.",
+        "[orchestrator] From a cwd outside the repo with the packages installed, `pi-context pi-bound` launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh.",
         "[orchestrator] In that session the agent can invoke the extension tools in the union and cannot invoke tools outside it.",
         "[subagent] `--grant <id>` extends the union for that launch; passthrough arguments reach pi unchanged."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-06T22:29:14.074Z",
+      "modified_at": "2026-06-06T23:09:46.695Z",
       "oid": "e209f40b550d60427fed1289852cf2a3",
-      "content_hash": "c3c9b2d4c1f10bdb74a338645c183f6e044120f211829ebf00a643f725fb6c90"
+      "content_hash": "3e3bfb669798af250ccaff2bce8da6baf0ded22b39bd41546f81013edfa6d64d",
+      "content_parent": "c3c9b2d4c1f10bdb74a338645c183f6e044120f211829ebf00a643f725fb6c90"
     },
     {
       "id": "FEAT-006",

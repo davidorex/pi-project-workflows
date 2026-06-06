@@ -15,7 +15,6 @@ import {
 	type ConfigBlock,
 	type Edge,
 	type EdgeEndpoint,
-	type EndpointRoles,
 	endpointIdentity,
 	endpointKey,
 	findUnmaterializedAssets,
@@ -50,7 +49,6 @@ export {
 	displayName,
 	type Edge,
 	type EdgeEndpoint,
-	type EndpointRoles,
 	edgesForLens,
 	endpointBin,
 	endpointIdentity,
@@ -1400,64 +1398,6 @@ function edgeIdentityKey(edge: Edge): string {
 }
 
 /**
- * Look up the `endpoint_roles` metadata (FGAP-007) for a relation_type in the
- * active config. Returns `null` when the substrate has no config, the
- * relation_type is unregistered, or the relation_type carries no
- * `endpoint_roles` declaration — every one of those cases means "no write-time
- * direction enforcement" (the metadata-absent gate). Best-effort: any
- * config-load failure collapses to `null` rather than throwing, keeping the
- * append porcelain tolerant on a substrate whose config is absent/malformed
- * (the relation_type-registration check stays deferred to `validateContext`).
- */
-function endpointRolesFor(cwd: string, relationType: string): EndpointRoles | null {
-	let cfg: ConfigBlock | null;
-	try {
-		cfg = loadConfig(cwd);
-	} catch {
-		return null;
-	}
-	if (!cfg) return null;
-	const decl = (cfg.relation_types ?? []).find((rt) => rt.canonical_id === relationType);
-	return decl?.endpoint_roles ?? null;
-}
-
-/**
- * Auto-orient an ordering edge to the deriver-canonical storage direction
- * (FGAP-007). The blocked/ready deriver fixes `{parent = prerequisite,
- * child = dependent}`. `endpoint_roles` names which role each AUTHORED endpoint
- * holds under the relation_type's name reading:
- *
- *  - declared `{parent:"prerequisite", child:"dependent"}` → the authored edge
- *    is already deriver-canonical; returned UNCHANGED.
- *  - declared `{parent:"dependent", child:"prerequisite"}` → the name reads
- *    inverted (the parent is the depender); the parent/child are SWAPPED so the
- *    stored edge lands deriver-canonical, with `ordinal` preserved.
- *
- * Relation_types carrying no `endpoint_roles` (data_flow / membership /
- * `*_supersedes_*` and any ordering type that opted out) are returned verbatim
- * — the gate fires ONLY for relation_types carrying the metadata, so no new
- * false-positive reorientation is introduced. Idempotent: re-orienting an
- * already-canonical edge is a no-op.
- */
-function orientOrderingEdge(cwd: string, edge: Edge): Edge {
-	const roles = endpointRolesFor(cwd, edge.relation_type);
-	if (!roles) return edge;
-	// Deriver-canonical storage = prerequisite at parent. When the declared
-	// AUTHORED parent role is the dependent, the authored direction is inverted
-	// relative to the deriver, so swap the endpoints into canonical storage.
-	if (roles.parent === "dependent" && roles.child === "prerequisite") {
-		return {
-			parent: edge.child,
-			child: edge.parent,
-			relation_type: edge.relation_type,
-			...(edge.ordinal !== undefined ? { ordinal: edge.ordinal } : {}),
-		};
-	}
-	// Already deriver-canonical (parent=prerequisite) — store verbatim.
-	return edge;
-}
-
-/**
  * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
  * `child` STRING selectors to structured `EdgeEndpoint`s via
  * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
@@ -1475,15 +1415,12 @@ export function appendRelationByRef(
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: boolean; edge: Edge; dryRun?: boolean } {
-	// Auto-orient to deriver-canonical storage when the relation_type carries
-	// FGAP-007 endpoint_roles (no-op otherwise). Orientation precedes dedup /
-	// dry-run / write so the preview and the stored edge are identical.
-	const edge: Edge = orientOrderingEdge(cwd, {
+	const edge: Edge = {
 		parent: resolveRelationSelector(cwd, rel.parent),
 		child: resolveRelationSelector(cwd, rel.child),
 		relation_type: rel.relation_type,
 		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-	});
+	};
 	if (opts?.dryRun) {
 		// Preview parity: run the SAME validation the write path applies (the
 		// prospective Edge[] against the whole relations schema — what
@@ -1615,17 +1552,12 @@ export function appendRelationsByRef(
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: number; skipped: number; edges: Edge[]; dryRun?: boolean } {
-	// Each resolved edge is auto-oriented to deriver-canonical storage when its
-	// relation_type carries FGAP-007 endpoint_roles (per-edge no-op otherwise),
-	// before the batch dedup so the preview and the stored edges are identical.
-	const resolved: Edge[] = edges.map((rel) =>
-		orientOrderingEdge(cwd, {
-			parent: resolveRelationSelector(cwd, rel.parent),
-			child: resolveRelationSelector(cwd, rel.child),
-			relation_type: rel.relation_type,
-			...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-		}),
-	);
+	const resolved: Edge[] = edges.map((rel) => ({
+		parent: resolveRelationSelector(cwd, rel.parent),
+		child: resolveRelationSelector(cwd, rel.child),
+		relation_type: rel.relation_type,
+		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+	}));
 	if (opts?.dryRun) {
 		// Preview parity: replay the bulk dedup the raw appendRelations applies —
 		// skip an edge whose identity is already on disk OR earlier in THIS batch

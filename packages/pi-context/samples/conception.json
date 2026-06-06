@@ -192,16 +192,14 @@
       "display_name": "depends on item",
       "category": "ordering",
       "source_kinds": ["features"],
-      "target_kinds": ["*"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "feature_gated_by_item",
       "display_name": "gated by",
       "category": "ordering",
       "source_kinds": ["features"],
-      "target_kinds": ["*"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "feature_resolves_issue",
@@ -222,32 +220,28 @@
       "display_name": "story depends on story",
       "category": "ordering",
       "source_kinds": ["story"],
-      "target_kinds": ["story"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["story"]
     },
     {
       "canonical_id": "story_gated_by_item",
       "display_name": "story gated by",
       "category": "ordering",
       "source_kinds": ["story"],
-      "target_kinds": ["*"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "task_depends_on_task",
       "display_name": "depends on task",
       "category": "ordering",
       "source_kinds": ["tasks"],
-      "target_kinds": ["tasks"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["tasks"]
     },
     {
       "canonical_id": "requirement_depends_on_requirement",
       "display_name": "depends on requirement",
       "category": "ordering",
       "source_kinds": ["requirements"],
-      "target_kinds": ["requirements"],
-      "endpoint_roles": { "parent": "dependent", "child": "prerequisite" }
+      "target_kinds": ["requirements"]
     },
     {
       "canonical_id": "research_supersedes_research",

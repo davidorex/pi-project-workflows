@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/config",
-	"version": "1.7.0",
+	"version": "1.6.0",
 	"title": "pi-context substrate config",
 	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs.",
 	"type": "object",
@@ -85,17 +85,7 @@
 					"category": { "type": "string", "enum": ["ordering", "data_flow", "membership"] },
 					"cycle_allowed": { "type": "boolean" },
 					"source_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's source (edge.parent) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." },
-					"target_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's target (edge.child) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." },
-					"endpoint_roles": {
-						"type": "object",
-						"additionalProperties": false,
-						"required": ["parent", "child"],
-						"description": "Ordering-edge endpoint-role metadata. Names which prerequisite/dependent role each AUTHORED endpoint holds for an ordering relation_type, making the depender/depended-upon endpoint unambiguous regardless of the source_verb_target name verb. The blocked/ready deriver fixes its consumption at {parent=prerequisite, child=dependent}: a relation_type declaring {parent:'prerequisite', child:'dependent'} is already deriver-canonical and is stored as authored; one whose name reads inverted (the verb implies the parent is the depender) declares {parent:'dependent', child:'prerequisite'}, and the write path auto-orients an authored edge to deriver-canonical storage so the name reading and the stored direction cannot diverge. Present only on ordering relation_types whose direction is load-bearing; absence => no write-time direction enforcement.",
-						"properties": {
-							"parent": { "type": "string", "enum": ["prerequisite", "dependent"], "description": "Role the AUTHORED parent endpoint holds under this relation_type's name reading." },
-							"child": { "type": "string", "enum": ["prerequisite", "dependent"], "description": "Role the AUTHORED child endpoint holds under this relation_type's name reading." }
-						}
-					}
+					"target_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's target (edge.child) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." }
 				}
 			}
 		},

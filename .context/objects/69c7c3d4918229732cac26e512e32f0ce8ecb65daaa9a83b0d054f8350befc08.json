@@ -1,0 +1,5 @@
+{
+  "description": "CLI command-form rule (follows pi's own convention; grounded in R-0006). Decide bare-subcommand vs flag by the nature of the capability, first match wins: (1) a distinct self-completing action that runs and exits — interactive or not (pi's `config` is a bare verb, never `--config`) -> BARE SUBCOMMAND; (2) the object/target a verb acts on -> POSITIONAL (e.g. `update <source|self|pi>`); (3) a modifier of HOW a verb runs (a toggle or target-mode of that verb) -> FLAG ON THAT VERB (e.g. `update --dry-run`); (4) a modifier, mode-selector, or one-shot short-circuit of the DEFAULT run -> TOP-LEVEL FLAG (e.g. `--model`, `--export`). Litmus: is it its own run-and-exit action, or an option/mode of an existing action? This governs every pi-context command form: reflected ops and `pi-context update` are bare verbs; `update --dry-run` is a verb flag; an alternate run-and-exit mode such as launching a bounded pi session is a bare verb (`pi-context pi-bound`), not a `--flag`. Apply it when adding any pi-context command; do not decide command form ad hoc.",
+  "enforcement": "review",
+  "severity": "error"
+}

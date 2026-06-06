@@ -1920,5 +1920,18 @@
       "refname": "FGAP-047"
     },
     "relation_type": "feature_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fbb9f0764e97850f64402839bfd97f7a",
+      "refname": "R-0006"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6cb0179a4968a2022406c5eb47114b38",
+      "refname": "cli-command-form"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

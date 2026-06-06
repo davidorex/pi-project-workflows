@@ -1189,6 +1189,70 @@
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
       "content_hash": "74fcaa25d62dd5b5a3b65337139179fb607e91a72b55c5867b3f6a12b3258250"
+    },
+    {
+      "id": "FGAP-034",
+      "title": "Phase schema needs a success_criteria field",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Phase schema is going to need success criteria — the phase schema needs a success_criteria field.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/phase.schema.json",
+          "reference": "phase items declare no success_criteria field"
+        }
+      ],
+      "impact": "Phase items have no success_criteria field.",
+      "proposed_resolution": "Add a success_criteria field to the phase schema.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "d1b88e8546dffdba6ac17b1ecde6707f",
+      "content_hash": "aab2f88c8094aeadbb9b21bbc96a56b4a0414d3d2d9acde46b45a469cdbf9e9a"
+    },
+    {
+      "id": "FGAP-035",
+      "title": "Tasks use success_criteria, not acceptance_criteria",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Tasks need success criteria not acceptance criteria — the task schema's acceptance_criteria field is replaced by success_criteria.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+          "reference": "task items declare acceptance_criteria, not success_criteria"
+        }
+      ],
+      "impact": "Task items use acceptance_criteria.",
+      "proposed_resolution": "Replace the task schema's acceptance_criteria field with success_criteria.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "7b6e4b4aeb6fbe795e883daf85000d2f",
+      "content_hash": "b2de63bc0181a2d2a61637b6d78383c811355e481d3e68106e89cc6f46c2b1af"
+    },
+    {
+      "id": "FGAP-036",
+      "title": "Phase and task criteria must be binary outcome-based or invalid",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Both levels' criteria must be binary outcome-based or invalid — phase success_criteria and task success_criteria must each be binary and outcome-based, or they are invalid.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/phase.schema.json",
+          "reference": "no constraint that phase success_criteria are binary and outcome-based"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+          "reference": "no constraint that task criteria are binary and outcome-based"
+        }
+      ],
+      "impact": "Criteria at both levels can be non-binary or non-outcome-based.",
+      "proposed_resolution": "Constrain phase and task success_criteria so each criterion must be binary and outcome-based, or it is invalid.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "8d71055d9de89506bbaafe2eb946260e",
+      "content_hash": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98"
     }
   ]
 }

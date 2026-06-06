@@ -1,0 +1,15 @@
+{
+  "title": "Phase schema needs a success_criteria field",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Phase schema is going to need success criteria — the phase schema needs a success_criteria field.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/phase.schema.json",
+      "reference": "phase items declare no success_criteria field"
+    }
+  ],
+  "impact": "Phase items have no success_criteria field.",
+  "proposed_resolution": "Add a success_criteria field to the phase schema."
+}

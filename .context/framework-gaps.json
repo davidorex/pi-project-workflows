@@ -1444,6 +1444,51 @@
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "a5de06b93ccd6dc5f6e4494a96db4c7f",
       "content_hash": "096731b17e269bd4c53c2814b9fac4a8e3678ec49437d971f5283badf995ee6b"
+    },
+    {
+      "title": "No one-step block-kind rename tool",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Block-kind renames require a manual multi-op migration: create a new schema, register a new block_kind, register installed_schemas/installed_blocks entries, write migrated block data, replace relation_type endpoint kinds, optionally rename relation_type ids, remove old config entries, and validate. rename-canonical-id explicitly does not support block_kind, and no harness op performs the filesystem/config/schema/data/relation cascade as one validated transaction.",
+      "evidence": [
+        {
+          "file": "pi-context tool surface",
+          "reference": "rename-canonical-id supports kind item | relation_type | lens | layer, not block_kind"
+        },
+        {
+          "file": "active substrate config",
+          "reference": "story block_kind rename to user-stories requires coordinated changes across block_kinds, installed_schemas, installed_blocks, schemas, block data, and relation_type endpoint kinds"
+        }
+      ],
+      "impact": "Renaming a block kind is high-friction and error-prone inside the pi harness: operators must sequence multiple config/schema/block writes by hand, old physical files can remain orphaned, and partial failure can leave config, relations, schemas, and data out of sync.",
+      "proposed_resolution": "Add a first-class block-kind rename operation that performs the full cascade transactionally: create/rename schema and data surfaces, update block_kinds and installed registries, migrate block data, update relation_type source_kinds/target_kinds and hierarchy/lens references, optionally rename relation_type ids by policy, validate the resulting substrate, and report or clean orphaned old files.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "id": "FGAP-045",
+      "oid": "591956318b5a91326cce5454e152f58d",
+      "content_hash": "53aae3c041db28e2738531ba6802da80d84b187b02312b69dd34b49cf35435d5"
+    },
+    {
+      "id": "FGAP-046",
+      "title": "install --update clobbers user schema customizations; no customization-preserving merge",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "install --update overwrites each installed schema with the catalog copy — verbatim on a same-version resync, migrate-or-refuse on a version gap — so a user's edits to a shipped block schema are lost on update. Block item data is preserved (S1) and a user-added custom block kind is untouched (no catalog counterpart), but edits to a catalog-shipped schema have no merge path: update is replace.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "resyncSchema overwrites the installed schema with the catalog version on install --update; same-version resync is a verbatim overwrite, version-gap is migrate-or-refuse — neither reconciles local schema edits"
+        }
+      ],
+      "impact": "A non-developer user who tailors a shipped schema must choose: take the update and lose the customization, or run plain install (never-clobber) and forgo the update. Tailoring a catalog schema is fragile against the next --update.",
+      "canonical_vocabulary": "three-way merge on update (customization-preserving upgrade)",
+      "proposed_resolution": "On install --update, three-way merge the catalog schema change against the user's local schema edits (base = the previously-installed catalog version), preserving non-conflicting local edits and surfacing conflicts rather than overwriting; or an equivalent overlay that re-applies recorded user customizations after the catalog refresh.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "1f84b7e0e7fe232c0838dd01a6492765",
+      "content_hash": "09d5ce1d3cb6b33300fab5b2ac3a24c4faf13fc5e2b533437f00043bf2360181"
     }
   ]
 }

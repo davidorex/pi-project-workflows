@@ -194,6 +194,42 @@
       "id": "VER-013",
       "oid": "c894add8ed226592637aaee334da01cc",
       "content_hash": "e3ea533db9e5cd57772a0f5717d8dde5af5e5f0b6dfcc08413c756d631fea020"
+    },
+    {
+      "id": "VER-014",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-06T00:00:00.000Z",
+      "evidence": "TASK-026 / FGAP-029 safe schema re-sync verified. Runtime demo on a byte-dup of live .context with the current post-excision build: 16 schemas migrated, genericized descriptions landed (zero project-name leaks), layer-plans 1.0.0->1.0.1, populated blocks preserved (zero data loss), idempotent, checkStatus all in-sync, live untouched. Promoted to live via /context install --update at c6434db: same outcome on real .context (6 populated blocks byte-unchanged, framework-gaps schema_version envelope-only, session-notes untouched), context-validate 0 errors. The unplanned skipIdentityStamp escape hatch was excised at fa8a0cc per DEC-0012; the pre-identity re-sync case is deferred to FGAP-033.",
+      "criteria_results": [
+        {
+          "criterion": "installed schemas re-sync through the migration registry — never a blind copyFileSync over a versioned schema that has live items",
+          "status": "passed",
+          "evidence": "resyncSchema (committed fa8a0cc); dup demo + live promotion c6434db migrated 16 schemas; populated blocks preserved"
+        },
+        {
+          "criterion": "runtime demo on a .context backup/dup: genericized descriptions land + layer-plans skew resolves with zero data loss; promotion to .context a separate user-approved step",
+          "status": "passed",
+          "evidence": "dup demo passed (zero leaks, layer-plans 1.0.1, items intact); promotion to live run + committed at c6434db"
+        },
+        {
+          "criterion": "FGAP-029 closed (status + closed_by + closed_at + closing-commit citation); FGAP-028 installed-dir residual addressed",
+          "status": "passed",
+          "evidence": "FGAP-028 residual cleared by live promotion (zero leaks in live .context/schemas); FGAP-029 closed in this cascade citing fa8a0cc + c6434db; pre-identity edge -> FGAP-033"
+        },
+        {
+          "criterion": "CHANGELOG [Unreleased] + usage-only docs",
+          "status": "passed",
+          "evidence": "committed at b1d2d1a"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build + check + full test suite green; husky green on every commit through c6434db"
+        }
+      ],
+      "oid": "11234bee1eea7a6388c50c449b77a77f",
+      "content_hash": "bf46ce72227e6097ee7e0bf38593aaa4ca6dbaab713b7d0672eb9aaf4d00237a"
     }
   ]
 }

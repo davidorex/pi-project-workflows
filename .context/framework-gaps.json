@@ -1009,7 +1009,7 @@
     },
     {
       "title": "/context install --update overwrites block DATA with empty starters (substrate-wiping); stale installed schemas have no safe re-sync; undocumented",
-      "status": "identified",
+      "status": "closed",
       "priority": "P0",
       "package": "pi-context",
       "description": "installContext (index.ts, behind /context install) copies catalog assets with fs.copyFileSync and, under --update (overwrite=true), overwrites BOTH installed_schemas[] AND installed_blocks[]. The block starters in samples/blocks/*.json are EMPTY ({\"<array_key>\": []}), so --update copies an empty file over the LIVE block, deleting every filed item. Verified: 'tasks' is in installed_blocks; .context/tasks.json holds 22 items; --update would zero it; all 16 installed blocks (decisions, framework-gaps, research, ...) are equally exposed. No migration, no version check, no warning, no backup. Root consequence: under the never-clobber (skip-if-exists) default, installed SCHEMAS silently drift stale from the evolving catalog (confirmed: .context/schemas/layer-plans.schema.json is 1.0.0 vs catalog 1.0.1, missing layers[]/migration_phases[]) — and the ONLY mechanism to re-sync them, --update, ALSO destroys all block data. So there is no safe path to refresh a stale installed schema.",
@@ -1044,7 +1044,10 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-029",
       "oid": "53ac7027782b8996d06334fe0ae12e1a",
-      "content_hash": "d724d13ade5f1be169243e0f614ef1e2073b6b6502959c69ba4e4e499db4dc38"
+      "content_hash": "ce54e64007de2fdaef01f9c6f14a6c249c88aad9c9d543991bb519839a4acac4",
+      "closed_by": "human/davidryan@gmail.com — closed by fa8a0cc (skipIdentityStamp excision, DEC-0012) + c6434db (re-sync promoted to live .context); verified by VER-014. Core safe re-sync resolved: install --update routes installed-schema evolution through the migration registry, never blind-overwrites a populated block (S1), records a baseline (S2), previews drift (S3 check-status), and forward-migrates-or-refuses (S4). Pre-identity-substrate re-sync deferred to FGAP-033.",
+      "closed_at": "2026-06-06T00:00:00.000Z",
+      "content_parent": "d724d13ade5f1be169243e0f614ef1e2073b6b6502959c69ba4e4e499db4dc38"
     },
     {
       "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",

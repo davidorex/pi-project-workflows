@@ -1725,5 +1725,18 @@
       "refname": "issue-001"
     },
     "relation_type": "decision_addresses_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "11234bee1eea7a6388c50c449b77a77f",
+      "refname": "VER-014"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "refname": "TASK-026"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

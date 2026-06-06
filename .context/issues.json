@@ -14,6 +14,19 @@
       "content_hash": "1404265861f31b42b98801b5a3a2efd504e035eeea79d356b7165acf8cdfbadc",
       "resolved_by": "0fcba9c — resyncSchema captures migrations.json raw bytes before the decl-append loop and, on the blocked refuse path, restores them (or unlinks the file if it did not exist pre-call) in the catch, so a refused re-sync leaves migrations.json byte-unchanged; the two blocked-path tests in install-subcommand.test.ts assert migrations.json byte-identity after a blocked outcome.",
       "content_parent": "d6d89572ab328fd870734022441fbefb361e92f1f3e085c976acaad273852a5d"
+    },
+    {
+      "id": "issue-002",
+      "title": "layer-plans schema nests id-bearing arrays (plans.layers, plans.migration_phases) instead of top-level entities + membership edges",
+      "body": "The layer-plans 1.0.1 schema declares plans[].layers[] and plans[].migration_phases[] as nested id-bearing arrays, violating the edges-not-inline rule (id-bearing items must be top-level, joined by membership edges). context-validate emits two warnings (code nested_id_bearing_array). Entered live by promoting layer-plans 1.0.0->1.0.1 (commit c6434db); the 1.0.0 schema did not nest these. layer-plans holds 0 items, so the fix is schema-only (no data migration): promote layers and migration_phases to top-level entity kinds, link each to its parent plan via a membership relation_type, and remove the nested arrays from the layer-plans item schema — in both the samples catalog (packages/pi-context/samples/schemas/layer-plans.schema.json) and the promoted live .context/schemas/layer-plans.schema.json.",
+      "location": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+      "status": "open",
+      "category": "cleanup",
+      "priority": "low",
+      "package": "pi-context",
+      "source": "agent",
+      "oid": "0c48b7f89b4e10b192908e90e6001fe8",
+      "content_hash": "fdec4278d966ea73b00914ccb0d6adf6dbd8bf58dba51e4a92d3a90b48362658"
     }
   ]
 }

@@ -475,7 +475,7 @@
     {
       "id": "TASK-027",
       "description": "Resolve FGAP-007: add endpoint-role metadata to ordering relation_types, enforce/normalize ordering-edge direction at write time in append-relation, reconcile relation_type name with the deriver contract, extend to the sibling ordering relations, and migrate any inverted edges.",
-      "status": "completed",
+      "status": "planned",
       "files": [
         "packages/pi-context/src/context-sdk.ts"
       ],
@@ -494,8 +494,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "79693a3ed131eb2244eac2ab8f2d2940",
-      "content_hash": "309d8fbf6d2a423d27942786d6d62425912895cfeef2b352ffc46264cda11ee8",
-      "content_parent": "bc6e492a167985551cae080a5dbb8f351c263e6f4ecdfd9c0e947b2cd154dfa7"
+      "content_hash": "bc6e492a167985551cae080a5dbb8f351c263e6f4ecdfd9c0e947b2cd154dfa7",
+      "content_parent": "4c4180d835f3192b7187cecc5fe7e728b49d5b70727b4293a7f71fec868864e3"
     }
   ]
 }

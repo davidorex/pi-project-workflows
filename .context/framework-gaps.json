@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.1.1",
   "gaps": [
     {
       "title": "init / switch -c bootstrap leaves the substrate config-less, with no op-driven path to a custom-vocabulary config",

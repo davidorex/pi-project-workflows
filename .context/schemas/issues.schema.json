@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/issues",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Issues",
   "description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
   "type": "object",
@@ -43,7 +43,7 @@
           },
           "location": {
             "type": "string",
-            "description": "File path + line number, e.g. packages/pi-workflows/src/dag.ts:219"
+            "description": "File path + line number, e.g. src/module/file.ts:NNN"
           },
           "status": {
             "type": "string",
@@ -74,7 +74,7 @@
           },
           "package": {
             "type": "string",
-            "description": "Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)"
+            "description": "Which package/module this issue touches (e.g. package-a, package-b)"
           },
           "source": {
             "type": "string",

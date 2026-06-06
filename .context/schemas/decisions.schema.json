@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/decisions",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Decisions",
   "description": "Live decision log; each entry is open, enacted, or superseded, with supporting references and intra-item options.",
   "type": "object",

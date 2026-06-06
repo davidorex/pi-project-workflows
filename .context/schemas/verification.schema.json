@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/verification",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Verification",
   "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
   "type": "object",

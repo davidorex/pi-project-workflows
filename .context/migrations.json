@@ -8,6 +8,134 @@
       "kind": "identity",
       "created_by": "migrate-content-addressed",
       "created_at": "2026-06-01T22:46:56.644Z"
+    },
+    {
+      "schemaName": "decisions",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.891Z"
+    },
+    {
+      "schemaName": "framework-gaps",
+      "fromVersion": "1.1.0",
+      "toVersion": "1.1.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.892Z"
+    },
+    {
+      "schemaName": "tasks",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "verification",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "issues",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.892Z"
+    },
+    {
+      "schemaName": "features",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.892Z"
+    },
+    {
+      "schemaName": "research",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "rationale",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "spec-reviews",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "layer-plans",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.892Z"
+    },
+    {
+      "schemaName": "requirements",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "conventions",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.891Z"
+    },
+    {
+      "schemaName": "context-contracts",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.891Z"
+    },
+    {
+      "schemaName": "phase",
+      "fromVersion": "2.0.0",
+      "toVersion": "2.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.892Z"
+    },
+    {
+      "schemaName": "story",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
+    },
+    {
+      "schemaName": "work-orders",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.0.1",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-05-31T07:48:18.893Z"
     }
   ]
 }

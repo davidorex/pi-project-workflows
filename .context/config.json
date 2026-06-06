@@ -608,5 +608,76 @@
   "tool_operations": [],
   "tool_operations_forbidden": [],
   "root": ".context",
-  "substrate_id": "sub-394aad2658e4d9a7"
+  "substrate_id": "sub-394aad2658e4d9a7",
+  "installed_from": {
+    "catalog": "@davidorex/pi-context@0.30.0",
+    "catalog_version": "1.0.0",
+    "at": "2026-06-06T11:34:51.674Z",
+    "assets": {
+      "decisions": {
+        "content_hash": "f13db02aa4831b06b913405b7b21f2290c6f62ebc46c9ad1068cbbf62469c2d4",
+        "version": "1.0.1"
+      },
+      "framework-gaps": {
+        "content_hash": "e31fd9ee2cf25d22113082a46439ef2db237be6ea8df48b93eb63d63d89e431c",
+        "version": "1.1.1"
+      },
+      "tasks": {
+        "content_hash": "356672360541a4ab5d136514a35060a970b92f9cb40202ae133b5e81778bb809",
+        "version": "1.0.1"
+      },
+      "verification": {
+        "content_hash": "c61cb09a2a2f7eb55fc3abc43313a70560507db4883e1562dd19e01ac558fd89",
+        "version": "1.0.1"
+      },
+      "issues": {
+        "content_hash": "72e5f253393b32723905408facdf3a95340db1ec785c1fa09c79e41a93225db8",
+        "version": "1.0.1"
+      },
+      "features": {
+        "content_hash": "e42a8d91a27a9d57c003596add1efc985369f0fcf9aa6f03460c5375d7fdfb87",
+        "version": "1.0.1"
+      },
+      "research": {
+        "content_hash": "938354e06f60f756df238edc6512cc927dc11df7642afa02bc2dce0ee4d5f4d8",
+        "version": "1.0.1"
+      },
+      "rationale": {
+        "content_hash": "b1d0af8916f25e9481d6076d90b7b612687b334b1d1d27149f1c0c7d96617ed4",
+        "version": "1.0.1"
+      },
+      "spec-reviews": {
+        "content_hash": "d0172db540175847f93e070f35a9f656e9315147d832085006b8fedbada1636a",
+        "version": "1.0.1"
+      },
+      "layer-plans": {
+        "content_hash": "a1d26098b0280ce5fb63f0f6531c1fbc31f98940dac9535e1c5dfc938031e2cd",
+        "version": "1.0.1"
+      },
+      "requirements": {
+        "content_hash": "cf5f899797499c5ab9d4ba5a8eaabafc17b0d4e8da196245c1d4fd1fef734403",
+        "version": "1.0.1"
+      },
+      "conventions": {
+        "content_hash": "7b942691280b6e93b84f7735cbe0cdb61db00f49f05ca40527ce70a387a43e56",
+        "version": "1.0.1"
+      },
+      "context-contracts": {
+        "content_hash": "71fef26b0523bc4fa91f6fcc94047919fdbb0274a96f19f4508eabd14c6d8432",
+        "version": "1.0.1"
+      },
+      "phase": {
+        "content_hash": "b41a48cc8acb81090874cfd4e435eee97e30fe774943a23c30999c5e07a7fe4e",
+        "version": "2.0.1"
+      },
+      "story": {
+        "content_hash": "9a4187fe15225ed0be26b7e64bc43ef6881a9706e7ff4c591923126e2ad71737",
+        "version": "1.0.1"
+      },
+      "work-orders": {
+        "content_hash": "200a6757d824b8d9e1c7cd3300d13b9cecee0184813f1a824a691504aa348b9d",
+        "version": "1.0.1"
+      }
+    }
+  }
 }

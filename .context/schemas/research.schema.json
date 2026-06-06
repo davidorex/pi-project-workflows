@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/research",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Research",
   "description": "Factual and analytical substrate under decisions — each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them.",
   "type": "object",
@@ -55,7 +55,7 @@
               "L4",
               "L5"
             ],
-            "description": "Which Muni layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory."
+            "description": "Which architecture layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory."
           },
           "type": {
             "type": "string",

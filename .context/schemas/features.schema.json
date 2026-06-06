@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/features",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Features",
   "description": "L3 Work layer. Features with their own scope, acceptance criteria, and status lifecycle. A feature is atomically composable into prompt context as a self-contained unit of work.",
   "type": "object",

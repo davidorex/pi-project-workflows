@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/phase",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "title": "Phases",
   "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
   "type": "object",

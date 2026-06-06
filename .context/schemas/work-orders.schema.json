@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/work-orders",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "title": "Work Orders",
-  "description": "Orchestrator-authored work-order spec for the privileged JIT-agent that drives the in-pi bounded code-change loop. A work-order names the target agent, the typed input/output contracts, the substrate-block context handoff, the bounded scope within which the agent may operate, and the deterministic real-check criteria gating acceptance (deterministic verification; never LLM self-report — verdict comes from real checks the agent cannot fake). Substrate-block handoff to the consuming agent uses the ContextBlockRef shape: each context_blocks entry is either a string for whole-block injection, or an object { name, item?, depth?, focus? } for item-specific injection. To handoff a single work-order item to the consuming agent, the agent's .agent.yaml contextBlocks declares { name: \"work-orders\", item: \"WO-NNN\" }; the compiler injects the resolved item under template key _work_orders_item (with companion _work_orders_raw / _work_orders_depth / _work_orders_focus). Authorship: orchestrator is sole spec author; capability-widening edits are writer.kind=human.",
+  "description": "Orchestrator-authored work-order spec for the privileged JIT-agent that drives the bounded code-change loop. A work-order names the target agent, the typed input/output contracts, the substrate-block context handoff, the bounded scope within which the agent may operate, and the deterministic real-check criteria gating acceptance (deterministic verification; never LLM self-report — verdict comes from real checks the agent cannot fake). Substrate-block handoff to the consuming agent uses the ContextBlockRef shape: each context_blocks entry is either a string for whole-block injection, or an object { name, item?, depth?, focus? } for item-specific injection. To handoff a single work-order item to the consuming agent, the agent's .agent.yaml contextBlocks declares { name: \"work-orders\", item: \"WO-NNN\" }; the compiler injects the resolved item under template key _work_orders_item (with companion _work_orders_raw / _work_orders_depth / _work_orders_focus). Authorship: orchestrator is sole spec author; capability-widening edits are writer.kind=human.",
   "type": "object",
   "required": [
     "work_orders"
@@ -57,7 +57,7 @@
           },
           "context_blocks": {
             "type": "array",
-            "description": "Substrate-block references the privileged agent's .agent.yaml will consume via contextBlocks. Each entry: string for whole-block injection (_<name>), OR object { name, item?, depth?, focus? } for item-specific injection (per the existing ContextBlockRef shape in packages/pi-jit-agents/src/types.ts).",
+            "description": "Substrate-block references the privileged agent's .agent.yaml will consume via contextBlocks. Each entry: string for whole-block injection (_<name>), OR object { name, item?, depth?, focus? } for item-specific injection (per the ContextBlockRef shape defined by your agent layer).",
             "items": {
               "oneOf": [
                 {

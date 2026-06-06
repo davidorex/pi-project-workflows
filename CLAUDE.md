@@ -103,7 +103,11 @@ After writing an analysis markdown (`analysis/*.md`), propose to the user surfac
 
 ## Project Blocks (the active substrate)
 
+**The active substrate IS the project-management system (binding):** all development work — milestones, phases, tasks, gaps, issues, decisions, verifications, and their relations — is planned, tracked, and closed in `.context`, not in side documents or memory, and project state / position / open work are derived from it. This PM model is itself being refined through use: its block kinds, fields, status vocabularies, and relations evolve as the work exercises them, and that refinement is filed in the substrate (as gaps and decisions), not assumed fixed.
+
 **Intended audience + use of all `.context` filings (binding):** the entire `.context` substrate, and every individual filing in it, exists to be a DRY context that is composed VERBATIM into subagent contexts. Filings are not notes-to-self or human-only prose — they are the source text that gets handed, unaltered, to subagents as their operating context. Whoever files (item bodies, decision/issue/gap/task field text, acceptance criteria, scope statements, ID ranges, relation content, etc.) MUST file with that audience and use in mind: each field must be self-sufficient, precise, and correct as the literal instruction a downstream subagent will act on. Garbage in = garbage out to subagents. Do not paraphrase or restate a filing when briefing — pass the filed text verbatim; correspondingly, file text that is fit to be passed verbatim.
+
+**Rhetorical situation for every block write (binding):** Write every block for its consumers and its purpose, no more and no less. Write terse, signal-dense, self-contained entries exactingly appropriate for the block type and for its use downstream. Blocks are state and context atoms designed to be consumed downstream, not prose addressed to a general audience.
 
 Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on the active substrate's `*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 

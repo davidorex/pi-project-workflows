@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-027 / FGAP-007 closed. endpoint_roles {parent,child} (each 'prerequisite'|'dependent') added to RelationTypeDecl + config.schema.json (v1.7.0); orientOrderingEdge + endpointRolesFor in context-sdk.ts auto-orient authored ordering edges to deriver-canonical storage (prerequisite-at-parent) through appendRelationByRef/appendRelationsByRef when the relation_type declares endpoint_roles, fired ONLY when present (gate holds for ordering-without-roles, unregistered, and non-ordering types). The six inverted-name ordering relation_types carry the metadata in active config + samples/conception.json; *_supersedes_* (lineage) + data_flow/membership exempt; phase_depends_on unregistered + already authored prerequisite-at-parent. Existing nine task_depends_on_task edges already deriver-canonical so none migrated/dropped/inverted; live deriver blocked output byte-identical pre/post (TASK-005<-004, 018<-016, 019<-015/016/017/018, 021<-020); context-validate stable at 2 pre-existing nested-array warnings. edge-orientation.test.ts (8 tests) asserts write-path normalization, metadata-absent gate, bulk, deriver consumption; orchestrator probe confirmed idempotent dedup post-swap, ordinal preservation, dry-run orientation without write. build+check+full suite green (pi-context 1049 pass/2 skip; all packages 0 fail); parity-check clean. Commits 3d7d897 (substrate config) + a08e586 (code/docs/test).",
+  "criteria_results": [
+    {
+      "criterion": "AC1 name+deriver agree via endpoint_roles",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC2 endpoint_roles metadata on task_depends_on_task",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC3 append-relation normalizes ordering direction at write",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC4 fires only with metadata; no false positives",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC5 existing edges valid; none inverted (already canonical)",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC6 context-validate passes; no new findings",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC7 deriver output unchanged where correct",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC8 siblings covered or demonstrably exempt",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC9 tests assert write-path enforcement + gate + deriver",
+      "status": "passed"
+    },
+    {
+      "criterion": "AC10 build/check/test zero failures in dist",
+      "status": "passed"
+    }
+  ]
+}

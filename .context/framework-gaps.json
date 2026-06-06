@@ -192,7 +192,7 @@
     },
     {
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:667-722). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a.",
       "evidence": [
@@ -216,7 +216,10 @@
       "created_at": "2026-06-03T23:04:22.642Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
-      "content_hash": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
+      "content_hash": "5e43cb74e14c5bc3ca9e18304828fdd291d7ccef57f65626afc5f1c6e6aff2ec",
+      "closed_by": "TASK-027 (verified VER-015; commits 3d7d897 substrate config + a08e586 code/docs/test)",
+      "closed_at": "2026-06-06T00:00:00.000Z",
+      "content_parent": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
     },
     {
       "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",

@@ -1484,11 +1484,12 @@
       ],
       "impact": "A non-developer user who tailors a shipped schema must choose: take the update and lose the customization, or run plain install (never-clobber) and forgo the update. Tailoring a catalog schema is fragile against the next --update.",
       "canonical_vocabulary": "three-way merge on update (customization-preserving upgrade)",
-      "proposed_resolution": "On install --update, three-way merge the catalog schema change against the user's local schema edits (base = the previously-installed catalog version), preserving non-conflicting local edits and surfacing conflicts rather than overwriting; or an equivalent overlay that re-applies recorded user customizations after the catalog refresh.",
+      "proposed_resolution": "Two candidate routes. (1) Deterministic three-way merge on install --update: reconcile the catalog schema change against the user's local edits (base = the previously-installed catalog version), preserving non-conflicting edits and surfacing conflicts instead of overwriting; or an overlay that re-applies recorded customizations after the catalog refresh. (2) Agent-mediated update in pi: for users tracking the samples, a mechanism by which the pi agent reconciles the user's local schema against the updated samples — applying the catalog change while preserving the user's customizations by judgement rather than a deterministic merge.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "1f84b7e0e7fe232c0838dd01a6492765",
-      "content_hash": "09d5ce1d3cb6b33300fab5b2ac3a24c4faf13fc5e2b533437f00043bf2360181"
+      "content_hash": "1429baf7a2b1c030bca69e8a4923206a4479876cc39659dacb9102534b400382",
+      "content_parent": "09d5ce1d3cb6b33300fab5b2ac3a24c4faf13fc5e2b533437f00043bf2360181"
     }
   ]
 }

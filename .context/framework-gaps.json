@@ -1392,6 +1392,31 @@
       "oid": "99dd98ebd606aa911c245f6c1967c8a3",
       "content_hash": "aec9e606826116d80bb11df392df0bbc96962ddd015af6b71fdec9691b19ce27",
       "content_parent": "7570c12931f1f35e40a6cae6ac684c49a24b029f4c7e71571fc0ddfd882f9354"
+    },
+    {
+      "id": "FGAP-043",
+      "title": "Schema descriptions carry no per-block rhetorical criteria; block writes are unvalidated against them",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Each block schema's description states the block's purpose but omits the block's specific rhetorical demands/criteria for its entries (terseness, signal-density, self-containment, appropriateness to block type and downstream use, no narration or git/live-source restatement). The criteria must be embedded per-block and machine-checkable so a Claude Code hook can validate a block-item write against them at write time.",
+      "evidence": [
+        {
+          "file": "CLAUDE.md",
+          "reference": "the 'Rhetorical situation for every block write' rule lives only as operating-doc prose — not encoded per-schema, not enforced on write"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/issues.schema.json",
+          "reference": "item descriptions state field purpose but carry no per-block rhetorical criteria; nothing validates an entry against them on write"
+        }
+      ],
+      "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
+      "canonical_vocabulary": "write-time authoring-contract validation",
+      "proposed_resolution": "Add explicit per-block rhetorical criteria to each block schema (in the description or a dedicated criteria field), machine-checkable. Add a Claude Code PreToolUse hook that intercepts block-item writes (append-block-item / update-block-item via the CLI) and validates the item against the target block's criteria, blocking non-conforming writes.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "5b3fdce0700fb049da6593b9b2e71260",
+      "content_hash": "80d70ff5424f784553c447fee298041681772370c063b0bcd523086d14028a47"
     }
   ]
 }

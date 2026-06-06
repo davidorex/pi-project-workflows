@@ -1192,43 +1192,45 @@
     },
     {
       "id": "FGAP-034",
-      "title": "Phase schema needs a success_criteria field",
+      "title": "Phase schema carries no success_criteria field",
       "status": "identified",
       "priority": "P2",
       "package": "pi-context",
-      "description": "Phase schema is going to need success criteria — the phase schema needs a success_criteria field.",
+      "description": "Composite levels (phase, milestone) carry no success_criteria. A phase is done when its tasks are done. The phase schema's optional success_criteria field is removed.",
       "evidence": [
         {
           "file": "packages/pi-context/samples/schemas/phase.schema.json",
-          "reference": "phase items declare no success_criteria field"
+          "reference": "declares an optional success_criteria field; the model forbids composite-level criteria, so it is removed"
         }
       ],
-      "impact": "Phase items have no success_criteria field.",
-      "proposed_resolution": "Add a success_criteria field to the phase schema.",
+      "impact": "Phase schema declares an optional success_criteria field the model forbids; composite-level criteria duplicate the child rollup.",
+      "proposed_resolution": "Remove success_criteria from the phase schema; phase completeness derives from its tasks.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "d1b88e8546dffdba6ac17b1ecde6707f",
-      "content_hash": "aab2f88c8094aeadbb9b21bbc96a56b4a0414d3d2d9acde46b45a469cdbf9e9a"
+      "content_hash": "6b6f0ac33c95aafc01907b350daf66c9ddcdaf9648a2e5d2089e24d025a93240",
+      "content_parent": "0b0cb87da92c08a9ff734a1dece7c030ea33380586e1d9a9dccb172635f13107"
     },
     {
       "id": "FGAP-035",
-      "title": "Tasks use success_criteria, not acceptance_criteria",
+      "title": "Task success_criteria are objects, replacing acceptance_criteria",
       "status": "identified",
       "priority": "P2",
       "package": "pi-context",
-      "description": "Tasks need success criteria not acceptance criteria — the task schema's acceptance_criteria field is replaced by success_criteria.",
+      "description": "The task field acceptance_criteria is replaced by success_criteria. Each entry is an object { statement, status: pass|fail, verified_by, verified_at, evidence }. statement is binary and outcome-based. A task is done when every entry is pass.",
       "evidence": [
         {
           "file": "packages/pi-context/samples/schemas/tasks.schema.json",
           "reference": "task items declare acceptance_criteria, not success_criteria"
         }
       ],
-      "impact": "Task items use acceptance_criteria.",
-      "proposed_resolution": "Replace the task schema's acceptance_criteria field with success_criteria.",
+      "impact": "Task schema declares acceptance_criteria as a string array; strings carry no status or proof, so done-ness and verification are not machine-checkable from the criterion.",
+      "proposed_resolution": "Rename acceptance_criteria to success_criteria and change each item from string to the criterion object.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7b6e4b4aeb6fbe795e883daf85000d2f",
-      "content_hash": "b2de63bc0181a2d2a61637b6d78383c811355e481d3e68106e89cc6f46c2b1af"
+      "content_hash": "2d28e470d7106362df13a0a73e78349a8d1e5ef7d9ca20bad82e4d9f75608c0d",
+      "content_parent": "b2de63bc0181a2d2a61637b6d78383c811355e481d3e68106e89cc6f46c2b1af"
     },
     {
       "id": "FGAP-036",
@@ -1260,7 +1262,7 @@
       "status": "identified",
       "priority": "P2",
       "package": "pi-context",
-      "description": "There is no milestone block kind, yet the phase and story schemas already name 'milestone' as a cross-altitude edge target. Add a milestone block. Fields: id (MILE-NNN), name, binary outcome-based success_criteria, status (planned | reached — NO 'missed', which is useless), and an OPTIONAL release field so various gaps / issues / tasks / phases can be rolled into a release (e.g. 'and this is 0.30.1'). No intent field — instead a milestone has edges to stories. Relationships are closure-table edges, not inline. The milestone block must exist in BOTH the packaged samples catalog AND the active .context substrate here; pi-context update (the CLI) adds it into samples.",
+      "description": "There is no milestone block kind, yet phases need a checkpoint to roll up into. Add a milestone block. Fields: id (MILE-NNN), name, status (planned | reached, no missed), optional release to group gaps/issues/tasks/phases into a release (e.g. 0.30.1). No intent field. No evidence_block/evidence_query. reached is derived: a milestone is reached when its placed phases are done (placement relation, FGAP-039); stories attach to it via the wildcard relation (FGAP-041). Lands in both the packaged samples catalog (via the pi-context update CLI) and the active .context substrate.",
       "evidence": [
         {
           "file": ".context/config.json",
@@ -1276,11 +1278,116 @@
         }
       ],
       "impact": "Phases and stories reference milestones as edge targets with nothing to point at, and there is no block to roll gaps/issues/tasks/phases into a release — milestones cannot be represented in the substrate.",
-      "proposed_resolution": "Add a milestone block kind with fields id (MILE-NNN), name, binary outcome-based success_criteria, status (planned | reached, no missed), and optional release; no intent field, edges to stories instead; relationships as closure-table edges. Land it in BOTH the packaged samples catalog (added via the pi-context update CLI) AND the active .context substrate.",
+      "proposed_resolution": "Add a milestone block kind with id (MILE-NNN), name, status (planned|reached), optional release; no intent; reached derived from placed phases (FGAP-039); organized by stories via FGAP-041. Land it in both the samples catalog and the active .context.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "eb340f2333abb437c6cff7e8036499a1",
-      "content_hash": "29182b87440c57b09c50b44c5d2825b8abd987b77a80cd808392b0b6fb50ec02"
+      "content_hash": "053667287c83c068919eb0a25e8f0640ba9ffca6334d1df23ac3a6fa87f645a6",
+      "content_parent": "29182b87440c57b09c50b44c5d2825b8abd987b77a80cd808392b0b6fb50ec02"
+    },
+    {
+      "id": "FGAP-038",
+      "title": "Verification block retired; proof lives on the task criterion",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "The verification block kind and the verification_verifies_item relation are removed. A task success_criterion carries its own proof inline (verified_by, verified_at, evidence). Existing verification items fold into the criteria they attest, or are dropped.",
+      "evidence": [
+        {
+          "file": ".context/config.json",
+          "reference": "block_kinds registry includes 'verification'; relation_types registry includes 'verification_verifies_item'"
+        },
+        {
+          "file": ".context/verification.json",
+          "reference": "holds verification items that duplicate the pass/proof a criterion now carries"
+        }
+      ],
+      "impact": "Two constructs assert the same done-ness: the criterion's pass and a separate verification item.",
+      "proposed_resolution": "Delete the verification block kind and the verification_verifies_item relation; migrate each verification onto the task criterion it attests.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "d20b20e4c30b2ce12911c902fb5c0aed",
+      "content_hash": "6ee28a5086bd011b0108cfc5a60e9d5a2c947b80616648aaa573b59fd65500fe"
+    },
+    {
+      "id": "FGAP-039",
+      "title": "Milestone groups phases via a placement relation",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "A phase is placed in a milestone by a relation mirroring task_positioned_in_phase. A milestone is reached when its placed phases are done.",
+      "evidence": [
+        {
+          "file": ".context/config.json",
+          "reference": "relation_types has task_positioned_in_phase (tasks->phase) but no phase->milestone placement; milestone block absent (FGAP-037)"
+        }
+      ],
+      "impact": "Milestone rollup has no edge to read; phases cannot be grouped under a milestone.",
+      "proposed_resolution": "Register a phase-in-milestone placement relation_type; milestone done-ness reads up it.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "fa867fd3ebbc861862763db310c92f63",
+      "content_hash": "34b0092734ce0efa5a1052a696dc8622fc0004f43a674d05a684340eb55cab39"
+    },
+    {
+      "id": "FGAP-040",
+      "title": "Story schema reduced to id, description, status (draft|set)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "A story holds id, a one-sentence description, and status draft|set. Fields title, acceptance_criteria, and the status values proposed/ready/in-progress/in-review/complete/blocked are removed. Stories carry no criteria.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas/story.schema.json",
+          "reference": "declares title, description, acceptance_criteria, and status enum proposed/ready/in-progress/in-review/complete/blocked"
+        }
+      ],
+      "impact": "Story schema carries criteria and a multi-state lifecycle; the model treats a story as a theme with no done-ness of its own.",
+      "proposed_resolution": "Reduce story to id + description + status(draft|set); drop title, acceptance_criteria, and the surplus status values.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "5fb8c651598f008d8526a291a7806673",
+      "content_hash": "21be52cd27953738bf614fb3a6f86839e18e893896e5a400025c55224c69a79b"
+    },
+    {
+      "id": "FGAP-041",
+      "title": "Stories attach to any item via one wildcard relation",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "One relation story_includes_item (source story, target any kind) links a story to any task, phase, or milestone. A story's scope is its outbound story_includes_item edges.",
+      "evidence": [
+        {
+          "file": ".context/config.json",
+          "reference": "relation_types has story_contains_task (story->tasks) only; no story->any relation"
+        }
+      ],
+      "impact": "Stories can only link to tasks; the model needs a story to span any level.",
+      "proposed_resolution": "Register story_includes_item with source_kinds=[story], target_kinds=[*].",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "89bf9b62592f4e56cb963332b58272df",
+      "content_hash": "ff00edf762c4f0784be4c7faf11cc7ecb65c172469b8bf9d1dcdc13a10618213"
+    },
+    {
+      "id": "FGAP-042",
+      "title": "Roadmap is a view over ordered milestones; ordering is a relation",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Milestone order is a milestone-to-milestone ordering relation. The roadmap is a derived view over milestones in that order. No roadmap block exists.",
+      "evidence": [
+        {
+          "file": "html-views/milestones-and-roadmap.html",
+          "reference": "hand-authored static milestones (const MILESTONES = [...]), not derived; no milestone ordering relation; no roadmap block or lens"
+        }
+      ],
+      "impact": "The roadmap has no live source and milestone sequence is unrepresented.",
+      "proposed_resolution": "Register a milestone ordering relation_type; render the roadmap as a view over ordered milestones; add no block.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "99dd98ebd606aa911c245f6c1967c8a3",
+      "content_hash": "7570c12931f1f35e40a6cae6ac684c49a24b029f4c7e71571fc0ddfd882f9354"
     }
   ]
 }

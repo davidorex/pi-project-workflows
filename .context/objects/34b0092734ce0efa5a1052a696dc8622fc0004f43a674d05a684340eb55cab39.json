@@ -1,0 +1,15 @@
+{
+  "title": "Milestone groups phases via a placement relation",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A phase is placed in a milestone by a relation mirroring task_positioned_in_phase. A milestone is reached when its placed phases are done.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types has task_positioned_in_phase (tasks->phase) but no phase->milestone placement; milestone block absent (FGAP-037)"
+    }
+  ],
+  "impact": "Milestone rollup has no edge to read; phases cannot be grouped under a milestone.",
+  "proposed_resolution": "Register a phase-in-milestone placement relation_type; milestone done-ness reads up it."
+}

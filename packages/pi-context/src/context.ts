@@ -165,6 +165,32 @@ export interface BlockKindDecl {
 
 export type StatusBucket = "complete" | "in_progress" | "blocked" | "todo" | "unknown";
 
+/**
+ * Ordering-edge endpoint-role metadata (FGAP-007). Names which prerequisite /
+ * dependent role each AUTHORED endpoint holds for an ordering relation_type,
+ * making the depender / depended-upon endpoint unambiguous regardless of the
+ * `source_verb_target` name verb. The blocked/ready deriver
+ * ({@link "./context-sdk".currentState}) fixes its consumption at
+ * `{parent = prerequisite, child = dependent}`: the parent must reach
+ * "complete" before the child is unblocked.
+ *
+ *  - `{parent:"prerequisite", child:"dependent"}` — already deriver-canonical;
+ *    an authored edge is stored verbatim.
+ *  - `{parent:"dependent", child:"prerequisite"}` — the name reads inverted
+ *    (e.g. `task_depends_on_task`, whose verb implies the parent is the
+ *    depender); the write path AUTO-ORIENTS an authored edge to deriver-
+ *    canonical storage (swap parent↔child), so the name reading and the stored
+ *    direction cannot diverge.
+ *
+ * Present only on ordering relation_types whose direction is load-bearing;
+ * absence ⇒ no write-time direction enforcement (the `*_supersedes_*` /
+ * data_flow / membership relations carry none and are unaffected).
+ */
+export interface EndpointRoles {
+	parent: "prerequisite" | "dependent";
+	child: "prerequisite" | "dependent";
+}
+
 export interface RelationTypeDecl {
 	canonical_id: string;
 	display_name: string;
@@ -172,6 +198,7 @@ export interface RelationTypeDecl {
 	cycle_allowed?: boolean;
 	source_kinds?: string[];
 	target_kinds?: string[];
+	endpoint_roles?: EndpointRoles;
 }
 
 export interface HierarchyDecl {

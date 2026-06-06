@@ -11,7 +11,7 @@ scripts/launch-constrained-pi.sh
 with a canonical pi-context CLI process mode:
 
 ```bash
-pi-context --pi-bound
+pi-context pi-bound
 ```
 
 This launches a **pi coding-agent session** with the same bounded tool surface the script currently composes.
@@ -71,7 +71,7 @@ Canonical port:
 
 ```ts
 if (!existsSync(path.join(targetCwd, ".pi-context.json"))) {
-  stderr.write("pi-context --pi-bound: WARNING — no .pi-context.json pointer ...\n");
+  stderr.write("pi-context pi-bound: WARNING — no .pi-context.json pointer ...\n");
 }
 ```
 
@@ -305,7 +305,7 @@ Canonical port:
 
 ```ts
 if (staticTools.length === 0) {
-  stderr.write("pi-context --pi-bound: no tools derived ...\n");
+  stderr.write("pi-context pi-bound: no tools derived ...\n");
   return 1;
 }
 ```
@@ -437,7 +437,7 @@ Canonical port:
 
 ```ts
 if (skillFileCount < 4) {
-  stderr.write("pi-context --pi-bound: WARNING — only ... SKILL.md files found ...\n");
+  stderr.write("pi-context pi-bound: WARNING — only ... SKILL.md files found ...\n");
 }
 ```
 
@@ -509,15 +509,15 @@ Current first-token flow:
   ```text
   packages/pi-context-cli/src/cli.ts:444-450
   ```
-  `:444` `if (op === undefined)`; `:445-446` `isProcessOnlyOp(first)` branch (process-only-op message); `:447-449` `else` (unknown-command message); `:450` `return 2;` for both arms. The `--pi-bound` branch inserted before op resolution does not collide with either arm.
+  `:444` `if (op === undefined)`; `:445-446` `isProcessOnlyOp(first)` branch (process-only-op message); `:447-449` `else` (unknown-command message); `:450` `return 2;` for both arms. The `pi-bound` bare-verb branch inserted before op resolution does not collide with either arm.
 
-Add `--pi-bound` before existing help/op resolution:
+Route the `pi-bound` bare verb before existing help/op resolution:
 
 ```ts
 export async function main(argv: string[]): Promise<number> {
   const first = argv[0];
 
-  if (first === "--pi-bound") {
+  if (first === "pi-bound") {
     return runPiBound(argv.slice(1));
   }
 
@@ -534,7 +534,7 @@ export async function main(argv: string[]): Promise<number> {
 Changes:
 
 - import `runPiBound`
-- branch on `first === "--pi-bound"` before help/op resolution
+- branch on `first === "pi-bound"` before help/op resolution
 
 Grounding:
 
@@ -759,14 +759,14 @@ Resume invariant:
 11. `runPiBound` invokes `pi install -l <metaPackageRoot>` before launching `pi`.
 12. `runPiBound` runs install/tool derivation even when passthrough contains `--continue`.
 13. `runPiBound` launches `pi --tools <csv> ...passthrough`.
-14. `main(["--pi-bound", ...])` routes before op resolution.
+14. `main(["pi-bound", ...])` routes before op resolution.
 15. Existing undefined-op behavior remains exit `2` for both arms — unknown command and process-only op (`cli.ts:444-450`).
 
 ---
 
 ## Non-goals
 
-- Do not add `--pi-bound` to the pi-context op registry.
+- Do not add `pi-bound` to the pi-context op registry.
   - CLI ops are reflected from:
     ```ts
     ops.filter((o) => o.surface === "use")

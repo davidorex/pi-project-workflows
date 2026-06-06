@@ -1,0 +1,15 @@
+{
+  "title": "Roadmap is a view over ordered milestones; ordering is a relation",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Milestone order is a milestone-to-milestone ordering relation. The roadmap is a derived view over milestones in that order. No roadmap block exists.",
+  "evidence": [
+    {
+      "file": "html-views/milestones-and-roadmap.html",
+      "reference": "hand-authored static milestones (const MILESTONES = [...]), not derived; no milestone ordering relation; no roadmap block or lens"
+    }
+  ],
+  "impact": "The roadmap has no live source and milestone sequence is unrepresented.",
+  "proposed_resolution": "Register relation_type milestone_precedes_milestone (category ordering, source milestone, target milestone), modeled on the existing decision_supersedes_decision. Roadmap order is the precedes-chain: start at the milestone with no predecessor and follow precedes to the end. Render the roadmap as a view over that chain; add no block."
+}

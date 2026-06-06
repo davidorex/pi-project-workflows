@@ -338,6 +338,74 @@
       "modified_at": "2026-06-06T22:07:25.817Z",
       "oid": "a6b0683bc10fe3094a3953d7d8e120e1",
       "content_hash": "d288a1b96ba997266a2b7d298769f8259f77808b858b886002fa3bea0afed028"
+    },
+    {
+      "id": "R-0005",
+      "title": "Making pi-context a globally installable command, grounded in pi's own bin/publish pattern",
+      "status": "complete",
+      "layer": "L2",
+      "type": "feasibility",
+      "question": "Grounded in the canonical pi runtime as exemplar, how is @davidorex/pi-context-cli shipped so the `pi-context` command (including the spec'd `pi-context --pi-bound` mode) resolves on PATH from any directory, not only via in-repo `node packages/pi-context-cli/dist/bin.js`?",
+      "method": "Read-only code inspection of the installed pi runtime (resolved via `which pi`) and packages/pi-context-cli + packages/pi-project-workflows + packages/pi-context, cross-checked against the pi-bound spec (R-0004); npm publish state verified via `npm view @davidorex/<pkg> version`.",
+      "scope": [
+        "@earendil-works/pi-coding-agent at /opt/homebrew/lib/node_modules (the pi exemplar)",
+        "packages/pi-context-cli/ (bin, build, deps)",
+        "packages/pi-project-workflows/ (the meta-package, --pi-bound's require.resolve target)",
+        "analysis/2026-06-07-pi-context-pi-bound-cli.md + research R-0004",
+        "npm registry state of all six @davidorex/* packages"
+      ],
+      "findings_summary": "Pi's global-command recipe (the exemplar): `type:module` + `bin:{\"pi\":\"dist/cli.js\"}`, a `#!/usr/bin/env node` shebang on the BUILT entry, an explicit `chmod +x dist/cli.js` inside the build script (so npm can symlink the command to an executable on global install), `files:[\"dist\",…]` shipping only built output, and all runtime deps declared and shrinkwrapped so they nest under the package's own node_modules and resolve regardless of cwd.\n\npi-context-cli already matches pi on type/bin/shebang/files/publishConfig. The gaps: (1) its build never sets the exec bit on dist/bin.js (it is -rw-r--r--), which blocks `npm link` and weakens `npm i -g` — FGAP-047; (2) for --pi-bound it must declare @davidorex/pi-project-workflows so require.resolve resolves the meta-package from an installed CLI, which the published 0.30.0 does not — FGAP-048.\n\nPublish state (verified via npm view): all six @davidorex/* are published at 0.30.0 (pi-context, pi-context-cli, pi-project-workflows, pi-behavior-monitors, pi-jit-agents, pi-agent-dispatch). So the base `pi-context` command is registry-installable today (`npm i -g @davidorex/pi-context-cli` pulls the published dep tree); an earlier draft's claim that none was published conflated 'not installed on this machine' (checking /opt/homebrew/lib/node_modules) with 'unpublished' and is wrong.\n\nConcrete paths: (a) local dogfooding — add the build chmod, then `npm link` from packages/pi-context-cli puts pi-context on PATH with deps resolving through the existing workspace symlinks; (b) registry — already available for the base command; --pi-bound additionally requires declaring the meta-dep and cutting a new (release-gated) version. Recommended publish unit: CLI-as-own-unit (pi-faithful, lowest delta), recorded as DEC-0013; the meta-package has no dist/bin and folding the CLI there would be a larger restructure.\n\n--pi-bound plugs in with no extra wiring once pi-context is global (it is a CLI process mode at the bin's main(), DEC-0014). The one global-install-specific risk is whether require.resolve('@davidorex/pi-project-workflows/package.json') and the downstream `pi install -l <metaRoot>` resolve correctly from a REGISTRY-installed CLI — npm link only simulates the workspace-symlink path, so this needs a published-package smoke test (TASK-029/030 orchestrator criteria, release-gated).",
+      "findings_document": "analysis/2026-06-07-pi-context-global-install-pattern.md",
+      "grounding": {
+        "dependencies": [
+          "@earendil-works/pi-coding-agent — its package.json bin/build/files/shrinkwrap is the global-install exemplar"
+        ],
+        "revisions": [
+          "context-jit-spec-v2 @ 2026-06-07"
+        ],
+        "external_refs": [
+          "npm registry: @davidorex/* all at 0.30.0 (npm view, 2026-06-07)"
+        ]
+      },
+      "stale_conditions": [
+        "pi-context-cli's build adds chmod +x dist/bin.js — FGAP-047 closes and the exec-bit gap framing is superseded.",
+        "pi-context-cli declares @davidorex/pi-project-workflows — FGAP-048 closes.",
+        "A new @davidorex/* release supersedes 0.30.0 — the published-version facts must be re-verified.",
+        "pi (@earendil-works/pi-coding-agent) changes its bin/build/files/shrinkwrap pattern — the exemplar recipe shifts.",
+        "scripts/launch-constrained-pi.sh or the pi-bound spec changes the meta-path resolution or tool-union derivation."
+      ],
+      "citations": [
+        {
+          "label": "pi bin mapping + type:module",
+          "path": "@earendil-works/pi-coding-agent/package.json",
+          "lines": "5,9-11"
+        },
+        {
+          "label": "pi build sets the exec bit (the step pi-context-cli lacks)",
+          "path": "@earendil-works/pi-coding-agent/package.json",
+          "lines": "33"
+        },
+        {
+          "label": "pi-context-cli build — no chmod +x (FGAP-047)",
+          "path": "packages/pi-context-cli/package.json",
+          "lines": "31"
+        },
+        {
+          "label": "pi-context-cli deps lack the meta-package (FGAP-048)",
+          "path": "packages/pi-context-cli/package.json",
+          "lines": "35-38"
+        },
+        {
+          "label": "full analysis (deep read)",
+          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-06T22:29:48.981Z",
+      "oid": "e072cd74684d58d1ea83b4c8704491d3",
+      "content_hash": "a134a90ee305dd3f7449a0874e42b3840d7ab5273d752f5ae46c8b019178de0c"
     }
   ]
 }

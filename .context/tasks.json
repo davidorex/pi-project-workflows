@@ -496,6 +496,67 @@
       "oid": "79693a3ed131eb2244eac2ab8f2d2940",
       "content_hash": "bc6e492a167985551cae080a5dbb8f351c263e6f4ecdfd9c0e947b2cd154dfa7",
       "content_parent": "4c4180d835f3192b7187cecc5fe7e728b49d5b70727b4293a7f71fec868864e3"
+    },
+    {
+      "id": "TASK-028",
+      "description": "Make pi-context a globally installable command: add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/package.json"
+      ],
+      "acceptance_criteria": [
+        "[subagent] The pi-context-cli build sets the exec bit on the bin entry (chmod +x dist/bin.js after tsc); dist/bin.js is -rwxr-xr-x after a clean build.",
+        "[orchestrator] npm link from packages/pi-context-cli places an executable pi-context on PATH.",
+        "[orchestrator] pi-context <op> --json runs from a cwd outside the repo, resolving @davidorex/pi-context through the linked dependency tree.",
+        "[orchestrator] build + check + full test suite pass at zero failures.",
+        "[orchestrator] published-package global install (npm i -g @davidorex/pi-context-cli) smoke-tested from a clean machine/dir — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "9437da385588fe3b4500b6acf6bf917f",
+      "content_hash": "cda5438c1c1b22353b408b84822ac8dfa172d7a6fff0a116ee307ec9c09ed76c"
+    },
+    {
+      "id": "TASK-029",
+      "description": "Declare @davidorex/pi-project-workflows in pi-context-cli dependencies at the lockstep version range so pi-context --pi-bound's require.resolve('@davidorex/pi-project-workflows/package.json') resolves from an installed CLI, not only via the in-repo workspace symlink.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/package.json"
+      ],
+      "acceptance_criteria": [
+        "[subagent] pi-context-cli declares @davidorex/pi-project-workflows at the lockstep version range in dependencies.",
+        "[orchestrator] require.resolve('@davidorex/pi-project-workflows/package.json') resolves under npm link from a cwd outside the repo.",
+        "[orchestrator] build + check + full test suite pass; lockstep version ranges across CLI -> pi-context -> meta remain internally consistent.",
+        "[orchestrator] registry-install resolution of the meta-package verified — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "eca4e8b70f2356fd42a71183bec24ac9",
+      "content_hash": "9d2c6eb66d8e21626fa31575bab284d92103256ace612213bb478c90e2aa6969"
+    },
+    {
+      "id": "TASK-030",
+      "description": "Implement pi-context --pi-bound per analysis/2026-06-07-pi-context-pi-bound-cli.md: a CLI process mode that launches an interactive pi session bound to the composed extension tool surface, reproducing scripts/launch-constrained-pi.sh.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context-cli/src/bin.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] --pi-bound is routed in cli.ts main() before op resolution and excluded from the reflected surface:use op set.",
+        "[subagent] The launched session's tool surface is the union of the two-package-root SKILL.md tool set (the script's 69 tools) plus the per-target composites from config.tool_operations[].",
+        "[subagent] The meta-package root is resolved via require.resolve('@davidorex/pi-project-workflows/package.json'); pi install -l <metaRoot> runs against it; the SKILL.md union globs that root.",
+        "[subagent] Context is composed in-process via loadContext (no tsx or python3 subprocess), per DEC-0015.",
+        "[subagent] --grant <id> extends the tool union; a trailing --grant with no value exits 2; passthrough arguments reach pi unchanged.",
+        "[subagent] pi is launched restricted to --tools <union>; the union is re-derived every launch (no stale reuse on resume).",
+        "[orchestrator] Runtime demo: pi-context --pi-bound launches an interactive pi session whose available tools equal the composed union and exclude tools outside it — equivalent to scripts/launch-constrained-pi.sh.",
+        "[orchestrator] build + check + full test suite pass at zero failures; the change is built into dist/.",
+        "[orchestrator] published-package smoke test of the meta-path resolution + pi install -l from a registry install — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "fade58e14f1eeb576a89663e7c2dcf0e",
+      "content_hash": "8ba5614d441ebbbe4fa01a76d0b155ff4f5b565bdd1b11d7376d3ef61f6cb67d"
     }
   ]
 }

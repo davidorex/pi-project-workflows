@@ -1490,6 +1490,58 @@
       "oid": "1f84b7e0e7fe232c0838dd01a6492765",
       "content_hash": "1429baf7a2b1c030bca69e8a4923206a4479876cc39659dacb9102534b400382",
       "content_parent": "09d5ce1d3cb6b33300fab5b2ac3a24c4faf13fc5e2b533437f00043bf2360181"
+    },
+    {
+      "id": "FGAP-047",
+      "title": "pi-context has no global command form — the built bin carries no exec bit",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "packages/pi-context-cli declares bin pi-context -> dist/bin.js with a node shebang, but its build (rm -rf dist && tsc) never sets the exec bit on dist/bin.js, leaving it -rw-r--r--. npm link and npm i -g cannot expose pi-context on PATH from a non-executable entry.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/package.json",
+          "lines": "31",
+          "reference": "build is 'rm -rf dist && tsc -p tsconfig.build.json' — no chmod +x dist/bin.js step"
+        },
+        {
+          "file": "packages/pi-context-cli/dist/bin.js",
+          "reference": "built bin is -rw-r--r-- (no exec bit); shebang present"
+        }
+      ],
+      "impact": "pi-context is invokable only as `node packages/pi-context-cli/dist/bin.js` from the repo; there is no PATH `pi-context` command for users, and pi-context --pi-bound (FEAT-005) has no global entrypoint.",
+      "canonical_vocabulary": "executable bin bit (global command installability)",
+      "proposed_resolution": "Add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH; the published artifact carries the bit unconditionally.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "61cb108b1659ffae0891557c6d591e85",
+      "content_hash": "0a293211340f032e2bdad0489bb8d5910864f271a1abdf70846435f317179ac0"
+    },
+    {
+      "id": "FGAP-048",
+      "title": "pi-context-cli does not declare @davidorex/pi-project-workflows; --pi-bound meta-resolution fails from a registry install",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "pi-context --pi-bound resolves the meta-package install root via require.resolve('@davidorex/pi-project-workflows/package.json') to run pi install -l <root> and read its bundled skills/*/SKILL.md. pi-context-cli's dependencies are @davidorex/pi-context and typebox only, so the meta-package resolves only via the in-repo workspace symlink, not from a globally or registry-installed CLI.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/package.json",
+          "lines": "35-38",
+          "reference": "dependencies are @davidorex/pi-context + typebox; @davidorex/pi-project-workflows is absent"
+        },
+        {
+          "file": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
+          "reference": "--pi-bound resolves the meta root via require.resolve('@davidorex/pi-project-workflows/package.json')"
+        }
+      ],
+      "impact": "From a registry or global install, --pi-bound's meta-path resolution and the downstream pi install -l + SKILL.md tool-union glob fail; the capability works only in-repo via the workspace symlink.",
+      "canonical_vocabulary": "declared dependency for runtime module resolution",
+      "proposed_resolution": "Declare @davidorex/pi-project-workflows at the lockstep version range in pi-context-cli dependencies so require.resolve succeeds from an installed CLI; verify against a published-package smoke test.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "371e3a81b13ab6db63959580a0962ab9",
+      "content_hash": "48b45497709705e1057f61d421afe57852f6f989a01b11cde728cedf8dc70ba7"
     }
   ]
 }

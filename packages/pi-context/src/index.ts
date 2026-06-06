@@ -28,7 +28,6 @@ import {
 	resolveContextDir,
 	SCHEMAS_DIR,
 	schemasDir,
-	tryReadSubstrateIdForDir,
 	tryResolveContextDir,
 	writeBootstrapPointer,
 } from "./context-dir.js";
@@ -558,21 +557,10 @@ function resyncSchema(
 		) {
 			(migrated as Record<string, unknown>).schema_version = catalogVersion;
 		}
-		// Persist the migrated block. When the substrate has ESTABLISHED identity
-		// (a valid `substrate_id`), route through the full whole-block write so the
-		// migrated items are identity-stamped (mint-or-preserve oid, recompute
-		// content_hash). When the substrate is PRE-IDENTITY (no substrate_id —
-		// e.g. a freshly-bootstrapped substrate whose identity has not yet been
-		// established), stamping cannot mint OIDs (substrateIdForDir throws by
-		// design). The migrate must still succeed for a pre-identity substrate, so
-		// skip stamping in that case: the items are persisted (still schema-
-		// validated inside writeBlockForDir) without identity and stay unstamped
-		// until identity is established by the normal path. Probing via
-		// tryReadSubstrateIdForDir (non-throwing) distinguishes a deliberately
-		// pre-identity substrate from a mis-provisioned one, matching the
-		// pre-identity "skip" branch in reconcileActiveSubstrateRegistration.
-		const skipIdentityStamp = tryReadSubstrateIdForDir(destRoot) === undefined;
-		writeBlockForDir(destRoot, name, migrated, undefined, { skipIdentityStamp });
+		// Persist the migrated block via the full whole-block write so the migrated
+		// items are identity-stamped (mint-or-preserve oid, recompute content_hash).
+		// Identity stamping is mandatory for every write.
+		writeBlockForDir(destRoot, name, migrated);
 		return "migrated";
 	} catch {
 		// Migrated items would NOT validate against the new schema (or migration

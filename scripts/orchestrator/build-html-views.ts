@@ -253,10 +253,16 @@ function gatherBlock(cwd: string, name: string, hasSchema: boolean): RenderedBlo
 	return block;
 }
 
+// Substrate infrastructure files that availableBlocks() enumerates from disk but
+// are NOT block kinds (no items to render): the config registry, the migration
+// registry, and the relations closure table.
+const NON_BLOCK_FILES = new Set(["config", "migrations", "relations"]);
+
 function gatherSubstrate(cwd: string): SubstrateData {
 	const head = getRepoHead(cwd);
 	const blocks: RenderedBlock[] = [];
 	for (const info of availableBlocks(cwd)) {
+		if (NON_BLOCK_FILES.has(info.name)) continue;
 		blocks.push(gatherBlock(cwd, info.name, info.hasSchema));
 	}
 	return {

@@ -446,6 +446,32 @@
       ],
       "oid": "032fa4281f17a689fde54852efdab3fd",
       "content_hash": "bc14bce36de05829936feb03e128ea2650b497e376d74bd2c50a105cd0d9768b"
+    },
+    {
+      "id": "VER-021",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-035 (FEAT-006 T2, base-stamping) verified. Commit fa4e7fd wires the dormant content-addressed object store into both baseline-write sites in index.ts: installContext baseline loop (putObject(destRoot, content_hash, schemaJson), reusing the already-parsed body + already-computed content_hash) and the updateContext baseline-refresh (TASK-034 site, inside the !dryRun guard, keyed by the new content_hash). adoptConception is correctly not a site; checkStatus and the installed_from.assets shape (context.ts:79) are untouched (purely additive, Option B from R-0008). Real-substrate tests (install-subcommand.test.ts, tsx --test against source): 'base-stamps each installed schema body under its baseline content_hash' (install round-trip: getObject by the baseline content_hash returns a body whose computeContentHash equals it) and '(b2) a resync base-stamps the resynced schema body under its NEW refreshed baseline content_hash' both pass; the dry-run test extended to assert objects/ gains no entry under updateContext({dryRun:true}). build+check+test green (pi-context 36, fail 0). Fresh-context adversarial probe: PASS, no defects (own harness round-tripped 2 assets; dryRun stamped nothing by independent before/after snapshot; checkStatus byte-identical by construction; install-site put inside the per-schema try/catch; idempotent + content-addressed, no collision; asset shape unchanged). The merge consuming this base is TASK-036.",
+      "criteria_results": [
+        {
+          "criterion": "every install/update writes the as-installed schema body to the object store via putObject keyed by the asset's recorded content_hash; installed_from.assets shape unchanged (no context.ts:79 type change)",
+          "status": "passed",
+          "evidence": "two putObject sites (install + update-refresh) keyed by the same content_hash written to assets[name]; asset shape unchanged"
+        },
+        {
+          "criterion": "after install, getObject(destRoot, assets[name].content_hash) returns a body that JCS-canonicalizes back to that content_hash (round-trip)",
+          "status": "passed",
+          "evidence": "test + independent adversarial harness: every asset round-trips (computeContentHash(body) === content_hash)"
+        },
+        {
+          "criterion": "purely additive: checkStatus classifications byte-identical to before; build+check+test pass; runtime demo (install -> base body present + retrievable)",
+          "status": "passed",
+          "evidence": "checkStatus reads only content_hash (never objects/); build/check/test fail 0; real installContext round-trip demonstrated"
+        }
+      ],
+      "oid": "c3d3ff57d6f44120c24ac4a2462ccb0b",
+      "content_hash": "78c96c7d74b5cc893fc7f9bb93965063e280b412fe957549e8a0a2f04300b62d"
     }
   ]
 }

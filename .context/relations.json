@@ -3506,5 +3506,18 @@
       "refname": "DEC-0017"
     },
     "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "032fa4281f17a689fde54852efdab3fd",
+      "refname": "VER-020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6bb089861ee847eed26b59e6927f0285",
+      "refname": "TASK-034"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

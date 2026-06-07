@@ -1,0 +1,82 @@
+{
+  "title": "FGAP-046 schema-merge across pi-context update — git-3-way reframed against the code; base-stamping + shared merge framework + hybrid resolver",
+  "status": "complete",
+  "layer": "L2",
+  "type": "feasibility",
+  "question": "How should pi-context update preserve a user's edits to a catalog-shipped schema across a catalog version change — deterministic 3-way merge, agent-mediated reconciliation in pi, or hybrid — and what does the code say about each route's feasibility and cost?",
+  "method": "Two read-only Explore investigations: a feasibility survey of the update/resyncSchema/checkStatus path, then a reframing of the git-3-way-merge model against the code (FEAT-002/DEC-0004 merge design, base-stamping via the content-addressed object store, the pi-bound + write-schema + auth-gate resolver surface). Substrate read via the global pi-context command.",
+  "scope": [
+    "packages/pi-context/src/index.ts (resyncSchema, checkStatus, installContext baseline write)",
+    "packages/pi-context/src/{context.ts,content-hash.ts,object-store.ts}",
+    "packages/pi-context/src/ops-registry.ts (read-schema, write-schema dryRun/authGated)",
+    "packages/pi-agent-dispatch/src/auth-gate.ts; packages/pi-context-cli/src/pi-bound.ts",
+    "FEAT-002 / DEC-0004 (substrate merge driver) + FEAT-006 / FGAP-046",
+    "branch context-jit-spec-v2 @ 2026-06-07"
+  ],
+  "findings_summary": "Decisive code fact: the 3-way merge BASE does not exist on disk — checkStatus stores the as-installed catalog schema only as a SHA-256 content_hash (irreversible; installed_from.assets = {content_hash, version}, context.ts:79), not the body. resyncSchema (index.ts:464-583) overwrites the installed schema (blind copy same-version :478-481; version-gap migrates block-item DATA, not schema shape :534-564) and never reads the installed body. So preserving edits requires base-stamping as a precondition: store the as-installed schema BODY per install. Preferred shape reuses the existing content-addressed object store (object-store.ts putObject/getObject, dormant today) keyed by the content_hash the asset already records — one idempotent putObject at index.ts:747-753, getObject at merge time, NO type change.\n\ngit's 3-way model maps on: keep the base (object store), merge by structure not line, auto-merge disjoint + surface a typed conflict set, separate pluggable resolver. Three routes:\nR1 deterministic 3-way schema-merge — net-new = base-stamping + the whole schema-merge engine. CORRECTION to the earlier synthesis: FEAT-002 (the structure-aware substrate git merge driver) is PROPOSED and entirely UNBUILT, and DEC-0004 §6 NAMES schemas in scope but does not author the schema-merge algorithm; a schema merges key/path-level (properties by key, required/enum arrays as sets) — DISTINCT from FEAT-002's id/oid block-item strategy. So 'consume FEAT-002's merger' = co-design one shared framework that does not exist yet; FEAT-002 sharing lowers eventual PROGRAM cost, not R1's immediate first-slice cost. R1 is deterministic/offline but cannot resolve semantic conflicts (overlapping edits to the same node) — it surfaces them.\nR2 agent-mediated reconciliation in pi — lowest net-new: reuses pi-bound + read-schema/write-schema (write-schema has dryRun + authGated) + the auth-gate (non-interactive refuses, interactive confirms) AS-IS; net-new is dispatch wiring + prompt. Resolves semantic conflicts by judgement; non-deterministic; cannot run unattended (auth-gate refuses non-interactive). Wants base-stamping for an ancestor.\nHybrid (git-shaped) — deterministic merge for clean/disjoint edits (auto-apply) + a resolver (user conflict report OR a pi-bound agent mergetool) on the typed conflict set. Best coverage; never silent-clobber.\n\nCoupling/ordering: FGAP-046 (under FEAT-006, L4) does NOT depend on FEAT-002 (L1) shipping; both consume a to-be-built structure-aware-merge framework on different axes with different base sources (FEAT-002 = git %O; FGAP-046 = base-stamping; the catalog-update axis is outside FEAT-002's same-repo scope). FEAT-006 can decompose the schema sub-strategy + base-stamping as a standalone slice, designed so FEAT-002 later reuses the framework. Hybrid wiring seam: consult checkStatus before the resyncSchema call (index.ts:666); on locally-modified/both-diverged run merge(base=getObject(content_hash), ours=installed dest, theirs=catalog source), auto-apply the clean result, route the conflict set.\n\nDecision frame (the route is the user's): R1 deterministic+offline+high-build+punts-semantics; R2 semantic+lowest-build+credentialed+non-deterministic+unattended-blocked; Hybrid best coverage at R1-engine+cheap-resolver cost. The single asymmetry: R1/hybrid cannot begin without base-stamping AND a net-new schema-merge engine; R2 needs neither (base optional, improves precision).",
+  "findings_document": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
+  "grounding": {
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-07"
+    ]
+  },
+  "stale_conditions": [
+    "resyncSchema (index.ts:464-583) or checkStatus (index.ts:858-949) changes — the gap locus and drift classifications shift.",
+    "DEC-0004 / FEAT-002 author the schema-merge sub-strategy beyond the §6 clause, or FEAT-002 ships a merge module — the 'unbuilt / unauthored' framing and the R1 build-cost frame are superseded.",
+    "The content-addressed object store (object-store.ts) gains a write-path consumer or base-stamping lands — the precondition is realized.",
+    "installed_from.assets shape (context.ts:79) changes — the base-stamping change-point shifts.",
+    "pi-bound / write-schema / auth-gate surface changes — the R2 agent-mergetool wiring shifts."
+  ],
+  "citations": [
+    {
+      "label": "resyncSchema overwrites; reads only version, never the installed body",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "464-583"
+    },
+    {
+      "label": "checkStatus 3-way HASH compare; locally-modified verdict; baseline content_hash",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "858-949"
+    },
+    {
+      "label": "installed_from.assets stores {content_hash, version} only — base body not retained",
+      "path": "packages/pi-context/src/context.ts",
+      "lines": "71-80"
+    },
+    {
+      "label": "content-addressed object store (putObject/getObject; dormant) — the base-stamping vehicle",
+      "path": "packages/pi-context/src/object-store.ts",
+      "lines": "59-110"
+    },
+    {
+      "label": "baseline write — the base-stamping target",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "738-754"
+    },
+    {
+      "label": "write-schema op (dryRun + authGated) — the R2 resolver write path",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1183-1201"
+    },
+    {
+      "label": "auth-gate non-interactive refusal / interactive confirm",
+      "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
+      "lines": "148-211"
+    },
+    {
+      "label": "pi-bound bounded session (R2 vehicle)",
+      "path": "packages/pi-context-cli/src/pi-bound.ts",
+      "lines": "298-305"
+    },
+    {
+      "label": "DEC-0004 §6 names config/schema 3-way but does not author the schema strategy",
+      "path": "DEC-0004",
+      "lines": ""
+    },
+    {
+      "label": "full reframed findings (deep read)",
+      "path": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
+      "lines": ""
+    }
+  ]
+}

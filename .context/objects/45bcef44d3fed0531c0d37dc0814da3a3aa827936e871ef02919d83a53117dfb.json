@@ -1,0 +1,10 @@
+{
+  "description": "Install the three requires-edge invariants (one per source block: decisions, features, tasks) in .context config at severity error, each requiring at least one item_governed_by_convention or item_acknowledges_missing_convention edge as_parent. Enact DEC-0016. Run only after the backfill (TASK-031) so the substrate validates clean.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "[orchestrator] Three requires-edge invariants are added to .context config.invariants (block decisions / features / tasks; relation_types both governance types; direction as_parent; severity error).",
+    "[orchestrator] context-validate reports zero convention-articulation errors (the backfill made it clean).",
+    "[orchestrator] A new decision/feature/task filed without an articulation edge is rejected by context-validate as an error.",
+    "[orchestrator] DEC-0016 is enacted (status + enacted_by + enacted_at + closing-commit reference)."
+  ]
+}

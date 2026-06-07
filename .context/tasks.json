@@ -562,7 +562,7 @@
     {
       "id": "TASK-031",
       "description": "Register the two governance relation_types in .context config and backfill all existing planning-artifact articulation: file the deduped missing-convention gaps and write the item_governed_by_convention / item_acknowledges_missing_convention edges for every existing decision/feature/task and for this initiative's own DEC/FEAT/TASK items, per analysis/2026-06-07-convention-articulation-backfill.md. Prerequisite to enabling the error invariant (TASK-032).",
-      "status": "planned",
+      "status": "completed",
       "acceptance_criteria": [
         "[orchestrator] item_governed_by_convention (source decisions/features/tasks -> target conventions) and item_acknowledges_missing_convention (source decisions/features/tasks -> target framework-gaps) are registered in .context config.relation_types.",
         "[orchestrator] The deduped missing-convention gaps (one per theme) are filed.",
@@ -572,12 +572,13 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "e6f28db3c5e9a1f552389ff8c6772dfe",
-      "content_hash": "ed95b9079d75fdd16922bb8ff775a4d548c98e9a18f2ee9f532676050f4f9460"
+      "content_hash": "b87355648845e5661c03cc20bb16fb26943ca070e514078ad4cee73ed76455f6",
+      "content_parent": "ed95b9079d75fdd16922bb8ff775a4d548c98e9a18f2ee9f532676050f4f9460"
     },
     {
       "id": "TASK-032",
       "description": "Install the three requires-edge invariants (one per source block: decisions, features, tasks) in .context config at severity error, each requiring at least one item_governed_by_convention or item_acknowledges_missing_convention edge as_parent. Enact DEC-0016. Run only after the backfill (TASK-031) so the substrate validates clean.",
-      "status": "planned",
+      "status": "completed",
       "acceptance_criteria": [
         "[orchestrator] Three requires-edge invariants are added to .context config.invariants (block decisions / features / tasks; relation_types both governance types; direction as_parent; severity error).",
         "[orchestrator] context-validate reports zero convention-articulation errors (the backfill made it clean).",
@@ -587,7 +588,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "6441f29277e8c7a6e22cdd71cb5bbc76",
-      "content_hash": "4689a851c3ac70932b8a0c74db75f0e56b7cc544b6888bb41fe0c02d2e0ef354"
+      "content_hash": "45bcef44d3fed0531c0d37dc0814da3a3aa827936e871ef02919d83a53117dfb",
+      "content_parent": "4689a851c3ac70932b8a0c74db75f0e56b7cc544b6888bb41fe0c02d2e0ef354"
     },
     {
       "id": "TASK-033",

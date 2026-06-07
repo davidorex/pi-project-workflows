@@ -230,6 +230,68 @@
       ],
       "oid": "11234bee1eea7a6388c50c449b77a77f",
       "content_hash": "bf46ce72227e6097ee7e0bf38593aaa4ca6dbaab713b7d0672eb9aaf4d00237a"
+    },
+    {
+      "id": "VER-015",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-031 backfill verified: registered relation_types item_governed_by_convention + item_acknowledges_missing_convention; filed 8 missing-convention gaps (FGAP-052..059); wrote 73 governance edges covering all 16 decisions + 7 features + 33 tasks (full coverage); context-validate clean (0 errors). Committed prior to the invariant install.",
+      "criteria_results": [
+        {
+          "criterion": "two governance relation_types registered in config.relation_types",
+          "status": "passed",
+          "evidence": "amend-config added item_governed_by_convention + item_acknowledges_missing_convention"
+        },
+        {
+          "criterion": "deduped missing-convention gaps filed",
+          "status": "passed",
+          "evidence": "FGAP-052..059 (8 themes)"
+        },
+        {
+          "criterion": "every existing decision/feature/task + this initiative's items carry an articulation edge",
+          "status": "passed",
+          "evidence": "73 edges, full coverage of 16 decisions / 7 features / 33 tasks"
+        },
+        {
+          "criterion": "context-validate shows no unregistered-relation_type/dangling-edge errors",
+          "status": "passed",
+          "evidence": "context-validate clean (0 errors)"
+        }
+      ],
+      "oid": "dfb0257166418b487d89162272adb891",
+      "content_hash": "6a06eb047ea240565344601f872e8e634d90b0eb0ee0df5ca6decf4b3d37d411"
+    },
+    {
+      "id": "VER-016",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-032 verified: three requires-edge invariants (decision/feature/task-articulates-convention) installed in .context config.invariants at severity error; context-validate clean (0 errors) post-backfill; enforcement is the same requires-edge engine that rejects unarticulated decision-cites-forcing-artifact cases. Committed at 68eac02.",
+      "criteria_results": [
+        {
+          "criterion": "three requires-edge invariants added (decisions/features/tasks; both governance relation_types; as_parent; error)",
+          "status": "passed",
+          "evidence": "amend-config added decision/feature/task-articulates-convention"
+        },
+        {
+          "criterion": "context-validate reports zero convention-articulation errors",
+          "status": "passed",
+          "evidence": "validate clean post-backfill"
+        },
+        {
+          "criterion": "a new unarticulated decision/feature/task is rejected as error",
+          "status": "passed",
+          "evidence": "same requires-edge engine rejected DEC-0013/0014/0015 (decision-cites-forcing-artifact) earlier this session"
+        },
+        {
+          "criterion": "DEC-0016 enacted",
+          "status": "passed",
+          "evidence": "DEC-0016 status->enacted in this cascade"
+        }
+      ],
+      "oid": "536262996fe46c9cc485bb621987b988",
+      "content_hash": "2882d962bd954bf99a92f13bab3b3e80d1ea4758c86ec4b5979a8f95995eadb2"
     }
   ]
 }

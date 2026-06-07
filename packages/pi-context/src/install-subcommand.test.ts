@@ -4,9 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { computeContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import { checkStatus, installContext, updateContext } from "./index.js";
+import { getObject } from "./object-store.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
@@ -214,6 +216,31 @@ describe("installContext", () => {
 			const entry = from.assets[name];
 			assert.match(entry.content_hash, /^[0-9a-f]{64}$/, `${name} content_hash is 64-hex`);
 			assert.match(entry.version, /^\d+\.\d+\.\d+$/, `${name} version populated`);
+		}
+	});
+
+	// TASK-035 / FEAT-006 T2 base-stamping: every install baseline-write site also
+	// persists the as-installed schema BODY into the content-addressed object store,
+	// keyed by the SAME content_hash recorded in installed_from.assets — so the merge
+	// base is retrievable later (TASK-036 precondition). computeContentHash(body) over
+	// the retrieved object must round-trip back to the baseline hash (per
+	// content-hash.ts: a file's computeFileContentHash and its parsed object's
+	// computeContentHash are the same JCS digest).
+	it("base-stamps each installed schema body into the object store under its baseline content_hash", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		const from = loadConfig(tmpRoot)?.installed_from;
+		assert.ok(from, "config.installed_from must be recorded");
+		const substrateDir = path.join(tmpRoot, ".project");
+		for (const name of Object.keys(from.assets)) {
+			const hash = from.assets[name].content_hash;
+			const body = getObject(substrateDir, hash);
+			assert.ok(body, `object store must hold the base-stamped body for ${name} under ${hash}`);
+			assert.equal(
+				computeContentHash(body),
+				hash,
+				`the stored ${name} body must round-trip to its baseline content_hash`,
+			);
 		}
 	});
 
@@ -651,6 +678,32 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		);
 	});
 
+	// TASK-035 / FEAT-006 T2: the updateContext baseline-REFRESH site (TASK-034) is a
+	// baseline-write site too, so a resync base-stamps the resynced schema's NEW body
+	// under its NEW (refreshed) content_hash. After resync, the refreshed baseline hash
+	// must have a retrievable stored body that round-trips.
+	it("(b2) a resync base-stamps the resynced schema body under its NEW refreshed baseline content_hash", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		const tasksDest = makeCatalogAheadFixture("tasks");
+		const substrateDir = path.join(tmpRoot, ".project");
+		// Baseline hash BEFORE update is the stale installed body's hash.
+		const staleHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
+		assert.ok(staleHash);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.resynced, ["tasks"], "precondition: tasks must resync");
+		const refreshedHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
+		assert.ok(refreshedHash, "the refreshed baseline must record a content_hash");
+		assert.notEqual(refreshedHash, staleHash, "the resync must have refreshed the baseline hash");
+		assert.equal(
+			refreshedHash,
+			computeContentHash(JSON.parse(fs.readFileSync(tasksDest, "utf-8")) as Record<string, unknown>),
+			"the refreshed baseline hash must equal the now-installed (catalog) body hash",
+		);
+		const body = getObject(substrateDir, refreshedHash);
+		assert.ok(body, "the resynced body must be base-stamped under the refreshed baseline hash");
+		assert.equal(computeContentHash(body), refreshedHash, "the stored resynced body must round-trip to its hash");
+	});
+
 	it("(c) dryRun writes NOTHING for ANY drift state and returns the action plan", () => {
 		// A substrate spanning the three live-routed states at once:
 		//   tasks       → catalog-ahead (would resync)
@@ -681,6 +734,12 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		const cfgPath = path.join(tmpRoot, ".project", "config.json");
 		const snapshot = new Map<string, Buffer>();
 		for (const f of [tasksDest, decDest, woDest, cfgPath]) snapshot.set(f, fs.readFileSync(f));
+		// TASK-035 / FEAT-006 T2: base-stamping is INSIDE the !dryRun guard, so a
+		// dry-run must add NO new object to the content-addressed store. Snapshot the
+		// objects/ directory listing before the dry run (prior installs may have
+		// stamped bodies; the invariant is that dryRun adds none).
+		const objectsDir = path.join(tmpRoot, ".project", "objects");
+		const objectsBefore = fs.existsSync(objectsDir) ? fs.readdirSync(objectsDir).sort() : [];
 		// Precondition spread across states.
 		const pre = Object.fromEntries(checkStatus(tmpRoot).perAsset.map((a) => [a.name, a.state]));
 		assert.equal(pre.tasks, "catalog-ahead");
@@ -697,5 +756,12 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		for (const [f, before] of snapshot) {
 			assert.ok(fs.readFileSync(f).equals(before), `dryRun must not modify ${path.basename(f)} (byte-identical)`);
 		}
+		// The objects/ store must be unchanged: dryRun base-stamps nothing.
+		const objectsAfter = fs.existsSync(objectsDir) ? fs.readdirSync(objectsDir).sort() : [];
+		assert.deepEqual(
+			objectsAfter,
+			objectsBefore,
+			"dryRun must base-stamp nothing — the objects/ store listing must be unchanged",
+		);
 	});
 });

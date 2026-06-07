@@ -36,6 +36,7 @@ import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
 import { getProjectMigrationRegistryForDir, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
+import { putObject } from "./object-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
@@ -746,8 +747,16 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		// the file is valid. Install proceeds for all other declared schemas.
 		try {
 			const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
+			const content_hash = computeFileContentHash(destSchemaFile);
+			// Base-stamp (TASK-035 / FEAT-006 T2): persist the as-installed schema body
+			// into the content-addressed object store keyed by its install-baseline
+			// content_hash, so the merge base is retrievable later (TASK-036 precondition).
+			// putObject is idempotent (content-addressed) — re-installing unchanged content
+			// re-stamps identical bytes harmlessly. Reuses the already-parsed schemaJson and
+			// already-computed content_hash; no re-read or re-hash.
+			putObject(destRoot, content_hash, schemaJson as Record<string, unknown>);
 			assets[name] = {
-				content_hash: computeFileContentHash(destSchemaFile),
+				content_hash,
 				version: typeof schemaJson.version === "string" ? schemaJson.version : "",
 			};
 		} catch {}
@@ -1175,8 +1184,15 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				// rather than crashing the update.
 				try {
 					const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
+					const content_hash = computeFileContentHash(destSchemaFile);
+					// Base-stamp (TASK-035 / FEAT-006 T2): persist the resynced schema body
+					// into the content-addressed object store keyed by its NEW baseline
+					// content_hash, so the refreshed merge base is retrievable (TASK-036
+					// precondition). Inside the !dryRun guard, so dry-run stamps nothing.
+					// Idempotent; reuses the already-parsed schemaJson + computed content_hash.
+					putObject(destRoot, content_hash, schemaJson as Record<string, unknown>);
 					refreshedAssets[name] = {
-						content_hash: computeFileContentHash(destSchemaFile),
+						content_hash,
 						version: typeof schemaJson.version === "string" ? schemaJson.version : "",
 					};
 				} catch {}

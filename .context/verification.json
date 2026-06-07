@@ -591,6 +591,63 @@
       ],
       "oid": "3777b57163b8ae9df1da7ee465bfe124",
       "content_hash": "0ad9114b78ac922ab10953d2ac8994cb43d7b5d5523a77fa4dc51a69cdcd48e3"
+    },
+    {
+      "id": "VER-026",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-039 (FEAT-006 T6) verified — two disjoint sub-fixes in index.ts (commit c31f9a7). FGAP-050 (updateContext / pi-context update): resyncSchema's return widened to {status, registeredMigrations: {schema,from,to}[]}; the version-bump registration loop reports the decls it appends; the same-version arm and the blocked-rollback arm report [] (post-rollback truth — migrations.json reverted). updateContext captures the live registrations onto a new UpdateResult.migrationsRegistered and, on --dryRun, computes the WOULD-register set READ-ONLY via computeWouldRegisterMigrations (catalog chain minus the decls already present, no write). FGAP-051 (installContext / install --update): a computeFileContentHash equality guard before the empty-block overwrite skips rewriting a block already equal to the catalog starter (-> skipped, not updated). The two are disjoint (updateContext never writes blocks; installContext's preserved/installed arms untouched). Real-substrate tests: live (a 1.0.0->1.0.1 version bump reports {schema:tasks,from:1.0.0,to:1.0.1} + persists it to migrations.json), dryRun (would-register reported + migrations.json byte-unchanged), same-version (-> []), blocked at 0.9.0 (-> [] + migrations.json reverted), block-skip (starter-equal empty block skipped, mtime+bytes unchanged; starter-different still updated). build+check+test green (pi-context 1089 pass). Fresh adversarial probe PASS, no defects (own harness: dryRun read-only + dryRun-set==live-set; blocked reverts + reports []; the block-skip is JCS-canonical — a whitespace-different-but-content-equal starter is still skipped; the CLI surfaces migrationsRegistered; all UpdateResult mutation buckets present). A non-blocking biome useOptionalChain warning the test introduced was cleared (split assert).",
+      "criteria_results": [
+        {
+          "criterion": "update output enumerates every schema re-sync/merge AND every migration declaration registered into migrations.json; --dry-run lists them without writing (closes FGAP-050)",
+          "status": "passed",
+          "evidence": "schema re-syncs/merges already in resynced/migrated/blocked/merged buckets; migrationsRegistered surfaces the decls (live) + would-register (dryRun, read-only, migrations.json byte-unchanged)"
+        },
+        {
+          "criterion": "update skips rewriting an existing catalog-origin block file whose content already equals the starter (closes FGAP-051)",
+          "status": "passed",
+          "evidence": "computeFileContentHash equality guard -> skipped + mtime/bytes unchanged; JCS-canonical (whitespace-equal still skipped); starter-different still updated"
+        },
+        {
+          "criterion": "runtime demo: a version-bump update lists the registered migration declarations; an unchanged empty block is not rewritten; build + check + full test pass",
+          "status": "passed",
+          "evidence": "real-substrate version-bump (live + dryRun) + block-skip cases + adversarial harness; build/check/test fail 0"
+        }
+      ],
+      "oid": "802e53e80ab7de18d1abbc2613ca3155",
+      "content_hash": "55038e7bbcebfece912f951bd4311dadd85d23d549b79ae1bcbdff23c313880e"
+    },
+    {
+      "id": "VER-027",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "FEAT-006 (the unified, drift-aware, customization-preserving pi-context update command with --dry-run) is complete — all six slices done and verified: T1 shell + drift routing (TASK-034/VER-020), T2 base-stamping (TASK-035/VER-021), T3 3-way schema merge (TASK-036/VER-022), T4 conflict resolver (TASK-037/VER-023), T5 config-registry propagation (TASK-038/VER-025), T6 surfaced mutation reporting + idempotent block skip (TASK-039/VER-026). The unified `pi-context update` (a reflected op on the globally-installed CLI) consults the per-schema checkStatus drift classification and: resyncs in-sync/catalog-ahead (migration-aware); 3-way merges locally-modified/both-diverged schemas preserving non-conflicting edits, routing irreconcilable conflicts to a pi-bound agent mergetool or a read-only report; additively propagates catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) preserving user entries; enumerates every mutation it performs (schema re-syncs/merges via the resynced/migrated/blocked/merged buckets, migration-declaration registrations via migrationsRegistered, config additions via registryAdditions); and --dryRun previews the entire change set while writing nothing. A locally-edited schema, the user's config registries, and populated blocks are never silently clobbered. Build/check/full-test green throughout; each slice carried a runtime demo + a fresh-context adversarial probe (all PASS). FGAP-046/049/050/051/060 closed across the arc.",
+      "criteria_results": [
+        {
+          "criterion": "pi-context update --dry-run reports the full set of schema/block/migration changes it would make (per the checkStatus drift classification) and writes nothing",
+          "status": "passed",
+          "evidence": "--dryRun computes + reports resynced/merged/conflicts + registryAdditions + migrationsRegistered (would-register read-only) and writes nothing; verified byte-unchanged across T1/T5/T6 dryRun tests"
+        },
+        {
+          "criterion": "pi-context update preserves or merges locally-modified schemas (per FGAP-046's chosen route) rather than overwriting them; config registries, populated blocks, and user-added elements are untouched",
+          "status": "passed",
+          "evidence": "T3 3-way merge + T4 resolver (FGAP-046 closed); T5 additive registry propagation never overwrites a user entry (FGAP-060 closed); T6 idempotent block skip (FGAP-051 closed); populated blocks preserved"
+        },
+        {
+          "criterion": "Every mutation the command performs — schema re-syncs, migration-declaration registrations, block starters — is enumerated in its output",
+          "status": "passed",
+          "evidence": "resynced/migrated/blocked/merged + migrationsRegistered (FGAP-050 closed) + registryAdditions; block starters via the install-path InstallResult buckets"
+        },
+        {
+          "criterion": "The command is exposed on the globally-installed pi-context (gated on the CLI grounding)",
+          "status": "passed",
+          "evidence": "the reflected update op runs as pi-context update on the global CLI (TASK-028/029/030 global install); CLI surface confirmed"
+        }
+      ],
+      "oid": "8a7db06de4a34b5780b0bd3553b694df",
+      "content_hash": "91e28e7fdd9f60730a2ae19b180e02a230672d974a74886b93f94668093d335f"
     }
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T00:00:00.000Z",
+  "evidence": "TASK-039 (FEAT-006 T6) verified — two disjoint sub-fixes in index.ts (commit c31f9a7). FGAP-050 (updateContext / pi-context update): resyncSchema's return widened to {status, registeredMigrations: {schema,from,to}[]}; the version-bump registration loop reports the decls it appends; the same-version arm and the blocked-rollback arm report [] (post-rollback truth — migrations.json reverted). updateContext captures the live registrations onto a new UpdateResult.migrationsRegistered and, on --dryRun, computes the WOULD-register set READ-ONLY via computeWouldRegisterMigrations (catalog chain minus the decls already present, no write). FGAP-051 (installContext / install --update): a computeFileContentHash equality guard before the empty-block overwrite skips rewriting a block already equal to the catalog starter (-> skipped, not updated). The two are disjoint (updateContext never writes blocks; installContext's preserved/installed arms untouched). Real-substrate tests: live (a 1.0.0->1.0.1 version bump reports {schema:tasks,from:1.0.0,to:1.0.1} + persists it to migrations.json), dryRun (would-register reported + migrations.json byte-unchanged), same-version (-> []), blocked at 0.9.0 (-> [] + migrations.json reverted), block-skip (starter-equal empty block skipped, mtime+bytes unchanged; starter-different still updated). build+check+test green (pi-context 1089 pass). Fresh adversarial probe PASS, no defects (own harness: dryRun read-only + dryRun-set==live-set; blocked reverts + reports []; the block-skip is JCS-canonical — a whitespace-different-but-content-equal starter is still skipped; the CLI surfaces migrationsRegistered; all UpdateResult mutation buckets present). A non-blocking biome useOptionalChain warning the test introduced was cleared (split assert).",
+  "criteria_results": [
+    {
+      "criterion": "update output enumerates every schema re-sync/merge AND every migration declaration registered into migrations.json; --dry-run lists them without writing (closes FGAP-050)",
+      "status": "passed",
+      "evidence": "schema re-syncs/merges already in resynced/migrated/blocked/merged buckets; migrationsRegistered surfaces the decls (live) + would-register (dryRun, read-only, migrations.json byte-unchanged)"
+    },
+    {
+      "criterion": "update skips rewriting an existing catalog-origin block file whose content already equals the starter (closes FGAP-051)",
+      "status": "passed",
+      "evidence": "computeFileContentHash equality guard -> skipped + mtime/bytes unchanged; JCS-canonical (whitespace-equal still skipped); starter-different still updated"
+    },
+    {
+      "criterion": "runtime demo: a version-bump update lists the registered migration declarations; an unchanged empty block is not rewritten; build + check + full test pass",
+      "status": "passed",
+      "evidence": "real-substrate version-bump (live + dryRun) + block-skip cases + adversarial harness; build/check/test fail 0"
+    }
+  ]
+}

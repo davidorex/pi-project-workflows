@@ -3584,5 +3584,31 @@
       "refname": "TASK-038"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "802e53e80ab7de18d1abbc2613ca3155",
+      "refname": "VER-026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7250cfb2c2d2552f4f7ab1c5ceb95d99",
+      "refname": "TASK-039"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a7db06de4a34b5780b0bd3553b694df",
+      "refname": "VER-027"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "150b653168eb04fa40ea004ef9e64324",
+      "refname": "FEAT-006"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

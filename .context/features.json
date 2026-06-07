@@ -106,7 +106,7 @@
     {
       "id": "FEAT-006",
       "title": "pi-context update — a unified, drift-aware, customization-preserving update command with --dry-run",
-      "status": "in-progress",
+      "status": "complete",
       "layer": "L4",
       "description": "A single `pi-context update` command brings an installed substrate's model (schemas + catalog-origin blocks) to a newer pi-context release while preserving the user's customizations: it consults the checkStatus drift classification, preserves or merges locally-modified schemas instead of overwriting (FGAP-046), surfaces every mutation it makes, and with --dry-run previews the full change set without writing. It supersedes the bare `/context install --update` flag as the user-facing update path, and states the guarantee that config registries, populated blocks, and user-added elements are never clobbered.",
       "motivation": "The framework exists to be customized; an update must not punish customization. Today update is a flag on install that overwrites locally-modified schemas, side-writes migration declarations unsurfaced, and never consults the drift detector that already exists. A unified command with a dry-run preview makes update safe and legible.",
@@ -119,10 +119,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-07T05:56:24.769Z",
+      "modified_at": "2026-06-07T22:24:25.068Z",
       "oid": "150b653168eb04fa40ea004ef9e64324",
-      "content_hash": "38a8d08909123042090e8507158b75a4ce19e5bcd2aaee6187c8655565c6cded",
-      "content_parent": "99320b8b3d84f66c329e46b7ecee5779dcf9242e0f2903c3216c53be951356dc"
+      "content_hash": "dad4ab79f3b3a2241a5e821959e2417617894a3c97c8a7a57e11835940f1b0dc",
+      "content_parent": "38a8d08909123042090e8507158b75a4ce19e5bcd2aaee6187c8655565c6cded"
     },
     {
       "id": "FEAT-007",

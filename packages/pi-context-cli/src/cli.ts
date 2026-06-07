@@ -35,6 +35,7 @@ import {
 	ops,
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
+import { runPiBound } from "./pi-bound.js";
 
 /**
  * The surfaced command set: every op the CLI exposes. Derived by reflection —
@@ -438,6 +439,10 @@ export async function main(argv: string[]): Promise<number> {
 	if (first === undefined || first === "--help" || first === "-h") {
 		process.stdout.write(`${deriveTopHelp()}\n`);
 		return 0;
+	}
+
+	if (first === "pi-bound") {
+		return runPiBound(argv.slice(1));
 	}
 
 	const op = resolveOp(first);

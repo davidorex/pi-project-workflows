@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- `pi-context pi-bound [--grant <id>]... [...pi flags]` — a CLI process mode that launches an interactive `pi` coding-agent session whose tool surface is constrained to the canonical bounded set: the static tools derived from the installed packages' generated `SKILL.md` files, plus pi's built-in read-only tools (`read`/`ls`/`grep`/`find`), plus the active substrate's declared bounded composites (`config.tool_operations[]`). Repeated `--grant <canonical_id>` scopes the composite surface to a subset (default: all declared); every other token passes through to `pi`. Runs from the target dir; re-derives the full allowlist and runs `pi install -l` on every launch, including `--continue`/`-c` resumes. Replaces the `scripts/launch-constrained-pi.sh` entrypoint.
+
 ## [0.30.0] - 2026-06-04
 
 ### Added

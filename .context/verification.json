@@ -359,6 +359,62 @@
       ],
       "oid": "da018d0e5d3acf171e07f03c573d13ea",
       "content_hash": "99cc9d9d5d66cd27193ae30d66defec166aee5aa073a9f191818da79e32a5f7c"
+    },
+    {
+      "id": "VER-019",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-030 verified. pi-context pi-bound implemented across 3369b57 (pi-context ./package.json export), 0501fde (pi-bound module + cli.ts dispatch + tests + CHANGELOG), 90c213f (set -e pre-launch failure-handling fix), e7e972d (README docs). Verified: routed in main() before op resolution + excluded from surface:use (pi-bound is not a registered op); the launched --tools surface is the 73-tool union (69 SKILL.md tools byte-identical to the script + builtin read,ls,grep,find) plus config.tool_operations[] composites; meta-root via require.resolve('@davidorex/pi-project-workflows/package.json') + pi install -l <root> spawned FIRST on every launch (resume invariant holds under --continue/-c); context composed in-process via loadContext (no tsx/python3); --grant scopes composites + trailing --grant exits 2 + passthrough forwarded to pi unchanged; all pre-launch setup failures (package-resolve throw, pi install non-zero exit, install spawn-error, launch spawn-error) abort BEFORE launch with pi-context-pi-bound-prefixed messages and deterministic codes (install propagates its own exit code, set -e parity). build + check + full test suite green (pi-context-cli 67/67, fail 0 across all packages); two fresh adversarial probes PASS (the second independently re-auditing the failure-handling fix). Stubbed-spawn runtime demo: install exit 5 -> runPiBound returns 5 with NO launch; install ok -> 2 spawns, 73-tool launch. The real interactive pi session from a registry/global install (criterion 7 live-session aspect + criterion 9) is credentialed + release-gated, deferred.",
+      "criteria_results": [
+        {
+          "criterion": "pi-bound routed in cli.ts main() before op resolution + excluded from surface:use",
+          "status": "passed",
+          "evidence": "cli.ts branch between help and resolveOp; pi-bound absent from the op registry"
+        },
+        {
+          "criterion": "tool surface = two-root SKILL.md union (69) + config.tool_operations[] composites",
+          "status": "passed",
+          "evidence": "73-tool union (69 + builtins), byte-identical to the script; composites folded (.context declares 0)"
+        },
+        {
+          "criterion": "meta-root via require.resolve; pi install -l <root>; SKILL union globs that root",
+          "status": "passed",
+          "evidence": "resolvePackageRoot + the ./package.json export; install spawned first"
+        },
+        {
+          "criterion": "context composed in-process via loadContext (no tsx/python3), per DEC-0015",
+          "status": "passed",
+          "evidence": "readCompositeOperationIds uses loadContext from @davidorex/pi-context/context"
+        },
+        {
+          "criterion": "--grant extends the union; trailing --grant exits 2; passthrough reaches pi unchanged",
+          "status": "passed",
+          "evidence": "parsePiBoundArgs + PiBoundUsageError(exit 2); tests assert scoping + passthrough"
+        },
+        {
+          "criterion": "pi launched restricted to --tools <union>; union re-derived every launch (no stale resume reuse)",
+          "status": "passed",
+          "evidence": "runtime demo: install+derivation run even with --continue"
+        },
+        {
+          "criterion": "Runtime demo: pi-context pi-bound launches a session whose tools equal the union and exclude outside",
+          "status": "passed",
+          "evidence": "composition + the pi --tools <union> dispatch verified via stubbed-spawn demo; the live interactive session is the release-gated smoke (criterion 9)"
+        },
+        {
+          "criterion": "build + check + full test suite pass at zero failures; built into dist/",
+          "status": "passed",
+          "evidence": "build/check/test exit 0; pi-bound.js in dist"
+        },
+        {
+          "criterion": "published-package smoke of meta-path resolution + pi install -l from a registry install",
+          "status": "skipped",
+          "evidence": "deferred, release-gated"
+        }
+      ],
+      "oid": "1fe8cba53ba3b6d2db530ed964a84eee",
+      "content_hash": "0853e2b2adaf66aae2996c25dae1cb8313cc8834f035e3232cb68fc10ecc6ca7"
     }
   ]
 }

@@ -86,7 +86,7 @@
     {
       "id": "FEAT-005",
       "title": "pi-context pi-bound: launch a pi session bound to the composed extension tool surface",
-      "status": "proposed",
+      "status": "in-review",
       "layer": "L4",
       "description": "A globally-runnable `pi-context pi-bound` command launches an interactive pi session restricted to the composed extension tool surface — the static SKILL.md tool union plus the config-declared per-target composites — reproducing scripts/launch-constrained-pi.sh as a first-class CLI command and subsuming it.",
       "motivation": "The constrained-launch capability exists only as an out-of-tree shell script that needs the repo checkout. As a command on a globally installed pi-context, it runs from any project with the published packages present.",
@@ -98,10 +98,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-06T23:09:46.695Z",
+      "modified_at": "2026-06-07T02:56:59.277Z",
       "oid": "e209f40b550d60427fed1289852cf2a3",
-      "content_hash": "3e3bfb669798af250ccaff2bce8da6baf0ded22b39bd41546f81013edfa6d64d",
-      "content_parent": "c3c9b2d4c1f10bdb74a338645c183f6e044120f211829ebf00a643f725fb6c90"
+      "content_hash": "1e330781d4898667945cd513cd957dde9c5fb9c98204cc177b681c81f01d2cb1",
+      "content_parent": "3e3bfb669798af250ccaff2bce8da6baf0ded22b39bd41546f81013edfa6d64d"
     },
     {
       "id": "FEAT-006",

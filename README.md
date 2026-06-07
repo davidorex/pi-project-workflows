@@ -67,6 +67,21 @@ Pointer-flip mutations (`context-switch` / `context-archive` / `context-init` / 
 
 This enables the **per-arc substrate engagement pattern**: significant design/spec arcs (multi-step feature work, spec drafting, dependency migrations) get their own `.context-<arc-name>/` substrate dir with bespoke vocabulary (custom block kinds + relation_types + lenses) decomposing the design space. The substrate IS the spec; the markdown form at `analysis/*.md` is source-of-content; the substrate is source-of-structure + cross-references.
 
+### Constrained pi session (`pi-context pi-bound`)
+
+The standalone `pi-context` CLI also provides a process mode that launches a `pi` coding-agent session restricted to the composed pi-extension tool surface:
+
+```bash
+pi-context pi-bound [--grant <id>]... [...pi-args]
+```
+
+On every launch it registers the extensions into the target dir's `.pi/` (`pi install -l` against the `@davidorex/pi-project-workflows` root), derives the static tool allowlist from the installed packages' generated `skills/*/SKILL.md` (`@davidorex/pi-context` + `@davidorex/pi-project-workflows`), always adds the built-in read-only tools `read,ls,grep,find`, appends the bounded composites declared in the active substrate's `config.tool_operations[]`, then launches `pi --tools <union> ...pi-args`. It runs from the process cwd and reads that dir's `.pi-context.json` for composites (warns, non-fatally, if absent).
+
+- `--grant <id>` (repeatable) — scope the bounded composites to only the named ids (default: all declared).
+- Any other token passes through verbatim to `pi` (e.g. `--continue` / `-c` to resume).
+
+This process mode replaces the former `scripts/launch-constrained-pi.sh` launch script.
+
 ## Directory Ownership
 
 After initialization, three directories coexist in a project:

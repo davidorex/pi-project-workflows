@@ -33,6 +33,35 @@ pi-context append-block-item --block issues --arrayKey issues --item @new-issue.
 pi-context read-block-page --block framework-gaps --offset 0 --limit 50
 ```
 
+## `pi-context pi-bound` — constrained pi session
+
+```bash
+pi-context pi-bound [--grant <id>]... [...pi-args]
+```
+
+`pi-bound` is a CLI **process mode** (not a substrate op): it launches a `pi` coding-agent session restricted to the composed pi-extension tool surface. On every launch it:
+
+1. runs `pi install -l <@davidorex/pi-project-workflows root>` to register the extensions into the target dir's `.pi/`
+2. derives the static tool allowlist from the installed packages' generated `skills/*/SKILL.md` (`@davidorex/pi-context` + `@davidorex/pi-project-workflows`)
+3. always adds the built-in read-only tools `read`, `ls`, `grep`, `find`
+4. appends the bounded composites declared in the active substrate's `config.tool_operations[]`
+5. launches `pi --tools <union> ...pi-args`
+
+It runs from the process cwd and reads that dir's `.pi-context.json` for composites (warns, non-fatally, if absent).
+
+**Flags:**
+
+- `--grant <id>` (repeatable) — scope the bounded composites to only the named ids. Default: all declared composites.
+- any other token — passed through verbatim to `pi` (e.g. `--continue` / `-c` to resume a session).
+
+```bash
+pi-context pi-bound                          # launch with the full composed tool surface
+pi-context pi-bound --grant grep-paths       # restrict composites to a single named op
+pi-context pi-bound -c                        # pass -c through to pi to resume
+```
+
+This process mode replaces the former `scripts/launch-constrained-pi.sh` launch script.
+
 ## Global flags
 
 - `--cwd <dir>` — substrate root (default: current working directory; relative paths resolve against it)

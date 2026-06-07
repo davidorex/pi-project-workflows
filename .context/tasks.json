@@ -520,7 +520,7 @@
     {
       "id": "TASK-029",
       "description": "Declare @davidorex/pi-project-workflows in pi-context-cli dependencies at the lockstep version range so pi-context --pi-bound's require.resolve('@davidorex/pi-project-workflows/package.json') resolves from an installed CLI, not only via the in-repo workspace symlink.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context-cli/package.json"
       ],
@@ -533,7 +533,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "eca4e8b70f2356fd42a71183bec24ac9",
-      "content_hash": "9d2c6eb66d8e21626fa31575bab284d92103256ace612213bb478c90e2aa6969"
+      "content_hash": "6366a7a1b30bdc11deb2e512ed8f726f2e610b0d01b06f91447002c66a807c3c",
+      "content_parent": "9d2c6eb66d8e21626fa31575bab284d92103256ace612213bb478c90e2aa6969"
     },
     {
       "id": "TASK-030",

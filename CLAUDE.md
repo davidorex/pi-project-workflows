@@ -45,6 +45,10 @@ npx tsx scripts/orchestrator/build-html-views.ts --dry-run # validate substrate 
 
 Re-run after any active-substrate `*.json` change to refresh the rendered view.
 
+## TEMPORARY — active-arc ordering tracker (retire when obsolete)
+
+While the ready/blocked deriver does not honor gating relations (`FGAP-061`), the cross-arc ordering for the current work (global `pi-context` CLI → `pi-bound` → unified `update` → governance-vocabulary release) is **not** derivable from `/context status`. Consult `analysis/2026-06-07-active-arc-ordering-tracker.md` for "what's next" / blocked / gated until `FGAP-061` lands (gate-aware derivation), then delete this note and the tracker.
+
 ## Conventions
 
 - ESM, TypeScript compiled via `tsc` to `dist/`. Pi loads `dist/index.js` from each package — runtime needs the build, not source.

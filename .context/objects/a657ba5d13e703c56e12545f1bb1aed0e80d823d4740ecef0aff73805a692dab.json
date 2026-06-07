@@ -1,0 +1,32 @@
+{
+  "title": "pi-context --help top-level listing is an unscannable flat dump — full LLM tool-descriptions, no grouping, promptSnippet unused, pi-bound undiscoverable",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "deriveTopHelp (cli.ts:406-422) renders one flat, registration-ordered line per useOps entry (49 ops) under a single 'Commands:' header, sourcing op.description — the full multi-sentence LLM-facing tool description. Its .split(\"\\n\")[0] summary attempt is inert: op descriptions are newline-free string concatenations, so the entire paragraph renders (several lines wide for ops like context-bootstrap-state / write-schema-migration). The purpose-built one-line field promptSnippet (present on all 49 OpDefinitions, ops-registry.ts:205) is never read; the name-prefix grouping signal (context-* / read-* / write-* / *-relation(s) / *-block(-nested)-item / roadmap) is unused; there is no sort. pi-bound (a hardcoded process-mode string branch, cli.ts:444, outside the ops registry) is structurally unreachable by the registry-only generator, so a real working command is undiscoverable via --help. Per-op help (deriveHelp, cli.ts:382-403) renders flags + per-field types/descriptions correctly — the defect is the top-level listing only. Reproduce via: pi-context --help (also reached by pi-context with no args, or any unknown command).",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "406-422",
+      "reference": "deriveTopHelp: flat loop over useOps (line 409); line 410 sources op.description; split('\\n')[0] inert on newline-free descriptions; no grouping/sort/short-summary"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "201-210",
+      "reference": "OpDefinition carries promptSnippet (one-line summary, on all 49 use-ops) + label (Title Case), both unused by deriveTopHelp; no explicit category/group field — name-prefix is the available grouping signal"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "444-446",
+      "reference": "pi-bound dispatched as a process-mode branch before resolveOp; not in ops; deriveTopHelp iterates only useOps so pi-bound never appears in --help"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "382-403",
+      "reference": "per-op help (deriveHelp) is correct (flags + field types/descriptions) — scope of the defect is top-level only"
+    }
+  ],
+  "impact": "The reflecting CLI is the dogfooding surface and the new-user entry point; its top-level --help is unscannable (49 paragraph-wide lines), buries the everyday ops (read-block-item / append-block-item / update-block-item / append-relation / context-validate), and hides pi-bound. Both new users and dogfooding hit a wall at the first command run.",
+  "canonical_vocabulary": "scannable grouped CLI help",
+  "proposed_resolution": "Confined to cli.ts deriveTopHelp; data-driven from existing OpDefinition fields (no ops-package change; zero risk to the in-pi LLM tool surface, which projects op.description via registerAll, not deriveTopHelp): (1) source each command line from op.promptSnippet ?? op.description (the existing short summary, not the paragraph); (2) group ops into sections by name-prefix (reads / writes / relations / schema / roadmap / substrate-lifecycle), sorted within section; (3) add a process-modes section listing pi-bound so it is discoverable; optionally flag authGated ops. Do NOT shorten op.description in place — it is the load-bearing LLM tool description."
+}

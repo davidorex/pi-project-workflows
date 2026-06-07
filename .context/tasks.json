@@ -695,7 +695,7 @@
     {
       "id": "TASK-038",
       "description": "FEAT-006 T5 — config-registry propagation. On update, additively merge catalog-new config-registry entries (relation_types, invariants, block_kinds, lenses) that are ABSENT from the existing substrate config into it, preserving the user's existing/modified registries; surfaced in output and previewed by --dry-run. Independent of the schema-merge slices (disjoint seam: the installContext config spread, the FGAP-060 site). Closes FGAP-060.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/context.ts"
@@ -708,7 +708,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "0cee5fff85482ecb49018fd65f200da8",
-      "content_hash": "8797c005be875c9d2ec4d031b1df72ee8c763a6d2c87f9cf75a1f7a199deac6c"
+      "content_hash": "cee3de94f1c5cb2666331cafeedc966b19c9a89d6f884108afd1d4b618844a78",
+      "content_parent": "8797c005be875c9d2ec4d031b1df72ee8c763a6d2c87f9cf75a1f7a199deac6c"
     },
     {
       "id": "TASK-039",

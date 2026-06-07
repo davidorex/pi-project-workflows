@@ -11,8 +11,8 @@ End state (the milestone, unbuilt as a block — FGAP-037): a user runs `pi-cont
 | # | Item | Status | Gated by / depends on | Resolves | Next action |
 |---|---|---|---|---|---|
 | 1 | **TASK-028** make pi-context globally installable (`chmod +x dist/bin.js` + npm link) | **COMPLETED** (VER-017, `a5055ad`; FGAP-047 closed) | — (root) | FGAP-047 ✓closed | done — global `pi-context` works |
-| 2 | **TASK-029** declare `@davidorex/pi-project-workflows` dep | planned · **READY** | — | FGAP-048 | **DO NEXT** — feature branch off integration branch |
-| 3 | **TASK-030** implement `pi-context pi-bound` | planned · BLOCKED | TASK-028, TASK-029 | FEAT-005 | after #1 + #2 |
+| 2 | **TASK-029** declare `@davidorex/pi-project-workflows` dep | **COMPLETED** (VER-018, `dafa2c6`; FGAP-048 closed) | — | FGAP-048 ✓closed | done — meta-package resolves |
+| 3 | **TASK-030** implement `pi-context pi-bound` | planned · **READY** | TASK-028 ✓, TASK-029 ✓ | FEAT-005 | **DO NEXT** — feature branch off integration branch |
 | 4 | **FEAT-006 decomposition** — file its ~5 tasks | proposed · undecomposed | gated on FGAP-047 (=TASK-028) | — | file tasks once #1 lands |
 | 5 | **FEAT-006 tasks** — unified update (command shell · schema drift-merge · config-registry propagation · surfaced reporting/idempotent skip · dry-run + demos) | not filed | FEAT-006 decomposition; needs TASK-028 | FGAP-046, 049, 050, 051, 060 | after #4 |
 | 6 | **TASK-033** ship governance vocab to catalog (warning) + release | planned · BLOCKED | FEAT-006 (`task_gated_by_item`) | completes FEAT-007 | after #5; release authorization-gated |

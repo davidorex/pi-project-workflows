@@ -36,11 +36,13 @@ import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
 import { getProjectMigrationRegistryForDir, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
-import { putObject } from "./object-store.js";
+import { getObject, putObject } from "./object-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
 import { validateBlockWithMigrationForDir } from "./schema-validator.js";
+import { writeSchemaCheckedForDir } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -1035,6 +1037,18 @@ export interface UpdateResult {
 	blocked: string[];
 	/** `locally-modified` / `both-diverged` schemas — refused, never overwritten (DEC-0017). */
 	refused: string[];
+	/**
+	 * `locally-modified` / `both-diverged` schemas whose recorded base, local
+	 * body, and catalog body merged conflict-free (TASK-036 — FEAT-006 T3). The
+	 * merged body was written (live run) or validated only (`dryRun`).
+	 */
+	merged: string[];
+	/**
+	 * `locally-modified` / `both-diverged` schemas whose 3-way merge surfaced
+	 * irreconcilable per-path disagreements (the merge declined to write); each
+	 * entry carries the schema `name` + its `conflicts` for reconciliation.
+	 */
+	conflicts: Array<{ name: string; conflicts: SchemaConflict[] }>;
 	/** `no-baseline` / `missing-catalog` / `missing-installed` schemas — reported, not acted on. */
 	reported: Array<{ name: string; state: CheckStatusAsset["state"] }>;
 	/** `in-sync` schemas — already current, no action. */
@@ -1061,6 +1075,18 @@ export interface UpdateResult {
  *                            overwrite; record under `refused`. The first increment
  *                            (DEC-0017) never clobbers a locally-edited schema; the
  *                            three-way merge is deferred (TASK-036).
+ *                            [TASK-036 — FEAT-006 T3, now implemented]: the merge is no
+ *                            longer deferred. BASE is reconstructed from the baseline's
+ *                            content-addressed body (`getObject(destRoot,
+ *                            installed_from.assets[name].content_hash)`) and key/path-
+ *                            merged with OURS (installed file) + THEIRS (catalog file)
+ *                            via `mergeSchema`. Conflict-free → write via
+ *                            `writeSchemaCheckedForDir` (meta-validated; `dryRun`
+ *                            validates without writing), record under `merged`; any
+ *                            conflict → record `{name, conflicts}` under `conflicts`,
+ *                            write NOTHING; no retrievable base body / parse / merge /
+ *                            validation throw → fall back to `refused`. An auto-merged
+ *                            body is base-refreshed post-loop like a resync.
  *   - `no-baseline` /
  *     `missing-catalog` /
  *     `missing-installed`  → record under `reported` (with the state) — undecidable
@@ -1081,6 +1107,8 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		migrated: [],
 		blocked: [],
 		refused: [],
+		merged: [],
+		conflicts: [],
 		reported: [],
 		inSync: [],
 	};
@@ -1145,10 +1173,51 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				break;
 			}
 			case "locally-modified":
-			case "both-diverged":
-				// Refuse-and-report (DEC-0017): never overwrite a locally-edited schema.
-				result.refused.push(name);
+			case "both-diverged": {
+				// 3-way merge (TASK-036 — FEAT-006 T3): a locally-edited schema is no
+				// longer blindly refused. Reconstruct BASE from the recorded install
+				// baseline's content-addressed body, take OURS = the installed file and
+				// THEIRS = the catalog file, and key/path-merge. Conflict-free → write
+				// (or, under dryRun, validate-only); any conflict → record + do NOT write.
+				const kind = byId.get(name);
+				if (!kind) {
+					// Mirrors the catalog-ahead arm's missing-catalog guard: a drift
+					// classification implies a catalog block_kind existed at check time;
+					// defend a race by reporting rather than throwing.
+					result.reported.push({ name, state: "missing-catalog" });
+					break;
+				}
+				const sourceFile = path.join(samplesRoot, kind.schema_path);
+				const destFile = installedSchemaDestPath(destRoot, name);
+				const baseHash = config.installed_from?.assets?.[name]?.content_hash;
+				const base = baseHash ? getObject(destRoot, baseHash) : null;
+				if (!base) {
+					// No retrievable stamped base body ⇒ no safe 3-way merge possible;
+					// fall back to refuse-and-report (DEC-0017) so the drift signal stays.
+					result.refused.push(name);
+					break;
+				}
+				try {
+					const ours = JSON.parse(fs.readFileSync(destFile, "utf-8")) as Record<string, unknown>;
+					const theirs = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+					const { merged, conflicts } = mergeSchema(base, ours, theirs);
+					if (conflicts.length === 0) {
+						// writeSchemaCheckedForDir meta-validates + guards nested-id arrays;
+						// dryRun validates without writing. The refresh loop (below) is
+						// !dryRun-guarded, so a dryRun merge stamps/refreshes nothing.
+						writeSchemaCheckedForDir(destRoot, name, merged, "replace", undefined, { dryRun });
+						result.merged.push(name);
+					} else {
+						result.conflicts.push({ name, conflicts });
+					}
+				} catch {
+					// A parse/merge/meta-validation throw must not crash the per-asset
+					// loop; fall back to refuse-and-report so the schema keeps its drift
+					// signal and is surfaced for manual reconciliation.
+					result.refused.push(name);
+				}
 				break;
+			}
 			default:
 				// no-baseline / missing-catalog / missing-installed — undecidable or
 				// absent; report with the state, take no action.
@@ -1166,7 +1235,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// refresh ONLY the resynced/migrated assets so a `refused` (locally-modified)
 	// schema KEEPS its drift signal (re-fingerprinting it would falsely mark it
 	// in-sync). dryRun performs no writes, so it never refreshes.
-	const brought_current = [...result.resynced, ...result.migrated];
+	const brought_current = [...result.resynced, ...result.migrated, ...result.merged];
 	if (!dryRun && brought_current.length > 0) {
 		// Reload config so the merge is against current on-disk config (resyncSchema
 		// mutates block + migrations files, not config.json, but reloading keeps this

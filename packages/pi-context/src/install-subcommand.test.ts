@@ -622,12 +622,18 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		return dest;
 	}
 
-	it("(a) refuses to overwrite a locally-modified installed schema — recorded in refused, bytes unchanged", () => {
+	// TASK-036 — FEAT-006 T3: a locally-modified schema is now 3-way-merged rather
+	// than blindly refused. The refuse-and-report path remains ONLY as the no-safe-
+	// base fallback: with no retrievable stamped BASE body (here the object-store
+	// object is deleted), the merge cannot run → the schema falls back to `refused`,
+	// keeping its drift signal, and its file is left byte-unchanged (no crash).
+	it("(a) a locally-modified schema with NO retrievable base body falls back to refused, bytes unchanged", () => {
 		tmpRoot = makeProject(["tasks", "decisions"], []);
 		installContext(tmpRoot);
+		const substrateDir = path.join(tmpRoot, ".project");
 		// Hand-edit the INSTALLED tasks schema so its content diverges from the
 		// recorded baseline while the catalog stays equal → locally-modified.
-		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const dest = path.join(substrateDir, "schemas", "tasks.schema.json");
 		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
 		obj.__local_edit_marker = true;
 		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
@@ -637,15 +643,28 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 			"locally-modified",
 			"precondition: the hand-edited schema must be locally-modified",
 		);
+		// Remove the stamped BASE body so getObject(baseHash) returns null → no safe
+		// 3-way merge → refuse-and-report fallback.
+		const baseHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
+		assert.ok(baseHash, "precondition: tasks must have a recorded baseline content_hash");
+		assert.ok(
+			getObject(substrateDir, baseHash) !== null,
+			"precondition: the base body must be stamped before deletion",
+		);
+		const objectPath = path.join(substrateDir, "objects", `${baseHash}.json`);
+		fs.unlinkSync(objectPath);
+		assert.equal(getObject(substrateDir, baseHash), null, "precondition: the base body must be gone");
+
 		const before = fs.readFileSync(dest);
 		const result = updateContext(tmpRoot);
-		assert.deepEqual(result.refused, ["tasks"], "a locally-modified schema must be refused, never resynced");
+		assert.deepEqual(result.refused, ["tasks"], "no retrievable base body → fall back to refused");
+		assert.deepEqual(result.merged, [], "with no base body the schema must NOT be merged");
+		assert.deepEqual(result.conflicts, [], "a refused-fallback raises no conflict record");
 		assert.ok(!result.resynced.includes("tasks"), "a locally-modified schema must NOT be resynced");
-		assert.ok(!result.migrated.includes("tasks"), "a locally-modified schema must NOT be migrated");
 		assert.deepEqual(result.inSync, ["decisions"], "the untouched sibling stays in-sync (no-op)");
 		assert.ok(
 			fs.readFileSync(dest).equals(before),
-			"the locally-modified schema file must be byte-unchanged (refuse-and-report writes nothing to it)",
+			"the refused schema file must be byte-unchanged (refuse-and-report writes nothing to it)",
 		);
 	});
 
@@ -749,7 +768,14 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		const plan = updateContext(tmpRoot, { dryRun: true });
 		assert.equal(plan.dryRun, true, "the plan must declare it is a dry run");
 		assert.deepEqual(plan.resynced, ["tasks"], "catalog-ahead schema appears in the would-resync set");
-		assert.deepEqual(plan.refused, ["decisions"], "locally-modified schema appears in the refused set");
+		// TASK-036 — FEAT-006 T3: a locally-modified schema is no longer blindly
+		// refused. `decisions` here is locally-modified with base === catalog (only
+		// ours diverges), so its 3-way merge is conflict-free → it routes into
+		// `merged` (the would-merge set), NOT `refused`. Under dryRun the merge is
+		// validate-only — nothing is written (asserted byte-for-byte below).
+		assert.deepEqual(plan.merged, ["decisions"], "a conflict-free locally-modified merge appears in the merged set");
+		assert.deepEqual(plan.refused, [], "no schema lacks a base body, so nothing falls back to refused");
+		assert.deepEqual(plan.conflicts, [], "the disjoint merge raises no conflicts");
 		assert.deepEqual(plan.inSync, ["work-orders"], "in-sync schema appears as a no-op");
 
 		// The load-bearing assertion: NOTHING on disk changed under dryRun.
@@ -763,5 +789,200 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 			objectsBefore,
 			"dryRun must base-stamp nothing — the objects/ store listing must be unchanged",
 		);
+	});
+
+	// ---- TASK-036 — FEAT-006 T3: 3-way installed/baseline/catalog schema merge ----
+	//
+	// All three sides must differ for the merge to be exercised non-trivially, but
+	// the catalog (THEIRS) is the shared packaged samples file and must not be
+	// mutated. So we synthesize divergence via the stale-baseline trick: edit the
+	// installed body to form BASE, re-install (re-baseline FROM the edited body), so
+	// BASE diverges from the catalog; the catalog stays the original (THEIRS). Then
+	// edit the installed body again to form OURS. This yields BASE ≠ THEIRS and
+	// OURS ≠ BASE — a `both-diverged` node that the merge resolves.
+	//
+	// `nudgeAt`/`readAt` operate on the nested item-property path
+	// `properties.tasks.items.properties` (where the per-task field schemas live).
+	const TASKS_ITEM_PROPS = ["properties", "tasks", "items", "properties"] as const;
+	function deepGet(obj: Record<string, unknown>, pathSegs: readonly string[]): Record<string, unknown> {
+		let cur: Record<string, unknown> = obj;
+		for (const seg of pathSegs) cur = cur[seg] as Record<string, unknown>;
+		return cur;
+	}
+	/**
+	 * Build a `both-diverged` tasks fixture and return the dest path. `baseMut`
+	 * mutates the installed item-properties to form BASE (then re-install bakes it
+	 * as the baseline, diverging BASE from the catalog); `oursMut` then mutates the
+	 * installed item-properties to form OURS on top of BASE.
+	 */
+	function makeBothDivergedTasks(
+		baseMut: (itemProps: Record<string, unknown>) => void,
+		oursMut: (itemProps: Record<string, unknown>) => void,
+	): string {
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		installContext(tmpRoot);
+		// Form BASE.
+		const baseObj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		baseMut(deepGet(baseObj, TASKS_ITEM_PROPS));
+		fs.writeFileSync(dest, JSON.stringify(baseObj, null, 2));
+		installContext(tmpRoot); // re-baseline FROM the edited body → BASE ≠ catalog(THEIRS)
+		// Form OURS on top of BASE.
+		const oursObj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		oursMut(deepGet(oursObj, TASKS_ITEM_PROPS));
+		fs.writeFileSync(dest, JSON.stringify(oursObj, null, 2));
+		return dest;
+	}
+
+	it("(d) disjoint divergence auto-merges: ours adds a field, catalog keeps a field base dropped → both present", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// BASE drops the catalog's `notes` field (so THEIRS appears to have ADDED it
+		// relative to BASE); OURS adds a brand-new `__ours_field`.
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				delete p.notes;
+			},
+			(p) => {
+				p.__ours_field = { type: "string" };
+			},
+		);
+		// Precondition: tasks is both-diverged (installed ≠ baseline ≠ catalog).
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"both-diverged",
+			"precondition: tasks must be both-diverged",
+		);
+		const before = fs.readFileSync(dest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, ["tasks"], "a conflict-free 3-way merge must land in merged");
+		assert.deepEqual(result.conflicts, [], "a disjoint merge raises no conflicts");
+		assert.deepEqual(result.refused, [], "a merged schema is never refused");
+		// The written body carries BOTH the catalog-kept field AND the local add.
+		const written = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		const writtenProps = deepGet(written, TASKS_ITEM_PROPS);
+		assert.ok("notes" in writtenProps, "the catalog-kept `notes` field must survive the merge");
+		assert.ok("__ours_field" in writtenProps, "the local `__ours_field` add must survive the merge");
+		assert.ok(!fs.readFileSync(dest).equals(before), "a live merge must rewrite the schema file");
+	});
+
+	it("(e) same-node divergence conflicts: ours + catalog give a field different types → conflict, bytes unchanged", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// BASE changes `notes.type` to "number" (diverging from the catalog's "string");
+		// OURS changes the SAME node to "boolean". THEIRS (catalog) stays "string".
+		// All three differ at properties.tasks.items.properties.notes.type → conflict.
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "number";
+			},
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "boolean";
+			},
+		);
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"both-diverged",
+			"precondition: tasks must be both-diverged",
+		);
+		const before = fs.readFileSync(dest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, [], "a conflicting merge must NOT land in merged");
+		assert.equal(result.conflicts.length, 1, "the conflict must be recorded");
+		assert.equal(result.conflicts[0].name, "tasks");
+		assert.ok(
+			result.conflicts[0].conflicts.some((c) => c.path === "properties.tasks.items.properties.notes.type"),
+			"the recorded conflict path must point at the divergent node",
+		);
+		assert.ok(
+			fs.readFileSync(dest).equals(before),
+			"a conflicting merge must write NOTHING — the schema file is byte-unchanged",
+		);
+	});
+
+	it("(f) enum widening on both sides set-unions without conflict", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// BASE narrows status.enum to a single value (so THEIRS, the catalog, appears
+		// to have ADDED the rest); OURS adds a brand-new enum value. Set-union keeps
+		// the catalog values AND the local add.
+		let catalogEnum: string[] = [];
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				const statusEnum = (p.status as Record<string, unknown>).enum as string[];
+				catalogEnum = [...statusEnum];
+				(p.status as Record<string, unknown>).enum = [statusEnum[0]];
+			},
+			(p) => {
+				const e = (p.status as Record<string, unknown>).enum as string[];
+				(p.status as Record<string, unknown>).enum = [...e, "__ours_status"];
+			},
+		);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, ["tasks"], "an enum set-union must auto-merge");
+		assert.deepEqual(result.conflicts, [], "a set-union raises no conflict");
+		const written = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		const mergedEnum = (deepGet(written, TASKS_ITEM_PROPS).status as Record<string, unknown>).enum as string[];
+		for (const v of catalogEnum) {
+			assert.ok(mergedEnum.includes(v), `the catalog enum value ${v} must survive the set-union`);
+		}
+		assert.ok(mergedEnum.includes("__ours_status"), "the local enum add must survive the set-union");
+	});
+
+	it("(g) delete-vs-modify conflicts: ours deletes a field the catalog modified → conflict", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// BASE changes notes.type to "number" (so THEIRS=catalog="string" is a MODIFY
+		// vs base); OURS deletes the whole notes node. delete-vs-modify → conflict.
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "number";
+			},
+			(p) => {
+				delete p.notes;
+			},
+		);
+		const before = fs.readFileSync(dest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, [], "a delete-vs-modify must not auto-merge");
+		assert.equal(result.conflicts.length, 1, "the delete-vs-modify must be recorded as a conflict");
+		assert.equal(result.conflicts[0].name, "tasks");
+		assert.ok(
+			result.conflicts[0].conflicts.some((c) => c.path === "properties.tasks.items.properties.notes"),
+			"the conflict path must point at the deleted-vs-modified node",
+		);
+		assert.ok(fs.readFileSync(dest).equals(before), "a conflicting merge writes nothing");
+	});
+
+	it("(h) an auto-merged schema is re-baselined: baseline refreshes to the merged body, which is base-stamped", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		const substrateDir = path.join(tmpRoot, ".project");
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				delete p.notes;
+			},
+			(p) => {
+				p.__ours_field = { type: "string" };
+			},
+		);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, ["tasks"], "precondition: tasks must auto-merge");
+		// The merged body passes meta-validation (writeSchemaCheckedForDir would have
+		// thrown otherwise) and re-baselines (baseline := the merged body). Because the
+		// merged body retains a local-only field the catalog lacks, a follow-up
+		// check-status no longer sees a LOCAL edit (installed === new baseline) but
+		// still sees the catalog as ahead of the new baseline → catalog-ahead (NOT
+		// both-diverged): the merge collapsed the local-divergence axis.
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"catalog-ahead",
+			"after an auto-merge the local-divergence axis collapses (installed === new baseline)",
+		);
+		// The refreshed baseline hash has a retrievable stamped body that round-trips.
+		const refreshedHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
+		assert.ok(refreshedHash, "the merge must refresh the baseline content_hash");
+		assert.equal(
+			refreshedHash,
+			computeContentHash(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>),
+			"the refreshed baseline hash must equal the merged body's hash",
+		);
+		const body = getObject(substrateDir, refreshedHash);
+		assert.ok(body, "the merged body must be base-stamped under the refreshed baseline hash");
+		assert.equal(computeContentHash(body), refreshedHash, "the stamped merged body must round-trip to its hash");
 	});
 });

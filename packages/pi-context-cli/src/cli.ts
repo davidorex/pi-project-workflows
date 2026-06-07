@@ -36,6 +36,7 @@ import {
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
 import { runPiBound } from "./pi-bound.js";
+import { resolveConflicts } from "./resolve-conflicts.js";
 
 /**
  * The surfaced command set: every op the CLI exposes. Derived by reflection —
@@ -511,6 +512,25 @@ export async function main(argv: string[]): Promise<number> {
 			// Default text surface stays byte-identical to before: the shared renderer
 			// reproduces each op's prior `run()` text (prose / JSON.stringify / read footer).
 			process.stdout.write(`${renderOpResultText(r)}\n`);
+		}
+
+		// TASK-037 — FEAT-006 T4: the `update` op returns the whole UpdateResult under
+		// `{ json }`; if it recorded any irreconcilable 3-way-merge conflicts, route them
+		// to the conflict RESOLVER. Interactive (both stdin+stdout a TTY, and not --json)
+		// → dispatch a `pi-bound` mergetool per conflicting schema; otherwise → render a
+		// read-only conflict report. The op's own output is printed above first; the op
+		// itself is not changed. A non-`update` op, or an `update` with no conflicts, is a
+		// no-op here.
+		if (op.name === "update" && r && typeof r === "object" && "json" in r) {
+			const update = (r as { json: { conflicts?: Array<{ name: string; conflicts: unknown[] }> } }).json;
+			const conflicts = update?.conflicts;
+			if (Array.isArray(conflicts) && conflicts.length > 0) {
+				const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) && !parsed.json;
+				await resolveConflicts(conflicts as Parameters<typeof resolveConflicts>[0], {
+					cwd: parsed.cwd,
+					interactive,
+				});
+			}
 		}
 		return 0;
 	} catch (err) {

@@ -1237,45 +1237,135 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// in-sync). dryRun performs no writes, so it never refreshes.
 	const brought_current = [...result.resynced, ...result.migrated, ...result.merged];
 	if (!dryRun && brought_current.length > 0) {
-		// Reload config so the merge is against current on-disk config (resyncSchema
-		// mutates block + migrations files, not config.json, but reloading keeps this
-		// write self-contained + robust to any prior config write in this process).
-		const current = loadConfig(cwd);
-		if (current?.installed_from) {
-			const refreshedAssets: Record<string, { content_hash: string; version: string }> = {
-				...current.installed_from.assets,
-			};
-			for (const name of brought_current) {
-				const destSchemaFile = installedSchemaDestPath(destRoot, name);
-				if (!fs.existsSync(destSchemaFile)) continue;
-				// Safety default mirrors installContext: a present-but-corrupt schema is
-				// skipped from the refresh (its stale baseline entry is left as-is)
-				// rather than crashing the update.
-				try {
-					const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
-					const content_hash = computeFileContentHash(destSchemaFile);
-					// Base-stamp (TASK-035 / FEAT-006 T2): persist the resynced schema body
-					// into the content-addressed object store keyed by its NEW baseline
-					// content_hash, so the refreshed merge base is retrievable (TASK-036
-					// precondition). Inside the !dryRun guard, so dry-run stamps nothing.
-					// Idempotent; reuses the already-parsed schemaJson + computed content_hash.
-					putObject(destRoot, content_hash, schemaJson as Record<string, unknown>);
-					refreshedAssets[name] = {
-						content_hash,
-						version: typeof schemaJson.version === "string" ? schemaJson.version : "",
-					};
-				} catch {}
-			}
-			const installed_from = {
-				...current.installed_from,
-				at: new Date().toISOString(),
-				assets: refreshedAssets,
-			};
-			writeConfig(cwd, { ...current, installed_from });
+		// Refresh the install baseline + base-stamp the body for each schema this run
+		// actually brought current, via the shared `refreshBaselineForSchema` helper
+		// (TASK-037 — FEAT-006 T4 DRY-out of the prior inline body). The helper owns
+		// its own per-name config load + content-addressed stamp + config write, and
+		// is internally guarded against an absent / corrupt schema file (returns
+		// false, leaving the stale baseline entry untouched) — so a present-but-
+		// corrupt schema is skipped rather than crashing the update, mirroring the
+		// prior inline safety default. A `refused` (locally-modified) schema is NOT
+		// in `brought_current`, so it keeps its drift signal (re-fingerprinting it
+		// would falsely mark it in-sync). dryRun is excluded by the outer guard, so a
+		// dry-run never refreshes.
+		for (const name of brought_current) {
+			refreshBaselineForSchema(cwd, name);
 		}
 	}
 
 	return result;
+}
+
+/**
+ * Reconstruct the three-way merge inputs for one `locally-modified` /
+ * `both-diverged` schema (TASK-037 — FEAT-006 T4). Replicates EXACTLY the
+ * base/ours/theirs resolution `updateContext`'s merge arm performs, so the
+ * conflict RESOLVER reconciles against the SAME bodies the `update` op merged:
+ *
+ *   - BASE   = the content-addressed body stored under the install baseline's
+ *              recorded `content_hash` (`getObject(destRoot, hash)`).
+ *   - OURS   = the currently-installed schema file (`installedSchemaDestPath`).
+ *   - THEIRS = the catalog's current schema file (`samplesRoot/<kind.schema_path>`,
+ *              resolved via the SAME `resolveCatalog` map the installer + detector use).
+ *
+ * Returns `null` (never throws) when the substrate / config / catalog kind /
+ * stamped base body is absent or any read/parse fails — the caller treats a
+ * `null` as "no safe merge inputs, fall back to a report". Pure read; no writes.
+ */
+export function getConflictMergeInputs(
+	cwd: string,
+	name: string,
+): { base: Record<string, unknown>; ours: Record<string, unknown>; theirs: Record<string, unknown> } | null {
+	try {
+		const destRoot = tryResolveContextDir(cwd);
+		if (destRoot === null) return null;
+		const config = loadConfig(cwd);
+		if (!config) return null;
+		const { samplesRoot, byId } = resolveCatalog();
+		const kind = byId.get(name);
+		if (!kind) return null;
+		const baseHash = config.installed_from?.assets?.[name]?.content_hash;
+		if (!baseHash) return null;
+		const base = getObject(destRoot, baseHash);
+		if (!base) return null;
+		const ours = JSON.parse(fs.readFileSync(installedSchemaDestPath(destRoot, name), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		const theirs = JSON.parse(fs.readFileSync(path.join(samplesRoot, kind.schema_path), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		return { base, ours, theirs };
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Re-stamp the install baseline (`config.installed_from.assets[name]`) for one
+ * schema from its CURRENT on-disk body (TASK-037 — FEAT-006 T4). Self-contained
+ * + idempotent: it owns its config load + write, so the conflict RESOLVER can
+ * call it standalone after an interactive mergetool has (or has not) rewritten
+ * the installed schema file:
+ *
+ *   - returns `false` (no write) when the installed schema file is absent, OR
+ *     its freshly-computed `content_hash` already equals the recorded baseline
+ *     hash (a true no-op — nothing was reconciled / written).
+ *   - otherwise stamps the new body into the content-addressed object store
+ *     (`putObject`) under its new `content_hash`, sets
+ *     `config.installed_from.assets[name] = { content_hash, version }`, writes
+ *     the config, and returns `true` — so a NON-equal new hash signals "the
+ *     mergetool reconciled this schema" to the resolver's resolved/unresolved
+ *     tally. Mirrors `updateContext`'s post-loop refresh body for ONE name.
+ */
+export function refreshBaselineForSchema(cwd: string, name: string): boolean {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) return false;
+	const config = loadConfig(cwd);
+	if (!config?.installed_from) return false;
+	const destFile = installedSchemaDestPath(destRoot, name);
+	if (!fs.existsSync(destFile)) return false;
+	const newHash = computeFileContentHash(destFile);
+	if (newHash === config.installed_from.assets?.[name]?.content_hash) return false;
+	const body = JSON.parse(fs.readFileSync(destFile, "utf-8")) as { version?: string };
+	putObject(destRoot, newHash, body as Record<string, unknown>);
+	const installed_from = {
+		...config.installed_from,
+		at: new Date().toISOString(),
+		assets: {
+			...config.installed_from.assets,
+			[name]: { content_hash: newHash, version: typeof body.version === "string" ? body.version : "" },
+		},
+	};
+	writeConfig(cwd, { ...config, installed_from });
+	return true;
+}
+
+/**
+ * Render an `UpdateResult["conflicts"]` set as a readable conflict report
+ * (TASK-037 — FEAT-006 T4) — the non-interactive resolution surface (mirrors
+ * `renderCheckStatus`'s grouping style). One section per conflicting schema
+ * `name`, then each irreconcilable `{ path, base, ours, theirs }` with its three
+ * values JSON-compacted for a side-by-side scan. Pure: no I/O, no writes.
+ */
+export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
+	const lines: string[] = [];
+	lines.push("Schema merge conflicts — manual reconciliation required (no writes performed):");
+	if (conflicts.length === 0) {
+		lines.push("  (no conflicts)");
+		return lines.join("\n");
+	}
+	for (const { name, conflicts: set } of conflicts) {
+		lines.push(`  ${name} (${set.length} conflict${set.length === 1 ? "" : "s"}):`);
+		for (const c of set) {
+			lines.push(`    ${c.path}`);
+			lines.push(`      base:   ${JSON.stringify(c.base)}`);
+			lines.push(`      ours:   ${JSON.stringify(c.ours)}`);
+			lines.push(`      theirs: ${JSON.stringify(c.theirs)}`);
+		}
+	}
+	return lines.join("\n");
 }
 
 /**
@@ -2063,3 +2153,8 @@ export {
 	topoSort,
 	validateRoadmaps,
 } from "./roadmap-plan.js";
+// Re-export the 3-way merge conflict type so cross-package consumers (the
+// pi-context-cli conflict resolver, TASK-037) can type `UpdateResult.conflicts`
+// against the public `@davidorex/pi-context` surface without reaching into the
+// unexported `./schema-merge` subpath.
+export type { SchemaConflict } from "./schema-merge.js";

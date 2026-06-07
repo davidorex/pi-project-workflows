@@ -8,9 +8,9 @@ Purpose: the actionable, topologically-ordered "what's next", hand-maintained un
 ## Current focus — two active arcs
 
 **A. Complete `pi-context update` (FEAT-006) to its own guarantee.** T1–T4 (shell, base-stamp, merge, resolver) are done + verified; FEAT-006 stays `in-progress` until both remaining slices land:
-- **TASK-038** — config-registry propagation on update (closes **FGAP-060**): an existing substrate additively receives catalog-new relation_types / invariants / block_kinds / lenses, preserving user entries; surfaced + `--dryRun`-previewed.
-- **TASK-039** — surfaced mutation reporting + idempotent block skip (closes **FGAP-050 + FGAP-051**): the update output enumerates every mutation (schema re-syncs/merges, migration-declaration registrations into migrations.json, block starters); `--dryRun` lists them; an unchanged catalog-origin block is not rewritten.
-Until both land, the `update` result is schema-actions-only and does NOT meet FEAT-006's "every mutation enumerated / config registries propagated" acceptance criteria; `update` must not be presented as fulfilling its guarantee.
+- **TASK-038** ✓ **done** (VER-025; **FGAP-060 closed**) — config-registry propagation on update: an existing substrate additively receives catalog-new relation_types / invariants / block_kinds / lenses, preserving user entries; `registryAdditions` surfaced + `--dryRun`-previewed. (Follow-up **FGAP-065** filed: a newly-merged block_kind's schema/starter materialization is the declaration-only half's complement — out of scope here.)
+- **TASK-039** (next, only remaining FEAT-006 slice) — surfaced mutation reporting + idempotent block skip (closes **FGAP-050 + FGAP-051**): the update output enumerates every mutation (schema re-syncs/merges, migration-declaration registrations into migrations.json, block starters); `--dryRun` lists them; an unchanged catalog-origin block is not rewritten.
+Until TASK-039 lands, the `update` result does NOT yet meet FEAT-006's "every mutation enumerated" acceptance criterion; `update` must not be presented as fulfilling its full guarantee.
 
 **B. The best-of-breed `pi-context` CLI surface.** 10 open `pi-context-cli` UX gaps. Grounded in `analysis/2026-06-07-pi-context-cli-release-readiness-audit.md` (real runtime evidence + the complete set). Candidate to bind as a `best-of-breed CLI surface` feature and decompose into pipelineable tasks per the `feature-decomposition` convention:
 - **Help / discovery** — FGAP-062 (scannable grouped `--help`; surface `promptSnippet`; expose `pi-bound`).

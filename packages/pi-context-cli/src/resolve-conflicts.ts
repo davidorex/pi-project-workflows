@@ -14,10 +14,13 @@
  *   - interactive     → per conflicting schema, dispatch an interactive
  *     `pi-bound` mergetool agent (its bounded tool surface already grants
  *     `read-schema` + `write-schema`; the auth-gate confirms the live write).
- *     After the agent returns, re-fingerprint the installed schema file via
- *     `refreshBaselineForSchema`: a CHANGED hash ⇒ the mergetool reconciled it
- *     (recorded `resolved`); an UNCHANGED hash ⇒ it did not (recorded
- *     `unresolved`).
+ *     The installed schema file's on-disk content hash is snapshotted BEFORE
+ *     and AFTER the session (`installedSchemaOnDiskHash`): an AFTER that differs
+ *     from BEFORE ⇒ the mergetool wrote a reconciled body — re-baseline it
+ *     (`refreshBaselineForSchema`) and record `resolved`; an unchanged AFTER ⇒
+ *     no write — record `unresolved` and leave the baseline at BASE (so the
+ *     schema stays conflicting on the next update; the conflict is NOT
+ *     swallowed).
  *
  * The loop is failure-isolated: a missing merge input or a per-schema throw is
  * caught and recorded (never re-thrown out of `resolveConflicts`), so one
@@ -30,6 +33,7 @@
 import type { spawn } from "node:child_process";
 import {
 	getConflictMergeInputs,
+	installedSchemaOnDiskHash,
 	refreshBaselineForSchema,
 	renderConflicts,
 	type SchemaConflict,
@@ -54,9 +58,9 @@ export interface ResolveDeps {
 
 /** The per-schema disposition tally returned by {@link resolveConflicts}. */
 export interface ResolveResult {
-	/** Schemas whose installed body CHANGED after the mergetool ran (reconciled + re-baselined). */
+	/** Schemas whose installed body CHANGED during the session (agent reconciled + re-baselined). */
 	resolved: string[];
-	/** Schemas the mergetool left byte-unchanged, OR a per-schema throw / missing-input fallback. */
+	/** Schemas left byte-unchanged (no write), OR a per-schema throw / missing-input fallback. */
 	unresolved: string[];
 	/** Schemas surfaced through the non-interactive report (no mergetool dispatched). */
 	reported: string[];
@@ -99,15 +103,21 @@ export async function resolveConflicts(
 				continue;
 			}
 			const prompt = buildReconcilePrompt(name, set, inputs);
+			// Snapshot the installed body's on-disk hash before and after the session:
+			// an AFTER differing from BEFORE means the mergetool wrote a reconciled
+			// body → re-baseline + resolved; an unchanged AFTER means no write →
+			// unresolved with NO refresh (the baseline stays BASE, so the schema stays
+			// conflicting on the next update — the conflict is NOT swallowed).
+			const before = installedSchemaOnDiskHash(deps.cwd, name);
 			await runPiBound(["-p", prompt], {
 				cwd: deps.cwd,
 				spawn: deps.spawn,
 				stderr: deps.stderr,
 				skillRoots: deps.skillRoots,
 			});
-			// A CHANGED installed-body hash signals the mergetool wrote a reconciled
-			// draft; an UNCHANGED hash signals it did not reconcile this schema.
-			if (refreshBaselineForSchema(deps.cwd, name)) {
+			const after = installedSchemaOnDiskHash(deps.cwd, name);
+			if (after !== null && after !== before) {
+				refreshBaselineForSchema(deps.cwd, name);
 				result.resolved.push(name);
 			} else {
 				result.unresolved.push(name);

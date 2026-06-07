@@ -1303,6 +1303,29 @@ export function getConflictMergeInputs(
 }
 
 /**
+ * Content hash of the installed schema file for one `name` (TASK-037 —
+ * FEAT-006 T4). Resolves the active substrate's dest root and the installed
+ * schema dest path, then returns `computeFileContentHash` of that file. Returns
+ * `null` (never throws) when the substrate dir is unresolvable, the installed
+ * file is absent, or the read/parse throws. The conflict RESOLVER snapshots
+ * this BEFORE and AFTER an interactive mergetool session: a difference between
+ * the two snapshots is the resolver's change-detector (the agent wrote a
+ * reconciled body), distinct from `refreshBaselineForSchema`'s baseline
+ * comparison.
+ */
+export function installedSchemaOnDiskHash(cwd: string, name: string): string | null {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) return null;
+	const destFile = installedSchemaDestPath(destRoot, name);
+	if (!fs.existsSync(destFile)) return null;
+	try {
+		return computeFileContentHash(destFile);
+	} catch {
+		return null;
+	}
+}
+
+/**
  * Re-stamp the install baseline (`config.installed_from.assets[name]`) for one
  * schema from its CURRENT on-disk body (TASK-037 — FEAT-006 T4). Self-contained
  * + idempotent: it owns its config load + write, so the conflict RESOLVER can
@@ -1315,9 +1338,15 @@ export function getConflictMergeInputs(
  *   - otherwise stamps the new body into the content-addressed object store
  *     (`putObject`) under its new `content_hash`, sets
  *     `config.installed_from.assets[name] = { content_hash, version }`, writes
- *     the config, and returns `true` — so a NON-equal new hash signals "the
- *     mergetool reconciled this schema" to the resolver's resolved/unresolved
- *     tally. Mirrors `updateContext`'s post-loop refresh body for ONE name.
+ *     the config, and returns `true`.
+ *
+ * This is a pure idempotent re-stamp action (re-stamps the on-disk body as the
+ * new baseline; false when the file is absent or its hash already equals the
+ * baseline). It is NOT the resolver's change-detector: the resolver decides
+ * resolved/unresolved from a before/after on-disk-hash snapshot
+ * (`installedSchemaOnDiskHash`), then calls this only to re-baseline a body it
+ * has already determined changed. Mirrors `updateContext`'s post-loop refresh
+ * body for ONE name.
  */
 export function refreshBaselineForSchema(cwd: string, name: string): boolean {
 	const destRoot = tryResolveContextDir(cwd);

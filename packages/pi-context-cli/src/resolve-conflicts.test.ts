@@ -7,6 +7,7 @@ import path from "node:path";
 import { test } from "node:test";
 import type { SchemaConflict } from "@davidorex/pi-context";
 import { checkStatus, installContext } from "@davidorex/pi-context";
+import { computeContentHash } from "@davidorex/pi-context/content-hash";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { resolveConflicts } from "./resolve-conflicts.js";
 
@@ -28,6 +29,42 @@ function makeFakeSpawn(): { spawn: typeof spawn; calls: SpawnCall[] } {
 		return child;
 	}) as unknown as typeof spawn;
 	return { spawn: fake, calls };
+}
+
+// A writing fake spawn that, on the `pi -p` mergetool launch (NOT the prior
+// `pi install -l` call), mutates the installed `tasks` schema file to a
+// reconciled body BEFORE emitting exit-0 — modelling an agent that actually
+// reconciled + wrote. `reconcile(installedPath)` performs the write and returns
+// the reconciled body so the test can assert the re-stamped baseline hash.
+function makeWritingFakeSpawn(reconcile: (installedPath: string) => Record<string, unknown>): {
+	spawn: typeof spawn;
+	calls: SpawnCall[];
+	reconciledBody: () => Record<string, unknown> | null;
+} {
+	const calls: SpawnCall[] = [];
+	let reconciled: Record<string, unknown> | null = null;
+	const fake = ((command: string, args: string[], opts: { cwd?: string }) => {
+		calls.push({ command, args, cwd: opts?.cwd });
+		const child = new EventEmitter();
+		// Only the `-p` launch represents the mergetool agent writing a draft; the
+		// first spawn is `pi install -l <metaRoot>` and writes nothing.
+		if (args.includes("-p") && opts?.cwd) {
+			const installedPath = path.join(opts.cwd, ".project", "schemas", "tasks.schema.json");
+			reconciled = reconcile(installedPath);
+		}
+		queueMicrotask(() => child.emit("exit", 0));
+		return child;
+	}) as unknown as typeof spawn;
+	return { spawn: fake, calls, reconciledBody: () => reconciled };
+}
+
+// Read `config.installed_from.assets.tasks.content_hash` from the substrate's
+// config — the recorded install baseline the resolver may (or may not) re-stamp.
+function readBaselineHash(cwd: string): string | undefined {
+	const config = JSON.parse(fs.readFileSync(path.join(cwd, ".project", "config.json"), "utf-8")) as {
+		installed_from?: { assets?: Record<string, { content_hash?: string }> };
+	};
+	return config.installed_from?.assets?.tasks?.content_hash;
 }
 
 // A skillRoot with one SKILL.md declaring tools, so runPiBound's static-tool
@@ -115,6 +152,7 @@ test("interactive: dispatches pi-bound mergetool with a -p prompt embedding the 
 			"both-diverged",
 			"precondition: tasks must be both-diverged so merge inputs resolve",
 		);
+		const baselineBefore = readBaselineHash(cwd);
 		const result = await resolveConflicts(oneConflict, {
 			cwd,
 			interactive: true,
@@ -131,13 +169,51 @@ test("interactive: dispatches pi-bound mergetool with a -p prompt embedding the 
 		assert.match(prompt, /"tasks"/, "the prompt names the conflicting schema");
 		assert.match(prompt, new RegExp(CONFLICT_PATH.replace(/\./g, "\\.")), "the prompt embeds the conflict path");
 		assert.match(prompt, /write-schema/, "the prompt instructs writing via write-schema");
-		// Per the resolver's spec'd contract, the post-dispatch disposition is
-		// refreshBaselineForSchema's verdict: it returns true whenever the installed
-		// body's hash differs from the RECORDED baseline hash. A both-diverged schema
-		// already has on-disk (OURS) ≠ baseline (BASE) before dispatch, so the verdict
-		// is `resolved` here — the spawn shape is what this case asserts.
-		assert.deepEqual(result.resolved, ["tasks"], "a both-diverged installed body (≠ baseline) re-baselines → resolved");
-		assert.deepEqual(result.unresolved, [], "nothing falls into unresolved in this case");
+		// The no-op fake spawn writes NOTHING, so the installed body's on-disk hash is
+		// identical before and after the session. The resolver decides from that
+		// before/after snapshot — not from the body-vs-baseline comparison — so a
+		// byte-unchanged session is `unresolved`, and the baseline is left at BASE (no
+		// silent re-stamp of OURS). The conflict survives to the next update.
+		assert.deepEqual(result.unresolved, ["tasks"], "a no-op (no-write) session is unresolved");
+		assert.deepEqual(result.resolved, [], "nothing is resolved when the mergetool wrote nothing");
+		assert.equal(readBaselineHash(cwd), baselineBefore, "the baseline must be UNCHANGED — no silent re-stamp");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+		rmSync(skillRoot, { recursive: true, force: true });
+	}
+});
+
+// ── 1b. interactive + the mergetool WRITES a reconciled body → resolved ───────
+test("interactive: a session that writes a reconciled body resolves + re-stamps the baseline to the new on-disk body", async () => {
+	const cwd = makeBothDivergedSubstrate();
+	const skillRoot = seedSkillRoot();
+	// On the `-p` launch, mutate the installed body's conflicting node to a third
+	// distinct value ("integer"; BASE=number / OURS=boolean / THEIRS=string), write
+	// it back, and return the reconciled body for the re-stamp assertion.
+	const { spawn: writingSpawn, reconciledBody } = makeWritingFakeSpawn((installedPath) => {
+		const body = JSON.parse(fs.readFileSync(installedPath, "utf-8")) as Record<string, unknown>;
+		(deepGet(body, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type = "integer";
+		fs.writeFileSync(installedPath, JSON.stringify(body, null, 2));
+		return body;
+	});
+	try {
+		const baselineBefore = readBaselineHash(cwd);
+		const result = await resolveConflicts(oneConflict, {
+			cwd,
+			interactive: true,
+			spawn: writingSpawn,
+			stderr: sink(),
+			skillRoots: [skillRoot],
+		});
+		assert.deepEqual(result.resolved, ["tasks"], "a session that changed the installed body resolves");
+		assert.deepEqual(result.unresolved, [], "nothing falls into unresolved when the body changed");
+		const body = reconciledBody();
+		assert.ok(body, "the writing spawn must have run on the -p launch");
+		// The baseline must be re-stamped to the NEW on-disk body's content hash, not
+		// the old OURS hash and not the prior baseline.
+		const expected = computeContentHash(body);
+		assert.equal(readBaselineHash(cwd), expected, "the baseline is re-stamped to the reconciled body's hash");
+		assert.notEqual(readBaselineHash(cwd), baselineBefore, "the re-stamped baseline differs from the prior baseline");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 		rmSync(skillRoot, { recursive: true, force: true });

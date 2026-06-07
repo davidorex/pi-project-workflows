@@ -1199,7 +1199,8 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 		if (before === null) {
 			assert.equal(after, null, "dryRun must not create migrations.json");
 		} else {
-			assert.ok(after !== null && after.equals(before), "dryRun must leave migrations.json byte-unchanged");
+			assert.ok(after, "dryRun must not delete migrations.json");
+			assert.ok(after.equals(before), "dryRun must leave migrations.json byte-unchanged");
 		}
 	});
 

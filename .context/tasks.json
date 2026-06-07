@@ -714,7 +714,7 @@
     {
       "id": "TASK-039",
       "description": "FEAT-006 T6 — surfaced mutation reporting + idempotent skip. The update output enumerates every mutation it performs (schema re-syncs/merges, migration-declaration registrations into migrations.json); --dry-run lists them without writing. And update skips rewriting an existing catalog-origin block file whose content already equals the starter. Independent of the schema-merge slices (disjoint seam: the install summary + the block branch). Closes FGAP-050 + FGAP-051.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts"
       ],
@@ -726,7 +726,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "7250cfb2c2d2552f4f7ab1c5ceb95d99",
-      "content_hash": "fe8e84cb0c542ad661fca807a03787eac4c1d1b221279736be23b6fbeac19260"
+      "content_hash": "ce3b4cea667de7878c06f147ac54c3ea965ea4c7c9f8b72b420a72bce5adda3c",
+      "content_parent": "fe8e84cb0c542ad661fca807a03787eac4c1d1b221279736be23b6fbeac19260"
     }
   ]
 }

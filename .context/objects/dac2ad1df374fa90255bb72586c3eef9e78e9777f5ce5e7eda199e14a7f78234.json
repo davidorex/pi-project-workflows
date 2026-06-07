@@ -1,0 +1,13 @@
+{
+  "description": "FEAT-006 T2 — base-stamping (the merge precondition). On every install/update, store the as-installed catalog schema BODY via the content-addressed object store: putObject(destRoot, asset.content_hash, schemaJson) at the baseline write (index.ts:738-754), keyed by the content_hash the asset already records (object-store.ts; content-hash.ts:82-84). Retrievable at merge time via getObject(destRoot, content_hash). This supplies the 3-way merge base that does not exist on disk today (checkStatus keeps only a SHA-256, context.ts:79). Depends on TASK-034.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/object-store.ts"
+  ],
+  "acceptance_criteria": [
+    "[subagent] every install/update writes the as-installed schema body to the object store via putObject keyed by the asset's recorded content_hash; installed_from.assets shape is unchanged (no context.ts:79 type change).",
+    "[orchestrator] after install, getObject(destRoot, assets[name].content_hash) returns a body that JCS-canonicalizes back to that content_hash (round-trip).",
+    "[orchestrator] purely additive: checkStatus classifications are byte-identical to before base-stamping; build + check + full test pass; runtime demo (install -> base body present + retrievable)."
+  ]
+}

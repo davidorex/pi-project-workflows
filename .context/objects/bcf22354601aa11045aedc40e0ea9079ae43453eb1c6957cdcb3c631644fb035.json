@@ -1,0 +1,63 @@
+{
+  "title": "pi-context update reconciles user schema edits by the hybrid route (deterministic merge + resolver on conflicts)",
+  "status": "enacted",
+  "context": "FGAP-046: install --update overwrites a user's edits to a catalog-shipped schema (resyncSchema, index.ts:464-583), and the 3-way merge base is not retained — checkStatus keeps a SHA-256 of the as-installed schema, not the body (context.ts:79). FEAT-006 must preserve customizations on update. Two candidate routes (FGAP-046 proposed_resolution): a deterministic 3-way merge, or agent-mediated reconciliation in pi. Reframed and grounded in R-0008.",
+  "decision": "On a locally-modified / both-diverged schema (per checkStatus), pi-context update runs a deterministic key/path-level draft-07 3-way merge (base = the base-stamped as-installed body; ours = installed; theirs = catalog) and auto-applies the merged schema when the typed conflict set is empty. On a non-empty conflict set it does NOT overwrite: it hands the set to a resolver — a pi-bound agent mergetool (the agent proposes a reconciled schema; the user inspects via --dry-run and approves via the existing write-schema auth-gate) with graceful fallback to a rendered conflict report when no interactive/credentialed pi is available. Update never silently clobbers a customization and never hard-blocks the remaining schemas.",
+  "consequences": [
+    "Decomposes into ordered, independently-shippable slices: base-stamping (store the as-installed schema body via the content-addressed object store) -> deterministic schema-merge (auto-apply clean, emit a typed conflict set) -> conflict resolver (agent mergetool + conflict-report fallback). The user gets 'never silently clobbered' first, 'smart conflict help' as the resolver lands.",
+    "Closes FGAP-046 (preserve schema customizations) + FGAP-049 (consult checkStatus before overwrite) across the base-stamping + merge + resolver tasks.",
+    "The merge engine is a new structure-aware key/path-level 3-way primitive: FEAT-002 (the substrate git merge driver) is proposed/unbuilt and DEC-0004 §6 names but does not author the schema-merge strategy; the primitive is designed so FEAT-002 later reuses the framework via its git %O base. FGAP-046 does not depend on FEAT-002 shipping.",
+    "Per correctness-over-cost: the hybrid is chosen on user-correctness; its higher build cost is sequencing (base-stamping -> merge -> resolver), not a tradeoff against correctness."
+  ],
+  "options_considered": [
+    {
+      "label": "R1 — deterministic 3-way merge only",
+      "description": "Key/path-level draft-07 3-way merge; auto-merge disjoint edits; surface every semantic conflict as a typed report for the user to resolve.",
+      "tradeoffs": "Deterministic + offline; punts rename / type-change / overlapping-edit conflicts to the user.",
+      "rejected_reason": "Hands a JSON-Schema 3-way conflict to the non-developer FGAP-046 exists to protect — not done-correctly for the target user."
+    },
+    {
+      "label": "R2 — agent-mediated reconciliation only",
+      "description": "Route every locally-modified schema through a pi-bound agent that reconciles by judgement, gated by dry-run + auth-gate.",
+      "tradeoffs": "Lowest build (reuses pi-bound + write-schema + auth-gate); resolves semantics; but a credentialed pi call + interactive confirm on every modified schema, and cannot run unattended.",
+      "rejected_reason": "Taxes routine disjoint updates with a model call + prompt and hard-blocks unattended/CI updates (the auth-gate refuses non-interactive) — not done-correctly."
+    },
+    {
+      "label": "Hybrid — deterministic merge + resolver on conflicts",
+      "description": "Auto-merge clean/disjoint edits silently; route only the typed conflict set to an agent mergetool (or a conflict report when non-interactive).",
+      "tradeoffs": "Best coverage: silent for the common case, intelligent help for the rare conflict, never destructive, never hard-blocked; cost = the merge engine + a cheap resolver seam.",
+      "rejected_reason": ""
+    }
+  ],
+  "references": [
+    {
+      "label": "feasibility + git-3-way reframing research",
+      "path": "R-0008"
+    },
+    {
+      "label": "full findings",
+      "path": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md"
+    },
+    {
+      "label": "the forcing gap",
+      "path": "FGAP-046"
+    },
+    {
+      "label": "resyncSchema overwrite; base body not retained",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "464-583"
+    },
+    {
+      "label": "content-addressed object store (base-stamping vehicle)",
+      "path": "packages/pi-context/src/object-store.ts",
+      "lines": "59-110"
+    },
+    {
+      "label": "write-schema dryRun + auth-gate (resolver write path)",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1183-1201"
+    }
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-06-07T00:00:00.000Z"
+}

@@ -31,6 +31,14 @@
       "severity": "error",
       "oid": "8fc525b0bfba94c6ffb55ceebc87fc63",
       "content_hash": "cef5d2fc4cf3b89fcb27b92ea16e316a1cb5c9e4d7d37da13b3c66ebed0cc603"
+    },
+    {
+      "id": "correctness-over-cost",
+      "description": "Design and route decisions are decided by correctness for the user — the done-correctly outcome — not by build cost. Build cost is a sequencing input (what to build first), never a reason to choose a less-correct route. When one route is correct and the others leave a known failure for the user, the correct route is the decision; decompose it into independently-shippable slices ordered so the user gets the correctness incrementally.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "content_hash": "6e365fe5f4ef27b492b438d33c634626c9239c1295fd51b271d2872049818827"
     }
   ]
 }

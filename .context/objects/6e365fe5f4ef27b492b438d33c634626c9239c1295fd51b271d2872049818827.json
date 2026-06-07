@@ -1,0 +1,5 @@
+{
+  "description": "Design and route decisions are decided by correctness for the user — the done-correctly outcome — not by build cost. Build cost is a sequencing input (what to build first), never a reason to choose a less-correct route. When one route is correct and the others leave a known failure for the user, the correct route is the decision; decompose it into independently-shippable slices ordered so the user gets the correctness incrementally.",
+  "enforcement": "review",
+  "severity": "error"
+}

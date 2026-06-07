@@ -611,6 +611,117 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "c435caaec915d903d4782a80cb42b307",
       "content_hash": "4673c7a3655e2d8970bd97e3271d5de801b0b409a115fc9ed893ba4bdd2bdfeb"
+    },
+    {
+      "id": "TASK-034",
+      "description": "FEAT-006 T1 — the pi-context update command shell + drift routing. Add a bare-verb `pi-context update` (per cli-command-form) with a `--dry-run` verb flag, superseding `install --update` as the user-facing update path. Update consults checkStatus (index.ts:858) per installed schema and routes by drift state: in-sync / catalog-ahead -> the existing resync path; locally-modified / both-diverged -> refuse-and-report (do NOT overwrite) until T3 (TASK-036) upgrades that branch to merge. This slice delivers 'never silently clobber' immediately via refuse-and-report.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] pi-context update is a bare verb routed in cli.ts before op resolution, excluded from the surface:use reflection, with --dry-run a verb flag (per cli-command-form).",
+        "[subagent] update consults checkStatus per installed schema and branches on state: in-sync/catalog-ahead -> existing resync path; locally-modified/both-diverged -> refuse-and-report (schema left unmodified).",
+        "[orchestrator] a locally-modified schema is NOT overwritten by update; the user's edits survive (demonstrated against an edited installed schema).",
+        "[orchestrator] pi-context update --dry-run prints the per-schema drift state + intended action and writes nothing; in-pi ops byte-unchanged; build + check + full test pass; runtime demo on a fresh + an existing substrate."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "6bb089861ee847eed26b59e6927f0285",
+      "content_hash": "bde9beb97a84141afe58c215b5571ecd5b0f11b764cf6d817938e7d0d8d0e739"
+    },
+    {
+      "id": "TASK-035",
+      "description": "FEAT-006 T2 — base-stamping (the merge precondition). On every install/update, store the as-installed catalog schema BODY via the content-addressed object store: putObject(destRoot, asset.content_hash, schemaJson) at the baseline write (index.ts:738-754), keyed by the content_hash the asset already records (object-store.ts; content-hash.ts:82-84). Retrievable at merge time via getObject(destRoot, content_hash). This supplies the 3-way merge base that does not exist on disk today (checkStatus keeps only a SHA-256, context.ts:79). Depends on TASK-034.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/object-store.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] every install/update writes the as-installed schema body to the object store via putObject keyed by the asset's recorded content_hash; installed_from.assets shape is unchanged (no context.ts:79 type change).",
+        "[orchestrator] after install, getObject(destRoot, assets[name].content_hash) returns a body that JCS-canonicalizes back to that content_hash (round-trip).",
+        "[orchestrator] purely additive: checkStatus classifications are byte-identical to before base-stamping; build + check + full test pass; runtime demo (install -> base body present + retrievable)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "82ae89de6887e1db7ac53dd33c1bd97e",
+      "content_hash": "dac2ad1df374fa90255bb72586c3eef9e78e9777f5ce5e7eda199e14a7f78234"
+    },
+    {
+      "id": "TASK-036",
+      "description": "FEAT-006 T3 — deterministic schema-merge. Add a key/path-level draft-07 3-way merge mergeSchema(base, ours, theirs) -> {merged, conflicts[]}: base = the base-stamped as-installed body (getObject), ours = the installed dest schema, theirs = the catalog source schema. Wire it into the update flow at the locally-modified / both-diverged branch (replacing TASK-034's refuse-and-report): auto-apply the merged schema when the conflict set is empty; on a non-empty conflict set leave the schema unmodified and hand the typed set to the resolver (TASK-037). Depends on TASK-035; governed by DEC-0017.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/schema-merge.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] mergeSchema(base, ours, theirs) returns {merged, conflicts[]}: disjoint key additions merge; required / enum / type-union arrays merge as sets; overlapping edits to the same node emit a typed conflict {path, base, ours, theirs}.",
+        "[subagent] the merged output passes AJV draft-07 meta-validation + assertNoNestedIdBearingArray before any write.",
+        "[orchestrator] a locally-modified schema with only disjoint edits: update auto-applies the merge and BOTH the user's edit and the catalog change survive (demo: add-field, widen-enum).",
+        "[orchestrator] an overlapping edit: the schema is left unmodified and the typed conflict set is produced (no clobber); checkStatus is consulted before merging (closes FGAP-049).",
+        "[orchestrator] deterministic — identical (base, ours, theirs) yield identical {merged, conflicts}; build + check + full test pass; runtime demo of a clean-merge and a conflict case."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "824230dad7d7ab467adbf4c4a8b36b0f",
+      "content_hash": "e1a9416dacb163788eaf2a51325b62acefe6951ba5f09fe5942757db28ab2c82"
+    },
+    {
+      "id": "TASK-037",
+      "description": "FEAT-006 T4 — conflict resolver. Route the typed conflict set from TASK-036 to a resolver: a pi-bound agent mergetool — dispatch a bounded pi-bound session granted read-schema + write-schema, feeding (base, ours, theirs); the agent proposes a reconciled schema and writes it via write-schema, forced through the existing dryRun + auth-gate (non-interactive refuses) — with graceful fallback to a rendered conflict report {path, base, ours, theirs} when no interactive/credentialed pi is available. The schema is left unmodified on the report path; the rest of the update proceeds either way. No change to auth-gate or pi-bound internals (grant + dispatch only). Depends on TASK-036; governed by DEC-0017.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context-cli/src/pi-bound.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] on a non-empty conflict set, update dispatches a bounded pi-bound session granted read-schema + write-schema, feeding (base, ours, theirs); the agent's write passes through the existing write-schema dryRun + auth-gate (non-interactive refuses) with no change to auth-gate or pi-bound internals.",
+        "[subagent] with no interactive context, update falls back to a rendered conflict report {path, base, ours, theirs}, leaves the schema unmodified, and proceeds with the rest of the update (never hard-blocks).",
+        "[orchestrator] runtime demo: interactive -> an agent proposal previewed via --dry-run and applied on confirm; non-interactive -> a clear conflict report + schema unchanged + remaining schemas still updated.",
+        "[orchestrator] build + check + full test pass."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "1128ab4916e3ed16f901fa912a144cb5",
+      "content_hash": "f01633fb77dfcebd6023cf2f77923ba48bc9f0e5780c8a24a31f663fa6c679fc"
+    },
+    {
+      "id": "TASK-038",
+      "description": "FEAT-006 T5 — config-registry propagation. On update, additively merge catalog-new config-registry entries (relation_types, invariants, block_kinds, lenses) that are ABSENT from the existing substrate config into it, preserving the user's existing/modified registries; surfaced in output and previewed by --dry-run. Independent of the schema-merge slices (disjoint seam: the installContext config spread, the FGAP-060 site). Closes FGAP-060.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] update additively merges catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) absent from the existing config; it never removes or overwrites a user-present entry.",
+        "[orchestrator] an existing substrate gains the new catalog vocabulary on update; user-added/-modified registry entries are untouched; --dry-run lists the additions and writes nothing (closes FGAP-060).",
+        "[orchestrator] build + check + full test pass; runtime demo (existing substrate + a catalog carrying new entries -> entries appear, customizations intact)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "0cee5fff85482ecb49018fd65f200da8",
+      "content_hash": "8797c005be875c9d2ec4d031b1df72ee8c763a6d2c87f9cf75a1f7a199deac6c"
+    },
+    {
+      "id": "TASK-039",
+      "description": "FEAT-006 T6 — surfaced mutation reporting + idempotent skip. The update output enumerates every mutation it performs (schema re-syncs/merges, migration-declaration registrations into migrations.json); --dry-run lists them without writing. And update skips rewriting an existing catalog-origin block file whose content already equals the starter. Independent of the schema-merge slices (disjoint seam: the install summary + the block branch). Closes FGAP-050 + FGAP-051.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] update output enumerates every schema re-sync/merge and every migration declaration registered into migrations.json; --dry-run lists them without writing (closes FGAP-050).",
+        "[subagent] update skips rewriting an existing catalog-origin block file whose content already equals the starter (closes FGAP-051).",
+        "[orchestrator] runtime demo: a version-bump update lists the registered migration declarations; an unchanged empty block is not rewritten; build + check + full test pass."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "7250cfb2c2d2552f4f7ab1c5ceb95d99",
+      "content_hash": "fe8e84cb0c542ad661fca807a03787eac4c1d1b221279736be23b6fbeac19260"
     }
   ]
 }

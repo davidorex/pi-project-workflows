@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-07T00:00:00.000Z",
+  "evidence": "TASK-036 (FEAT-006 T3, deterministic 3-way schema merge) verified. Commit 39d0458: new schema-merge.ts mergeSchema(base, ours, theirs) -> {merged, conflicts} (pure; canonicalJson equality; MISSING unique-symbol sentinel) implements the recursive 3-way: all-three-objects per-key over the sorted union (MISSING-merged keys omitted = deletion); SET-ARRAY (last segment required/enum/type, all sides arrays) = (ours∩theirs)∪(ours\\base)∪(theirs\\base) sorted; add/remove (one side MISSING) present-on-one->take, both-add-differing->conflict, removed-vs-unchanged->honor, delete-vs-modify->conflict; atomic 3-way for scalars/non-set-arrays/kind-mismatch (all-differ -> {path,base,ours,theirs} conflict). Wired into updateContext's locally-modified/both-diverged arm: base via getObject(content_hash) (null -> refused fallback), ours=installed, theirs=catalog; conflict-free -> writeSchemaCheckedForDir(meta-validate + nested-id guard + atomic write; dryRun validates-only) + result.merged; conflicts -> result.conflicts (no write); throw -> refused; brought_current extended with result.merged so an auto-merged body is re-base-stamped as the next base. UpdateResult gains merged/conflicts; the update op unchanged. Tests: schema-merge.test.ts 15/15; install-subcommand merge cases (d) disjoint auto-merge both survive, (e) same-node conflict bytes-unchanged, (f) enum widening set-union, (g) delete-vs-modify conflict, (h) merged re-baselined+stamped — all pass on real substrates. build+check+test green (pi-context 1066 pass, fail 0). Fresh adversarial probe: PASS, no defects (own merge harness 6/6 + real-updateContext harness 13/13; set-array gated on all-arrays; null vs MISSING distinguished; allOf -> atomic; dryRun/conflict write nothing; changed tests strengthened not weakened). Documented conservatism (not a defect): when the base lacks a set field entirely and both sides add it with different arrays, it is recorded as a conflict rather than set-unioned (safe-conservative; surfaces the divergence). The conflict resolver consuming result.conflicts is TASK-037.",
+  "criteria_results": [
+    {
+      "criterion": "mergeSchema returns {merged, conflicts[]}: disjoint key additions merge; required/enum/type-union arrays merge as sets; overlapping edits to the same node emit a typed {path,base,ours,theirs} conflict",
+      "status": "passed",
+      "evidence": "schema-merge.ts + 15 unit tests + independent harness 6/6"
+    },
+    {
+      "criterion": "the merged output passes AJV draft-07 meta-validation + assertNoNestedIdBearingArray before any write",
+      "status": "passed",
+      "evidence": "auto-apply routes through writeSchemaCheckedForDir (meta-validate + nested-id guard); adversarial harness confirmed validateSchemaAgainstMeta on the written body"
+    },
+    {
+      "criterion": "a locally-modified schema with only disjoint edits: update auto-applies and BOTH the user's edit and the catalog change survive",
+      "status": "passed",
+      "evidence": "case (d): both fields present in the written schema; real updateContext"
+    },
+    {
+      "criterion": "an overlapping edit: schema left unmodified, typed conflict set produced (no clobber); checkStatus consulted before merge",
+      "status": "passed",
+      "evidence": "case (e): conflict recorded with path, dest bytes unchanged; updateContext branches off checkStatus per asset"
+    },
+    {
+      "criterion": "deterministic — identical inputs yield identical {merged, conflicts}; build+check+test; demo of a clean-merge and a conflict case",
+      "status": "passed",
+      "evidence": "determinism unit test (byte-identical two runs); real clean-merge + conflict demonstrated"
+    }
+  ]
+}

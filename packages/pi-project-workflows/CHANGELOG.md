@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Regenerated the aggregate `SKILL.md` to reflect the pi-context `update` op's refreshed surfaced description (drift-aware: resync `in-sync`/`catalog-ahead`; 3-way merge `locally-modified`/`both-diverged` preserving non-conflicting edits; conflicts → `pi-bound` mergetool or read-only report; `--dryRun` previews); see the `pi-context` changelog for the member-package detail.
 
 ## [0.30.0] - 2026-06-04
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context relation/upsert ops (`remove-relation`, `replace-relation`, `append-relations`, `upsert-block-item`) and the op-coverage contract; see the `pi-context` changelog for the member-package detail.

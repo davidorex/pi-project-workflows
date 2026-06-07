@@ -1555,7 +1555,7 @@
     {
       "id": "FGAP-049",
       "title": "install --update overwrites a locally-modified schema without consulting the checkStatus drift classification",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "The update path overwrites installed schemas (resyncSchema) without first consulting the checkStatus drift detector, which already classifies each installed schema as in-sync / catalog-ahead / locally-modified / both-diverged. A locally-modified (user-edited) schema is clobbered with no detection or warning, even though the classification that would flag it is computable and shipped.",
@@ -1575,7 +1575,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "ad54150945add17479f99d15cee3619b",
-      "content_hash": "c304e37ab3246ecf06d39c068d825100f42337dff58f1e5bb765d96df47a9a21"
+      "content_hash": "c84dacda2728ff2e4acbc7e3241d6d7e6eb5399d3aec4e9506b1b719469dbf84",
+      "closed_by": "FEAT-006 unified update command — VER-020 (TASK-034) delivered the consult-checkStatus routing: updateContext reads the checkStatus drift state per installed schema and routes locally-modified/both-diverged to refuse (T1) / merge (T3, VER-022) / resolve (T4, VER-023) instead of overwriting; the drift classification is consulted before any write",
+      "closed_at": "2026-06-07T00:00:00.000Z",
+      "content_parent": "c304e37ab3246ecf06d39c068d825100f42337dff58f1e5bb765d96df47a9a21"
     },
     {
       "id": "FGAP-050",

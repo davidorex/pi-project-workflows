@@ -1970,6 +1970,48 @@
       "id": "FGAP-065",
       "oid": "6c909103e3127305ce4e68a7cbbfd727",
       "content_hash": "af27c0c700fc6e2688437a660c96e37cc37ffaa24a8b015db70c921eefa8ffcb"
+    },
+    {
+      "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Under --dryRun, updateContext's catalog-ahead arm short-circuits BEFORE resyncSchema (no write) and reports the schema under `resynced` as the would-act set, because the concrete resynced/migrated/blocked outcome is unknowable without running the forward migration. So a version-bump schema that a live run would `migrate` (items forward-migrated) — or `block` (no safe chain, or migrated items fail revalidation) — is previewed as `resynced`. The would-register migration declarations (migrationsRegistered) are computed accurately read-only, but a live blocked run rolls those declarations back, so --dryRun can also list migrationsRegistered a live run would not keep. This undercuts FEAT-006's stated guarantee that --dry-run reports the full set of changes update would make: the per-schema OUTCOME under dryRun is optimistic, not exact, precisely when a schema is at risk of blocking.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "updateContext catalog-ahead dryRun branch pushes name onto result.resynced (the would-act set) and computes migrationsRegistered read-only; the live resynced/migrated/blocked classification and the block-path rollback of migrations.json are not modelled under dryRun"
+        }
+      ],
+      "impact": "A user previewing an update sees `resynced` for a schema a live run would actually migrate or refuse (block), and migrationsRegistered may list decls a blocked live run would roll back — the dry-run preview can over-state what an update would do, exactly for the schemas most at risk.",
+      "canonical_vocabulary": "exact dry-run outcome preview",
+      "proposed_resolution": "Under --dryRun compute the precise per-schema version-bump outcome READ-ONLY (find the catalog migration chain, forward-migrate the populated block in memory, AJV-validate against the new schema) and classify resynced vs migrated vs blocked — reporting migrationsRegistered only for non-blocked outcomes — without writing, so the preview matches a live run.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-08T00:00:00.000Z",
+      "id": "FGAP-066",
+      "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
+      "content_hash": "a62cfe70c7e9d0bf5936e19281c618ba519845d4a591e8877bb5bafe9675ba46"
+    },
+    {
+      "title": "pi-context update does not reconcile a catalog registry entry whose body changed against a user-modified entry of the same id (additive-only) — the config-registry analog of the schema 3-way merge",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "TASK-038/FGAP-060's config-registry propagation is additive-only: an ABSENT catalog entry is appended, but an entry whose identity (canonical_id for relation_types/block_kinds, id for invariants/lenses) is already PRESENT is left exactly as the substrate has it — never reconciled — even when the catalog's body for that same id has changed. So a user who customizes a catalog registry entry's body never receives a later catalog change to that same entry (the user's version is kept entirely; the catalog's body change is silently dropped). This is the config-registry analog of FGAP-046 (the schema clobber/merge gap): there, schema BODIES get a 3-way merge preserving non-conflicting edits; here, config-registry entry bodies have NO merge — additive-only by design (mergeCatalogRegistries, context.ts).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "mergeCatalogRegistries appends only absent entries (by REGISTRY_DESCRIPTORS idField); a present id is never replaced or body-merged, even when the catalog body for that id diverges (additive-only)"
+        }
+      ],
+      "impact": "A user who tailors a catalog registry entry (e.g. a relation_type display_name/category, an invariant severity, a lens body) is frozen against future catalog changes to that entry — the value of a catalog registry update is capped for any customized entry, mirroring FGAP-046 for schemas but for config registries.",
+      "canonical_vocabulary": "config-registry 3-way merge (divergent-body reconciliation)",
+      "proposed_resolution": "Extend update to reconcile a divergent catalog body against a user-modified registry entry of the same id via a 3-way merge (base = the as-installed catalog entry, ours = the substrate entry, theirs = the catalog entry), preserving non-conflicting customizations and surfacing conflicts — the registry analog of the FGAP-046 schema merge. Requires recording a per-registry-entry base (the registry equivalent of base-stamping).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-08T00:00:00.000Z",
+      "id": "FGAP-067",
+      "oid": "b08ca852bf0eba2255dc47a5b5e7d641",
+      "content_hash": "4f74f3dc354576a40941f24ae4ad9acb2c23cafc8f2a741927f636dfa4b9ed7f"
     }
   ]
 }

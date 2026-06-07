@@ -14,7 +14,7 @@ End state (the milestone, unbuilt as a block — FGAP-037): a user runs `pi-cont
 | 2 | **TASK-029** declare `@davidorex/pi-project-workflows` dep | **COMPLETED** (VER-018, `dafa2c6`; FGAP-048 closed) | — | FGAP-048 ✓closed | done — meta-package resolves |
 | 3 | **TASK-030** implement `pi-context pi-bound` | **COMPLETED** (VER-019, `ad9508b`; FEAT-005 → in-review) | TASK-028 ✓, TASK-029 ✓ | FEAT-005 (real-session smoke release-gated) | done — pi-bound works (stub-verified) |
 | 4 | **FEAT-006 decomposition** | **COMPLETED** (DEC-0017 hybrid + TASK-034..039, `3f5b34a`); FEAT-006 → in-progress | gate FGAP-047 ✓ | — | done — decomposed per `feature-decomposition` |
-| 5 | **FEAT-006 tasks** — TASK-034 shell ✓(VER-020, `0dbdf9b`) · 035 base-stamping · 036 merge · 037 resolver · 038 config-propagation · 039 reporting | T034 completed; chain T035→036→037, T038/039 independent | T036/037 gov DEC-0017 | FGAP-046/049/050/051/060 | **DO NEXT** — TASK-035 |
+| 5 | **FEAT-006 tasks** — TASK-034 shell ✓ · 035 base-stamping ✓(VER-021) · 036 merge · 037 resolver · 038 config-propagation · 039 reporting | T034+T035 completed; chain T036→037, T038/039 independent | T036/037 gov DEC-0017 | FGAP-046/049/050/051/060 | **DO NEXT** — TASK-036 |
 | 6 | **TASK-033** ship governance vocab to catalog (warning) + release | planned · BLOCKED | FEAT-006 (`task_gated_by_item`) | completes FEAT-007 | after #5; release authorization-gated |
 | 7 | **C4 governance tail** — author the 8 missing conventions, re-point decisions, close gaps | identified | — (independent) | FGAP-052..059 | anytime; grounded per-domain |
 

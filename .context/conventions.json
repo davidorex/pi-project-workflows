@@ -23,6 +23,14 @@
       "severity": "error",
       "oid": "947ecbee9ff3d978ddbec9839f90415c",
       "content_hash": "94ba9f079bebc1ace77eb90ab4eb3fe9d68806305baaa2f91e982fa3734c3fdf"
+    },
+    {
+      "id": "rhetorical-register",
+      "description": "Every block write follows this register; it also governs communications.\n1. Write declarative statements. Not prose, not narration.\n2. Be terse and signal-dense. No perambulation, ceremony, recap, or hedging.\n3. Make each entry self-contained — the literal instruction a downstream consumer acts on, standing alone.\n4. Be exact and concrete. Not opaque, not abstract for its own sake.\n5. State current truth only. No provenance, git, or prior-state narration in block bodies; never assert-then-refute — edit to current truth on correction.\n6. Write for the consumer and the purpose — no more, no less; appropriate to the block type and its downstream use.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "8fc525b0bfba94c6ffb55ceebc87fc63",
+      "content_hash": "cef5d2fc4cf3b89fcb27b92ea16e316a1cb5c9e4d7d37da13b3c66ebed0cc603"
     }
   ]
 }

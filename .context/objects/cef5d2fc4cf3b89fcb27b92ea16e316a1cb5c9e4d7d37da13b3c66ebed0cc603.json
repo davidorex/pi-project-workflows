@@ -1,0 +1,5 @@
+{
+  "description": "Every block write follows this register; it also governs communications.\n1. Write declarative statements. Not prose, not narration.\n2. Be terse and signal-dense. No perambulation, ceremony, recap, or hedging.\n3. Make each entry self-contained — the literal instruction a downstream consumer acts on, standing alone.\n4. Be exact and concrete. Not opaque, not abstract for its own sake.\n5. State current truth only. No provenance, git, or prior-state narration in block bodies; never assert-then-refute — edit to current truth on correction.\n6. Write for the consumer and the purpose — no more, no less; appropriate to the block type and its downstream use.",
+  "enforcement": "review",
+  "severity": "error"
+}

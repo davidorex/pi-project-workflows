@@ -1413,11 +1413,12 @@
       ],
       "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
       "canonical_vocabulary": "write-time authoring-contract validation",
-      "proposed_resolution": "Add explicit per-block rhetorical criteria to each block schema (in the description or a dedicated criteria field), machine-checkable. Add a Claude Code PreToolUse hook that intercepts block-item writes (append-block-item / update-block-item via the CLI) and validates the item against the target block's criteria, blocking non-conforming writes.",
+      "proposed_resolution": "Validate block-item writes against the rhetorical-register convention (the single canon source) at write time: a PreToolUse hook intercepts append-block-item / update-block-item, composes the rhetorical-register convention, and checks the entry against it — LLM-judge where the register rules are not mechanically checkable — blocking or flagging a non-conforming write and surfacing the register rules so the filer writes to them. The rhetorical-register convention is the canon; do not duplicate criteria per-schema. Per-block specificity, where needed beyond the general register, is added to the relevant block schema's description and composed alongside the convention.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "80d70ff5424f784553c447fee298041681772370c063b0bcd523086d14028a47"
+      "content_hash": "353ba16afaf5ef4e3923ffdb354df025f9dabcab41596ddd3bb04b9e3e5c47bf",
+      "content_parent": "80d70ff5424f784553c447fee298041681772370c063b0bcd523086d14028a47"
     },
     {
       "id": "FGAP-044",

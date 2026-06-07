@@ -15,6 +15,14 @@
       "severity": "error",
       "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
       "content_hash": "91527a0e04493205b85ceff8aef0adc87dccbc202a2a08bf712ece9d7192ca8e"
+    },
+    {
+      "id": "feature-decomposition",
+      "description": "Decompose a feature into tasks by these rules. Do not decompose ad hoc.\n1. The tasks come from the gaps the feature addresses. Start from that gap set.\n2. State the invariant the feature must never violate (e.g. \"never overwrite a user's customizations\"). Every task must preserve it.\n3. For each gap, name the single code location its fix edits.\n4. Gaps whose fixes edit the same code location become one task.\n5. Gaps whose fixes edit different code locations become separate tasks.\n6. A task is one change that one coding-agent brief implements and one runtime demo plus one adversarial audit proves. If a candidate task needs two briefs, split it. If two candidate tasks edit the same location, merge them.\n7. If a fix needs a design choice that is not yet made, file the choice as a decision first. The task that depends on it stays unwritten until that decision is filed.\n8. If a fix cannot preserve the invariant in rule 2, it is its own task.\n9. Order the tasks: a task others build on comes first — the command before the behaviors it carries. Record order with task_depends_on_task edges.\n10. Wire every task: task_addresses_feature, task_addresses_gap for each gap it closes, item_governed_by_convention, and task_governed_by_decision when a decision gates it.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "content_hash": "94ba9f079bebc1ace77eb90ab4eb3fe9d68806305baaa2f91e982fa3734c3fdf"
     }
   ]
 }

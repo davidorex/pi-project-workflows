@@ -3090,5 +3090,18 @@
       "refname": "TASK-017"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "3e5f5d547f6e3d1ce9ee1c34924f38f4",
+      "refname": "R-0003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

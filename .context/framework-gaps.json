@@ -1788,7 +1788,7 @@
     {
       "id": "FGAP-060",
       "title": "install --update does not propagate catalog config-registry additions (relation_types/invariants/block_kinds) to an existing substrate",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "installContext writes config via a verbatim spread ({...config, installed_from}), so new catalog config-registry entries (relation_types, invariants, block_kinds, lenses) are never merged into an existing substrate's config on install --update; adoptConception writes registries only on a skeleton. A catalog model addition (e.g. new governance relation_types/invariants) therefore reaches only fresh substrates; existing substrates never receive it. Distinct from FGAP-046 (schema clobber): this is non-propagation of config-registry additions, not destruction of edits.",
@@ -1809,7 +1809,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "9d20eeedb0616d8c8f7f7aa614da5985",
-      "content_hash": "dd60745e1789913a34f40d8941570f862a9e48d40c4b773b6a8774311257b272"
+      "content_hash": "d50fe02e54bf0b5c73a80461d465c6a2e7291abb5130a7f392870a6022aa6f27",
+      "closed_by": "VER-025 / TASK-038 — pi-context update additively merges catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) absent from an existing substrate config, preserving user entries; --dryRun previews. mergeCatalogRegistries (additive, REGISTRY_DESCRIPTORS-driven) wired into updateContext after the baseline-refresh loop.",
+      "closed_at": "2026-06-08T00:00:00.000Z",
+      "content_parent": "dd60745e1789913a34f40d8941570f862a9e48d40c4b773b6a8774311257b272"
     },
     {
       "id": "FGAP-061",
@@ -1936,6 +1939,31 @@
       "id": "FGAP-064",
       "oid": "f91a7b90ad64bb551a6804035241ca20",
       "content_hash": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
+    },
+    {
+      "title": "pi-context update merges a new block_kind config declaration but does not materialize its schema/starter — a dangling declaration until install",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "TASK-038's config-registry propagation additively merges a catalog-new block_kind entry into config.block_kinds. But a genuinely-new block_kind's schema file + starter block materialize ONLY from the installed_schemas / installed_blocks lists (string-array registries, not in TASK-038's four-registry scope), which updateContext does not propagate. So an additively-merged new block_kind is a dangling declaration: config declares the kind, but its schema is not copied and no starter block exists, until a subsequent install (which iterates installed_schemas/installed_blocks). relation_types / invariants / lenses have no such concern — they are fully functional as config declarations; only block_kinds couple to schema/block materialization.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "updateContext's TASK-038 registry-merge step merges block_kinds config entries; installContext materializes schemas/blocks only from config.installed_schemas / installed_blocks, not from block_kinds"
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "mergeCatalogRegistries scope = the four keyed-array registries (relation_types/invariants/block_kinds/lenses); installed_schemas/installed_blocks (string-array) are out of scope, so a newly-declared block_kind's schema_path/data_path point at uncopied catalog files"
+        }
+      ],
+      "impact": "A catalog release that adds a new block_kind reaches an existing substrate (via update) as a config declaration without its schema/starter — the kind is declared but unusable (no schema to validate items against, no starter block) until a subsequent install. No data loss; the relation_types/invariants governance propagation (TASK-038's immediate driver) is unaffected.",
+      "canonical_vocabulary": "block_kind materialization on update (schema + starter, not just declaration)",
+      "proposed_resolution": "On update, for a block_kind additively merged into config, also propagate its installed_schemas / installed_blocks entries and materialize the schema + starter block via the install path, so a new block kind arrives complete (declaration + schema + starter); surfaced + previewed by --dryRun. Tracked as the materialization half of config-registry propagation (TASK-038 did the declaration half).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-08T00:00:00.000Z",
+      "id": "FGAP-065",
+      "oid": "6c909103e3127305ce4e68a7cbbfd727",
+      "content_hash": "af27c0c700fc6e2688437a660c96e37cc37ffaa24a8b015db70c921eefa8ffcb"
     }
   ]
 }

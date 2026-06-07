@@ -1,0 +1,20 @@
+{
+  "title": "pi-context update merges a new block_kind config declaration but does not materialize its schema/starter — a dangling declaration until install",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "TASK-038's config-registry propagation additively merges a catalog-new block_kind entry into config.block_kinds. But a genuinely-new block_kind's schema file + starter block materialize ONLY from the installed_schemas / installed_blocks lists (string-array registries, not in TASK-038's four-registry scope), which updateContext does not propagate. So an additively-merged new block_kind is a dangling declaration: config declares the kind, but its schema is not copied and no starter block exists, until a subsequent install (which iterates installed_schemas/installed_blocks). relation_types / invariants / lenses have no such concern — they are fully functional as config declarations; only block_kinds couple to schema/block materialization.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "updateContext's TASK-038 registry-merge step merges block_kinds config entries; installContext materializes schemas/blocks only from config.installed_schemas / installed_blocks, not from block_kinds"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "mergeCatalogRegistries scope = the four keyed-array registries (relation_types/invariants/block_kinds/lenses); installed_schemas/installed_blocks (string-array) are out of scope, so a newly-declared block_kind's schema_path/data_path point at uncopied catalog files"
+    }
+  ],
+  "impact": "A catalog release that adds a new block_kind reaches an existing substrate (via update) as a config declaration without its schema/starter — the kind is declared but unusable (no schema to validate items against, no starter block) until a subsequent install. No data loss; the relation_types/invariants governance propagation (TASK-038's immediate driver) is unaffected.",
+  "canonical_vocabulary": "block_kind materialization on update (schema + starter, not just declaration)",
+  "proposed_resolution": "On update, for a block_kind additively merged into config, also propagate its installed_schemas / installed_blocks entries and materialize the schema + starter block via the install path, so a new block kind arrives complete (declaration + schema + starter); surfaced + previewed by --dryRun. Tracked as the materialization half of config-registry propagation (TASK-038 did the declaration half)."
+}

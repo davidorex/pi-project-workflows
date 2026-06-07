@@ -72,6 +72,7 @@ import {
 	switchAndCreate,
 	switchToExisting,
 	switchToPrevious,
+	updateContext,
 } from "./index.js";
 import {
 	edgesForLensByName,
@@ -1319,6 +1320,25 @@ export const ops: OpDefinition[] = [
 				}
 				throw err;
 			}
+			return { json: result };
+		},
+	},
+	{
+		name: "update",
+		label: "Update Installed Model",
+		description:
+			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is REFUSED — never overwritten — and reported for reconciliation; undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched; an already-current (in-sync) schema is a no-op. Pass dryRun to preview the action plan without writing anything.",
+		promptSnippet:
+			"Update the installed schema model from the catalog (refuses to overwrite locally-modified schemas; --dry-run previews)",
+		parameters: Type.Object({
+			dryRun: Type.Optional(
+				Type.Boolean({ description: "Preview the per-schema action plan without writing anything." }),
+			),
+		}),
+		surface: "use",
+		run(cwd: string, params: { dryRun?: boolean }): OpResult {
+			const result = updateContext(cwd, { dryRun: params.dryRun === true });
+			if (result.error) return result.error;
 			return { json: result };
 		},
 	},

@@ -6,7 +6,7 @@ import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { checkStatus, installContext } from "./index.js";
+import { checkStatus, installContext, updateContext } from "./index.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
@@ -565,5 +565,137 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		const tasks = plan.perAsset.find((a) => a.name === "tasks");
 		assert.ok(tasks);
 		assert.equal(tasks.state, "in-sync", "post-migrate baseline must report the schema in-sync");
+	});
+});
+
+// FEAT-006 T1 (TASK-034 / DEC-0017): /context update consults checkStatus per
+// installed schema and routes by drift — refuse-and-report for locally-modified /
+// both-diverged (never overwrite), resync catalog-ahead via the SAME resyncSchema
+// path /context install --update uses, no-op in-sync, report undecidable/absent.
+// --dryRun computes the plan WITHOUT writing.
+describe("updateContext (drift-routed model update — T1 refuse-and-report)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Model catalog-ahead the SAME way the checkStatus catalog-ahead test does:
+	// install, mutate the installed schema so it diverges from the true catalog,
+	// then RE-install to re-baseline against the stale installed file. Result:
+	// baseline === installed (so NOT locally-modified) while catalog ≠ baseline →
+	// catalog-ahead. Because installed/catalog share the SAME `version`, the resync
+	// takes the same-version (verbatim copyFileSync) branch — no migrate, no
+	// identity-stamping throw on this pre-identity substrate.
+	function makeCatalogAheadFixture(name: string): string {
+		const dest = path.join(tmpRoot, ".project", "schemas", `${name}.schema.json`);
+		installContext(tmpRoot);
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__stale_marker = true; // installed now diverges from the true catalog source
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		installContext(tmpRoot); // re-baseline FROM the stale installed file → baseline === installed
+		return dest;
+	}
+
+	it("(a) refuses to overwrite a locally-modified installed schema — recorded in refused, bytes unchanged", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		// Hand-edit the INSTALLED tasks schema so its content diverges from the
+		// recorded baseline while the catalog stays equal → locally-modified.
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__local_edit_marker = true;
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		// Confirm the precondition: checkStatus classifies it locally-modified.
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"locally-modified",
+			"precondition: the hand-edited schema must be locally-modified",
+		);
+		const before = fs.readFileSync(dest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.refused, ["tasks"], "a locally-modified schema must be refused, never resynced");
+		assert.ok(!result.resynced.includes("tasks"), "a locally-modified schema must NOT be resynced");
+		assert.ok(!result.migrated.includes("tasks"), "a locally-modified schema must NOT be migrated");
+		assert.deepEqual(result.inSync, ["decisions"], "the untouched sibling stays in-sync (no-op)");
+		assert.ok(
+			fs.readFileSync(dest).equals(before),
+			"the locally-modified schema file must be byte-unchanged (refuse-and-report writes nothing to it)",
+		);
+	});
+
+	it("(b) in-sync schema is a no-op; a catalog-ahead schema is resynced", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// `tasks` → catalog-ahead (stale baseline trick); `decisions` left in-sync.
+		const tasksDest = makeCatalogAheadFixture("tasks");
+		// Precondition: tasks catalog-ahead, decisions in-sync.
+		const pre = Object.fromEntries(checkStatus(tmpRoot).perAsset.map((a) => [a.name, a.state]));
+		assert.equal(pre.tasks, "catalog-ahead", "precondition: tasks must be catalog-ahead");
+		assert.equal(pre.decisions, "in-sync", "precondition: decisions must be in-sync");
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.resynced, ["tasks"], "the catalog-ahead schema must be resynced");
+		assert.deepEqual(result.migrated, [], "same-version catalog-ahead resyncs (no migration)");
+		assert.deepEqual(result.blocked, [], "a same-version resync is never blocked");
+		assert.deepEqual(result.refused, [], "nothing locally-modified → nothing refused");
+		assert.deepEqual(result.inSync, ["decisions"], "the in-sync schema must be a no-op");
+		// The resync overwrote the stale marker with the true catalog source.
+		const catalogNow = fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8");
+		assert.equal(
+			fs.readFileSync(tasksDest, "utf-8"),
+			catalogNow,
+			"the resynced schema must be overwritten byte-equal to the catalog source",
+		);
+		// Post-condition: tasks is now in-sync.
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"in-sync",
+			"after resync the schema must report in-sync",
+		);
+	});
+
+	it("(c) dryRun writes NOTHING for ANY drift state and returns the action plan", () => {
+		// A substrate spanning the three live-routed states at once:
+		//   tasks       → catalog-ahead (would resync)
+		//   decisions   → locally-modified (would refuse)
+		//   work-orders → in-sync (no-op)
+		tmpRoot = makeProject(["tasks", "decisions", "work-orders"], []);
+		installContext(tmpRoot);
+		// tasks → catalog-ahead via the stale-baseline trick: mutate the installed
+		// tasks schema, then re-install so it re-baselines FROM the stale installed
+		// bytes (baseline === installed, catalog ≠ baseline). ONLY tasks is touched
+		// before the re-install — decisions + work-orders keep baseline === catalog
+		// (so a later single edit to decisions is cleanly locally-modified, not
+		// both-diverged).
+		const tasksDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const tasksObj = JSON.parse(fs.readFileSync(tasksDest, "utf-8")) as Record<string, unknown>;
+		tasksObj.__stale_marker = true;
+		fs.writeFileSync(tasksDest, JSON.stringify(tasksObj, null, 2));
+		installContext(tmpRoot); // re-baseline: tasks stale===baseline (catalog-ahead); decisions/work-orders unchanged === catalog
+		// decisions → locally-modified: edit ONCE against the now-refreshed baseline,
+		// which still equals the catalog (decisions was never edited pre-re-install),
+		// so installed ≠ baseline === catalog → locally-modified (not both-diverged).
+		const decDest = path.join(tmpRoot, ".project", "schemas", "decisions.schema.json");
+		const decObj = JSON.parse(fs.readFileSync(decDest, "utf-8")) as Record<string, unknown>;
+		decObj.__local_edit_marker = true;
+		fs.writeFileSync(decDest, JSON.stringify(decObj, null, 2));
+		// Capture EVERY substrate file's bytes before the dry run.
+		const woDest = path.join(tmpRoot, ".project", "schemas", "work-orders.schema.json");
+		const cfgPath = path.join(tmpRoot, ".project", "config.json");
+		const snapshot = new Map<string, Buffer>();
+		for (const f of [tasksDest, decDest, woDest, cfgPath]) snapshot.set(f, fs.readFileSync(f));
+		// Precondition spread across states.
+		const pre = Object.fromEntries(checkStatus(tmpRoot).perAsset.map((a) => [a.name, a.state]));
+		assert.equal(pre.tasks, "catalog-ahead");
+		assert.equal(pre.decisions, "locally-modified");
+		assert.equal(pre["work-orders"], "in-sync");
+
+		const plan = updateContext(tmpRoot, { dryRun: true });
+		assert.equal(plan.dryRun, true, "the plan must declare it is a dry run");
+		assert.deepEqual(plan.resynced, ["tasks"], "catalog-ahead schema appears in the would-resync set");
+		assert.deepEqual(plan.refused, ["decisions"], "locally-modified schema appears in the refused set");
+		assert.deepEqual(plan.inSync, ["work-orders"], "in-sync schema appears as a no-op");
+
+		// The load-bearing assertion: NOTHING on disk changed under dryRun.
+		for (const [f, before] of snapshot) {
+			assert.ok(fs.readFileSync(f).equals(before), `dryRun must not modify ${path.basename(f)} (byte-identical)`);
+		}
 	});
 });

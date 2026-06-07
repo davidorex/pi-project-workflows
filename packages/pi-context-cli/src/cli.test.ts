@@ -91,6 +91,24 @@ test("parseOpArgs treats boolean field as a presence flag and accepts explicit t
 	assert.equal(explicit.params.autoId, false);
 });
 
+// ── update op (FEAT-006 T1 / TASK-034) reflection ─────────────────────────────
+test("resolveOp('update') resolves the reflected update op", () => {
+	const op = resolveOp("update");
+	assert.ok(op, "the update op must be surfaced via the CLI (surface === use)");
+	assert.equal(op.name, "update");
+	assert.equal(op.surface, "use");
+});
+
+test("parseOpArgs parses the update op's dryRun as a boolean presence flag", () => {
+	// The dryRun param is reflected as the camelCase flag `--dryRun` (the CLI's
+	// presence-flag convention uses the schema property name verbatim, like
+	// `--autoId` above). Presence → true; no value token required.
+	const op = resolveOp("update");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--dryRun"]);
+	assert.equal(parsed.params.dryRun, true);
+});
+
 test("parseOpArgs rejects a non-numeric value for a number field", () => {
 	const op = resolveOp("read-block-page");
 	assert.ok(op);

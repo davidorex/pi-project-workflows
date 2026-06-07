@@ -979,6 +979,221 @@ export function renderCheckStatus(report: CheckStatusReport): string {
 }
 
 /**
+ * The per-schema action plan produced by `updateContext` (FEAT-006 T1 — TASK-034 /
+ * DEC-0017). `updateContext` classifies every installed schema via the read-only
+ * `checkStatus` detector, then routes by drift state:
+ *
+ *   - `resynced` / `migrated`: a `catalog-ahead` schema (the package shipped a
+ *     newer schema; the local copy still matches the baseline it was installed
+ *     from) was brought current through the SAME `resyncSchema` path `/context
+ *     install --update` uses. `resyncSchema` reports `resynced` (same-version /
+ *     versionless drift, or a version bump with no items to migrate) vs
+ *     `migrated` (a version bump whose populated block forward-migrated +
+ *     re-validated); `updateContext` records the schema name under the
+ *     corresponding array. A `catalog-ahead` schema whose `resyncSchema` returns
+ *     `blocked` (no shipped chain, or migrated items fail the new schema) is
+ *     recorded under `blocked` — schema, block, and migrations.json all left
+ *     byte-unchanged (per `resyncSchema`'s blocked guarantee).
+ *   - `refused`: a `locally-modified` or `both-diverged` schema — the installed
+ *     file was edited on disk. This first increment (DEC-0017) REFUSES to
+ *     overwrite a locally-modified schema: no `resyncSchema` call, no copy, no
+ *     write of any kind for these. The schema name is recorded here so the
+ *     operator can reconcile; an automatic three-way merge is the deferred
+ *     follow-on (TASK-036), out of scope for T1.
+ *   - `reported`: a schema whose drift is undecidable or whose files are absent
+ *     (`no-baseline` / `missing-catalog` / `missing-installed`). Recorded with
+ *     its `state` (no write attempted) so the operator sees why it was not acted
+ *     on.
+ *   - `inSync`: an `in-sync` schema — already current, recorded as a no-action.
+ *
+ * `dryRun: true` performs NO writes (no `resyncSchema` call) — the action plan is
+ * computed from `checkStatus` alone, so the `resynced`/`migrated`/`blocked`
+ * arrays carry the schemas that WOULD be acted on (every `catalog-ahead` schema
+ * is reported under `resynced` in the preview, since the resync outcome is not
+ * computed without running it), and `refused`/`reported`/`inSync` are identical
+ * to the live run. Nothing on disk changes under `dryRun`.
+ */
+export interface UpdateResult {
+	/** Substrate-resolution / config-load failure (no schemas processed). */
+	error?: string;
+	/** When true, no writes were performed — the plan is a preview only. */
+	dryRun: boolean;
+	/** `catalog-ahead` schemas re-synced verbatim (same-version / no-item-migration). */
+	resynced: string[];
+	/** `catalog-ahead` schemas whose populated block forward-migrated + re-validated. */
+	migrated: string[];
+	/** `catalog-ahead` schemas whose resync was refused by `resyncSchema` (no safe migration). */
+	blocked: string[];
+	/** `locally-modified` / `both-diverged` schemas — refused, never overwritten (DEC-0017). */
+	refused: string[];
+	/** `no-baseline` / `missing-catalog` / `missing-installed` schemas — reported, not acted on. */
+	reported: Array<{ name: string; state: CheckStatusAsset["state"] }>;
+	/** `in-sync` schemas — already current, no action. */
+	inSync: string[];
+}
+
+/**
+ * `/context update` engine (FEAT-006 T1 — TASK-034 / DEC-0017). Brings the
+ * installed substrate MODEL (schemas) current with the packaged catalog by
+ * consulting the read-only `checkStatus` drift detector per installed schema and
+ * routing each by its drift `state`:
+ *
+ *   - `in-sync`            → no-op (recorded under `inSync`).
+ *   - `catalog-ahead`      → re-sync via the EXISTING `resyncSchema` (the SAME
+ *                            call shape `/context install --update`'s schema loop
+ *                            uses for that asset: `resyncSchema(destRoot,
+ *                            samplesRoot, sourceFile, destFile, name)` with
+ *                            `sourceFile = samplesRoot/<kind.schema_path>` and
+ *                            `destFile = installedSchemaDestPath(destRoot,
+ *                            name)`). Its `resynced`/`migrated`/`blocked` outcome
+ *                            routes into the matching array.
+ *   - `locally-modified` /
+ *     `both-diverged`      → REFUSE-AND-REPORT: do NOT call `resyncSchema`, do NOT
+ *                            overwrite; record under `refused`. The first increment
+ *                            (DEC-0017) never clobbers a locally-edited schema; the
+ *                            three-way merge is deferred (TASK-036).
+ *   - `no-baseline` /
+ *     `missing-catalog` /
+ *     `missing-installed`  → record under `reported` (with the state) — undecidable
+ *                            or absent, not acted on.
+ *
+ * When `dryRun` is true NO writes occur: `checkStatus` is consulted and the action
+ * plan is computed (every `catalog-ahead` schema is listed under `resynced` as the
+ * would-act set, since the concrete resync outcome is only known by running it),
+ * but `resyncSchema` is NOT invoked. The live path mutates only via `resyncSchema`
+ * (the catalog-ahead branch); `installContext` and its install handler are NOT
+ * touched. Resolves the catalog / dest paths through the SAME `resolveCatalog` +
+ * `installedSchemaDestPath` helpers the installer + detector use.
+ */
+export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolean } = {}): UpdateResult {
+	const result: UpdateResult = {
+		dryRun,
+		resynced: [],
+		migrated: [],
+		blocked: [],
+		refused: [],
+		reported: [],
+		inSync: [],
+	};
+
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		result.error =
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.";
+		return result;
+	}
+	const config = loadConfig(cwd);
+	if (!config) {
+		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
+		return result;
+	}
+
+	// Drift classification is the read-only checkStatus detector (shares
+	// resolveCatalog + installedSchemaDestPath with the installer, so update and
+	// install cannot diverge on how they resolve sources / dests). The routing
+	// below acts ONLY on the classified state; it never re-derives drift.
+	const report = checkStatus(cwd);
+	// Catalog resolution for the catalog-ahead resync branch — the SAME helper the
+	// installer + detector use, so the sourceFile derivation matches checkStatus's.
+	const { samplesRoot, byId } = resolveCatalog();
+
+	for (const asset of report.perAsset) {
+		const { name, state } = asset;
+		switch (state) {
+			case "in-sync":
+				result.inSync.push(name);
+				break;
+			case "catalog-ahead": {
+				if (dryRun) {
+					// Preview only — never call resyncSchema (it writes). The concrete
+					// resynced/migrated/blocked outcome is unknowable without running it,
+					// so report the schema as the would-act (resynced) set.
+					result.resynced.push(name);
+					break;
+				}
+				const kind = byId.get(name);
+				if (!kind) {
+					// A catalog-ahead classification implies a catalog block_kind existed
+					// when checkStatus ran; defend against a races/edge by reporting rather
+					// than throwing (mirrors checkStatus's missing-catalog default).
+					result.reported.push({ name, state: "missing-catalog" });
+					break;
+				}
+				const sourceFile = path.join(samplesRoot, kind.schema_path);
+				const destFile = installedSchemaDestPath(destRoot, name);
+				const outcome = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
+				switch (outcome) {
+					case "resynced":
+						result.resynced.push(name);
+						break;
+					case "migrated":
+						result.migrated.push(name);
+						break;
+					case "blocked":
+						result.blocked.push(name);
+						break;
+				}
+				break;
+			}
+			case "locally-modified":
+			case "both-diverged":
+				// Refuse-and-report (DEC-0017): never overwrite a locally-edited schema.
+				result.refused.push(name);
+				break;
+			default:
+				// no-baseline / missing-catalog / missing-installed — undecidable or
+				// absent; report with the state, take no action.
+				result.reported.push({ name, state });
+				break;
+		}
+	}
+
+	// Baseline refresh for the schemas this run actually brought current. A resync
+	// overwrites the installed schema file with the catalog source but does NOT, by
+	// itself, refresh the recorded install baseline (config.installed_from.assets) —
+	// so without this step a just-resynced schema would still read as drifted
+	// (installed === catalog ≠ stale-baseline → both-diverged) on the next
+	// check-status. Mirror installContext's post-loop baseline write, but SURGICALLY:
+	// refresh ONLY the resynced/migrated assets so a `refused` (locally-modified)
+	// schema KEEPS its drift signal (re-fingerprinting it would falsely mark it
+	// in-sync). dryRun performs no writes, so it never refreshes.
+	const brought_current = [...result.resynced, ...result.migrated];
+	if (!dryRun && brought_current.length > 0) {
+		// Reload config so the merge is against current on-disk config (resyncSchema
+		// mutates block + migrations files, not config.json, but reloading keeps this
+		// write self-contained + robust to any prior config write in this process).
+		const current = loadConfig(cwd);
+		if (current?.installed_from) {
+			const refreshedAssets: Record<string, { content_hash: string; version: string }> = {
+				...current.installed_from.assets,
+			};
+			for (const name of brought_current) {
+				const destSchemaFile = installedSchemaDestPath(destRoot, name);
+				if (!fs.existsSync(destSchemaFile)) continue;
+				// Safety default mirrors installContext: a present-but-corrupt schema is
+				// skipped from the refresh (its stale baseline entry is left as-is)
+				// rather than crashing the update.
+				try {
+					const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
+					refreshedAssets[name] = {
+						content_hash: computeFileContentHash(destSchemaFile),
+						version: typeof schemaJson.version === "string" ? schemaJson.version : "",
+					};
+				} catch {}
+			}
+			const installed_from = {
+				...current.installed_from,
+				at: new Date().toISOString(),
+				assets: refreshedAssets,
+			};
+			writeConfig(cwd, { ...current, installed_from });
+		}
+	}
+
+	return result;
+}
+
+/**
  * /context init — scaffold the substrate dir (bootstrap pointer + substrate +
  * schemas directories only; no asset copying). Run accept-all + install to
  * populate. Idempotent: skips directories that already exist.

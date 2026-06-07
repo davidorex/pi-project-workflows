@@ -483,6 +483,17 @@
       "target_kinds": [
         "framework-gaps"
       ]
+    },
+    {
+      "canonical_id": "task_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "*"
+      ]
     }
   ],
   "lenses": [

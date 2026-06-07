@@ -2986,5 +2986,31 @@
       "refname": "TASK-032"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9d20eeedb0616d8c8f7f7aa614da5985",
+      "refname": "FGAP-060"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "150b653168eb04fa40ea004ef9e64324",
+      "refname": "FEAT-006"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c435caaec915d903d4782a80cb42b307",
+      "refname": "TASK-033"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "150b653168eb04fa40ea004ef9e64324",
+      "refname": "FEAT-006"
+    },
+    "relation_type": "task_gated_by_item"
   }
 ]

@@ -432,6 +432,46 @@ function findCatalogMigrationChain(
 }
 
 /**
+ * Read-only computation of the migration declarations a version-bump re-sync of
+ * `name` WOULD register into the substrate's migrations.json, WITHOUT writing
+ * anything (FGAP-050 — surfaced migration reporting). Mirrors the filter
+ * `resyncSchema`'s registration loop applies: read the installed vs catalog
+ * `version`, walk the shipped catalog chain, and subtract the decls whose
+ * `(schemaName, fromVersion)` pair is already present on disk. Returns the
+ * absent decls as the `{ schema, from, to }` report shape (empty array when the
+ * versions match, either version is unreadable, no chain reaches the catalog
+ * version, or every chain decl is already registered). Reads only — never
+ * appends, never overwrites the schema. Used by `updateContext`'s dryRun
+ * catalog-ahead arm to report the would-register set; the live path lets
+ * `resyncSchema` itself report the decls it actually appended.
+ */
+function computeWouldRegisterMigrations(
+	destRoot: string,
+	samplesRoot: string,
+	sourceFile: string,
+	destFile: string,
+	name: string,
+): Array<{ schema: string; from: string; to: string }> {
+	const catalogVersion = readDeclaredVersion(sourceFile);
+	const installedVersion = readDeclaredVersion(destFile);
+	if (installedVersion === undefined || catalogVersion === undefined || installedVersion === catalogVersion) {
+		return [];
+	}
+	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
+	if (chain === null) return [];
+	const existing = loadMigrationsFileForDir(destRoot);
+	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	const out: Array<{ schema: string; from: string; to: string }> = [];
+	for (const decl of chain) {
+		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		if (present.has(key)) continue;
+		out.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
+		present.add(key);
+	}
+	return out;
+}
+
+/**
  * Migration-aware re-sync of ONE installed schema under `/context install
  * --update` (FGAP-029 safe re-sync, slice S4). Replaces the blind
  * `fs.copyFileSync` the schema loop used to perform with a forward-migrate-or-
@@ -472,17 +512,21 @@ function resyncSchema(
 	sourceFile: string,
 	destFile: string,
 	name: string,
-): "resynced" | "migrated" | "blocked" {
+): {
+	status: "resynced" | "migrated" | "blocked";
+	registeredMigrations: Array<{ schema: string; from: string; to: string }>;
+} {
 	const catalogVersion = readDeclaredVersion(sourceFile);
 	const installedVersion = readDeclaredVersion(destFile);
 
 	// (A) Same version (or either version unreadable / non-versioned): there is no
 	// version transition to migrate across, so the drift is description-only —
 	// safe to overwrite the schema verbatim. Items are unaffected by a same-
-	// version schema body change (the version is the migration contract).
+	// version schema body change (the version is the migration contract). No
+	// migration is registered on this arm, so it reports an empty decl list.
 	if (installedVersion === catalogVersion || catalogVersion === undefined || installedVersion === undefined) {
 		fs.copyFileSync(sourceFile, destFile);
-		return "resynced";
+		return { status: "resynced", registeredMigrations: [] };
 	}
 
 	// (B) Version bump — migrate-or-refuse. installedVersion ≠ catalogVersion,
@@ -491,7 +535,8 @@ function resyncSchema(
 	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
 	if (chain === null) {
 		// No shipped chain reaches the catalog version → refuse, leave unchanged.
-		return "blocked";
+		// Nothing was registered, so the report is empty.
+		return { status: "blocked", registeredMigrations: [] };
 	}
 
 	// Capture migrations.json raw bytes BEFORE any decl append so the refuse path
@@ -507,11 +552,17 @@ function resyncSchema(
 	// call so the loaded registry carries the forward edge.
 	const existing = loadMigrationsFileForDir(destRoot);
 	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	// Accumulate the decls THIS call actually appends (the not-already-present
+	// subset), reported as the { schema, from, to } shape for the caller to
+	// surface (FGAP-050). On the blocked rollback path below this list is
+	// discarded and [] is returned (post-rollback truth: nothing stuck).
+	const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
 	for (const decl of chain) {
 		const key = `${decl.schemaName} ${decl.fromVersion}`;
 		if (present.has(key)) continue;
 		appendMigrationDeclForDir(destRoot, decl);
 		present.add(key);
+		registeredMigrations.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
 	}
 
 	// Determine whether the block file carries items to migrate. Absent / zero-
@@ -541,7 +592,7 @@ function resyncSchema(
 
 	if (!hasItems) {
 		// No items to migrate — schema overwritten, chain registered. Done.
-		return "migrated";
+		return { status: "migrated", registeredMigrations };
 	}
 
 	try {
@@ -566,7 +617,7 @@ function resyncSchema(
 		// items are identity-stamped (mint-or-preserve oid, recompute content_hash).
 		// Identity stamping is mandatory for every write.
 		writeBlockForDir(destRoot, name, migrated);
-		return "migrated";
+		return { status: "migrated", registeredMigrations };
 	} catch {
 		// Migrated items would NOT validate against the new schema (or migration
 		// threw). Refuse: restore the original schema bytes verbatim so the schema
@@ -583,7 +634,9 @@ function resyncSchema(
 			fs.writeFileSync(migrationsPath, originalMigrationsBytes);
 		}
 		invalidateMigrationRegistryForDir(destRoot);
-		return "blocked";
+		// Rollback reverted migrations.json to its pre-call bytes, so report no
+		// registered migrations (post-rollback truth — nothing is stuck on disk).
+		return { status: "blocked", registeredMigrations: [] };
 	}
 }
 
@@ -668,7 +721,11 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		// resyncSchema decides between same-version overwrite, version-bump
 		// forward-migration, and refuse-and-leave-unchanged; it never strands the
 		// block's items under a schema they fail.
-		const outcome = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
+		// resyncSchema now returns { status, registeredMigrations }; installContext
+		// reports only the status bucket (the migration-decl reporting surface is on
+		// /context update — FGAP-050 — so the appended decls are intentionally
+		// ignored here).
+		const { status: outcome } = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
 		switch (outcome) {
 			case "resynced":
 				result.resynced.push(relDest);
@@ -721,6 +778,16 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 				continue;
 			}
 			if (!overwrite) {
+				result.skipped.push(relDest);
+				continue;
+			}
+			// FGAP-051 idempotent skip: the on-disk empty block already equals the
+			// catalog starter (JCS-canonical content equality, key-order/whitespace
+			// insensitive) — rewriting it would be a no-op churn (mtime bump, identical
+			// bytes), so skip it and report `skipped` rather than `updated`. Reaches
+			// here only for an itemless block under overwrite; a starter whose content
+			// differs (e.g. an extra top-level field) still falls through to the copy.
+			if (computeFileContentHash(destFile) === computeFileContentHash(sourceFile)) {
 				result.skipped.push(relDest);
 				continue;
 			}
@@ -1065,6 +1132,16 @@ export interface UpdateResult {
 	 * the arrays report what WOULD be added; nothing is written.
 	 */
 	registryAdditions: RegistryAdditions;
+	/**
+	 * Migration declarations this run registered into the substrate's
+	 * migrations.json (FGAP-050). A version-bump `catalog-ahead` re-sync registers
+	 * the shipped catalog chain's not-already-present decls before migrating; each
+	 * appears here as `{ schema, from, to }`. Mirrors `registryAdditions`: under
+	 * `dryRun` this lists what WOULD be registered (computed read-only from the
+	 * catalog chain minus the decls already on disk); nothing is written. A
+	 * same-version resync or a `blocked` (rolled-back) outcome contributes nothing.
+	 */
+	migrationsRegistered: Array<{ schema: string; from: string; to: string }>;
 }
 
 /**
@@ -1107,9 +1184,12 @@ export interface UpdateResult {
  * When `dryRun` is true NO writes occur: `checkStatus` is consulted and the action
  * plan is computed (every `catalog-ahead` schema is listed under `resynced` as the
  * would-act set, since the concrete resync outcome is only known by running it),
- * but `resyncSchema` is NOT invoked. The live path mutates only via `resyncSchema`
- * (the catalog-ahead branch); `installContext` and its install handler are NOT
- * touched. Resolves the catalog / dest paths through the SAME `resolveCatalog` +
+ * but `resyncSchema` is NOT invoked. The dryRun arm DOES compute the would-register
+ * migration decls read-only (`computeWouldRegisterMigrations`) onto
+ * `migrationsRegistered` (FGAP-050) without writing. The live path mutates only via
+ * `resyncSchema` (the catalog-ahead branch) and surfaces the decls it appended onto
+ * `migrationsRegistered`; `installContext` and its install handler are NOT touched.
+ * Resolves the catalog / dest paths through the SAME `resolveCatalog` +
  * `installedSchemaDestPath` helpers the installer + detector use.
  */
 export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolean } = {}): UpdateResult {
@@ -1124,6 +1204,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		reported: [],
 		inSync: [],
 		registryAdditions: { relation_types: [], invariants: [], block_kinds: [], lenses: [] },
+		migrationsRegistered: [],
 	};
 
 	const destRoot = tryResolveContextDir(cwd);
@@ -1159,6 +1240,23 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 					// resynced/migrated/blocked outcome is unknowable without running it,
 					// so report the schema as the would-act (resynced) set.
 					result.resynced.push(name);
+					// FGAP-050: in addition, compute READ-ONLY the migration decls a
+					// version-bump resync WOULD register, so the plan surfaces them without
+					// writing. computeWouldRegisterMigrations reads only (catalog chain
+					// minus the decls already present in migrations.json); a missing kind,
+					// same version, no chain, or all-already-present yields an empty list.
+					// Wrapped so a read/parse failure cannot crash the plan (mirrors the
+					// per-asset error tolerance the merge arm applies).
+					try {
+						const kind = byId.get(name);
+						if (kind) {
+							const sourceFile = path.join(samplesRoot, kind.schema_path);
+							const destFile = installedSchemaDestPath(destRoot, name);
+							for (const m of computeWouldRegisterMigrations(destRoot, samplesRoot, sourceFile, destFile, name)) {
+								result.migrationsRegistered.push(m);
+							}
+						}
+					} catch {}
 					break;
 				}
 				const kind = byId.get(name);
@@ -1171,7 +1269,15 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				}
 				const sourceFile = path.join(samplesRoot, kind.schema_path);
 				const destFile = installedSchemaDestPath(destRoot, name);
-				const outcome = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
+				const { status: outcome, registeredMigrations } = resyncSchema(
+					destRoot,
+					samplesRoot,
+					sourceFile,
+					destFile,
+					name,
+				);
+				// FGAP-050: surface the decls the live resync actually appended.
+				for (const m of registeredMigrations) result.migrationsRegistered.push(m);
 				switch (outcome) {
 					case "resynced":
 						result.resynced.push(name);

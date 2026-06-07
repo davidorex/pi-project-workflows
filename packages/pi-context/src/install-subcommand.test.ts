@@ -1122,3 +1122,176 @@ describe("updateContext — config-registry propagation (TASK-038)", () => {
 		assert.equal(after, before, "dryRun must not write config.json");
 	});
 });
+
+// FGAP-050 — surfaced migration-declaration reporting on /context update. A
+// version-bump catalog-ahead resync registers the shipped catalog chain's decls
+// into migrations.json; updateContext now surfaces them under
+// `migrationsRegistered` (live = the decls actually appended; dryRun = the
+// would-register set computed read-only, nothing written). The catalog ships
+// `tasks 1.0.0 -> 1.0.1` (identity), so installing `tasks` at 1.0.0 with NO block
+// file (zero items → clean `migrated`, no identity-stamp throw on this
+// pre-identity makeProject substrate) drives the version-bump path.
+describe("updateContext migration-declaration reporting (FGAP-050)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Pre-place an installed schema dest = the catalog body with its `version`
+	// overridden to an older value, then install so the baseline is recorded FROM
+	// that on-disk older body → checkStatus classifies it catalog-ahead.
+	function installOlderSchema(dir: string, name: string, version: string): void {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", `${name}.schema.json`), JSON.stringify(catalog, null, 2));
+	}
+
+	function migrationsPathOf(dir: string): string {
+		return path.join(dir, ".project", "migrations.json");
+	}
+
+	it("live: a version-bump resync reports the registered decl AND writes it to migrations.json", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "1.0.0"); // installed older than catalog (1.0.1)
+		installContext(tmpRoot); // baseline FROM the on-disk 1.0.0 body → catalog-ahead
+		const pre = checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks");
+		assert.equal(pre?.state, "catalog-ahead", "precondition: tasks must be catalog-ahead (older installed version)");
+
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.migrated, ["tasks"], "a version bump with no items migrates");
+		assert.deepEqual(
+			result.migrationsRegistered,
+			[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
+			"the registered catalog decl must be surfaced under migrationsRegistered",
+		);
+		// migrations.json now carries the decl on disk.
+		const onDisk = JSON.parse(fs.readFileSync(migrationsPathOf(tmpRoot), "utf-8")) as {
+			migrations: Array<{ schemaName: string; fromVersion: string; toVersion: string }>;
+		};
+		assert.ok(
+			onDisk.migrations.some((m) => m.schemaName === "tasks" && m.fromVersion === "1.0.0" && m.toVersion === "1.0.1"),
+			"the decl must be persisted into migrations.json on the live path",
+		);
+	});
+
+	it("dryRun: the would-register decl is reported AND migrations.json is byte-unchanged", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "1.0.0");
+		installContext(tmpRoot);
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"catalog-ahead",
+			"precondition: tasks must be catalog-ahead",
+		);
+		const mp = migrationsPathOf(tmpRoot);
+		const before = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+
+		const result = updateContext(tmpRoot, { dryRun: true });
+		assert.equal(result.dryRun, true, "the plan must declare it is a dry run");
+		assert.deepEqual(
+			result.migrationsRegistered,
+			[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
+			"dryRun must list the would-register decl",
+		);
+		// migrations.json byte-unchanged (absent stays absent; present stays equal).
+		const after = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+		if (before === null) {
+			assert.equal(after, null, "dryRun must not create migrations.json");
+		} else {
+			assert.ok(after !== null && after.equals(before), "dryRun must leave migrations.json byte-unchanged");
+		}
+	});
+
+	it("resyncSchema return: a same-version catalog-ahead resync reports no registered decls", () => {
+		// The stale-baseline trick yields a SAME-version catalog-ahead resync (no
+		// migration), so migrationsRegistered stays empty.
+		tmpRoot = makeProject(["tasks"], []);
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		installContext(tmpRoot);
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__stale_marker = true;
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		installContext(tmpRoot); // re-baseline FROM the stale body → catalog-ahead, same version
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"catalog-ahead",
+			"precondition: tasks catalog-ahead at the SAME version",
+		);
+
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.resynced, ["tasks"], "same-version catalog-ahead resyncs (no migration)");
+		assert.deepEqual(result.migrated, [], "no version bump → nothing migrated");
+		assert.deepEqual(result.migrationsRegistered, [], "a same-version resync registers no migration decls");
+	});
+
+	it("resyncSchema return: a blocked outcome reports no registered decls (rollback truth)", () => {
+		// Installed at a version with no chain reaching the catalog version → blocked;
+		// the rollback reverts migrations.json, so migrationsRegistered must be empty.
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "0.9.0"); // no 0.9.0 -> 1.0.1 chain ships
+		installContext(tmpRoot);
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		fs.writeFileSync(
+			blockDest,
+			JSON.stringify(
+				{ schema_version: "0.9.0", tasks: [{ id: "TASK-001", description: "x", status: "open" }] },
+				null,
+				2,
+			),
+		);
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"catalog-ahead",
+			"precondition: tasks catalog-ahead at 0.9.0",
+		);
+
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.blocked, ["tasks"], "no shipped chain → blocked");
+		assert.deepEqual(result.migrated, []);
+		assert.deepEqual(result.migrationsRegistered, [], "a blocked (rolled-back) outcome registers nothing");
+	});
+});
+
+// FGAP-051 — idempotent block skip. installContext's empty-block overwrite arm
+// must NOT rewrite a block whose on-disk content already equals the catalog
+// starter (JCS-canonical equality); it reports `skipped` and leaves the file
+// byte-identical (mtime + bytes), avoiding no-op churn. A starter whose content
+// differs still falls through to `updated`.
+describe("installContext idempotent block skip (FGAP-051)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("an empty block already equal to the catalog starter is skipped, not rewritten", () => {
+		tmpRoot = makeProject([], ["tasks"]);
+		const dest = path.join(tmpRoot, ".project", "tasks.json");
+		// Write the on-disk block EXACTLY equal (content) to the catalog starter.
+		const starter = fs.readFileSync(path.join(SAMPLES_DIR, "blocks", "tasks.json"), "utf-8");
+		fs.writeFileSync(dest, starter);
+		const before = fs.readFileSync(dest);
+		const mtimeBefore = fs.statSync(dest).mtimeMs;
+
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.skipped, ["tasks.json"], "a starter-equal empty block must be skipped");
+		assert.deepEqual(result.updated, [], "a starter-equal empty block must NOT be updated");
+		assert.deepEqual(result.preserved, [], "an empty block is not preserved");
+		assert.ok(fs.readFileSync(dest).equals(before), "the block file bytes must be unchanged");
+		assert.equal(fs.statSync(dest).mtimeMs, mtimeBefore, "the block file mtime must be unchanged (no rewrite)");
+	});
+
+	it("an empty block that DIFFERS from the catalog starter is still overwritten (updated)", () => {
+		// Guards that the idempotent skip does not regress the existing empty-block
+		// overwrite behaviour: an itemless block carrying an extra top-level field
+		// differs from the starter, so it must still be replaced + reported updated.
+		tmpRoot = makeProject([], ["tasks"]);
+		const dest = path.join(tmpRoot, ".project", "tasks.json");
+		fs.writeFileSync(dest, JSON.stringify({ tasks: [], extra_marker: true }, null, 2));
+
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.deepEqual(result.updated, ["tasks.json"], "a differing empty block must be updated");
+		assert.deepEqual(result.skipped, [], "a differing empty block must NOT be skipped");
+		const after = fs.readFileSync(dest, "utf-8");
+		assert.ok(!after.includes("extra_marker"), "the block must be replaced by the catalog starter");
+	});
+});

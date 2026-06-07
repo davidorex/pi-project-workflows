@@ -986,3 +986,139 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		assert.equal(computeContentHash(body), refreshedHash, "the stamped merged body must round-trip to its hash");
 	});
 });
+
+// ── TASK-038 (FEAT-006 T5): config-registry propagation on update ────────────
+// `updateContext` additively brings catalog-new config-registry entries
+// (relation_types / invariants / block_kinds / lenses) absent from the substrate
+// config current, preserving every user entry (and any locally-diverged body of
+// an existing entry). makeProject ships block_kinds:[] / lenses:[] and no
+// relation_types / invariants, so update must re-populate all four from the
+// catalog. Catalog ids confirmed from samples/conception.json.
+const CATALOG = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "conception.json"), "utf-8")) as {
+	relation_types?: Array<{ canonical_id: string }>;
+	invariants?: Array<{ id: string }>;
+	block_kinds?: Array<{ canonical_id: string }>;
+	lenses?: Array<{ id: string }>;
+};
+const configPathOf = (root: string) => path.join(root, ".project", "config.json");
+
+describe("updateContext — config-registry propagation (TASK-038)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("absent registry entries reappear from the catalog and are reported in registryAdditions", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const result = updateContext(tmpRoot);
+
+		const after = loadConfig(tmpRoot);
+		assert.ok(after, "config must load after update");
+		// All four registries gained the catalog's entries.
+		const catRt = (CATALOG.relation_types ?? []).map((r) => r.canonical_id);
+		const catInv = (CATALOG.invariants ?? []).map((i) => i.id);
+		const catBk = (CATALOG.block_kinds ?? []).map((b) => b.canonical_id);
+		const catLn = (CATALOG.lenses ?? []).map((l) => l.id);
+		assert.deepEqual(
+			new Set((after.relation_types ?? []).map((r) => r.canonical_id)),
+			new Set(catRt),
+			"every catalog relation_type must be present after update",
+		);
+		assert.deepEqual(
+			new Set((after.invariants ?? []).map((i) => i.id)),
+			new Set(catInv),
+			"every catalog invariant must be present after update",
+		);
+		assert.deepEqual(
+			new Set((after.block_kinds ?? []).map((b) => b.canonical_id)),
+			new Set(catBk),
+			"every catalog block_kind must be present after update",
+		);
+		assert.deepEqual(
+			new Set((after.lenses ?? []).map((l) => l.id)),
+			new Set(catLn),
+			"every catalog lens must be present after update",
+		);
+		// registryAdditions lists exactly what was added (everything, here).
+		assert.deepEqual(new Set(result.registryAdditions.relation_types), new Set(catRt));
+		assert.deepEqual(new Set(result.registryAdditions.invariants), new Set(catInv));
+		assert.deepEqual(new Set(result.registryAdditions.block_kinds), new Set(catBk));
+		assert.deepEqual(new Set(result.registryAdditions.lenses), new Set(catLn));
+		// A relation_type addition is keyed by its canonical_id (not display_name).
+		assert.ok(
+			result.registryAdditions.relation_types.includes("decision_supersedes_decision"),
+			"relation_type additions must be keyed by canonical_id",
+		);
+	});
+
+	it("a user-added entry absent from the catalog survives and is NOT in registryAdditions", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		// Hand-write a custom lens whose id is NOT in the catalog (the :29 precedent).
+		const cfg = loadConfig(tmpRoot);
+		assert.ok(cfg);
+		const customLensId = "my-custom-lens-xyz";
+		cfg.lenses = [...(cfg.lenses ?? []), { id: customLensId, bins: ["a", "b"] }];
+		fs.writeFileSync(configPathOf(tmpRoot), JSON.stringify(cfg, null, 2));
+
+		const result = updateContext(tmpRoot);
+
+		const after = loadConfig(tmpRoot);
+		assert.ok(after);
+		const lens = (after.lenses ?? []).find((l) => l.id === customLensId);
+		assert.ok(lens, "the user-added custom lens must survive the update");
+		assert.deepEqual(lens.bins, ["a", "b"], "the custom lens body must be untouched");
+		assert.ok(
+			!result.registryAdditions.lenses.includes(customLensId),
+			"a user-added entry must NOT be listed as a catalog addition",
+		);
+		// The catalog's own lenses still arrive alongside it.
+		assert.ok(
+			(after.lenses ?? []).some((l) => l.id === "tasks-by-status"),
+			"catalog lenses still propagate alongside the preserved user lens",
+		);
+	});
+
+	it("a user-modified existing entry is NOT overwritten by the catalog body", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		// First update to populate the registries from the catalog.
+		updateContext(tmpRoot);
+		// Now locally modify an EXISTING catalog entry's permitted body field.
+		const cfg = loadConfig(tmpRoot);
+		assert.ok(cfg);
+		const targetId = "decision_supersedes_decision";
+		const rt = (cfg.relation_types ?? []).find((r) => r.canonical_id === targetId);
+		assert.ok(rt, "the catalog relation_type must be present after the first update");
+		rt.display_name = "LOCALLY-EDITED-DISPLAY-NAME";
+		fs.writeFileSync(configPathOf(tmpRoot), JSON.stringify(cfg, null, 2));
+
+		const result = updateContext(tmpRoot);
+
+		const after = loadConfig(tmpRoot);
+		assert.ok(after);
+		const afterRt = (after.relation_types ?? []).find((r) => r.canonical_id === targetId);
+		assert.ok(afterRt);
+		assert.equal(
+			afterRt.display_name,
+			"LOCALLY-EDITED-DISPLAY-NAME",
+			"a present entry's locally-edited body must be preserved (additive-only)",
+		);
+		assert.ok(
+			!result.registryAdditions.relation_types.includes(targetId),
+			"a present (modified) entry must NOT be listed as a catalog addition",
+		);
+	});
+
+	it("dryRun populates registryAdditions but leaves config.json byte-unchanged", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const before = fs.readFileSync(configPathOf(tmpRoot), "utf-8");
+
+		const result = updateContext(tmpRoot, { dryRun: true });
+
+		assert.ok(result.registryAdditions.relation_types.length > 0, "dryRun must still compute the catalog additions");
+		const after = fs.readFileSync(configPathOf(tmpRoot), "utf-8");
+		assert.equal(after, before, "dryRun must not write config.json");
+	});
+});

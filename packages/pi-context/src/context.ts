@@ -980,6 +980,69 @@ function hierarchyKey(h: { parent_block: string; child_block: string; relation_t
 }
 
 /**
+ * Per-registry list of the config-registry entry IDs `mergeCatalogRegistries`
+ * brought into a substrate config from the catalog (TASK-038 — FEAT-006 T5).
+ * Empty arrays when an `update` found nothing absent (or under `dryRun`, the
+ * arrays still report what WOULD be added). Keyed by each registry's IDENTITY
+ * field value: `relation_types` / `block_kinds` by `canonical_id`,
+ * `invariants` / `lenses` by `id` (per `REGISTRY_DESCRIPTORS`).
+ */
+export interface RegistryAdditions {
+	relation_types: string[];
+	invariants: string[];
+	block_kinds: string[];
+	lenses: string[];
+}
+
+/**
+ * Additively merge the four KEYED-ARRAY config registries `relation_types`,
+ * `invariants`, `block_kinds`, `lenses` from a catalog `ConfigBlock` into an
+ * existing substrate `ConfigBlock` (TASK-038 — FEAT-006 T5). PURE: no I/O,
+ * operates on a deep clone of `existing` (the
+ * load → JSON.parse(JSON.stringify(config)) → mutate precedent from
+ * `amendConfigEntry`).
+ *
+ * For each of those four registries the identity field is read from
+ * `REGISTRY_DESCRIPTORS[reg].idField` (NOT hard-coded — `relation_types` /
+ * `block_kinds` key by `canonical_id`, `invariants` / `lenses` by `id`). A
+ * catalog entry whose identity value is ABSENT from the existing registry is
+ * pushed onto the merged array and recorded under `additions[reg]`; an entry
+ * whose identity is already PRESENT is left exactly as the existing config has
+ * it — never replaced, removed, or body-merged, even when the catalog's
+ * same-id body diverges (additive-only, so a user's local edit to a catalog
+ * entry survives an `update`). A missing/undefined registry array on either
+ * side is treated as `[]`. `status_buckets` (a map) is out of scope and never
+ * touched.
+ */
+export function mergeCatalogRegistries(
+	existing: ConfigBlock,
+	catalog: ConfigBlock,
+): { merged: ConfigBlock; additions: RegistryAdditions } {
+	const merged = JSON.parse(JSON.stringify(existing)) as ConfigBlock;
+	const additions: RegistryAdditions = { relation_types: [], invariants: [], block_kinds: [], lenses: [] };
+	const registries: (keyof RegistryAdditions)[] = ["relation_types", "invariants", "block_kinds", "lenses"];
+	const mc = merged as unknown as Record<string, unknown>;
+	const cat = catalog as unknown as Record<string, unknown>;
+	for (const reg of registries) {
+		const idField = REGISTRY_DESCRIPTORS[reg].idField as string;
+		const existingArr = (mc[reg] as Array<Record<string, unknown>> | undefined) ?? [];
+		const catalogArr = (cat[reg] as Array<Record<string, unknown>> | undefined) ?? [];
+		const present = new Set(existingArr.map((e) => e[idField]));
+		const out = [...existingArr];
+		for (const entry of catalogArr) {
+			const id = entry[idField];
+			if (!present.has(id)) {
+				out.push(entry);
+				present.add(id);
+				additions[reg].push(String(id));
+			}
+		}
+		mc[reg] = out;
+	}
+	return { merged, additions };
+}
+
+/**
  * Scoped add / replace / remove of ONE entry in ONE config registry.
  *
  * Two guard tiers, both decidable here:

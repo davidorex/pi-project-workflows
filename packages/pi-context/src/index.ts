@@ -17,6 +17,8 @@ import {
 	installedSchemaDestPath,
 	loadConfig,
 	loadContext,
+	mergeCatalogRegistries,
+	type RegistryAdditions,
 	reconcileActiveSubstrateRegistration,
 	writeConfig,
 	writeSkeletonConfig,
@@ -1053,6 +1055,16 @@ export interface UpdateResult {
 	reported: Array<{ name: string; state: CheckStatusAsset["state"] }>;
 	/** `in-sync` schemas — already current, no action. */
 	inSync: string[];
+	/**
+	 * Catalog-new config-registry entries this run additively propagated into the
+	 * substrate config (TASK-038 — FEAT-006 T5). Per registry, the identity-keyed
+	 * ids brought current (`relation_types` / `block_kinds` by `canonical_id`,
+	 * `invariants` / `lenses` by `id`). User-authored entries absent from the
+	 * catalog, and existing entries whose body diverges from the catalog, are
+	 * preserved untouched and never listed here (additive-only). Under `dryRun`
+	 * the arrays report what WOULD be added; nothing is written.
+	 */
+	registryAdditions: RegistryAdditions;
 }
 
 /**
@@ -1111,6 +1123,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		conflicts: [],
 		reported: [],
 		inSync: [],
+		registryAdditions: { relation_types: [], invariants: [], block_kinds: [], lenses: [] },
 	};
 
 	const destRoot = tryResolveContextDir(cwd);
@@ -1251,6 +1264,38 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		for (const name of brought_current) {
 			refreshBaselineForSchema(cwd, name);
 		}
+	}
+
+	// Config-registry propagation (TASK-038 — FEAT-006 T5). Bring catalog-new
+	// keyed-array config-registry entries (relation_types / invariants /
+	// block_kinds / lenses) that are ABSENT from the substrate config current with
+	// the packaged catalog, ADDITIVELY: a user-authored entry (absent from the
+	// catalog) and an existing entry whose body diverges from the catalog are both
+	// preserved untouched (mergeCatalogRegistries never replaces a present id).
+	// Re-load config FRESH — the baseline-refresh loop above wrote config.json, so
+	// the `config` captured at function entry is stale (would drop those baseline
+	// updates on write-back). Under dryRun: compute + record additions, write
+	// nothing. A read/parse failure is swallowed so the schema-update result
+	// (already computed) is not lost — registryAdditions simply stays empty.
+	try {
+		const catalog = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
+		const fresh = loadConfig(cwd);
+		if (fresh) {
+			const { merged, additions } = mergeCatalogRegistries(fresh, catalog);
+			result.registryAdditions = additions;
+			if (
+				!dryRun &&
+				(additions.relation_types.length ||
+					additions.invariants.length ||
+					additions.block_kinds.length ||
+					additions.lenses.length)
+			) {
+				writeConfig(cwd, merged);
+			}
+		}
+	} catch {
+		// Catalog read / parse / config-load failure: leave registryAdditions empty
+		// (its initialized value) and return the schema-update result unchanged.
 	}
 
 	return result;
@@ -2142,6 +2187,10 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
+// Re-export the config-registry-propagation surface (TASK-038 — FEAT-006 T5) so
+// consumers can type `UpdateResult.registryAdditions` and call the pure merge
+// helper against the public `@davidorex/pi-context` surface.
+export { mergeCatalogRegistries, type RegistryAdditions } from "./context.js";
 export {
 	contextRegistryPath,
 	invalidateRegistry,

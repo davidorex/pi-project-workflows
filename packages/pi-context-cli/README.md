@@ -76,10 +76,12 @@ A schema whose per-path edits cannot be reconciled is left unmodified and routed
 - on an interactive TTY (and not `--json`), `update` dispatches an interactive [`pi-context pi-bound`](#pi-context-pi-bound--constrained-pi-session) mergetool per conflicting schema — the bounded agent reconciles and writes through `write-schema` (the auth-gate confirming the write)
 - otherwise it renders a read-only conflict report and writes nothing
 
-`--dryRun` previews the per-schema action plan (resync / merge / conflict) and writes nothing.
+`update` also additively propagates catalog-new config-registry entries (`relation_types` / `invariants` / `block_kinds` / `lenses`) absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten; the added ids are reported under `registryAdditions`).
+
+`--dryRun` previews the per-schema action plan (resync / merge / conflict) and the config-registry entries that would be added, and writes nothing.
 
 ```bash
-pi-context update --dryRun                   # preview the per-schema action plan
+pi-context update --dryRun                   # preview the per-schema action plan + config-registry additions
 pi-context update                            # apply: resync + auto-merge; conflicts → mergetool (TTY) or report
 ```
 

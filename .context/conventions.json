@@ -39,6 +39,14 @@
       "severity": "error",
       "oid": "600e4c269282ce170865645c9d143145",
       "content_hash": "6e365fe5f4ef27b492b438d33c634626c9239c1295fd51b271d2872049818827"
+    },
+    {
+      "id": "docs-surface-sync",
+      "description": "Every change to a user-facing surface updates that surface's documentation in the same change set, and the docs are CHECKED for staleness — not merely extended.\n1. Documented surfaces: the package README (packages/<pkg>/README.md), the monorepo root README.md, the surfaced strings of any changed reflected op (description/promptSnippet in ops-registry.ts), and the generated SKILL.md (regenerate via `npm run skills`; never hand-edit).\n2. Check before write: audit the existing docs for statements the change makes false and correct them. A behavior change leaves stale text exactly where users read it; adding new prose is not enough.\n3. Docs are usage-only — what the surface does and how to use it. Never what it fixes or how it behaved before.\n4. The CHANGELOG [Unreleased] entry carries the change and is the ONLY place correction/fix framing appears; every published-surface change grows [Unreleased] (gate-enforced by check-changelog).\n5. This is a step of every change's completion and the object of a periodic surface-staleness audit (READMEs + op strings + SKILL.md + CLAUDE.md op-surface notes).",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "content_hash": "ca1a75473c68f0280c68fdeeb08aec7633b5ded88b297f5344ab99952c5f36f1"
     }
   ]
 }

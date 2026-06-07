@@ -1,0 +1,19 @@
+{
+  "description": "Implement pi-context pi-bound per analysis/2026-06-07-pi-context-pi-bound-cli.md: a CLI process mode that launches an interactive pi session bound to the composed extension tool surface, reproducing scripts/launch-constrained-pi.sh.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context-cli/src/bin.ts"
+  ],
+  "acceptance_criteria": [
+    "[subagent] pi-bound is routed in cli.ts main() before op resolution (dispatched when the first positional is 'pi-bound') and excluded from the reflected surface:use op set.",
+    "[subagent] The launched session's tool surface is the union of the two-package-root SKILL.md tool set (the script's 69 tools) plus the per-target composites from config.tool_operations[].",
+    "[subagent] The meta-package root is resolved via require.resolve('@davidorex/pi-project-workflows/package.json'); pi install -l <metaRoot> runs against it; the SKILL.md union globs that root.",
+    "[subagent] Context is composed in-process via loadContext (no tsx or python3 subprocess), per DEC-0015.",
+    "[subagent] --grant <id> extends the tool union; a trailing --grant with no value exits 2; passthrough arguments reach pi unchanged.",
+    "[subagent] pi is launched restricted to --tools <union>; the union is re-derived every launch (no stale reuse on resume).",
+    "[orchestrator] Runtime demo: pi-context pi-bound launches an interactive pi session whose available tools equal the composed union and exclude tools outside it — equivalent to scripts/launch-constrained-pi.sh.",
+    "[orchestrator] build + check + full test suite pass at zero failures; the change is built into dist/.",
+    "[orchestrator] published-package smoke test of the meta-path resolution + pi install -l from a registry install — deferred, release-gated."
+  ]
+}

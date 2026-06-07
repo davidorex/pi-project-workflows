@@ -62,6 +62,20 @@ While the ready/blocked deriver does not honor gating relations (`FGAP-061`), th
 - **Op surface**: the reflecting `pi-context-cli` (`pi-context <op> …`) is the Claude Code-side shell surface over the op-registry — a substrate op is a library fn + a Pi tool the CLI reflects. The hand-written `scripts/orchestrator/*.ts` are composers (`compile-*-context.ts`, `inject-context-items.ts`), runtime-demos, and launch-support — hand-authored briefs forbidden, use these. `build-html-views.ts` projects the active substrate's `*.json` (via canonical pi-context block-api) to a self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
 
+## Canonical implementation pipeline (every code change, including in-loop fixes)
+
+The orchestration shape that wraps the Completion Sequence below. A feature AND every fix to a finding raised mid-pipeline flow through the same loop — a discovered divergence is not patched ad hoc, it re-enters the pipeline:
+
+1. **Implement — explore → plan → agent.** Enter plan mode; investigate *exclusively* via Explore agents (the orchestrator never greps as investigation); resolve the approach into a written plan; approve via ExitPlanMode; a foreground coding subagent implements from the approved plan. The orchestrator never hand-writes source. Pre-step: clean git baseline; file the resolved plan into the substrate (TASK/FGAP/DEC); set the task in-progress; branch off the porcelain-clean integration branch (per `feature-branch-workflow`).
+2. **Verify — runtime demo + adversarial probe.** Real end-to-end invocation (not a mocked assertion) plus a fresh-context adversarial probe that independently re-derives. Tests-pass is necessary, not sufficient.
+3. **Iterate to zero — every finding re-enters this same pipeline.** A divergence/defect surfaced by verify or the probe goes back through explore → plan → approve → agent, scoped to the finding's whole **class** (Explore enumerates the class; fix the class, not the one symptom).
+4. **Re-verify the fix — fresh, non-inherited.** A fix does NOT inherit the prior green: re-run the runtime demo + a FRESH adversarial re-audit of the fix specifically. Loop 2→3→4 until a pass finds nothing new.
+5. **Docs — usage-only, correct surface.** Package + monorepo READMEs; `skill-narrative.md` only when the surface is a pi op (not a CLI-only mode); regen SKILL.md only if a skill source changed. Fix/defect framing → CHANGELOG, never docs.
+6. **Merge — `feature-branch-workflow`.** Merge to the integration branch; rebuild (pi loads `dist/`).
+7. **Substrate closure — honest status.** Verification + `complete-task`; set the addressed feature to its TRUE bucket — `complete` only when its acceptance criteria are actually met, `in-review` when a credentialed/release-gated piece remains. Deferred/credentialed pieces are named, never faked. Delete the branch; `context-validate` clean.
+
+Per-step detail (build/check/test, the probe's mutual-re-derivation rule, release, credentialed verification, publish) is the Completion Sequence below.
+
 ## Completion Sequence (mandatory after every code change)
 
 Work is not complete until the runtime can load it. Pi loads from `dist/`, not source. Every code change follows the full sequence:

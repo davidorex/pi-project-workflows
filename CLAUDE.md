@@ -129,7 +129,7 @@ After writing an analysis markdown (`analysis/*.md`), propose to the user surfac
 
 Typed JSON files with schemas. Substrate writes via block-api primitives (validated + DispatchContext-stamped). Direct `Edit` / `Write` on the active substrate's `*.json` is forbidden. `pi -p "call append-block-item"` is retired; do not use.
 
-**Canonical filing patterns** — via the reflecting CLI (`node packages/pi-context-cli/dist/bin.js <op>`; target form `pi-context <op>` per FGAP-031), one write per Bash call, `--writer '{"kind":"human","user":"davidryan@gmail.com"}' --json`:
+**Canonical filing patterns** — via the globally-installed reflecting CLI (`pi-context <op>`; if not on PATH, `npm link` from `packages/pi-context-cli/`), one write per Bash call, `--writer '{"kind":"human","user":"davidryan@gmail.com"}' --json`:
 
 - **Append** (new item): write JSON to `/tmp/<id>.json`, then `append-block-item --block <name> --arrayKey <key> --autoId true --item @/tmp/<id>.json --writer … --json`. Use `read-schema --schemaName <name> --path properties.<key>.items.required` first when unfamiliar with the block's fields; `--arrayKey` is the block's `array_key` (`read-config --registry block_kinds --id <name>`).
 - **Status mutation / field update**: `update-block-item --block <name> --arrayKey <key> --match '{"id":"…"}' --updates '{…}' --writer …`.
@@ -168,7 +168,7 @@ Load-bearing architectural rules (not change-history):
 
 ## pi-context-cli — direct-drive discipline (dogfooding)
 
-`pi-context-cli` (`node packages/pi-context-cli/dist/bin.js <op> --flag value …`) is the dogfooding surface for substrate reads and writes — drive it **directly**, one clean invocation per operation, inline flags. `--item @/tmp/<id>.json` only when the payload's quotes/apostrophes fight the shell. Verify every write through the CLI's own read op (`read-block-item` / `read-block`) — output landing ≠ success.
+The globally-installed `pi-context` command (`pi-context <op> --flag value …`; if absent from PATH, `npm link` from `packages/pi-context-cli/`) is the dogfooding surface for substrate reads and writes — drive the real global command **directly** (not `node …/dist/bin.js`), one clean invocation per operation, inline flags. `--item @/tmp/<id>.json` only when the payload's quotes/apostrophes fight the shell. Verify every write through the CLI's own read op (`read-block-item` / `read-block`) — output landing ≠ success.
 
 Forbidden:
 - **Bypassing the CLI to inspect or mutate substrate/schema state by other means** — `node -e "require('./.context/*.json')"`, `cat`, `Read`/`Edit` on the active substrate's `*.json` or `schemas/*.json`. If a CLI op reads it, read it through the op.

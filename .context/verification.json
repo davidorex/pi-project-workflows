@@ -539,6 +539,32 @@
       ],
       "oid": "febaecb4de62a84de2f091c9bfca175b",
       "content_hash": "213e79b901e798edf211d47b82fd799a7e54c474f8057d4020bde532831c9dae"
+    },
+    {
+      "id": "VER-024",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "FEAT-005's outstanding [orchestrator] real-session smoke confirmed by the operator (davidryan@gmail.com): running pi-context pi-bound from a cwd outside the repo with the published packages present launches an interactive pi session constrained to the composed extension tool surface (the two-package-root SKILL.md tool union + the active substrate's config.tool_operations[] composites), in which the agent can invoke the union tools and cannot invoke tools outside it, with --grant extending the union and passthrough args reaching pi unchanged. The operator ran and confirmed the live interactive/credentialed session — the piece the orchestrator could not exercise in a non-interactive harness; TASK-030 (VER-019) had stub-verified the dispatch/composition path. Recorded at the operator's direction ('done'); the orchestrator did not itself run the interactive session.",
+      "criteria_results": [
+        {
+          "criterion": "From a cwd outside the repo with the packages installed, pi-context pi-bound launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh",
+          "status": "passed",
+          "evidence": "operator-confirmed live run from outside the repo"
+        },
+        {
+          "criterion": "In that session the agent can invoke the extension tools in the union and cannot invoke tools outside it",
+          "status": "passed",
+          "evidence": "operator-confirmed the constrained tool surface in the live session"
+        },
+        {
+          "criterion": "--grant <id> extends the union for that launch; passthrough arguments reach pi unchanged",
+          "status": "passed",
+          "evidence": "code-verified in TASK-030 (VER-019) + operator-confirmed in the live session"
+        }
+      ],
+      "oid": "0bd14a323ecd840435d8ecea692e8305",
+      "content_hash": "b86fa12928b3bf79bfd2b14620c59418f998da63fb2c81b6aa3274496d403449"
     }
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "title": "pi-context pi-bound: launch a pi session bound to the composed extension tool surface",
+  "status": "complete",
+  "layer": "L4",
+  "description": "A globally-runnable `pi-context pi-bound` command launches an interactive pi session restricted to the composed extension tool surface — the static SKILL.md tool union plus the config-declared per-target composites — reproducing scripts/launch-constrained-pi.sh as a first-class CLI command and subsuming it.",
+  "motivation": "The constrained-launch capability exists only as an out-of-tree shell script that needs the repo checkout. As a command on a globally installed pi-context, it runs from any project with the published packages present.",
+  "acceptance_criteria": [
+    "[orchestrator] From a cwd outside the repo with the packages installed, `pi-context pi-bound` launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh.",
+    "[orchestrator] In that session the agent can invoke the extension tools in the union and cannot invoke tools outside it.",
+    "[subagent] `--grant <id>` extends the union for that launch; passthrough arguments reach pi unchanged."
+  ]
+}

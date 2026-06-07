@@ -38,6 +38,40 @@ function makeFakeSpawn(exitCodes: number[] = []): { spawn: typeof spawn; calls: 
 	return { spawn: fake, calls };
 }
 
+// A spawn stub that records every invocation and, on the Nth call (1-based),
+// emits "error" instead of "exit" — modelling an un-runnable subprocess (e.g.
+// `pi` not on PATH). All other calls default to a clean "exit" 0. Exercises the
+// runCommand reject path that the pre-launch-abort wraps catch + attribute.
+function makeErrorSpawn(errorOnCall: number): { spawn: typeof spawn; calls: SpawnCall[] } {
+	const calls: SpawnCall[] = [];
+	let n = 0;
+	const fake = ((command: string, args: string[], opts: { cwd?: string }) => {
+		calls.push({ command, args, cwd: opts?.cwd });
+		n++;
+		const child = new EventEmitter();
+		if (n === errorOnCall) {
+			queueMicrotask(() => child.emit("error", new Error("spawn pi ENOENT")));
+		} else {
+			queueMicrotask(() => child.emit("exit", 0));
+		}
+		return child;
+	}) as unknown as typeof spawn;
+	return { spawn: fake, calls };
+}
+
+// Records whether stderr received any write — used to assert the pre-launch-abort
+// wraps emit their attributed diagnostic line.
+function recordingStderr(): { stream: NodeJS.WritableStream; wrote: () => boolean } {
+	let wrote = false;
+	const stream = {
+		write: () => {
+			wrote = true;
+			return true;
+		},
+	} as unknown as NodeJS.WritableStream;
+	return { stream, wrote: () => wrote };
+}
+
 function sink(): NodeJS.WritableStream {
 	return { write: () => true } as unknown as NodeJS.WritableStream;
 }
@@ -280,3 +314,66 @@ test("process-only op returns exit 2", async () => {
 	const code = await main(["list-tools"]);
 	assert.equal(code, 2);
 });
+
+// ── 16. `pi install` non-zero exit aborts before launch, propagating its code ──
+// set -e parity: the install's OWN exit code (3) is returned; no `pi --tools`
+// launch occurs; a diagnostic line is written to stderr.
+test("runPiBound aborts before launch with install's own code when pi install exits non-zero", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "pibound-installfail-"));
+	const skillRoot = seedSkillRoot({ a: '<tool name="read-block"></tool>' });
+	const { spawn: fakeSpawn, calls } = makeFakeSpawn([3]);
+	const err = recordingStderr();
+	try {
+		const code = await runPiBound([], { cwd, stderr: err.stream, spawn: fakeSpawn, skillRoots: [skillRoot] });
+		assert.equal(code, 3);
+		assert.deepEqual(calls[0].args.slice(0, 2), ["install", "-l"]);
+		assert.ok(!calls.some((c) => c.args[0] === "--tools"));
+		assert.ok(err.wrote(), "expected an attributed stderr diagnostic");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+		rmSync(skillRoot, { recursive: true, force: true });
+	}
+});
+
+// ── 17. `pi install` spawn-error aborts before launch, coded 1 ────────────────
+// pi un-runnable (ENOENT) on the FIRST (install) spawn → caught, coded 1, no launch.
+test("runPiBound aborts before launch coded 1 when pi install cannot run", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "pibound-installerr-"));
+	const skillRoot = seedSkillRoot({ a: '<tool name="read-block"></tool>' });
+	const { spawn: fakeSpawn, calls } = makeErrorSpawn(1);
+	const err = recordingStderr();
+	try {
+		const code = await runPiBound([], { cwd, stderr: err.stream, spawn: fakeSpawn, skillRoots: [skillRoot] });
+		assert.equal(code, 1);
+		assert.ok(!calls.some((c) => c.args[0] === "--tools"));
+		assert.ok(err.wrote(), "expected an attributed stderr diagnostic");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+		rmSync(skillRoot, { recursive: true, force: true });
+	}
+});
+
+// ── 18. launch spawn-error surfaces attributed non-zero ───────────────────────
+// install exits 0 (first call), then the SECOND (launch) spawn errors → caught,
+// coded 1; install still ran; a diagnostic line is written.
+test("runPiBound returns non-zero with diagnostic when the pi launch cannot run", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "pibound-launcherr-"));
+	const skillRoot = seedSkillRoot({ a: '<tool name="read-block"></tool>' });
+	const { spawn: fakeSpawn, calls } = makeErrorSpawn(2);
+	const err = recordingStderr();
+	try {
+		const code = await runPiBound([], { cwd, stderr: err.stream, spawn: fakeSpawn, skillRoots: [skillRoot] });
+		assert.equal(code, 1);
+		assert.deepEqual(calls[0].args.slice(0, 2), ["install", "-l"]);
+		assert.ok(err.wrote(), "expected an attributed stderr diagnostic");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+		rmSync(skillRoot, { recursive: true, force: true });
+	}
+});
+
+// Test 4 (package-root resolution failure) is OMITTED: production resolution calls
+// the module-level `require.resolve` directly (not injected via deps), so there is
+// no clean deps-consistent seam to force a throw without restructuring production
+// code solely for testability. The resolve-failure guards (META_PACKAGE +
+// SKILL_PACKAGES) therefore ship untested here.

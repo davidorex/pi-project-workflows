@@ -238,10 +238,47 @@ export async function runPiBound(
 		);
 	}
 
-	const metaPackageRoot = resolvePackageRoot(META_PACKAGE);
-	await runCommand("pi", ["install", "-l", metaPackageRoot], targetCwd, spawnFn);
+	// set -e pre-launch parity: a non-resolvable package must abort BEFORE the
+	// launch with an attributed message, not propagate a raw `Cannot find module`
+	// throw out of runPiBound (which bin.ts would surface as a generic error/exit 1).
+	let metaPackageRoot: string;
+	try {
+		metaPackageRoot = resolvePackageRoot(META_PACKAGE);
+	} catch (err) {
+		stderr.write(
+			`pi-context pi-bound: could not resolve ${META_PACKAGE} (${(err as Error).message}); is it installed? aborting before launch.\n`,
+		);
+		return 1;
+	}
 
-	const skillRoots = deps?.skillRoots ?? SKILL_PACKAGES.map((pkg) => resolvePackageRoot(pkg));
+	// set -e pre-launch parity: `pi install` failure (either a non-zero exit or an
+	// un-runnable spawn) must abort before deriving skills / launching. A non-zero
+	// exit propagates the install's OWN code (script `set -e` carried the failed
+	// command's status); a spawn 'error' (pi missing) is caught and coded 1.
+	try {
+		const installCode = await runCommand("pi", ["install", "-l", metaPackageRoot], targetCwd, spawnFn);
+		if (installCode !== 0) {
+			stderr.write(
+				`pi-context pi-bound: pi install -l ${metaPackageRoot} failed (exit ${installCode}); extensions may not have registered — aborting before launch.\n`,
+			);
+			return installCode;
+		}
+	} catch (err) {
+		stderr.write(
+			`pi-context pi-bound: pi install -l ${metaPackageRoot} could not run (${(err as Error).message}); aborting before launch.\n`,
+		);
+		return 1;
+	}
+
+	let skillRoots: string[];
+	try {
+		skillRoots = deps?.skillRoots ?? SKILL_PACKAGES.map((pkg) => resolvePackageRoot(pkg));
+	} catch (err) {
+		stderr.write(
+			`pi-context pi-bound: could not resolve a skill package (${(err as Error).message}); is it installed? aborting before launch.\n`,
+		);
+		return 1;
+	}
 	const { tools: staticTools, skillFileCount } = deriveSkillToolNames(skillRoots);
 
 	if (staticTools.length === 0) {
@@ -261,5 +298,13 @@ export async function runPiBound(
 	const tools = composePiBoundTools({ staticTools, declaredComposites, grants });
 	const toolsCsv = tools.join(",");
 
-	return runCommand("pi", ["--tools", toolsCsv, ...passthrough], targetCwd, spawnFn);
+	// Success path: the launch's exit code IS the command's result, returned
+	// unchanged. A spawn 'error' (pi un-runnable) is caught here and surfaced as an
+	// attributed non-zero (1) instead of a bare reject out of runPiBound.
+	try {
+		return await runCommand("pi", ["--tools", toolsCsv, ...passthrough], targetCwd, spawnFn);
+	} catch (err) {
+		stderr.write(`pi-context pi-bound: failed to launch pi (${(err as Error).message}).\n`);
+		return 1;
+	}
 }

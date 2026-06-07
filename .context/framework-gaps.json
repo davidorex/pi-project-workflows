@@ -1473,7 +1473,7 @@
     {
       "id": "FGAP-046",
       "title": "install --update clobbers user schema customizations; no customization-preserving merge",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "install --update overwrites each installed schema with the catalog copy — verbatim on a same-version resync, migrate-or-refuse on a version gap — so a user's edits to a shipped block schema are lost on update. Block item data is preserved (S1) and a user-added custom block kind is untouched (no catalog counterpart), but edits to a catalog-shipped schema have no merge path: update is replace.",
@@ -1489,8 +1489,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "1f84b7e0e7fe232c0838dd01a6492765",
-      "content_hash": "1429baf7a2b1c030bca69e8a4923206a4479876cc39659dacb9102534b400382",
-      "content_parent": "09d5ce1d3cb6b33300fab5b2ac3a24c4faf13fc5e2b533437f00043bf2360181"
+      "content_hash": "4e18c89ace912ee548742f5ede69d9d9fa5ba9eb978a210b2357c45d1744cebc",
+      "content_parent": "1429baf7a2b1c030bca69e8a4923206a4479876cc39659dacb9102534b400382",
+      "closed_by": "VER-023 / TASK-037 — FEAT-006 hybrid complete (refuse T1 -> base-stamp T2 -> 3-way merge T3 -> resolver T4): pi-context update merges a locally-edited schema with the catalog preserving non-conflicting edits, and routes conflicts to an interactive pi-bound mergetool or a conflict report; a customization is never silently clobbered",
+      "closed_at": "2026-06-07T00:00:00.000Z"
     },
     {
       "id": "FGAP-047",

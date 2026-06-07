@@ -635,7 +635,7 @@
     {
       "id": "TASK-035",
       "description": "FEAT-006 T2 — base-stamping (the merge precondition). On every install/update, store the as-installed catalog schema BODY via the content-addressed object store: putObject(destRoot, asset.content_hash, schemaJson) at the baseline write (index.ts:738-754), keyed by the content_hash the asset already records (object-store.ts; content-hash.ts:82-84). Retrievable at merge time via getObject(destRoot, content_hash). This supplies the 3-way merge base that does not exist on disk today (checkStatus keeps only a SHA-256, context.ts:79). Depends on TASK-034.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/object-store.ts"
@@ -648,7 +648,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "82ae89de6887e1db7ac53dd33c1bd97e",
-      "content_hash": "dac2ad1df374fa90255bb72586c3eef9e78e9777f5ce5e7eda199e14a7f78234"
+      "content_hash": "f2a8ee0a91b16d870c272dc538fbdea61bd9e2c45a1ee29fd7a35adda343e279",
+      "content_parent": "dac2ad1df374fa90255bb72586c3eef9e78e9777f5ce5e7eda199e14a7f78234"
     },
     {
       "id": "TASK-036",

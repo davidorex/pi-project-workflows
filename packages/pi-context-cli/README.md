@@ -31,6 +31,7 @@ Example:
 pi-context read-block --block tasks
 pi-context append-block-item --block issues --arrayKey issues --item @new-issue.json --autoId
 pi-context read-block-page --block framework-gaps --offset 0 --limit 50
+pi-context update --dryRun
 ```
 
 ## `pi-context pi-bound` — constrained pi session
@@ -61,6 +62,26 @@ pi-context pi-bound -c                        # pass -c through to pi to resume
 ```
 
 This process mode replaces the former `scripts/launch-constrained-pi.sh` launch script.
+
+## `pi-context update` — drift-aware model update + conflict resolution
+
+```bash
+pi-context update [--dryRun]
+```
+
+`update` brings the installed schema model current with the packaged catalog. Per installed schema it consults the drift classification and routes by state: an `in-sync` schema is a no-op; a `catalog-ahead` schema re-syncs through the migration-aware path; a `locally-modified` / `both-diverged` schema is reconciled by a deterministic 3-way merge of base (the as-installed schema body in the object store, keyed by the recorded baseline `content_hash`) × ours (the installed schema) × theirs (the catalog schema). Disjoint edits auto-merge so both the user's and the catalog's changes survive (`required` / `enum` / array-valued `type` nodes merge as sets).
+
+A schema whose per-path edits cannot be reconciled is left unmodified and routed to a resolver:
+
+- on an interactive TTY (and not `--json`), `update` dispatches an interactive [`pi-context pi-bound`](#pi-context-pi-bound--constrained-pi-session) mergetool per conflicting schema — the bounded agent reconciles and writes through `write-schema` (the auth-gate confirming the write)
+- otherwise it renders a read-only conflict report and writes nothing
+
+`--dryRun` previews the per-schema action plan (resync / merge / conflict) and writes nothing.
+
+```bash
+pi-context update --dryRun                   # preview the per-schema action plan
+pi-context update                            # apply: resync + auto-merge; conflicts → mergetool (TTY) or report
+```
 
 ## Global flags
 

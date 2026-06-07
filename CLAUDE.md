@@ -141,7 +141,8 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 **Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json`; legacy `registry/`+`defaults/` are unshipped on-disk test fixtures only:
 - `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults)
 - `/context accept-all` — adopt `samples/conception.json` as `config.json` (full vocabulary + `installed_*`, root-overridden, idempotent never-clobber); writes config only
-- `/context install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`); `--update` overwrites
+- `/context install` — copies declared `installed_schemas[]`/`installed_blocks[]` from the samples catalog (`samples/schemas/` + `samples/blocks/`), base-stamping each as-installed schema body into `objects/` + recording the install baseline (schemas only)
+- `/context update [--dryRun]` — brings the installed schema model current with the catalog (supersedes `install --update`): `in-sync` no-op; `catalog-ahead` resync (migration-aware); `locally-modified`/`both-diverged` reconciled by a deterministic 3-way merge (base = object-store body at the baseline `content_hash`, ours = installed, theirs = catalog) that auto-merges disjoint edits; irreconcilable conflicts route to a `pi-bound` mergetool (TTY) or a read-only report. `--dryRun` previews, writes nothing
 - Or hand-author `config.json`'s `installed_*` then `/context install`
 
 **Block kinds**: query the samples catalog via the `read-samples-catalog` tool (or read `samples/conception.json` `block_kinds[]`) for the canonical set + descriptions. Each schema declares its array_key + required fields + ID pattern.

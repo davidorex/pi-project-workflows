@@ -1327,9 +1327,9 @@ export const ops: OpDefinition[] = [
 		name: "update",
 		label: "Update Installed Model",
 		description:
-			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is REFUSED — never overwritten — and reported for reconciliation; undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched; an already-current (in-sync) schema is a no-op. Pass dryRun to preview the action plan without writing anything.",
+			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified and routed to a resolver (an interactive pi-bound mergetool on a TTY, otherwise a read-only conflict report); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Pass dryRun to preview the per-schema action plan (resync / merge / conflict) without writing anything.",
 		promptSnippet:
-			"Update the installed schema model from the catalog (refuses to overwrite locally-modified schemas; --dry-run previews)",
+			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → mergetool/report; --dry-run previews)",
 		parameters: Type.Object({
 			dryRun: Type.Optional(
 				Type.Boolean({ description: "Preview the per-schema action plan without writing anything." }),

@@ -629,6 +629,42 @@
       "forbid_target_bucket": "unknown",
       "severity": "warning",
       "message": "Task '{id}' is governed by a superseded or cancelled decision"
+    },
+    {
+      "id": "decision-articulates-convention",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Decision '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "feature-articulates-convention",
+      "class": "requires-edge",
+      "block": "features",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Feature '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "task-articulates-convention",
+      "class": "requires-edge",
+      "block": "tasks",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Task '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
     }
   ],
   "tool_operations": [],

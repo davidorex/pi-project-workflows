@@ -1523,7 +1523,7 @@
     {
       "id": "FGAP-048",
       "title": "pi-context-cli does not declare @davidorex/pi-project-workflows; --pi-bound meta-resolution fails from a registry install",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "pi-context --pi-bound resolves the meta-package install root via require.resolve('@davidorex/pi-project-workflows/package.json') to run pi install -l <root> and read its bundled skills/*/SKILL.md. pi-context-cli's dependencies are @davidorex/pi-context and typebox only, so the meta-package resolves only via the in-repo workspace symlink, not from a globally or registry-installed CLI.",
@@ -1544,7 +1544,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "371e3a81b13ab6db63959580a0962ab9",
-      "content_hash": "48b45497709705e1057f61d421afe57852f6f989a01b11cde728cedf8dc70ba7"
+      "content_hash": "9b3814fe45783c1916e8fb583635b8283202f02e5bba0e5e71b247dd27f72a13",
+      "closed_by": "human/davidryan@gmail.com — closed by dafa2c6 (declared @davidorex/pi-project-workflows ^0.30.0 in pi-context-cli); verified by VER-018 (require.resolve resolves; no cycle; build/check/test green). The registry-install resolution smoke is deferred (release-gated) and does not block closing the declaration gap.",
+      "closed_at": "2026-06-07T00:00:00.000Z",
+      "content_parent": "48b45497709705e1057f61d421afe57852f6f989a01b11cde728cedf8dc70ba7"
     },
     {
       "id": "FGAP-049",

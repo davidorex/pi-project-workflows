@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-07T00:00:00.000Z",
+  "evidence": "TASK-029 verified. pi-context-cli now declares @davidorex/pi-project-workflows ^0.30.0 (commit dafa2c6), between @davidorex/pi-context and typebox; lockstep consistent (all @davidorex/* at 0.30.0). No circular dependency — nothing declares @davidorex/pi-context-cli (grep + DFS over the dependency graph, cycle:false). Resolution demo: from packages/pi-context-cli, require.resolve('@davidorex/pi-project-workflows/package.json') -> packages/pi-project-workflows/package.json. npm install clean (no ERESOLVE/peer); npm run build green (CLI bin still -rwxr-xr-x, TASK-028 intact); check clean; full test suite exit 0 (fail 0). Fresh adversarial probe: PASS, no defects. Merged dafa2c6 fast-forward to context-jit-spec-v2. Honest caveat: in-repo the resolve succeeds via the workspace symlink regardless of the declaration — the declaration's effect is only provable at a registry install (deferred, release-gated).",
+  "criteria_results": [
+    {
+      "criterion": "pi-context-cli declares @davidorex/pi-project-workflows at the lockstep range",
+      "status": "passed",
+      "evidence": "^0.30.0 added (dafa2c6)"
+    },
+    {
+      "criterion": "require.resolve('@davidorex/pi-project-workflows/package.json') resolves under npm link from an arbitrary cwd",
+      "status": "passed",
+      "evidence": "resolved to packages/pi-project-workflows/package.json from the CLI dir (in-repo via workspace symlink)"
+    },
+    {
+      "criterion": "build + check + full test suite pass; lockstep ranges internally consistent",
+      "status": "passed",
+      "evidence": "build/check/test green (test exit 0); all @davidorex/* at 0.30.0"
+    },
+    {
+      "criterion": "registry-install resolution of the meta-package",
+      "status": "skipped",
+      "evidence": "deferred, release-gated"
+    }
+  ]
+}

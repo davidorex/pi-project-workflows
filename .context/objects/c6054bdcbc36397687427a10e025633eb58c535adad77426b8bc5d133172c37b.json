@@ -1,0 +1,14 @@
+{
+  "description": "Make pi-context a globally installable command: add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/package.json"
+  ],
+  "acceptance_criteria": [
+    "[subagent] The pi-context-cli build sets the exec bit on the bin entry (chmod +x dist/bin.js after tsc); dist/bin.js is -rwxr-xr-x after a clean build.",
+    "[orchestrator] npm link from packages/pi-context-cli places an executable pi-context on PATH.",
+    "[orchestrator] pi-context <op> --json runs from a cwd outside the repo, resolving @davidorex/pi-context through the linked dependency tree.",
+    "[orchestrator] build + check + full test suite pass at zero failures.",
+    "[orchestrator] published-package global install (npm i -g @davidorex/pi-context-cli) smoke-tested from a clean machine/dir — deferred, release-gated."
+  ]
+}

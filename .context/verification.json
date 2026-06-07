@@ -292,6 +292,42 @@
       ],
       "oid": "536262996fe46c9cc485bb621987b988",
       "content_hash": "2882d962bd954bf99a92f13bab3b3e80d1ea4758c86ec4b5979a8f95995eadb2"
+    },
+    {
+      "id": "VER-017",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-028 verified. The pi-context-cli build now appends chmod +x dist/bin.js (commit a5055ad); after a clean npm run build, dist/bin.js is -rwxr-xr-x with the #!/usr/bin/env node shebang. Runtime demo: npm link from packages/pi-context-cli placed pi-context on PATH (/opt/homebrew/bin/pi-context); from /tmp (outside the repo) `pi-context read-block-item --cwd <repo> --block tasks --id TASK-028 --json` ran the op, resolving @davidorex/pi-context via the workspace symlink and reading the substrate; unlinked after. build + check + full test suite green (6 suites, fail 0). Fresh-context adversarial probe: PASS, no defects (one-line diff, exec bit reproducible, published path inherits via prepublishOnly, POSIX-chmod an accepted scope decision). Merged a5055ad fast-forward to context-jit-spec-v2.",
+      "criteria_results": [
+        {
+          "criterion": "CLI build sets the exec bit; dist/bin.js is -rwxr-xr-x after a clean build",
+          "status": "passed",
+          "evidence": "reproduced -rwxr-xr-x after npm run build"
+        },
+        {
+          "criterion": "npm link places an executable pi-context on PATH",
+          "status": "passed",
+          "evidence": "which pi-context -> /opt/homebrew/bin/pi-context"
+        },
+        {
+          "criterion": "pi-context <op> runs from a cwd outside the repo, resolving @davidorex/pi-context",
+          "status": "passed",
+          "evidence": "ran read-block-item from /tmp with --cwd to the repo; returned TASK-028"
+        },
+        {
+          "criterion": "build + check + full test suite pass at zero failures",
+          "status": "passed",
+          "evidence": "6 suites fail 0; check clean"
+        },
+        {
+          "criterion": "published-package global install smoke test",
+          "status": "skipped",
+          "evidence": "deferred, release-gated"
+        }
+      ],
+      "oid": "064b23824e603c489a25c44339757b32",
+      "content_hash": "7532d8701fc35f0113d0f5c79ac86bea6ce22a3b548ebc172bdd54074a618d60"
     }
   ]
 }

@@ -3025,5 +3025,18 @@
       "refname": "FEAT-004"
     },
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "064b23824e603c489a25c44339757b32",
+      "refname": "VER-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9437da385588fe3b4500b6acf6bf917f",
+      "refname": "TASK-028"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

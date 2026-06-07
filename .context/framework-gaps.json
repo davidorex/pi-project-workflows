@@ -1494,7 +1494,7 @@
     {
       "id": "FGAP-047",
       "title": "pi-context has no global command form — the built bin carries no exec bit",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "packages/pi-context-cli declares bin pi-context -> dist/bin.js with a node shebang, but its build (rm -rf dist && tsc) never sets the exec bit on dist/bin.js, leaving it -rw-r--r--. npm link and npm i -g cannot expose pi-context on PATH from a non-executable entry.",
@@ -1515,7 +1515,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "61cb108b1659ffae0891557c6d591e85",
-      "content_hash": "0a293211340f032e2bdad0489bb8d5910864f271a1abdf70846435f317179ac0"
+      "content_hash": "94657ffaf881ca7ba9bcd6c73a8211b87d26bb0db834cf5bf59e7754129a196f",
+      "closed_by": "human/davidryan@gmail.com — closed by a5055ad (chmod +x dist/bin.js in the pi-context-cli build); verified by VER-017 (dist/bin.js -rwxr-xr-x; npm link exposed pi-context on PATH; ran an op from outside the repo). Published npm i -g smoke deferred (release-gated), not blocking closure of the exec-bit gap.",
+      "closed_at": "2026-06-07T00:00:00.000Z",
+      "content_parent": "0a293211340f032e2bdad0489bb8d5910864f271a1abdf70846435f317179ac0"
     },
     {
       "id": "FGAP-048",

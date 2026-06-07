@@ -23,8 +23,8 @@ End state (the milestone, unbuilt as a block — FGAP-037): a user runs `pi-cont
 - pi-bound recast to a bare subcommand (DEC-0014, spec, FEAT-005, TASK-030).
 - Dependency recorded: TASK-033 → FEAT-006 → FGAP-047.
 
-## Gates not yet derived (caveat)
-The `task_gated_by_item` / `feature_gated_by_item` gates above are stored as edges but may not be consumed by the blocked/ready deriver (`currentState` consumes `task_depends_on_task`). Pending verification; if unconsumed, a "what's ready" query will under-report these gates and this tracker is the only place the gating ordering is actionable.
+## Gates not yet derived (confirmed — FGAP-061)
+Verified: `currentState` (context-sdk.ts:727-730) consumes only `task_depends_on_task`; the `task_gated_by_item` / `feature_gated_by_item` gates above are stored-but-inert — no readiness deriver honors them, and no feature/story-level readiness derivation exists at all. So a "what's ready" query under-reports these gates, and **this tracker is the only place the gating ordering is actionable** until FGAP-061's fix lands (extend `currentState` now for task gates; FEAT-004 config-declared gate-aware derivation for feature/story gates).
 
 ## Standing constraints
 - Releases HELD (no `release:*` without explicit authorization; npm publish needs OTP).

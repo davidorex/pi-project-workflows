@@ -3012,5 +3012,18 @@
       "refname": "FEAT-006"
     },
     "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "aeffe68d922894375b46f7f0f1121056",
+      "refname": "FGAP-061"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b5428784e8fbdb7524f7f5780c65dd69",
+      "refname": "FEAT-004"
+    },
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

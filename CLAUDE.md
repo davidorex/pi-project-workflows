@@ -47,7 +47,7 @@ Re-run after any active-substrate `*.json` change to refresh the rendered view.
 
 ## TEMPORARY — active-arc ordering tracker (retire when obsolete)
 
-While the ready/blocked deriver does not honor gating relations (`FGAP-061`), the cross-arc ordering for the current work (global `pi-context` CLI → `pi-bound` → unified `update` → governance-vocabulary release) is **not** derivable from `/context status`. Consult `analysis/2026-06-07-active-arc-ordering-tracker.md` for "what's next" / blocked / gated until `FGAP-061` lands (gate-aware derivation), then delete this note and the tracker.
+While the ready/blocked deriver does not honor gating relations (`FGAP-061`), the **current status + focus** is **not** derivable from `/context status` — the active CLI gaps are gaps, not yet tasks under a feature. The current focus is two arcs, both to the best-of-breed + superior-UX standard (no item tiered as "polish"/"ship-after"): **(A) complete `pi-context update` (FEAT-006) — TASK-038 config-registry propagation + TASK-039 surfaced-mutation reporting**, the two slices left before `update` meets its own "every mutation enumerated / registries propagated" guarantee; **(B) the best-of-breed `pi-context` CLI surface** — the 10 open `pi-context-cli` UX gaps (help `FGAP-062`, flag-normalization `FGAP-064`/`FGAP-032`, AJV guidance `FGAP-023`, `--version` `FGAP-063`, exit codes `FGAP-026`, render `FGAP-021`, write-safety `FGAP-022`/`FGAP-024`, shorthands `FGAP-025`). Consult `analysis/2026-06-07-active-arc-ordering-tracker.md` for the actionable ordering and `analysis/2026-06-07-pi-context-cli-release-readiness-audit.md` for the grounded CLI/update assessment, until `FGAP-061` lands (gate-aware derivation), then delete this note and the tracker.
 
 ## Conventions
 

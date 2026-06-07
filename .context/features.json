@@ -122,6 +122,26 @@
       "modified_at": "2026-06-06T22:52:00.499Z",
       "oid": "150b653168eb04fa40ea004ef9e64324",
       "content_hash": "99320b8b3d84f66c329e46b7ecee5779dcf9242e0f2903c3216c53be951356dc"
+    },
+    {
+      "id": "FEAT-007",
+      "title": "Convention-articulation enforcement — the validator requires planning artifacts to cite a governing convention or a missing-convention gap",
+      "status": "proposed",
+      "layer": "L2",
+      "description": "context-validate requires every decision, feature, and task to articulate its governance: an item_governed_by_convention edge to a convention, OR an item_acknowledges_missing_convention edge to a 'no convention governs X' framework-gap. A planning artifact filed with neither is a validation violation, so conventions cannot be silently skipped and a missing convention surfaces as tracked debt rather than a silent opt-out.",
+      "motivation": "Conventions govern planning before implementation, but their composition into context relies on the LLM reading and heeding them. Enforcing articulation at validation makes governance a checked precondition, not an aspiration.",
+      "acceptance_criteria": [
+        "[orchestrator] A decision/feature/task with neither an item_governed_by_convention nor an item_acknowledges_missing_convention edge is flagged by context-validate.",
+        "[orchestrator] An item edged to a convention, or to a missing-convention gap, passes.",
+        "[subagent] The mechanism is config-only — two relation_types + three requires-edge invariants — with no validator code change.",
+        "[orchestrator] .context enforces at severity error (clean after backfill); the shipped catalog enforces at severity warning for fresh substrates."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T00:23:07.752Z",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "content_hash": "28388635c3ab240afd7be44df9821497feaa23802b40dad100bf8075645b944d"
     }
   ]
 }

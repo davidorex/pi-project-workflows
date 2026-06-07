@@ -1933,5 +1933,83 @@
       "refname": "cli-command-form"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d0cc5578574b835b15bc0b6d4c8c48ef",
+      "refname": "DEC-0016"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e6f28db3c5e9a1f552389ff8c6772dfe",
+      "refname": "TASK-031"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6441f29277e8c7a6e22cdd71cb5bbc76",
+      "refname": "TASK-032"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c435caaec915d903d4782a80cb42b307",
+      "refname": "TASK-033"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e6f28db3c5e9a1f552389ff8c6772dfe",
+      "refname": "TASK-031"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6441f29277e8c7a6e22cdd71cb5bbc76",
+      "refname": "TASK-032"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6441f29277e8c7a6e22cdd71cb5bbc76",
+      "refname": "TASK-032"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c435caaec915d903d4782a80cb42b307",
+      "refname": "TASK-033"
+    },
+    "relation_type": "task_depends_on_task"
   }
 ]

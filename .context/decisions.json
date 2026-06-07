@@ -483,6 +483,39 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "2a280f513f2e006b0231459377931714",
       "content_hash": "c5f3d92a0e66fa6a8082f6842c159bf6224e2ad96bc830dc67607dc7cb697ced"
+    },
+    {
+      "id": "DEC-0016",
+      "status": "open",
+      "title": "Enforce convention articulation on planning artifacts via requires-edge invariants; error in .context, warning in the shipped catalog",
+      "context": "Conventions govern decisions/features/tasks but are only passively composed into context, so an LLM can skip them. The validator's requires-edge engine (config.invariants[], the vocabulary-free loop at context-sdk.ts:2055-2078) already enforces edge-presence — decision-cites-forcing-artifact is the living template — so articulation can be enforced as config with no validator code.",
+      "decision": "Register two relation_types: item_governed_by_convention (decisions/features/tasks -> conventions) and item_acknowledges_missing_convention (decisions/features/tasks -> framework-gaps). Add three requires-edge invariants, one per source block (decisions, features, tasks), each requiring at least one edge of either relation_type. When no convention governs an artifact, file a 'no convention governs X' framework-gap and acknowledge it via the second relation_type, surfacing missing governance as tracked debt rather than a silent opt-out. Severity is error in .context (hard reject, installed only after the existing artifacts are backfilled) and warning in the shipped samples catalog so a fresh substrate — which has no conventions yet — is advised, not blocked.",
+      "consequences": [
+        "The .context error invariant is installed only AFTER backfilling every existing decision/feature/task, else the substrate is invalid.",
+        "No pi-context code change — pure config (relation_types + invariants) in .context now, and in samples/conception.json for the catalog.",
+        "A new planning artifact must articulate a convention or file a missing-convention gap to validate.",
+        "Missing-convention gaps drive authoring the missing conventions over time."
+      ],
+      "references": [
+        {
+          "label": "requires-edge invariant engine (vocabulary-free loop)",
+          "path": "packages/pi-context/src/context-sdk.ts",
+          "lines": "2055-2078"
+        },
+        {
+          "label": "decision-cites-forcing-artifact template",
+          "path": "packages/pi-context/samples/conception.json",
+          "lines": "419-431"
+        },
+        {
+          "label": "backfill determination",
+          "path": "analysis/2026-06-07-convention-articulation-backfill.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "d0cc5578574b835b15bc0b6d4c8c48ef",
+      "content_hash": "fc0a729090e534b530527c7f24ebaad1c380adb6f62af65a1fe147690b79569d"
     }
   ]
 }

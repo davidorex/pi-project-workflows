@@ -457,6 +457,32 @@
       "target_kinds": [
         "*"
       ]
+    },
+    {
+      "canonical_id": "item_governed_by_convention",
+      "display_name": "governed by convention",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions",
+        "features",
+        "tasks"
+      ],
+      "target_kinds": [
+        "conventions"
+      ]
+    },
+    {
+      "canonical_id": "item_acknowledges_missing_convention",
+      "display_name": "acknowledges missing convention",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions",
+        "features",
+        "tasks"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
     }
   ],
   "lenses": [

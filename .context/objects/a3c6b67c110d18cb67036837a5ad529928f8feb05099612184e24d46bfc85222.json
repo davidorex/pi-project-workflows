@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs where the read/output safety cap invariant is enforced",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs which boundary owns the read/output safety-cap invariant. DEC-0009 (cap as an output-boundary invariant) was decided in this domain without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering output-safety invariant placement"
+    }
+  ],
+  "impact": "Output-safety-invariant-placement decisions are ungoverned.",
+  "proposed_resolution": "Author a convention governing output-safety invariant placement; re-point DEC-0009 to item_governed_by_convention; close this gap."
+}

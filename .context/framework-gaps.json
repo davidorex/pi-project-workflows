@@ -1609,6 +1609,166 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "136d4b378729d6ac5a4891b0d79d416c",
       "content_hash": "0be5d9d549c0866e0ab6c16204744e75a9c8875b86b36475a06f1adab0903f32"
+    },
+    {
+      "id": "FGAP-052",
+      "title": "No convention governs substrate bootstrap-state provisioning + substrate-identity reconciliation",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs how substrate bootstrap-state is provisioned and how substrate-identity is reconciled on init/switch. Decisions in this domain (DEC-0001 skeleton-config bootstrap, DEC-0003 switch register-if-absent reconciliation) were made without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering substrate bootstrap-state / identity-lifecycle"
+        }
+      ],
+      "impact": "Bootstrap/identity-lifecycle decisions are ungoverned — no checked rule constrains future decisions of this kind.",
+      "proposed_resolution": "Author a convention governing substrate bootstrap-state + identity reconciliation; re-point DEC-0001/DEC-0003 from item_acknowledges_missing_convention to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "195bbb09301a60a50dbf0d6e1e0f5a07",
+      "content_hash": "da73d8613a63546bf54ed1d15497812f7b432e06f319adb452ccca77a83fa67d"
+    },
+    {
+      "id": "FGAP-053",
+      "title": "No convention governs the substrate data-model representation + field-kind merge semantics",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs the substrate data-model representation and field-kind merge semantics (e.g. convergent ordered-sequence CRDT). DEC-0005 was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering data-model representation / merge field-kinds"
+        }
+      ],
+      "impact": "Data-model/merge-semantics decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing data-model representation + merge field-kind semantics; re-point DEC-0005 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "75adcc0cf5548792ed2e8461eda23eed",
+      "content_hash": "cc3ff45c6c0c953d83e97132d5bc86765a75519ecd545fd8f5e566ddf605b615"
+    },
+    {
+      "id": "FGAP-054",
+      "title": "No convention governs release cadence + changelog-accrual discipline",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs release cadence and changelog-accrual discipline. DEC-0007 was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering release/changelog process"
+        }
+      ],
+      "impact": "Release/changelog-process decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing release cadence + changelog discipline; re-point DEC-0007 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "b130b65831617391423f4ae404e38f8e",
+      "content_hash": "bb1327915c62e06a48f6f3475c2587887ab41d33e463dad7150c49e28472e220"
+    },
+    {
+      "id": "FGAP-055",
+      "title": "No convention governs where the read/output safety cap invariant is enforced",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs which boundary owns the read/output safety-cap invariant. DEC-0009 (cap as an output-boundary invariant) was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering output-safety invariant placement"
+        }
+      ],
+      "impact": "Output-safety-invariant-placement decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing output-safety invariant placement; re-point DEC-0009 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "c60ad8e5d1ed92abd165049afbf1ff42",
+      "content_hash": "a3c6b67c110d18cb67036837a5ad529928f8feb05099612184e24d46bfc85222"
+    },
+    {
+      "id": "FGAP-056",
+      "title": "No convention governs op/script/CLI surface topology + duplication",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs which surfaces a capability lives on (op/script/CLI topology + duplication). DEC-0011 (retire op-twin scripts; ops op-only, CLI as reflected shell) was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering surface topology / duplication"
+        }
+      ],
+      "impact": "Surface-topology decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing op/script/CLI surface topology; re-point DEC-0011 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "c15929f59b0bb4c5d259c83a7c6a62b8",
+      "content_hash": "a2e47852930baa49a68ac998b827cd9f14e118b95fd2eafbf509ad8157fd0a77"
+    },
+    {
+      "id": "FGAP-057",
+      "title": "No convention governs canonical-process governance against unplanned architectural surface",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs the canonical-process gate (gap->DEC->plan before new surface) and convention-enforcement governance. DEC-0012 (revert the unplanned pre-identity escape hatch) and DEC-0016 (enforce convention articulation) were decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering canonical-process / governance-enforcement"
+        }
+      ],
+      "impact": "Process-governance decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing canonical-process + governance-enforcement; re-point DEC-0012/DEC-0016 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "c6f790e02a2343f55f510b7e749032d3",
+      "content_hash": "b3b0b38958ee81c03c384d2666dac387e3727cfb55cd55fa50a9072e8dd5f202"
+    },
+    {
+      "id": "FGAP-058",
+      "title": "No convention governs npm publish-unit / package topology",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs npm publish-unit / package topology (which package hosts the bin). DEC-0013 (bin ships as its own publish unit) was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering packaging/publish topology"
+        }
+      ],
+      "impact": "Packaging/publish-topology decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing publish-unit / package topology; re-point DEC-0013 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "1f5bac32a78214bc307b48d333a22b49",
+      "content_hash": "ec156b917467b628537b8480d4037c808c291c0f2e4a7fc410df64883028e263"
+    },
+    {
+      "id": "FGAP-059",
+      "title": "No convention governs implementation-mechanism choice (in-process vs subprocess)",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No convention governs implementation-mechanism choices (e.g. in-process composition vs a subprocess pipeline). DEC-0015 (pi-bound composes context in-process via loadContext) was decided in this domain without a governing convention.",
+      "evidence": [
+        {
+          "file": ".context/conventions.json",
+          "reference": "conventions block has no rule covering implementation-mechanism choice"
+        }
+      ],
+      "impact": "Implementation-mechanism decisions are ungoverned.",
+      "proposed_resolution": "Author a convention governing implementation-mechanism choice; re-point DEC-0015 to item_governed_by_convention; close this gap.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "2f661948acf59b47bd5344c9238d0811",
+      "content_hash": "f3b54bfaccd337d84278ebb42301c217c00158997723a0cad8013a3ae96ec943"
     }
   ]
 }

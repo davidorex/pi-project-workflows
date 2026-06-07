@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs implementation-mechanism choice (in-process vs subprocess)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs implementation-mechanism choices (e.g. in-process composition vs a subprocess pipeline). DEC-0015 (pi-bound composes context in-process via loadContext) was decided in this domain without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering implementation-mechanism choice"
+    }
+  ],
+  "impact": "Implementation-mechanism decisions are ungoverned.",
+  "proposed_resolution": "Author a convention governing implementation-mechanism choice; re-point DEC-0015 to item_governed_by_convention; close this gap."
+}

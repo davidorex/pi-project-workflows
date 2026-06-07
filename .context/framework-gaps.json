@@ -1081,7 +1081,7 @@
     },
     {
       "title": "Target state: invoke pi-context-cli as the first-class `pi-context` command, not `node .../dist/bin.js`",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context-cli",
       "description": "packages/pi-context-cli/package.json already declares `bin: { \"pi-context\": \"./dist/bin.js\" }` and dist/bin.js carries a `#!/usr/bin/env node` shebang — so installing or linking the package puts a first-class `pi-context` command on PATH. But the dev workflow, the docs (CLAUDE.md, READMEs), the dogfooding invocations, and orchestration all call `node packages/pi-context-cli/dist/bin.js <op>` — the developer-mode path-to-bin wart, not a real CLI. TARGET STATE: pi-context is a first-rate command invoked as `pi-context <op> --...` everywhere; no `node /path/to/bin` ceremony.",
@@ -1107,7 +1107,10 @@
       "created_at": "2026-06-06T00:00:00.000Z",
       "id": "FGAP-031",
       "oid": "82fa1ecb70845e5f7e862dd369bd9676",
-      "content_hash": "3785d0a2497367320e5a329efa614f7f4943e1a9a70405ca03d9ef32b4e32ecd"
+      "content_hash": "0240f88adee1c2727bc6c5a2cde273ac1d859c849770b7a9e252fe1b0928d883",
+      "closed_by": "TASK-028 (VER-017) made pi-context globally installable (chmod +x dist/bin.js + the published bin) and the project docs + dogfooding switched to the global `pi-context <op>` command, retiring `node …/dist/bin.js`; `which pi-context` resolves the published bin. The load-bearing asks (first-class command on PATH + doc/dogfooding switch) are met.",
+      "closed_at": "2026-06-07T00:00:00.000Z",
+      "content_parent": "3785d0a2497367320e5a329efa614f7f4943e1a9a70405ca03d9ef32b4e32ecd"
     },
     {
       "id": "FGAP-032",
@@ -1876,6 +1879,63 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "6e97fee15ea7746c3535e2ce37a4b16e",
       "content_hash": "a657ba5d13e703c56e12545f1bb1aed0e80d823d4740ecef0aff73805a692dab"
+    },
+    {
+      "title": "pi-context CLI has no --version / -v command — a globally-installed CLI cannot report its own version",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context-cli",
+      "description": "main() (cli.ts:437-545) has no version branch; `pi-context --version` and `pi-context -v` fall through to resolveOp and are rejected as `unknown command: --version` (exit 2) followed by the help dump. The package ships a `bin` and is globally installed on PATH, yet the command cannot report its own version. `-h`/`--help` is handled (cli.ts:440), but `-v`/`--version` has no equivalent.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "437-545",
+          "reference": "main() has no --version/-v branch; both fall through to resolveOp as an unknown command and exit 2"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "440",
+          "reference": "-h is aliased to help; there is no -v/--version equivalent"
+        }
+      ],
+      "impact": "A user verifying an install or filing a bug cannot state which pi-context version they run; --version is a baseline expectation of any installed CLI. A first-run and support deficiency on the global command.",
+      "canonical_vocabulary": "CLI version command",
+      "proposed_resolution": "Add a --version/-v branch in main() (beside the -h/--help branch, before resolveOp) that prints the pi-context-cli package version (read from package.json) and returns 0.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "id": "FGAP-063",
+      "oid": "8ce58a2be65cf437b2c58bc5b4986c14",
+      "content_hash": "aa7d93cc533eff304124f834fed5525ae40202d3208992b07cbd18297a7a0437"
+    },
+    {
+      "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context-cli",
+      "description": "parseOpArgs (cli.ts:184-233) derives each op's accepted flag names 1:1 from its typebox parameter property keys; a token whose stripped name is absent from the schema throws `unknown flag` (exit 2). Op-schema keys are camelCase, so the conventional kebab-case flag a user types fails: `pi-context update --dry-run` -> `unknown flag: --dry-run` (only `--dryRun` works), although FEAT-006, FGAP-050/051/060, TASK-038/039 and standard CLI convention all write it `--dry-run`. The CLI has no kebab->camel normalization or alias layer. FGAP-032 is the id-flag-specific instance of this same root (--id vs --itemId/--taskId across ops); THIS gap is the general flag-casing/normalization defect, of which the headline update --dry-run failure is the most visible case.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "184-233",
+          "reference": "parseOpArgs derives flags verbatim from camelCase typebox keys; no kebab->camel normalization; an unknown stripped name throws UsageError (exit 2)"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "the update op declares parameter key dryRun (camelCase) -> CLI flag --dryRun; the conventional --dry-run is rejected"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "reference": "runtime: `pi-context update --dry-run` -> error: unknown flag: --dry-run, exit 2 (only --dryRun is accepted)"
+        }
+      ],
+      "impact": "The headline update feature's safety-preview flag fails when typed in the conventional kebab form documented across the substrate; every camelCase op parameter inherits the same footgun. A first-run and dogfooding UX defect on the highest-visibility surface.",
+      "canonical_vocabulary": "kebab-case CLI flag normalization",
+      "proposed_resolution": "Normalize flag matching in parseOpArgs so a kebab-case flag maps to its camelCase op-schema key (accept --dry-run for dryRun, etc.), accepting both forms. Resolve as one flag-normalization layer together with FGAP-032 (the id-flag-specific instance). No op-schema change.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "id": "FGAP-064",
+      "oid": "f91a7b90ad64bb551a6804035241ca20",
+      "content_hash": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
     }
   ]
 }

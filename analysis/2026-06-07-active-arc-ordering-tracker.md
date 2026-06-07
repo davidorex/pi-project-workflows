@@ -12,7 +12,7 @@ End state (the milestone, unbuilt as a block — FGAP-037): a user runs `pi-cont
 |---|---|---|---|---|---|
 | 1 | **TASK-028** make pi-context globally installable (`chmod +x dist/bin.js` + npm link) | **COMPLETED** (VER-017, `a5055ad`; FGAP-047 closed) | — (root) | FGAP-047 ✓closed | done — global `pi-context` works |
 | 2 | **TASK-029** declare `@davidorex/pi-project-workflows` dep | **COMPLETED** (VER-018, `dafa2c6`; FGAP-048 closed) | — | FGAP-048 ✓closed | done — meta-package resolves |
-| 3 | **TASK-030** implement `pi-context pi-bound` | **COMPLETED** (VER-019, `ad9508b`; FEAT-005 → in-review) | TASK-028 ✓, TASK-029 ✓ | FEAT-005 (real-session smoke release-gated) | done — pi-bound works (stub-verified) |
+| 3 | **TASK-030** implement `pi-context pi-bound` | **COMPLETED** (VER-019, `ad9508b`); **FEAT-005 → complete** (VER-024, operator-confirmed real-session smoke) | TASK-028 ✓, TASK-029 ✓ | FEAT-005 ✓complete | done — pi-bound works (live-verified) |
 | 4 | **FEAT-006 decomposition** | **COMPLETED** (DEC-0017 hybrid + TASK-034..039, `3f5b34a`); FEAT-006 → in-progress | gate FGAP-047 ✓ | — | done — decomposed per `feature-decomposition` |
 | 5 | **FEAT-006 tasks** — TASK-034 shell ✓ · 035 base-stamping ✓ · 036 merge ✓ · 037 resolver ✓(VER-023, FGAP-046 closed) · 038 config-propagation · 039 reporting | T034/035/036/037 completed; T038/039 remain (independent) | — | FGAP-050/051/060 (046 ✓closed; 049 open — see note) | **DO NEXT** — TASK-038 or TASK-039 |
 | 6 | **TASK-033** ship governance vocab to catalog (warning) + release | planned · BLOCKED | FEAT-006 (`task_gated_by_item`) | completes FEAT-007 | after #5; release authorization-gated |

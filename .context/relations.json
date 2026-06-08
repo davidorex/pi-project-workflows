@@ -3922,5 +3922,18 @@
       "refname": "cli-command-form"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87eaf6bf5da8e7658c818203f9ce701e",
+      "refname": "FGAP-071"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

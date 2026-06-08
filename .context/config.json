@@ -533,6 +533,33 @@
         "closed",
         "wontfix"
       ]
+    },
+    {
+      "id": "gaps-by-priority",
+      "kind": "target",
+      "target": "framework-gaps",
+      "derived_from_field": "priority",
+      "bins": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "id": "features-by-status",
+      "kind": "target",
+      "target": "features",
+      "derived_from_field": "status",
+      "bins": [
+        "proposed",
+        "approved",
+        "in-progress",
+        "in-review",
+        "complete",
+        "blocked",
+        "cancelled"
+      ]
     }
   ],
   "layers": [],

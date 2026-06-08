@@ -1,0 +1,26 @@
+{
+  "title": "the update conflict resolver spawns a subordinate `pi -p` mergetool instead of returning the conflict to the calling agent — the spawned agent's write-schema is auth-gate-refused (hasUI=false)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "On a both-diverged schema CONFLICT, the CLI resolver (resolve-conflicts.ts) dispatches a subordinate pi-bound mergetool via runPiBound(['-p', prompt], …). `pi -p` runs pi NON-interactively (hasUI=false), and write-schema is auth-gated requiring hasUI=true, so the spawned agent's write is REFUSED — it can only print the reconciled schema and tell the operator to run write-schema manually; the reconciliation is never auto-applied. Deeper mis-design: the pi-context CLI is an agent-invoked surface (run by Claude Code or another shell-LLM, rarely a bare-shell human), so the CALLING agent already holds the conflict (the CLI's JSON `conflicts`) + the operator's authority + is interactive — spawning a SUBORDINATE agent to do the reconciliation is the wrong abstraction. DEC-0017's resolver route (a pi-bound agent mergetool that writes via write-schema under the auth-gate) was built for the rare human-at-bare-shell model and is internally inconsistent: the `-p` dispatch makes the session non-interactive, which DEC-0017's own R2 rejection already noted the auth-gate refuses. Surfaced by the live credentialed smoke; TASK-037's structural fake-spawn verification missed it (the fake spawn never ran real `pi -p` against the real auth-gate).",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/resolve-conflicts.ts",
+      "lines": "106",
+      "reference": "runPiBound(['-p', prompt], …) dispatches the subordinate pi-bound mergetool; -p is pi's non-interactive print mode → the spawned session is hasUI=false"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1183-1201",
+      "reference": "write-schema is authGated; the auth-gate refuses when hasUI===false, so the spawned agent's reconciled write is refused"
+    },
+    {
+      "file": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
+      "reference": "live smoke repro: pi-context update --cwd <both-diverged-conflict substrate> → the real agent reconciles but 'write-schema requires interactive user confirmation … ctx.hasUI=false'; rebuild the substrate via /tmp/resolver-smoke-setup.mjs (installContext + a same-node tasks conflict)"
+    }
+  ],
+  "impact": "The agent-mergetool resolver never auto-applies a reconciliation. It degrades to: the agent prints the reconciled schema + the operator manually runs write-schema in an interactive pi. The conflict is surfaced and resolvable (never-clobber holds), but the one-command resolver UX is broken for its target case; and for the dominant agent-invoked usage the subordinate spawn is redundant — the calling agent should reconcile + apply.",
+  "canonical_vocabulary": "caller-as-reconciler (no subordinate-agent spawn for an agent-invoked CLI)",
+  "proposed_resolution": "Drop the pi-bound subordinate spawn from the resolver. update returns the typed conflict set (the rendered report + the structured `conflicts`); the calling agent (Claude Code / a shell-LLM) reconciles and applies the result via write-schema under the operator's confirm. Net-simpler code. Amends DEC-0017's resolver route. Re-verify with the live smoke (the calling agent applies the reconciliation end-to-end)."
+}

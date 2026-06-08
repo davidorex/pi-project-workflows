@@ -529,12 +529,13 @@
       "title": "pi-context update reconciles user schema edits by the hybrid route (deterministic merge + resolver on conflicts)",
       "status": "enacted",
       "context": "FGAP-046: install --update overwrites a user's edits to a catalog-shipped schema (resyncSchema, index.ts:464-583), and the 3-way merge base is not retained — checkStatus keeps a SHA-256 of the as-installed schema, not the body (context.ts:79). FEAT-006 must preserve customizations on update. Two candidate routes (FGAP-046 proposed_resolution): a deterministic 3-way merge, or agent-mediated reconciliation in pi. Reframed and grounded in R-0008.",
-      "decision": "On a locally-modified / both-diverged schema (per checkStatus), pi-context update runs a deterministic key/path-level draft-07 3-way merge (base = the base-stamped as-installed body; ours = installed; theirs = catalog) and auto-applies the merged schema when the typed conflict set is empty. On a non-empty conflict set it does NOT overwrite: it hands the set to a resolver — a pi-bound agent mergetool (the agent proposes a reconciled schema; the user inspects via --dry-run and approves via the existing write-schema auth-gate) with graceful fallback to a rendered conflict report when no interactive/credentialed pi is available. Update never silently clobbers a customization and never hard-blocks the remaining schemas.",
+      "decision": "On a locally-modified / both-diverged schema (per checkStatus), pi-context update runs a deterministic key/path-level draft-07 3-way merge (base = the base-stamped as-installed body; ours = installed; theirs = catalog) and auto-applies the merged schema when the typed conflict set is empty. On a non-empty conflict set it does NOT overwrite: it returns the typed conflict set — a rendered report plus the structured conflicts (path / base / ours / theirs). Because pi-context update is an agent-invoked CLI surface (run by Claude Code or another shell-LLM, which already holds the conflict set and the operator's authority and is interactive), the reconciler is the CALLING agent: it reconciles and applies the result via the existing write-schema auth-gate under the operator's confirm. update does NOT spawn a subordinate agent to reconcile. Update never silently clobbers a customization and never hard-blocks the remaining schemas.",
       "consequences": [
-        "Decomposes into ordered, independently-shippable slices: base-stamping (store the as-installed schema body via the content-addressed object store) -> deterministic schema-merge (auto-apply clean, emit a typed conflict set) -> conflict resolver (agent mergetool + conflict-report fallback). The user gets 'never silently clobbered' first, 'smart conflict help' as the resolver lands.",
+        "Decomposes into ordered, independently-shippable slices: base-stamping (store the as-installed schema body via the content-addressed object store) -> deterministic schema-merge (auto-apply clean, emit a typed conflict set) -> conflict resolution (return the typed conflict set to the calling agent + a rendered report). The user gets 'never silently clobbered' first, 'smart conflict help' via the calling agent.",
         "Closes FGAP-046 (preserve schema customizations) + FGAP-049 (consult checkStatus before overwrite) across the base-stamping + merge + resolver tasks.",
         "The merge engine is a new structure-aware key/path-level 3-way primitive: FEAT-002 (the substrate git merge driver) is proposed/unbuilt and DEC-0004 §6 names but does not author the schema-merge strategy; the primitive is designed so FEAT-002 later reuses the framework via its git %O base. FGAP-046 does not depend on FEAT-002 shipping.",
-        "Per correctness-over-cost: the hybrid is chosen on user-correctness; its higher build cost is sequencing (base-stamping -> merge -> resolver), not a tradeoff against correctness."
+        "Per correctness-over-cost: the hybrid is chosen on user-correctness; its higher build cost is sequencing (base-stamping -> merge -> resolver), not a tradeoff against correctness.",
+        "Resolver-route correction (FGAP-068): the resolver returns the conflict to the CALLING agent rather than spawning a subordinate pi-bound mergetool. The original subordinate-spawn route used `pi -p`, which runs the spawned session non-interactively (hasUI=false) so its write-schema was auth-gate-refused — the wrong abstraction for an agent-invoked CLI where the caller is already the interactive, credentialed reconciler. Surfaced by the live credentialed smoke (the structural fake-spawn verification missed it)."
       ],
       "options_considered": [
         {
@@ -590,7 +591,8 @@
       "enacted_by": "human/davidryan@gmail.com",
       "enacted_at": "2026-06-07T00:00:00.000Z",
       "oid": "0fb56e117810db8c6537afbf1361236e",
-      "content_hash": "bcf22354601aa11045aedc40e0ea9079ae43453eb1c6957cdcb3c631644fb035"
+      "content_hash": "368e8fa14466a993a4572e74f3e9114672e6268f943d58f5407cb2453365b331",
+      "content_parent": "bcf22354601aa11045aedc40e0ea9079ae43453eb1c6957cdcb3c631644fb035"
     }
   ]
 }

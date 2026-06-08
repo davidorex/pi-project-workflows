@@ -949,7 +949,7 @@
     },
     {
       "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "Distinct from FGAP-020's CLI-surface correction: the IN-PI read-schema op itself returns the paged `required` name-list for an addressed object node, because it wraps addr.value in structureForRead (ops-registry.ts:1166) which pages on the node's incidental array (read-element.ts:266-285). A CLI-only fix leaves in-pi agents still receiving the projection. Correcting BOTH surfaces requires passing whole:true at ops-registry.ts:1166 — a deliberate change to in-pi op behavior, which the parity survey's frozen-ops constraint explicitly carved out and the user has now authorized as a tracked gap.",
       "evidence": [
@@ -979,9 +979,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-027",
       "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
-      "content_hash": "36f7e6f5d5bfb8243cb81d08524c5a92c17997b1206cca949f893e434396383a",
+      "content_hash": "bea9a5e60c7f04612e22f834bccc4a813029b6fbac0eb4b94dcf9df36a341244",
       "priority": "P2",
-      "content_parent": "1309f0e4f1f0aed133996dec521130191b4b20d9b49bd34840eafc78f89544f9"
+      "content_parent": "36f7e6f5d5bfb8243cb81d08524c5a92c17997b1206cca949f893e434396383a",
+      "closed_by": "VER-032 / TASK-018 — the in-pi op-registry addressed-single-node reads (read-schema --path, read-config --registry/--id, list-tools name=, read-samples-catalog kind=) pass whole:true, returning the whole subtree (50KB cap retained); the redundant CLI addressedReadOverride is retired so the op is the single source on both surfaces.",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "Installable schema descriptions hardcode this project (package names / Muni / in-pi / .project/) — non-portable",

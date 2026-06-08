@@ -787,6 +787,37 @@
       ],
       "oid": "0b92eaec7e0c95f49533400d642da015",
       "content_hash": "f37bc78188682034835a6798f6ca7a4213fc23e7635d33f892a66f786c8dd110"
+    },
+    {
+      "id": "VER-032",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-018 (FEAT-008 order 4/6) the SOLE authorized in-pi op change, verified end-to-end (incl. the pi -p / in-pi-op-handler runtime demo). Closes FGAP-027: addressed-single-node reads in the in-pi op-registry now pass whole:true so an addressed object node returns the WHOLE subtree instead of a 50-item page of an incidental array child. The COMPLETE class fixed (5 sites in packages/pi-context/src/ops-registry.ts, a039cba): read-schema --path, read-config --registry, read-config --registry --id, list-tools name=, read-samples-catalog kind=. The intentional collection-paging reads (read-block-page, read-block, read-block-dir, filter-block-items, find-references, join-blocks, walk-ancestors, context-edges-for-lens) and the whole-config/whole-schema wrapper branches are untouched. read-element.ts/truncate.ts unchanged (the task file-list was over-broad; whole already exists and the 50KB cap is unconditional after the whole-skip — verified: a 378KB addressed node fails closed data:null/complete:false/truncated:true, so whole:true does NOT bypass the cap). The redundant TASK-016 CLI-side addressedReadOverride (FGAP-020) is RETIRED from packages/pi-context-cli/src/cli.ts (+ the addressInto/structureForRead imports dropped) — the op is now the single source of the whole-subtree behavior on BOTH surfaces; FGAP-020's CLI guarantee is preserved, now op-sourced (the existing cli FGAP-020 tests stay green as the parity proof, ahead of the TASK-019 gate). Runtime demo: the in-pi read-schema op handler (the code pi -p dispatches to, driven directly: ops.find(name).run(cwd,{path})) returns the whole framework-gaps gaps-item subtree (type/additionalProperties/required/properties siblings, total undefined = whole, complete true); read-config --registry relation_types returns the whole 33-entry array (total undefined); the global CLI returns byte-identical whole subtrees with the override gone; read-config --registry without --id (single-array registry) is whole not a page. build+check+full-test green (fail 0 all packages); new op-level block-tools.test.ts tests (whole subtree + over-cap fail-closed) + the existing cli FGAP-020 tests pass. Fresh adversarial probe PASS zero defects: class complete (no other addressed-single-node read silently pages), cap retained (independent 378KB over-cap fail-closed), override removed with no dangling refs + CLI==op, intentional paging unregressed (read-block-page/filter/find-references still page on the 71-item block), TASK-015/016/017 affordances intact. NOTE: pi -p LLM tool-dispatch needs credentials (not run in this env) — but its dispatch target IS the op handler run() method, exercised directly + by the passing op-level tests.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-027 closed: in-pi read-schema --path at an object node returns the full subtree",
+          "status": "passed",
+          "evidence": "read-schema op handler returns the whole subtree (required + properties siblings, total undefined); whole:true added at the addressed branch; demonstrated via the op handler (pi -p dispatch target) + the CLI"
+        },
+        {
+          "criterion": "{read} cap behavior unchanged (50KB retained, no leak)",
+          "status": "passed",
+          "evidence": "whole:true skips paging only; the cap is unconditional after — a 378KB addressed node fails closed (data:null/complete:false/truncated:true), independently re-derived by the probe + the op-level over-cap test"
+        },
+        {
+          "criterion": "Class-check: no other read op silently projects an addressed object node",
+          "status": "passed",
+          "evidence": "all 27 structureForRead sites classified; the 5 addressed-single-node reads got whole:true; the intentional collection-paging reads untouched; probe confirmed no remaining addressed-single-node pager"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo via pi -p tool dispatch + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; runtime demo via the in-pi op handler (the pi -p dispatch target) + the CLI; fresh adversarial probe PASS zero defects; pi -p LLM wrapper not runnable in-env (creds) but the dispatched op handler verified directly"
+        }
+      ],
+      "oid": "fdcc615aba4d2dbc0b628c7bb0b34efb",
+      "content_hash": "044416457036142768d7d48a4def55736df1cff0deb378e08a15c644b00d60a8"
     }
   ]
 }

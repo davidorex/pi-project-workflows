@@ -28,6 +28,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { renderConflicts } from "@davidorex/pi-context";
+import { loadConfig } from "@davidorex/pi-context/context";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import {
 	boundedJsonOutput,
@@ -215,6 +216,18 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		if (tok === "--writer") {
 			const v = argv[++i];
 			if (v === undefined) throw new UsageError("--writer requires a JSON argument");
+			// Shorthand `kind:id` (FGAP-025): a value that is neither `{`-prefixed JSON
+			// nor an `@file` reference and matches `<kind>:<identifier>` expands to the
+			// canonical {kind, <id-field>:<rest>} WriterIdentity (the id-field per
+			// WRITER_KIND_IDENTIFIER_FIELD). The rest may itself contain colons (an
+			// email or step-id) — only the FIRST colon delimits kind from identifier.
+			// A JSON / @file value (the canonical form) is parsed unchanged.
+			const shorthand = /^(human|agent|monitor|workflow):(.+)$/.exec(v);
+			if (shorthand && !v.startsWith("@")) {
+				const kind = shorthand[1] as WriterIdentity["kind"];
+				out.explicitWriter = { kind, [WRITER_KIND_IDENTIFIER_FIELD[kind]]: shorthand[2] };
+				continue;
+			}
 			try {
 				out.explicitWriter = v.startsWith("@") ? JSON.parse(readFileSync(v.slice(1), "utf8")) : JSON.parse(v);
 			} catch (err) {
@@ -222,11 +235,59 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			}
 			continue;
 		}
+		// `--where field:op:value` shorthand (FGAP-025): a single token expanding to
+		// the op's declared field/op/value params. Split on the FIRST TWO colons only —
+		// the value segment may itself contain colons. The canonical explicit
+		// `--field/--op/--value` flags remain available and pass through unchanged.
+		if (tok === "--where") {
+			const v = argv[++i];
+			if (v === undefined) throw new UsageError("--where requires a field:op:value argument");
+			const c1 = v.indexOf(":");
+			const c2 = c1 >= 0 ? v.indexOf(":", c1 + 1) : -1;
+			if (c1 < 0 || c2 < 0) {
+				throw new UsageError(`--where expects field:op:value; got '${v}'`);
+			}
+			out.params.field = v.slice(0, c1);
+			out.params.op = v.slice(c1 + 1, c2);
+			out.params.value = v.slice(c2 + 1);
+			continue;
+		}
 		if (!tok.startsWith("--")) {
 			throw new UsageError(`unexpected argument: ${tok}`);
 		}
 
-		const field = tok.slice(2);
+		// Raw token kept verbatim for error messages; `field` resolves to the op's
+		// actual property key via the normalization layer below.
+		let field = tok.slice(2);
+		// FGAP-032 — `--id` aliases the op's single declared id-param. An op may key
+		// its id param `id`, or `<x>Id` (itemId/parentId/taskId/unitId/…). When the op
+		// has no literal `id` property and exactly one such param, `--id` resolves to
+		// it; zero leaves `field` as-is (the unknown-flag error fires); two or more is
+		// ambiguous (the caller must name the explicit flag). An id-param is always
+		// string-typed (every identity selector is Type.String / Type.Optional(String));
+		// the string-type guard excludes boolean flags whose name happens to end in `Id`
+		// — e.g. append-block-item's `autoId` (a Type.Boolean allocation flag, not an
+		// identity selector) — so `--id` never silently binds to them.
+		if (field === "id" && props.id === undefined) {
+			const idParams = Object.keys(props).filter(
+				(k) => (k === "id" || /Id$/.test(k)) && fieldType(props[k]) === "string",
+			);
+			if (idParams.length === 1) {
+				field = idParams[0];
+			} else if (idParams.length >= 2) {
+				throw new UsageError(
+					`ambiguous --id (op declares ${idParams.length} id-params: ${idParams.join(", ")}); use the explicit flag`,
+				);
+			}
+		} else if (props[field] === undefined && field.includes("-")) {
+			// FGAP-064 — kebab→camel normalization: a conventional `--dry-run` / `--id`
+			// kebab form resolves to the camelCase op-schema key (`dryRun`) when that
+			// camel key exists. An unresolved kebab token stays raw → unknown-flag error.
+			const camel = field.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
+			if (props[camel] !== undefined) {
+				field = camel;
+			}
+		}
 		const fschema = props[field];
 		if (fschema === undefined) {
 			throw new UsageError(`unknown flag: ${tok}`);
@@ -265,7 +326,18 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 					? JSON.parse(readFileSync(value.slice(1), "utf8"))
 					: JSON.parse(value);
 			} catch (err) {
-				throw new UsageError(`--${field}: ${err instanceof Error ? err.message : String(err)}`);
+				// FGAP-025: the `value` field (the comparison operand of
+				// filter-block-items, Type.Unknown) is the sole CSV-shorthand target. A
+				// bare unquoted operand that is not valid JSON is retained as the raw
+				// string so the post-loop `--op in` CSV pass can split it (and an
+				// unquoted scalar operand still reaches the op as a string). Every other
+				// json field keeps the strict parse-or-error contract (e.g. a malformed
+				// `--item` is an operator error, never a silent string).
+				if (field === "value" && !value.startsWith("@")) {
+					out.params[field] = value;
+				} else {
+					throw new UsageError(`--${field}: ${err instanceof Error ? err.message : String(err)}`);
+				}
 			}
 		}
 	}
@@ -274,10 +346,23 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		out.params.writer = out.explicitWriter;
 	}
 
-	// Required-field check — `writer` is exempt (schema-driven auto-injected
-	// after parse when the op declares it and none was passed).
+	// CSV `--op in` normalization (FGAP-025): the `in` membership operator takes a
+	// list value. When `op === "in"` and the value arrived as a single string,
+	// split it on commas into the string array the op's declared shape expects.
+	// Argv-order-independent — runs after the whole loop, so `--value a,b,c --op in`
+	// and `--op in --value a,b,c` both normalize. A value already an array passes
+	// through unchanged (the typeof guard).
+	if (out.params.op === "in" && typeof out.params.value === "string") {
+		out.params.value = out.params.value.split(",");
+	}
+
+	// Required-field check — `writer` is exempt (schema-driven auto-injected after
+	// parse when the op declares it and none was passed); `arrayKey` is exempt too —
+	// injectArrayKey derives it from config.block_kinds[].array_key for the
+	// block-mutation ops after parse (FGAP-019), so a `--block` without an explicit
+	// `--arrayKey` must not be flagged missing here.
 	if (!out.help) {
-		const required = (schema.required ?? []).filter((r) => r !== "writer");
+		const required = (schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey");
 		const missing = required.filter((r) => !(r in out.params));
 		if (missing.length > 0) {
 			throw new UsageError(`missing required: ${missing.map((m) => `--${m}`).join(", ")}`);
@@ -300,6 +385,36 @@ export function injectWriter(
 	const props = objectSchema(op).properties ?? {};
 	if (props.writer !== undefined && params.writer === undefined) {
 		params.writer = { kind: "human", user: identity ?? "operator" };
+	}
+	return params;
+}
+
+/**
+ * Schema- + config-driven arrayKey injection (FGAP-019), mirroring injectWriter.
+ * The 7 block-mutation ops still DECLARE `arrayKey` required (their in-pi schema +
+ * handler are byte-unchanged and still receive + require it) — the CLI supplies it
+ * pre-call so a caller passes only `--block`. When the op declares `arrayKey`, none
+ * was passed, and a string `block` is present, derive the array_key from the
+ * config block_kinds entry whose canonical_id matches `block` (canonical_id ≠
+ * array_key in real data, e.g. framework-gaps → gaps, so the derivation is genuinely
+ * needed). Best-effort: no substrate, no config, or an unknown block leaves arrayKey
+ * unset — the op then throws its own missing-param error. Mutates and returns params.
+ */
+export function injectArrayKey(
+	op: OpDefinition,
+	params: Record<string, unknown>,
+	cwd: string,
+): Record<string, unknown> {
+	const props = objectSchema(op).properties ?? {};
+	if (props.arrayKey !== undefined && params.arrayKey === undefined && typeof params.block === "string") {
+		let cfg: ReturnType<typeof loadConfig> = null;
+		try {
+			cfg = loadConfig(cwd);
+		} catch {
+			cfg = null;
+		}
+		const bk = cfg?.block_kinds.find((b) => b.canonical_id === params.block);
+		if (bk) params.arrayKey = bk.array_key;
 	}
 	return params;
 }
@@ -474,6 +589,7 @@ export async function main(argv: string[]): Promise<number> {
 
 	const identity = resolveIdentity();
 	injectWriter(op, parsed.params, identity);
+	injectArrayKey(op, parsed.params, parsed.cwd);
 	const dctx = buildCliDispatchContext(parsed.explicitWriter, identity);
 
 	const decision = authDecision(op, {

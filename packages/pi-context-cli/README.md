@@ -34,6 +34,25 @@ pi-context read-block-page --block framework-gaps --offset 0 --limit 50
 pi-context update --dryRun
 ```
 
+## Input affordances
+
+On top of the schema-derived flags, the CLI accepts a set of input conveniences. Each is additive — the schema-exact form (camelCase flags, explicit `--arrayKey`, a JSON `--writer`, separate `--field`/`--op`/`--value`) keeps working unchanged.
+
+- **kebab-case flags** are accepted alongside the camelCase op-schema keys. `--dry-run` resolves to `--dryRun`; any conventional kebab form resolves when its camelCase key exists. An unrecognized flag (kebab or otherwise) is still rejected.
+- **`--id` aliases the op's single id-param.** When an op declares exactly one id-shaped parameter (`itemId` / `parentId` / `taskId` / `unitId` / …), `--id <value>` resolves to it. An op that already declares a literal `id` parameter takes `--id` directly. An op with two id-params (e.g. `complete-task`, `rename-canonical-id`) rejects `--id` as ambiguous — name the explicit flag.
+- **`--arrayKey` is derived from config** for the block-mutation ops (`append-block-item`, `update-block-item`, `upsert-block-item`, `remove-block-item`, and the nested variants). Pass only `--block <name>`; the array key is read from that block's `config.block_kinds[].array_key`. An explicit `--arrayKey` overrides the derivation.
+- **`--writer kind:id` shorthand.** `--writer human:you@example.com` expands to `{"kind":"human","user":"you@example.com"}`; `--writer agent:claude` to `{"kind":"agent","agent_id":"claude"}` (`monitor:`→`monitor_name`, `workflow:`→`workflow_step_id`). The first colon delimits the kind; the identifier may itself contain colons.
+- **`--where field:op:value` shorthand** for the filter predicate: `--where status:eq:done` sets `--field status --op eq --value done`. Split on the first two colons only, so the value may contain colons.
+- **CSV `--op in`.** When the comparison operator is `in`, a comma-separated `--value a,b,c` is split into the array `["a","b","c"]`. Order-independent — `--op in --value a,b,c` and `--value a,b,c --op in` are equivalent.
+
+```bash
+pi-context append-block-item --block framework-gaps --item @gap.json        # arrayKey derived from config
+pi-context find-references --id TASK-1                                       # --id → itemId
+pi-context append-block-item --block tasks --item @t.json --writer human:you@example.com
+pi-context filter-block-items --block tasks --where status:eq:done          # field/op/value from one token
+pi-context filter-block-items --block tasks --field tag --op in --value a,b,c
+```
+
 ## `pi-context pi-bound` — constrained pi session
 
 ```bash

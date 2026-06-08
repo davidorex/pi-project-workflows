@@ -12,6 +12,7 @@ import {
 	buildCliDispatchContext,
 	deriveHelp,
 	fieldType,
+	injectArrayKey,
 	injectWriter,
 	isProcessOnlyOp,
 	main,
@@ -794,4 +795,289 @@ test("CLI update (text surface): an irreconcilable conflict is SURFACED via rend
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
+});
+
+// ── TASK-015 (FEAT-008 1/6): CLI pre-call input layer ─────────────────────────
+// Four additive affordances entirely in cli.ts's pre-call path — the in-pi op
+// schemas + handlers stay byte-unchanged (the ops still receive + require their
+// declared params; the CLI normalizes/supplies them). Every currently-working
+// flag form keeps working.
+
+// ── FGAP-064: kebab-case flag normalization ──────────────────────────────────
+test("parseOpArgs resolves a kebab `--dry-run` to the camelCase `dryRun` key (FGAP-064)", () => {
+	const op = resolveOp("update");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--dry-run"]);
+	assert.equal(parsed.params.dryRun, true);
+	// The existing camelCase form keeps working (additive).
+	const camel = parseOpArgs(op, ["--dryRun"]);
+	assert.equal(camel.params.dryRun, true);
+});
+
+test("parseOpArgs still rejects an unknown kebab flag with unknown-flag (FGAP-064)", () => {
+	const op = resolveOp("update");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--no-such-flag"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --no-such-flag"),
+	);
+});
+
+// ── FGAP-032: `--id` aliases the op's single declared id-param ────────────────
+test("parseOpArgs resolves `--id` to the op's single id-param (FGAP-032)", () => {
+	// find-references + walk-ancestors each declare exactly one id-param: itemId.
+	const fr = resolveOp("find-references");
+	assert.ok(fr);
+	assert.equal(parseOpArgs(fr, ["--id", "TASK-1"]).params.itemId, "TASK-1");
+	assert.equal("id" in parseOpArgs(fr, ["--id", "TASK-1"]).params, false);
+	const wa = resolveOp("walk-ancestors");
+	assert.ok(wa);
+	assert.equal(parseOpArgs(wa, ["--id", "TASK-1", "--relationType", "r"]).params.itemId, "TASK-1");
+});
+
+test("parseOpArgs rejects `--id` as ambiguous when the op declares ≥2 id-params (FGAP-032)", () => {
+	// complete-task declares taskId + verificationId; rename-canonical-id declares oldId + newId.
+	const ct = resolveOp("complete-task");
+	assert.ok(ct);
+	assert.throws(
+		() => parseOpArgs(ct, ["--id", "X"]),
+		(err: unknown) => err instanceof UsageError && /ambiguous/.test(err.message),
+	);
+	const rc = resolveOp("rename-canonical-id");
+	assert.ok(rc);
+	assert.throws(
+		() => parseOpArgs(rc, ["--id", "X"]),
+		(err: unknown) => err instanceof UsageError && /ambiguous/.test(err.message),
+	);
+});
+
+test("parseOpArgs leaves `--id` as unknown-flag when the op declares 0 id-params (FGAP-032)", () => {
+	// append-relation uses parent/child, not *Id — 0 id-params, so --id stays unknown.
+	const ar = resolveOp("append-relation");
+	assert.ok(ar);
+	assert.throws(
+		() => parseOpArgs(ar, ["--id", "X"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --id"),
+	);
+});
+
+test("parseOpArgs does NOT bind `--id` to a boolean *Id flag like autoId (FGAP-032 string-type guard)", () => {
+	// append-block-item's only `/Id$/` property is `autoId` — a Type.Boolean allocation
+	// flag, NOT a string identity selector. The string-type guard means it is not counted
+	// as an id-param, so `--id` finds 0 id-params and falls through to unknown-flag rather
+	// than silently swallowing the value into autoId.
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--id", "TASK-1"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --id"),
+	);
+	// The boolean presence flag itself is unaffected: `--autoId` (presence) and
+	// `--autoId true` both still resolve to the boolean param.
+	assert.equal(parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--autoId"]).params.autoId, true);
+	assert.equal(
+		parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--autoId", "true"]).params.autoId,
+		true,
+	);
+});
+
+test("parseOpArgs still resolves `--id` for a single string id-param op (read-config, FGAP-032)", () => {
+	// read-config declares `id` as Type.Optional(Type.String); fieldType unwraps the
+	// Optional → "string", so the guard keeps it as a valid single id-param.
+	const rc = resolveOp("read-config");
+	assert.ok(rc);
+	assert.equal(parseOpArgs(rc, ["--id", "block_kinds"]).params.id, "block_kinds");
+});
+
+// ── FGAP-019: arrayKey derived from config; required-filter exemption ─────────
+test("parseOpArgs accepts a block-mutation op without --arrayKey (FGAP-019 required-filter exemption)", () => {
+	// append-block-item declares arrayKey required; the CLI must NOT flag it missing
+	// pre-injection (injectArrayKey supplies it after parse).
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--block", "framework-gaps", "--item", "{}"]);
+	assert.equal("arrayKey" in parsed.params, false);
+	assert.equal(parsed.params.block, "framework-gaps");
+});
+
+test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ array_key) (FGAP-019)", () => {
+	// Seed a substrate whose framework-gaps block_kind has array_key 'gaps' (≠ its
+	// canonical_id 'framework-gaps') so the derivation is genuinely load-bearing.
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-arraykey-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(sub, { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "framework-gaps",
+						display_name: "Gaps",
+						prefix: "FGAP-",
+						schema_path: "schemas/gaps.schema.json",
+						array_key: "gaps",
+						data_path: "gaps.json",
+					},
+				],
+			}),
+		);
+		const op = resolveOp("append-block-item");
+		assert.ok(op);
+		const parsed = parseOpArgs(op, ["--block", "framework-gaps", "--item", "{}"], cwd);
+		injectArrayKey(op, parsed.params, cwd);
+		assert.equal(parsed.params.arrayKey, "gaps");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("injectArrayKey preserves an explicit --arrayKey and skips a non-arrayKey op (FGAP-019)", () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const append = resolveOp("append-block-item");
+		assert.ok(append);
+		// Explicit --arrayKey is preserved (override, not overwritten).
+		const explicit = parseOpArgs(append, ["--block", "tasks", "--arrayKey", "custom", "--item", "{}"], cwd);
+		injectArrayKey(append, explicit.params, cwd);
+		assert.equal(explicit.params.arrayKey, "custom");
+		// A non-arrayKey op is untouched (read-block declares no arrayKey).
+		const read = resolveOp("read-block");
+		assert.ok(read);
+		const rparams = parseOpArgs(read, ["--block", "tasks"], cwd).params;
+		injectArrayKey(read, rparams, cwd);
+		assert.equal("arrayKey" in rparams, false);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("injectArrayKey leaves arrayKey unset for an unknown block or no substrate (no throw) (FGAP-019)", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	// No substrate at this cwd → loadConfig returns null → arrayKey stays unset.
+	const noSub = mkdtempSync(path.join(tmpdir(), "picli-nosub-"));
+	try {
+		const params: Record<string, unknown> = { block: "tasks" };
+		injectArrayKey(op, params, noSub);
+		assert.equal("arrayKey" in params, false);
+	} finally {
+		rmSync(noSub, { recursive: true, force: true });
+	}
+	// A known substrate but an unknown block → no matching block_kind → unset.
+	const cwd = seedTasksSubstrate();
+	try {
+		const params: Record<string, unknown> = { block: "not-a-block" };
+		injectArrayKey(op, params, cwd);
+		assert.equal("arrayKey" in params, false);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── FGAP-025: --writer kind:id, --where field:op:value, CSV --op in ───────────
+test("parseOpArgs expands a `--writer human:<email>` shorthand to the canonical WriterIdentity (FGAP-025)", () => {
+	const op = resolveOp("write-schema-migration");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, [
+		"--writer",
+		"human:davidryan@gmail.com",
+		"--operation",
+		"create",
+		"--schemaName",
+		"tasks",
+		"--fromVersion",
+		"1.0.0",
+		"--toVersion",
+		"1.1.0",
+		"--kind",
+		"identity",
+	]);
+	assert.deepEqual(parsed.explicitWriter, { kind: "human", user: "davidryan@gmail.com" });
+	// And it flows through assertWriterIdentity / buildCliDispatchContext unchanged.
+	const dctx = buildCliDispatchContext(parsed.explicitWriter, "ignored@x");
+	assert.deepEqual(dctx, { writer: { kind: "human", user: "davidryan@gmail.com" } });
+});
+
+test("parseOpArgs expands a `--writer agent:<id>` shorthand to {kind,agent_id} (FGAP-025)", () => {
+	const op = resolveOp("write-schema-migration");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, [
+		"--writer",
+		"agent:claude",
+		"--operation",
+		"create",
+		"--schemaName",
+		"tasks",
+		"--fromVersion",
+		"1.0.0",
+		"--toVersion",
+		"1.1.0",
+		"--kind",
+		"identity",
+	]);
+	assert.deepEqual(parsed.explicitWriter, { kind: "agent", agent_id: "claude" });
+});
+
+test("parseOpArgs passes a canonical JSON `--writer` through unchanged (FGAP-025 additive)", () => {
+	const op = resolveOp("write-schema-migration");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, [
+		"--writer",
+		'{"kind":"human","user":"explicit@x.com"}',
+		"--operation",
+		"create",
+		"--schemaName",
+		"tasks",
+		"--fromVersion",
+		"1.0.0",
+		"--toVersion",
+		"1.1.0",
+		"--kind",
+		"identity",
+	]);
+	assert.deepEqual(parsed.explicitWriter, { kind: "human", user: "explicit@x.com" });
+});
+
+test("parseOpArgs expands `--where field:op:value` to the op's field/op/value params (FGAP-025)", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--block", "tasks", "--where", "status:eq:done"]);
+	assert.equal(parsed.params.field, "status");
+	assert.equal(parsed.params.op, "eq");
+	assert.equal(parsed.params.value, "done");
+});
+
+test("parseOpArgs splits `--where` on the first two colons only — value may contain colons (FGAP-025)", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--block", "tasks", "--where", "url:eq:https://x.com/a"]);
+	assert.equal(parsed.params.field, "url");
+	assert.equal(parsed.params.op, "eq");
+	assert.equal(parsed.params.value, "https://x.com/a");
+});
+
+test("parseOpArgs leaves explicit --field/--op/--value unchanged (FGAP-025 additive)", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const parsed = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "eq", "--value", '"x"']);
+	assert.equal(parsed.params.field, "f");
+	assert.equal(parsed.params.op, "eq");
+	assert.equal(parsed.params.value, "x");
+});
+
+test("parseOpArgs splits a CSV value into an array when --op is `in` (FGAP-025)", () => {
+	const op = resolveOp("filter-block-items");
+	assert.ok(op);
+	const a = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "in", "--value", "a,b,c"]);
+	assert.deepEqual(a.params.value, ["a", "b", "c"]);
+	// Argv-order-independent: value-before-op normalizes identically.
+	const b = parseOpArgs(op, ["--block", "b", "--field", "f", "--value", "a,b,c", "--op", "in"]);
+	assert.deepEqual(b.params.value, ["a", "b", "c"]);
+	// A non-`in` op leaves the value as the parsed scalar.
+	const eq = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "eq", "--value", '"a,b,c"']);
+	assert.equal(eq.params.value, "a,b,c");
 });

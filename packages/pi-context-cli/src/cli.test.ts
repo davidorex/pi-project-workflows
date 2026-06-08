@@ -1265,7 +1265,8 @@ test("CLI --json: a schema-invalid append surfaces a field-named validation erro
 			cwd,
 			"--json",
 		]);
-		assert.equal(code, 1);
+		// FGAP-026 — a validation failure now exits 5 (was 1 before granular exit codes).
+		assert.equal(code, 5);
 		const envelope = JSON.parse(out) as { ok: boolean; op: string; error: string };
 		assert.equal(envelope.ok, false);
 		// THE assertion: the error names the missing field…
@@ -1356,6 +1357,401 @@ test("CLI read-config --registry block_kinds --id tasks returns the whole entry 
 		assert.equal(data.data_path, "tasks.json");
 		assert.equal(data.prefix, "TASK-");
 		assert.equal(envelope.output.complete, true);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-022: --show-schema contract preview ────────────────────────
+
+test("CLI append-block-item --show-schema previews the block contract and writes nothing (FGAP-022)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as {
+			tasks: unknown[];
+		};
+		const { code, out } = await captureMainStdout([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--show-schema",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		assert.match(out, /Array key:/);
+		assert.match(out, /Required fields:/);
+		assert.match(out, /ID pattern:/);
+		// No write happened: the block is byte-for-byte the seed.
+		const after = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as { tasks: unknown[] };
+		assert.deepEqual(after.tasks, before.tasks);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI --show-schema on a block whose schema is absent exits 3 (FGAP-022)", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-showschema-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "tasks",
+						display_name: "Tasks",
+						prefix: "TASK-",
+						schema_path: "schemas/tasks.schema.json",
+						array_key: "tasks",
+						data_path: "tasks.json",
+					},
+				],
+			}),
+		);
+		// No schemas/tasks.schema.json on disk → readSchema returns null → exit 3.
+		const { code, err } = await captureMainStderr([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--show-schema",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 3);
+		assert.match(err, /schema not found/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-024: append-block-item --dry-run ───────────────────────────
+
+test("parseOpArgs: --dryRun and --dry-run set parsed.dryRun and never enter params (FGAP-024)", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const camel = parseOpArgs(op, ["--block", "tasks", "--dryRun", "--arrayKey", "tasks", "--item", "{}"]);
+	assert.equal(camel.dryRun, true);
+	assert.equal("dryRun" in camel.params, false);
+	const kebab = parseOpArgs(op, ["--block", "tasks", "--dry-run", "--arrayKey", "tasks", "--item", "{}"]);
+	assert.equal(kebab.dryRun, true);
+	assert.equal("dryRun" in kebab.params, false);
+	assert.equal("dry-run" in kebab.params, false);
+});
+
+test("CLI append-block-item --dry-run with a valid item PASSes and writes nothing (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as {
+			tasks: unknown[];
+		};
+		const { code, out } = await captureMainStdout([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--dry-run",
+			"--item",
+			'{"id":"TASK-2","title":"beta"}',
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		assert.match(out, /\[dry-run\] PASS/);
+		const after = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as { tasks: unknown[] };
+		assert.equal(after.tasks.length, before.tasks.length);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI append-block-item --dry-run with a schema-invalid item exits 5 and writes nothing (FGAP-024)", async () => {
+	// gaps items require `description`; an item lacking it fails the prospective-file validation.
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-dryrun-invalid-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "framework-gaps",
+						display_name: "Gaps",
+						prefix: "FGAP-",
+						schema_path: "schemas/framework-gaps.schema.json",
+						array_key: "gaps",
+						data_path: "framework-gaps.json",
+					},
+				],
+			}),
+		);
+		writeFileSync(
+			path.join(sub, "schemas", "framework-gaps.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					gaps: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description"],
+							properties: { id: { type: "string" }, description: { type: "string" } },
+						},
+					},
+				},
+			}),
+		);
+		writeFileSync(path.join(sub, "framework-gaps.json"), JSON.stringify({ gaps: [] }));
+
+		const { code, err } = await captureMainStderr([
+			"append-block-item",
+			"--block",
+			"framework-gaps",
+			"--dry-run",
+			"--item",
+			'{"id":"FGAP-999"}',
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 5);
+		assert.match(err, /description/);
+		// Nothing written: the block stays empty.
+		const after = JSON.parse(readFileSync(path.join(sub, "framework-gaps.json"), "utf8")) as { gaps: unknown[] };
+		assert.equal(after.gaps.length, 0);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI append-block-item --dry-run --autoId names the prospective id (FGAP-024)", async () => {
+	// id pattern + a populated block so nextId allocates a deterministic successor.
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-dryrun-autoid-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "tasks",
+						display_name: "Tasks",
+						prefix: "TASK-",
+						schema_path: "schemas/tasks.schema.json",
+						array_key: "tasks",
+						data_path: "tasks.json",
+					},
+				],
+			}),
+		);
+		writeFileSync(
+			path.join(sub, "schemas", "tasks.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					tasks: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id"],
+							properties: { id: { type: "string", pattern: "^TASK-\\d{3}$" }, title: { type: "string" } },
+						},
+					},
+				},
+			}),
+		);
+		writeFileSync(path.join(sub, "tasks.json"), JSON.stringify({ tasks: [{ id: "TASK-001", title: "alpha" }] }));
+
+		const { code, out } = await captureMainStdout([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--dry-run",
+			"--autoId",
+			"--item",
+			'{"title":"beta"}',
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		assert.match(out, /\[dry-run\] PASS — would append TASK-002/);
+		const after = JSON.parse(readFileSync(path.join(sub, "tasks.json"), "utf8")) as { tasks: unknown[] };
+		assert.equal(after.tasks.length, 1);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-026: granular exit codes ───────────────────────────────────
+
+test("CLI a not-initialized op exits 1 (BootstrapNotFound) (FGAP-026)", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-noinit-"));
+	try {
+		// No .pi-context.json pointer at all → the op throws BootstrapNotFoundError.
+		const { code } = await captureMainStderr(["read-block", "--block", "tasks", "--cwd", cwd]);
+		assert.equal(code, 1);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI an unknown flag is a usage error → exit 2 (FGAP-026)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const { code } = await captureMainStderr(["read-block", "--block", "tasks", "--bogus", "x", "--cwd", cwd]);
+		assert.equal(code, 2);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-024 follow-up: --dryRun is op-scoped to append-block-item ───
+// The global `--dry-run` swallow used to fire for EVERY op that declared no `dryRun`
+// param, but the main() honor branch only acts for append-block-item. So a no-dryRun
+// MUTATION op (update-block-item, remove-block-item, …) swallowed the flag and then
+// ran the REAL op — a silent write. The swallow is now gated on the op being
+// append-block-item; for every other no-dryRun op the token is an unknown flag (exit 2);
+// for ops that DECLARE dryRun (upsert-block-item, update, relation ops) the token still
+// flows to their own dryRun param.
+
+test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the swallow is append-scoped) (FGAP-024)", () => {
+	const op = resolveOp("update-block-item");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "tasks", "--arrayKey", "tasks", "--match", "{}", "--updates", "{}", "--dryRun"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --dryRun"),
+	);
+});
+
+test("CLI update-block-item --dryRun rejects (exit 2) and writes NOTHING — no silent write (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code } = await captureMainStderr([
+			"update-block-item",
+			"--block",
+			"tasks",
+			"--match",
+			'{"id":"TASK-1"}',
+			"--updates",
+			'{"title":"MUTATED"}',
+			"--dryRun",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 2);
+		// The block is byte-for-byte unchanged: the silent write is gone.
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+		assert.doesNotMatch(after, /MUTATED/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI remove-block-item --dry-run rejects (exit 2) and writes NOTHING (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code } = await captureMainStderr([
+			"remove-block-item",
+			"--block",
+			"tasks",
+			"--match",
+			'{"id":"TASK-1"}',
+			"--dry-run",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 2);
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI upsert-block-item --dryRun reaches its own dryRun param (preview, exit 0, no write) (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code, out } = await captureMainStdout([
+			"upsert-block-item",
+			"--block",
+			"tasks",
+			"--item",
+			'{"id":"TASK-2","title":"beta"}',
+			"--dryRun",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		assert.match(out, /would upsert/);
+		// Op-level dryRun: nothing written.
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-026 follow-up: schema-absent classifies to 3, not 4 ─────────
+// nextId's schema-missing throw ("nextId: schema not found for block …") matched the
+// id-allocation pattern first → exit 4, masking the true cause (absent schema → 3).
+// The catch classifier now tests schema-not-found BEFORE id-allocation.
+
+test("CLI autoId append against a block whose schema file is absent exits 3 (schema-absent, not 4) (FGAP-026)", async () => {
+	// config declares the block_kind (so arrayKey resolves) but NO schema file on disk.
+	// The autoId allocation calls nextId → throws "nextId: schema not found …" → exit 3.
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-noschema-autoid-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "tasks",
+						display_name: "Tasks",
+						prefix: "TASK-",
+						schema_path: "schemas/tasks.schema.json",
+						array_key: "tasks",
+						data_path: "tasks.json",
+					},
+				],
+			}),
+		);
+		// Deliberately NO schemas/tasks.schema.json on disk.
+		writeFileSync(path.join(sub, "tasks.json"), JSON.stringify({ tasks: [] }));
+
+		const { code, err } = await captureMainStderr([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--arrayKey",
+			"tasks",
+			"--autoId",
+			"--item",
+			'{"title":"beta"}',
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 3);
+		assert.match(err, /schema not found/);
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

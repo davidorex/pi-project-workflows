@@ -648,6 +648,37 @@
       ],
       "oid": "8a7db06de4a34b5780b0bd3553b694df",
       "content_hash": "91e28e7fdd9f60730a2ae19b180e02a230672d974a74886b93f94668093d335f"
+    },
+    {
+      "id": "VER-028",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-037 (caller-as-reconciler conflict resolution) verified end-to-end across three sub-fixes. (1) FGAP-068 — the update conflict resolver no longer spawns a subordinate pi-bound mergetool (deleted resolve-conflicts.ts); pi-context update SURFACES the conflict set (structured under --json + a renderConflicts report with reconcile guidance on the text surface) and the calling agent reconciles. (2) FGAP-069 — a new reflected auth-gated op resolve-conflict --schemaName <name> [--schema <R>] writes the reconciled schema AND advances the merge base to the catalog body (stampBaselineFromBody), so a subsequent update converges instead of re-deriving the conflict. (3) FGAP-070 (CRITICAL) — updateContext's merge arm now stamps the merge base := the catalog (theirs) body, not the on-disk merged body, and merged is dropped from the post-loop on-disk baseline refresh; a kept-local divergence (reconciled conflict OR plain disjoint auto-merge) now persists as locally-modified and survives subsequent updates instead of being resynced to the catalog on the next run. Live CLI end-to-end: a both-diverged conflict (R=boolean, catalog=string) -> resolve-conflict --yes -> THREE live update --yes runs, notes.type stays boolean at every step, every update merged:[tasks] (no resynced flip) — the exact loop that clobbered before now a stable fixed point. build+check+full-test green (auth-gate canon 18 incl. resolve-conflict). Fresh adversarial probe PASS, no defects: own multi-update harness (4+ updates) for both the resolve-conflict and disjoint-auto-merge paths durable; base content_hash == catalog body (not merged); resynced/migrated unbroken (resync then in-sync, no re-resync loop); dryRun stamps nothing; a refused schema keeps its drift signal; mergeSchema algorithm byte-unchanged (only the recorded baseline changed); no test still asserts the buggy post-merge catalog-ahead state.",
+      "criteria_results": [
+        {
+          "criterion": "the update conflict path does not spawn a subordinate agent; the conflict set is returned to the calling agent (closes FGAP-068)",
+          "status": "passed",
+          "evidence": "resolve-conflicts.ts deleted; the only runPiBound caller is the pi-bound command; renderConflicts on the text surface + structured conflicts under --json; live update dispatches no sub-pi"
+        },
+        {
+          "criterion": "a calling agent can resolve a conflict so update stops re-reporting it (closes FGAP-069)",
+          "status": "passed",
+          "evidence": "resolve-conflict op writes R + advances base to catalog; live resolve-conflict then update -> conflict gone, R preserved; tests i/j/k converge"
+        },
+        {
+          "criterion": "a kept-local divergence (reconciled or disjoint-merged) survives subsequent updates and is not resynced to the catalog (closes FGAP-070)",
+          "status": "passed",
+          "evidence": "merge arm stamps base := catalog body; live 3x update keeps notes.type=boolean (merged, never resynced); adversarial 4+ update harness durable for both paths; base hash == catalog not merged"
+        },
+        {
+          "criterion": "runtime demo + adversarial probe + full gates green, no regression",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; auth-gate canon 18; fresh probe PASS no defects; mergeSchema byte-unchanged"
+        }
+      ],
+      "oid": "236ea2aa322d1d32defadb3589d4cbb8",
+      "content_hash": "87a91a770cc305e1d61778d9959a45ed516a1a8b0c3706cb2c31372b7583eca7"
     }
   ]
 }

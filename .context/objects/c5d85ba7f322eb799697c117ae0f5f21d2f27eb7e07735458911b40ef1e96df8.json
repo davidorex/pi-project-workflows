@@ -1,0 +1,25 @@
+{
+  "title": "a calling agent cannot resolve an update conflict — write-schema does not advance the merge base, so update re-flags a reconciled schema forever",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "After the FGAP-068 rework, `pi-context update` surfaces a both-diverged schema CONFLICT and the report guides the calling agent to reconcile via write-schema. But following that guidance does NOT resolve the conflict: write-schema writes the resolved body (R) but never advances the merge BASE (config.installed_from.assets[name]), so the next update re-derives the identical 3-way base/ours/theirs disagreement — confirmed empirically (write-schema --yes of the resolved schema, then update --dryRun → the same conflict). The only value that converges is reconciling to the catalog's exact value (ours==theirs). The old (now-deleted) resolver called refreshBaselineForSchema after the agent's write; the rework dropped that with no replacement, leaving the calling agent with no working path to resolve a conflict. Correct semantics (Explore-verified against mergeSchema/checkStatus): a reconciliation means the agent has seen the catalog value (theirs) and chosen R; the new merge base must become the CATALOG body, so checkStatus reads locally-modified (catalogDrift false) and mergeSchema's base==theirs->ours rule (schema-merge.ts:168) takes R on the next update with zero conflicts, R preserved, re-conflicting only when the catalog later changes that path.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "updateContext conflict arm pushes to result.conflicts with NO baseline advance; the brought_current loop (refreshBaselineForSchema) runs only for resynced/migrated/merged, never conflicts — so the base stays stale after the agent's write-schema"
+    },
+    {
+      "file": "packages/pi-context/src/schema-merge.ts",
+      "lines": "167-171",
+      "reference": "mergeSchema atomic rule: base==theirs -> ours; advancing base to the catalog body makes a reconciled schema auto-merge to R with zero conflicts on the next update"
+    },
+    {
+      "file": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
+      "reference": "empirical repro: pi-context update --cwd <both-diverged substrate> reports the conflict; write-schema --yes the resolved schema; update --dryRun re-reports the identical conflict (base/ours/theirs unchanged)"
+    }
+  ],
+  "impact": "The caller-as-reconciler model surfaces conflicts but provides no way to resolve them — a reconciled schema is re-flagged on every update unless the agent happens to pick the catalog's exact value. The conflict-handling guarantee of FEAT-006/update is not met end-to-end without a reconciliation-commit.",
+  "canonical_vocabulary": "reconciliation-commit (advance merge base to catalog on conflict resolution)",
+  "proposed_resolution": "Add a reflected, auth-gated commit op `resolve-conflict --schemaName <name> [--schema <R>]` that (i) writes R via writeSchemaCheckedForDir if provided, then (ii) advances installed_from.assets[name] (+ object-store stamp) to the CATALOG body (resolveCatalog -> samples/<schema_path>) via a stampBaselineFromBody helper factored from refreshBaselineForSchema. The conflict report's guidance names it. Then update auto-merges the reconciled schema (base==theirs->ours), zero conflicts."
+}

@@ -861,6 +861,34 @@ test("parseOpArgs leaves `--id` as unknown-flag when the op declares 0 id-params
 	);
 });
 
+test("parseOpArgs does NOT bind `--id` to a boolean *Id flag like autoId (FGAP-032 string-type guard)", () => {
+	// append-block-item's only `/Id$/` property is `autoId` — a Type.Boolean allocation
+	// flag, NOT a string identity selector. The string-type guard means it is not counted
+	// as an id-param, so `--id` finds 0 id-params and falls through to unknown-flag rather
+	// than silently swallowing the value into autoId.
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--id", "TASK-1"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --id"),
+	);
+	// The boolean presence flag itself is unaffected: `--autoId` (presence) and
+	// `--autoId true` both still resolve to the boolean param.
+	assert.equal(parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--autoId"]).params.autoId, true);
+	assert.equal(
+		parseOpArgs(op, ["--block", "b", "--arrayKey", "k", "--item", "{}", "--autoId", "true"]).params.autoId,
+		true,
+	);
+});
+
+test("parseOpArgs still resolves `--id` for a single string id-param op (read-config, FGAP-032)", () => {
+	// read-config declares `id` as Type.Optional(Type.String); fieldType unwraps the
+	// Optional → "string", so the guard keeps it as a valid single id-param.
+	const rc = resolveOp("read-config");
+	assert.ok(rc);
+	assert.equal(parseOpArgs(rc, ["--id", "block_kinds"]).params.id, "block_kinds");
+});
+
 // ── FGAP-019: arrayKey derived from config; required-filter exemption ─────────
 test("parseOpArgs accepts a block-mutation op without --arrayKey (FGAP-019 required-filter exemption)", () => {
 	// append-block-item declares arrayKey required; the CLI must NOT flag it missing

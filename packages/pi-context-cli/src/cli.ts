@@ -263,9 +263,15 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		// its id param `id`, or `<x>Id` (itemId/parentId/taskId/unitId/…). When the op
 		// has no literal `id` property and exactly one such param, `--id` resolves to
 		// it; zero leaves `field` as-is (the unknown-flag error fires); two or more is
-		// ambiguous (the caller must name the explicit flag).
+		// ambiguous (the caller must name the explicit flag). An id-param is always
+		// string-typed (every identity selector is Type.String / Type.Optional(String));
+		// the string-type guard excludes boolean flags whose name happens to end in `Id`
+		// — e.g. append-block-item's `autoId` (a Type.Boolean allocation flag, not an
+		// identity selector) — so `--id` never silently binds to them.
 		if (field === "id" && props.id === undefined) {
-			const idParams = Object.keys(props).filter((k) => k === "id" || /Id$/.test(k));
+			const idParams = Object.keys(props).filter(
+				(k) => (k === "id" || /Id$/.test(k)) && fieldType(props[k]) === "string",
+			);
 			if (idParams.length === 1) {
 				field = idParams[0];
 			} else if (idParams.length >= 2) {

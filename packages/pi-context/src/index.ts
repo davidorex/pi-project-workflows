@@ -1327,6 +1327,17 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						// !dryRun-guarded, so a dryRun merge stamps/refreshes nothing.
 						writeSchemaCheckedForDir(destRoot, name, merged, "replace", undefined, { dryRun });
 						result.merged.push(name);
+						// Stamp the merge BASE := the CATALOG body (theirs), not the merged
+						// on-disk body (FGAP-070). A 3-way merge that KEEPS a local divergence
+						// (a reconciled conflict OR a disjoint auto-merge: installed === merged
+						// === R, R ≠ catalog) must persist as `locally-modified` on the next
+						// check-status — so the next update re-derives base === theirs (catalog)
+						// → ours === R via the `base === theirs → ours` rule (schema-merge.ts),
+						// keeping R durable at a stable fixed point. Were the baseline left at
+						// the merged on-disk body, the next check would read `catalog-ahead` and
+						// RESYNC the schema to the catalog, clobbering R. Mirrors resolveConflict's
+						// base-advance. dryRun-guarded so a dry-run merge stamps nothing.
+						if (!dryRun) stampBaselineFromBody(cwd, name, theirs, readDeclaredVersion(sourceFile) ?? "");
 					} else {
 						result.conflicts.push({ name, conflicts });
 					}
@@ -1352,10 +1363,14 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// so without this step a just-resynced schema would still read as drifted
 	// (installed === catalog ≠ stale-baseline → both-diverged) on the next
 	// check-status. Mirror installContext's post-loop baseline write, but SURGICALLY:
-	// refresh ONLY the resynced/migrated assets so a `refused` (locally-modified)
-	// schema KEEPS its drift signal (re-fingerprinting it would falsely mark it
-	// in-sync). dryRun performs no writes, so it never refreshes.
-	const brought_current = [...result.resynced, ...result.migrated, ...result.merged];
+	// refresh ONLY the resynced/migrated assets (their on-disk body IS the catalog
+	// post-resync, so base === catalog either way). A merged schema is EXCLUDED here
+	// (FGAP-070): it already stamped its baseline := the CATALOG body in the merge
+	// arm, so re-fingerprinting its merged on-disk body would overwrite that with
+	// the merged body and resync away a kept-local divergence on the next update. A
+	// `refused` (locally-modified) schema is likewise not in `brought_current`, so it
+	// keeps its drift signal. dryRun performs no writes, so it never refreshes.
+	const brought_current = [...result.resynced, ...result.migrated];
 	if (!dryRun && brought_current.length > 0) {
 		// Refresh the install baseline + base-stamp the body for each schema this run
 		// actually brought current, via the shared `refreshBaselineForSchema` helper

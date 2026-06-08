@@ -31,6 +31,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 ### Removed
 - The `getConflictMergeInputs(cwd, name)` and `installedSchemaOnDiskHash(cwd, name)` exports — both added earlier in this same `[Unreleased]` window and removed before any release — are gone. They existed only to feed the subordinate conflict resolver (the mergetool reconstructed BASE/OURS/THEIRS bodies and snapshotted the installed-schema hash before/after the session). With the resolver retired in favor of returning the conflict set to the calling agent, neither has a remaining consumer. `refreshBaselineForSchema` (now `updateContext`-internal) and `renderConflicts` (the report renderer) remain exported.
 
+### Fixed
+- `/context update`'s 3-way merge now records a merged schema's install baseline as the CATALOG body (theirs), not the merged on-disk body. A merge that KEEPS a local divergence — a reconciled conflict (the resolved body `R` ≠ catalog) OR a disjoint auto-merge (a local-only field the catalog lacks) — now reads as `locally-modified` on the next `check-status` (baseline === catalog, installed differs), so the next `update` re-takes the local divergence via the `base === theirs → ours` rule and preserves it. Previously the baseline was stamped from the merged body, so the following `update` read the schema as `catalog-ahead` and RESYNCED it to the catalog — silently clobbering the kept-local divergence on the very next run. The kept-local divergence is now a stable fixed point across repeated updates.
+
 ## [0.30.0] - 2026-06-04
 
 ### Added

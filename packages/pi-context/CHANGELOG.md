@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- Regenerated the generated `SKILL.md` so the surfaced skill doc carries the new `resolve-conflict` op and the caller-reconciles conflict route.
+
 ### Added
 - `/context update` now surfaces the migration declarations a version-bump re-sync registers into `migrations.json`, under a new `UpdateResult.migrationsRegistered: Array<{ schema; from; to }>`. When a `catalog-ahead` schema's installed `version` differs from the catalog `version`, the re-sync walks the shipped catalog migration chain and registers each not-already-present declaration; those appended declarations are now reported (each `{ schema, from, to }`). A same-version re-sync, or a `blocked` outcome (whose rollback reverts `migrations.json`), contributes nothing — the live report reflects post-rollback truth. `--dryRun` computes the would-register set READ-ONLY (the catalog chain minus the declarations already on disk) and reports it without writing. `resyncSchema`'s return widens from a bare status string to `{ status; registeredMigrations }`; `/context install`'s schema loop consumes only the status (the migration-decl reporting surface is on `/context update`).
 - `/context install --update`'s empty-block overwrite now skips a block whose on-disk content already equals the catalog starter (JCS-canonical content equality, key-order/whitespace insensitive), reporting it under `skipped` rather than rewriting it. Previously an itemless block equal to the starter was copied over on every `--update` (an mtime-bumping no-op with identical bytes); it is now left byte-identical. An empty block whose content DIFFERS from the starter (e.g. an extra top-level field) is still overwritten and reported `updated`.

@@ -28,7 +28,9 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { renderConflicts } from "@davidorex/pi-context";
+import { nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import { loadConfig } from "@davidorex/pi-context/context";
+import { schemaPath } from "@davidorex/pi-context/context-dir";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import {
 	boundedJsonOutput,
@@ -38,6 +40,7 @@ import {
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
 import { addressInto, structureForRead } from "@davidorex/pi-context/read-element";
+import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 import { runPiBound } from "./pi-bound.js";
 import { formatAjvError, isValidationError, renderTable } from "./render.js";
@@ -173,6 +176,15 @@ export interface ParsedArgs {
 	json: boolean;
 	yes: boolean;
 	help: boolean;
+	/** --show-schema (FGAP-022): print the block contract and exit before any write. */
+	showSchema?: boolean;
+	/**
+	 * --dryRun / --dry-run (FGAP-024): for append-block-item, validate the prospective
+	 * whole file and write nothing. Parsed as a global flag — never injected into
+	 * `params` — because the frozen append op declares no `dryRun` param and would
+	 * reject it as an unknown flag.
+	 */
+	dryRun?: boolean;
 	/** Selected output render (FGAP-021). Unset → resolved from `json` at emit time. */
 	format?: "text" | "json" | "table";
 	explicitWriter?: unknown;
@@ -202,6 +214,24 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		const tok = argv[i];
 		if (tok === "--help" || tok === "-h") {
 			out.help = true;
+			continue;
+		}
+		if (tok === "--show-schema") {
+			// FGAP-022 — global flag (not an op param): print the block contract and exit.
+			out.showSchema = true;
+			continue;
+		}
+		if ((tok === "--dryRun" || tok === "--dry-run") && props.dryRun === undefined) {
+			// FGAP-024 — `--dry-run` is a GLOBAL flag ONLY for an op that declares no
+			// `dryRun` param (the sole such block-mutation op is the frozen
+			// append-block-item). It is handled in main() and NEVER routed into params,
+			// because the frozen op would reject `dryRun` as an unknown flag. Both the
+			// camel and kebab tokens are matched here explicitly since, not being a
+			// schema key on this op, neither would resolve through the kebab→camel
+			// normalization below. For ops that DO declare a `dryRun` param (relation
+			// ops, upsert, update, …) this branch is skipped and the token flows to the
+			// boolean-param handling so the op's own dryRun semantics are preserved.
+			out.dryRun = true;
 			continue;
 		}
 		if (tok === "--json") {
@@ -379,7 +409,10 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 	// injectArrayKey derives it from config.block_kinds[].array_key for the
 	// block-mutation ops after parse (FGAP-019), so a `--block` without an explicit
 	// `--arrayKey` must not be flagged missing here.
-	if (!out.help) {
+	// `--help` and `--show-schema` exit before any op invocation and need no item, so
+	// the required-field check is skipped for them (FGAP-022). `--dryRun` still requires
+	// the op's declared inputs (it validates a prospective item) and so is NOT exempt.
+	if (!out.help && !out.showSchema) {
 		const required = (schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey");
 		const missing = required.filter((r) => !(r in out.params));
 		if (missing.length > 0) {
@@ -532,7 +565,10 @@ export function deriveHelp(op: OpDefinition): string {
 			lines.push(`  --${field} <${t}>  (${req})${desc}`);
 		}
 	}
-	lines.push("", "Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --help");
+	lines.push(
+		"",
+		"Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --show-schema  --dry-run  --help",
+	);
 	return lines.join("\n");
 }
 
@@ -551,6 +587,8 @@ export function deriveTopHelp(): string {
 		"  --format <fmt>   render as text | json | table (default: text, or json with --json)",
 		"  --yes, --force   pre-authorize gated ops in non-interactive contexts",
 		"  --writer <json>  override the auto-resolved writer identity",
+		"  --show-schema    preview a block op's contract (array_key/required/types/id) and exit",
+		"  --dry-run        append-block-item: validate the prospective file, write nothing",
 		"  --help, -h       this help, or per-op help after an op name",
 	);
 	return lines.join("\n");
@@ -633,9 +671,103 @@ export async function main(argv: string[]): Promise<number> {
 		return 0;
 	}
 
+	// FGAP-022 — `--show-schema`: preview the block contract (array_key / required /
+	// field types / id pattern) and exit 0 BEFORE any write. Only meaningful for the
+	// block-mutation ops (the ops that declare `arrayKey` and take a `--block`); on any
+	// other op it is a misuse (exit 2). Reads the installed schema through the lifted
+	// readSchema → resolveBlockItemSchema path (no op change).
+	if (parsed.showSchema) {
+		const opProps = objectSchema(op).properties ?? {};
+		if (opProps.arrayKey === undefined || typeof parsed.params.block !== "string") {
+			process.stderr.write(`error: --show-schema applies only to a block op with --block <name>\n`);
+			return 2;
+		}
+		const block = parsed.params.block;
+		const schema = readSchema(parsed.cwd, block);
+		if (schema === null) {
+			process.stderr.write(`error: schema not found for block ${block}\n`);
+			return 3;
+		}
+		const { arrayKey, itemSchema } = resolveBlockItemSchema(schema as Record<string, unknown>);
+		const props = (itemSchema.properties ?? {}) as Record<string, Record<string, unknown>>;
+		const required = (itemSchema.required ?? []) as string[];
+		const lines = [
+			`Block: ${block}`,
+			`Array key: ${arrayKey}`,
+			`Required fields: ${required.join(", ")}`,
+			"All fields:",
+		];
+		for (const [name, fschema] of Object.entries(props)) {
+			const enumVals = Array.isArray(fschema.enum) ? fschema.enum : null;
+			const type =
+				typeof fschema.type === "string"
+					? fschema.type
+					: typeof fschema.$ref === "string"
+						? (fschema.$ref as string)
+						: enumVals
+							? "enum"
+							: "object";
+			const enumSuffix = enumVals ? ` [enum: ${enumVals.join(", ")}]` : "";
+			lines.push(`  - ${name}: ${type}${enumSuffix}`);
+		}
+		const idPattern = (props.id?.pattern as string | undefined) ?? "(none)";
+		lines.push(`ID pattern: ${idPattern}`);
+		process.stdout.write(`${lines.join("\n")}\n`);
+		return 0;
+	}
+
 	const identity = resolveIdentity();
 	injectWriter(op, parsed.params, identity);
 	injectArrayKey(op, parsed.params, parsed.cwd);
+
+	// FGAP-024 — append-block-item `--dry-run`: client-side prospective-whole-file
+	// validation. Replicates the op's autoId allocation, builds the prospective file
+	// {...existing, [arrayKey]: [...items, item]}, and validates it against the WHOLE
+	// block schema (matching exactly what appendToBlock validates on write) — then
+	// RETURNS before the auth/op-run block, so the frozen op is never invoked and
+	// nothing is written. The `--dryRun` flag itself never enters parsed.params, so
+	// the op would never see it even if reached.
+	if (op.name === "append-block-item" && parsed.dryRun) {
+		const block = parsed.params.block as string;
+		const arrayKey = parsed.params.arrayKey as string | undefined;
+		if (typeof arrayKey !== "string") {
+			process.stderr.write(`error: cannot resolve array key for block ${block}\n`);
+			return 2;
+		}
+		let item = (parsed.params.item ?? {}) as Record<string, unknown>;
+		if (parsed.params.autoId && (item == null || item.id === undefined)) {
+			try {
+				item = { ...item, id: nextId(parsed.cwd, block) };
+			} catch (e) {
+				process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
+				return 4;
+			}
+		}
+		let existing: Record<string, unknown> = {};
+		try {
+			existing = readBlock(parsed.cwd, block) as Record<string, unknown>;
+		} catch {
+			existing = {};
+		}
+		const items = Array.isArray(existing[arrayKey]) ? (existing[arrayKey] as unknown[]) : [];
+		const prospective = { ...existing, [arrayKey]: [...items, item] };
+		try {
+			validateFromFile(schemaPath(parsed.cwd, block), prospective, `${block}.${arrayKey}[item]`);
+		} catch (e) {
+			if (isValidationError(e)) {
+				process.stderr.write(`error: ${formatAjvError(e)}\n`);
+				return 5;
+			}
+			if (/schema (file )?not found/i.test(String((e as Error).message))) {
+				process.stderr.write(`error: ${(e as Error).message}\n`);
+				return 3;
+			}
+			throw e;
+		}
+		process.stdout.write(`[dry-run] PASS${item.id ? ` — would append ${item.id}` : ""}\n`);
+		return 0;
+	}
+
 	const dctx = buildCliDispatchContext(parsed.explicitWriter, identity);
 
 	const decision = authDecision(op, {
@@ -762,6 +894,16 @@ export async function main(argv: string[]): Promise<number> {
 		} else {
 			process.stderr.write(`error: ${message}\n`);
 		}
-		return 1;
+		// FGAP-026 — granular exit codes distinguishing error classes. Name/message-based
+		// (instanceof is unreliable across the package boundary): validation → 5;
+		// not-initialized / BootstrapNotFoundError → 1 (generic runtime); id-allocation
+		// failure → 4; schema-absent → 3; everything else → 1. Usage/arg errors are 2,
+		// classified earlier at the UsageError catch. The message emit above is unchanged.
+		let code = 1;
+		if (isValidationError(err)) code = 5;
+		else if (err instanceof Error && err.name === "BootstrapNotFoundError") code = 1;
+		else if (err instanceof Error && /nextId|id pattern|allocate/i.test(err.message)) code = 4;
+		else if (err instanceof Error && /schema (file )?not found/i.test(err.message)) code = 3;
+		return code;
 	}
 }

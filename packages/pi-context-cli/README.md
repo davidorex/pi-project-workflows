@@ -53,6 +53,19 @@ pi-context filter-block-items --block tasks --where status:eq:done          # fi
 pi-context filter-block-items --block tasks --field tag --op in --value a,b,c
 ```
 
+## Contract preview + dry-run
+
+For the block-mutation ops the CLI offers two pre-write affordances:
+
+- **`--show-schema`** previews a block op's contract and exits before any write — the array key, the required-field set, every field with its type (and enum values when declared), and the id pattern. Pass it with the op and `--block <name>`; no `--item` is needed.
+- **`append-block-item --dry-run`** (or `--dryRun`) validates the prospective whole file — `{...existing, <arrayKey>: [...items, newItem]}` against the block schema, exactly what a real append validates — and writes nothing. With `--autoId` it reports the id that would be allocated. The output is `[dry-run] PASS` (or `[dry-run] PASS — would append <id>`); a schema-invalid item surfaces the field-named validation error.
+
+```bash
+pi-context append-block-item --block framework-gaps --show-schema     # contract preview, no write
+pi-context append-block-item --block tasks --item @t.json --dry-run    # validate the prospective file, no write
+pi-context append-block-item --block tasks --item @t.json --dry-run --autoId   # also reports the allocated id
+```
+
 ## Output rendering
 
 `--format text|json|table` selects how an op's result is rendered. `--json` is the exact alias of `--format json`.
@@ -134,6 +147,8 @@ pi-context update                            # apply: resync + auto-merge; confl
 - `--format <text|json|table>` — select the output render (default `text`, or `json` with `--json`); see [Output rendering](#output-rendering)
 - `--yes`, `--force` — pre-authorize an auth-gated op in a non-interactive context
 - `--writer <json>` — override the auto-resolved writer identity
+- `--show-schema` — preview a block op's contract (array key / required fields / field types / id pattern) and exit; see [Contract preview + dry-run](#contract-preview--dry-run)
+- `--dry-run`, `--dryRun` — for `append-block-item`, validate the prospective file and write nothing; see [Contract preview + dry-run](#contract-preview--dry-run)
 - `--help`, `-h` — top-level help, or per-op help after an op name
 
 ## Writer identity
@@ -154,6 +169,11 @@ Ops marked `authGated` (writes that mutate config / schemas / migrations) requir
 
 ## Exit codes
 
-- `0` — success
-- `1` — op/runtime error, or declined authorization
-- `2` — usage error (unknown op, unknown flag, missing required field)
+| Code | Meaning |
+| --- | --- |
+| `0` | success |
+| `1` | op/runtime error, or declined authorization |
+| `2` | usage error (unknown op, unknown flag, missing required field) |
+| `3` | schema absent (the block's schema is not installed) |
+| `4` | id-allocation failure (`--autoId` could not allocate the next id) |
+| `5` | schema validation failure |

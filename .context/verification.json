@@ -751,6 +751,42 @@
       ],
       "oid": "f392a2871f5a1efb6086b4607b307c46",
       "content_hash": "9b3e648e338594d4e9be1eb6772e94a183a216f52b295f06d7346f39fd4b100f"
+    },
+    {
+      "id": "VER-031",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-017 (FEAT-008 order 3/6) the CLI ergonomic affordances, verified end-to-end incl. an in-impl iterate-to-zero fix cycle. All changes CLI-side in packages/pi-context-cli/src/cli.ts (impl ae5e800 + fix 41b8326); ops-registry.ts byte-unchanged (the append op stays frozen) — the FEAT-008 additive invariant holds. FGAP-022 (--show-schema): an early branch (gated like injectArrayKey — op declares arrayKey + --block) loads readSchema + resolveBlockItemSchema and prints Block/Array key/Required fields/All fields (name: type [+enum])/ID pattern, exit 0, writes nothing; schema-absent -> exit 3; misuse on a non-block op -> exit 2. FGAP-024 (append-block-item --dry-run): a CLI-only global flag (never a param on the frozen op), an early branch that replicates the op autoId nextId allocation, builds the prospective whole block, validateFromFile, PASS -> exit 0 [dry-run] PASS + prospective id, validation -> exit 5, id-allocation -> exit 4, schema-absent -> exit 3; returns before op.run (nothing written, op never invoked). FGAP-026 (granular exit codes): a name/message-based classifier at the op-run catch (instanceof unreliable across the package boundary) — ValidationError -> 5, BootstrapNotFoundError -> 1, schema-absent -> 3, id-allocation -> 4, else -> 1; UsageError -> 2 at its catch; the script-convention 0-5 taxonomy mapped complete (incl. 4). The adversarial probe found two defects, both re-entered the pipeline (explore -> plan -> approve -> agent -> fresh re-audit): (1) MEDIUM silent-write — the --dryRun parse-swallow fired for every no-dryRun op but only append-block-item honored it, so other no-dryRun mutation ops (update-block-item, remove-block-item, the nested ops, write-block, write-schema, resolve-conflict, complete-task) swallowed-then-ran the real op (silent write); fixed by op-scoping the swallow to append-block-item so all others reject --dryRun as unknown-flag (exit 2); (2) MINOR exit-code mis-classification — a schema-absent nextId throw matched the id-allocation regex before schema-not-found (-> 4 not 3); fixed by reordering schema-not-found ahead of id-allocation. Live runtime demo on a .context copy: update-block-item --dryRun -> exit 2 with tasks.json byte-unchanged (the silent write is gone), remove-block-item --dry-run -> exit 2, upsert-block-item --dryRun (declares dryRun) -> still previews exit 0, append-block-item --dry-run -> [dry-run] PASS exit 0, all dry-runs leave md5 unchanged; --show-schema prints the contract exit 0; schema-invalid append -> exit 5; no-substrate -> exit 1; --show-schema absent-schema -> exit 3; usage -> exit 2. build+check+full-test green (fail 0 all packages); cli.test.ts gained the FGAP-022/024/026 tests + the fix-class tests (update-block-item --dryRun -> exit 2 + byte-unchanged; dryRun-declaring still honored; schema-absent -> 3). Fresh re-audit of the fix confirmed the whole class (every no-dryRun mutation op rejects --dryRun, dryRun-declaring + append unaffected, classifier reorder regression-free).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-022 closed: --show-schema previews the block contract and exits 0 before any write",
+          "status": "passed",
+          "evidence": "early branch renders Block/Array key/Required/All fields/ID pattern, exit 0, nothing written; schema-absent -> 3; non-block misuse -> 2"
+        },
+        {
+          "criterion": "FGAP-024 closed: append-block-item --dry-run validates the prospective whole file and writes nothing, with no op change",
+          "status": "passed",
+          "evidence": "CLI-only flag + early branch returns before op.run; prospective-whole-block validateFromFile; PASS exit 0 / invalid exit 5; md5 unchanged; op byte-frozen"
+        },
+        {
+          "criterion": "FGAP-026 closed: exit codes distinguish error classes 1-5",
+          "status": "passed",
+          "evidence": "name/message classifier: validation 5, schema-absent 3, id-allocation 4, bootstrap/runtime 1, usage 2; reordered schema-absent ahead of id-allocation per the fix"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged",
+          "status": "passed",
+          "evidence": "git diff of ops-registry.ts empty across ae5e800+41b8326; all changes in cli.ts; --dryRun never reaches the frozen append op (and other no-dryRun ops reject it)"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; live demo on .context copy; adversarial probe found 2 defects, both fixed + fresh-re-audited to a stable class"
+        }
+      ],
+      "oid": "0b92eaec7e0c95f49533400d642da015",
+      "content_hash": "f37bc78188682034835a6798f6ca7a4213fc23e7635d33f892a66f786c8dd110"
     }
   ]
 }

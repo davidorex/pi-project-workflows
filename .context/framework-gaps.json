@@ -786,7 +786,7 @@
     },
     {
       "title": "CLI lacks a --show-schema contract preview before block writes",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "file-block-item.ts prints the block contract (array_key + required fields + field types + id-pattern) before a write so the author sees what is expected; the CLI has no one-shot preview. This is the same contract-blindness that, with FGAP-020, drove the evidence-must-be-array failure while filing FGAP-019.",
       "evidence": [
@@ -810,9 +810,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-022",
       "oid": "ba04c442d72fcaa8655338fba491263e",
-      "content_hash": "877193dddb7d72efd107f97d8bfe6d4048a23cdc3fe01393d9d27fb63987a327",
+      "content_hash": "24481bda4220161eb154bacd99d238df871b87c76d0907f0a7a2471f8591bbda",
       "priority": "P2",
-      "content_parent": "4e3a05ef6aff64ab3192dcc38b5531603e034129d387f360c8688b2737953e17"
+      "content_parent": "877193dddb7d72efd107f97d8bfe6d4048a23cdc3fe01393d9d27fb63987a327",
+      "closed_by": "VER-031 / TASK-017 — --show-schema previews the block contract (array_key/required/fields/id-pattern via readSchema + resolveBlockItemSchema) and exits 0 before any write; schema-absent -> exit 3.",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "CLI surfaces raw AJV error messages instead of field-named guidance",
@@ -849,7 +851,7 @@
     },
     {
       "title": "append-block-item has no dry-run; only the script validates the prospective whole file",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "file-block-item.ts builds the prospective whole block (on-disk items + new item) and validates it (dry-run PASS == write PASS). The append-block-item op has no dryRun param (the upsert-block-item op does, ops-registry.ts:553), so the CLI cannot offer append dry-run. Closable CLI-side without an op change via client-side prospective-validation.",
       "evidence": [
@@ -874,9 +876,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-024",
       "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
-      "content_hash": "68a918700fd7b0948e5c56d23d1401bc545b3884c2c3fcbf20e60fbb78579dee",
+      "content_hash": "a9ae20e020d085ddee476c1b4224524192471605077a06defcefcc31cf0986ce",
       "priority": "P2",
-      "content_parent": "0c44d9da46e1689a5b5a3c62bfc3a2a7051fc6f921179788b84b1a63eb9dadcd"
+      "content_parent": "68a918700fd7b0948e5c56d23d1401bc545b3884c2c3fcbf20e60fbb78579dee",
+      "closed_by": "VER-031 / TASK-017 — append-block-item --dry-run is a CLI-only flag whose early branch does prospective-whole-block validation (validateFromFile) and returns before op.run, writing nothing; PASS exit 0, validation exit 5. Op byte-unchanged. The swallow is op-scoped to append-block-item so other no-dryRun ops reject --dryRun (exit 2), not silently run (fix 41b8326).",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "CLI lacks the scripts' input shorthands (--writer kind:id, --where field:op:value, CSV --op in)",
@@ -913,7 +917,7 @@
     },
     {
       "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "The orchestrator scripts return granular exit codes (1-5: usage / not-initialized / schema-absent / validation / etc.); the CLI returns only 0/1/2, so callers and CI cannot distinguish error classes.",
       "evidence": [
@@ -937,9 +941,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-026",
       "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
-      "content_hash": "1b5a2504954b58471dfba4f799cd0ecb66fbcc05307db48331ed63dcd3a931b1",
+      "content_hash": "8e1e9cac33fde1be2b5d189175ad82faa1c2405382a67c58ffc6d2f951785ce1",
       "priority": "P2",
-      "content_parent": "e04b8c2f25e3595416f0374a11b7feea3abee90c8b618a2e21fff712c93e96c8"
+      "content_parent": "1b5a2504954b58471dfba4f799cd0ecb66fbcc05307db48331ed63dcd3a931b1",
+      "closed_by": "VER-031 / TASK-017 — a name/message-based exit-code classifier maps error classes 1-5 (validation 5, id-allocation 4, schema-absent 3, usage 2, bootstrap/runtime 1) at the cli.ts catch + UsageError sites; schema-absent is tested ahead of id-allocation (fix 41b8326).",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",

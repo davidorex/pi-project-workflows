@@ -922,10 +922,14 @@ export const ops: OpDefinition[] = [
 					if (!entry.found) {
 						return `read-config: entry not found in ${params.registry} — ${entry.resolved}`;
 					}
-					const read = structureForRead(entry.value, { label: `config.${params.registry}.${params.id}` });
+					const read = structureForRead(entry.value, {
+						whole: true,
+						label: `config.${params.registry}.${params.id}`,
+					});
 					return { read };
 				}
 				const read = structureForRead(reg.value, {
+					whole: true,
 					label: `config.${params.registry}`,
 					overCapDirective: {
 						tool: "read-config",
@@ -984,7 +988,7 @@ export const ops: OpDefinition[] = [
 				if (tool === undefined) {
 					return `list-tools: tool not found — name=${params.name}`;
 				}
-				const read = structureForRead(tool, { label: `tool ${params.name}` });
+				const read = structureForRead(tool, { whole: true, label: `tool ${params.name}` });
 				return { read };
 			}
 
@@ -1029,8 +1033,12 @@ export const ops: OpDefinition[] = [
 			const read = structureForRead(catalog, {
 				label: params.kind ? `samples kind=${params.kind}` : "samples catalog",
 				// Whole catalog → narrow by kind; a single kind has no finer
-				// addressing (edge → head-leading marker, no directive).
-				...(params.kind ? {} : { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
+				// addressing (edge → head-leading marker, no directive). The
+				// single-kind read is an addressed node — return it whole (capped),
+				// never a 50-item page of an incidental array child.
+				...(params.kind
+					? { whole: true }
+					: { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
 			});
 			return { read };
 		},
@@ -1165,7 +1173,7 @@ export const ops: OpDefinition[] = [
 				if (!addr.found) {
 					return `read-schema: property not found — ${addr.resolved}`;
 				}
-				const read = structureForRead(addr.value, { label: `${params.schemaName} ${addr.resolved}` });
+				const read = structureForRead(addr.value, { whole: true, label: `${params.schemaName} ${addr.resolved}` });
 				return { read };
 			}
 

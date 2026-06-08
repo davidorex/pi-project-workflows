@@ -702,7 +702,7 @@
     },
     {
       "title": "read-schema --path at an object node projects to the `required` name-list, not the node subtree",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "read-schema --path addressed at a JSON-Schema OBJECT node (e.g. properties.gaps.items) returns a flat list of field NAMES (the node's `required` array) instead of the node's full schema subtree (properties/types/required/additionalProperties). Leaf nodes return correctly (properties.gaps.items.properties.status -> full {type,enum}); the whole-schema read (no --path) returns the full schema. Root cause: the read-schema op routes the addressed node through structureForRead, whose discoverArrayKey heuristic treats any object with a single array-valued property as a paginated collection and pages it — a schema object node carrying a `required` array trips it, so the array is returned in place of the object. The pi-tool op and the reflecting pi-context-cli both project; the orchestrator script scripts/orchestrator/read-schema.ts avoids it by stringifying the addressed value directly — a dual-surface asymmetry (the two surfaces disagree on the same query). Repro: `read-schema --schemaName framework-gaps --path properties.gaps.items` -> ['id','title',...,'created_at'] (the 10-entry required list); `--path properties.gaps.items.properties.status` -> full {type,enum}; no --path -> full schema.",
       "evidence": [
@@ -746,13 +746,15 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-020",
       "oid": "8ecb24b45db69607db7b05d0fb95e678",
-      "content_hash": "d2d285c4b2c26c767f6f75be8ab50e51a2d895ab60a891c7b35997f6d5b9134c",
+      "content_hash": "e5310ecf70f626c6b5f93ce46a1a7771a2d5e8eb0359735a53871a512c9dbdba",
       "priority": "P2",
-      "content_parent": "e0b45fe9d89be7971cecc607d65e8baa397e4222a415d885dbf9788a3fde0977"
+      "content_parent": "d2d285c4b2c26c767f6f75be8ab50e51a2d895ab60a891c7b35997f6d5b9134c",
+      "closed_by": "VER-030 / TASK-016 — a CLI-side addressedReadOverride recomputes the addressed value from source (addressInto + readSchema/loadConfig) and re-structures it whole (structureForRead whole:true, 50KB-capped) for read-schema --path and read-config --registry [--id], so an addressed object node returns the full subtree; the op is untouched.",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "CLI lacks a human-render mode (--format / terse / --raw) the script twins provide",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "The CLI emits only the --json envelope or the op's own renderOpResultText text; 15+ orchestrator op-twin scripts offer --format table|chain|summary|csv plus a renderTerse default and --raw for config/schema. Direct CLI users get structured JSON or the op's terse text, with no human-oriented render layer. Closable CLI-side without touching ops (a CLI-only render layer in-pi dispatch never sees).",
       "evidence": [
@@ -776,9 +778,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-021",
       "oid": "a23d5835258e1b607bfa3e3f59f87e88",
-      "content_hash": "818c56ed77ebf8343714802d1208748ca2cccd719a77cec306746b9813ce1ef6",
+      "content_hash": "7962432256133c739ad395260cfc372040aaa36bb6d2855826b92b1c5d4012e4",
       "priority": "P2",
-      "content_parent": "c63656998b2aa91ba73ee30ed58827db0f0a9331e4a34efc4ead605d41980d23"
+      "content_parent": "818c56ed77ebf8343714802d1208748ca2cccd719a77cec306746b9813ce1ef6",
+      "closed_by": "VER-030 / TASK-016 — --format text|json|table render dispatch in cli.ts backed by a new render.ts renderTable (lifted from the script twin); --json is sugar for --format json; table gracefully falls back to text for non-tabular/over-cap/empty results.",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "CLI lacks a --show-schema contract preview before block writes",
@@ -812,7 +816,7 @@
     },
     {
       "title": "CLI surfaces raw AJV error messages instead of field-named guidance",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "On a validation failure the CLI surfaces the raw thrown .message; the script's formatAjvError turns AJV instancePath/schemaPath into field-named guidance. CLI users get the raw AJV string (e.g. `/gaps/18/evidence: must be array`) rather than a field-named message.",
       "evidence": [
@@ -837,9 +841,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-023",
       "oid": "bf32be6013fbaa95a52e337fd5f3413c",
-      "content_hash": "003e2e861ac92ae0d26a397b1ed7d923f7b1bf57cad361a9a0b8d0db81beced7",
+      "content_hash": "4c2c075877d889c39232037669e0786947a73632e5b6eb0719b55ff2fe82fdc2",
       "priority": "P2",
-      "content_parent": "c6b4fad5c24e8e2052dd9b87412f7abc9edd4cd3c5ba8d15ff1dd222b89f037d"
+      "content_parent": "003e2e861ac92ae0d26a397b1ed7d923f7b1bf57cad361a9a0b8d0db81beced7",
+      "closed_by": "VER-030 / TASK-016 — render.ts formatAjvError translates ValidationError.errors[] to field-named guidance in the cli.ts op-run catch (both --json envelope + stderr); a structural isValidationError guard handles the cross-package-boundary class-identity issue with instanceof.",
+      "closed_at": "2026-06-09T00:00:00.000Z"
     },
     {
       "title": "append-block-item has no dry-run; only the script validates the prospective whole file",

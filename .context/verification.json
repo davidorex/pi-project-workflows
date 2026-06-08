@@ -715,6 +715,42 @@
       ],
       "oid": "b100773abb105f5028d29b0c7b62ef35",
       "content_hash": "c741b333ec31ba368191e78cd99adec83c1316dba001305a744b5a4122bb0e4c"
+    },
+    {
+      "id": "VER-030",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-016 (FEAT-008 order 2/6) the CLI output + error-shaping layer, verified end-to-end. All changes CLI-side: packages/pi-context-cli/src/cli.ts + new render.ts (commit f562658); ops-registry.ts byte-unchanged (git diff empty across the commit) — the FEAT-008 additive invariant holds. FGAP-021 (--format text|json|table): a new render.ts renderTable (lifted from the filter-block-items orchestrator twin: id-first <=4 cols, markdown header, JSON.stringify non-string cells, newline-collapse, 80-char/77+ellipsis truncation) renders array-of-objects results; text -> renderOpResultText, json -> the boundedJsonOutput envelope; --json is sugar for --format json (byte-identical, diff-confirmed); --format <bad> -> exit 2 with a clear message; table gracefully falls back to text for prose/object/over-cap/empty results (never a degenerate table); the update-conflict surfacing block re-gated on format!=='json'. FGAP-023 (AJV translation): render.ts formatAjvError maps the ValidationError.errors[] (required/type/enum/additionalProperties) to field-named guidance (one segment per error, empty instancePath -> '/'); hooked in the op-run catch and flows through both the --json {ok:false,error} envelope and the stderr text surface. The implementer found instanceof ValidationError unreliable across the package boundary (the @davidorex/pi-context/schema-validator subpath export yields a distinct class identity from the op's resolution) and used a structural isValidationError guard (name==='ValidationError' + .errors array + .label string) — caught by the FGAP-023 test, fixed in-CLI, no op change. FGAP-020 (addressed read): a CLI-side addressedReadOverride recomputes the addressed value from a fresh source load (addressInto(readSchema|loadConfig, ...)) + structureForRead({whole:true}) for read-schema --path and read-config --registry [--id], so an addressed object node returns the WHOLE subtree instead of a 50-item page; best-effort guarded (addr.found===false / null source / any throw keeps the op's original r); 50KB cap retained (over-cap -> fail-closed data:null). Recompute-from-source is required (the op's returned r.read.data is only the page slice). read-config's override is permanent; read-schema's is redundant-but-harmless once TASK-018 lands whole:true at the op. Live runtime demo on a .context copy: read-schema --path properties.gaps.items + read-config --registry block_kinds --id tasks return whole subtrees; --format table renders + falls back; append with missing required fields -> 'missing required field title/status/package/...' (not raw AJV); --format bogus -> exit 2; --json == --format json identical. build+check+full-test green (fail 0 all packages; new render.test.ts + cli.test.ts). Fresh adversarial probe PASS, zero defects (all four FGAP-020 adversarial cases incl. >50KB fail-closed + non-addressed passthrough; FGAP-023 no false-positives + count preserved; FGAP-021 all graceful fallbacks + byte-identical compose; TASK-015 input layer not regressed).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-020 closed: read-schema/read-config --path at an object node returns the full subtree from the CLI (matching the orchestrator script), op unchanged",
+          "status": "passed",
+          "evidence": "addressedReadOverride recompute-from-source + structureForRead({whole:true}); live demo returns whole subtrees; 200-element node returns all 200 vs the op's 50-item page (probe); ops-registry byte-unchanged"
+        },
+        {
+          "criterion": "FGAP-021 closed: --format selects a human render for ops whose script twins offer one",
+          "status": "passed",
+          "evidence": "--format table renders array results (renderTable lifted from the script twin), graceful text fallback for non-tabular; --json == --format json; --format bad exit 2"
+        },
+        {
+          "criterion": "FGAP-023 closed: AJV validation errors surface field-named guidance, not the raw .message",
+          "status": "passed",
+          "evidence": "formatAjvError field-named on both surfaces; structural isValidationError guard handles the cross-boundary class-identity issue; no false-positives, count preserved"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged",
+          "status": "passed",
+          "evidence": "git diff of ops-registry.ts empty across f562658; all changes in cli.ts + new render.ts"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; live demo on .context copy; fresh adversarial probe PASS zero defects"
+        }
+      ],
+      "oid": "f392a2871f5a1efb6086b4607b307c46",
+      "content_hash": "9b3e648e338594d4e9be1eb6772e94a183a216f52b295f06d7346f39fd4b100f"
     }
   ]
 }

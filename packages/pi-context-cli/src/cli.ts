@@ -39,7 +39,6 @@ import {
 	ops,
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
-import { addressInto, structureForRead } from "@davidorex/pi-context/read-element";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 import { runPiBound } from "./pi-bound.js";
@@ -797,51 +796,7 @@ export async function main(argv: string[]): Promise<number> {
 	const format: "text" | "json" | "table" = parsed.format ?? (parsed.json ? "json" : "text");
 
 	try {
-		let r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
-
-		// FGAP-020 — addressed-read full-subtree override (CLI-side, op untouched).
-		// read-schema --path / read-config --registry [--id] return only the page slice
-		// (or null) when the addressed node is itself a collection, because the op wraps
-		// `addr.value` through structureForRead WITHOUT `whole:true` — so an object node
-		// carrying an array child is paged, losing the rest of the subtree. The op's
-		// returned `r.read.data` is that lossy slice, so re-wrapping it cannot reconstruct
-		// the subtree: RECOMPUTE FROM SOURCE — re-address the same node off a fresh load
-		// and re-wrap with `{whole:true}` (still 50KB-capped by structureForRead's internal
-		// truncateHead → over-cap fail-closes to data:null). Best-effort: ANY throw, or a
-		// null/absent recomputed source, KEEPS the op's original `r` (never crashes the CLI).
-		try {
-			if (op.name === "read-schema" && typeof parsed.params.path === "string") {
-				const schema = readSchema(parsed.cwd, parsed.params.schemaName as string);
-				if (schema !== null) {
-					const addr = addressInto(schema, { path: parsed.params.path });
-					if (addr.found && addr.value !== null && addr.value !== undefined) {
-						r = {
-							read: structureForRead(addr.value, {
-								whole: true,
-								label: `${parsed.params.schemaName} path=${parsed.params.path}`,
-							}),
-						};
-					}
-				}
-			} else if (op.name === "read-config" && typeof parsed.params.registry === "string") {
-				const cfg = loadConfig(parsed.cwd);
-				let a = addressInto(cfg, { key: parsed.params.registry });
-				if (a.found && typeof parsed.params.id === "string") {
-					a = addressInto(a.value, { id: parsed.params.id });
-				}
-				if (a.found && a.value !== null && a.value !== undefined) {
-					r = {
-						read: structureForRead(a.value, {
-							whole: true,
-							label: `config.${parsed.params.registry}${parsed.params.id ? `.${parsed.params.id}` : ""}`,
-						}),
-					};
-				}
-			}
-		} catch {
-			// Recompute failed (no substrate / bad config / address miss) — keep the op's
-			// original result. The override is a presentation enhancement, never a gate.
-		}
+		const r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
 
 		if (format === "json") {
 			// FGAP-013: emit `output` as a JSON VALUE, not a stringified JSON string.

@@ -1278,7 +1278,11 @@ test("CLI --json: a schema-invalid append surfaces a field-named validation erro
 	}
 });
 
-// ── TASK-016 / FGAP-020: addressed reads return the WHOLE subtree ──────────────
+// ── addressed reads return the WHOLE subtree ───────────────────────────────────
+// The whole-subtree behavior is now sourced from the op itself (the in-pi op passes
+// `whole:true` on the addressed-single-node structureForRead); the CLI re-wrap
+// override was retired. These tests assert the observable envelope the op produces
+// on both surfaces, so they remain valid after the override removal.
 
 test("CLI read-schema --path at an object node returns the full subtree, not a 50-item page (FGAP-020)", async () => {
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-addr-"));

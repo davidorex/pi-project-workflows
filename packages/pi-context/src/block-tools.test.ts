@@ -13,8 +13,24 @@ import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
 import { loadConfig } from "./context.js";
 import { resolveContextDir, schemaPath, writeBootstrapPointer } from "./context-dir.js";
 import { findAppendableBlocks } from "./context-sdk.js";
+import { type OpDefinition, ops } from "./ops-registry.js";
+import type { ReadStructured } from "./read-element.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema } from "./schema-write.js";
+
+/** Resolve an op by name, asserting it exists, for op-level `run()` tests. */
+function op(name: string): OpDefinition {
+	const found = ops.find((o) => o.name === name);
+	if (found === undefined) throw new Error(`op not found: ${name}`);
+	return found;
+}
+
+/** Pull the `{read}` ReadStructured off an OpResult, asserting it is one. */
+function readOf(result: unknown): ReadStructured {
+	const r = result as { read?: ReadStructured };
+	assert.ok(r && typeof r === "object" && r.read !== undefined, "op returned a {read} result");
+	return r.read;
+}
 
 function makeTmpDir(): string {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "block-tools-"));
@@ -745,5 +761,127 @@ describe("read-schema tool — readSchema + schemaPath cascade", () => {
 		assert.notStrictEqual(loaded, null, "readSchema returns non-null when file present");
 		assert.strictEqual(loaded?.type, "object");
 		assert.strictEqual(loaded?.$schema, "http://json-schema.org/draft-07/schema#");
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Addressed-single-node reads return the WHOLE subtree (capped), not a
+// 50-item page of an incidental array child. Each op below names ONE node via
+// its addressing param; the op passes `whole:true` so an object node carrying
+// an array child still serializes every sibling key. The 50KB cap is retained
+// (unconditional after the whole-skip), so an over-cap node still fails closed.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("addressed-single-node reads return the whole subtree (capped)", () => {
+	it("read-schema --path at an object node returns the whole object, not a page of its array child", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const sp = schemaPath(cwd, "tasks");
+		// `properties.tasks.items` is an object node carrying an array child
+		// (`required`) PLUS a sibling object (`properties`) — paging the node
+		// would surface only the array slice and drop the siblings.
+		const schema = {
+			$schema: "http://json-schema.org/draft-07/schema#",
+			type: "object",
+			properties: {
+				tasks: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "title", "status"],
+						properties: {
+							id: { type: "string" },
+							title: { type: "string" },
+							status: { type: "string" },
+						},
+					},
+				},
+			},
+		};
+		fs.mkdirSync(path.dirname(sp), { recursive: true });
+		fs.writeFileSync(sp, JSON.stringify(schema));
+
+		const read = readOf(op("read-schema").run(cwd, { schemaName: "tasks", path: "properties.tasks.items" }));
+		const data = read.data as Record<string, unknown>;
+		assert.strictEqual(typeof data, "object", "data is the whole addressed object");
+		// Both the array child AND the sibling object — not a paged slice of one array.
+		assert.deepStrictEqual(data.required, ["id", "title", "status"]);
+		assert.ok(data.properties && typeof data.properties === "object", "sibling `properties` retained");
+		assert.strictEqual(read.total, undefined, "whole-object reads carry no paging total");
+		assert.strictEqual(read.complete, true, "under-cap whole read is complete");
+	});
+
+	it("read-config --registry <single-array registry> returns the whole array, not a page", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const configPath = path.join(resolveContextDir(cwd), "config.json");
+		const lenses = [
+			{ id: "alpha", kind: "target", target: "tasks", derived_from_field: "status", bins: ["a"] },
+			{ id: "beta", kind: "target", target: "tasks", derived_from_field: "status", bins: ["b"] },
+			{ id: "gamma", kind: "target", target: "tasks", derived_from_field: "status", bins: ["c"] },
+		];
+		fs.mkdirSync(path.dirname(configPath), { recursive: true });
+		fs.writeFileSync(
+			configPath,
+			JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [], lenses }),
+		);
+
+		const read = readOf(op("read-config").run(cwd, { registry: "lenses" }));
+		const data = read.data as unknown[];
+		assert.ok(Array.isArray(data), "data is the whole array");
+		assert.strictEqual(data.length, 3, "all three lenses present (not a page)");
+		assert.strictEqual(read.complete, true);
+	});
+
+	it("read-config --registry block_kinds --id <one> returns the whole entry, every field", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const configPath = path.join(resolveContextDir(cwd), "config.json");
+		const entry = {
+			canonical_id: "tasks",
+			display_name: "Tasks",
+			prefix: "TASK-",
+			schema_path: "schemas/tasks.schema.json",
+			array_key: "tasks",
+			data_path: "tasks.json",
+		};
+		fs.mkdirSync(path.dirname(configPath), { recursive: true });
+		fs.writeFileSync(configPath, JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [entry] }));
+
+		const read = readOf(op("read-config").run(cwd, { registry: "block_kinds", id: "tasks" }));
+		const data = read.data as Record<string, unknown>;
+		assert.strictEqual(data.canonical_id, "tasks");
+		assert.strictEqual(data.array_key, "tasks");
+		assert.strictEqual(data.data_path, "tasks.json");
+		assert.strictEqual(data.prefix, "TASK-");
+		assert.strictEqual(read.complete, true);
+	});
+
+	it("an over-cap addressed node fails closed (data:null, complete:false) — the 50KB cap is retained", (t) => {
+		const cwd = makeTmpDir();
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const sp = schemaPath(cwd, "big");
+		// A single addressed object node whose serialized form exceeds the 50KB
+		// read cap. `whole:true` skips paging only; the cap is applied
+		// unconditionally after, so this still fails closed.
+		const bigBlob = "x".repeat(60_000);
+		const schema = {
+			$schema: "http://json-schema.org/draft-07/schema#",
+			type: "object",
+			properties: {
+				node: {
+					type: "object",
+					description: bigBlob,
+					required: ["a"],
+				},
+			},
+		};
+		fs.mkdirSync(path.dirname(sp), { recursive: true });
+		fs.writeFileSync(sp, JSON.stringify(schema));
+
+		const read = readOf(op("read-schema").run(cwd, { schemaName: "big", path: "properties.node" }));
+		assert.strictEqual(read.data, null, "over-cap node returns data:null");
+		assert.strictEqual(read.complete, false, "over-cap node is not complete");
+		assert.strictEqual(read.truncated, true, "over-cap node is flagged truncated");
 	});
 });

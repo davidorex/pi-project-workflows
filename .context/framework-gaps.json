@@ -694,7 +694,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-019",
       "oid": "433ae156e4ce1a04ca4c220c85339ad7",
-      "content_hash": "97186ba996e92d1db0793cd157944024752e0a99285b0c45b26656145718baae"
+      "content_hash": "3589cc9c05df0b535a7fcc15d46ec9561ed72c06395144d8e22a010fc2f0d30c",
+      "priority": "P2",
+      "content_parent": "97186ba996e92d1db0793cd157944024752e0a99285b0c45b26656145718baae"
     },
     {
       "title": "read-schema --path at an object node projects to the `required` name-list, not the node subtree",
@@ -742,7 +744,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-020",
       "oid": "8ecb24b45db69607db7b05d0fb95e678",
-      "content_hash": "e0b45fe9d89be7971cecc607d65e8baa397e4222a415d885dbf9788a3fde0977"
+      "content_hash": "d2d285c4b2c26c767f6f75be8ab50e51a2d895ab60a891c7b35997f6d5b9134c",
+      "priority": "P2",
+      "content_parent": "e0b45fe9d89be7971cecc607d65e8baa397e4222a415d885dbf9788a3fde0977"
     },
     {
       "title": "CLI lacks a human-render mode (--format / terse / --raw) the script twins provide",
@@ -770,7 +774,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-021",
       "oid": "a23d5835258e1b607bfa3e3f59f87e88",
-      "content_hash": "c63656998b2aa91ba73ee30ed58827db0f0a9331e4a34efc4ead605d41980d23"
+      "content_hash": "818c56ed77ebf8343714802d1208748ca2cccd719a77cec306746b9813ce1ef6",
+      "priority": "P2",
+      "content_parent": "c63656998b2aa91ba73ee30ed58827db0f0a9331e4a34efc4ead605d41980d23"
     },
     {
       "title": "CLI lacks a --show-schema contract preview before block writes",
@@ -798,7 +804,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-022",
       "oid": "ba04c442d72fcaa8655338fba491263e",
-      "content_hash": "4e3a05ef6aff64ab3192dcc38b5531603e034129d387f360c8688b2737953e17"
+      "content_hash": "877193dddb7d72efd107f97d8bfe6d4048a23cdc3fe01393d9d27fb63987a327",
+      "priority": "P2",
+      "content_parent": "4e3a05ef6aff64ab3192dcc38b5531603e034129d387f360c8688b2737953e17"
     },
     {
       "title": "CLI surfaces raw AJV error messages instead of field-named guidance",
@@ -827,7 +835,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-023",
       "oid": "bf32be6013fbaa95a52e337fd5f3413c",
-      "content_hash": "c6b4fad5c24e8e2052dd9b87412f7abc9edd4cd3c5ba8d15ff1dd222b89f037d"
+      "content_hash": "003e2e861ac92ae0d26a397b1ed7d923f7b1bf57cad361a9a0b8d0db81beced7",
+      "priority": "P2",
+      "content_parent": "c6b4fad5c24e8e2052dd9b87412f7abc9edd4cd3c5ba8d15ff1dd222b89f037d"
     },
     {
       "title": "append-block-item has no dry-run; only the script validates the prospective whole file",
@@ -856,7 +866,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-024",
       "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
-      "content_hash": "0c44d9da46e1689a5b5a3c62bfc3a2a7051fc6f921179788b84b1a63eb9dadcd"
+      "content_hash": "68a918700fd7b0948e5c56d23d1401bc545b3884c2c3fcbf20e60fbb78579dee",
+      "priority": "P2",
+      "content_parent": "0c44d9da46e1689a5b5a3c62bfc3a2a7051fc6f921179788b84b1a63eb9dadcd"
     },
     {
       "title": "CLI lacks the scripts' input shorthands (--writer kind:id, --where field:op:value, CSV --op in)",
@@ -885,7 +897,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-025",
       "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
-      "content_hash": "1760351f43cf28fa9cf8eb8c4e69eee5c86b45349614a0f8ce0c296b84af7b38"
+      "content_hash": "ae2ca276fdf87ae6054a24f3038ead482628e88f4b1d107287946b66c7af4385",
+      "priority": "P2",
+      "content_parent": "1760351f43cf28fa9cf8eb8c4e69eee5c86b45349614a0f8ce0c296b84af7b38"
     },
     {
       "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
@@ -913,7 +927,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-026",
       "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
-      "content_hash": "e04b8c2f25e3595416f0374a11b7feea3abee90c8b618a2e21fff712c93e96c8"
+      "content_hash": "1b5a2504954b58471dfba4f799cd0ecb66fbcc05307db48331ed63dcd3a931b1",
+      "priority": "P2",
+      "content_parent": "e04b8c2f25e3595416f0374a11b7feea3abee90c8b618a2e21fff712c93e96c8"
     },
     {
       "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",
@@ -947,7 +963,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-027",
       "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
-      "content_hash": "1309f0e4f1f0aed133996dec521130191b4b20d9b49bd34840eafc78f89544f9"
+      "content_hash": "36f7e6f5d5bfb8243cb81d08524c5a92c17997b1206cca949f893e434396383a",
+      "priority": "P2",
+      "content_parent": "1309f0e4f1f0aed133996dec521130191b4b20d9b49bd34840eafc78f89544f9"
     },
     {
       "title": "Installable schema descriptions hardcode this project (package names / Muni / in-pi / .project/) — non-portable",

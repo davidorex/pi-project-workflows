@@ -1,0 +1,25 @@
+{
+  "title": "CLI surfaces raw AJV error messages instead of field-named guidance",
+  "status": "identified",
+  "package": "pi-context-cli",
+  "description": "On a validation failure the CLI surfaces the raw thrown .message; the script's formatAjvError turns AJV instancePath/schemaPath into field-named guidance. CLI users get the raw AJV string (e.g. `/gaps/18/evidence: must be array`) rather than a field-named message.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "511-518",
+      "reference": "catch surfaces raw err.message; no AJV translation"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "184-205",
+      "reference": "formatAjvError translates AJV instancePath/schemaPath into field-named guidance"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-5 in the parity survey, categorized CLI-post-call"
+    }
+  ],
+  "impact": "Validation errors are harder to act on from the CLI than from the script, slowing the dogfooding write loop.",
+  "proposed_resolution": "In the cli.ts catch (:511-518), when err is an AJV ValidationError (.errors[]), run a lifted formatAjvError over each entry using the op's parameters/block schema for field context. Op throws unchanged; the CLI shapes the message. Re-confirm via the canonical pipeline.",
+  "priority": "P2"
+}

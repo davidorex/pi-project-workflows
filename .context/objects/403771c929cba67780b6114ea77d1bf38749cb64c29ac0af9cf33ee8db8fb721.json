@@ -1,0 +1,14 @@
+{
+  "description": "CLI discovery surface: a scannable grouped --help and a --version command, so a globally-installed reflecting CLI is legible and self-identifying. Both edit cli.ts's top-level dispatch (deriveTopHelp ~:407-423 + a --version short-circuit in main). Closes FGAP-062 (--help top-level listing is an unscannable dump of full op.descriptions with no grouping/sort and promptSnippet unused, and pi-bound is undiscoverable as a process-mode branch outside the registry — data-driven fix in deriveTopHelp from existing OpDefinition fields: source promptSnippet, group by name-prefix, add a process-modes section) and FGAP-063 (no --version/-v — add a --version short-circuit in main printing the package version). Per cli-command-form: --version is a top-level one-shot flag, pi-bound stays a bare verb. Additive per the FEAT-008 invariant: no op behavior changes; help/version are dispatch-layer reads only.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "FGAP-062 closed: --help / no-args prints a scannable, grouped listing sourcing promptSnippet (not the full op.description), and every command including process modes (pi-bound) is listed",
+    "FGAP-063 closed: --version and -v print the package version and exit 0 (no fall-through to unknown-command)",
+    "In-pi ops byte-unchanged; the change is confined to cli.ts dispatch",
+    "Canonical pipeline green (incl. runtime demo driving the CLI directly + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: cli-parity (FEAT-008) | order 6/6 | addresses FGAP-062, FGAP-063 | category: CLI dispatch/discovery | independent — no build-order dependency on the input/output tasks"
+}

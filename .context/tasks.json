@@ -209,7 +209,7 @@
       "content_parent": "19bc8bf0b3b8ae7cae35e0dd77deab226b8a3b75c917151ee8546477f9651aaf"
     },
     {
-      "description": "CLI pre-call input layer: derive arrayKey from config and accept the scripts' input shorthands so the CLI reaches script-parity on INPUT without changing in-pi ops. Closes FGAP-019 (arrayKey required-but-derivable across 7 block-mutation ops — derive from config.block_kinds[].array_key, demote --arrayKey to optional override by extending cli.ts's required-filter exemption from {writer} to {writer,arrayKey} + an injectArrayKey helper mirroring injectWriter at cli.ts:293-303) and FGAP-025 (--writer kind:id, --where field:op:value, CSV --op in shorthands, each a pre-call transform in parseOpArgs). The ops still receive + require arrayKey; the CLI supplies it.",
+      "description": "CLI pre-call input layer: normalize flag forms, derive arrayKey from config, and accept the scripts' input shorthands so the CLI reaches script-parity on INPUT without changing in-pi ops. All edits live in cli.ts's pre-call path (parseOpArgs ~:184-233 + the required-filter exemption ~:293-303). Closes FGAP-019 (arrayKey required-but-derivable across 7 block-mutation ops — derive from config.block_kinds[].array_key, demote --arrayKey to optional override by extending the required-filter exemption from {writer} to {writer,arrayKey} + an injectArrayKey helper mirroring injectWriter), FGAP-025 (--writer kind:id, --where field:op:value, CSV --op in shorthands, each a pre-call transform in parseOpArgs), FGAP-064 (kebab-case flag normalization — a kebab->camel alias layer in parseOpArgs so conventional --dry-run / --id forms resolve to the camelCase op-schema keys), and FGAP-032 (the id-flag instance of the same root — --id aliases to the op's single declared id-param: --itemId/--parentId/--taskId/--unitId — resolved in the SAME normalization layer as FGAP-064). The ops still receive + require their declared params; the CLI normalizes/supplies them. Additive per the FEAT-008 invariant: every currently-working flag form keeps working, the op surface is byte-unchanged.",
       "status": "planned",
       "files": [
         "packages/pi-context-cli/src/cli.ts"
@@ -217,15 +217,18 @@
       "acceptance_criteria": [
         "FGAP-019 closed: append/update/upsert/remove-block-item (+ nested parents) accept --block without --arrayKey; the op is byte-unchanged (still receives + requires arrayKey, the CLI supplies it)",
         "FGAP-025 closed: --writer kind:id, --where field:op:value, and CSV --op in parse to the op's declared param shape before invocation",
+        "FGAP-064 closed: conventional kebab-case flags (e.g. update --dry-run) resolve to the camelCase op-schema key; the existing camelCase form still works",
+        "FGAP-032 closed: --id resolves to the op's single declared id-param across id-taking ops (find-references --id no longer mis-fires)",
         "In-pi op behavior byte-unchanged (frozen-ops constraint honored)",
         "Canonical pipeline: build/check/test + runtime demo (drive the CLI directly) + fresh adversarial audit before green"
       ],
-      "notes": "Release-group: cli-parity (NEXT) | order 1/5 | addresses FGAP-019, FGAP-025 | category: CLI-pre-call (R-0003)",
+      "notes": "Release-group: cli-parity (FEAT-008) | order 1/6 | addresses FGAP-019, FGAP-025, FGAP-064, FGAP-032 | category: CLI-pre-call (R-0003) | flag-normalization + shorthands + arrayKey all edit parseOpArgs -> one task per feature-decomposition rule 4",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-015",
       "oid": "6ec5bfbcda7978934f0a949b21041a55",
-      "content_hash": "e9df1de3889565c4085d9d3127587ed10e6a5c51729a0b1421ba9495d53148a8"
+      "content_hash": "3f9987c81e96012437b83d7896f8f8b138699bd2612d2a20023355babfff7b93",
+      "content_parent": "e9df1de3889565c4085d9d3127587ed10e6a5c51729a0b1421ba9495d53148a8"
     },
     {
       "description": "CLI output + error-shaping layer. Closes FGAP-020 (addressed read returns the full subtree CLI-side via an addressedReadOverride helper that re-runs the read with structureForRead({whole:true}), bypassing collection-paging, still 50KB-capped — does NOT touch the op), FGAP-021 (--format text|json|table render dispatch, lifting the scripts' renderTable/renderTerse bodies into a CLI render module), and FGAP-023 (AJV ValidationError translation in the cli.ts catch via a lifted formatAjvError). All at the cli.ts emit/catch region (~:504-518) + a new CLI render/helper module in-pi dispatch never touches.",
@@ -728,6 +731,23 @@
       "oid": "7250cfb2c2d2552f4f7ab1c5ceb95d99",
       "content_hash": "97c927dc1d4ef6ca0bd1b1742375baed970c453e2d8fa9dffea194fa827924e6",
       "content_parent": "ce3b4cea667de7878c06f147ac54c3ea965ea4c7c9f8b72b420a72bce5adda3c"
+    },
+    {
+      "description": "CLI discovery surface: a scannable grouped --help and a --version command, so a globally-installed reflecting CLI is legible and self-identifying. Both edit cli.ts's top-level dispatch (deriveTopHelp ~:407-423 + a --version short-circuit in main). Closes FGAP-062 (--help top-level listing is an unscannable dump of full op.descriptions with no grouping/sort and promptSnippet unused, and pi-bound is undiscoverable as a process-mode branch outside the registry — data-driven fix in deriveTopHelp from existing OpDefinition fields: source promptSnippet, group by name-prefix, add a process-modes section) and FGAP-063 (no --version/-v — add a --version short-circuit in main printing the package version). Per cli-command-form: --version is a top-level one-shot flag, pi-bound stays a bare verb. Additive per the FEAT-008 invariant: no op behavior changes; help/version are dispatch-layer reads only.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-062 closed: --help / no-args prints a scannable, grouped listing sourcing promptSnippet (not the full op.description), and every command including process modes (pi-bound) is listed",
+        "FGAP-063 closed: --version and -v print the package version and exit 0 (no fall-through to unknown-command)",
+        "In-pi ops byte-unchanged; the change is confined to cli.ts dispatch",
+        "Canonical pipeline green (incl. runtime demo driving the CLI directly + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 6/6 | addresses FGAP-062, FGAP-063 | category: CLI dispatch/discovery | independent — no build-order dependency on the input/output tasks",
+      "id": "TASK-040",
+      "oid": "9e43e32a0b1bd729a3259f1faff3972b",
+      "content_hash": "403771c929cba67780b6114ea77d1bf38749cb64c29ac0af9cf33ee8db8fb721"
     }
   ]
 }

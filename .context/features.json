@@ -144,6 +144,29 @@
       "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
       "content_hash": "11821ddc340aeaafc183d44ca014ae0949f9e7a663e5915e457696454acd9fed",
       "content_parent": "28388635c3ab240afd7be44df9821497feaa23802b40dad100bf8075645b944d"
+    },
+    {
+      "title": "pi-context-cli best-of-breed surface — script-parity input/output, discoverability, and write-safety to a superior CLI UX",
+      "status": "proposed",
+      "layer": "L4",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-08T00:00:00.000Z",
+      "description": "The reflecting pi-context CLI is both the dogfooding surface and the new-user entry point; today it lags its op-twin orchestrator scripts on input ergonomics, human output, discoverability, error UX, and write-safety. This feature brings the CLI to best-of-breed parity additively. INVARIANT (every task preserves it): the reflecting CLI is additive — every currently-working invocation keeps working, and every in-pi op's behavior plus the --json data envelope are byte-unchanged; new affordances (kebab/alias flags, input shorthands, render modes, previews, granular exit codes, help/version) are layers over the canonical op surface, never replacements. The sole authorized in-pi op change is the read-schema addressed-node correction (FGAP-027), paired with its CLI-side twin so read-schema is coherent across both surfaces. A behavioral parity gate locks the input/output parity classes at commit so the regression class is caught-at-commit, not found-by-dogfooding.",
+      "motivation": "The CLI is the surface the project is built and demonstrated on; every parity/discoverability/safety gap degrades both dogfooding and first-run UX. The standard is best-of-breed with a superior user experience, sequenced by priority, nothing tiered as ship-after.",
+      "acceptance_criteria": [
+        "Input parity: the CLI accepts conventional flag forms (kebab-case, --id aliasing the op's single id-param, the scripts' --writer kind:id / --where field:op:value / CSV shorthands) and derives arrayKey from config — without changing any in-pi op.",
+        "Output + error parity: the CLI renders human output (--format) and field-named validation guidance with granular exit codes distinguishing error classes.",
+        "Discoverability: --help is scannable and grouped and surfaces every command including process modes (e.g. pi-bound); --version reports the package version.",
+        "Write-safety: --show-schema previews a block contract and append-block-item --dry-run validates the prospective whole file, each before any write, with no op change.",
+        "Read coherence: an addressed read returns the full subtree on BOTH the CLI and the in-pi read-schema op (the one authorized op change), 50KB cap retained.",
+        "Durability: a behavioral parity gate (parity-check.ts) FAILs at commit on a reintroduced required-but-derivable param or an op/script output-shape divergence.",
+        "Every in-pi op is byte-unchanged except the authorized read-schema correction; the CLI is an additive layer over the canonical op surface."
+      ],
+      "id": "FEAT-008",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-08T10:55:05.581Z",
+      "oid": "e460e331ed4de4200a6d09a86138fb14",
+      "content_hash": "a8688a22c48b5ca402a5bdab97e46c8b048b0d9742280e46604a4f6ce3304adb"
     }
   ]
 }

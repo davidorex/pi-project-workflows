@@ -1,0 +1,44 @@
+{
+  "title": "read-schema --path at an object node projects to the `required` name-list, not the node subtree",
+  "status": "identified",
+  "package": "pi-context",
+  "description": "read-schema --path addressed at a JSON-Schema OBJECT node (e.g. properties.gaps.items) returns a flat list of field NAMES (the node's `required` array) instead of the node's full schema subtree (properties/types/required/additionalProperties). Leaf nodes return correctly (properties.gaps.items.properties.status -> full {type,enum}); the whole-schema read (no --path) returns the full schema. Root cause: the read-schema op routes the addressed node through structureForRead, whose discoverArrayKey heuristic treats any object with a single array-valued property as a paginated collection and pages it — a schema object node carrying a `required` array trips it, so the array is returned in place of the object. The pi-tool op and the reflecting pi-context-cli both project; the orchestrator script scripts/orchestrator/read-schema.ts avoids it by stringifying the addressed value directly — a dual-surface asymmetry (the two surfaces disagree on the same query). Repro: `read-schema --schemaName framework-gaps --path properties.gaps.items` -> ['id','title',...,'created_at'] (the 10-entry required list); `--path properties.gaps.items.properties.status` -> full {type,enum}; no --path -> full schema.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/dist/bin.js",
+      "reference": "Origin: surfaced by USING the CLI while filing FGAP-019 — read-schema --schemaName framework-gaps --path properties.gaps.items returned the 10-entry required name-list, hiding that `evidence` is an array; the hidden type caused a downstream `Validation failed ... /gaps/18/evidence: must be array` failure at write time and drove wasteful field-by-field probing."
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "39-48",
+      "reference": "discoverArrayKey treats an object with a single array-valued property as a paginated collection; a JSON-Schema object node carrying a `required` array trips this heuristic."
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "202-227",
+      "reference": "resolveCollection resolves the addressed node to that array."
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "266-285",
+      "reference": "structureForRead returns data = the `required` name-list instead of the full object subtree — the projection itself."
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1166",
+      "reference": "read-schema op passes the --path-addressed node through structureForRead, so an object node with `required` projects; the reflecting pi-context-cli inherits it."
+    },
+    {
+      "file": "scripts/orchestrator/read-schema.ts",
+      "lines": "181",
+      "reference": "the orchestrator-script counterpart uses JSON.stringify(addr.value) directly and returns the full subtree — dual-surface asymmetry: the script is correct, the op/CLI projects."
+    },
+    {
+      "file": "packages/pi-context/src/read-element.test.ts",
+      "reference": "no test covers schema-node path addressing / the projection, and no CLI-vs-op output-parity test exists — the regression surface a fix must add."
+    }
+  ],
+  "impact": "Addressing an object node to inspect its shape returns only field names, hiding types/required/enum — the caller believes they read the schema when they did not. This session it directly caused a downstream filing failure (evidence-must-be-array discovered only at write time) and drove wasteful per-field probing. Any agent using read-schema --path to navigate into an object node is misled. The dual-surface asymmetry (op/CLI project; orchestrator script does not) means the two surfaces disagree on the same query.",
+  "proposed_resolution": "Carve schema/object nodes out of the collection-paging path: when read-schema addresses a node (or structureForRead is handed an object that is not a genuine paginated collection) return the full subtree — e.g. a whole:true path through structureForRead at ops-registry.ts:1166, or guard discoverArrayKey/resolveCollection (read-element.ts:39-48/202-227) so an object carrying both `properties` and `required` is not paged on `required`. Align the op output with the orchestrator script (read-schema.ts:181) so the dual surface agrees. Add read-element tests for schema-node path addressing + a CLI-vs-op output-parity assertion. Re-confirm via the canonical pipeline (plan -> coding subagent -> adversarial audit). Class check: ensure no OTHER read op routing through structureForRead projects object nodes carrying a single array property.",
+  "priority": "P2"
+}

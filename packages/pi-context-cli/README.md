@@ -53,6 +53,24 @@ pi-context filter-block-items --block tasks --where status:eq:done          # fi
 pi-context filter-block-items --block tasks --field tag --op in --value a,b,c
 ```
 
+## Output rendering
+
+`--format text|json|table` selects how an op's result is rendered. `--json` is the exact alias of `--format json`.
+
+- **`text`** (default) — each op's human render: prose, a JSON.stringify'd value, or a read body with its paging footer.
+- **`json`** — the `{ ok, op, output }` envelope (`{ ok: false, op, error }` on failure). `output` is the un-stringified value (single-parse), read-capped at 50KB.
+- **`table`** — a compact markdown table of a renderable row array (a read whose body is a collection, or a data op that returns an array). The projection is best-effort terse: `id` first when present, then up to three more fields (≤4 columns), cells one-lined and capped at 80 chars. A result that is not a complete tabular collection (prose, a non-array value, or an over-cap read) renders as `text` instead — a degenerate table is never substituted for the real output.
+
+```bash
+pi-context read-block --block tasks --format table       # markdown table of the tasks
+pi-context filter-block-items --block tasks --where status:eq:open --format table
+pi-context read-block --block tasks --json               # ≡ --format json
+```
+
+Schema-validation failures surface **field-named guidance** — which field and what constraint (e.g. `` `/gaps/0`: missing required field `description` ``) — rather than the raw validator phrasing, on both the text and `--json` surfaces.
+
+Addressed reads return the **whole addressed subtree** (50KB-capped): `read-schema --schemaName <name> --path <dotted.path>` and `read-config --registry <name> [--id <id>]` return the complete node at that address — including all of its children — not a paged slice of one of its arrays.
+
 ## `pi-context pi-bound` — constrained pi session
 
 ```bash
@@ -112,7 +130,8 @@ pi-context update                            # apply: resync + auto-merge; confl
 ## Global flags
 
 - `--cwd <dir>` — substrate root (default: current working directory; relative paths resolve against it)
-- `--json` — emit a `{ ok, op, output }` envelope on success (`{ ok: false, op, error }` on failure) instead of raw output
+- `--json` — emit a `{ ok, op, output }` envelope on success (`{ ok: false, op, error }` on failure) instead of raw output (≡ `--format json`)
+- `--format <text|json|table>` — select the output render (default `text`, or `json` with `--json`); see [Output rendering](#output-rendering)
 - `--yes`, `--force` — pre-authorize an auth-gated op in a non-interactive context
 - `--writer <json>` — override the auto-resolved writer identity
 - `--help`, `-h` — top-level help, or per-op help after an op name

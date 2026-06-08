@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { computeContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { checkStatus, installContext, updateContext } from "./index.js";
+import { checkStatus, installContext, resolveConflict, updateContext } from "./index.js";
 import { getObject } from "./object-store.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
@@ -862,6 +862,20 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		assert.ok("notes" in writtenProps, "the catalog-kept `notes` field must survive the merge");
 		assert.ok("__ours_field" in writtenProps, "the local `__ours_field` add must survive the merge");
 		assert.ok(!fs.readFileSync(dest).equals(before), "a live merge must rewrite the schema file");
+		// FGAP-070 durability: a SECOND update must NOT resync the disjoint local add away.
+		// The merge stamped baseline := the catalog body, so the kept-local `__ours_field`
+		// reads as locally-modified and persists; the re-merge takes ours via base === theirs.
+		const second = updateContext(tmpRoot);
+		assert.deepEqual(second.conflicts, [], "a second update over a disjoint auto-merge raises no conflict");
+		const afterSecond = deepGet(
+			JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>,
+			TASKS_ITEM_PROPS,
+		);
+		assert.ok(
+			"__ours_field" in afterSecond,
+			"the local `__ours_field` add survives a second update — NOT resynced away",
+		);
+		assert.ok("notes" in afterSecond, "the catalog-kept `notes` field remains present after a second update");
 	});
 
 	it("(e) same-node divergence conflicts: ours + catalog give a field different types → conflict, bytes unchanged", () => {
@@ -949,7 +963,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		assert.ok(fs.readFileSync(dest).equals(before), "a conflicting merge writes nothing");
 	});
 
-	it("(h) an auto-merged schema is re-baselined: baseline refreshes to the merged body, which is base-stamped", () => {
+	it("(h) an auto-merged schema is re-baselined to the CATALOG body, so the kept-local divergence stays locally-modified", () => {
 		tmpRoot = makeProject(["tasks", "decisions"], []);
 		const substrateDir = path.join(tmpRoot, ".project");
 		const dest = makeBothDivergedTasks(
@@ -962,28 +976,223 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		);
 		const result = updateContext(tmpRoot);
 		assert.deepEqual(result.merged, ["tasks"], "precondition: tasks must auto-merge");
-		// The merged body passes meta-validation (writeSchemaCheckedForDir would have
-		// thrown otherwise) and re-baselines (baseline := the merged body). Because the
-		// merged body retains a local-only field the catalog lacks, a follow-up
-		// check-status no longer sees a LOCAL edit (installed === new baseline) but
-		// still sees the catalog as ahead of the new baseline → catalog-ahead (NOT
-		// both-diverged): the merge collapsed the local-divergence axis.
+		// FGAP-070: the merge stamps the baseline := the CATALOG body (theirs), NOT the
+		// merged on-disk body. The merged body still carries the local-only `__ours_field`
+		// the catalog lacks, so against the catalog baseline a follow-up check-status sees a
+		// LOCAL edit (installed ≠ baseline) while baseline === catalog (no catalog-ahead axis)
+		// → `locally-modified` (NOT catalog-ahead). This is the durable fixed point: a kept-
+		// local divergence persists across updates instead of being resynced to the catalog.
 		assert.equal(
 			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
-			"catalog-ahead",
-			"after an auto-merge the local-divergence axis collapses (installed === new baseline)",
+			"locally-modified",
+			"after an auto-merge the kept-local divergence reads as locally-modified (baseline := catalog)",
 		);
-		// The refreshed baseline hash has a retrievable stamped body that round-trips.
+		// The merged on-disk body still carries BOTH the catalog-kept `notes` and the
+		// local-only `__ours_field` — the merge result itself is unchanged on disk.
+		const writtenProps = deepGet(
+			JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>,
+			TASKS_ITEM_PROPS,
+		);
+		assert.ok("notes" in writtenProps, "the catalog-kept `notes` field is present on the merged on-disk body");
+		assert.ok("__ours_field" in writtenProps, "the local-only `__ours_field` is present on the merged on-disk body");
+		// The refreshed baseline hash equals the CATALOG body's hash, NOT the merged body's,
+		// and has a retrievable stamped body that round-trips.
 		const refreshedHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
 		assert.ok(refreshedHash, "the merge must refresh the baseline content_hash");
+		const catalogBody = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
 		assert.equal(
 			refreshedHash,
-			computeContentHash(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>),
-			"the refreshed baseline hash must equal the merged body's hash",
+			computeContentHash(catalogBody),
+			"the refreshed baseline hash must equal the CATALOG body's hash, not the merged body's",
 		);
 		const body = getObject(substrateDir, refreshedHash);
-		assert.ok(body, "the merged body must be base-stamped under the refreshed baseline hash");
-		assert.equal(computeContentHash(body), refreshedHash, "the stamped merged body must round-trip to its hash");
+		assert.ok(body, "the catalog body must be base-stamped under the refreshed baseline hash");
+		assert.equal(computeContentHash(body), refreshedHash, "the stamped catalog body must round-trip to its hash");
+	});
+
+	// ── FGAP-069: resolveConflict commits a reconciliation end-to-end ────────────
+	// update surfaces a both-diverged CONFLICT; the calling agent reconciles into a
+	// body R and runs resolveConflict, which writes R AND advances the merge base to
+	// the catalog. A SUBSEQUENT update must then converge — the base === catalog rule
+	// takes R via base === theirs → ours: zero conflicts, R preserved on disk.
+
+	it("(i) resolveConflict(R=ours) makes a subsequent update converge — conflict gone, R preserved, locally-modified", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// The (e) conflict: BASE notes.type="number", OURS="boolean", catalog(THEIRS)="string".
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "number";
+			},
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "boolean";
+			},
+		);
+		// Precondition: the first update reports the tasks conflict and writes nothing.
+		const first = updateContext(tmpRoot);
+		assert.equal(first.conflicts.length, 1, "first update must report the tasks conflict");
+		assert.equal(first.conflicts[0].name, "tasks");
+		// R = the OURS body (the on-disk tasks schema; notes.type already "boolean").
+		const R = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		assert.equal((deepGet(R, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type, "boolean", "R is the OURS body");
+		const out = resolveConflict(tmpRoot, "tasks", R);
+		assert.equal(out.schemaName, "tasks");
+		assert.equal(out.wroteSchema, true, "a supplied schema is written");
+		assert.ok(out.baseAdvancedTo, "the base advances to a catalog content_hash");
+		// Immediately after resolveConflict (before any further update) the schema reads as
+		// `locally-modified`: the base advanced to the catalog body, so baseline === catalog
+		// while installed === R differs from it (the one axis that diverges is local). This
+		// is precisely the state that lets the next update's merge take R via base === theirs.
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"locally-modified",
+			"after the base advances, tasks is locally-modified (installed R ≠ baseline catalog), not both-diverged",
+		);
+		// The SUBSEQUENT update converges: no conflict, tasks lands in merged or is a no-op.
+		const second = updateContext(tmpRoot);
+		assert.deepEqual(second.conflicts, [], "the subsequent update reports NO conflict — the base advanced");
+		assert.ok(
+			second.merged.includes("tasks") || !second.refused.includes("tasks"),
+			"tasks is no longer refused — it merged (or was already in-sync)",
+		);
+		// R is preserved on disk: notes.type is still "boolean" after the converging update.
+		const onDisk = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		assert.equal(
+			(deepGet(onDisk, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type,
+			"boolean",
+			"the reconciled R (notes.type boolean) survives the converging update",
+		);
+		// After the converging update, tasks is no longer a CONFLICT — and FGAP-070 makes
+		// it STABLE: the second update auto-merged R (notes.type "boolean") and stamped the
+		// baseline := the CATALOG body, so the kept-local divergence reads as `locally-
+		// modified` (installed R ≠ baseline catalog), NOT `catalog-ahead`. A catalog-ahead
+		// reading would resync R away on the next update — the very defect FGAP-070 fixes.
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"locally-modified",
+			"the merge stamps baseline := catalog, so the kept-local R reads as locally-modified (stable, not resync-bound)",
+		);
+		// Durability across repeated updates (the FGAP-070 fixed point): a THIRD and FOURTH
+		// update must keep R on disk (notes.type "boolean") and raise no conflict — R is
+		// never resynced to the catalog "string".
+		const third = updateContext(tmpRoot);
+		assert.deepEqual(third.conflicts, [], "a further update raises no conflict — R is the stable fixed point");
+		assert.equal(
+			(
+				deepGet(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>, TASKS_ITEM_PROPS)
+					.notes as Record<string, unknown>
+			).type,
+			"boolean",
+			"R (notes.type boolean) survives a further update — NOT resynced to the catalog string",
+		);
+		const fourth = updateContext(tmpRoot);
+		assert.deepEqual(fourth.conflicts, [], "yet a further update still raises no conflict");
+		assert.equal(
+			(
+				deepGet(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>, TASKS_ITEM_PROPS)
+					.notes as Record<string, unknown>
+			).type,
+			"boolean",
+			"R (notes.type boolean) is durable across repeated updates",
+		);
+	});
+
+	it("(j) resolveConflict with schema omitted advances the base off the on-disk body and the next update converges", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		// Same (e) conflict; the on-disk body IS already R (notes.type="boolean").
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "number";
+			},
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "boolean";
+			},
+		);
+		const before = fs.readFileSync(dest);
+		assert.equal(updateContext(tmpRoot).conflicts.length, 1, "precondition: the conflict is reported");
+		const out = resolveConflict(tmpRoot, "tasks");
+		assert.equal(out.wroteSchema, false, "no schema supplied → no write");
+		assert.ok(out.baseAdvancedTo, "the base still advances to the catalog");
+		assert.ok(fs.readFileSync(dest).equals(before), "omitting schema writes nothing to the schema file");
+		const second = updateContext(tmpRoot);
+		assert.deepEqual(second.conflicts, [], "the next update converges with the base advanced");
+		const onDiskJ = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		assert.equal(
+			(deepGet(onDiskJ, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type,
+			"boolean",
+			"the on-disk R (already boolean) is preserved",
+		);
+		// FGAP-070 durability: a THIRD and FOURTH update keep the reconciled value — the
+		// schema is never resynced back to the catalog "string".
+		const third = updateContext(tmpRoot);
+		assert.deepEqual(third.conflicts, [], "a third update raises no conflict — the base advanced to the catalog");
+		assert.equal(
+			(
+				deepGet(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>, TASKS_ITEM_PROPS)
+					.notes as Record<string, unknown>
+			).type,
+			"boolean",
+			"the reconciled notes.type stays boolean across a third update",
+		);
+		const fourth = updateContext(tmpRoot);
+		assert.deepEqual(fourth.conflicts, [], "a fourth update still raises no conflict");
+		assert.equal(
+			(
+				deepGet(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>, TASKS_ITEM_PROPS)
+					.notes as Record<string, unknown>
+			).type,
+			"boolean",
+			"the reconciled notes.type is durable across repeated updates",
+		);
+	});
+
+	it("(k) resolveConflict reconciling to the catalog value (notes.type=string) converges to in-sync", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		const dest = makeBothDivergedTasks(
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "number";
+			},
+			(p) => {
+				(p.notes as Record<string, unknown>).type = "boolean";
+			},
+		);
+		assert.equal(updateContext(tmpRoot).conflicts.length, 1, "precondition: the conflict is reported");
+		// Reconcile to the catalog value: R = the on-disk body with notes.type set to "string".
+		const R = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		(deepGet(R, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type = "string";
+		resolveConflict(tmpRoot, "tasks", R);
+		const second = updateContext(tmpRoot);
+		assert.deepEqual(second.conflicts, [], "reconciling to the catalog value raises no conflict");
+		// R === catalog body → the schema reads as in-sync (installed === baseline catalog).
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"in-sync",
+			"reconciling to the catalog value converges to in-sync",
+		);
+		const onDiskK = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		assert.equal(
+			(deepGet(onDiskK, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type,
+			"string",
+			"the catalog-valued reconciliation is preserved on disk",
+		);
+		// FGAP-070: a catalog-valued reconciliation is already a stable in-sync fixed point —
+		// a second update is a no-op and it stays in-sync (notes.type "string" preserved).
+		const third = updateContext(tmpRoot);
+		assert.deepEqual(third.conflicts, [], "a second update over an in-sync schema raises no conflict");
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"in-sync",
+			"a catalog-valued reconciliation stays in-sync across updates",
+		);
+		assert.equal(
+			(
+				deepGet(JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>, TASKS_ITEM_PROPS)
+					.notes as Record<string, unknown>
+			).type,
+			"string",
+			"the catalog value remains on disk after a further update",
+		);
 	});
 });
 

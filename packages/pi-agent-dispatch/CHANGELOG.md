@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- Extended the `AUTH_REQUIRED_TOOLS` canonical-membership pin test to 18 names, adding `resolve-conflict`. The runtime `AUTH_REQUIRED_TOOLS` set is derived from the op-registries' `authGated` flags and already carries `resolve-conflict` (the `pi-context` reconciliation-commit op); the deliberate canon-drift assertion is updated to match the derived set (the gate's purpose is to surface membership drift as a test failure, so the explicit list tracks the derived one).
+
 ## [0.30.0] - 2026-06-04
 
 ## [0.29.0] - 2026-06-04

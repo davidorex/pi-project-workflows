@@ -27,6 +27,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
+import { renderConflicts } from "@davidorex/pi-context";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import {
 	boundedJsonOutput,
@@ -36,7 +37,6 @@ import {
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
 import { runPiBound } from "./pi-bound.js";
-import { resolveConflicts } from "./resolve-conflicts.js";
 
 /**
  * The surfaced command set: every op the CLI exposes. Derived by reflection —
@@ -515,21 +515,19 @@ export async function main(argv: string[]): Promise<number> {
 		}
 
 		// TASK-037 — FEAT-006 T4: the `update` op returns the whole UpdateResult under
-		// `{ json }`; if it recorded any irreconcilable 3-way-merge conflicts, route them
-		// to the conflict RESOLVER. Interactive (both stdin+stdout a TTY, and not --json)
-		// → dispatch a `pi-bound` mergetool per conflicting schema; otherwise → render a
-		// read-only conflict report. The op's own output is printed above first; the op
-		// itself is not changed. A non-`update` op, or an `update` with no conflicts, is a
-		// no-op here.
-		if (op.name === "update" && r && typeof r === "object" && "json" in r) {
-			const update = (r as { json: { conflicts?: Array<{ name: string; conflicts: unknown[] }> } }).json;
+		// `{ json }`; if it recorded any irreconcilable 3-way-merge conflicts, the CLI
+		// SURFACES them — it does NOT spawn a subordinate resolver. The CALLING agent
+		// reconciles via the existing `read-schema` / `write-schema` ops. On the default
+		// TEXT surface, render the conflict report (renderConflicts carries the
+		// reconcile-via-write-schema guidance line) below the op's own output. Under
+		// `--json` the structured `conflicts` array already prints in the op-result
+		// envelope above — do NOT double-emit. A non-`update` op, or an `update` with no
+		// conflicts, is a no-op here.
+		if (!parsed.json && op.name === "update" && r && typeof r === "object" && "json" in r) {
+			const update = (r as { json: { conflicts?: Parameters<typeof renderConflicts>[0] } }).json;
 			const conflicts = update?.conflicts;
 			if (Array.isArray(conflicts) && conflicts.length > 0) {
-				const interactive = Boolean(process.stdin.isTTY && process.stdout.isTTY) && !parsed.json;
-				await resolveConflicts(conflicts as Parameters<typeof resolveConflicts>[0], {
-					cwd: parsed.cwd,
-					interactive,
-				});
+				process.stdout.write(`${renderConflicts(conflicts)}\n`);
 			}
 		}
 		return 0;

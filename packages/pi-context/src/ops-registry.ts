@@ -69,6 +69,7 @@ import {
 	archiveSubstrate,
 	initProject,
 	listSubstrates,
+	resolveConflict,
 	switchAndCreate,
 	switchToExisting,
 	switchToPrevious,
@@ -1228,6 +1229,29 @@ export const ops: OpDefinition[] = [
 		},
 	},
 	{
+		name: "resolve-conflict",
+		label: "Resolve Schema Conflict",
+		description:
+			"Commit the reconciliation of a schema merge conflict surfaced by update. Run this AFTER reconciling a both-diverged conflict update reported: it writes the reconciled schema body (meta-validated, atomic, operation 'replace') AND advances the merge base for that schema to the packaged catalog body. Advancing the base is the step a bare write-schema lacks — without it, update's 3-way merge re-derives the SAME conflict on every subsequent run because the base never moves off the original pre-conflict body. With the base advanced to the catalog, the next update sees the schema as locally-modified (base === catalog ≠ your body) and the deterministic merge takes your reconciled body (base === theirs → ours) — auto-merging with zero conflicts and preserving your resolution. If schema is omitted, the current on-disk schema is treated as already reconciled and only the base is advanced. The calling agent runs this; no subordinate resolver is spawned.",
+		promptSnippet:
+			"Commit a reconciled schema conflict: write the resolved body + advance the merge base to the catalog so update stops re-reporting it (run after reconciling an update conflict)",
+		parameters: Type.Object({
+			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')" }),
+			schema: Type.Optional(
+				Type.Unknown({
+					description:
+						"The reconciled schema body R (whole JSON Schema object, draft-07; accepts a JSON string). If omitted, the current on-disk schema is treated as already reconciled and only the merge base is advanced.",
+				}),
+			),
+		}),
+		surface: "use",
+		authGated: true,
+		run(cwd: string, params: { schemaName: string; schema?: unknown }, ctx?: DispatchContext): OpResult {
+			const result = resolveConflict(cwd, params.schemaName, params.schema, ctx);
+			return { json: result };
+		},
+	},
+	{
 		name: "write-schema-migration",
 		label: "Write Schema Migration",
 		description:
@@ -1327,9 +1351,9 @@ export const ops: OpDefinition[] = [
 		name: "update",
 		label: "Update Installed Model",
 		description:
-			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified and routed to a resolver (an interactive pi-bound mergetool on a TTY, otherwise a read-only conflict report); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). Pass dryRun to preview the per-schema action plan (resync / merge / conflict), the config-registry entries that would be added, AND the migration declarations that would be registered, without writing anything.",
+			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body AND advances the merge base to the catalog so update stops re-reporting it (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). Pass dryRun to preview the per-schema action plan (resync / merge / conflict), the config-registry entries that would be added, AND the migration declarations that would be registered, without writing anything.",
 		promptSnippet:
-			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → mergetool/report; --dry-run previews)",
+			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → returned in the op output + a report for the calling agent to reconcile and commit via resolve-conflict; --dry-run previews)",
 		parameters: Type.Object({
 			dryRun: Type.Optional(
 				Type.Boolean({ description: "Preview the per-schema action plan without writing anything." }),

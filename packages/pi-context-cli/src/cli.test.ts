@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
+import { installContext } from "@davidorex/pi-context";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { boundedJsonOutput, type OpResult, ops, renderOpResultText } from "@davidorex/pi-context/ops";
 import { structureForRead } from "@davidorex/pi-context/read-element";
@@ -710,4 +711,87 @@ test("renderOpResultText: under-cap prose → itself; over-cap prose → REFUSAL
 	const over = renderOpResultText("z".repeat(60000));
 	assert.ok(over.includes("OUTPUT REFUSED"));
 	assert.equal(over.includes("z".repeat(1000)), false);
+});
+
+// ── TASK-037 (reopened) / FGAP-068: the `update` post-op SURFACES conflicts ────
+// The CLI no longer spawns a subordinate resolver/mergetool. On the default text
+// surface, an `update` that surfaces irreconcilable 3-way-merge conflicts prints
+// the `renderConflicts` report (including its reconcile-then-`resolve-conflict`
+// guidance line) below the op's own output, and spawns NOTHING — the calling
+// agent reconciles each conflict and commits via the `resolve-conflict` op.
+
+const TASKS_ITEM_PROPS = ["properties", "tasks", "items", "properties"] as const;
+function deepGetItemProps(obj: Record<string, unknown>): Record<string, unknown> {
+	let cur: Record<string, unknown> = obj;
+	for (const seg of TASKS_ITEM_PROPS) cur = cur[seg] as Record<string, unknown>;
+	return cur;
+}
+
+// Build a both-diverged `tasks` substrate so `update` genuinely surfaces a
+// per-path conflict: BASE notes.type="number" (re-baselined), OURS="boolean",
+// catalog THEIRS="string" → all three differ at notes.type. Mirrors the
+// conflict-resolver-helpers fixture construction.
+function makeBothDivergedTasksSubstrate(): string {
+	const dir = mkdtempSync(path.join(tmpdir(), "picli-update-conflict-"));
+	writeBootstrapPointer(dir, ".project");
+	mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+	writeFileSync(
+		path.join(dir, ".project", "config.json"),
+		JSON.stringify(
+			{
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: ["tasks"],
+				installed_blocks: [],
+			},
+			null,
+			2,
+		),
+	);
+	const dest = path.join(dir, ".project", "schemas", "tasks.schema.json");
+	installContext(dir);
+	const baseObj = JSON.parse(readFileSync(dest, "utf-8")) as Record<string, unknown>;
+	(deepGetItemProps(baseObj).notes as Record<string, unknown>).type = "number";
+	writeFileSync(dest, JSON.stringify(baseObj, null, 2));
+	installContext(dir); // re-baseline FROM the edited body → BASE ≠ catalog (THEIRS)
+	const oursObj = JSON.parse(readFileSync(dest, "utf-8")) as Record<string, unknown>;
+	(deepGetItemProps(oursObj).notes as Record<string, unknown>).type = "boolean";
+	writeFileSync(dest, JSON.stringify(oursObj, null, 2));
+	return dir;
+}
+
+test("CLI update (text surface): an irreconcilable conflict is SURFACED via renderConflicts + guidance, no spawn", async () => {
+	const cwd = makeBothDivergedTasksSubstrate();
+	// No-spawn is a STRUCTURAL guarantee here: the subordinate-resolver module is
+	// deleted and the update path is pure `renderConflicts` (the only `runPiBound`
+	// caller is the separate `pi-bound` command). A regression that re-introduces a
+	// dispatch is caught by the grep in the rework's adversarial probe.
+	try {
+		const { code, out } = await captureMainStdout(["update", "--cwd", cwd]);
+		assert.equal(code, 0, "the update op exits 0");
+		// The op's own JSON output (the UpdateResult) prints first; the conflict
+		// report renders below it on the text surface.
+		assert.match(out, /Schema merge conflicts/, "the conflict report header is surfaced");
+		assert.match(out, /tasks \(1 conflict\)/, "the conflicting schema + count is named");
+		assert.match(
+			out,
+			/properties\.tasks\.items\.properties\.notes\.type/,
+			"the conflicting path is listed in the report",
+		);
+		// The trailing guidance line tells the calling agent how to apply a fix.
+		assert.match(
+			out,
+			/To resolve each: reconcile the conflicting paths/,
+			"the report carries the reconcile guidance line",
+		);
+		assert.match(
+			out,
+			/resolve-conflict --schemaName <name> --schema <reconciled>/,
+			"the guidance names the resolve-conflict apply path",
+		);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
 });

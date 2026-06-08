@@ -254,7 +254,7 @@
     },
     {
       "description": "CLI ergonomic affordances. Closes FGAP-022 (--show-schema contract preview — an early branch printing array_key/required/types/id-pattern via the lifted loadBlockSchema/resolveBlockItemSchema path, return 0, mirroring the parsed.help branch at cli.ts:464-467), FGAP-024 (append-block-item --dry-run via client-side prospective-whole-file validation lifted from file-block-item.ts:247-255, never calling appendToBlock — no op change, avoids adding dryRun to the frozen op), and FGAP-026 (granular exit codes mapping arg/usage->2, not-initialized/BootstrapNotFoundError->1, schema-absent->3, validation->5 at the cli.ts catch + UsageError sites).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context-cli/src/cli.ts"
       ],
@@ -270,7 +270,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-017",
       "oid": "514efa463982fe36de6c9bc8139afcc0",
-      "content_hash": "978eee088d873a1036ff118238ce2f6cfd65e74de67b13dfac69df84b325b950"
+      "content_hash": "718c7fbf03d784bbcc072e5ac3ad96758ed301beb4a5f8e1d453523c30744668",
+      "content_parent": "978eee088d873a1036ff118238ce2f6cfd65e74de67b13dfac69df84b325b950"
     },
     {
       "description": "In-pi read-schema correction — the one authorized in-pi op change in this release. Closes FGAP-027: pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the IN-PI read-schema op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), retaining the 50KB cap. Completes read-schema across BOTH surfaces (pairs with the order-2 task's FGAP-020 CLI-side fix). Class-check other read ops routing addressed object nodes through structureForRead.",

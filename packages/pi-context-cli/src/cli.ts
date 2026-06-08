@@ -37,7 +37,10 @@ import {
 	ops,
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
+import { addressInto, structureForRead } from "@davidorex/pi-context/read-element";
+import { readSchema } from "@davidorex/pi-context/schema-write";
 import { runPiBound } from "./pi-bound.js";
+import { formatAjvError, isValidationError, renderTable } from "./render.js";
 
 /**
  * The surfaced command set: every op the CLI exposes. Derived by reflection —
@@ -170,6 +173,8 @@ export interface ParsedArgs {
 	json: boolean;
 	yes: boolean;
 	help: boolean;
+	/** Selected output render (FGAP-021). Unset → resolved from `json` at emit time. */
+	format?: "text" | "json" | "table";
 	explicitWriter?: unknown;
 	params: Record<string, unknown>;
 }
@@ -211,6 +216,19 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			const v = argv[++i];
 			if (v === undefined) throw new UsageError("--cwd requires a directory argument");
 			out.cwd = path.isAbsolute(v) ? v : path.resolve(cwdBase, v);
+			continue;
+		}
+		if (tok === "--format") {
+			// FGAP-021 — explicit render selector. `text` reproduces each op's prior
+			// run() text; `json` is the `--json` envelope; `table` projects a renderable
+			// array (read-page / data array) as markdown. An unknown value is an operator
+			// error, not a silent fallback.
+			const v = argv[++i];
+			if (v === undefined) throw new UsageError("--format requires one of: text, json, table");
+			if (v !== "text" && v !== "json" && v !== "table") {
+				throw new UsageError(`--format expects one of: text, json, table; got '${v}'`);
+			}
+			out.format = v;
 			continue;
 		}
 		if (tok === "--writer") {
@@ -514,7 +532,7 @@ export function deriveHelp(op: OpDefinition): string {
 			lines.push(`  --${field} <${t}>  (${req})${desc}`);
 		}
 	}
-	lines.push("", "Global flags: --cwd <dir>  --json  --yes  --writer <json>  --help");
+	lines.push("", "Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --help");
 	return lines.join("\n");
 }
 
@@ -529,7 +547,8 @@ export function deriveTopHelp(): string {
 		"",
 		"Global flags:",
 		"  --cwd <dir>      substrate root (default: cwd)",
-		"  --json           emit { ok, op, output } envelope",
+		"  --json           emit { ok, op, output } envelope (≡ --format json)",
+		"  --format <fmt>   render as text | json | table (default: text, or json with --json)",
 		"  --yes, --force   pre-authorize gated ops in non-interactive contexts",
 		"  --writer <json>  override the auto-resolved writer identity",
 		"  --help, -h       this help, or per-op help after an op name",
@@ -547,6 +566,33 @@ function promptConfirm(opName: string): Promise<boolean> {
 			resolve(a === "y" || a === "yes");
 		});
 	});
+}
+
+/**
+ * FGAP-021 — extract the renderable row array from an OpResult for `--format table`,
+ * or null when the result is not a complete tabular collection. Precedence:
+ *   - `{read}` whose `data` is an array AND `complete !== false` (an over-cap read,
+ *     complete:false with data:null, is NOT tabular) → that array;
+ *   - `{read}` whose `data` is an object exposing an `items` array → `.items`
+ *     (the paged-collection shape: {items,total,hasMore});
+ *   - `{json}` whose value is an array → that array;
+ *   - anything else (prose, scalar/object data, over-cap, non-array) → null,
+ *     so the dispatch falls back to text rather than emit a degenerate table.
+ */
+function tabularRows(r: OpResult): unknown[] | null {
+	if (typeof r === "string") return null;
+	if ("read" in r) {
+		const read = r.read;
+		if (read.complete === false) return null;
+		if (Array.isArray(read.data)) return read.data;
+		if (read.data !== null && typeof read.data === "object") {
+			const items = (read.data as Record<string, unknown>).items;
+			if (Array.isArray(items)) return items;
+		}
+		return null;
+	}
+	if ("json" in r && Array.isArray(r.json)) return r.json;
+	return null;
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -609,9 +655,58 @@ export async function main(argv: string[]): Promise<number> {
 		}
 	}
 
+	// Resolve the effective render. `--format` wins; absent it, `--json` → json,
+	// else text — so `--json` and `--format json` are exact aliases.
+	const format: "text" | "json" | "table" = parsed.format ?? (parsed.json ? "json" : "text");
+
 	try {
-		const r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
-		if (parsed.json) {
+		let r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
+
+		// FGAP-020 — addressed-read full-subtree override (CLI-side, op untouched).
+		// read-schema --path / read-config --registry [--id] return only the page slice
+		// (or null) when the addressed node is itself a collection, because the op wraps
+		// `addr.value` through structureForRead WITHOUT `whole:true` — so an object node
+		// carrying an array child is paged, losing the rest of the subtree. The op's
+		// returned `r.read.data` is that lossy slice, so re-wrapping it cannot reconstruct
+		// the subtree: RECOMPUTE FROM SOURCE — re-address the same node off a fresh load
+		// and re-wrap with `{whole:true}` (still 50KB-capped by structureForRead's internal
+		// truncateHead → over-cap fail-closes to data:null). Best-effort: ANY throw, or a
+		// null/absent recomputed source, KEEPS the op's original `r` (never crashes the CLI).
+		try {
+			if (op.name === "read-schema" && typeof parsed.params.path === "string") {
+				const schema = readSchema(parsed.cwd, parsed.params.schemaName as string);
+				if (schema !== null) {
+					const addr = addressInto(schema, { path: parsed.params.path });
+					if (addr.found && addr.value !== null && addr.value !== undefined) {
+						r = {
+							read: structureForRead(addr.value, {
+								whole: true,
+								label: `${parsed.params.schemaName} path=${parsed.params.path}`,
+							}),
+						};
+					}
+				}
+			} else if (op.name === "read-config" && typeof parsed.params.registry === "string") {
+				const cfg = loadConfig(parsed.cwd);
+				let a = addressInto(cfg, { key: parsed.params.registry });
+				if (a.found && typeof parsed.params.id === "string") {
+					a = addressInto(a.value, { id: parsed.params.id });
+				}
+				if (a.found && a.value !== null && a.value !== undefined) {
+					r = {
+						read: structureForRead(a.value, {
+							whole: true,
+							label: `config.${parsed.params.registry}${parsed.params.id ? `.${parsed.params.id}` : ""}`,
+						}),
+					};
+				}
+			}
+		} catch {
+			// Recompute failed (no substrate / bad config / address miss) — keep the op's
+			// original result. The override is a presentation enhancement, never a gate.
+		}
+
+		if (format === "json") {
 			// FGAP-013: emit `output` as a JSON VALUE, not a stringified JSON string.
 			// Prose → the string itself; a read op → its structured ReadStructured
 			// (data + paging/cap metadata); a data op → its raw JSON value. No
@@ -624,6 +719,16 @@ export async function main(argv: string[]): Promise<number> {
 			// past the cap on the `--json` surface.
 			const output = boundedJsonOutput(r);
 			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output })}\n`);
+		} else if (format === "table") {
+			// FGAP-021 — extract the renderable array, falling back to text whenever the
+			// result is not a complete tabular collection (over-cap, prose, or a non-array
+			// data op) so a degenerate one-row table never substitutes for the real output.
+			const arr = tabularRows(r);
+			if (arr !== null) {
+				process.stdout.write(`${renderTable(arr)}\n`);
+			} else {
+				process.stdout.write(`${renderOpResultText(r)}\n`);
+			}
 		} else {
 			// Default text surface stays byte-identical to before: the shared renderer
 			// reproduces each op's prior `run()` text (prose / JSON.stringify / read footer).
@@ -633,13 +738,13 @@ export async function main(argv: string[]): Promise<number> {
 		// TASK-037 — FEAT-006 T4: the `update` op returns the whole UpdateResult under
 		// `{ json }`; if it recorded any irreconcilable 3-way-merge conflicts, the CLI
 		// SURFACES them — it does NOT spawn a subordinate resolver. The CALLING agent
-		// reconciles via the existing `read-schema` / `write-schema` ops. On the default
-		// TEXT surface, render the conflict report (renderConflicts carries the
+		// reconciles via the existing `read-schema` / `write-schema` ops. On a NON-json
+		// surface (text or table), render the conflict report (renderConflicts carries the
 		// reconcile-via-write-schema guidance line) below the op's own output. Under
-		// `--json` the structured `conflicts` array already prints in the op-result
+		// `--format json` the structured `conflicts` array already prints in the op-result
 		// envelope above — do NOT double-emit. A non-`update` op, or an `update` with no
 		// conflicts, is a no-op here.
-		if (!parsed.json && op.name === "update" && r && typeof r === "object" && "json" in r) {
+		if (format !== "json" && op.name === "update" && r && typeof r === "object" && "json" in r) {
 			const update = (r as { json: { conflicts?: Parameters<typeof renderConflicts>[0] } }).json;
 			const conflicts = update?.conflicts;
 			if (Array.isArray(conflicts) && conflicts.length > 0) {
@@ -648,8 +753,11 @@ export async function main(argv: string[]): Promise<number> {
 		}
 		return 0;
 	} catch (err) {
-		const message = err instanceof Error ? err.message : String(err);
-		if (parsed.json) {
+		// FGAP-023 — an AJV ValidationError surfaces field-named guidance (which field,
+		// what constraint) rather than the raw concatenated `.message`. The shaped message
+		// flows through both the `--json` envelope and the stderr line below.
+		const message = isValidationError(err) ? formatAjvError(err) : err instanceof Error ? err.message : String(err);
+		if (format === "json") {
 			process.stdout.write(`${JSON.stringify({ ok: false, op: op.name, error: message })}\n`);
 		} else {
 			process.stderr.write(`error: ${message}\n`);

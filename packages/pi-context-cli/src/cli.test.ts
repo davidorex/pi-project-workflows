@@ -1081,3 +1081,282 @@ test("parseOpArgs splits a CSV value into an array when --op is `in` (FGAP-025)"
 	const eq = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "eq", "--value", '"a,b,c"']);
 	assert.equal(eq.params.value, "a,b,c");
 });
+
+// ── TASK-016 / FGAP-021: --format render dispatch ─────────────────────────────
+
+/** Capture everything main() writes to stderr while it runs. */
+async function captureMainStderr(argv: string[]): Promise<{ code: number; err: string }> {
+	const orig = process.stderr.write;
+	let err = "";
+	const capture = (chunk: unknown): boolean => {
+		err += typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf8");
+		return true;
+	};
+	process.stderr.write = capture as typeof process.stderr.write;
+	try {
+		const code = await main(argv);
+		return { code, err };
+	} finally {
+		process.stderr.write = orig;
+	}
+}
+
+test("parseOpArgs parses --format and rejects an unknown value (FGAP-021)", () => {
+	const op = resolveOp("read-block");
+	assert.ok(op);
+	assert.equal(parseOpArgs(op, ["--block", "tasks", "--format", "table"]).format, "table");
+	assert.equal(parseOpArgs(op, ["--block", "tasks", "--format", "json"]).format, "json");
+	assert.equal(parseOpArgs(op, ["--block", "tasks", "--format", "text"]).format, "text");
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "tasks", "--format", "zzz"]),
+		(e: unknown) => e instanceof UsageError && /one of: text, json, table/.test((e as Error).message),
+	);
+});
+
+test("CLI --format zzz exits 2 (UsageError surfaced by main) (FGAP-021)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const { code, err } = await captureMainStderr(["read-block", "--block", "tasks", "--format", "zzz", "--cwd", cwd]);
+		assert.equal(code, 2);
+		assert.match(err, /one of: text, json, table/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI --format table on an array {read} result renders a markdown table (FGAP-021)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"read-block",
+			"--block",
+			"tasks",
+			"--format",
+			"table",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		// read-block returns a {read} whose data is the tasks array → a markdown table.
+		const lines = out.trim().split("\n");
+		assert.match(lines[0], /^\| id \|/);
+		assert.match(lines[1], /^\| --- \|/);
+		assert.match(out, /TASK-1/);
+		assert.match(out, /alpha/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI --format table on a PROSE result falls back to text (no degenerate table) (FGAP-021)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--arrayKey",
+			"tasks",
+			"--item",
+			'{"id":"TASK-2","title":"beta"}',
+			"--format",
+			"table",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		// A prose op has no renderable array → the human prose, not a "| ... |" table.
+		assert.ok(out.includes("Appended"));
+		assert.equal(out.includes("| --- |"), false);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI --format table on an OVER-CAP read falls back to text (over-cap is not tabular) (FGAP-021)", async () => {
+	const cwd = seedOverCapTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"read-block",
+			"--block",
+			"tasks",
+			"--format",
+			"table",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		// complete:false → tabularRows returns null → text (the REFUSAL), never a table.
+		assert.equal(out.includes("| --- |"), false);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI --json and --format json produce identical envelopes (compose regression) (FGAP-021)", async () => {
+	const cwdA = seedTasksSubstrate();
+	const cwdB = seedTasksSubstrate();
+	try {
+		const a = await captureMainStdout(["read-block", "--block", "tasks", "--json", "--cwd", cwdA]);
+		const b = await captureMainStdout(["read-block", "--block", "tasks", "--format", "json", "--cwd", cwdB]);
+		assert.equal(a.code, 0);
+		assert.equal(b.code, 0);
+		// The substrates are byte-identical seeds, so the envelopes must match exactly.
+		assert.equal(a.out, b.out);
+	} finally {
+		rmSync(cwdA, { recursive: true, force: true });
+		rmSync(cwdB, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-016 / FGAP-023: AJV ValidationError → field-named guidance ────────────
+
+test("CLI --json: a schema-invalid append surfaces a field-named validation error, not the raw AJV phrasing (FGAP-023)", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-ajv-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		// gaps items REQUIRE description — an item lacking it fails AJV with a `required`
+		// error, which the catch must shape into field-named guidance.
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "framework-gaps",
+						display_name: "Gaps",
+						prefix: "FGAP-",
+						schema_path: "schemas/framework-gaps.schema.json",
+						array_key: "gaps",
+						data_path: "framework-gaps.json",
+					},
+				],
+			}),
+		);
+		writeFileSync(
+			path.join(sub, "schemas", "framework-gaps.schema.json"),
+			JSON.stringify({
+				type: "object",
+				properties: {
+					gaps: {
+						type: "array",
+						items: {
+							type: "object",
+							required: ["id", "description"],
+							properties: { id: { type: "string" }, description: { type: "string" } },
+						},
+					},
+				},
+			}),
+		);
+		writeFileSync(path.join(sub, "framework-gaps.json"), JSON.stringify({ gaps: [] }));
+
+		const { code, out } = await captureMainStdout([
+			"append-block-item",
+			"--block",
+			"framework-gaps",
+			"--item",
+			'{"id":"FGAP-999"}',
+			"--yes",
+			"--cwd",
+			cwd,
+			"--json",
+		]);
+		assert.equal(code, 1);
+		const envelope = JSON.parse(out) as { ok: boolean; op: string; error: string };
+		assert.equal(envelope.ok, false);
+		// THE assertion: the error names the missing field…
+		assert.match(envelope.error, /description/);
+		// …and the raw AJV phrasing does NOT leak through.
+		assert.equal(envelope.error.includes("must have required property"), false);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-016 / FGAP-020: addressed reads return the WHOLE subtree ──────────────
+
+test("CLI read-schema --path at an object node returns the full subtree, not a 50-item page (FGAP-020)", async () => {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-addr-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [] }),
+		);
+		// An object node (`properties.tasks.items`) that carries an array child (`required`)
+		// PLUS a sibling object (`properties`) — paging the node would lose the siblings.
+		const schema = {
+			type: "object",
+			properties: {
+				tasks: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "title", "status"],
+						properties: { id: { type: "string" }, title: { type: "string" }, status: { type: "string" } },
+					},
+				},
+			},
+		};
+		writeFileSync(path.join(sub, "schemas", "tasks.schema.json"), JSON.stringify(schema, null, 2));
+
+		const { code, out } = await captureMainStdout([
+			"read-schema",
+			"--schemaName",
+			"tasks",
+			"--path",
+			"properties.tasks.items",
+			"--json",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; output: { data?: unknown; total?: number; complete?: boolean } };
+		assert.equal(envelope.ok, true);
+		const data = envelope.output.data as Record<string, unknown>;
+		// The WHOLE subtree object — both the `required` array AND the `properties`
+		// sibling — not a paged slice of one array.
+		assert.equal(typeof data, "object");
+		assert.deepEqual(data.required, ["id", "title", "status"]);
+		assert.ok(data.properties && typeof data.properties === "object");
+		// Whole-object reads carry no paging `total`.
+		assert.equal(envelope.output.total, undefined);
+		assert.equal(envelope.output.complete, true);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI read-config --registry block_kinds --id tasks returns the whole entry (FGAP-020)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"read-config",
+			"--registry",
+			"block_kinds",
+			"--id",
+			"tasks",
+			"--json",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; output: { data?: Record<string, unknown>; complete?: boolean } };
+		assert.equal(envelope.ok, true);
+		const data = envelope.output.data as Record<string, unknown>;
+		// The whole block_kinds entry, every field present.
+		assert.equal(data.canonical_id, "tasks");
+		assert.equal(data.array_key, "tasks");
+		assert.equal(data.data_path, "tasks.json");
+		assert.equal(data.prefix, "TASK-");
+		assert.equal(envelope.output.complete, true);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});

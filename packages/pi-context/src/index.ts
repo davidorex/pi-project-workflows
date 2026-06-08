@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { forEachBlockArray, readBlock, readBlockForDir, writeBlockForDir } from "./block-api.js";
-import { computeFileContentHash } from "./content-hash.js";
+import { computeContentHash, computeFileContentHash } from "./content-hash.js";
 import {
 	type AdoptResult,
 	adoptConception,
@@ -34,6 +34,7 @@ import {
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import { contextState, findAppendableBlocks, validateContext } from "./context-sdk.js";
+import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
 import { getProjectMigrationRegistryForDir, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
@@ -1408,96 +1409,62 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 }
 
 /**
- * Reconstruct the three-way merge inputs for one `locally-modified` /
- * `both-diverged` schema (TASK-037 — FEAT-006 T4). Replicates EXACTLY the
- * base/ours/theirs resolution `updateContext`'s merge arm performs, so the
- * conflict RESOLVER reconciles against the SAME bodies the `update` op merged:
+ * Stamp an in-memory schema `body` as the install baseline
+ * (`config.installed_from.assets[name]`) for one schema (TASK-037 — FEAT-006 T4
+ * / FGAP-069). The shared stamp mechanics extracted from
+ * `refreshBaselineForSchema`: compute the content_hash of `body`, store it into
+ * the content-addressed object store (`putObject`) under that hash, set
+ * `config.installed_from.assets[name] = { content_hash, version }` (refreshing
+ * `at`), and write the config. Self-contained + idempotent: it owns its config
+ * load + write. Returns the stamped `content_hash`, or `null` (no write) when
+ * the substrate dir is unresolvable or the config carries no `installed_from`.
  *
- *   - BASE   = the content-addressed body stored under the install baseline's
- *              recorded `content_hash` (`getObject(destRoot, hash)`).
- *   - OURS   = the currently-installed schema file (`installedSchemaDestPath`).
- *   - THEIRS = the catalog's current schema file (`samplesRoot/<kind.schema_path>`,
- *              resolved via the SAME `resolveCatalog` map the installer + detector use).
- *
- * Returns `null` (never throws) when the substrate / config / catalog kind /
- * stamped base body is absent or any read/parse fails — the caller treats a
- * `null` as "no safe merge inputs, fall back to a report". Pure read; no writes.
+ * Two callers stamp via this: `refreshBaselineForSchema` (re-baselines the
+ * ON-DISK body — `update`'s post-loop refresh) and `resolveConflict` (advances
+ * the baseline to the CATALOG body so the next `update` re-derives a resolved
+ * schema as `locally-modified`, not a recurring conflict).
  */
-export function getConflictMergeInputs(
+export function stampBaselineFromBody(
 	cwd: string,
 	name: string,
-): { base: Record<string, unknown>; ours: Record<string, unknown>; theirs: Record<string, unknown> } | null {
-	try {
-		const destRoot = tryResolveContextDir(cwd);
-		if (destRoot === null) return null;
-		const config = loadConfig(cwd);
-		if (!config) return null;
-		const { samplesRoot, byId } = resolveCatalog();
-		const kind = byId.get(name);
-		if (!kind) return null;
-		const baseHash = config.installed_from?.assets?.[name]?.content_hash;
-		if (!baseHash) return null;
-		const base = getObject(destRoot, baseHash);
-		if (!base) return null;
-		const ours = JSON.parse(fs.readFileSync(installedSchemaDestPath(destRoot, name), "utf-8")) as Record<
-			string,
-			unknown
-		>;
-		const theirs = JSON.parse(fs.readFileSync(path.join(samplesRoot, kind.schema_path), "utf-8")) as Record<
-			string,
-			unknown
-		>;
-		return { base, ours, theirs };
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Content hash of the installed schema file for one `name` (TASK-037 —
- * FEAT-006 T4). Resolves the active substrate's dest root and the installed
- * schema dest path, then returns `computeFileContentHash` of that file. Returns
- * `null` (never throws) when the substrate dir is unresolvable, the installed
- * file is absent, or the read/parse throws. The conflict RESOLVER snapshots
- * this BEFORE and AFTER an interactive mergetool session: a difference between
- * the two snapshots is the resolver's change-detector (the agent wrote a
- * reconciled body), distinct from `refreshBaselineForSchema`'s baseline
- * comparison.
- */
-export function installedSchemaOnDiskHash(cwd: string, name: string): string | null {
+	body: Record<string, unknown>,
+	version: string,
+): string | null {
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) return null;
-	const destFile = installedSchemaDestPath(destRoot, name);
-	if (!fs.existsSync(destFile)) return null;
-	try {
-		return computeFileContentHash(destFile);
-	} catch {
-		return null;
-	}
+	const config = loadConfig(cwd);
+	if (!config?.installed_from) return null;
+	const hash = computeContentHash(body);
+	putObject(destRoot, hash, body);
+	const installed_from = {
+		...config.installed_from,
+		at: new Date().toISOString(),
+		assets: {
+			...config.installed_from.assets,
+			[name]: { content_hash: hash, version },
+		},
+	};
+	writeConfig(cwd, { ...config, installed_from });
+	return hash;
 }
 
 /**
  * Re-stamp the install baseline (`config.installed_from.assets[name]`) for one
  * schema from its CURRENT on-disk body (TASK-037 — FEAT-006 T4). Self-contained
- * + idempotent: it owns its config load + write, so the conflict RESOLVER can
- * call it standalone after an interactive mergetool has (or has not) rewritten
- * the installed schema file:
+ * + idempotent. Used by `updateContext`'s post-loop refresh to re-baseline each
+ * brought-current schema (resynced / migrated / auto-merged) so a follow-up
+ * `/context check-status` reports it `in-sync`:
  *
  *   - returns `false` (no write) when the installed schema file is absent, OR
  *     its freshly-computed `content_hash` already equals the recorded baseline
  *     hash (a true no-op — nothing was reconciled / written).
- *   - otherwise stamps the new body into the content-addressed object store
- *     (`putObject`) under its new `content_hash`, sets
- *     `config.installed_from.assets[name] = { content_hash, version }`, writes
- *     the config, and returns `true`.
+ *   - otherwise delegates the stamp to `stampBaselineFromBody` (object-store
+ *     put + `assets[name]` set + config write from the on-disk body + its
+ *     declared version) and returns `true`.
  *
  * This is a pure idempotent re-stamp action (re-stamps the on-disk body as the
  * new baseline; false when the file is absent or its hash already equals the
- * baseline). It is NOT the resolver's change-detector: the resolver decides
- * resolved/unresolved from a before/after on-disk-hash snapshot
- * (`installedSchemaOnDiskHash`), then calls this only to re-baseline a body it
- * has already determined changed. Mirrors `updateContext`'s post-loop refresh
- * body for ONE name.
+ * baseline). Mirrors `updateContext`'s post-loop refresh body for ONE name.
  */
 export function refreshBaselineForSchema(cwd: string, name: string): boolean {
 	const destRoot = tryResolveContextDir(cwd);
@@ -1508,26 +1475,101 @@ export function refreshBaselineForSchema(cwd: string, name: string): boolean {
 	if (!fs.existsSync(destFile)) return false;
 	const newHash = computeFileContentHash(destFile);
 	if (newHash === config.installed_from.assets?.[name]?.content_hash) return false;
-	const body = JSON.parse(fs.readFileSync(destFile, "utf-8")) as { version?: string };
-	putObject(destRoot, newHash, body as Record<string, unknown>);
-	const installed_from = {
-		...config.installed_from,
-		at: new Date().toISOString(),
-		assets: {
-			...config.installed_from.assets,
-			[name]: { content_hash: newHash, version: typeof body.version === "string" ? body.version : "" },
-		},
-	};
-	writeConfig(cwd, { ...config, installed_from });
-	return true;
+	const body = JSON.parse(fs.readFileSync(destFile, "utf-8")) as Record<string, unknown> & { version?: string };
+	const stamped = stampBaselineFromBody(cwd, name, body, typeof body.version === "string" ? body.version : "");
+	return stamped !== null;
+}
+
+/**
+ * Reconciliation-commit op (FGAP-069) — completes the caller-as-reconciler model
+ * end-to-end. After `update` surfaces a both-diverged schema CONFLICT, the
+ * calling agent reconciles the conflicting paths into a resolved body R and runs
+ * this op. It does two things atomically per call:
+ *
+ *   1. WRITES R, when a `schema` is supplied: parse-if-string (mirroring the
+ *      write-schema op's tolerant JSON-string handling) then
+ *      `writeSchemaCheckedForDir(destRoot, name, R, "replace", ctx)` (AJV
+ *      meta-validate + nested-id guard + atomic write). When `schema` is omitted
+ *      the current on-disk body is treated as already reconciled — no write.
+ *   2. ADVANCES the merge base to the CATALOG body (theirs): it reads the
+ *      catalog source schema, stamps it as the install baseline via
+ *      `stampBaselineFromBody`. This is the fix the bare write-schema lacks —
+ *      with the baseline advanced to the catalog, the next `update`'s 3-way
+ *      check resolves the schema as `locally-modified` (base === catalog ≠ R),
+ *      and `mergeSchema(base=catalog, ours=R, theirs=catalog)` takes R via the
+ *      `base === theirs → ours` rule → auto-merge, zero conflicts, R preserved.
+ *      Without this advance, the baseline stays at the original pre-conflict
+ *      body and `update` re-derives the SAME both-diverged conflict forever.
+ *
+ * Throws a clear error when the substrate dir is unresolvable, the config /
+ * catalog kind for `name` is missing, or the catalog source schema is absent —
+ * the base cannot be advanced without a catalog body to advance it to.
+ *
+ * Returns `{ schemaName, wroteSchema, baseAdvancedTo }`: `wroteSchema` is true
+ * iff a `schema` was supplied and written; `baseAdvancedTo` is the content_hash
+ * of the catalog body now stamped as the baseline.
+ */
+export function resolveConflict(
+	cwd: string,
+	name: string,
+	schema?: unknown,
+	ctx?: DispatchContext,
+): { schemaName: string; wroteSchema: boolean; baseAdvancedTo: string } {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		throw new Error(`resolve-conflict: no active substrate resolved for '${cwd}'`);
+	}
+	const { samplesRoot, byId } = resolveCatalog();
+	const kind = byId.get(name);
+	if (!kind) {
+		throw new Error(`resolve-conflict: no catalog block_kind named '${name}' — cannot advance the merge base`);
+	}
+	const sourceFile = path.join(samplesRoot, kind.schema_path);
+	if (!fs.existsSync(sourceFile)) {
+		throw new Error(`resolve-conflict: catalog schema source missing at ${sourceFile} for '${name}'`);
+	}
+
+	// 1. Write the reconciled body R when supplied. Type.Unknown() params may
+	// arrive as JSON strings (mirror the write-schema op handler): parse if
+	// possible, otherwise keep raw (meta-validation rejects a non-object body).
+	let wroteSchema = false;
+	if (schema !== undefined) {
+		let body = schema;
+		if (typeof body === "string") {
+			try {
+				body = JSON.parse(body);
+			} catch {
+				/* keep raw string — meta-validation will reject a non-object */
+			}
+		}
+		writeSchemaCheckedForDir(destRoot, name, body as object, "replace", ctx);
+		wroteSchema = true;
+	}
+
+	// 2. Advance the merge base to the CATALOG body (theirs). Read + parse the
+	// catalog source, stamp it as the new install baseline so the next update's
+	// 3-way check sees base === catalog and takes R via base === theirs → ours.
+	const catalogBody = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+	const version = readDeclaredVersion(sourceFile) ?? "";
+	const catalogHash = stampBaselineFromBody(cwd, name, catalogBody, version);
+	if (catalogHash === null) {
+		throw new Error(`resolve-conflict: could not advance the merge base for '${name}' (no install baseline in config)`);
+	}
+
+	return { schemaName: name, wroteSchema, baseAdvancedTo: catalogHash };
 }
 
 /**
  * Render an `UpdateResult["conflicts"]` set as a readable conflict report
- * (TASK-037 — FEAT-006 T4) — the non-interactive resolution surface (mirrors
- * `renderCheckStatus`'s grouping style). One section per conflicting schema
- * `name`, then each irreconcilable `{ path, base, ours, theirs }` with its three
- * values JSON-compacted for a side-by-side scan. Pure: no I/O, no writes.
+ * (TASK-037 — FEAT-006 T4 / FGAP-069) — the surface the `update` op + CLI hand
+ * to the CALLING agent, which reconciles each conflict into a resolved body and
+ * commits it via the `resolve-conflict` op (writes the body AND advances the
+ * merge base to the catalog so `update` stops re-reporting it; no subordinate
+ * resolver is spawned). Mirrors `renderCheckStatus`'s grouping
+ * style: one section per conflicting schema `name`, then each irreconcilable
+ * `{ path, base, ours, theirs }` with its three values JSON-compacted for a
+ * side-by-side scan, then a trailing guidance line stating how to apply a
+ * reconciliation. Pure: no I/O, no writes.
  */
 export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
 	const lines: string[] = [];
@@ -1545,6 +1587,9 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
 			lines.push(`      theirs: ${JSON.stringify(c.theirs)}`);
 		}
 	}
+	lines.push(
+		"To resolve each: reconcile the conflicting paths into a schema, then resolve-conflict --schemaName <name> --schema <reconciled> — it writes your schema AND advances the merge base to the catalog so update stops re-reporting it.",
+	);
 	return lines.join("\n");
 }
 

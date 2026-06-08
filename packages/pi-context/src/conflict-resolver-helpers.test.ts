@@ -6,13 +6,7 @@ import { afterEach, describe, it } from "node:test";
 import { computeFileContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import {
-	checkStatus,
-	getConflictMergeInputs,
-	installContext,
-	refreshBaselineForSchema,
-	renderConflicts,
-} from "./index.js";
+import { installContext, refreshBaselineForSchema, renderConflicts } from "./index.js";
 import { getObject } from "./object-store.js";
 
 // Mirrors install-subcommand.test.ts makeProject — a tmp substrate at .project
@@ -34,91 +28,6 @@ function makeProject(installedSchemas: string[] = []): string {
 	fs.writeFileSync(path.join(dir, ".project", "config.json"), JSON.stringify(config, null, 2));
 	return dir;
 }
-
-const TASKS_ITEM_PROPS = ["properties", "tasks", "items", "properties"] as const;
-function deepGet(obj: Record<string, unknown>, segs: readonly string[]): Record<string, unknown> {
-	let cur: Record<string, unknown> = obj;
-	for (const seg of segs) cur = cur[seg] as Record<string, unknown>;
-	return cur;
-}
-
-/**
- * Build a `both-diverged` tasks fixture (BASE ≠ baseline-catalog, OURS ≠ BASE) —
- * the SAME construction install-subcommand.test.ts's makeBothDivergedTasks uses.
- * `baseMut` forms BASE (re-installed → baselined, diverging from catalog THEIRS);
- * `oursMut` forms OURS on top. Returns the installed schema dest path.
- */
-function makeBothDivergedTasks(
-	baseMut: (p: Record<string, unknown>) => void,
-	oursMut: (p: Record<string, unknown>) => void,
-): string {
-	const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
-	installContext(tmpRoot);
-	const baseObj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
-	baseMut(deepGet(baseObj, TASKS_ITEM_PROPS));
-	fs.writeFileSync(dest, JSON.stringify(baseObj, null, 2));
-	installContext(tmpRoot); // re-baseline FROM the edited body → BASE ≠ catalog (THEIRS)
-	const oursObj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
-	oursMut(deepGet(oursObj, TASKS_ITEM_PROPS));
-	fs.writeFileSync(dest, JSON.stringify(oursObj, null, 2));
-	return dest;
-}
-
-describe("getConflictMergeInputs (TASK-037)", () => {
-	afterEach(() => {
-		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
-	});
-
-	it("returns base/ours/theirs for a both-diverged schema", () => {
-		tmpRoot = makeProject(["tasks", "decisions"]);
-		makeBothDivergedTasks(
-			(p) => {
-				(p.notes as Record<string, unknown>).type = "number";
-			},
-			(p) => {
-				(p.notes as Record<string, unknown>).type = "boolean";
-			},
-		);
-		assert.equal(
-			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
-			"both-diverged",
-			"precondition: tasks must be both-diverged",
-		);
-		const inputs = getConflictMergeInputs(tmpRoot, "tasks");
-		assert.ok(inputs, "merge inputs must resolve for a both-diverged schema");
-		// BASE was baselined from the "number" body; OURS is the on-disk "boolean"
-		// body; THEIRS is the catalog "string" body. All three differ at notes.type.
-		const baseType = (deepGet(inputs.base, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type;
-		const oursType = (deepGet(inputs.ours, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type;
-		const theirsType = (deepGet(inputs.theirs, TASKS_ITEM_PROPS).notes as Record<string, unknown>).type;
-		assert.equal(baseType, "number", "BASE = the baselined body");
-		assert.equal(oursType, "boolean", "OURS = the on-disk installed body");
-		assert.equal(theirsType, "string", "THEIRS = the catalog body");
-	});
-
-	it("returns null when the base body is unstamped (object-store object deleted)", () => {
-		tmpRoot = makeProject(["tasks", "decisions"]);
-		installContext(tmpRoot);
-		const substrateDir = path.join(tmpRoot, ".project");
-		// Make tasks locally-modified so a baseline hash is recorded, then remove the
-		// stamped BASE body → getObject(baseHash) returns null → no merge inputs.
-		const dest = path.join(substrateDir, "schemas", "tasks.schema.json");
-		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
-		obj.__local_edit_marker = true;
-		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
-		const baseHash = loadConfig(tmpRoot)?.installed_from?.assets.tasks.content_hash;
-		assert.ok(baseHash, "precondition: tasks must have a recorded baseline content_hash");
-		fs.unlinkSync(path.join(substrateDir, "objects", `${baseHash}.json`));
-		assert.equal(getObject(substrateDir, baseHash), null, "precondition: the base body must be gone");
-		assert.equal(getConflictMergeInputs(tmpRoot, "tasks"), null, "no stamped base body → null inputs");
-	});
-
-	it("returns null for an unknown schema name (no catalog kind)", () => {
-		tmpRoot = makeProject(["tasks"]);
-		installContext(tmpRoot);
-		assert.equal(getConflictMergeInputs(tmpRoot, "definitely-not-a-real-schema"), null);
-	});
-});
 
 describe("refreshBaselineForSchema (TASK-037)", () => {
 	afterEach(() => {
@@ -175,6 +84,20 @@ describe("renderConflicts (TASK-037)", () => {
 		assert.match(out, /base:\s+"number"/, "base value rendered");
 		assert.match(out, /ours:\s+"boolean"/, "ours value rendered");
 		assert.match(out, /theirs:\s+"string"/, "theirs value rendered");
+		// The report carries the trailing guidance line telling the calling agent how to
+		// apply a reconciliation: reconcile the paths into a schema, then commit via the
+		// resolve-conflict op (writes the body AND advances the merge base to the catalog).
+		assert.match(out, /To resolve each: reconcile the conflicting paths/, "guidance line names the reconcile step");
+		assert.match(
+			out,
+			/resolve-conflict --schemaName <name> --schema <reconciled>/,
+			"guidance line names the resolve-conflict apply path",
+		);
+		assert.match(
+			out,
+			/advances the merge base to the catalog so update stops re-reporting it/,
+			"guidance line states the base-advance rationale",
+		);
 	});
 
 	it("renders an empty set as a no-conflicts line", () => {

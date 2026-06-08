@@ -63,7 +63,7 @@ pi-context pi-bound -c                        # pass -c through to pi to resume
 
 This process mode replaces the former `scripts/launch-constrained-pi.sh` launch script.
 
-## `pi-context update` — drift-aware model update + conflict resolution
+## `pi-context update` — drift-aware model update + conflict surfacing
 
 ```bash
 pi-context update [--dryRun]
@@ -71,10 +71,15 @@ pi-context update [--dryRun]
 
 `update` brings the installed schema model current with the packaged catalog. Per installed schema it consults the drift classification and routes by state: an `in-sync` schema is a no-op; a `catalog-ahead` schema re-syncs through the migration-aware path; a `locally-modified` / `both-diverged` schema is reconciled by a deterministic 3-way merge of base (the as-installed schema body in the object store, keyed by the recorded baseline `content_hash`) × ours (the installed schema) × theirs (the catalog schema). Disjoint edits auto-merge so both the user's and the catalog's changes survive (`required` / `enum` / array-valued `type` nodes merge as sets).
 
-A schema whose per-path edits cannot be reconciled is left unmodified and routed to a resolver:
+A schema whose per-path edits cannot be reconciled is left unmodified, and the conflict is SURFACED to the calling agent — `update` does not spawn a subordinate resolver. The conflict set is returned in the op output (the `conflicts` array, printed under `--json`) alongside a readable per-schema report on the default text surface. The report ends with a guidance line; the calling agent reconciles each conflicting schema and commits the reconciliation with `pi-context resolve-conflict`:
 
-- on an interactive TTY (and not `--json`), `update` dispatches an interactive [`pi-context pi-bound`](#pi-context-pi-bound--constrained-pi-session) mergetool per conflicting schema — the bounded agent reconciles and writes through `write-schema` (the auth-gate confirming the write)
-- otherwise it renders a read-only conflict report and writes nothing
+```bash
+pi-context read-schema --schemaName <name>     # inspect the current installed body
+# resolve the conflicting paths into a reconciled draft-07 schema, then commit it:
+pi-context resolve-conflict --schemaName <name> --schema '<reconciled-json>'
+```
+
+`resolve-conflict` writes the reconciled body AND advances the merge base for that schema to the catalog, so the next `update` sees the schema as `locally-modified` and its deterministic merge takes the reconciled body (base === theirs → ours) — converging with zero conflicts and preserving the resolution. A bare `write-schema` does not advance the base, so `update` would re-report the same conflict on every run. Omit `--schema` to treat the current on-disk body as already reconciled and only advance the base.
 
 `update` also additively propagates catalog-new config-registry entries (`relation_types` / `invariants` / `block_kinds` / `lenses`) absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten; the added ids are reported under `registryAdditions`).
 
@@ -82,7 +87,7 @@ A schema whose per-path edits cannot be reconciled is left unmodified and routed
 
 ```bash
 pi-context update --dryRun                   # preview the per-schema action plan + config-registry additions
-pi-context update                            # apply: resync + auto-merge; conflicts → mergetool (TTY) or report
+pi-context update                            # apply: resync + auto-merge; conflicts → surfaced (op output + report) for the caller to reconcile + commit via resolve-conflict
 ```
 
 ## Global flags

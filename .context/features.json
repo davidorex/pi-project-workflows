@@ -147,7 +147,7 @@
     },
     {
       "title": "pi-context-cli best-of-breed surface — script-parity input/output, discoverability, and write-safety to a superior CLI UX",
-      "status": "proposed",
+      "status": "in-progress",
       "layer": "L4",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
@@ -164,9 +164,10 @@
       ],
       "id": "FEAT-008",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-08T10:55:05.581Z",
+      "modified_at": "2026-06-08T12:57:02.768Z",
       "oid": "e460e331ed4de4200a6d09a86138fb14",
-      "content_hash": "a8688a22c48b5ca402a5bdab97e46c8b048b0d9742280e46604a4f6ce3304adb"
+      "content_hash": "63bdc1a3db6455bc240c07163ff8c588985d78e6d99132dda3b36105b1abe5cb",
+      "content_parent": "a8688a22c48b5ca402a5bdab97e46c8b048b0d9742280e46604a4f6ce3304adb"
     }
   ]
 }

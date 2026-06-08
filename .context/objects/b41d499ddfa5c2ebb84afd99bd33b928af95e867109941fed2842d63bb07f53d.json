@@ -1,0 +1,25 @@
+{
+  "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "parseOpArgs (cli.ts:184-233) derives each op's accepted flag names 1:1 from its typebox parameter property keys; a token whose stripped name is absent from the schema throws `unknown flag` (exit 2). Op-schema keys are camelCase, so the conventional kebab-case flag a user types fails: `pi-context update --dry-run` -> `unknown flag: --dry-run` (only `--dryRun` works), although FEAT-006, FGAP-050/051/060, TASK-038/039 and standard CLI convention all write it `--dry-run`. The CLI has no kebab->camel normalization or alias layer. FGAP-032 is the id-flag-specific instance of this same root (--id vs --itemId/--taskId across ops); THIS gap is the general flag-casing/normalization defect, of which the headline update --dry-run failure is the most visible case.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "184-233",
+      "reference": "parseOpArgs derives flags verbatim from camelCase typebox keys; no kebab->camel normalization; an unknown stripped name throws UsageError (exit 2)"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "the update op declares parameter key dryRun (camelCase) -> CLI flag --dryRun; the conventional --dry-run is rejected"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "reference": "runtime: `pi-context update --dry-run` -> error: unknown flag: --dry-run, exit 2 (only --dryRun is accepted)"
+    }
+  ],
+  "impact": "The headline update feature's safety-preview flag fails when typed in the conventional kebab form documented across the substrate; every camelCase op parameter inherits the same footgun. A first-run and dogfooding UX defect on the highest-visibility surface.",
+  "canonical_vocabulary": "kebab-case CLI flag normalization",
+  "proposed_resolution": "Normalize flag matching in parseOpArgs so a kebab-case flag maps to its camelCase op-schema key (accept --dry-run for dryRun, etc.), accepting both forms. Resolve as one flag-normalization layer together with FGAP-032 (the id-flag-specific instance). No op-schema change."
+}

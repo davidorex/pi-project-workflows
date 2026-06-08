@@ -619,7 +619,7 @@
     },
     {
       "title": "Block-mutation ops require `arrayKey` though it is derivable from config (CLASS: 7 ops)",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "Seven block-mutation OpDefinitions in pi-context's op-registry declare `arrayKey` as a required parameter (bare `Type.String`), forcing every caller to restate a value the substrate already declares as `config.block_kinds[].array_key`. pi-context-cli faithfully reflects the op schema's `required` set, so the redundant required flag surfaces at the CLI (e.g. `append-block-item --block research` errors `missing required: --arrayKey` despite `research`'s array_key being knowable from config). The deficiency is in the OP SCHEMAS, one layer below the CLI — the CLI reflection is correct. CLASS, not single-op: append-block-item, update-block-item, upsert-block-item, remove-block-item (top-level array_key), plus the parent `arrayKey` of the 3 nested ops append-block-nested-item / update-block-nested-item / remove-block-nested-item. write-block + read-block are clean (no arrayKey param). For the nested ops, only the parent `arrayKey` is redundant; their `nestedKey` is legitimately caller-supplied (a property of the parent-array item schema, NOT derivable from block_kinds).",
       "evidence": [
@@ -694,9 +694,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-019",
       "oid": "433ae156e4ce1a04ca4c220c85339ad7",
-      "content_hash": "3589cc9c05df0b535a7fcc15d46ec9561ed72c06395144d8e22a010fc2f0d30c",
+      "content_hash": "4083438f692babf9f6266d4eda91a5ac803cff809c17db2f9a7e78536944d873",
       "priority": "P2",
-      "content_parent": "97186ba996e92d1db0793cd157944024752e0a99285b0c45b26656145718baae"
+      "content_parent": "3589cc9c05df0b535a7fcc15d46ec9561ed72c06395144d8e22a010fc2f0d30c",
+      "closed_by": "VER-029 / TASK-015 — block-mutation ops accept --block without --arrayKey; the CLI derives array_key from config.block_kinds[].array_key (injectArrayKey) and supplies it pre-call, the op schema unchanged.",
+      "closed_at": "2026-06-08T00:00:00.000Z"
     },
     {
       "title": "read-schema --path at an object node projects to the `required` name-list, not the node subtree",
@@ -872,7 +874,7 @@
     },
     {
       "title": "CLI lacks the scripts' input shorthands (--writer kind:id, --where field:op:value, CSV --op in)",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context-cli",
       "description": "The scripts accept ergonomic shorthands (--writer kind:id parsed to {kind,user}; --where field:op:value split into fields; --op in CSV split to an array); the CLI requires full-JSON or separate-flag forms. Each is a pre-call transform of an already-supported op param.",
       "evidence": [
@@ -897,9 +899,11 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-025",
       "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
-      "content_hash": "ae2ca276fdf87ae6054a24f3038ead482628e88f4b1d107287946b66c7af4385",
+      "content_hash": "2039076b8fa8c53483463c00e3faa0c88090152f0150db376584d9f1d81bff94",
       "priority": "P2",
-      "content_parent": "1760351f43cf28fa9cf8eb8c4e69eee5c86b45349614a0f8ce0c296b84af7b38"
+      "content_parent": "ae2ca276fdf87ae6054a24f3038ead482628e88f4b1d107287946b66c7af4385",
+      "closed_by": "VER-029 / TASK-015 — the CLI accepts the scripts input shorthands: --writer kind:id, --where field:op:value, and CSV --op in, each a pre-call transform in parseOpArgs.",
+      "closed_at": "2026-06-08T00:00:00.000Z"
     },
     {
       "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
@@ -1133,7 +1137,7 @@
     {
       "id": "FGAP-032",
       "title": "pi-context-cli id-flag naming diverges across id-taking ops (--id vs --itemId vs --taskId vs --parentId vs --unitId), with no normalized convention",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "description": "The reflecting pi-context-cli derives each op's CLI flag names verbatim from that op's typebox parameters-schema property keys (packages/pi-context-cli/src/cli.ts parseOpArgs reads props[field] off objectSchema(op).properties; an unknown key throws 'unknown flag'). Because the op-registry authored those property names ad hoc per op, the single-item-id argument is spelled differently across ops with no shared convention: read-block-item and resolve-item-by-id use --id; find-references and walk-ancestors use --itemId; context-walk-descendants uses --parentId; complete-task uses --taskId; gather-execution-context uses --unitId; promote-item uses --source. update-block-item / remove-block-item / nested-item ops select the id inside a --match JSON predicate; relation ops use --parent / --child. Driving the CLI, the natural guess --id fails on find-references with 'unknown flag: --id' (exit 2), forcing a re-read of --help to discover --itemId. The divergence is purely a property-name authoring inconsistency in the op-registry surfaced 1:1 by the flag-derivation, not a behavioral defect: each op works once the right flag is supplied. Impact is dogfooding friction (wrong-flag guesses, failed invocations, help round-trips) rather than data correctness.",
@@ -1184,7 +1188,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7d987f8421ac209f9efc57b81adc1f6d",
-      "content_hash": "1a2666a12e38d1cf1c61628e18f8bf72451098d8efb557732d5601d6abb1a4bd"
+      "content_hash": "ffa80a9d97233a20acdb2dfd80d9e998a0ea3f22c2ed937f287ac328e5dc5fff",
+      "closed_by": "VER-029 / TASK-015 — --id aliases the op single string-typed id-param (the same normalization layer as FGAP-064); ambiguous-reject when >=2, unknown-flag when 0; boolean autoId is excluded by the string-type guard (f1aef2b).",
+      "closed_at": "2026-06-08T00:00:00.000Z",
+      "content_parent": "1a2666a12e38d1cf1c61628e18f8bf72451098d8efb557732d5601d6abb1a4bd"
     },
     {
       "id": "FGAP-033",
@@ -1936,7 +1943,7 @@
     },
     {
       "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "description": "parseOpArgs (cli.ts:184-233) derives each op's accepted flag names 1:1 from its typebox parameter property keys; a token whose stripped name is absent from the schema throws `unknown flag` (exit 2). Op-schema keys are camelCase, so the conventional kebab-case flag a user types fails: `pi-context update --dry-run` -> `unknown flag: --dry-run` (only `--dryRun` works), although FEAT-006, FGAP-050/051/060, TASK-038/039 and standard CLI convention all write it `--dry-run`. The CLI has no kebab->camel normalization or alias layer. FGAP-032 is the id-flag-specific instance of this same root (--id vs --itemId/--taskId across ops); THIS gap is the general flag-casing/normalization defect, of which the headline update --dry-run failure is the most visible case.",
@@ -1962,7 +1969,10 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-064",
       "oid": "f91a7b90ad64bb551a6804035241ca20",
-      "content_hash": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
+      "content_hash": "b41d499ddfa5c2ebb84afd99bd33b928af95e867109941fed2842d63bb07f53d",
+      "closed_by": "VER-029 / TASK-015 — a kebab->camel alias layer in parseOpArgs resolves conventional kebab-case flags (e.g. update --dry-run) to the camelCase op-schema key; the camelCase form still works.",
+      "closed_at": "2026-06-08T00:00:00.000Z",
+      "content_parent": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
     },
     {
       "title": "pi-context update merges a new block_kind config declaration but does not materialize its schema/starter — a dangling declaration until install",

@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T00:00:00.000Z",
+  "evidence": "TASK-015 (FEAT-008 order 1/6) — the pi-context CLI pre-call input layer — verified end-to-end. All changes confined to packages/pi-context-cli/src/cli.ts (commit 46805b1 + the autoId fix f1aef2b); ops-registry.ts byte-unchanged (git diff empty; the 7 arrayKey params still required Type.String) — the FEAT-008 additive invariant holds. FGAP-064 (kebab->camel flag normalization): update --dry-run resolves to dryRun and the existing --dryRun still works; unknown kebab still errors with the raw token. FGAP-032 (--id aliases the op's single id-param): find-references/walk-ancestors --id -> itemId; complete-task / rename-canonical-id reject --id as ambiguous (exit 2, naming the params); 0-id ops (append-relation) unknown-flag. FGAP-019 (config-derived arrayKey): a real append to a block SUCCEEDED without --arrayKey (arrayKey derived from config.block_kinds[].array_key via injectArrayKey mirroring injectWriter; canonical_id verification != array_key verifications, derived correctly), the item landing in the correct array — the op still receives+requires arrayKey, the required-filter exemption is user-facing only; explicit --arrayKey preserved; unknown block / no substrate degrade without throw. FGAP-025 (shorthands): --writer human:x -> {kind:human,user:x} and agent:y -> {kind:agent,agent_id:y} (a real write stamped created_by agent/...), JSON/@file writer still work; --where field:op:value -> three params splitting on the first two colons (embedded colons preserved), explicit --field/--op/--value still work; CSV --op in --value a,b,c -> array in both argv orders, non-in op leaves value scalar. build+check+full-test green (fail 0 all packages; ~16 new cli.test.ts tests). Fresh adversarial probe found one medium defect — /Id$/ matched the boolean autoId on append-block-item so --id mis-bound to autoId — FIXED at f1aef2b (id-params now require fieldType==='string'; append-block-item --id is now unknown-flag while --autoId still works) and re-audited clean. The value-field json-parse raw-string fallback (enabling bare CSV operands) is scoped to the sole op declaring a value param (filter-block-items); every other json field still strict-parses-or-errors (malformed --item/--updates still throw).",
+  "criteria_results": [
+    {
+      "criterion": "FGAP-019 closed: the 7 block-mutation ops accept --block without --arrayKey; op byte-unchanged (still receives+requires arrayKey, CLI supplies it)",
+      "status": "passed",
+      "evidence": "live append succeeded sans --arrayKey, item in correct array; ops-registry arrayKey params still required Type.String (unchanged)"
+    },
+    {
+      "criterion": "FGAP-025 closed: --writer kind:id, --where field:op:value, CSV --op in parse to the op's declared shape",
+      "status": "passed",
+      "evidence": "all three demonstrated live + unit-tested; canonical JSON/explicit forms still parse (additive)"
+    },
+    {
+      "criterion": "FGAP-064 closed: kebab flags resolve to the camelCase key; existing camelCase still works",
+      "status": "passed",
+      "evidence": "update --dry-run and --dryRun both work; unknown kebab errors with raw token"
+    },
+    {
+      "criterion": "FGAP-032 closed: --id resolves to the op's single id-param",
+      "status": "passed",
+      "evidence": "single-id resolves; >=2 ambiguous-reject; 0-id unknown-flag; boolean autoId excluded (string-typed guard, f1aef2b)"
+    },
+    {
+      "criterion": "In-pi op behavior byte-unchanged (frozen-ops)",
+      "status": "passed",
+      "evidence": "git diff of ops-registry.ts empty across the commit range; all changes in cli.ts"
+    }
+  ]
+}

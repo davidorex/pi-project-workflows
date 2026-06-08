@@ -221,16 +221,21 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			out.showSchema = true;
 			continue;
 		}
-		if ((tok === "--dryRun" || tok === "--dry-run") && props.dryRun === undefined) {
-			// FGAP-024 — `--dry-run` is a GLOBAL flag ONLY for an op that declares no
-			// `dryRun` param (the sole such block-mutation op is the frozen
-			// append-block-item). It is handled in main() and NEVER routed into params,
-			// because the frozen op would reject `dryRun` as an unknown flag. Both the
-			// camel and kebab tokens are matched here explicitly since, not being a
-			// schema key on this op, neither would resolve through the kebab→camel
-			// normalization below. For ops that DO declare a `dryRun` param (relation
-			// ops, upsert, update, …) this branch is skipped and the token flows to the
-			// boolean-param handling so the op's own dryRun semantics are preserved.
+		if (op.name === "append-block-item" && (tok === "--dryRun" || tok === "--dry-run") && props.dryRun === undefined) {
+			// FGAP-024 — `--dry-run` is a GLOBAL flag scoped to append-block-item, the
+			// sole op the main() honor branch handles: it declares no `dryRun` param yet
+			// supports a client-side prospective-whole-file dry run. The token is captured
+			// here and NEVER routed into params, because the frozen op would reject
+			// `dryRun` as an unknown flag. Both the camel and kebab tokens are matched
+			// explicitly since, not being a schema key on this op, neither would resolve
+			// through the kebab→camel normalization below.
+			//
+			// For ops that DO declare a `dryRun` param (relation ops, upsert, update, …)
+			// `props.dryRun === undefined` is false, so this branch was already skipped and
+			// the token flows to the boolean-param handling, preserving the op's own dryRun
+			// semantics. For every OTHER no-`dryRun` op (the non-append block-mutation ops)
+			// the token is NOT swallowed here; it falls through to the unknown-flag throw
+			// below (UsageError → exit 2), a clean rejection rather than a silent write.
 			out.dryRun = true;
 			continue;
 		}
@@ -896,14 +901,19 @@ export async function main(argv: string[]): Promise<number> {
 		}
 		// FGAP-026 — granular exit codes distinguishing error classes. Name/message-based
 		// (instanceof is unreliable across the package boundary): validation → 5;
-		// not-initialized / BootstrapNotFoundError → 1 (generic runtime); id-allocation
-		// failure → 4; schema-absent → 3; everything else → 1. Usage/arg errors are 2,
+		// not-initialized / BootstrapNotFoundError → 1 (generic runtime); schema-absent →
+		// 3; id-allocation failure → 4; everything else → 1. Usage/arg errors are 2,
 		// classified earlier at the UsageError catch. The message emit above is unchanged.
+		// Ordering matters: schema-absent is tested BEFORE id-allocation because the
+		// schema-missing throw from nextId ("nextId: schema not found for block …") also
+		// matches the id-allocation pattern — its true cause is the absent schema (→ 3),
+		// not an allocation failure (→ 4). The genuine allocation throws (no id.pattern;
+		// not prefix+width parseable) do not contain "schema not found" and stay 4.
 		let code = 1;
 		if (isValidationError(err)) code = 5;
 		else if (err instanceof Error && err.name === "BootstrapNotFoundError") code = 1;
-		else if (err instanceof Error && /nextId|id pattern|allocate/i.test(err.message)) code = 4;
 		else if (err instanceof Error && /schema (file )?not found/i.test(err.message)) code = 3;
+		else if (err instanceof Error && /nextId|id pattern|allocate/i.test(err.message)) code = 4;
 		return code;
 	}
 }

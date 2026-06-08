@@ -1614,3 +1614,145 @@ test("CLI an unknown flag is a usage error → exit 2 (FGAP-026)", async () => {
 		rmSync(cwd, { recursive: true, force: true });
 	}
 });
+
+// ── TASK-017 / FGAP-024 follow-up: --dryRun is op-scoped to append-block-item ───
+// The global `--dry-run` swallow used to fire for EVERY op that declared no `dryRun`
+// param, but the main() honor branch only acts for append-block-item. So a no-dryRun
+// MUTATION op (update-block-item, remove-block-item, …) swallowed the flag and then
+// ran the REAL op — a silent write. The swallow is now gated on the op being
+// append-block-item; for every other no-dryRun op the token is an unknown flag (exit 2);
+// for ops that DECLARE dryRun (upsert-block-item, update, relation ops) the token still
+// flows to their own dryRun param.
+
+test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the swallow is append-scoped) (FGAP-024)", () => {
+	const op = resolveOp("update-block-item");
+	assert.ok(op);
+	assert.throws(
+		() => parseOpArgs(op, ["--block", "tasks", "--arrayKey", "tasks", "--match", "{}", "--updates", "{}", "--dryRun"]),
+		(err: unknown) => err instanceof UsageError && err.message.includes("unknown flag: --dryRun"),
+	);
+});
+
+test("CLI update-block-item --dryRun rejects (exit 2) and writes NOTHING — no silent write (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code } = await captureMainStderr([
+			"update-block-item",
+			"--block",
+			"tasks",
+			"--match",
+			'{"id":"TASK-1"}',
+			"--updates",
+			'{"title":"MUTATED"}',
+			"--dryRun",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 2);
+		// The block is byte-for-byte unchanged: the silent write is gone.
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+		assert.doesNotMatch(after, /MUTATED/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI remove-block-item --dry-run rejects (exit 2) and writes NOTHING (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code } = await captureMainStderr([
+			"remove-block-item",
+			"--block",
+			"tasks",
+			"--match",
+			'{"id":"TASK-1"}',
+			"--dry-run",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 2);
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI upsert-block-item --dryRun reaches its own dryRun param (preview, exit 0, no write) (FGAP-024)", async () => {
+	const cwd = seedTasksSubstrate();
+	try {
+		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		const { code, out } = await captureMainStdout([
+			"upsert-block-item",
+			"--block",
+			"tasks",
+			"--item",
+			'{"id":"TASK-2","title":"beta"}',
+			"--dryRun",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0);
+		assert.match(out, /would upsert/);
+		// Op-level dryRun: nothing written.
+		const after = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
+		assert.equal(after, before);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+// ── TASK-017 / FGAP-026 follow-up: schema-absent classifies to 3, not 4 ─────────
+// nextId's schema-missing throw ("nextId: schema not found for block …") matched the
+// id-allocation pattern first → exit 4, masking the true cause (absent schema → 3).
+// The catch classifier now tests schema-not-found BEFORE id-allocation.
+
+test("CLI autoId append against a block whose schema file is absent exits 3 (schema-absent, not 4) (FGAP-026)", async () => {
+	// config declares the block_kind (so arrayKey resolves) but NO schema file on disk.
+	// The autoId allocation calls nextId → throws "nextId: schema not found …" → exit 3.
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-noschema-autoid-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = path.join(cwd, ".project");
+		mkdirSync(path.join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			path.join(sub, "config.json"),
+			JSON.stringify({
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [
+					{
+						canonical_id: "tasks",
+						display_name: "Tasks",
+						prefix: "TASK-",
+						schema_path: "schemas/tasks.schema.json",
+						array_key: "tasks",
+						data_path: "tasks.json",
+					},
+				],
+			}),
+		);
+		// Deliberately NO schemas/tasks.schema.json on disk.
+		writeFileSync(path.join(sub, "tasks.json"), JSON.stringify({ tasks: [] }));
+
+		const { code, err } = await captureMainStderr([
+			"append-block-item",
+			"--block",
+			"tasks",
+			"--arrayKey",
+			"tasks",
+			"--autoId",
+			"--item",
+			'{"title":"beta"}',
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 3);
+		assert.match(err, /schema not found/);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});

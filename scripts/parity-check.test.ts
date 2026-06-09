@@ -1,38 +1,44 @@
 /**
- * Tests for the parity-check's pure helpers + the real-tree integration assertion
- * (scripts/parity-check.ts — the FGAP-009 op-coverage contract enforcer, TASK-008 γ).
+ * Tests for the in-pi op ↔ reflecting-CLI parity gate's pure helpers + its
+ * real-surface integration assertions (scripts/parity-check.ts).
  *
  * Two layers:
- *   1. Unit fixtures — synthetic ParsedTree models exercise each coverage class
- *      (op-backed-direct, op-backed-transitive, *ForDir twin, allowlisted,
- *      internal-primitive), the UNCLASSIFIED → FAIL case, and the ctx-drop →
- *      FAIL case. Helpers are imported from the built scripts/parity-check.ts.
- *   2. Integration — parse the REAL packages/pi-context/src tree (+ its
- *      ops-registry.ts) and assert ZERO classification violations and ZERO
- *      ctx-drop violations. After STEP 1 (rollbackBlockFiles allowlisted) the
- *      real tree is fully classified, so this passes — the same assertion the
+ *   1. Unit fixtures — synthetic ParsedTree / OpDefinition models exercise each
+ *      coverage class (op-backed-direct, op-backed-transitive, *ForDir twin,
+ *      allowlisted, internal-primitive), the UNCLASSIFIED → FAIL case, the ctx-
+ *      drop → FAIL case, the {json}-content-cap gate, the required-but-derivable
+ *      op↔CLI INPUT-parity gate (incl. NEGATIVE fixtures proving it BITES when an
+ *      arrayKey-requiring op is not CLI-exempted), the extractStringLiterals
+ *      cli.ts-exemption parser, and diffReadPayload (the pure op↔CLI OUTPUT diff).
+ *   2. Integration — parse the REAL packages/pi-context/src tree (+ ops-registry.ts)
+ *      and assert ZERO classification / ctx-drop / {json}-content-cap violations;
+ *      assert the REAL ops + the real parsed cli.ts exemptions yield ZERO required-
+ *      but-derivable violations; and run read-schema --path through BOTH the in-pi
+ *      op AND the CLI's main() (cli SOURCE, in-process — not dist) on a fixture
+ *      substrate, asserting ZERO output-shape divergence. The same assertions the
  *      husky/CI check makes.
  */
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition } from "@davidorex/pi-context/ops";
+import { INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition, ops } from "@davidorex/pi-context/ops";
 import {
 	checkCtxForwarding,
-	checkDualSurfaceParity,
 	checkJsonContentCap,
+	checkOutputShapeParity,
+	checkRequiredButDerivable,
 	classifyAll,
+	diffReadPayload,
 	enumerateWriters,
+	extractStringLiterals,
 	type FnDef,
 	flattenSchemaProperties,
 	type OpRun,
 	opDeclaresParam,
 	type ParsedTree,
 	parseSourceTree,
-	scriptParsesFlag,
 } from "./parity-check.ts";
 
 // ─── Fixture builders ──────────────────────────────────────────────────────────
@@ -64,6 +70,9 @@ const tree = (fns: FnDef[], opRuns: OpRun[]): ParsedTree => ({
 	fns: new Map(fns.map((f) => [f.name, f])),
 	opRuns,
 });
+
+/** Repo root (this file lives in scripts/), used by the real-tree assertions. */
+const repoRoot = join(fileURLToPath(new URL("..", import.meta.url)));
 
 // ─── enumerateWriters ───────────────────────────────────────────────────────────
 
@@ -205,99 +214,82 @@ describe("checkCtxForwarding", () => {
 	});
 });
 
-// ─── checkDualSurfaceParity — accurate op-schema vs script-flag signals ──────────
+// ─── checkRequiredButDerivable — op↔CLI INPUT parity (required-but-derivable) ─────
 
-describe("checkDualSurfaceParity", () => {
+describe("checkRequiredButDerivable", () => {
 	// A synthetic OpDefinition carrying ONLY the runtime-relevant `parameters`
-	// shape opDeclaresParam reads: `{ properties: { <camelParam>: ... } }`. The
-	// detector inspects `op.parameters.properties` keys (the same field
-	// pi-context-cli reads via objectSchema(op).properties), never `run.params`.
-	const opDef = (name: string, paramKeys: string[]): OpDefinition =>
+	// shape opRequiredParams reads: `{ required: [...] }` (the same field
+	// pi-context-cli reads via objectSchema(op).required), never `run.params`.
+	const opDef = (name: string, required: string[]): OpDefinition =>
 		({
 			name,
 			label: name,
 			description: "",
-			parameters: { properties: Object.fromEntries(paramKeys.map((k) => [k, {}])) },
+			parameters: { required },
 			run: () => "",
 			surface: "use",
 		}) as unknown as OpDefinition;
 
-	// A scripts dir holding one fixture orchestrator script per op-name.
-	const makeScriptsDir = (scripts: Record<string, string>): string => {
-		const dir = mkdtempSync(join(tmpdir(), "parity-scripts-"));
-		for (const [opName, body] of Object.entries(scripts)) {
-			writeFileSync(join(dir, `${opName}.ts`), body, "utf-8");
-		}
-		return dir;
-	};
-
-	// The op-run AST presence is only the gate for "has a sibling worth checking";
-	// param detection comes from the op schema + the script text.
-	const opRunTree = (...names: string[]): ParsedTree =>
-		tree(
-			[],
-			names.map((n) => op(n)),
+	it("FLAGS an op requiring arrayKey when the CLI exemptions DO NOT include arrayKey", () => {
+		const violations = checkRequiredButDerivable(
+			new Set(["writer"]), // arrayKey absent
+			[opDef("append-block-item", ["block", "arrayKey"])],
 		);
+		// One GLOBAL violation (arrayKey not exempted) + one PER-OP violation.
+		assert.ok(violations.some((v) => v.includes("'append-block-item'") && v.includes("'arrayKey'")));
+		assert.ok(violations.some((v) => v.includes("DERIVABLE") && v.includes("'arrayKey'")));
+	});
 
-	it("NO divergence when op schema declares dryRun AND the script parses --dry-run", () => {
-		const dir = makeScriptsDir({
-			"promote-item": `if (a === "--dry-run") { out.dryRun = true; }`,
-		});
-		const violations = checkDualSurfaceParity(opRunTree("promote-item"), dir, [
-			opDef("promote-item", ["source", "to", "dryRun"]),
+	it("passes (0 violations) when the CLI exemptions include arrayKey", () => {
+		const violations = checkRequiredButDerivable(new Set(["writer", "arrayKey"]), [
+			opDef("append-block-item", ["block", "arrayKey"]),
 		]);
 		assert.deepEqual(violations, []);
 	});
 
-	it("divergence (non-fatal) when the script parses --dry-run but the op schema lacks dryRun", () => {
-		const dir = makeScriptsDir({
-			"append-relation": `if (a === "--dry-run") { out.dryRun = true; } else if (a === "--ordinal" && argv[i + 1]) { out.ordinal = n; }`,
-		});
-		const violations = checkDualSurfaceParity(opRunTree("append-relation"), dir, [
-			// schema declares ordinal but NOT dryRun (mirrors the real append-relation op)
-			opDef("append-relation", ["parent", "child", "relation_type", "ordinal"]),
-		]);
-		const dryRun = violations.filter((v) => v.detail.includes("dryRun"));
-		assert.equal(dryRun.length, 1);
-		assert.equal(dryRun[0].kind, "dual-surface");
-		assert.equal(dryRun[0].fatal, false);
-		// ordinal is declared AND parsed (--ordinal present) → no ordinal divergence.
-		assert.equal(violations.filter((v) => v.detail.includes("ordinal")).length, 0);
+	it("FLAGS a different derivable-required param (extended DERIVABLE) that is not exempted", () => {
+		// Extend DERIVABLE for the test to a hypothetical 'schemaKey' the op requires
+		// but the CLI does not exempt → per-op + global violations.
+		const violations = checkRequiredButDerivable(
+			new Set(["writer", "arrayKey"]), // arrayKey exempt, schemaKey NOT
+			[opDef("derive-op", ["block", "schemaKey"])],
+			new Set(["arrayKey", "schemaKey"]),
+		);
+		assert.ok(violations.some((v) => v.includes("'derive-op'") && v.includes("'schemaKey'")));
+		assert.ok(violations.some((v) => v.includes("DERIVABLE") && v.includes("'schemaKey'")));
 	});
 
-	it("NO divergence when op schema declares ordinal AND the script parses --ordinal", () => {
-		const dir = makeScriptsDir({
-			"append-relation": `else if (a === "--ordinal" && argv[i + 1]) { out.ordinal = n; }`,
-		});
-		const violations = checkDualSurfaceParity(opRunTree("append-relation"), dir, [
-			opDef("append-relation", ["parent", "child", "relation_type", "ordinal"]),
-		]);
-		assert.equal(violations.filter((v) => v.detail.includes("ordinal")).length, 0);
+	it("the REAL ops + the real parsed cli.ts exemptions → ZERO violations (green-now)", () => {
+		const cliFile = join(repoRoot, "packages", "pi-context-cli", "src", "cli.ts");
+		const cliExemptions = extractStringLiterals(readFileSync(cliFile, "utf-8"));
+		assert.ok(cliExemptions.has("arrayKey"), "cli.ts required-filter must exempt arrayKey");
+		assert.deepEqual(checkRequiredButDerivable(cliExemptions, ops as OpDefinition[]), []);
+	});
+});
+
+// ─── diffReadPayload — op↔CLI OUTPUT comparison (pure) ────────────────────────────
+
+describe("diffReadPayload", () => {
+	it("FLAGS a mismatched .data subtree", () => {
+		const violations = diffReadPayload({ data: { a: 1 }, complete: true }, { data: { a: 2 }, complete: true });
+		assert.equal(violations.length, 1);
+		assert.ok(violations[0].includes(".data differs"));
 	});
 
-	it("does NOT bare-word-match a camel token in comments / output tables", () => {
-		// Script prints "ordinal" in an output string but parses no --ordinal flag,
-		// and the op schema does not declare ordinal → the OLD bare-word detector
-		// would FALSELY flag; the flag-literal detector must NOT.
-		const dir = makeScriptsDir({
-			"find-references": `console.log("relation_type | ordinal");`,
-		});
-		const violations = checkDualSurfaceParity(opRunTree("find-references"), dir, [
-			opDef("find-references", ["id", "direction"]),
-		]);
-		assert.deepEqual(violations, []);
+	it("passes (0 violations) when .data / .complete / .total all match", () => {
+		assert.deepEqual(
+			diffReadPayload(
+				{ data: { required: ["id"] }, complete: true, total: undefined },
+				{ data: { required: ["id"] }, complete: true, total: undefined },
+			),
+			[],
+		);
 	});
 
-	it("flags an op that declares a param its sibling script offers no flag for", () => {
-		const dir = makeScriptsDir({
-			"upsert-block-item": `// no --id-field parsing here`,
-		});
-		const violations = checkDualSurfaceParity(opRunTree("upsert-block-item"), dir, [
-			opDef("upsert-block-item", ["block", "item", "idField"]),
-		]);
-		const idField = violations.filter((v) => v.detail.includes("idField"));
-		assert.equal(idField.length, 1);
-		assert.equal(idField[0].fatal, false);
+	it("FLAGS a .complete divergence", () => {
+		const violations = diffReadPayload({ data: 1, complete: true }, { data: 1, complete: false });
+		assert.equal(violations.length, 1);
+		assert.ok(violations[0].includes(".complete differs"));
 	});
 });
 
@@ -380,39 +372,24 @@ describe("opDeclaresParam", () => {
 	});
 });
 
-// ─── scriptParsesFlag — arg-parse position only, escaped, both quote styles ───────
+// ─── extractStringLiterals — AST literal harvest (used to parse cli.ts exemptions) ─
 
-describe("scriptParsesFlag", () => {
-	it("does NOT match a flag literal in a console.log", () => {
-		assert.equal(scriptParsesFlag(`console.log("usage: cmd --dry-run");`, "--dry-run"), false);
+describe("extractStringLiterals", () => {
+	it('captures the operands of a `r !== "lit"` filter chain (the cli.ts exemption shape)', () => {
+		const lits = extractStringLiterals(`(schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey")`);
+		assert.ok(lits.has("writer"));
+		assert.ok(lits.has("arrayKey"));
 	});
 
-	it("does NOT match a flag literal in a comment", () => {
-		assert.equal(scriptParsesFlag(`// --dry-run is handled elsewhere`, "--dry-run"), false);
+	it("captures single-quoted + template (no-substitution) literals", () => {
+		const lits = extractStringLiterals("const a = 'arrayKey'; const b = `writer`;");
+		assert.ok(lits.has("arrayKey"));
+		assert.ok(lits.has("writer"));
 	});
 
-	it('matches an `else if (a === "--dry-run")` arg-parse line', () => {
-		assert.equal(scriptParsesFlag(`} else if (a === "--dry-run") {`, "--dry-run"), true);
-	});
-
-	it("matches a single-quoted arg-parse line", () => {
-		assert.equal(scriptParsesFlag(`if (a === '--id-field') {`, "--id-field"), true);
-	});
-
-	it("matches with no whitespace around ===", () => {
-		assert.equal(scriptParsesFlag(`if (a==="--ordinal"&&argv[i+1]){`, "--ordinal"), true);
-	});
-
-	it("does NOT match the comparison text inside a block comment (audit repro)", () => {
-		assert.equal(scriptParsesFlag(`/* a === "--dry-run" */`, "--dry-run"), false);
-	});
-
-	it("does NOT match a flag inside a display string literal", () => {
-		assert.equal(scriptParsesFlag(`const help = "pass a === \\"--dry-run\\" here";`, "--dry-run"), false);
-	});
-
-	it('matches a `case "--flag":` switch arg-parse position', () => {
-		assert.equal(scriptParsesFlag(`switch (a) { case "--dry-run": break; }`, "--dry-run"), true);
+	it("does NOT capture text from a comment (trivia carries no literal node)", () => {
+		const lits = extractStringLiterals(`// arrayKey is handled here\nconst x = 1;`);
+		assert.equal(lits.has("arrayKey"), false);
 	});
 });
 
@@ -517,7 +494,6 @@ describe("checkJsonContentCap", () => {
 // ─── Integration — the REAL pi-context tree, post STEP 1 ─────────────────────────
 
 describe("integration: real pi-context tree has ZERO violations", () => {
-	const repoRoot = join(fileURLToPath(new URL("..", import.meta.url)));
 	const srcDir = join(repoRoot, "packages", "pi-context", "src");
 
 	it("parses op runs from the real ops-registry.ts (build present)", () => {
@@ -562,5 +538,13 @@ describe("integration: real pi-context tree has ZERO violations", () => {
 			[],
 			"no op may return { json } of a content-reading library call — emit { read: structureForRead(...) }",
 		);
+	});
+
+	it("has ZERO op↔CLI output-shape divergence (read-schema --path on a fixture, both surfaces)", async () => {
+		// End-to-end: read-schema --path properties.tasks.items run through the in-pi
+		// op AND the reflecting CLI's main() (imported from cli SOURCE, in-process —
+		// NOT dist) must yield the same read payload (.data / .complete / .total).
+		const violations = await checkOutputShapeParity();
+		assert.deepEqual(violations, [], "the in-pi op read and the CLI envelope output must agree");
 	});
 });

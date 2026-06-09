@@ -13,6 +13,7 @@
 			"@davidorex/pi-context/lens-view": ["./packages/pi-context/src/lens-view.ts"],
 			"@davidorex/pi-context/execution-context": ["./packages/pi-context/src/execution-context.ts"],
 			"@davidorex/pi-context/sync-skills": ["./packages/pi-context/src/sync-skills.ts"],
+			"@davidorex/pi-context-cli": ["./packages/pi-context-cli/src/cli.ts"],
 			"@davidorex/pi-jit-agents": ["./packages/pi-jit-agents/src/index.ts"],
 			"@davidorex/pi-jit-agents/types": ["./packages/pi-jit-agents/src/types.ts"],
 			"@davidorex/pi-jit-agents/agent-spec": ["./packages/pi-jit-agents/src/agent-spec.ts"],

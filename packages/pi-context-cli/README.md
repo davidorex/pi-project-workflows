@@ -15,7 +15,8 @@ This provides a `pi-context` binary.
 ## Usage
 
 ```bash
-pi-context --help                 # list every surfaced op + global flags
+pi-context --help                 # grouped op index (by command class) + global flags
+pi-context --version              # print the package version (alias -v)
 pi-context <op> --help            # per-op help: declared flags with TYPE tags
 pi-context <op> [flags]           # run an op
 ```
@@ -149,7 +150,8 @@ pi-context update                            # apply: resync + auto-merge; confl
 - `--writer <json>` — override the auto-resolved writer identity
 - `--show-schema` — preview a block op's contract (array key / required fields / field types / id pattern) and exit; see [Contract preview + dry-run](#contract-preview--dry-run)
 - `--dry-run`, `--dryRun` — for `append-block-item`, validate the prospective file and write nothing; see [Contract preview + dry-run](#contract-preview--dry-run)
-- `--help`, `-h` — top-level help, or per-op help after an op name
+- `--version`, `-v` — print the package version and exit
+- `--help`, `-h` — grouped top-level help (ops by command class + a Process modes section), or per-op help after an op name
 
 ## Writer identity
 

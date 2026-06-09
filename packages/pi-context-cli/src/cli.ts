@@ -27,6 +27,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
+import { fileURLToPath } from "node:url";
 import { renderConflicts } from "@davidorex/pi-context";
 import { nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import { loadConfig } from "@davidorex/pi-context/context";
@@ -50,6 +51,19 @@ import { formatAjvError, isValidationError, renderTable } from "./render.js";
  * is excluded here by the partition, never by name.
  */
 export const useOps: OpDefinition[] = ops.filter((o) => o.surface === "use");
+
+/**
+ * The pi-context-cli package version, read ONCE at module load from the shipped
+ * package.json. Resolved RELATIVE to this module's URL (mirrors pi-bound.ts's
+ * createRequire(import.meta.url) pattern) so it works from the BUILT bin: from
+ * `dist/cli.js`, `../package.json` is the package root (npm always ships
+ * package.json in a published tarball). A plain `import pkg from "../package.json"`
+ * is deliberately avoided — tsconfig.build's rootDir:"./src" / include:["src/**"]
+ * would make that compile path a hazard. `--version`/`-v` prints this value.
+ */
+export const PKG_VERSION: string = JSON.parse(
+	readFileSync(fileURLToPath(new URL("../package.json", import.meta.url)), "utf8"),
+).version;
 
 /** Field-type tag rendered in help and used to pick a coercion strategy. */
 export type FieldType = "string" | "number" | "boolean" | "json";
@@ -576,15 +590,158 @@ export function deriveHelp(op: OpDefinition): string {
 	return lines.join("\n");
 }
 
-/** Top-level help: one line per surfaced op + global flag notes. */
-export function deriveTopHelp(): string {
-	const lines = ["pi-context <op> [flags]", "", "Commands:"];
-	const width = Math.max(...useOps.map((o) => o.name.length));
-	for (const op of useOps) {
-		lines.push(`  ${op.name.padEnd(width)}  —  ${op.description.split("\n")[0]}`);
+/**
+ * Group definitions for the grouped top-level help (CHANGE A). Each group has a
+ * human-readable `label` and a `match(name)` predicate. The list is ORDERED
+ * read-before-mutate (reads/queries → block writes → relations → schema/config →
+ * lifecycle → workflow), and `groupForOp` returns the FIRST group whose predicate
+ * matches (first-match-wins). Predicates are a mix of explicit name-sets and
+ * name-prefixes; together they must be EXHAUSTIVE and DISJOINT over `useOps` — the
+ * drift-guard test (`cli.test.ts`) is the real enforcement. Ordering is load-
+ * bearing where prefixes would otherwise collide: Relations (`*-relation(s)`) is
+ * listed BEFORE Block writes so `append-relation`/`remove-relation` slot to
+ * Relations, not to the `append-/remove-*` block-write prefixes; the explicit
+ * `context-*` read/lifecycle/workflow name-sets precede any bare `context-` rule.
+ *
+ * Process modes (`pi-bound`) are NOT registry-driven — they are rendered as a
+ * static section in `deriveTopHelp`, never classified through `groupForOp`.
+ */
+interface HelpGroup {
+	label: string;
+	match: (name: string) => boolean;
+}
+
+/** Membership test against an explicit name-set. */
+const oneOf =
+	(...names: string[]): ((name: string) => boolean) =>
+	(name) =>
+		names.includes(name);
+
+const HELP_GROUPS: HelpGroup[] = [
+	{
+		label: "Read & query",
+		match: (n) =>
+			n.startsWith("read-") ||
+			oneOf(
+				"filter-block-items",
+				"join-blocks",
+				"resolve-item-by-id",
+				"resolve-items-by-id",
+				"find-references",
+				"walk-ancestors",
+				"context-walk-descendants",
+				"context-edges-for-lens",
+				"context-status",
+				"context-current-state",
+				"context-bootstrap-state",
+				"context-validate",
+				"context-validate-relations",
+				"gather-execution-context",
+			)(n),
+	},
+	{
+		// Relations BEFORE Block writes: `*-relation` / `*-relations` must win over
+		// the `append-`/`remove-` block-write prefixes below.
+		label: "Relations",
+		match: (n) => n.endsWith("-relation") || n.endsWith("-relations"),
+	},
+	{
+		label: "Block writes",
+		match: (n) =>
+			oneOf(
+				"append-block-item",
+				"update-block-item",
+				"upsert-block-item",
+				"remove-block-item",
+				"append-block-nested-item",
+				"update-block-nested-item",
+				"remove-block-nested-item",
+				"write-block",
+			)(n),
+	},
+	{
+		label: "Schema & config",
+		match: oneOf(
+			"write-schema",
+			"write-schema-migration",
+			"amend-config",
+			"update",
+			"resolve-conflict",
+			"rename-canonical-id",
+		),
+	},
+	{
+		label: "Substrate lifecycle",
+		match: oneOf("context-init", "context-accept-all", "context-switch", "context-list", "context-archive"),
+	},
+	{
+		label: "Workflow",
+		match: (n) => n.startsWith("context-roadmap-") || oneOf("complete-task", "promote-item")(n),
+	},
+];
+
+/**
+ * Classify a use-op into its top-level help group LABEL (first-match-wins over the
+ * ordered HELP_GROUPS). Throws when a use-op matches no group — a new op that slips
+ * past every rule fails loudly here rather than silently vanishing from the help.
+ * The drift-guard test asserts every `useOps` name maps to exactly one group.
+ */
+export function groupForOp(name: string): string {
+	const group = HELP_GROUPS.find((g) => g.match(name));
+	if (group === undefined) {
+		throw new Error(`groupForOp: op '${name}' matches no help group — add it to HELP_GROUPS`);
 	}
+	return group.label;
+}
+
+/** Max one-liner width before truncation in the grouped help. */
+const HELP_ONELINER_WIDTH = 72;
+
+/**
+ * One-liner for an op row: prefer `promptSnippet` (the terse reflection summary),
+ * fall back to `description`. Collapse to a single line, then truncate uniformly to
+ * ~HELP_ONELINER_WIDTH at the last word boundary, appending an ellipsis when cut.
+ * Applied to EVERY row identically — no per-op special-casing, and the ops-registry
+ * text itself is never edited.
+ */
+export function helpOneLiner(op: OpDefinition): string {
+	const raw = (op.promptSnippet ?? op.description).split("\n")[0].trim();
+	if (raw.length <= HELP_ONELINER_WIDTH) return raw;
+	const head = raw.slice(0, HELP_ONELINER_WIDTH);
+	const lastSpace = head.lastIndexOf(" ");
+	const cut = lastSpace > 0 ? head.slice(0, lastSpace) : head;
+	return `${cut.trimEnd()}…`;
+}
+
+/**
+ * Grouped, scannable top-level help. Sections appear in HELP_GROUPS order (only
+ * groups with ≥1 op), ops sorted alphabetically within a group, each row a name
+ * padded to the group's own max-name width followed by the truncated one-liner.
+ * A static Process modes section surfaces `pi-bound` (a process mode, not a
+ * substrate op). The Global flags block is retained verbatim plus `--version`.
+ * Plain text only.
+ */
+export function deriveTopHelp(): string {
+	const lines: string[] = ["pi-context <op> [flags]", ""];
+
+	for (const group of HELP_GROUPS) {
+		const groupOps = useOps
+			.filter((o) => groupForOp(o.name) === group.label)
+			.sort((a, b) => a.name.localeCompare(b.name));
+		if (groupOps.length === 0) continue;
+		const width = Math.max(...groupOps.map((o) => o.name.length));
+		lines.push(group.label);
+		for (const op of groupOps) {
+			lines.push(`  ${op.name.padEnd(width)}  —  ${helpOneLiner(op)}`);
+		}
+		lines.push("");
+	}
+
+	lines.push("Process modes");
+	lines.push("  pi-bound  —  Launch an embedded pi agent in-process on a bounded tool surface");
+	lines.push("");
+
 	lines.push(
-		"",
 		"Global flags:",
 		"  --cwd <dir>      substrate root (default: cwd)",
 		"  --json           emit { ok, op, output } envelope (≡ --format json)",
@@ -593,6 +750,7 @@ export function deriveTopHelp(): string {
 		"  --writer <json>  override the auto-resolved writer identity",
 		"  --show-schema    preview a block op's contract (array_key/required/types/id) and exit",
 		"  --dry-run        append-block-item: validate the prospective file, write nothing",
+		"  --version, -v    print the pi-context version and exit",
 		"  --help, -h       this help, or per-op help after an op name",
 	);
 	return lines.join("\n");
@@ -642,6 +800,14 @@ export async function main(argv: string[]): Promise<number> {
 
 	if (first === undefined || first === "--help" || first === "-h") {
 		process.stdout.write(`${deriveTopHelp()}\n`);
+		return 0;
+	}
+
+	if (first === "--version" || first === "-v") {
+		// CHANGE B — print the package version (read once at module load, build-safe
+		// relative to dist/cli.js) and exit. STDOUT, exit 0. Placed before the
+		// pi-bound branch and resolveOp so `--version`/`-v` are never mistaken for ops.
+		process.stdout.write(`pi-context ${PKG_VERSION}\n`);
 		return 0;
 	}
 

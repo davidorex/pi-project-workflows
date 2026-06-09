@@ -32,6 +32,7 @@ import {
 	classifyAll,
 	diffReadPayload,
 	enumerateWriters,
+	extractObjectKeys,
 	extractStringLiterals,
 	type FnDef,
 	flattenSchemaProperties,
@@ -261,7 +262,7 @@ describe("checkRequiredButDerivable", () => {
 
 	it("the REAL ops + the real parsed cli.ts exemptions → ZERO violations (green-now)", () => {
 		const cliFile = join(repoRoot, "packages", "pi-context-cli", "src", "cli.ts");
-		const cliExemptions = extractStringLiterals(readFileSync(cliFile, "utf-8"));
+		const cliExemptions = extractObjectKeys(readFileSync(cliFile, "utf-8"), "AUTO_SUPPLIED");
 		assert.ok(cliExemptions.has("arrayKey"), "cli.ts required-filter must exempt arrayKey");
 		assert.deepEqual(checkRequiredButDerivable(cliExemptions, ops as OpDefinition[]), []);
 	});
@@ -390,6 +391,28 @@ describe("extractStringLiterals", () => {
 	it("does NOT capture text from a comment (trivia carries no literal node)", () => {
 		const lits = extractStringLiterals(`// arrayKey is handled here\nconst x = 1;`);
 		assert.equal(lits.has("arrayKey"), false);
+	});
+});
+
+// ─── extractObjectKeys — AUTO_SUPPLIED key read (the canonical cli.ts exemption source) ─
+
+describe("extractObjectKeys", () => {
+	it("reads the KEYS of the named const's object literal (export const)", () => {
+		const keys = extractObjectKeys(`export const X = { a: "1", b: "2" };`, "X");
+		assert.ok(keys.has("a"));
+		assert.ok(keys.has("b"));
+		assert.equal(keys.size, 2);
+	});
+
+	it("reads KEYS not VALUES (the string values are NOT in the set)", () => {
+		const keys = extractObjectKeys(`export const X = { a: "1", b: "2" };`, "X");
+		assert.equal(keys.has("1"), false);
+		assert.equal(keys.has("2"), false);
+	});
+
+	it("returns empty when no const of that name is present", () => {
+		const keys = extractObjectKeys(`const Y = { a: "1" };`, "X");
+		assert.equal(keys.size, 0);
 	});
 });
 

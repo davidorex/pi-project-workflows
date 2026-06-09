@@ -8,6 +8,7 @@ import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { boundedJsonOutput, type OpResult, ops, renderOpResultText } from "@davidorex/pi-context/ops";
 import { structureForRead } from "@davidorex/pi-context/read-element";
 import {
+	AUTO_SUPPLIED,
 	authDecision,
 	buildCliDispatchContext,
 	buildHelpModel,
@@ -1069,6 +1070,52 @@ test("parseOpArgs accepts a block-mutation op without --arrayKey (FGAP-019 requi
 	const parsed = parseOpArgs(op, ["--block", "framework-gaps", "--item", "{}"]);
 	assert.equal("arrayKey" in parsed.params, false);
 	assert.equal(parsed.params.block, "framework-gaps");
+});
+
+test("parseOpArgs missing-required check exempts every AUTO_SUPPLIED key (single-source coupling)", () => {
+	// The :434 missing-required filter derives from AUTO_SUPPLIED, so any key in the map
+	// is auto-exempted. This guard confirms the exemption holds for every key — adding a
+	// key to AUTO_SUPPLIED (and its injector) cannot leave that param parser-rejected as
+	// missing while the help surfaces it as auto-supplied/bracketed-optional.
+	// Each AUTO_SUPPLIED key maps to a representative op that DECLARES it required; the
+	// other declared-required params are supplied so only the auto-supplied key is omitted.
+	const reps: Record<string, { op: string; args: string[] }> = {
+		// append-block-item declares arrayKey required; omit --arrayKey, supply the rest.
+		arrayKey: { op: "append-block-item", args: ["--block", "framework-gaps", "--item", "{}"] },
+		// write-schema-migration declares writer required; omit --writer, supply the rest.
+		writer: {
+			op: "write-schema-migration",
+			args: [
+				"--operation",
+				"create",
+				"--schemaName",
+				"tasks",
+				"--fromVersion",
+				"1.0.0",
+				"--toVersion",
+				"1.1.0",
+				"--kind",
+				"identity",
+			],
+		},
+	};
+	let coveredWriter = false;
+	let coveredArrayKey = false;
+	for (const key of Object.keys(AUTO_SUPPLIED)) {
+		const rep = reps[key];
+		// A key with no representative declaring-op binding is skipped (future-proofing);
+		// writer + arrayKey MUST be covered (asserted below).
+		if (!rep) continue;
+		const op = resolveOp(rep.op);
+		assert.ok(op, `representative op '${rep.op}' for AUTO_SUPPLIED key '${key}' must resolve`);
+		// parseOpArgs must NOT throw a missing-required UsageError for the omitted key.
+		const parsed = parseOpArgs(op, rep.args);
+		assert.equal(key in parsed.params, false, `auto-supplied key '${key}' must not be present pre-injection`);
+		if (key === "writer") coveredWriter = true;
+		if (key === "arrayKey") coveredArrayKey = true;
+	}
+	assert.ok(coveredWriter, "AUTO_SUPPLIED must include and this test must cover 'writer'");
+	assert.ok(coveredArrayKey, "AUTO_SUPPLIED must include and this test must cover 'arrayKey'");
 });
 
 test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ array_key) (FGAP-019)", () => {

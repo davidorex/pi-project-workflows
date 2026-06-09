@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- The CLI auto-supplied params (`writer`, `arrayKey` — filled after parse so a caller need not pass them) are now described by one internal source that drives all of: their exemption from the missing-required check, their bracketed-optional rendering in the per-op synopsis, and their `autoSupplied` annotation in the `--help` Flags block. Observable behavior is unchanged — these params remain optional to pass and auto-filled.
+
 ### Added
 - Per-op `pi-context <op> --help` now renders a structured page: a one-line summary, a `SYNOPSIS` line (`pi-context <op>` with required flags first and optional flags bracketed — auto-injected `writer`/`arrayKey` shown bracketed-optional), the per-field `Flags` block (type tag, enum choices, required/optional, description; JSON-valued flags shown as `<json | @file>`), an `EXAMPLES` section of copy-pasteable invocations for that op, a `RELATED` section listing the sibling commands in the same help group, and a footer pointing to `pi-context --help` and the machine-readable form. **`pi-context <op> --help --format json`** (or `--help --json`) emits that same help as a machine-readable JSON model (`{ name, synopsis, summary, flags[], examples[], related[] }`).
 - The top-level `pi-context --help` (and bare `pi-context`) is now grouped and scannable: the surfaced ops are partitioned into seven command classes — Read & query, Block writes, Relations, Schema & config, Substrate lifecycle, Workflow, and a Process modes section (`pi-bound`) — rendered read-before-mutate, alphabetically within each class, each row showing the op's short reflection summary truncated to a uniform width. The classification is derived from the reflected op set, so a newly surfaced op appears under its class automatically. A new **`pi-context --version`** (alias `-v`) prints the package version and exits.

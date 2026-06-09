@@ -422,16 +422,22 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		out.params.value = out.params.value.split(",");
 	}
 
-	// Required-field check — `writer` is exempt (schema-driven auto-injected after
-	// parse when the op declares it and none was passed); `arrayKey` is exempt too —
-	// injectArrayKey derives it from config.block_kinds[].array_key for the
-	// block-mutation ops after parse (FGAP-019), so a `--block` without an explicit
-	// `--arrayKey` must not be flagged missing here.
+	// Required-field check — the exemption set derives from AUTO_SUPPLIED, the single
+	// source for the CLI auto-supplied param contract: a key there is auto-supplied, so
+	// it is exempt from this missing-required check, rendered bracketed-optional in the
+	// per-op synopsis (isSynopsisRequired), and `autoSupplied`-annotated in the Flags
+	// block. Concretely today: `writer` (injectWriter fills it from the resolved operator
+	// identity after parse) and `arrayKey` (injectArrayKey derives it from
+	// config.block_kinds[].array_key for the block-mutation ops after parse, FGAP-019, so
+	// a `--block` without an explicit `--arrayKey` must not be flagged missing here).
+	// Adding a new AUTO_SUPPLIED key also requires adding its injector (injectWriter /
+	// injectArrayKey-style): the map single-sources the exemption/help CONTRACT, not the
+	// value-supply wiring.
 	// `--help` and `--show-schema` exit before any op invocation and need no item, so
 	// the required-field check is skipped for them (FGAP-022). `--dryRun` still requires
 	// the op's declared inputs (it validates a prospective item) and so is NOT exempt.
 	if (!out.help && !out.showSchema) {
-		const required = (schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey");
+		const required = (schema.required ?? []).filter((r) => !(r in AUTO_SUPPLIED));
 		const missing = required.filter((r) => !(r in out.params));
 		if (missing.length > 0) {
 			throw new UsageError(`missing required: ${missing.map((m) => `--${m}`).join(", ")}`);
@@ -616,7 +622,7 @@ export interface HelpModel {
  *   - writer:   injectWriter fills it from the resolved operator identity
  *   - arrayKey: injectArrayKey derives it from config.block_kinds[].array_key
  */
-const AUTO_SUPPLIED: Record<string, string> = {
+export const AUTO_SUPPLIED: Record<string, string> = {
 	writer: "auto-injected",
 	arrayKey: "auto-derived from --block",
 };

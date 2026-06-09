@@ -740,21 +740,56 @@ export function opRequiredParams(op: OpDefinition): Set<string> {
 
 /**
  * Collect every string-literal text appearing in a TypeScript source snippet, via
- * the AST (ts.createSourceFile, error-tolerant). Used to read the CLI's required-
- * field exemption list out of cli.ts: the required-filter is
- *   `(schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey")`
- * — the exempted param names are exactly the string-literal operands of that
- * `r !== "<lit>"` chain. Parsing the source inherently ignores comments (trivia
- * carries no StringLiteral node). Both quote styles + template literals with no
- * substitution are captured; substitution-bearing templates are ignored (they
- * are not bare literals). The caller intersects the result with the small,
- * known DERIVABLE set, so unrelated literals elsewhere in the file are inert.
+ * the AST (ts.createSourceFile, error-tolerant). A general literal-harvest helper:
+ * both quote styles + template literals with no substitution are captured;
+ * substitution-bearing templates are ignored (they are not bare literals). Parsing
+ * the source inherently ignores comments (trivia carries no StringLiteral node).
+ * Retained for its own unit coverage + general use; the CLI-exemption read now goes
+ * through extractObjectKeys (the canonical AUTO_SUPPLIED keys), not loose literals.
  */
 export function extractStringLiterals(sourceText: string): Set<string> {
 	const sf = ts.createSourceFile("snippet.ts", sourceText, ts.ScriptTarget.Latest, /* setParentNodes */ true);
 	const out = new Set<string>();
 	const visit = (n: ts.Node): void => {
 		if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) out.add(n.text);
+		ts.forEachChild(n, visit);
+	};
+	visit(sf);
+	return out;
+}
+
+/**
+ * Read the KEYS of a named object-literal const out of a TypeScript source snippet,
+ * via the AST (ts.createSourceFile, error-tolerant). Used to read the CLI's required-
+ * field exemption set out of cli.ts: the canonical source is the exported
+ *   `export const AUTO_SUPPLIED: Record<string, string> = { writer: …, arrayKey: … }`
+ * map — its KEYS are exactly the params the CLI auto-supplies post-parse, which the
+ * `parseOpArgs` missing-required exemption + the per-op help synopsis/Flags
+ * annotation both derive from. Reading the keys (not loose string literals) tracks
+ * that real contract source precisely: a key is an identifier (or, defensively, a
+ * string-literal) property name, NOT a value. Finds the `const`/`export const`
+ * whose name === constName and whose initializer is an object literal; returns its
+ * property-name keys (PropertyAssignment + ShorthandPropertyAssignment). Returns an
+ * empty Set when no such const is present.
+ */
+export function extractObjectKeys(sourceText: string, constName: string): Set<string> {
+	const sf = ts.createSourceFile("snippet.ts", sourceText, ts.ScriptTarget.Latest, /* setParentNodes */ true);
+	const out = new Set<string>();
+	const visit = (n: ts.Node): void => {
+		if (
+			ts.isVariableDeclaration(n) &&
+			ts.isIdentifier(n.name) &&
+			n.name.text === constName &&
+			n.initializer &&
+			ts.isObjectLiteralExpression(n.initializer)
+		) {
+			for (const prop of n.initializer.properties) {
+				if (ts.isPropertyAssignment(prop) || ts.isShorthandPropertyAssignment(prop)) {
+					if (ts.isIdentifier(prop.name)) out.add(prop.name.text);
+					else if (ts.isStringLiteral(prop.name)) out.add(prop.name.text);
+				}
+			}
+		}
 		ts.forEachChild(n, visit);
 	};
 	visit(sf);
@@ -769,9 +804,10 @@ export function extractStringLiterals(sourceText: string): Set<string> {
  * required-field check; otherwise the CLI rejects a caller who passes only the
  * surface flag (e.g. `--block`) even though the value is derivable post-parse
  * (injectArrayKey). The CLI exemptions come from `cliExemptions` — at the top-
- * level call this is parsed out of cli.ts's required-filter
- *   `(schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey")`
- * via extractStringLiterals(cli source) ∩ DERIVABLE-relevant names.
+ * level call this is the KEYS of cli.ts's exported `AUTO_SUPPLIED` object literal
+ * (the canonical single source the CLI's parseOpArgs missing-required exemption +
+ * the per-op help synopsis/Flags annotation both derive from), read via
+ * extractObjectKeys(cli source, "AUTO_SUPPLIED").
  *
  * Two assertions:
  *   - GLOBAL: every member of DERIVABLE must be in cliExemptions. If `arrayKey`
@@ -1042,7 +1078,7 @@ async function main(): Promise<number> {
 		console.error(`parity-check: CLI source not found: ${cliFile} — cannot enforce op↔CLI input parity`);
 		return 1;
 	}
-	const cliExemptions = extractStringLiterals(readFileSync(cliFile, "utf-8"));
+	const cliExemptions = extractObjectKeys(readFileSync(cliFile, "utf-8"), "AUTO_SUPPLIED");
 	const requiredButDerivable = checkRequiredButDerivable(cliExemptions);
 
 	// op ↔ CLI output parity: read-schema --path through both surfaces.

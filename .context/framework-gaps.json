@@ -1894,7 +1894,7 @@
     {
       "id": "FGAP-062",
       "title": "pi-context --help top-level listing is an unscannable flat dump — full LLM tool-descriptions, no grouping, promptSnippet unused, pi-bound undiscoverable",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "description": "deriveTopHelp (cli.ts:406-422) renders one flat, registration-ordered line per useOps entry (49 ops) under a single 'Commands:' header, sourcing op.description — the full multi-sentence LLM-facing tool description. Its .split(\"\\n\")[0] summary attempt is inert: op descriptions are newline-free string concatenations, so the entire paragraph renders (several lines wide for ops like context-bootstrap-state / write-schema-migration). The purpose-built one-line field promptSnippet (present on all 49 OpDefinitions, ops-registry.ts:205) is never read; the name-prefix grouping signal (context-* / read-* / write-* / *-relation(s) / *-block(-nested)-item / roadmap) is unused; there is no sort. pi-bound (a hardcoded process-mode string branch, cli.ts:444, outside the ops registry) is structurally unreachable by the registry-only generator, so a real working command is undiscoverable via --help. Per-op help (deriveHelp, cli.ts:382-403) renders flags + per-field types/descriptions correctly — the defect is the top-level listing only. Reproduce via: pi-context --help (also reached by pi-context with no args, or any unknown command).",
@@ -1926,11 +1926,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "6e97fee15ea7746c3535e2ce37a4b16e",
-      "content_hash": "a657ba5d13e703c56e12545f1bb1aed0e80d823d4740ecef0aff73805a692dab"
+      "content_hash": "003031c7011a5a83b8df264520b4413454b6cf28dd819475a5956a78fd09bbe6",
+      "closed_by": "VER-034 / TASK-040 — deriveTopHelp rewritten as a grouped scannable listing (7 read-before-mutate groups via an exhaustive+disjoint groupForOp classifier over all 50 use-ops, alphabetical within group), one-liner sourced from promptSnippet (truncated at a 72-char word boundary, not the full op.description), pi-bound surfaced under a Process modes section. Additive dispatch-layer in cli.ts; ops frozen.",
+      "closed_at": "2026-06-09T00:00:00.000Z",
+      "content_parent": "a657ba5d13e703c56e12545f1bb1aed0e80d823d4740ecef0aff73805a692dab"
     },
     {
       "title": "pi-context CLI has no --version / -v command — a globally-installed CLI cannot report its own version",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "description": "main() (cli.ts:437-545) has no version branch; `pi-context --version` and `pi-context -v` fall through to resolveOp and are rejected as `unknown command: --version` (exit 2) followed by the help dump. The package ships a `bin` and is globally installed on PATH, yet the command cannot report its own version. `-h`/`--help` is handled (cli.ts:440), but `-v`/`--version` has no equivalent.",
@@ -1953,7 +1956,10 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-063",
       "oid": "8ce58a2be65cf437b2c58bc5b4986c14",
-      "content_hash": "aa7d93cc533eff304124f834fed5525ae40202d3208992b07cbd18297a7a0437"
+      "content_hash": "c0c3c3d574ffabfdee08b1cdfcfe546ce848fe49ba5930baf89ac7c6bac5bf83",
+      "closed_by": "VER-034 / TASK-040 — a --version/-v branch in main() before resolveOp prints pi-context <version> to stdout exit 0; the version is read build-safe at module load from the shipped package.json via fileURLToPath(new URL(../package.json, import.meta.url)), resolving from dist/cli.js (matches package.json 0.30.0, not hardcoded).",
+      "closed_at": "2026-06-09T00:00:00.000Z",
+      "content_parent": "aa7d93cc533eff304124f834fed5525ae40202d3208992b07cbd18297a7a0437"
     },
     {
       "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",

@@ -859,6 +859,37 @@
       ],
       "oid": "e85204603f9c176c956f59f3f532d24f",
       "content_hash": "03adf0a6eae3088384a742249ab36fa55e76179a3dd96a19be2c5acaf3026eca"
+    },
+    {
+      "id": "VER-034",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-040 (FEAT-008, the final top-level-dispatch slice) verified end-to-end. Closes FGAP-062 (top-level --help was a flat dump of full op.description, no grouping/sort, promptSnippet unused, pi-bound undiscoverable) + FGAP-063 (no --version/-v). Confined to packages/pi-context-cli/src/cli.ts (cbe265b): (A) deriveTopHelp rewritten as a grouped scannable listing — a pure groupForOp classifier (ordered first-match-wins HELP_GROUPS, exhaustive+disjoint over all 50 surface:use ops, throws on no-match) partitions into 7 sections in read-before-mutate order (Read & query 21, Block writes 8, Relations 4, Schema & config 6, Substrate lifecycle 5, Workflow 6, Process modes=pi-bound), ops alphabetical within group, one-liner sourced from promptSnippet ?? description and truncated uniformly at a 72-char word boundary with ellipsis, pi-bound surfaced under Process modes, --version/-v added to the global-flags block; (B) a --version/-v branch in main() before resolveOp printing 'pi-context <version>' to stdout exit 0, the version read build-safe at module load via fileURLToPath(new URL('../package.json', import.meta.url)) (resolves from dist/cli.js, mirrors pi-bound.ts; NOT a TS JSON import that would break rootDir:./src). Additive dispatch-layer: ops-registry.ts byte-unchanged (git show cbe265b -- ops-registry.ts empty), no op promptSnippet/description edited, the op<->CLI parity gate (TASK-019) stays green. Runtime demo against the rebuilt global pi-context bin: --help renders the 7 grouped sections sourced from promptSnippet with pi-bound under Process modes; no-args byte-identical to --help (exit 0); --version and -v both print 'pi-context 0.30.0' (matches package.json) exit 0; bogus command -> 'unknown command' on stderr exit 2, 0 stdout (unchanged); read-block-item --help (per-op deriveHelp) still works. build+check+full-test green (fail 0 all packages); new cli.test.ts tests (group headers, representative slotting, the exhaustive-disjoint drift-guard, --version/-v, --help round-trip) pass; the existing useOps auto-track test still passes; parity-check.ts exit 0. Fresh adversarial probe PASS zero defects: scope confined + ops frozen (independently re-derived ops-registry empty diff + promptSnippet untouched); the classifier independently re-enumerated exhaustive+disjoint over all 50 use-ops with the edge cases holding (context-validate-relations under Read not Relations; the 4 *-relation(s) under Relations not Block writes; context-roadmap-* under Workflow); pi-bound one-liner accurate to runPiBound; promptSnippet truncation safe (long snippets render as single truncated lines, no wrapped paragraphs); --version build-safe + equals package.json + not hardcoded; no dispatch regression; the drift-guard test genuine (groupForOp throws on no-match). The grouped classifier is the same name-prefix partition TASK-042 will reuse for the per-op RELATED hint (one grouping source, parity-guarded).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-062 closed: --help / no-args prints a scannable, grouped listing sourcing promptSnippet (not the full op.description), and every command including process modes (pi-bound) is listed",
+          "status": "passed",
+          "evidence": "deriveTopHelp renders 7 read-before-mutate groups, all 50 use-ops exactly once, promptSnippet-sourced + truncated, pi-bound under Process modes; no-args identical to --help"
+        },
+        {
+          "criterion": "FGAP-063 closed: --version and -v print the package version and exit 0 (no fall-through to unknown-command)",
+          "status": "passed",
+          "evidence": "--version and -v both print 'pi-context 0.30.0' (matches package.json) to stdout exit 0; build-safe import.meta.url-relative read from dist"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged; the change is confined to cli.ts dispatch",
+          "status": "passed",
+          "evidence": "git show cbe265b --stat = cli.ts + cli.test.ts + CHANGELOG + README only; ops-registry.ts diff empty; no op promptSnippet/description edited; parity-check.ts green"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo driving the CLI directly + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; runtime demo against the rebuilt global bin (--help grouped, --version, no-args, bogus exit 2); fresh adversarial probe PASS zero defects"
+        }
+      ],
+      "oid": "ab05f658e0723b60e1e6a42ab7ec1789",
+      "content_hash": "a19850f3dac24cc9731bf4e51c2c76966d03e295c78cd9b605b1c28073f80a44"
     }
   ]
 }

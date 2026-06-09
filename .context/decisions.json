@@ -593,6 +593,55 @@
       "oid": "0fb56e117810db8c6537afbf1361236e",
       "content_hash": "368e8fa14466a993a4572e74f3e9114672e6268f943d58f5407cb2453365b331",
       "content_parent": "bcf22354601aa11045aedc40e0ea9079ae43453eb1c6957cdcb3c631644fb035"
+    },
+    {
+      "title": "pi-context update transactional model: per-component, not whole-run-atomic",
+      "status": "open",
+      "context": "In-pi update usage surfaced that a live `update` reporting a schema as `blocked` had still mutated config.json — the post-loop config-registry propagation (packages/pi-context/src/index.ts:1391-1421) is not gated on the schema-loop outcome and calls writeConfig when !dryRun regardless of a blocked sibling schema (reproduced: R-0012). The substrate does not decide whether `update` is atomic across the schema loop and the registry propagation: DEC-0017 decides per-schema independence across sibling schemas ('never hard-blocks the remaining schemas') but not the registry-vs-blocked coupling; issue-001 scopes resyncSchema's byte-exact rollback to the single schema's file + migrations.json; VER-025 frames the propagation's try/catch as isolating the loop FROM the merge, never the inverse; FEAT-006's tasks leave the coupling, dry/live parity, and rollback scope unspecified, and TASK-038 framed the registry slice as a deliberate 'disjoint seam … Independent of the schema-merge slices'. So per-component application is true by construction but never decided. update does two things with opposite risk profiles: additive vocabulary propagation (new relation_types/block_kinds/invariants/lenses — non-destructive, independently useful, unusable if withheld) and schema version migration (touches block-item data, the only step that can block).",
+      "decision": "pi-context update applies PER-COMPONENT, not whole-run-atomic. A schema that returns `blocked` does not withhold the additive config-registry propagation, nor the other schemas' resyncs/merges. The safety boundary is the existing per-schema byte-exact rollback (resyncSchema restores the blocked schema's file and its migrations.json decls and leaves its block untouched); additive vocabulary propagation sits outside that boundary and proceeds. Rationale: additive vocabulary is non-destructive and independently useful, so withholding it because an unrelated schema's migration could not validate is all cost and no benefit — the literal extension of DEC-0017's 'never hard-blocks the remaining schemas' from sibling schemas to the registry step. update is NOT made atomic. This decision affirms the current registry-propagation-on-blocked behavior as intended; it carries the consequence that the partial application MUST be made legible (a blocked result must surface what applied and what blocked), tracked as a separate framework-gap.",
+      "options_considered": [
+        {
+          "label": "Per-component (proposed)",
+          "description": "Each component applies independently: a blocked schema rolls back only itself (byte-exact, per-schema); sibling schemas resync/merge; the additive registry propagation writes regardless. The report must make the partiality legible.",
+          "tradeoffs": "Maximizes delivered value (safe vocabulary always lands) and extends an already-enacted principle (DEC-0017). Cost: callers cannot assume a `blocked` run left config unchanged, so the result must report partiality clearly — a new legibility requirement."
+        },
+        {
+          "label": "Whole-run-atomic",
+          "description": "Any block anywhere in the run → nothing persists: config-registry additions and every schema resync/merge roll back together, leaving the substrate byte-identical to pre-call.",
+          "tradeoffs": "Simple mental model ('blocked means nothing happened'). Cost: withholds safe, wanted, non-destructive vocabulary because of an unrelated migration failure; requires a cross-file transaction (config + N schemas + migrations.json) the code does not have; contradicts DEC-0017's sibling-independence."
+        }
+      ],
+      "consequences": [
+        "The registry-propagation-despite-blocked behavior (index.ts:1391-1421) is affirmed as intended on enactment — not a defect to remove.",
+        "A dependent requirement follows: the partial application must be LEGIBLE — a `blocked` result must surface what applied (registryAdditions) and what was refused and why (the blocked schema + its AJV error) — filed as its own framework-gap so a blocked run never reads as a no-op.",
+        "Callers of update may not assume a `blocked` run left config.json unchanged; the transactional contract is per-component and must be documented on the update surface.",
+        "Extends DEC-0017 from sibling-schema independence to the schema-loop / registry-propagation seam."
+      ],
+      "references": [
+        {
+          "label": "DEC-0017 — never hard-blocks the remaining schemas (the precedent this extends)",
+          "path": ".context/decisions.json"
+        },
+        {
+          "label": "R-0012 — empirical reproduction + UX-intention grounding",
+          "path": ".context/research.json"
+        },
+        {
+          "label": "registry propagation ungated on schema outcome, !dryRun writeConfig",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "1391-1421"
+        },
+        {
+          "label": "resyncSchema per-schema byte-exact rollback (the safety boundary)",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "599-641"
+        }
+      ],
+      "id": "DEC-0018",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T22:20:00.556Z",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "content_hash": "697ea5dee9c8564b174147ec8456237d9e9353d87563895bab9ba86e7ffa2f75"
     }
   ]
 }

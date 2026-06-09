@@ -4299,5 +4299,109 @@
       "refname": "TASK-043"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bd4314b1ececae87000027e9f73f7ca6",
+      "refname": "R-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
+      "refname": "FGAP-066"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bd4314b1ececae87000027e9f73f7ca6",
+      "refname": "R-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ce550805023c174d4626b03da56911a7",
+      "refname": "FGAP-076"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bd4314b1ececae87000027e9f73f7ca6",
+      "refname": "R-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "refname": "DEC-0018"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
+      "refname": "TASK-046"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
+      "refname": "FGAP-066"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "refname": "DEC-0018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0fb56e117810db8c6537afbf1361236e",
+      "refname": "DEC-0017"
+    },
+    "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "refname": "DEC-0018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ce550805023c174d4626b03da56911a7",
+      "refname": "FGAP-076"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "refname": "DEC-0018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "refname": "derive-decisions-from-facts"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
+      "refname": "TASK-046"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

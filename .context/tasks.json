@@ -295,25 +295,27 @@
       "content_parent": "7e63a5e8ac35acb12b7d3152a380037ff2ba2e36df93f8870bef95b092f92eb5"
     },
     {
-      "description": "Behavioral parity gate — the regression guard implementing R-0003 section F. Extends scripts/parity-check.ts with, AFTER the existing static checks: a script<->op name map (5 twins have mismatched names; 29 of 48 use-ops are currently invisible to the exact-name keying at parity-check.ts:748), fixtures + an execution harness, a required-but-derivable assertion (FAIL if an op's required param is one its script twin derives — catches the FGAP-019 class), and an output-shape diff (op --json vs script --format json on the same addressed read — the read-schema --path fixture catches the FGAP-020 class). Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; it is the durability mechanism that locks in TASK orders 1-4.",
-      "status": "planned",
+      "description": "Behavioral parity gate — the regression guard that locks in TASK-015/016/017/018. Asserts in-pi op <-> reflecting-CLI parity: the CLI is a faithful ADDITIVE reflection of the op-registry. The orchestrator scripts are composers/launch-support, NOT a parity reference; the two canonical routes are the in-pi op and the reflecting CLI. Extends scripts/parity-check.ts AFTER its existing hard static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) with two new HARD op<->CLI checks, and RETIRES the soft op<->orchestrator-script comparison (checkDualSurfaceParity + its scriptsDir/DUAL_SURFACE machinery). Check 1 (required-but-derivable, FGAP-019 class): parse the CLI required-filter exemptions from cli.ts source and assert every config-derivable required op param (arrayKey, derived by injectArrayKey) is exempted by the CLI — FAILs if arrayKey is dropped from the filter or a new config-derivable required param is added without an exemption. Check 2 (output-shape, FGAP-020/027 class): run read-schema --path at an object node via BOTH routes in-process (the op run() and the CLI main() --json) on a fixture substrate and assert the op's r.read.data equals the CLI's output.data (boundedJsonOutput unwraps {read} so output === r.read) — FAILs on any op/CLI output divergence. In-process harness (not a subprocess of dist/bin.js) because husky pre-commit does not build dist. Folds into the same violations[]/exit-1 aggregation; main() becomes async. Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; durability mechanism.",
+      "status": "in-progress",
       "files": [
         "scripts/parity-check.ts",
         "test fixtures (new fixture substrate)"
       ],
       "acceptance_criteria": [
-        "The gate FAILs on a reintroduced required-but-derivable param (FGAP-019 class)",
-        "The gate FAILs on an op/script output-shape divergence (read-schema --path fixture, FGAP-020 class)",
-        "The script<->op name map covers the 5 mismatched twins; the 29 previously-invisible ops are compared where a twin exists",
-        "Runs as a husky/CI phase after the static checks (same exit-1 aggregation)",
-        "Green on the post-orders-1..4 tree; canonical pipeline green"
+        "The gate FAILs on a reintroduced required-but-derivable param (the CLI no longer exempts a config-derivable required op param) — FGAP-019 class",
+        "The gate FAILs on an in-pi-op vs reflecting-CLI output-shape divergence on the read-schema --path fixture — FGAP-020/027 class",
+        "The soft op<->orchestrator-script comparison (checkDualSurfaceParity) is retired; no op<->script parity reference remains (scripts off the table)",
+        "The gate's new checks are pure/unit-testable and PROVEN to bite via negative fixtures in parity-check.test.ts; the real-tree integration is green",
+        "Runs as the existing husky/CI parity-check phase after the static checks (same exit-1 aggregation); green on the current tree",
+        "Canonical pipeline green (incl. runtime demo of the gate + a bite demonstration + fresh adversarial audit)"
       ],
-      "notes": "Release-group: cli-parity (NEXT) | order 5/5 | regression guard (closes no gap directly) | depends on orders 1-4 (asserts their post-fix state)",
+      "notes": "Release-group: cli-parity (FEAT-008) | order 5/6 | regression guard (closes no gap) | depends on orders 1-4 (asserts their post-fix state) | REFRAMED from the 2026-06-05 op<->script premise (R-0003 cli-ops-scripts-parity-survey, now superseded) to op<->CLI: the orchestrator scripts are off the table as a parity reference",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-019",
       "oid": "a68e51861de5dd7113768b3052d18661",
-      "content_hash": "a4d5a06899037ef1dc7e42d9a5274b9b47f1ccc9d3d47ec3b8c1948f1a812a08"
+      "content_hash": "aeaca5d4fb215deac92b413de57d8b6956c946c81937c05ae67717a7ce6407b0",
+      "content_parent": "f46995577149a2e350db061653b70b59059ef4146b3a7f5757c34e604efaca4d"
     },
     {
       "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals; the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",

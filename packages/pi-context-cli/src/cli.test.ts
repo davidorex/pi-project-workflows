@@ -8,8 +8,10 @@ import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { boundedJsonOutput, type OpResult, ops, renderOpResultText } from "@davidorex/pi-context/ops";
 import { structureForRead } from "@davidorex/pi-context/read-element";
 import {
+	AUTO_SUPPLIED,
 	authDecision,
 	buildCliDispatchContext,
+	buildHelpModel,
 	deriveHelp,
 	deriveTopHelp,
 	fieldType,
@@ -314,6 +316,172 @@ test("deriveHelp renders a string-enum field's choices as the TYPE tag", () => {
 	assert.ok(op);
 	const help = deriveHelp(op);
 	assert.ok(help.includes("--op <eq|neq|in|matches>"));
+});
+
+// ── TASK-042: best-of-breed per-op help template ─────────────────────────────
+test("deriveHelp renders SYNOPSIS, EXAMPLES, RELATED and the footer", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	assert.ok(help.includes("SYNOPSIS"));
+	assert.ok(help.includes("pi-context append-block-item"));
+	assert.ok(help.includes("EXAMPLES"));
+	// The authored example substring must surface verbatim.
+	assert.ok(help.includes("--block framework-gaps --arrayKey gaps --autoId true"));
+	assert.ok(help.includes("RELATED"));
+	assert.ok(help.includes("update-block-item"));
+	assert.ok(help.includes("for machine-readable help."));
+});
+
+test("deriveHelp synopsis brackets arrayKey as optional (auto-derived); block/item required", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	const synopsisLine = help.split("\n").find((l) => l.includes("pi-context append-block-item"));
+	assert.ok(synopsisLine);
+	// arrayKey is schema-required but auto-derived → bracketed-optional,
+	// never a bare required token.
+	assert.ok(synopsisLine.includes("[--arrayKey"));
+	assert.ok(!/(?<!\[)--arrayKey </.test(synopsisLine));
+	// A genuinely-required field stays unbracketed.
+	assert.ok(synopsisLine.includes("--block <string>"));
+	assert.ok(!synopsisLine.includes("[--block"));
+});
+
+// ── TASK-042 iterate-to-zero: auto-supplied Flags-line annotation ────────────
+// A CLI-auto-supplied param (arrayKey/writer) is schema-required, so the Flags
+// block shows (required) — reconciled with the bracketed-optional synopsis by
+// appending the provenance phrase. Non-auto-supplied required params keep a plain
+// (required) with NO marker.
+test("deriveHelp annotates the arrayKey Flags line auto-derived; block stays a plain (required)", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	// Flags-block lines are indented `  --<name> <type>  (...)`; the SYNOPSIS line
+	// also names the flags, so select the indented Flags-block line by its tag.
+	const arrayKeyLine = help.split("\n").find((l) => l.startsWith("  --arrayKey <"));
+	assert.ok(arrayKeyLine);
+	assert.ok(arrayKeyLine.includes("auto-derived from --block"));
+	assert.ok(arrayKeyLine.includes("(required; auto-derived from --block)"));
+	// A non-exempt required field carries no provenance marker.
+	const blockLine = help.split("\n").find((l) => l.startsWith("  --block <"));
+	assert.ok(blockLine);
+	assert.ok(blockLine.includes("(required)"));
+	assert.ok(!blockLine.includes("auto-derived"));
+	assert.ok(!blockLine.includes("auto-injected"));
+});
+
+test("deriveHelp annotates the writer Flags line auto-injected on promote-item", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	const writerLine = help.split("\n").find((l) => l.startsWith("  --writer <"));
+	assert.ok(writerLine);
+	assert.ok(writerLine.includes("auto-injected"));
+	assert.ok(writerLine.includes("(required; auto-injected)"));
+});
+
+// ── TASK-042 iterate-to-zero: auto-supplied carried in the help model ────────
+test("buildHelpModel carries autoSupplied on arrayKey (schema-required) and omits it on block", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	const arrayKeyFlag = model.flags.find((f) => f.name === "arrayKey");
+	assert.ok(arrayKeyFlag);
+	assert.equal(arrayKeyFlag.autoSupplied, "auto-derived from --block");
+	assert.equal(arrayKeyFlag.required, true);
+	const blockFlag = model.flags.find((f) => f.name === "block");
+	assert.ok(blockFlag);
+	assert.equal(blockFlag.autoSupplied, undefined);
+});
+
+test("buildHelpModel carries autoSupplied on writer for promote-item", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	const writerFlag = model.flags.find((f) => f.name === "writer");
+	assert.ok(writerFlag);
+	assert.equal(writerFlag.autoSupplied, "auto-injected");
+});
+
+test("per-op --help --format json carries autoSupplied on arrayKey, not on block", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help", "--format", "json"]);
+	assert.equal(code, 0);
+	const m = JSON.parse(out);
+	const arrayKeyFlag = m.flags.find((f: { name: string }) => f.name === "arrayKey");
+	assert.ok(arrayKeyFlag);
+	assert.equal(arrayKeyFlag.autoSupplied, "auto-derived from --block");
+	const blockFlag = m.flags.find((f: { name: string }) => f.name === "block");
+	assert.ok(blockFlag);
+	assert.equal(blockFlag.autoSupplied, undefined);
+});
+
+// ── TASK-042: examples-coverage guard ────────────────────────────────────────
+// Every surfaced op MUST carry ≥1 authored example. A future use-op added without
+// examples FAILS here — the guard against a synthetic/empty floor.
+test("every use-op carries at least one authored example", () => {
+	for (const op of useOps) {
+		assert.ok(
+			Array.isArray(op.examples) && op.examples.length > 0,
+			`use-op '${op.name}' has no examples — author a pi-context invocation`,
+		);
+	}
+});
+
+// ── TASK-042: buildHelpModel pure unit ───────────────────────────────────────
+test("buildHelpModel treats arrayKey as non-synopsis-required and derives related from the help group", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	assert.equal(model.name, "append-block-item");
+	assert.ok(model.synopsis.startsWith("pi-context append-block-item"));
+	// arrayKey: schema-required but auto-derived → bracketed-optional in the synopsis.
+	assert.ok(model.synopsis.includes("[--arrayKey"));
+	assert.ok(!/(?<!\[)--arrayKey </.test(model.synopsis));
+	// block IS synopsis-required (unbracketed, leads the synopsis).
+	assert.ok(/pi-context append-block-item --block <string>/.test(model.synopsis));
+	// related == sorted same-group siblings, self excluded.
+	const expectedRelated = useOps
+		.filter((o) => o.name !== "append-block-item" && groupForOp(o.name) === groupForOp("append-block-item"))
+		.map((o) => o.name)
+		.sort();
+	assert.deepEqual(model.related, expectedRelated);
+	assert.ok(model.related.includes("update-block-item"));
+	assert.ok(!model.related.includes("append-block-item"));
+});
+
+// ── TASK-042: writer-exemption applies where the op genuinely declares writer ─
+// promote-item declares a `writer` property in its op schema (ops-registry.ts),
+// so the auto-inject exemption (`&& f !== "writer"`) must render it
+// bracketed-optional rather than as a bare required token.
+test("buildHelpModel brackets writer as optional on promote-item (which declares writer)", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const m = buildHelpModel(op);
+	assert.ok(m.synopsis.includes("[--writer"));
+});
+
+// ── TASK-042: machine-readable help (--help --format json) ───────────────────
+test("per-op --help --format json emits the HelpModel", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help", "--format", "json"]);
+	assert.equal(code, 0);
+	const m = JSON.parse(out);
+	assert.equal(m.name, "append-block-item");
+	assert.ok(typeof m.synopsis === "string" && m.synopsis.startsWith("pi-context append-block-item"));
+	const blockFlag = m.flags.find((f: { name: string }) => f.name === "block");
+	assert.deepEqual(blockFlag, { name: "block", type: "string", required: true, description: blockFlag.description });
+	assert.equal(blockFlag.type, "string");
+	assert.equal(blockFlag.required, true);
+	assert.ok(Array.isArray(m.examples) && m.examples.length >= 1);
+	assert.ok(Array.isArray(m.related) && m.related.includes("update-block-item"));
+});
+
+test("per-op --help text round-trip exits 0 with SYNOPSIS/EXAMPLES/RELATED", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help"]);
+	assert.equal(code, 0);
+	assert.ok(out.includes("SYNOPSIS"));
+	assert.ok(out.includes("EXAMPLES"));
+	assert.ok(out.includes("RELATED"));
 });
 
 // ── DispatchContext threading (TASK-006) ─────────────────────────────────────
@@ -902,6 +1070,52 @@ test("parseOpArgs accepts a block-mutation op without --arrayKey (FGAP-019 requi
 	const parsed = parseOpArgs(op, ["--block", "framework-gaps", "--item", "{}"]);
 	assert.equal("arrayKey" in parsed.params, false);
 	assert.equal(parsed.params.block, "framework-gaps");
+});
+
+test("parseOpArgs missing-required check exempts every AUTO_SUPPLIED key (single-source coupling)", () => {
+	// The :434 missing-required filter derives from AUTO_SUPPLIED, so any key in the map
+	// is auto-exempted. This guard confirms the exemption holds for every key — adding a
+	// key to AUTO_SUPPLIED (and its injector) cannot leave that param parser-rejected as
+	// missing while the help surfaces it as auto-supplied/bracketed-optional.
+	// Each AUTO_SUPPLIED key maps to a representative op that DECLARES it required; the
+	// other declared-required params are supplied so only the auto-supplied key is omitted.
+	const reps: Record<string, { op: string; args: string[] }> = {
+		// append-block-item declares arrayKey required; omit --arrayKey, supply the rest.
+		arrayKey: { op: "append-block-item", args: ["--block", "framework-gaps", "--item", "{}"] },
+		// write-schema-migration declares writer required; omit --writer, supply the rest.
+		writer: {
+			op: "write-schema-migration",
+			args: [
+				"--operation",
+				"create",
+				"--schemaName",
+				"tasks",
+				"--fromVersion",
+				"1.0.0",
+				"--toVersion",
+				"1.1.0",
+				"--kind",
+				"identity",
+			],
+		},
+	};
+	let coveredWriter = false;
+	let coveredArrayKey = false;
+	for (const key of Object.keys(AUTO_SUPPLIED)) {
+		const rep = reps[key];
+		// A key with no representative declaring-op binding is skipped (future-proofing);
+		// writer + arrayKey MUST be covered (asserted below).
+		if (!rep) continue;
+		const op = resolveOp(rep.op);
+		assert.ok(op, `representative op '${rep.op}' for AUTO_SUPPLIED key '${key}' must resolve`);
+		// parseOpArgs must NOT throw a missing-required UsageError for the omitted key.
+		const parsed = parseOpArgs(op, rep.args);
+		assert.equal(key in parsed.params, false, `auto-supplied key '${key}' must not be present pre-injection`);
+		if (key === "writer") coveredWriter = true;
+		if (key === "arrayKey") coveredArrayKey = true;
+	}
+	assert.ok(coveredWriter, "AUTO_SUPPLIED must include and this test must cover 'writer'");
+	assert.ok(coveredArrayKey, "AUTO_SUPPLIED must include and this test must cover 'arrayKey'");
 });
 
 test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ array_key) (FGAP-019)", () => {

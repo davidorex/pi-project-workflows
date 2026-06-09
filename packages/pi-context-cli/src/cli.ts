@@ -422,16 +422,22 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		out.params.value = out.params.value.split(",");
 	}
 
-	// Required-field check — `writer` is exempt (schema-driven auto-injected after
-	// parse when the op declares it and none was passed); `arrayKey` is exempt too —
-	// injectArrayKey derives it from config.block_kinds[].array_key for the
-	// block-mutation ops after parse (FGAP-019), so a `--block` without an explicit
-	// `--arrayKey` must not be flagged missing here.
+	// Required-field check — the exemption set derives from AUTO_SUPPLIED, the single
+	// source for the CLI auto-supplied param contract: a key there is auto-supplied, so
+	// it is exempt from this missing-required check, rendered bracketed-optional in the
+	// per-op synopsis (isSynopsisRequired), and `autoSupplied`-annotated in the Flags
+	// block. Concretely today: `writer` (injectWriter fills it from the resolved operator
+	// identity after parse) and `arrayKey` (injectArrayKey derives it from
+	// config.block_kinds[].array_key for the block-mutation ops after parse, FGAP-019, so
+	// a `--block` without an explicit `--arrayKey` must not be flagged missing here).
+	// Adding a new AUTO_SUPPLIED key also requires adding its injector (injectWriter /
+	// injectArrayKey-style): the map single-sources the exemption/help CONTRACT, not the
+	// value-supply wiring.
 	// `--help` and `--show-schema` exit before any op invocation and need no item, so
 	// the required-field check is skipped for them (FGAP-022). `--dryRun` still requires
 	// the op's declared inputs (it validates a prospective item) and so is NOT exempt.
 	if (!out.help && !out.showSchema) {
-		const required = (schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey");
+		const required = (schema.required ?? []).filter((r) => !(r in AUTO_SUPPLIED));
 		const missing = required.filter((r) => !(r in out.params));
 		if (missing.length > 0) {
 			throw new UsageError(`missing required: ${missing.map((m) => `--${m}`).join(", ")}`);
@@ -564,27 +570,159 @@ export function authDecision(op: OpDefinition, opts: { yes: boolean; interactive
 	};
 }
 
-/** Per-op help text: description + one line per declared field. */
-export function deriveHelp(op: OpDefinition): string {
+/**
+ * One flag descriptor in the machine-readable help model (CHANGE 3 / TASK-042).
+ * `type` is the enum-join (`eq|neq|in|matches`) for string-enum fields, else the
+ * coarse FieldType tag. `required` reflects the op's declared schema `required` set
+ * verbatim (writer/arrayKey ARE marked required here — schema-truth). `autoSupplied`
+ * carries the AUTO_SUPPLIED provenance phrase when the CLI fills the param after
+ * parse (writer / arrayKey), else omitted — the Flags block + json help render it as
+ * `(required; <autoSupplied>)` so a schema-required-but-CLI-supplied param is not
+ * mistaken for one the caller must pass.
+ */
+export interface HelpFlag {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+	autoSupplied?: string;
+}
+
+/**
+ * Structured per-op help model — the single source both the text template
+ * (deriveHelp) and the `--help --format json` machine help render from.
+ *
+ * `synopsis` treats `writer` and `arrayKey` as OPTIONAL even when the schema lists
+ * them required, because both are auto-injected after parse (writer from the
+ * resolved operator identity; arrayKey from config.block_kinds[].array_key) — the
+ * same exemption parseOpArgs applies to its required-field check. So a flag is
+ * synopsis-required iff it is schema-required AND not writer/arrayKey.
+ *
+ * `related` is the sibling use-ops sharing this op's top-level help group
+ * (groupForOp — the single grouping source the top-level help uses), name-sorted,
+ * self excluded. pi-bound modes are not useOps, so they never appear.
+ */
+export interface HelpModel {
+	name: string;
+	synopsis: string;
+	summary: string;
+	flags: HelpFlag[];
+	examples: string[];
+	related: string[];
+}
+
+/**
+ * Single source for the CLI's auto-supplied params: a field declared `required`
+ * by the op schema that the CLI fills after parse, so the caller never passes it.
+ * Maps the param name to its provenance phrase. This map is the ONE source for
+ * both the synopsis exemption (bracketed-optional, `isSynopsisRequired`) and the
+ * per-flag `autoSupplied` annotation surfaced in the Flags block + json help —
+ * reconciling the Flags `(required)` schema-truth with the optional synopsis so
+ * neither surface contradicts the other (TASK-042 iterate-to-zero finding):
+ *   - writer:   injectWriter fills it from the resolved operator identity
+ *   - arrayKey: injectArrayKey derives it from config.block_kinds[].array_key
+ */
+export const AUTO_SUPPLIED: Record<string, string> = {
+	writer: "auto-injected",
+	arrayKey: "auto-derived from --block",
+};
+
+/**
+ * A field is synopsis-required iff the schema lists it required AND the CLI does
+ * NOT auto-supply it. Auto-supplied params (AUTO_SUPPLIED) are post-parse fills,
+ * so they render bracketed-optional in the synopsis even when schema-required —
+ * derived from AUTO_SUPPLIED so the exemption and the `autoSupplied` annotation
+ * share one source (no hardcoded writer/arrayKey literal here).
+ */
+function isSynopsisRequired(field: string, schemaRequired: Set<string>): boolean {
+	return schemaRequired.has(field) && !(field in AUTO_SUPPLIED);
+}
+
+/**
+ * Build the structured per-op help model from the op's typebox parameters +
+ * the registry `examples` + the help-group siblings. Pure — no I/O.
+ */
+export function buildHelpModel(op: OpDefinition): HelpModel {
 	const schema = objectSchema(op);
 	const props = schema.properties ?? {};
 	const required = new Set(schema.required ?? []);
-	const lines = [`${op.name} — ${op.description}`, ""];
-	const entries = Object.entries(props);
-	if (entries.length === 0) {
+
+	const flags: HelpFlag[] = Object.entries(props).map(([name, fschema]) => {
+		const vals = stringEnumValues(fschema);
+		return {
+			name,
+			type: vals ? vals.join("|") : fieldType(fschema),
+			required: required.has(name),
+			...(fschema.description ? { description: fschema.description } : {}),
+			...(name in AUTO_SUPPLIED ? { autoSupplied: AUTO_SUPPLIED[name] } : {}),
+		};
+	});
+
+	// Synopsis: required (sans writer/arrayKey) then optional, each `--<f> <type>`,
+	// optionals bracketed. writer/arrayKey fall into the optional/bracketed set.
+	const synReq: string[] = [];
+	const synOpt: string[] = [];
+	for (const f of flags) {
+		const token = `--${f.name} <${f.type}>`;
+		if (isSynopsisRequired(f.name, required)) synReq.push(token);
+		else synOpt.push(`[${token}]`);
+	}
+	const synopsis = [`pi-context ${op.name}`, ...synReq, ...synOpt].join(" ");
+
+	const group = groupForOp(op.name);
+	const related = useOps
+		.filter((o) => o.name !== op.name && groupForOp(o.name) === group)
+		.map((o) => o.name)
+		.sort();
+
+	return {
+		name: op.name,
+		synopsis,
+		summary: op.promptSnippet ?? op.description,
+		flags,
+		examples: op.examples ?? [],
+		related,
+	};
+}
+
+/**
+ * Best-of-breed per-op help text (TASK-042): `<name> — <description>` → SYNOPSIS →
+ * Flags (per-field, enum joins + required/optional + desc; json fields show
+ * `<json | @file>`) → EXAMPLES → RELATED (omitted when empty) → footer →
+ * the Global flags trailer. Plain text.
+ */
+export function deriveHelp(op: OpDefinition): string {
+	const model = buildHelpModel(op);
+	const lines = [`${op.name} — ${op.description}`, "", "SYNOPSIS", `  ${model.synopsis}`, ""];
+
+	if (model.flags.length === 0) {
 		lines.push("  (no parameters)");
 	} else {
 		lines.push("Flags:");
-		for (const [field, fschema] of entries) {
-			const vals = stringEnumValues(fschema);
-			const t = vals ? vals.join("|") : fieldType(fschema);
-			const req = required.has(field) ? "required" : "optional";
-			const desc = fschema.description ? ` — ${fschema.description}` : "";
-			lines.push(`  --${field} <${t}>  (${req})${desc}`);
+		for (const f of model.flags) {
+			const typeShown = f.type === "json" ? "json | @file" : f.type;
+			// required/optional is schema-truth; an auto-supplied param appends its
+			// provenance (`required; auto-derived from --block`) so the (required) tag
+			// here does not contradict the bracketed-optional synopsis.
+			const baseTag = f.required ? "required" : "optional";
+			const tag = f.autoSupplied ? `${baseTag}; ${f.autoSupplied}` : baseTag;
+			const desc = f.description ? ` — ${f.description}` : "";
+			lines.push(`  --${f.name} <${typeShown}>  (${tag})${desc}`);
 		}
 	}
+
+	if (model.examples.length > 0) {
+		lines.push("", "EXAMPLES");
+		for (const ex of model.examples) lines.push(`  ${ex}`);
+	}
+
+	if (model.related.length > 0) {
+		lines.push("", "RELATED", `  ${model.related.join("  ")}`);
+	}
+
 	lines.push(
 		"",
+		`Run 'pi-context --help' for all commands; '${op.name} --help --format json' for machine-readable help.`,
 		"Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --show-schema  --dry-run  --help",
 	);
 	return lines.join("\n");
@@ -837,7 +975,15 @@ export async function main(argv: string[]): Promise<number> {
 	}
 
 	if (parsed.help) {
-		process.stdout.write(`${deriveHelp(op)}\n`);
+		// `--help --format json` (or `--help --json`) emits the machine-readable
+		// HelpModel; otherwise the text template. table → text fallback (only json
+		// diverges). parsed.format/parsed.json are already populated by parseOpArgs.
+		const helpFormat = parsed.format ?? (parsed.json ? "json" : "text");
+		if (helpFormat === "json") {
+			process.stdout.write(`${JSON.stringify(buildHelpModel(op))}\n`);
+		} else {
+			process.stdout.write(`${deriveHelp(op)}\n`);
+		}
 		return 0;
 	}
 

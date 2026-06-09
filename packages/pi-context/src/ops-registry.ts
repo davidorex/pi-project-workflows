@@ -205,6 +205,14 @@ export interface OpDefinition<P = any> {
 	label: string;
 	description: string;
 	promptSnippet?: string;
+	/**
+	 * Copy-pasteable `pi-context <op> …` invocation strings surfaced by the CLI's
+	 * per-op `--help` EXAMPLES section (and its `--format json` machine help). Help
+	 * metadata only — TASK-042 (FEAT-008). Deliberately NOT projected by registerAll
+	 * into the in-pi tool surface (the in-pi tool exposes only
+	 * {name,label,description,promptSnippet,parameters}); `examples` is CLI-help-only.
+	 */
+	examples?: string[];
 	parameters: TSchema;
 	run(cwd: string, params: P, ctx?: DispatchContext): OpResult | Promise<OpResult>;
 	authGated?: boolean;
@@ -245,6 +253,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id.",
 		promptSnippet: "Append items to project blocks (issues, decisions, or any user-defined block)",
+		examples: [
+			`pi-context append-block-item --block framework-gaps --arrayKey gaps --autoId true --item @/tmp/fgap.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
@@ -287,6 +298,9 @@ export const ops: OpDefinition[] = [
 		label: "Update Block Item",
 		description: "Update fields on an item in a project block array. Finds by predicate field match.",
 		promptSnippet: "Update items in project blocks — change status, add details, mark resolved",
+		examples: [
+			`pi-context update-block-item --block tasks --arrayKey tasks --match '{"id":"TASK-001"}' --updates '{"status":"in-progress"}' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block" }),
@@ -328,6 +342,9 @@ export const ops: OpDefinition[] = [
 			"integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate " +
 			"after. Creates relations.json if absent.",
 		promptSnippet: "Create a relation/edge between two items (parent→child under a relation_type)",
+		examples: [
+			`pi-context append-relation --parent VER-001 --child TASK-001 --relation_type verification_verifies_item --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			parent: Type.String({ description: "Canonical id (or lens bin name) of the parent endpoint" }),
 			child: Type.String({ description: "Canonical id of the child endpoint" }),
@@ -380,6 +397,9 @@ export const ops: OpDefinition[] = [
 			"inverse of append-relation (ordinal is NOT part of identity). An absent edge is an idempotent no-op. " +
 			"Reference integrity is NOT checked here — run context-validate after if the removal changes resolvability.",
 		promptSnippet: "Remove a relation/edge between two items (the inverse of append-relation)",
+		examples: [
+			`pi-context remove-relation --parent VER-001 --child TASK-001 --relation_type verification_verifies_item --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			parent: Type.String({ description: "Canonical id (or lens bin name) of the parent endpoint" }),
 			child: Type.String({ description: "Canonical id of the child endpoint" }),
@@ -424,6 +444,9 @@ export const ops: OpDefinition[] = [
 			"the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of " +
 			"the new edge. Reference integrity is NOT checked here — run context-validate after.",
 		promptSnippet: "Atomically swap one relation/edge for another in a single write",
+		examples: [
+			`pi-context replace-relation --old_parent TASK-001 --old_child DEC-0001 --old_relation_type task_informed_by_decision --parent TASK-001 --child DEC-0002 --relation_type task_informed_by_decision --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			old_parent: Type.String({ description: "Parent endpoint selector of the edge to remove" }),
 			old_child: Type.String({ description: "Child endpoint selector of the edge to remove" }),
@@ -504,6 +527,9 @@ export const ops: OpDefinition[] = [
 			"on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT " +
 			"checked here — run context-validate after. Creates relations.json if absent.",
 		promptSnippet: "Create many relations/edges between items in one write",
+		examples: [
+			`pi-context append-relations --edges '[{"parent":"FEAT-008","child":"TASK-042","relation_type":"feature_decomposed_into_task"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			edges: Type.Unknown({
 				description:
@@ -547,6 +573,9 @@ export const ops: OpDefinition[] = [
 			"REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is " +
 			"appended. Schema validation is automatic. idField defaults to 'id'.",
 		promptSnippet: "Append-or-replace a full block item by id (replacement, not merge)",
+		examples: [
+			`pi-context upsert-block-item --block tasks --arrayKey tasks --item @/tmp/task.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
 			arrayKey: Type.String({ description: "Array key in the block (e.g., 'issues', 'decisions')" }),
@@ -592,6 +621,9 @@ export const ops: OpDefinition[] = [
 			"(unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname " +
 			"collision) throw. Pass dryRun to compute the destination without writing.",
 		promptSnippet: "Promote an item into another substrate as a derived copy with a lineage edge",
+		examples: [
+			`pi-context promote-item --source DEC-0001 --destinationSubstrate .context --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			source: Type.String({ description: "Source item selector (bare refname / <alias>:<refname>)" }),
 			destinationSubstrate: Type.String({ description: "Registered destination substrate alias" }),
@@ -650,6 +682,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Append an item to a nested array on a parent-array item in a project block. Schema validation is automatic.",
 		promptSnippet: "Append items to nested arrays inside parent items (e.g., findings inside a review)",
+		examples: [
+			`pi-context append-block-nested-item --block spec-reviews --arrayKey reviews --match '{"id":"REVIEW-001"}' --nestedKey findings --item @/tmp/finding.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
@@ -692,6 +727,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Update fields on a nested-array item inside a parent-array item in a project block. Finds parent and nested by predicate field match. Throws on parent or nested miss (mirrors update-block-item semantics).",
 		promptSnippet: "Update items inside nested arrays — change finding state, mark resolved",
+		examples: [
+			`pi-context update-block-nested-item --block spec-reviews --arrayKey reviews --match '{"id":"REVIEW-001"}' --nestedKey findings --nestedMatch '{"id":"F-001"}' --updates '{"state":"resolved"}' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
@@ -747,6 +785,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Remove items matching a predicate from a top-level array in a project block. Idempotent — returns { removed: 0 } on no match without throwing. Schema validation runs after removal.",
 		promptSnippet: "Remove items from project blocks — prune retracted issues, dedupe entries",
+		examples: [
+			`pi-context remove-block-item --block issues --arrayKey issues --match '{"id":"ISSUE-001"}' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues')" }),
 			arrayKey: Type.String({ description: "Top-level array key (e.g., 'issues')" }),
@@ -771,6 +812,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Remove items matching a predicate from a nested array on a parent-array item in a project block. Throws on parent miss; returns { removed: 0 } on nested miss without throwing.",
 		promptSnippet: "Remove nested items — drop rejected findings, retract nested references",
+		examples: [
+			`pi-context remove-block-nested-item --block spec-reviews --arrayKey reviews --match '{"id":"REVIEW-001"}' --nestedKey findings --nestedMatch '{"id":"F-001"}' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'spec-reviews')" }),
 			arrayKey: Type.String({ description: "Parent array key (e.g., 'reviews')" }),
@@ -818,6 +862,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Enumerate and parse all .json files in a <substrate-dir>/<subdir>/ directory, returned as a sorted array. Missing directories return [].",
 		promptSnippet: "Enumerate project block subdirectories (phases, schemas, etc.) as parsed JSON",
+		examples: [`pi-context read-block-dir --subdir phases --json`],
 		parameters: Type.Object({
 			subdir: Type.String({ description: "Subdirectory under the substrate dir (e.g., 'phases', 'schemas')" }),
 		}),
@@ -833,6 +878,7 @@ export const ops: OpDefinition[] = [
 		label: "Read Block",
 		description: "Read a project block file as structured JSON.",
 		promptSnippet: "Read a project block as structured JSON",
+		examples: [`pi-context read-block --block tasks --json`],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'tasks', 'requirements')" }),
 		}),
@@ -855,6 +901,9 @@ export const ops: OpDefinition[] = [
 		label: "Write Block",
 		description: "Write or replace an entire project block with schema validation.",
 		promptSnippet: "Write or replace a project block with schema validation",
+		examples: [
+			`pi-context write-block --block architecture --data @/tmp/architecture.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'project', 'architecture')" }),
 			data: Type.Unknown({ description: "Complete block data — must conform to block schema" }),
@@ -872,6 +921,7 @@ export const ops: OpDefinition[] = [
 		label: "Context Status",
 		description: "Get derived context state — source metrics, block summaries, planning lifecycle status.",
 		promptSnippet: "Get context state — source metrics, block summaries, planning lifecycle status",
+		examples: [`pi-context context-status --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -884,6 +934,7 @@ export const ops: OpDefinition[] = [
 		label: "Context Validate",
 		description: "Validate cross-block referential integrity — check that IDs referenced across blocks exist.",
 		promptSnippet: "Validate cross-block referential integrity",
+		examples: [`pi-context context-validate --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -897,6 +948,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
 		promptSnippet: "Read project config — vocabulary, lenses, relation_types, status_buckets",
+		examples: [`pi-context read-config --registry block_kinds --id tasks --json`],
 		parameters: Type.Object({
 			registry: Type.Optional(
 				Type.String({
@@ -1022,6 +1074,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Enumerate installable sample block kinds (packaged view): per kind — title, description, item shape, applicable relation_types (as source/target), invariants, lenses — plus top-level relation_type/lens/invariant/layer/status_bucket registries. Package-intrinsic: reads the extension's bundled samples catalog, independent of any project. Optional `kind` returns one packaged kind.",
 		promptSnippet: "Discover installable sample block kinds — title, shape, relation_types, invariants, lenses",
+		examples: [`pi-context read-samples-catalog --kind tasks --json`],
 		parameters: Type.Object({
 			kind: Type.Optional(Type.String({ description: "Filter to one block_kind canonical_id (e.g. 'tasks')" })),
 		}),
@@ -1049,6 +1102,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.",
 		promptSnippet: "Derive current project state — focus, in-flight, next actions, blocked",
+		examples: [`pi-context context-current-state --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -1063,6 +1117,7 @@ export const ops: OpDefinition[] = [
 			"Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'no-pointer' | 'no-config' | 'skeleton' | 'not-installed' | 'ready', plus the resolved contextDir and any declared-but-unmaterialized installed assets. Bootstrap (/context init or /context switch -c <new-dir>) now writes a minimal schema-valid config empty of vocabulary, so a freshly-bootstrapped substrate lands at 'skeleton' — onward via /context accept-all (adopt the packaged catalog, then /context install) OR amend-config / edit (build a custom vocabulary). Unlike every other tool, this NEVER throws on an un-bootstrapped substrate — it returns 'no-pointer' so you can detect a fresh substrate and tell the user to run /context init <substrate-dir> → /context accept-all → /context install (bootstrap requires user authorization via interactive confirmation). No writes.",
 		promptSnippet:
 			"Derive substrate bootstrap state — no-pointer | no-config | skeleton | not-installed | ready (never throws pre-bootstrap)",
+		examples: [`pi-context context-bootstrap-state --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -1076,6 +1131,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.",
 		promptSnippet: "Rename a canonical_id (item/relation_type/lens/layer) across substrate; dryRun to preview",
+		examples: [`pi-context rename-canonical-id --kind item --oldId TASK-001 --newId TASK-100 --dryRun true --json`],
 		parameters: Type.Object({
 			kind: Type.String({ description: "One of: item | relation_type | lens | layer" }),
 			oldId: Type.String({ description: "Current canonical_id to rename from" }),
@@ -1101,6 +1157,9 @@ export const ops: OpDefinition[] = [
 			"without writing.",
 		promptSnippet:
 			"Add/replace/remove one entry in a config.json registry (vocabulary, lenses, invariants, status_buckets)",
+		examples: [
+			`pi-context amend-config --registry relation_types --operation add --key task_blocks_task --entry @/tmp/relation-type.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			registry: Type.String({
 				description:
@@ -1153,6 +1212,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Read a substrate schema by name as parsed JSON. Returns null when the schema file is absent. Address ONE property via `path` (dotted/bracket, e.g. properties.tasks.items.properties.status) instead of reading the whole schema.",
 		promptSnippet: "Read a block schema as structured JSON — optionally address one property via `path`",
+		examples: [`pi-context read-schema --schemaName framework-gaps --path properties.gaps.items.required --json`],
 		parameters: Type.Object({
 			schemaName: Type.String({
 				description: "Schema name without extension (e.g., 'tasks', 'decisions', 'issues')",
@@ -1199,6 +1259,9 @@ export const ops: OpDefinition[] = [
 			"read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind " +
 			"that points at this schema is a separate step (amend-config block_kinds).",
 		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
+		examples: [
+			`pi-context write-schema --operation create --schemaName tasks --schema @/tmp/tasks.schema.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			operation: Type.String({ description: "create | replace" }),
 			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')" }),
@@ -1243,6 +1306,9 @@ export const ops: OpDefinition[] = [
 			"Commit the reconciliation of a schema merge conflict surfaced by update. Run this AFTER reconciling a both-diverged conflict update reported: it writes the reconciled schema body (meta-validated, atomic, operation 'replace') AND advances the merge base for that schema to the packaged catalog body. Advancing the base is the step a bare write-schema lacks — without it, update's 3-way merge re-derives the SAME conflict on every subsequent run because the base never moves off the original pre-conflict body. With the base advanced to the catalog, the next update sees the schema as locally-modified (base === catalog ≠ your body) and the deterministic merge takes your reconciled body (base === theirs → ours) — auto-merging with zero conflicts and preserving your resolution. If schema is omitted, the current on-disk schema is treated as already reconciled and only the base is advanced. The calling agent runs this; no subordinate resolver is spawned.",
 		promptSnippet:
 			"Commit a reconciled schema conflict: write the resolved body + advance the merge base to the catalog so update stops re-reporting it (run after reconciling an update conflict)",
+		examples: [
+			`pi-context resolve-conflict --schemaName tasks --schema @/tmp/tasks.reconciled.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')" }),
 			schema: Type.Optional(
@@ -1265,6 +1331,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Declare a schema version-bump migration into substrate (migrations.json). operation 'create' appends a new declaration; 'replace' overwrites an existing declaration matched by (schemaName, fromVersion); 'remove' drops a declaration. kind='identity' asserts the bump is shape-compatible (no data transform); kind='declarative-transform' carries a TransformSpec of rename/set/delete/coerce operations on dotted JSON paths. The loaded MigrationRegistry resolves the recorded edge at next read/write so block items declaring an older schema_version walk forward without process restart. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer.",
 		promptSnippet: "Declare a schema version-bump migration (identity or declarative-transform) into migrations.json",
+		examples: [
+			`pi-context write-schema-migration --operation create --schemaName tasks --fromVersion 1.0.0 --toVersion 1.1.0 --kind identity --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			operation: Type.String({ description: "create | replace | remove" }),
 			schemaName: Type.String({ description: "Schema name without extension (e.g., 'tasks')." }),
@@ -1321,6 +1390,7 @@ export const ops: OpDefinition[] = [
 			"Initialize the substrate dir: bootstrap pointer + dirs + a minimal schema-valid SKELETON config empty of vocabulary. Lands at the 'skeleton' bootstrap state — onward via accept-all (adopt the packaged catalog, then install) OR amend-config / edit (build a custom vocabulary).",
 		promptSnippet:
 			"Initialize the substrate dir (bootstrap pointer + dirs + skeleton config; onward via accept-all OR amend-config/edit)",
+		examples: [`pi-context context-init --contextDir .context --json`],
 		parameters: Type.Object({
 			contextDir: Type.String({
 				description: "Substrate dir name (e.g. .context). Required — no default.",
@@ -1339,6 +1409,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Adopt the canonical packaged conception (samples/conception.json) as this substrate's config.json (accept-all). Writes config only — run install after. Skeleton-aware: overwrites a SKELETON config (the empty-of-vocabulary config init / switch -c writes) but never a POPULATED one.",
 		promptSnippet: "Adopt the canonical conception as config (accept-all)",
+		examples: [`pi-context context-accept-all --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		authGated: true,
@@ -1362,6 +1433,7 @@ export const ops: OpDefinition[] = [
 			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body AND advances the merge base to the catalog so update stops re-reporting it (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). Pass dryRun to preview the per-schema action plan (resync / merge / conflict), the config-registry entries that would be added, AND the migration declarations that would be registered, without writing anything.",
 		promptSnippet:
 			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → returned in the op output + a report for the calling agent to reconcile and commit via resolve-conflict; --dry-run previews)",
+		examples: [`pi-context update --dryRun true --json`],
 		parameters: Type.Object({
 			dryRun: Type.Optional(
 				Type.Boolean({ description: "Preview the per-schema action plan without writing anything." }),
@@ -1380,6 +1452,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Flip the bootstrap pointer to a different substrate dir (parallel to git switch). Default: flip to an existing substrate at target_dir (requires config.json present). create_new=true: bootstrap a fresh substrate at target_dir AND flip in one operation. to_previous=true: flip back to the pointer's previous_contextDir (target_dir ignored).",
 		promptSnippet: "Switch the bootstrap pointer to a different substrate dir",
+		examples: [
+			`pi-context context-switch --target_dir .context --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			target_dir: Type.String({
 				description:
@@ -1457,6 +1532,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Enumerate top-level dirs under cwd containing a config.json (switchable substrates). Marks the active one with isActive=true. Read-only.",
 		promptSnippet: "List switchable substrate dirs under cwd",
+		examples: [`pi-context context-list --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -1470,6 +1546,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Move a non-active substrate dir to archive/<dir>/. Refuses to archive the active substrate (the dir the bootstrap pointer currently names) or to clobber an existing archive/<dir>/.",
 		promptSnippet: "Archive a non-active substrate dir to archive/<dir>/",
+		examples: [
+			`pi-context context-archive --target_dir .context-old --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			target_dir: Type.String({
 				description: "Substrate dir name to archive (e.g. '.project'). Refused if it is the active substrate.",
@@ -1493,6 +1572,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Filter the array items of a block by a single-field predicate (eq / neq / in / matches). Discovers the single top-level array property in the block; items missing the predicate field are never matched. Wraps the canonical readBlock + caller-side filter into one queryable surface; never mutates the block.",
 		promptSnippet: "Filter a block's items by a predicate — eq / neq / in / matches against a single field",
+		examples: [`pi-context filter-block-items --block framework-gaps --field status --op eq --value '"open"' --json`],
 		parameters: Type.Object({
 			block: Type.String({
 				description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps', 'context-contracts')",
@@ -1529,6 +1609,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Look up the block, array key, and item payload for a given ID across all blocks in the substrate dir. Returns null when no item matches. Mirrors the resolveItemById SDK function and shares its prefix-vs-block invariant — IDs whose prefix maps to a known block but live elsewhere throw at index-build time.",
 		promptSnippet: "Resolve a kind-prefixed ID (DEC-/FEAT-/FGAP-/issue-/REQ-/TASK-/etc.) to its owning block and item",
+		examples: [`pi-context resolve-item-by-id --id TASK-001 --json`],
 		parameters: Type.Object({
 			id: Type.String({ description: "Kind-prefixed ID, e.g., DEC-NNNN / FEAT-NNN / FGAP-NNN / ISSUE-NNN" }),
 		}),
@@ -1554,6 +1635,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Read a single item from a named block by its id — returns the item or null. Block-scoped (unlike resolve-item-by-id, which searches all blocks by kind-prefixed id). Avoids fetching a whole large block to get one item.",
 		promptSnippet: "Read one item from a block by id (block-scoped; null if absent)",
+		examples: [`pi-context read-block-item --block tasks --id TASK-001 --json`],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'tasks', 'decisions', 'framework-gaps')" }),
 			id: Type.String({ description: "Item id within the block (e.g., 'TASK-NNN')" }),
@@ -1573,6 +1655,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Paginate a block's items: returns { items, total, hasMore }. offset default 0, limit default 50. Use for blocks too large to fetch whole (past the 50KB read-block cap). total is the full item count; hasMore signals another page.",
 		promptSnippet: "Paginate a block's items — offset + limit; returns {items,total,hasMore}",
+		examples: [`pi-context read-block-page --block tasks --limit 20 --json`],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'framework-gaps', 'decisions', 'issues')" }),
 			offset: Type.Optional(Type.Integer({ minimum: 0, description: "Start index (default 0)" })),
@@ -1593,6 +1676,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Join two blocks in one call. EDGE mode: pass `relationType` — pairs left items with right-block items connected by that relations.json edge (`leftEndpoint` parent|child, default parent). FIELD mode: pass `leftField`+`rightField` — pairs where left[leftField] === right[rightField]. Optional left pre-filter via where{Field,Op,Value}. Returns [{left, right:[]}] (right always an array; one-to-many). Use instead of N+1 read-block + resolve calls.",
 		promptSnippet: "Join two blocks in one call — by relation edge or shared field; returns {left,right[]} pairs",
+		examples: [
+			`pi-context join-blocks --leftBlock tasks --rightBlock verification --relationType verification_verifies_item --leftEndpoint child --json`,
+		],
 		parameters: Type.Object({
 			leftBlock: Type.String({ description: "Left block name (e.g., 'tasks')" }),
 			rightBlock: Type.String({ description: "Right block name (e.g., 'verification')" }),
@@ -1654,6 +1740,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a single buildIdIndex traversal. Returns an object mapping each input id to its ItemLocation (block / arrayKey / item) or null when not found. Coexists with the singular resolve-item-by-id tool; bulk collapses the N×singular-call pattern for callers resolving multiple ids in one render pass.",
 		promptSnippet: "Resolve a batch of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) in one call",
+		examples: [`pi-context resolve-items-by-id --ids '["TASK-001","DEC-0001","FGAP-042"]' --json`],
 		parameters: Type.Object({
 			ids: Type.Array(Type.String(), {
 				description: "Array of kind-prefixed ids (DEC-/FGAP-/TASK-/issue-/REQ-/...) to resolve in one call",
@@ -1675,6 +1762,9 @@ export const ops: OpDefinition[] = [
 		label: "Complete Task",
 		description: "Complete a task with verification gate — requires a passing verification entry targeting the task.",
 		promptSnippet: "Complete a task — gates on passing verification before updating status",
+		examples: [
+			`pi-context complete-task --taskId TASK-001 --verificationId VER-001 --writer '{"kind":"human","user":"you@example.com"}' --json`,
+		],
 		parameters: Type.Object({
 			taskId: Type.String({ description: "Task ID to complete" }),
 			verificationId: Type.String({
@@ -1693,6 +1783,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.",
 		promptSnippet: "Validate substrate relations against config + items",
+		examples: [`pi-context context-validate-relations --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
@@ -1706,6 +1797,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Materialize the Edge[] for a named lens — synthetic edges from derived_from_field for auto-derived lenses; authored edges filtered by relation_type for hand-curated lenses; unioned items from composition members for kind=composition lenses.",
 		promptSnippet: "Materialize edges for a named lens (auto-derived or hand-curated)",
+		examples: [`pi-context context-edges-for-lens --lensId feature-decomposition --json`],
 		parameters: Type.Object({
 			lensId: Type.String({ description: "Lens id from config.lenses[].id" }),
 		}),
@@ -1722,6 +1814,9 @@ export const ops: OpDefinition[] = [
 		description:
 			"Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).",
 		promptSnippet: "Walk closure-table descendants under a relation_type",
+		examples: [
+			`pi-context context-walk-descendants --parentId FEAT-008 --relationType feature_decomposed_into_task --json`,
+		],
 		parameters: Type.Object({
 			parentId: Type.String({ description: "Parent id (canonical id or lens bin name)" }),
 			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
@@ -1738,6 +1833,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).",
 		promptSnippet: "Walk closure-table ancestors under a relation_type",
+		examples: [`pi-context walk-ancestors --itemId TASK-042 --relationType feature_decomposed_into_task --json`],
 		parameters: Type.Object({
 			itemId: Type.String({ description: "Child item id whose ancestors are sought" }),
 			relationType: Type.String({ description: "Relation type from config.relation_types[].canonical_id" }),
@@ -1755,6 +1851,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Find all closure-table edges incident on an item id (inbound, outbound, or both). Returns Edge[] preserving relation_type + ordinal per record — edge-level view, not the id-chain projection that walk-ancestors / context-walk-descendants emit.",
 		promptSnippet: "Find closure-table edges incident on an item id",
+		examples: [`pi-context find-references --itemId TASK-001 --direction both --json`],
 		parameters: Type.Object({
 			itemId: Type.String({ description: "Item id whose incident edges are sought" }),
 			direction: Type.Optional(
@@ -1777,6 +1874,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Compose a ContextBundle for a work-unit by reading its context-contract (by unit_kind) and walking declared relation_types bidirectionally per direction semantic. Returns unit + perRelationType buckets of resolved items + traversal_depth + scoped_at. Substrate primitive serving harness-confined dispatch.",
 		promptSnippet: "Compose ContextBundle for unit + context-contract-declared bundle_relation_types",
+		examples: [`pi-context gather-execution-context --unitId TASK-001 --kind task --json`],
 		parameters: Type.Object({
 			unitId: Type.String({ description: "Work-unit id (e.g. TASK-NNN / DEC-NNNN / FGAP-NNN)" }),
 			kind: Type.String({
@@ -1805,6 +1903,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Phase ordering lives in relations.json with relation_type='phase_depends_on'.",
 		promptSnippet: "Load a roadmap by id",
+		examples: [`pi-context context-roadmap-load --roadmapId ROADMAP-001 --json`],
 		parameters: Type.Object({
 			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
 		}),
@@ -1830,6 +1929,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.",
 		promptSnippet: "Render a roadmap as markdown",
+		examples: [`pi-context context-roadmap-render --roadmapId ROADMAP-001`],
 		parameters: Type.Object({
 			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
 		}),
@@ -1849,6 +1949,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.",
 		promptSnippet: "Validate roadmaps",
+		examples: [`pi-context context-roadmap-validate --roadmapId ROADMAP-001 --json`],
 		parameters: Type.Object({
 			roadmapId: Type.Optional(
 				Type.String({ description: "Filter to issues matching this roadmap_id (omit for full-project validation)" }),
@@ -1869,6 +1970,7 @@ export const ops: OpDefinition[] = [
 		description:
 			"List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).",
 		promptSnippet: "List roadmaps",
+		examples: [`pi-context context-roadmap-list --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {

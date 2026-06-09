@@ -17,7 +17,8 @@ This provides a `pi-context` binary.
 ```bash
 pi-context --help                 # grouped op index (by command class) + global flags
 pi-context --version              # print the package version (alias -v)
-pi-context <op> --help            # per-op help: declared flags with TYPE tags
+pi-context <op> --help            # per-op help: synopsis + flags + examples + related commands
+pi-context <op> --help --format json  # the same help as a machine-readable JSON model
 pi-context <op> [flags]           # run an op
 ```
 

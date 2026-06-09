@@ -82,7 +82,7 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 **Tools registered:** the tool surface grows with the package — read the generated `skills/pi-context/SKILL.md` for the current set, or call the `list-tools` tool at runtime (in-pi) / `grep pi.registerTool packages/pi-context/src/index.ts` (source). Families:
 
 - **Block CRUD** — `read-block`, `write-block`, `read-block-dir`, `append-block-item`, `update-block-item`, `upsert-block-item` (validated find-or-append), `remove-block-item`, and the nested-array variants (`append/update/remove-block-nested-item`).
-- **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `gather-execution-context`.
+- **Item-level read/query** — `read-block-item`, `read-block-page`, `filter-block-items`, `resolve-item-by-id`, `resolve-items-by-id`, `join-blocks`, `find-references`, `walk-ancestors`, `context-walk-descendants`, `context-edges-for-lens`, `context-lens-view`, `gather-execution-context`.
 - **Substrate writes** — `append-relation`, `append-relations` (bulk edge append), `remove-relation`, `replace-relation` (single-write atomic re-orient), `amend-config`, `write-schema`, `write-schema-migration`, `rename-canonical-id`.
 - **Content-addressing lifecycle** — `promote-item` (cross-substrate derivation: promote an item into another registered substrate as a new content-addressed item + `item_derived_from_item` lineage edge; `dryRun` previews the destination write without persisting).
 - **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
@@ -219,7 +219,7 @@ edgesForLensByName(cwd: string, lensId: string): Edge[] | { error: string }
 walkLensDescendants(cwd: string, parentId: string, relationType: string): string[]
 ```
 
-Pure functions consumed by the `/context view`, `/context lens-curate`, `context-edges-for-lens`, `context-walk-descendants`, and `context-validate-relations` shells in `index.ts`. Tests call them directly without an `ExtensionCommandContext`.
+Pure functions consumed by the `/context view`, `/context lens-curate`, `context-edges-for-lens`, `context-lens-view`, `context-walk-descendants`, and `context-validate-relations` shells in `index.ts`. Tests call them directly without an `ExtensionCommandContext`.
 
 ### Substrate Path Surface (`src/context-dir.ts`)
 

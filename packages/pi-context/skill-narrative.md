@@ -85,7 +85,7 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 
 `validateContext(cwd)` (the `context-validate` tool) layers the registry/identity invariants over cross-block referential integrity: `substrate_id_unregistered` and `substrate_id_registry_mismatch` (the source-of-truth-drift guard on the active substrate), `edge_endpoint_dangling` and `edge_endpoint_unregistered` (a structured endpoint naming a registered-but-absent or unregistered substrate), and `nested_id_bearing_array` (a schema embedding an id-bearing array instead of using a membership edge). Config-declared `invariants[]` and registered lens-validators are checked in the same pass.
 
-Two derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
+Three derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-lens-view` projects a config-declared lens as a binned item-view — a bin→count summary, or one bin's items paged by `offset`/`limit`; `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
 
 <block_item_reads>

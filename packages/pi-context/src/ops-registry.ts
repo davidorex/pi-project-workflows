@@ -78,12 +78,13 @@ import {
 import {
 	edgesForLensByName,
 	findReferencesInRepo,
+	loadLensView,
 	validateContextRelations,
 	walkAncestorsByLens,
 	walkLensDescendants,
 } from "./lens-view.js";
 import { promoteItem } from "./promote-item.js";
-import { addressInto, type ReadStructured, renderReadText, structureForRead } from "./read-element.js";
+import { addressInto, pageArray, type ReadStructured, renderReadText, structureForRead } from "./read-element.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
 import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
@@ -1806,6 +1807,46 @@ export const ops: OpDefinition[] = [
 			const result = edgesForLensByName(cwd, params.lensId);
 			const read = structureForRead(result, { label: `edges for lens ${params.lensId}` });
 			return { read };
+		},
+	},
+	{
+		name: "context-lens-view",
+		label: "Context Lens View",
+		description:
+			"Project a config-declared lens (config.lenses[]) as a binned item-view. Without --bin, a bin->count summary (always under the read cap). With --bin, that bin's items paged by --offset/--limit. Serves target, composition, and hand-curated lenses.",
+		promptSnippet:
+			"Project a config-declared lens as a binned item-view — bin->count summary, or one bin's items paged",
+		examples: [
+			`pi-context context-lens-view --lensId gaps-by-status --json`,
+			`pi-context context-lens-view --lensId gaps-by-status --bin identified --limit 20 --json`,
+		],
+		parameters: Type.Object({
+			lensId: Type.String({ description: "Lens id from config.lenses[].id" }),
+			bin: Type.Optional(Type.String({ description: "Return this bin's items paged; omit for a bin->count summary" })),
+			offset: Type.Optional(Type.Integer({ minimum: 0, description: "Per-bin page start index (default 0)" })),
+			limit: Type.Optional(Type.Integer({ minimum: 1, description: "Per-bin page size (default 50)" })),
+		}),
+		surface: "use",
+		run(cwd: string, params: { lensId: string; bin?: string; offset?: number; limit?: number }): OpResult {
+			const view = loadLensView(cwd, params.lensId);
+			if ("error" in view) throw new Error(view.error); // unknown lens / no-config -> non-zero exit
+			if (params.bin !== undefined) {
+				const items = view.grouped.get(params.bin);
+				if (items === undefined)
+					throw new Error(
+						`Bin '${params.bin}' not declared on lens '${params.lensId}'. Bins: ${view.lens.bins.join(", ")}`,
+					);
+				const page = pageArray(items, { offset: params.offset, limit: params.limit });
+				return { read: structureForRead(page, { whole: true, label: `lens ${params.lensId} bin ${params.bin}` }) };
+			}
+			const summary = {
+				lens: view.lens.id,
+				kind: view.lens.kind ?? "target",
+				bins: Object.fromEntries(view.lens.bins.map((b) => [b, (view.grouped.get(b) ?? []).length])),
+				uncategorized: view.uncategorized.length,
+				total: view.items.length,
+			};
+			return { read: structureForRead(summary, { whole: true, label: `lens ${params.lensId} bins` }) };
 		},
 	},
 	{

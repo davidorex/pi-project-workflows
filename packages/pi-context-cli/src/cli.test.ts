@@ -2069,3 +2069,121 @@ test("--help round-trips deriveTopHelp through main()", async () => {
 	}
 	assert.ok(out.includes("pi-bound"), "--help missing pi-bound");
 });
+
+// ── TASK-043 / FGAP-073: context-lens-view (binned item-view) ────────────────
+// Seed a substrate with one auto-derived lens (target=issues, binned by `package`)
+// plus the issues block it projects. Mirrors seedTasksSubstrate's config shape.
+function seedLensSubstrate(): { cwd: string; lensId: string; bin: string } {
+	const cwd = mkdtempSync(path.join(tmpdir(), "picli-lensview-"));
+	writeBootstrapPointer(cwd, ".project");
+	const sub = path.join(cwd, ".project");
+	mkdirSync(path.join(sub, "schemas"), { recursive: true });
+	writeFileSync(
+		path.join(sub, "config.json"),
+		JSON.stringify({
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [],
+			lenses: [
+				{
+					id: "by-package",
+					target: "issues",
+					relation_type: "package-membership",
+					derived_from_field: "package",
+					bins: ["pi-context", "pi-jit-agents"],
+				},
+			],
+		}),
+	);
+	writeFileSync(
+		path.join(sub, "issues.json"),
+		JSON.stringify({
+			issues: [
+				{ id: "issue-001", package: "pi-context" },
+				{ id: "issue-002", package: "pi-context" },
+				{ id: "issue-003", package: "pi-jit-agents" },
+			],
+		}),
+	);
+	return { cwd, lensId: "by-package", bin: "pi-context" };
+}
+
+test("CLI context-lens-view --json: bin->count summary (code 0, structured {read} envelope)", async () => {
+	const { cwd, lensId } = seedLensSubstrate();
+	try {
+		const { code, out } = await captureMainStdout(["context-lens-view", "--lensId", lensId, "--cwd", cwd, "--json"]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; op: string; output: unknown };
+		assert.equal(envelope.ok, true);
+		assert.equal(envelope.op, "context-lens-view");
+		const ro = envelope.output as {
+			data?: { lens?: string; bins?: Record<string, number>; uncategorized?: number; total?: number };
+			complete?: boolean;
+		};
+		assert.equal(ro.complete, true);
+		assert.equal(ro.data?.lens, "by-package");
+		assert.equal(ro.data?.bins?.["pi-context"], 2);
+		assert.equal(ro.data?.bins?.["pi-jit-agents"], 1);
+		assert.equal(ro.data?.total, 3);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI context-lens-view --bin --limit: per-bin page (code 0, paged items under {read})", async () => {
+	const { cwd, lensId, bin } = seedLensSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"context-lens-view",
+			"--lensId",
+			lensId,
+			"--bin",
+			bin,
+			"--limit",
+			"1",
+			"--cwd",
+			cwd,
+			"--json",
+		]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; output: unknown };
+		const ro = envelope.output as { data?: { items?: unknown[]; total?: number; hasMore?: boolean } };
+		assert.equal(ro.data?.items?.length, 1);
+		assert.equal(ro.data?.total, 2);
+		assert.equal(ro.data?.hasMore, true);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI context-lens-view --format json: summary is parseable (single-parse envelope)", async () => {
+	const { cwd, lensId } = seedLensSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"context-lens-view",
+			"--lensId",
+			lensId,
+			"--cwd",
+			cwd,
+			"--format",
+			"json",
+		]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; output: unknown };
+		assert.equal(envelope.ok, true);
+		assert.equal(typeof envelope.output, "object");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI context-lens-view: an unknown lensId is non-zero exit + an error line", async () => {
+	const { cwd } = seedLensSubstrate();
+	try {
+		const { code, err } = await captureMainStderr(["context-lens-view", "--lensId", "bogus", "--cwd", cwd]);
+		assert.notEqual(code, 0);
+		assert.match(err, /error:/i);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});

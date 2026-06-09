@@ -769,6 +769,7 @@ const HELP_GROUPS: HelpGroup[] = [
 				"walk-ancestors",
 				"context-walk-descendants",
 				"context-edges-for-lens",
+				"context-lens-view",
 				"context-status",
 				"context-current-state",
 				"context-bootstrap-state",

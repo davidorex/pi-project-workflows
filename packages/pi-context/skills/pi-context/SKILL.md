@@ -500,6 +500,19 @@ Materialize the Edge[] for a named lens — synthetic edges from derived_from_fi
 | `lensId` | string | yes | Lens id from config.lenses[].id |
 </tool>
 
+<tool name="context-lens-view">
+Project a config-declared lens (config.lenses[]) as a binned item-view. Without --bin, a bin->count summary (always under the read cap). With --bin, that bin's items paged by --offset/--limit. Serves target, composition, and hand-curated lenses.
+
+*Project a config-declared lens as a binned item-view — bin->count summary, or one bin's items paged*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `lensId` | string | yes | Lens id from config.lenses[].id |
+| `bin` | string | no | Return this bin's items paged; omit for a bin->count summary |
+| `offset` | integer | no | Per-bin page start index (default 0) |
+| `limit` | integer | no | Per-bin page size (default 50) |
+</tool>
+
 <tool name="context-walk-descendants">
 Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).
 
@@ -786,7 +799,7 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 
 `validateContext(cwd)` (the `context-validate` tool) layers the registry/identity invariants over cross-block referential integrity: `substrate_id_unregistered` and `substrate_id_registry_mismatch` (the source-of-truth-drift guard on the active substrate), `edge_endpoint_dangling` and `edge_endpoint_unregistered` (a structured endpoint naming a registered-but-absent or unregistered substrate), and `nested_id_bearing_array` (a schema embedding an id-bearing array instead of using a membership edge). Config-declared `invariants[]` and registered lens-validators are checked in the same pass.
 
-Two derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
+Three derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-lens-view` projects a config-declared lens as a binned item-view — a bin→count summary, or one bin's items paged by `offset`/`limit`; `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>
 
 <block_item_reads>

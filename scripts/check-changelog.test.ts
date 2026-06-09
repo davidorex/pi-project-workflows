@@ -17,6 +17,7 @@ import {
 	ALL_PACKAGES,
 	changedPackages,
 	extractUnreleased,
+	isExemptSurface,
 	unreleasedGrew,
 	watchDirsFromFiles,
 } from "./check-changelog.ts";
@@ -113,6 +114,47 @@ describe("changedPackages", () => {
 
 	it("knows exactly the seven lockstep packages", () => {
 		assert.equal(ALL_PACKAGES.length, 7);
+	});
+
+	it("does NOT flag a build-excluded *.test.ts under a watched src/ tree (a)", () => {
+		assert.deepEqual(changedPackages(["packages/pi-context/src/lens-view-op.test.ts"], watchFor), []);
+	});
+
+	it("exempts a learned-pattern store but preserves a monitor definition (b)", () => {
+		const monitorWatch = (pkg: string): string[] =>
+			pkg === "pi-behavior-monitors" ? ["packages/pi-behavior-monitors/examples/"] : [];
+		assert.deepEqual(changedPackages(["packages/pi-behavior-monitors/examples/hedge.patterns.json"], monitorWatch), []);
+		assert.deepEqual(changedPackages(["packages/pi-behavior-monitors/examples/hedge.monitor.json"], monitorWatch), [
+			"pi-behavior-monitors",
+		]);
+	});
+
+	it("still flags a genuine src/*.ts surface change (c regression)", () => {
+		assert.deepEqual(changedPackages(["packages/pi-context/src/lens-view-op.ts"], watchFor), ["pi-context"]);
+		assert.deepEqual(changedPackages(["packages/pi-context/src/block-api.ts"], watchFor), ["pi-context"]);
+	});
+});
+
+describe("isExemptSurface", () => {
+	it("is true for *.test.ts / *.test.mts files (build-excluded tests)", () => {
+		assert.equal(isExemptSurface("x/y.test.ts"), true);
+		assert.equal(isExemptSurface("a.test.mts"), true);
+	});
+
+	it("is true for a pi-behavior-monitors examples/*.patterns.json learned-pattern store", () => {
+		assert.equal(isExemptSurface("packages/pi-behavior-monitors/examples/hedge.patterns.json"), true);
+	});
+
+	it("is true for a *.patterns.json anywhere under the examples/ dir", () => {
+		assert.equal(isExemptSurface("packages/pi-behavior-monitors/examples/sub/x.patterns.json"), true);
+	});
+
+	it("is false for a real src/*.ts file", () => {
+		assert.equal(isExemptSurface("packages/pi-context/src/foo.ts"), false);
+	});
+
+	it("is false for a monitor definition (examples/*.monitor.json is shipped surface)", () => {
+		assert.equal(isExemptSurface("packages/pi-behavior-monitors/examples/hedge.monitor.json"), false);
 	});
 });
 

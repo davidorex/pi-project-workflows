@@ -5,6 +5,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 ## [Unreleased]
 
 ### Added
+- New `context-lens-view` op (`pi-context context-lens-view --lensId <id>`) projects a config-declared lens (`config.lenses[]`) as a binned item-view, reusing `loadLensView`. Without `--bin` it returns a bin→count summary — `{ lens, kind, bins: { <bin>: count }, uncategorized, total }` over every declared bin (including empty bins → 0) plus the uncategorized count and the total item count, serialized whole (always under the read cap). With `--bin <name>` it returns that bin's items paged by `--offset`/`--limit` through the shared `pageArray` (`{ items, total, hasMore }`). Both routes serialize through `structureForRead` so an over-cap per-bin page fails closed (`data: null`, `complete: false`). Serves target, composition, and hand-curated lenses. An unknown lens id (or, with `--bin`, an undeclared bin) throws — surfacing a non-zero CLI exit.
 - Each surfaced op now carries an optional `examples` field — copy-pasteable `pi-context <op> …` invocation strings consumed by the CLI's per-op `--help` (its `EXAMPLES` section and `--help --format json` model). It is help metadata only and is not part of the in-pi tool surface (the registered pi tool still exposes only name/label/description/promptSnippet/parameters).
 
 ### Fixed

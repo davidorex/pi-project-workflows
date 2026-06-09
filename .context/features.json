@@ -147,7 +147,7 @@
     },
     {
       "title": "pi-context-cli best-of-breed surface — script-parity input/output, discoverability, and write-safety to a superior CLI UX",
-      "status": "in-progress",
+      "status": "complete",
       "layer": "L4",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
@@ -156,18 +156,18 @@
       "acceptance_criteria": [
         "Input parity: the CLI accepts conventional flag forms (kebab-case, --id aliasing the op's single id-param, the scripts' --writer kind:id / --where field:op:value / CSV shorthands) and derives arrayKey from config — without changing any in-pi op.",
         "Output + error parity: the CLI renders human output (--format) and field-named validation guidance with granular exit codes distinguishing error classes.",
-        "Discoverability: --help is scannable and grouped and surfaces every command including process modes (e.g. pi-bound); --version reports the package version.",
+        "Discoverability: --help is scannable and grouped and surfaces every command including process modes (e.g. pi-bound); --version reports the package version; and each <op> --help renders a best-of-breed template (synopsis + typed flags + examples + related + footer) with machine-readable --help --format json.",
         "Write-safety: --show-schema previews a block contract and append-block-item --dry-run validates the prospective whole file, each before any write, with no op change.",
         "Read coherence: an addressed read returns the full subtree on BOTH the CLI and the in-pi read-schema op (the one authorized op change), 50KB cap retained.",
-        "Durability: a behavioral parity gate (parity-check.ts) FAILs at commit on a reintroduced required-but-derivable param or an op/script output-shape divergence.",
-        "Every in-pi op is byte-unchanged except the authorized read-schema correction; the CLI is an additive layer over the canonical op surface."
+        "Durability: a behavioral parity gate (parity-check.ts) FAILs at commit on a reintroduced required-but-derivable param or an in-pi-op vs reflecting-CLI output-shape divergence — the op<->CLI parity classes (the orchestrator scripts are not a parity reference; this criterion was reframed from the original op<->script wording when scripts were taken off the table in TASK-019).",
+        "Every in-pi op is byte-unchanged except the authorized read-schema correction; the CLI is an additive layer over the canonical op surface (the per-op help examples[] metadata added in TASK-042 is invisible to the in-pi tool surface — registerAll does not project it)."
       ],
       "id": "FEAT-008",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-08T12:57:02.768Z",
+      "modified_at": "2026-06-09T09:00:19.181Z",
       "oid": "e460e331ed4de4200a6d09a86138fb14",
-      "content_hash": "63bdc1a3db6455bc240c07163ff8c588985d78e6d99132dda3b36105b1abe5cb",
-      "content_parent": "a8688a22c48b5ca402a5bdab97e46c8b048b0d9742280e46604a4f6ce3304adb"
+      "content_hash": "ab53b7f8e727904ddb3b9e41ae36a17a5c57f118744cc5d570da0a01d385a685",
+      "content_parent": "63bdc1a3db6455bc240c07163ff8c588985d78e6d99132dda3b36105b1abe5cb"
     }
   ]
 }

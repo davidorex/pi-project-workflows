@@ -768,6 +768,28 @@
       "id": "TASK-041",
       "oid": "9556ca047e5d0a0ff7c9ac7d7337c2f9",
       "content_hash": "d825bcf57aa78a6054d4115b5c866c4dfc15143d8a1b1e9554e0837816d6d5b6"
+    },
+    {
+      "description": "Per-op <op> --help best-of-breed template + machine-readable help — closes FGAP-072. Sibling to TASK-040 under FEAT-008 (different code location: deriveHelp + OpDefinition help-metadata + the help-render-through-format path, vs TASK-040's deriveTopHelp + main). Additive: in-pi op behavior frozen (run/parameters/description unchanged; the parity gate TASK-019 stays green — additive help-metadata is not op behavior). Scope, per FGAP-072's proposed_resolution: (1) add an examples[] help-metadata field (and optionally related[]) to OpDefinition in ops-registry.ts, and AUTHOR examples[] for ALL ~48 use-ops from the CLAUDE.md canonical filing patterns (no synthetic floor — the no-deferral/best-of-breed mandate requires real copy-pasteable examples per op); (2) render a fixed template in deriveHelp (cli.ts:554): SYNOPSIS (derived from the op's typed params in docopt notation — required -> `--flag <type>`, optional -> `[--flag <type>]`, @file alternation) -> summary -> Flags (existing required-vs-optional typed list) -> EXAMPLES -> RELATED -> learn-more footer; (3) derive RELATED from the op's name-prefix group (the same pure classifier TASK-040 builds for the top-level listing) and surface the process-mode pi-bound; (4) route a structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) through the existing --format json (FGAP-021) so a per-op --help --format json is machine-parseable off the registry. Reuse TASK-040's name-prefix group classifier for RELATED so the two help surfaces share one grouping source (no drift; the parity gate guards it).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-072 closed: per-op <op> --help renders a SYNOPSIS line (docopt notation, derived from typed params), the existing Flags list, an EXAMPLES block, a RELATED/see-also hint, and a footer — for every use-op",
+        "OpDefinition carries an examples[] help-metadata field and every one of the ~48 use-ops has authored, copy-pasteable examples (no op left with an empty/synthetic-only examples list)",
+        "RELATED is derived from the op name-prefix group (reusing TASK-040's classifier, not a second hand-curated list) and surfaces pi-bound",
+        "Per-op --help participates in --format: --help --format json emits a structured {synopsis, summary, flags[], examples[], related[]} rendering off the registry; default --help stays human-scannable plain text to stdout",
+        "In-pi op behavior byte-unchanged (run/parameters/description); the op<->CLI parity gate (TASK-019) stays green; additive only",
+        "Canonical pipeline green (build/check/test + a CLI runtime demo driving <op> --help and --help --format json directly + a fresh adversarial probe)"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 7/7 | sibling to TASK-040 | addresses FGAP-072 | informed by R-0011 | folds the per-op help-template render layer into FEAT-008 so the CLI ships best-of-breed (the prior session left these elements parked; no-deferral requires folding, not deferring)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T00:00:00.000Z",
+      "id": "TASK-042",
+      "oid": "f71ea44630dd877df746b9f885de1141",
+      "content_hash": "30d07e0a9b591c75d030271c539baef83b2e8073aa1bd6161b72cef35f550dff"
     }
   ]
 }

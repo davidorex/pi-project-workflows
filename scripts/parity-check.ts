@@ -1,46 +1,65 @@
 #!/usr/bin/env -S npx tsx
 /**
- * Build-time PARITY CHECK — the FGAP-009 op-coverage contract, mechanically
- * enforced (TASK-008 / cli-arc γ).
+ * Build-time PARITY CHECK — the in-pi op ↔ reflecting-CLI parity gate.
  *
- * The contract (defined in @davidorex/pi-context/ops as OP_COVERAGE_RULE +
- * CoverageClass + INTENTIONALLY_UNEXPOSED_WRITERS) asserts that EVERY library
- * write function in packages/pi-context/src is COVERED by one of five mutually
- * exhaustive classes: op-backed-direct, op-backed-transitive, for-dir-twin,
- * intentionally-unexposed, or internal-primitive. A writer matching NONE is a
- * silent gap — a write capability with no op surface and no recorded reason.
+ * This gate asserts that the two surfaces over the pi-context op-registry — the
+ * in-pi ops (`@davidorex/pi-context/ops`) and the reflecting CLI that auto-
+ * derives a command per op (`@davidorex/pi-context-cli`) — stay BEHAVIORALLY in
+ * lockstep. The orchestrator scripts under `scripts/orchestrator/` are NOT a
+ * parity reference; the only two surfaces compared here are the in-pi op and the
+ * CLI command that reflects it. This file only OBSERVES both surfaces — it never
+ * mutates op or CLI source.
  *
- * This check enumerates writers FROM SOURCE (AST walk), not from a hand-list,
- * so a newly-added library writer that is neither op-reachable nor a ForDir
- * twin nor allowlisted nor a structural internal-primitive auto-FAILS. It also
- * guards attestation: a write op whose run() calls a ctx-accepting writer
- * WITHOUT forwarding its own ctx is a silent attestation drop and FAILs.
+ * It retains the op-coverage contract (defined in @davidorex/pi-context/ops as
+ * OP_COVERAGE_RULE + CoverageClass + INTENTIONALLY_UNEXPOSED_WRITERS): EVERY
+ * library write function in packages/pi-context/src must be COVERED by one of
+ * five mutually exhaustive classes (op-backed-direct, op-backed-transitive,
+ * for-dir-twin, intentionally-unexposed, internal-primitive). A writer matching
+ * NONE is a silent gap — a write capability with no op surface and no recorded
+ * reason. Writers are enumerated FROM SOURCE (AST walk), not a hand-list.
  *
- * Three enforcement categories, all exit-1 on any violation:
+ * Five enforcement categories, all exit-1 on any violation:
  *   1. classification — every enumerated writer lands in exactly one class;
  *      UNCLASSIFIED writers are violations.
- *   2. ctx-forwarding — every op→writer call (direct or transitive) that COULD
- *      forward ctx (the writer declares ctx, the op's run has a ctx param) MUST
- *      forward it. A dropped ctx is a hard FAIL. dual-surface optional-param
- *      divergences vs the orchestrator-script sibling (dryRun/ordinal/idField)
- *      are reported as soft divergences (printed, not fatal) per the spec.
- *   3. {json}-content-cap (FGAP-015) — an op that returns { json } of a content-
- *      reading library call (CONTENT_READING_FNS), inline or via a single same-
- *      body const/let binding, bypasses the 50KB read cap (enforced only on the
+ *   2. ctx-forwarding — every op→writer call that COULD forward ctx (the writer
+ *      declares ctx, the op's run has a ctx param) MUST forward it. A dropped
+ *      ctx is a hard FAIL (silent attestation drop).
+ *   3. {json}-content-cap — an op that returns { json } of a content-reading
+ *      library call (CONTENT_READING_FNS), inline or via a single same-body
+ *      const/let binding, bypasses the 50KB read cap (enforced only on the
  *      {read} channel). Hard FAIL: emit { read: structureForRead(...) } instead.
+ *   4. required-but-derivable (op ↔ CLI input parity) — an op that declares a
+ *      config-DERIVABLE param (arrayKey) required, where the CLI does not exempt
+ *      that param from its required-field check, is a UX defect: the CLI would
+ *      reject a caller who passes only `--block` even though the value is
+ *      config-derivable. The set of CLI exemptions is parsed from cli.ts. Hard
+ *      FAIL.
+ *   5. output-shape parity (op ↔ CLI output parity) — `read-schema --path` run
+ *      through the in-pi op vs the CLI command on a fixture substrate must yield
+ *      the SAME read payload (.data + .complete + .total). A divergence is a hard
+ *      FAIL.
  *
  * Pure helpers (enumerateWriters / classifyWriter / classifyAll /
  * checkCtxForwarding / checkJsonContentCap / parseSourceTree / opDeclaresParam /
- * scriptParsesFlag / flattenSchemaProperties) are exported for
- * scripts/parity-check.test.ts. main() aggregates violations + exits.
+ * checkRequiredButDerivable / diffReadPayload / extractStringLiterals /
+ * flattenSchemaProperties) are exported for scripts/parity-check.test.ts. main()
+ * aggregates violations + exits.
  *
  * AST idiom mirrors packages/pi-context/src/citation-rot-scanner.ts
  * (ts.createSourceFile + ts.forEachChild + node-type guards). Enforcement /
  * exit-code shape mirrors scripts/check-changelog.ts.
+ *
+ * The op ↔ CLI checks run IN-PROCESS: the CLI route imports the CLI's `main`
+ * from `packages/pi-context-cli/src/cli.ts` (SOURCE, via tsx — NOT the built
+ * dist) so the gate never observes a stale bin. No subprocess of dist/bin.js.
  */
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { deepEqual } from "node:assert/strict";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
+import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { CoverageClass, INTENTIONALLY_UNEXPOSED_WRITERS, type OpDefinition, ops } from "@davidorex/pi-context/ops";
+import { main as cliMain } from "@davidorex/pi-context-cli";
 import ts from "typescript";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -69,18 +88,16 @@ const TYPED_FILE_WRITERS = new Set([
 const INTERNAL_PRIMITIVE_FIRST_PARAMS = new Set(["filePath", "schemaPath"]);
 
 /**
- * Optional dual-surface params compared op-schema vs orchestrator-script. `ctx`
- * is NOT in this set — ctx forwarding is the SEPARATE fatal guard
- * (checkCtxForwarding); double-reporting it here would be noise. Each entry maps
- * the camelCase param name (the op's typebox schema property key + the op's
- * destructured run param) to the kebab-case `--flag` the orchestrator script
- * parses.
+ * The set of op-required params the reflecting CLI is expected to DERIVE for the
+ * caller rather than demand on the command line. Currently only `arrayKey`: the
+ * 7 block-mutation ops declare `arrayKey` required (their in-pi schema + handler
+ * are byte-unchanged and still receive + require it), but the CLI's
+ * `injectArrayKey` derives it from `config.block_kinds[].array_key` after parse,
+ * so the CLI's required-field check MUST exempt it. If a derivable-required param
+ * is not exempted, a caller who passes only `--block` is wrongly rejected — that
+ * is the op ↔ CLI input-parity defect this set anchors.
  */
-const DUAL_SURFACE_OPTIONAL_PARAMS: Record<string, string> = {
-	dryRun: "--dry-run",
-	ordinal: "--ordinal",
-	idField: "--id-field",
-};
+const DERIVABLE = new Set<string>(["arrayKey"]);
 
 /**
  * Library functions whose return value EMBEDS substrate item / block content
@@ -566,14 +583,14 @@ export function classifyAll(tree: ParsedTree): Classification[] {
 	return results;
 }
 
-// ─── Step C — ctx-forwarding + dual-surface param parity ──────────────────────
+// ─── Step C — ctx-forwarding ──────────────────────────────────────────────────
 
-/** A ctx-forwarding / dual-surface divergence. */
+/** A ctx-forwarding divergence (silent attestation drop). */
 export interface ForwardingViolation {
 	opName: string;
 	writer: string;
-	/** "ctx-drop" (hard FAIL) | "dual-surface" (soft divergence). */
-	kind: "ctx-drop" | "dual-surface";
+	/** "ctx-drop" (hard FAIL). */
+	kind: "ctx-drop";
 	detail: string;
 	fatal: boolean;
 }
@@ -681,84 +698,117 @@ export function opDeclaresParam(op: OpDefinition, camelParam: string): boolean {
 }
 
 /**
- * The authoritative script-side signal: does the orchestrator script actually
- * PARSE the `--<kebab>` flag as an argument? We detect the flag ONLY in a
- * genuine arg-parse position via the AST — the flag literal as an operand of an
- * equality `BinaryExpression` (`a === "--flag"` / `"--flag" === a`, also `==`)
- * or the expression of a `case` clause (`case "--flag":`). Parsing the source
- * (ts.createSourceFile, error-tolerant) inherently ignores comments and display
- * string literals: a bare literal in a `console.log` / a `// --dry-run` note /
- * a `/* a === "--flag" *​/` comment is trivia or a non-operand StringLiteral and
- * yields no matching node. This replaces the prior regex (`=== "--flag"`), which
- * false-matched the comparison text inside comments and display strings.
+ * Union of declared REQUIRED param names across the schema's object / allOf /
+ * $ref forms — the `required` analogue of flattenSchemaProperties. Threads the
+ * same `$defs`/`definitions` ref bag down and is cycle-guarded. Real ops are a
+ * flat Type.Object carrying a top-level `required: string[]`.
  */
-export function scriptParsesFlag(scriptText: string, kebabFlag: string): boolean {
-	const sf = ts.createSourceFile("script.ts", scriptText, ts.ScriptTarget.Latest, /* setParentNodes */ true);
-	const isFlagLiteral = (n: ts.Node | undefined): boolean =>
-		!!n && (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) && n.text === kebabFlag;
-	let found = false;
-	const visit = (n: ts.Node): void => {
-		if (found) return;
-		// arg-parse equality: a === "--flag" / "--flag" === a  (=== or ==)
-		if (
-			ts.isBinaryExpression(n) &&
-			(n.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken ||
-				n.operatorToken.kind === ts.SyntaxKind.EqualsEqualsToken) &&
-			(isFlagLiteral(n.left) || isFlagLiteral(n.right))
-		) {
-			found = true;
-			return;
+export function flattenSchemaRequired(
+	schema: OpParamSchema | undefined,
+	rootBag: Record<string, OpParamSchema> = {},
+	seenRefs: Set<string> = new Set(),
+): Set<string> {
+	const keys = new Set<string>();
+	if (!schema || typeof schema !== "object") return keys;
+	const bag =
+		schema.$defs || schema.definitions
+			? { ...rootBag, ...(schema.$defs ?? {}), ...(schema.definitions ?? {}) }
+			: rootBag;
+	for (const k of schema.required ?? []) keys.add(k);
+	if (Array.isArray(schema.allOf)) {
+		for (const member of schema.allOf) for (const k of flattenSchemaRequired(member, bag, seenRefs)) keys.add(k);
+	}
+	if (typeof schema.$ref === "string") {
+		const m = /^#\/(?:\$defs|definitions)\/(.+)$/.exec(schema.$ref);
+		if (m && !seenRefs.has(schema.$ref)) {
+			seenRefs.add(schema.$ref);
+			const target = bag[m[1]];
+			if (target) for (const k of flattenSchemaRequired(target, bag, seenRefs)) keys.add(k);
 		}
-		// switch arg-parse: case "--flag":
-		if (ts.isCaseClause(n) && isFlagLiteral(n.expression)) {
-			found = true;
-			return;
-		}
-		ts.forEachChild(n, visit);
-	};
-	visit(sf);
-	return found;
+	}
+	return keys;
 }
 
 /**
- * Dual-surface optional-param parity: where an op <name> has an orchestrator
- * sibling scripts/orchestrator/<name>.ts, compare the optional params
- * (dryRun/ordinal/idField) against the two AUTHORITATIVE signals —
- *   - op-side: the op's typebox `parameters` schema DECLARES the param
- *     (opDeclaresParam, camelCase key);
- *   - script-side: the script PARSES the `--<kebab>` flag (scriptParsesFlag).
- * A divergence is real (reported, NON-FATAL) iff exactly one side has the param:
- * the script offers a `--flag` the op's schema lacks, or the op declares a param
- * its sibling script offers no flag for. `ctx` is excluded — its forwarding is
- * the separate fatal guard (checkCtxForwarding).
- *
- * `opsList` supplies the op definitions (carrying `op.parameters`); the AST tree
- * supplies only which ops have an orchestrator sibling worth checking.
+ * The op's REQUIRED param names — the same flattened `required` set the CLI reads
+ * via `objectSchema(op).required` before its `writer`/`arrayKey` exemption.
  */
-export function checkDualSurfaceParity(
-	tree: ParsedTree,
-	scriptsDir: string,
+export function opRequiredParams(op: OpDefinition): Set<string> {
+	const schema = (op.parameters as unknown as OpParamSchema) ?? {};
+	return flattenSchemaRequired(schema);
+}
+
+/**
+ * Collect every string-literal text appearing in a TypeScript source snippet, via
+ * the AST (ts.createSourceFile, error-tolerant). Used to read the CLI's required-
+ * field exemption list out of cli.ts: the required-filter is
+ *   `(schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey")`
+ * — the exempted param names are exactly the string-literal operands of that
+ * `r !== "<lit>"` chain. Parsing the source inherently ignores comments (trivia
+ * carries no StringLiteral node). Both quote styles + template literals with no
+ * substitution are captured; substitution-bearing templates are ignored (they
+ * are not bare literals). The caller intersects the result with the small,
+ * known DERIVABLE set, so unrelated literals elsewhere in the file are inert.
+ */
+export function extractStringLiterals(sourceText: string): Set<string> {
+	const sf = ts.createSourceFile("snippet.ts", sourceText, ts.ScriptTarget.Latest, /* setParentNodes */ true);
+	const out = new Set<string>();
+	const visit = (n: ts.Node): void => {
+		if (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLiteral(n)) out.add(n.text);
+		ts.forEachChild(n, visit);
+	};
+	visit(sf);
+	return out;
+}
+
+/**
+ * op ↔ CLI INPUT parity — required-but-derivable.
+ *
+ * For each op, the params it declares REQUIRED that are also config-DERIVABLE
+ * (the DERIVABLE set — currently just `arrayKey`) MUST be exempted by the CLI's
+ * required-field check; otherwise the CLI rejects a caller who passes only the
+ * surface flag (e.g. `--block`) even though the value is derivable post-parse
+ * (injectArrayKey). The CLI exemptions come from `cliExemptions` — at the top-
+ * level call this is parsed out of cli.ts's required-filter
+ *   `(schema.required ?? []).filter((r) => r !== "writer" && r !== "arrayKey")`
+ * via extractStringLiterals(cli source) ∩ DERIVABLE-relevant names.
+ *
+ * Two assertions:
+ *   - GLOBAL: every member of DERIVABLE must be in cliExemptions. If `arrayKey`
+ *     is ever dropped from the CLI filter, this bites once globally AND every
+ *     arrayKey-requiring op bites below.
+ *   - PER-OP: for each op, every param in (op.required ∩ DERIVABLE) must be in
+ *     cliExemptions.
+ *
+ * `opsList` is injectable (mirrors the other checks) for unit tests. The op's
+ * required params are read through opRequiredParams (the same flattened typebox
+ * `required` array the CLI reads via objectSchema(op).required).
+ */
+export function checkRequiredButDerivable(
+	cliExemptions: Set<string>,
 	opsList: OpDefinition[] = ops,
-): ForwardingViolation[] {
-	const out: ForwardingViolation[] = [];
-	const byName = new Map(opsList.map((o) => [o.name, o]));
-	for (const run of tree.opRuns) {
-		const op = byName.get(run.opName);
-		if (!op) continue; // no op definition to read a schema from
-		const scriptPath = join(scriptsDir, `${run.opName}.ts`);
-		if (!existsSync(scriptPath)) continue;
-		const scriptText = readFileSync(scriptPath, "utf-8");
-		for (const [camelParam, kebabFlag] of Object.entries(DUAL_SURFACE_OPTIONAL_PARAMS)) {
-			const opDeclares = opDeclaresParam(op, camelParam);
-			const scriptParses = scriptParsesFlag(scriptText, kebabFlag);
-			if (opDeclares !== scriptParses) {
-				out.push({
-					opName: run.opName,
-					writer: `scripts/orchestrator/${run.opName}.ts`,
-					kind: "dual-surface",
-					detail: `param '${camelParam}' (${kebabFlag}) divergence: op schema ${opDeclares ? "declares" : "lacks"} it, script ${scriptParses ? "parses" : "does not parse"} the flag`,
-					fatal: false,
-				});
+	derivable: Set<string> = DERIVABLE,
+): string[] {
+	const out: string[] = [];
+
+	// GLOBAL: every derivable param must be exempted by the CLI, or the whole
+	// class of derivable-required ops is broken.
+	for (const d of derivable) {
+		if (!cliExemptions.has(d)) {
+			out.push(
+				`parity: config-derivable param '${d}' is in DERIVABLE but the CLI required-filter does not exempt it (every op requiring '${d}' would be wrongly rejected; required-but-derivable, FGAP-019 class)`,
+			);
+		}
+	}
+
+	// PER-OP: an op that requires a derivable param the CLI does not exempt.
+	for (const op of opsList) {
+		const required = opRequiredParams(op);
+		for (const p of required) {
+			if (derivable.has(p) && !cliExemptions.has(p)) {
+				out.push(
+					`parity: op '${op.name}' requires config-derivable param '${p}' but the CLI does not exempt it (required-but-derivable, FGAP-019 class)`,
+				);
 			}
 		}
 	}
@@ -826,12 +876,149 @@ export function checkJsonContentCap(tree: ParsedTree): JsonContentCapViolation[]
 	return out;
 }
 
+// ─── Step E — op ↔ CLI output-shape parity (read-schema --path) ───────────────
+
+/** The read payload shape both surfaces emit for a `{read}` op result. */
+interface ReadPayloadLike {
+	data?: unknown;
+	complete?: boolean;
+	total?: number;
+}
+
+/**
+ * Compare the read payload produced by the in-pi op against the one the CLI
+ * emits, for the same op invocation. PURE: no I/O. Asserts the `data` subtree is
+ * deepEqual and that `.complete` / `.total` agree. Any divergence is a single
+ * hard-FAIL violation string. This is the behavioral contract the CLI's
+ * boundedJsonOutput must keep: for a `{read}` result it returns `r.read`, so the
+ * CLI envelope's `output` must equal the op's `read` exactly.
+ */
+export function diffReadPayload(opRead: ReadPayloadLike, cliOutput: ReadPayloadLike): string[] {
+	const out: string[] = [];
+	try {
+		deepEqual(opRead.data, cliOutput.data);
+	} catch {
+		out.push(
+			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .data differs between the in-pi op read and the CLI envelope output`,
+		);
+	}
+	if (opRead.complete !== cliOutput.complete) {
+		out.push(
+			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .complete differs (op=${String(opRead.complete)} cli=${String(cliOutput.complete)})`,
+		);
+	}
+	if (opRead.total !== cliOutput.total) {
+		out.push(
+			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .total differs (op=${String(opRead.total)} cli=${String(cliOutput.total)})`,
+		);
+	}
+	return out;
+}
+
+/**
+ * op ↔ CLI OUTPUT parity, executed end-to-end on a throwaway fixture substrate.
+ * Runs `read-schema --path properties.tasks.items` through BOTH surfaces:
+ *   - op route: `ops.find(o => o.name === "read-schema").run(cwd, {...})` → its
+ *     `{ read }` payload (r.read).
+ *   - CLI route: the CLI's `main([...])` imported from cli SOURCE (NOT dist),
+ *     stdout captured (process.stdout.write swap), the `{ ok, output }` JSON
+ *     envelope parsed → `envelope.output`.
+ * diffReadPayload then asserts the two payloads agree (.data / .complete /
+ * .total). The fixture mirrors cli.test.ts's read-schema fixture: an object node
+ * (`properties.tasks.items`) carrying an array child (`required`) PLUS a sibling
+ * object (`properties`), so paging the node would lose siblings — the exact case
+ * the whole-subtree read must preserve identically on both surfaces. The tmp dir
+ * is removed before return. Returns hard-FAIL violation strings.
+ */
+export async function checkOutputShapeParity(): Promise<string[]> {
+	const out: string[] = [];
+	const cwd = mkdtempSync(join(tmpdir(), "parity-readschema-"));
+	try {
+		writeBootstrapPointer(cwd, ".project");
+		const sub = join(cwd, ".project");
+		mkdirSync(join(sub, "schemas"), { recursive: true });
+		writeFileSync(
+			join(sub, "config.json"),
+			JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [] }),
+		);
+		const schema = {
+			type: "object",
+			properties: {
+				tasks: {
+					type: "array",
+					items: {
+						type: "object",
+						required: ["id", "title", "status"],
+						properties: { id: { type: "string" }, title: { type: "string" }, status: { type: "string" } },
+					},
+				},
+			},
+		};
+		writeFileSync(join(sub, "schemas", "tasks.schema.json"), JSON.stringify(schema, null, 2));
+
+		// op route — call read-schema's run() directly.
+		const readSchemaOp = (ops as OpDefinition[]).find((o) => o.name === "read-schema");
+		if (!readSchemaOp) {
+			out.push("parity: read-schema op not found in the ops registry — cannot run op↔CLI output parity");
+			return out;
+		}
+		const opResult = await readSchemaOp.run(cwd, { schemaName: "tasks", path: "properties.tasks.items" });
+		if (typeof opResult === "string" || !("read" in opResult)) {
+			out.push(
+				`parity: read-schema op did not return a { read } payload (got ${typeof opResult}) — output parity unverifiable`,
+			);
+			return out;
+		}
+		const opRead = opResult.read as ReadPayloadLike;
+
+		// CLI route — capture main()'s stdout JSON envelope.
+		const orig = process.stdout.write;
+		let captured = "";
+		process.stdout.write = ((chunk: unknown): boolean => {
+			captured += typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf8");
+			return true;
+		}) as typeof process.stdout.write;
+		let code: number;
+		try {
+			code = await cliMain([
+				"read-schema",
+				"--schemaName",
+				"tasks",
+				"--path",
+				"properties.tasks.items",
+				"--json",
+				"--cwd",
+				cwd,
+			]);
+		} finally {
+			process.stdout.write = orig;
+		}
+		if (code !== 0) {
+			out.push(`parity: CLI read-schema --path exited ${code} (expected 0) — output parity unverifiable`);
+			return out;
+		}
+		let envelope: { ok?: boolean; output?: ReadPayloadLike };
+		try {
+			envelope = JSON.parse(captured);
+		} catch {
+			out.push("parity: CLI read-schema --path did not emit a parseable JSON envelope — output parity unverifiable");
+			return out;
+		}
+		const cliOutput = (envelope.output ?? {}) as ReadPayloadLike;
+
+		out.push(...diffReadPayload(opRead, cliOutput));
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+	return out;
+}
+
 // ─── main ─────────────────────────────────────────────────────────────────────
 
-function main(): number {
+async function main(): Promise<number> {
 	const repoRoot = process.cwd();
 	const srcDir = join(repoRoot, "packages", "pi-context", "src");
-	const scriptsDir = join(repoRoot, "scripts", "orchestrator");
+	const cliFile = join(repoRoot, "packages", "pi-context-cli", "src", "cli.ts");
 
 	if (!existsSync(srcDir)) {
 		console.error(`parity-check: source dir not found: ${srcDir}`);
@@ -848,8 +1035,18 @@ function main(): number {
 
 	const classifications = classifyAll(tree);
 	const forwarding = checkCtxForwarding(tree);
-	const dualSurface = checkDualSurfaceParity(tree, scriptsDir);
 	const jsonContentCap = checkJsonContentCap(tree);
+
+	// op ↔ CLI input parity: parse the CLI's required-field exemptions from cli.ts.
+	if (!existsSync(cliFile)) {
+		console.error(`parity-check: CLI source not found: ${cliFile} — cannot enforce op↔CLI input parity`);
+		return 1;
+	}
+	const cliExemptions = extractStringLiterals(readFileSync(cliFile, "utf-8"));
+	const requiredButDerivable = checkRequiredButDerivable(cliExemptions);
+
+	// op ↔ CLI output parity: read-schema --path through both surfaces.
+	const outputShape = await checkOutputShapeParity();
 
 	const violations: string[] = [];
 
@@ -865,18 +1062,19 @@ function main(): number {
 		if (f.fatal) violations.push(`op '${f.opName}' — ${f.writer} — ${f.detail}`);
 	}
 
-	// {json}-content-cap violations (hard FAIL — FGAP-015 read-cap bypass).
+	// {json}-content-cap violations (hard FAIL — read-cap bypass).
 	for (const j of jsonContentCap) {
 		violations.push(`op '${j.opName}' — {json} of ${j.fn} (${j.via}) — ${j.detail}`);
 	}
 
-	// Soft dual-surface divergences — reported, not fatal.
-	for (const d of dualSurface) {
-		console.error(`parity-check (divergence, non-fatal): ${d.detail} [${d.writer}]`);
-	}
+	// op ↔ CLI input-parity violations (hard FAIL — required-but-derivable).
+	violations.push(...requiredButDerivable);
+
+	// op ↔ CLI output-parity violations (hard FAIL — read-schema --path divergence).
+	violations.push(...outputShape);
 
 	if (violations.length > 0) {
-		console.error(`parity-check: ${violations.length} FGAP-009 coverage violation(s) — do not --no-verify:`);
+		console.error(`parity-check: ${violations.length} op↔CLI parity violation(s) — do not --no-verify:`);
 		for (const v of violations) console.error(`  ${v}`);
 		return 1;
 	}
@@ -892,12 +1090,12 @@ function main(): number {
 		.map(([k, n]) => `${k}=${n}`)
 		.join(" ");
 	console.log(
-		`parity-check: ${classifications.length} writer(s) enumerated, all classified (${tallyStr}); 0 ctx-drops; 0 {json}-content-cap bypasses`,
+		`parity-check: ${classifications.length} writer(s) enumerated, all classified (${tallyStr}); 0 ctx-drops; 0 {json}-content-cap bypasses; op↔CLI input + output parity OK`,
 	);
 	return 0;
 }
 
 // Run only as a CLI, not when imported by the test.
 if (import.meta.url === `file://${process.argv[1]}`) {
-	process.exit(main());
+	main().then((code) => process.exit(code));
 }

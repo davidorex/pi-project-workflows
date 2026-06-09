@@ -4273,5 +4273,31 @@
       "refname": "feature-decomposition"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9f7d6609184319041c36ddd3012d6b26",
+      "refname": "VER-036"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ccd67db743977afcb388fe54f42b2e51",
+      "refname": "TASK-045"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ede00f8ac7cfe4bb8b071c08fdc21dbe",
+      "refname": "VER-037"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "418e56f7c6d4d87abbb80bf2405746a0",
+      "refname": "TASK-043"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

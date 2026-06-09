@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T00:00:00.000Z",
+  "evidence": "TASK-043 (the context-lens-view op) verified end-to-end; closes FGAP-073. Additive reflected op context-lens-view keyed by --lensId projects any config-declared lens as a binned item-view, reusing loadLensView (lens-view.ts:43) + pageArray (read-element.ts:188), both routed through structureForRead for the cap; renderLensView is not used. Without --bin: a bin->count summary (always under the read cap). With --bin: that bin's items paged by --offset/--limit. Serves target, composition, and hand-curated lenses (loadLensView dispatches all kinds). Unknown lensId or unknown --bin throw, mapping to a non-zero exit with a field-named message and the --json {ok:false,op,error} envelope. Slotted into the cli.ts groupForOp Read & query group; authored examples; registerAll and every other in-pi op byte-unchanged. Runtime demo against the rebuilt global pi-context bin: context-lens-view --lensId gaps-by-status returns {identified:33,accepted:5,in-progress:0,closed:37,wontfix:0}, uncategorized 0, total 75, complete, ~200 bytes (the see-open-gaps answer, under cap despite framework-gaps exceeding 50KB whole); --bin identified --limit 3 returns a paged bin with total/hasMore; tasks-by-status and features-by-status work lens-generically; --lensId bogus -> exit 1 + 'Lens not found, Known lenses: ...' (and the --json {ok:false,error} envelope); --bin nonexistent -> exit 1 + 'Bin not declared, Bins: ...'. An over-cap per-bin page fail-closes (data:null/complete:false/truncated:true) while the summary stays complete. An iterate-to-zero finding (the op-level composition-dispatch coverage was claimed but only transitively tested) was fixed: lens-view-op.test.ts now seeds a kind=composition lens and drives it through the op (data.kind=composition, planned:1/completed:2/empty-bin:0, uncategorized:1, total:4, + per-bin paging) — the op-level lens-kind-agnostic proof. build+check+full-test green (fail 0 all packages); parity-check exit 0 (the new op auto-covered; the {read} channel satisfies the {json}-content-cap gate); SKILL.md regenerated for the new op surface. Fresh adversarial probes PASS zero defects on the op and on the composition-test finding. Cross-package + tooling preconditions surfaced and handled during verification: the pi-context dist rebuild before the pi-context-cli gate; the check-changelog over-flag on the test-only commit (closed by FGAP-075/TASK-045, which exempts non-shipping surface).",
+  "criteria_results": [
+    {
+      "criterion": "context-lens-view --lensId <lens> returns a bin summary always within the cap",
+      "status": "passed",
+      "evidence": "gaps-by-status -> bins/counts + total 75, complete, ~200 bytes, on the real >50KB framework-gaps"
+    },
+    {
+      "criterion": "--bin returns that bin's items paged via pageArray (offset/limit/total/hasMore)",
+      "status": "passed",
+      "evidence": "--bin identified --limit 3 -> 3 items, total, hasMore; offset advances; op-level + CLI tests"
+    },
+    {
+      "criterion": "--json single-parse structured object distinct from context-edges-for-lens Edge[]; --format json same payload",
+      "status": "passed",
+      "evidence": "the {read} envelope data is the summary/per-bin object; cli tests"
+    },
+    {
+      "criterion": "lens-generic across the four target-lenses + composition/hand-curated",
+      "status": "passed",
+      "evidence": "gaps-by-status/gaps-by-priority/tasks-by-status/features-by-status work; the op-level composition-dispatch test drives kind=composition through the op"
+    },
+    {
+      "criterion": "unknown lensId / unknown bin -> field-named error + non-zero exit",
+      "status": "passed",
+      "evidence": "exit 1 + the field-named message on both the stderr and --json {ok:false,error} surfaces"
+    },
+    {
+      "criterion": "over-cap per-bin fail-closes; additive (ops frozen, parity green)",
+      "status": "passed",
+      "evidence": "over-cap per-bin data:null/complete:false; ops-registry diff = the one new op; registerAll unchanged; parity-check exit 0"
+    },
+    {
+      "criterion": "discoverability: per-op --help template + grouped --help; canonical pipeline green incl. fresh adversarial audit",
+      "status": "passed",
+      "evidence": "context-lens-view --help renders the template + examples and appears under Read & query; fresh adversarial probes PASS zero defects"
+    }
+  ]
+}

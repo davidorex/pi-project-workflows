@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T00:00:00.000Z",
+  "evidence": "TASK-045 (check-changelog exemption fix) verified; closes FGAP-075. check-changelog now exempts non-shipping surface from published-surface classification: a subtractive isExemptSurface(path) predicate (/\\.test\\.[cm]?tsx?$/ OR a packages/pi-behavior-monitors/examples/ path ending in .patterns.json) filters changedPaths in changedPackages before classification; watchDirsFromFiles, pathInWatchSet, and unreleasedGrew are unchanged (3b98c80, scripts-only, +15/-1 in check-changelog.ts). A genuine src/*.ts (non-test) and a real examples/*.monitor.json still flag. Runtime: with packages/pi-context/src/lens-view-op.test.ts + packages/pi-behavior-monitors/examples/hedge.patterns.json staged, npx tsx scripts/check-changelog.ts exits 0 (no demand); the regression unit case asserts a real src/*.ts still flags its package. build + check + full test green (fail 0 all packages); parity-check exit 0; check-changelog.test.ts cases pass (test-only -> [], examples/*.patterns.json -> [] while examples/*.monitor.json -> [pi-behavior-monitors], real src/*.ts -> [pi-context], plus the direct isExemptSurface unit test). Fresh adversarial probe PASS zero defects: the change is subtractive (only the candidates filter added); no over-exemption — contest.ts / latest.ts / attest.ts / *.monitor.json / a *.patterns.json outside the monitors examples dir all still flag; the regex matches only .test.{ts,mts,cts,tsx} and the monitor exemption is dir-scoped. The monitor test mutating the shipped hedge.patterns.json on each run is a separate test-hygiene matter, noted not fixed.",
+  "criteria_results": [
+    {
+      "criterion": "isExemptSurface true for *.test.ts + monitor examples/*.patterns.json; false for src/*.ts + examples/*.monitor.json",
+      "status": "passed",
+      "evidence": "the predicate + its direct unit tests; adversarial regex/dir-scope probe confirmed no over-exemption"
+    },
+    {
+      "criterion": "changedPackages filters exempt paths before classification; exempt-only set flags nothing; a real src/*.ts still flags",
+      "status": "passed",
+      "evidence": "the candidates = changedPaths.filter(!isExemptSurface) edit; test cases (a)/(b)/(c) pass"
+    },
+    {
+      "criterion": "the gate exits 0 for the staged exempt files; still exits 1 for a genuine src change",
+      "status": "passed",
+      "evidence": "npx tsx scripts/check-changelog.ts exit 0 with lens-view-op.test.ts + hedge.patterns.json staged; the regression unit case proves the real-src bite"
+    },
+    {
+      "criterion": "build/check/test/parity green; husky passes the gate-fix commit",
+      "status": "passed",
+      "evidence": "build+check+test fail 0; parity-check exit 0; 3b98c80 committed husky-green"
+    }
+  ]
+}

@@ -2238,7 +2238,7 @@
     },
     {
       "title": "The reflecting pi-context CLI has no op to project a config-declared target-lens as a binned item-view (the lens-view primitive exists but is reachable only inside a roadmap)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "The reflecting CLI has no op to project a config-declared lens as a binned item-view. config.lenses[] declares four target-lenses — gaps-by-status (target framework-gaps, derived_from_field status, bins identified/accepted/in-progress/closed/wontfix), gaps-by-priority, tasks-by-status, features-by-status — none reachable as a view; the gap covers kind=composition and hand-curated lenses too, i.e. the whole config.lenses[] registry. The binning primitives exist: loadLensView (lens-view.ts:43-97) resolves a lens, reads its target items, and groups them into the declared bins (kind target + composition); renderLensView (lens-view.ts:105-150) renders bins as markdown. They are reflected only inside a roadmap — context-roadmap-load/render, keyed by roadmapId via serializeRoadmapView — not by a standalone lensId. The only lensId-keyed op, context-edges-for-lens (ops-registry.ts:1795-1810), returns flat Edge[] (bin as parent, item id as child, paginated, no item bodies, no grouping). Broader class: config-declared vocabulary (lenses, status_buckets, invariants, state-derivation) is under-surfaced as queryable ops; the state-derivation member is FEAT-004, adjacent and not covering lens projection.",
@@ -2275,8 +2275,10 @@
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "FGAP-073",
       "oid": "204bd4df63719f6f0f23fb86c95fbd08",
-      "content_hash": "e7accfb54fb132c1b24066f01a0dea9eb762676826d0a3159d248e2feaedb3d3",
-      "content_parent": "fe23bcf6e562988534f21f235846cba20ab64280f6ff2f84892bb28f63b0f1ab"
+      "content_hash": "2ee21ceddb02b7a249d23ea0f4ce8b7059788b7343796c5d27e61adf3509d9ac",
+      "content_parent": "e7accfb54fb132c1b24066f01a0dea9eb762676826d0a3159d248e2feaedb3d3",
+      "closed_by": "VER-037 / TASK-043 — the additive context-lens-view op projects any config-declared lens as a binned item-view (bin->count summary + per-bin paging via pageArray, routed through structureForRead), reusing loadLensView/renderLensView; serves target/composition/hand-curated lenses; slotted in groupForOp; ops frozen, parity green.",
+      "closed_at": "2026-06-10T00:00:00.000Z"
     },
     {
       "title": "Past-filed context atoms violate rhetorical-register at scale — provenance/process/git narration in block bodies that compose verbatim into subagent contexts",
@@ -2321,7 +2323,7 @@
     },
     {
       "title": "check-changelog watched-surface derivation over-includes non-shipping files — build-excluded *.test.ts and monitor examples/*.patterns.json learned-pattern stores",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "scripts/check-changelog.ts derives a package's watched published surface from package.json files[], mapping the shipped dist/ to the whole src/ tree (watchDirsFromFiles, scripts/check-changelog.ts:56-72). This over-includes files that do not ship: (1) *.test.ts — every tsconfig.build.json excludes **/*.test.ts, so tests never compile to dist/; (2) the behavior-monitor learned-pattern stores packages/pi-behavior-monitors/examples/*.patterns.json (hedge, fragility, commit-hygiene, unauthorized-action, work-quality) — a monitor test rewrites them on each run, and examples/ is in that package's files[]. A change confined to either class is flagged 'published-surface change without a [Unreleased] entry,' demanding a changelog line for a change that never reaches dist/. General class: the dist/->src/ whole-tree watch counts build-excluded files and data-dir files that are not shipped API; the two classes above are its instances.",
@@ -2352,7 +2354,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T16:02:20.407Z",
       "oid": "cc70d9e9aa6271bc6a565563cd641e8f",
-      "content_hash": "9c052f84eab6169026f45c74030a1343b1b1e7c0f0bd23dc8851cb3d3eaca891"
+      "content_hash": "8baa14cbf42d5d08731387b03a2997432b2a58661b529eb901650a562a690de8",
+      "closed_by": "VER-036 / TASK-045 — check-changelog exempts non-shipping surface via a subtractive isExemptSurface predicate (build-excluded *.test.ts + monitor examples/*.patterns.json) filtered in changedPackages before classification; watch-set derivation and matching unchanged; a genuine src/*.ts and examples/*.monitor.json still flag.",
+      "closed_at": "2026-06-10T00:00:00.000Z",
+      "content_parent": "9c052f84eab6169026f45c74030a1343b1b1e7c0f0bd23dc8851cb3d3eaca891"
     }
   ]
 }

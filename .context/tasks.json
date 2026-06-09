@@ -795,7 +795,7 @@
     },
     {
       "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context-cli/src/cli.ts",
@@ -816,8 +816,8 @@
       "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased].",
       "id": "TASK-043",
       "oid": "418e56f7c6d4d87abbb80bf2405746a0",
-      "content_hash": "3792a69f8fa1242c0eb6422c1291344a752bd44f0a0c9e6a1c345bd5f0ed15cd",
-      "content_parent": "1b1c6669fd61cab3f7fa945bd76e176c8dba3aee79cf9ce9764b73d5c112b32b"
+      "content_hash": "3ec77cb3a4b5d89246f25760e81a808b9276fd33e6b62c9f3f2cddea6635ccb8",
+      "content_parent": "3792a69f8fa1242c0eb6422c1291344a752bd44f0a0c9e6a1c345bd5f0ed15cd"
     },
     {
       "description": "Broaden the rhetorical-register checkpoint guard and clean the existing violating context atoms. Closes FGAP-074. Two parts: (1) extend the register-checkpoint hook (.claude/hooks/, currently framework-gaps-only) to cover append AND update/closure writes for tasks, verification, decisions, issues, research, features, and framework-gaps; exclude session-notes. (2) Rewrite every existing violating block body (the ~118 items in the FGAP-074 audit) to declarative current-truth per rhetorical-register, preserving all load-bearing content.",
@@ -842,7 +842,7 @@
     },
     {
       "description": "Fix the check-changelog watched-surface over-flag — closes FGAP-075. Add a subtractive isExemptSurface(path) predicate to scripts/check-changelog.ts and filter changedPaths through it at the top of changedPackages, so build-excluded *.test.ts and the monitor packages/pi-behavior-monitors/examples/*.patterns.json learned-pattern stores no longer count as published surface. Orthogonal to watchDirsFromFiles/pathInWatchSet/unreleasedGrew; a genuine src/*.ts or examples/*.monitor.json still flags.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "scripts/check-changelog.ts",
         "scripts/check-changelog.test.ts"
@@ -858,8 +858,8 @@
       "notes": "Closes FGAP-075. Subtractive predicate + filter only; no change to the watch-set derivation or matching. The gate fix lives in scripts/ (not a watched package surface), so committing it does not self-trip. Unblocks the TASK-043 composition-test + hedge.patterns.json commit. Separate, noted-not-fixed: a monitor test mutates the shipped hedge.patterns.json on each run (test-hygiene).",
       "id": "TASK-045",
       "oid": "ccd67db743977afcb388fe54f42b2e51",
-      "content_hash": "c24c1f7142d5fe7de5630b36373a421785818f6720b9435287b2d816a1bd88e8",
-      "content_parent": "4e47b8a9f3bbf419a76d21ac34900585ee2170634b318a751219e8bc9c69f0d8"
+      "content_hash": "a4de9c092bd5a01f688602bd0c85da1c24725fb1a7b269091d612135c0093fec",
+      "content_parent": "c24c1f7142d5fe7de5630b36373a421785818f6720b9435287b2d816a1bd88e8"
     }
   ]
 }

@@ -794,28 +794,30 @@
       "content_parent": "185c4bf2acfbc1123e4fa94fc579b876fa01defd9d1a6bbcc173e34fcd05a4e2"
     },
     {
-      "description": "Add a reflected lens-view op so the CLI can project any config-declared lens as a binned item-view — closes FGAP-073 at the general (all-lenses) altitude. A new op (proposed canonical name context-lens-view, sibling to context-edges-for-lens; confirm at plan time) keyed by --lensId reuses the shipped primitives loadLensView (packages/pi-context/src/lens-view.ts:43) + renderLensView (lens-view.ts:105) to return/render a lens's target items grouped into its declared bins. ADDITIVE per the FEAT-008 invariant: a NEW op reusing existing primitives; context-edges-for-lens + every other in-pi op byte-unchanged. The new op is slotted in the CLI grouped-help classifier (groupForOp in cli.ts — the exhaustive-disjoint guard forces this) and routed through the boundary read-cap (structureForRead) so a large view fail-closes. Implement via the canonical pipeline (explore -> plan -> agent -> verify, iterate to zero).",
+      "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
       "status": "planned",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context-cli/src/cli.ts",
-        "packages/pi-context/src/lens-view.ts (reuse only; no behavior change)",
-        "tests (op-level + cli)"
+        "packages/pi-context/src/ops-registry.test.ts",
+        "packages/pi-context-cli/src/cli.test.ts"
       ],
       "acceptance_criteria": [
-        "CLI-PROVABLE (the originating friction): `pi-context context-lens-view --lensId gaps-by-status` (text) renders framework-gaps grouped under its declared bin headings (identified / accepted / in-progress / closed / wontfix), each gap a line carrying id + status + title — the binned VIEW, not edges. Running this answers 'see open gaps' directly.",
-        "CLI-PROVABLE: `pi-context context-lens-view --lensId gaps-by-status --json` returns a single-parse structured object grouping items into bins (bin -> item records with id/status/title), distinct from context-edges-for-lens's flat Edge[]; the same payload is produced by --format json.",
-        "CLI-PROVABLE (lens-generic, not lensId-specific — the FGAP-073 general class): running `pi-context context-lens-view --lensId <id>` for EACH of the four declared lenses (gaps-by-status, gaps-by-priority, tasks-by-status, features-by-status) returns that lens's target block binned by its declared field; an op-level test additionally exercises kind=composition + hand-curated dispatch through the shared loadLensView primitive.",
-        "CLI-PROVABLE (fails clean): `pi-context context-lens-view --lensId does-not-exist` emits a field-named error and a non-zero classifier exit code (not a crash, not exit 0).",
-        "CLI-PROVABLE (read-cap honored): a lens view whose serialization exceeds the 50KB boundary cap fail-closes like every other read op (over-cap node -> data:null / complete:false / truncated:true) rather than dumping unbounded or crashing — exercise on gaps-by-status (framework-gaps already exceeds 50KB flat).",
-        "CLI-PROVABLE (discoverability auto-covered): `pi-context context-lens-view --help` renders the best-of-breed per-op template (SYNOPSIS + typed flags + EXAMPLES + RELATED + footer) and `--help --format json` emits the structured help model; the op carries an authored examples[] (the gaps-by-status invocation); the op appears in grouped `pi-context --help` under its derived group (slotted in groupForOp; the exhaustive-disjoint guard stays green).",
-        "Additive + gates: in-pi ops byte-unchanged except the new op; `npx tsx scripts/parity-check.ts` exit 0 (the op<->CLI parity gate auto-covers the new op); `npm run build` + `npm run check` + `npm test` fail 0 with new op-level tests (per-lens binning correctness, the cap fail-close, the unknown-lens error).",
-        "Closure: FGAP-073 closed by this task (verification_verifies_item + complete-task); canonical pipeline green — the runtime demo IS the CLI commands in the criteria above, plus a fresh adversarial probe re-deriving lens-generality + the cap fail-close + additivity."
+        "`pi-context context-lens-view --lensId gaps-by-status` returns a bin summary — every declared bin (identified, accepted, in-progress, closed, wontfix) with its item count plus an uncategorized count — always within the 50KB cap.",
+        "`pi-context context-lens-view --lensId gaps-by-status --bin identified [--offset N --limit M]` returns that bin's items (id, status, title), paged via pageArray (offset/limit/total/hasMore).",
+        "`--json` returns a single-parse structured object (summary bins->counts; per-bin paged items under --bin); `--format json` yields the same payload; the shape is distinct from context-edges-for-lens's flat Edge[].",
+        "The summary and per-bin paths work for gaps-by-status, gaps-by-priority, tasks-by-status, and features-by-status with no lensId-specific code; op-level tests cover kind=composition and hand-curated dispatch.",
+        "An unknown --lensId, or an unknown --bin for a valid lens, returns a field-named error and a non-zero exit code.",
+        "A per-bin page whose serialization exceeds 50KB fail-closes via structureForRead (data:null, complete:false, truncated:true) carrying the overCapDirective to narrow --limit.",
+        "`pi-context context-lens-view --help` renders the per-op template (synopsis; typed flags --lensId/--bin/--offset/--limit; examples; related; footer); `--help --format json` emits the structured help model; the op carries authored examples[]; the op appears in grouped `pi-context --help` under its name-prefix group.",
+        "`npx tsx scripts/parity-check.ts` exits 0; `npm run build` + `npm run check` + `npm test` report fail 0 with op-level tests for: summary within cap on a lens whose full view exceeds 50KB, per-bin paging, per-lens binning across the four lenses, composition dispatch, and the unknown-lens/unknown-bin errors.",
+        "FGAP-073 closed via verification_verifies_item + complete-task."
       ],
-      "notes": "Addresses FGAP-073 (general altitude: covers all four target-lenses + composition/hand-curated, gaps-by-status the trigger). Reuses loadLensView (lens-view.ts:43) + renderLensView (lens-view.ts:105) — exists-but-unexposed, so additive reflection not new machinery. Adjacent to FEAT-004 (config-driven state-derivation) but distinct (lens projection). docs-surface-sync: the new op's description/promptSnippet + examples[] are user-facing surface; README/SKILL audit + CHANGELOG [Unreleased].",
+      "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased].",
       "id": "TASK-043",
       "oid": "418e56f7c6d4d87abbb80bf2405746a0",
-      "content_hash": "584a5aa297f2a8420f494c62ab2b8b74e7038eb8d0370cafa5fe9c4c05fe4808"
+      "content_hash": "1b1c6669fd61cab3f7fa945bd76e176c8dba3aee79cf9ce9764b73d5c112b32b",
+      "content_parent": "d543306b45359b333d83fcb4c31e2fd995b15374d2d20be5618d15e9e2f450bb"
     }
   ]
 }

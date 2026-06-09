@@ -11,11 +11,15 @@ import {
 	authDecision,
 	buildCliDispatchContext,
 	deriveHelp,
+	deriveTopHelp,
 	fieldType,
+	groupForOp,
+	helpOneLiner,
 	injectArrayKey,
 	injectWriter,
 	isProcessOnlyOp,
 	main,
+	PKG_VERSION,
 	parseOpArgs,
 	resolveIdentity,
 	resolveOp,
@@ -1759,4 +1763,95 @@ test("CLI autoId append against a block whose schema file is absent exits 3 (sch
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
+});
+
+// ── Grouped top-level help (CHANGE A) ────────────────────────────────────────
+// deriveTopHelp renders the seven ordered command groups + a Process modes
+// section. The one-liner sources promptSnippet (not the longer description), and
+// groupForOp is exhaustive + disjoint over useOps (the drift-guard).
+
+const HELP_GROUP_LABELS = [
+	"Read & query",
+	"Block writes",
+	"Relations",
+	"Schema & config",
+	"Substrate lifecycle",
+	"Workflow",
+] as const;
+
+test("deriveTopHelp renders all seven group headers + Process modes", () => {
+	const help = deriveTopHelp();
+	for (const label of HELP_GROUP_LABELS) {
+		assert.ok(help.includes(label), `missing group header: ${label}`);
+	}
+	assert.ok(help.includes("Process modes"), "missing Process modes section");
+	assert.ok(help.includes("pi-bound"), "pi-bound not surfaced under Process modes");
+	assert.ok(help.includes("--version, -v"), "missing --version flag line");
+});
+
+test("groupForOp slots representative ops into the right group", () => {
+	assert.equal(groupForOp("read-block-item"), "Read & query");
+	assert.equal(groupForOp("append-block-item"), "Block writes");
+	assert.equal(groupForOp("append-relation"), "Relations");
+	assert.equal(groupForOp("remove-relation"), "Relations");
+	assert.equal(groupForOp("write-schema"), "Schema & config");
+	assert.equal(groupForOp("context-init"), "Substrate lifecycle");
+	assert.equal(groupForOp("complete-task"), "Workflow");
+	assert.equal(groupForOp("context-roadmap-render"), "Workflow");
+});
+
+test("groupForOp is EXHAUSTIVE + DISJOINT over useOps (drift-guard)", () => {
+	// Every surfaced op maps to exactly one group label. A useOp matching no rule
+	// throws in groupForOp — this loop fails loudly rather than silently dropping it.
+	const seenPerGroup = new Map<string, string[]>();
+	for (const op of useOps) {
+		const label = groupForOp(op.name); // throws if unmatched
+		assert.ok(HELP_GROUP_LABELS.includes(label as (typeof HELP_GROUP_LABELS)[number]), `unknown label '${label}'`);
+		const list = seenPerGroup.get(label) ?? [];
+		list.push(op.name);
+		seenPerGroup.set(label, list);
+	}
+	// Disjointness is structural (first-match-wins → one label per call); assert the
+	// partition covers every useOp.
+	const total = [...seenPerGroup.values()].reduce((s, l) => s + l.length, 0);
+	assert.equal(total, useOps.length);
+});
+
+test("helpOneLiner sources promptSnippet, not the longer description", () => {
+	const op = resolveOp("read-block-item");
+	assert.ok(op);
+	assert.ok(op.promptSnippet);
+	// The row contains the promptSnippet text…
+	const help = deriveTopHelp();
+	assert.ok(help.includes("Read one item from a block by id"), "promptSnippet text absent from help");
+	// …and NOT a trailing clause unique to the longer description.
+	assert.ok(
+		!help.includes("Avoids fetching a whole large block"),
+		"help leaked description-only text — one-liner is not promptSnippet-sourced",
+	);
+	// helpOneLiner itself prefers promptSnippet.
+	assert.equal(helpOneLiner(op), op.promptSnippet);
+});
+
+// ── --version / -v (CHANGE B) ────────────────────────────────────────────────
+test("--version prints the package version and exits 0", async () => {
+	const { code, out } = await captureMainStdout(["--version"]);
+	assert.equal(code, 0);
+	assert.ok(out.includes(PKG_VERSION), `output ${JSON.stringify(out)} missing version ${PKG_VERSION}`);
+	assert.match(out, /\d+\.\d+\.\d+/);
+});
+
+test("-v is an alias for --version", async () => {
+	const { code, out } = await captureMainStdout(["-v"]);
+	assert.equal(code, 0);
+	assert.ok(out.includes(PKG_VERSION));
+});
+
+test("--help round-trips deriveTopHelp through main()", async () => {
+	const { code, out } = await captureMainStdout(["--help"]);
+	assert.equal(code, 0);
+	for (const label of HELP_GROUP_LABELS) {
+		assert.ok(out.includes(label), `--help missing group header: ${label}`);
+	}
+	assert.ok(out.includes("pi-bound"), "--help missing pi-bound");
 });

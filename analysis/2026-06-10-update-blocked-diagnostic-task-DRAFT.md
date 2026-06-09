@@ -1,33 +1,14 @@
-# DRAFT task — update `blocked` surfaces the per-item validation diagnostic needed to unblock
+# DRAFT task — update `blocked` surfaces which item/field failed
 
-**Status: DRAFT — held, NOT yet filed to the substrate.** Reify into the `tasks` block on user direction (relate `task_addresses_gap` → the broadened FGAP-076; `item_governed_by_convention` → feature-decomposition). Acceptance criteria are user-story form, grounded verbatim in the operator's in-pi `update` reports (quoted text is the operator's own words).
+**Status: DRAFT — held, not yet filed.**
 
-## User story
-As an operator running `pi-context update`, when a catalog-ahead schema is refused with `blocked`, I need the tool to tell me **which item and which field failed validation, and why**, so I can fix either the items or the local schema and re-run — without reverse-engineering the failure from a hand-diffed schema.
+## Description
+When `update` blocks a schema, surface which item and field failed validation, so the operator can unblock it.
 
-## Description (for the tasks-block `description` on reification)
-When `update`'s live forward-migrate + re-validate rejects a catalog-ahead schema's block items, the `blocked` outcome must surface the per-item validation diagnostic (failing item id, field, value, and the violated schema constraint), to the same standard the conflict path already meets, on the `update` tool surface itself, while preserving the byte-unchanged blocked contract. This closes the diagnostic half of the "blocked is under-informative" gap (FGAP-076, broadened). Triggering instance: the live `conventions` block (45 items) blocked against catalog 1.0.1 although, by the operator's inspection, nothing in the block should fail it — so the diagnostic must be sufficient to tell a real invalid item apart from a forward-migrate/validate bug.
-
-## Acceptance criteria (user-story form; quotes are the operator's in-pi report text, verbatim)
-
-1. **Which item / which field.** Given a live `update` (or `update --dryRun`) where a catalog-ahead schema's block items fail the new schema, when the outcome is `blocked`, then the result names the offending item(s) and field(s). Grounded verbatim: *"The blocked outcome is opaque — update doesn't surface which item or field caused the validation failure"* and *"It doesn't tell you which item or field failed. You have to reverse-engineer the failure from the schema diff."*
-
-2. **Parity with the conflict path.** Given a `blocked` outcome, then it surfaces per-item diagnostic detail to the standard the conflict path already meets. Grounded verbatim: *"unlike conflicts — which surfaces per-path {base, ours, theirs} detail and has a dedicated resolve-conflict tool to commit the resolution — blocked is opaque. … That's the gap: the tool stops at 'no safe migration' without surfacing the diagnostic needed to unblock it."* The diagnostic surfaces, per failing item: item id, field, value, and the schema constraint it violated.
-
-3. **On the tool surface, not by hand.** Given the operator needs to diagnose a blocked schema, then they do not have to validate the block items directly against the catalog schema themselves, because no other op does it. Grounded verbatim: *"context-validate checks cross-block referential integrity (do referenced IDs exist?) and invariant enforcement. It doesn't run per-item schema validation, so it can't surface what update's forward-migration path tripped on. To diagnose the conventions block, you'd need to validate the block items directly against the 1.0.1 catalog schema — and update doesn't expose which item or field caused the failure."* The diagnostic is emitted by `update` itself (and/or a first-class per-item-validate-against-schema-version op the blocked path uses).
-
-4. **Blocked contract preserved.** Given the diagnostic is produced, then the blocked contract is unchanged. Grounded verbatim: *"The schema file and block file were left byte-unchanged per the blocked contract, so no damage was done."* The diagnostic is read-only reporting; no schema/block/config mutation on the blocked path.
-
-5. **Disambiguates the candidate failure modes.** Given a blocked outcome whose cause is non-obvious — Grounded verbatim: *"Our 45 block items all have description, enforcement, and severity populated. All enforcement values are 'manual' or 'review' — both in the new enum. All severity values are 'error' or 'warning' — both in the new enum. By inspection, nothing in the block should fail the 1.0.1 schema."* — then the diagnostic is sufficient to distinguish the operator's three candidate explanations, grounded verbatim: *"A forward-migration bug (the identity migration path itself tripping)"*, *"A subtle schema-parse difference between dry-run and live paths"*, *"An item field value that looks valid on inspection but fails a pattern, type coercion, or JSON Schema edge case."*
-
-6. **Unblock workflow actionable end-to-end.** Given the diagnostic, then the documented unblock workflow completes without reverse-engineering. Grounded verbatim: *"The intended next step would be: diff the schemas yourself, figure out why the block items don't validate, fix either the items or the local schema, then re-run update."* — with the tool supplying the "figure out why" step instead of the operator hand-diffing the schema.
-
-7. **Verified on the real triggering case.** Given the live `.context` `conventions` block and the catalog 1.0.1 `conventions` schema, when `update` blocks it, then the diagnostic identifies the exact item + field + violated rule — resolving whether the cause is a real invalid item or a migrate/validate bug. Grounded verbatim: *"The identity migration was available (dry run confirmed it), but the live forward-migrate + re-validate step rejected it"* and *"the dry-run prediction was wrong — it said resynced but the real validation said blocked."* (Run read-only / against a copy of the live block; `.context` is not mutated.)
-
-## Files (for reification)
-- `packages/pi-context/src/index.ts` — `resyncSchema` blocked/`catch` path (~:622-640) currently discards the validation error; capture the AJV error detail (failing item/field/keyword/params) and thread it into the `blocked` result.
-- the forward-migrate + validate path (`validateBlockWithMigrationForDir`) — return structured per-item validation errors rather than a bare throw.
-- `updateContext` result shape + the `update` op/CLI reporting — carry the per-item blocked diagnostic into the result object and the text surface.
-
-## Notes (for reification)
-Closes the diagnostic half of FGAP-076 (broaden FGAP-076 to: "the `blocked` outcome is under-informative — surfaces neither the partial application nor the per-item validation diagnostic"). Pairs with FGAP-066 (dry/live outcome parity) and R-0012 (the investigation + reproduction). The `conventions`-blocks-when-it-should-pass question is answerable only once this diagnostic exists — it rides on this task, not a parallel ad-hoc investigation. Per-item-validation-against-a-target-schema is a capability the substrate currently lacks entirely (update swallows it; context-validate does referential + invariants only).
+## Acceptance criteria (user stories)
+- As an operator, when `update` blocks a schema, I can see which item and which field caused the validation failure.
+- As an operator, I get the same diagnostic for `blocked` that `conflicts` already gives, instead of `blocked` being opaque.
+- As an operator, I don't have to reverse-engineer the failure from the schema diff.
+- As an operator, the tool gives me the diagnostic needed to unblock, instead of stopping at "no safe migration."
+- As an operator, I can validate the block items directly against the target catalog schema and see what fails — which `update` doesn't expose and `context-validate` doesn't do.
+- As an operator, once I see why the block items don't validate, I can fix either the items or the local schema and re-run `update`.

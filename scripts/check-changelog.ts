@@ -71,6 +71,18 @@ export function watchDirsFromFiles(files: string[], pkgDir: string, hasSrc?: boo
 	return [...out];
 }
 
+/**
+ * Is this path a non-shipping surface that should never flag a package? Subtractive
+ * exemption applied before classification: build-excluded tests + monitor learned-pattern
+ * stores — not shipped feature surface.
+ */
+export function isExemptSurface(path: string): boolean {
+	return (
+		/\.test\.[cm]?tsx?$/.test(path) ||
+		(path.startsWith("packages/pi-behavior-monitors/examples/") && path.endsWith(".patterns.json"))
+	);
+}
+
 /** Body text between `## [Unreleased]` and the next `## [` heading. Empty if none. */
 export function extractUnreleased(changelogText: string): string {
 	const start = changelogText.indexOf("## [Unreleased]");
@@ -115,11 +127,12 @@ export function changedPackages(
 	changedPaths: string[],
 	watchFor: (pkg: string) => string[] = defaultWatchFor,
 ): string[] {
+	const candidates = changedPaths.filter((p) => !isExemptSurface(p));
 	const hit = new Set<string>();
 	for (const pkg of ALL_PACKAGES) {
 		const watch = watchFor(pkg);
 		if (watch.length === 0) continue;
-		if (changedPaths.some((p) => pathInWatchSet(p, watch))) hit.add(pkg);
+		if (candidates.some((p) => pathInWatchSet(p, watch))) hit.add(pkg);
 	}
 	return [...hit];
 }

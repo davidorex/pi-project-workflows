@@ -1,0 +1,18 @@
+{
+  "description": "Broaden the rhetorical-register checkpoint guard and clean the existing violating context atoms. Closes FGAP-074. Two parts: (1) extend the register-checkpoint hook (.claude/hooks/, currently framework-gaps-only) to cover append AND update/closure writes for tasks, verification, decisions, issues, research, features, and framework-gaps; exclude session-notes. (2) Rewrite every existing violating block body (the ~118 items in the FGAP-074 audit) to declarative current-truth per rhetorical-register, preserving all load-bearing content.",
+  "status": "planned",
+  "files": [
+    ".claude/hooks/gap-register-guard.sh",
+    ".claude/settings.local.json"
+  ],
+  "acceptance_criteria": [
+    "The register checkpoint guard covers append AND update writes for tasks, verification, decisions, issues, research, features, and framework-gaps. Provable: for each block, an un-acknowledged pi-context append-block-item / update-block-item blocks (exit 2, register rules on stderr); the same write with the review sentinel passes (exit 0).",
+    "session-notes writes are NOT guarded (narrative is its purpose, rule 6). Provable: an un-acknowledged pi-context append to session-notes passes (exit 0).",
+    "The guard fires on closure/update writes, not only append. Provable: an un-acknowledged update-block-item setting closed_by / resolved_by / notes / status on a covered block blocks (exit 2).",
+    "A fresh substrate-wide re-audit against the six rhetorical-register rules reports ZERO violations in the covered blocks (session-notes excluded). Provable: re-run the audit; zero violations across tasks, verification, decisions, issues, research, features, framework-gaps.",
+    "No true signal loss: every cleaned item retains all load-bearing content — each fact, criterion, id, file:line reference, and relation the original carried. Provable: a fresh adversarial agent diffs original vs cleaned per item and confirms only register changed, not substance; context-validate clean; schema + closure invariants (closed_by/closed_at present, verification edges intact) still satisfied.",
+    "The broadened guard is tested in isolation per covered block: un-acknowledged append AND update -> block; acknowledged -> pass; session-notes append -> pass; reads and non-covered-block writes -> pass.",
+    "FGAP-074 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-074. The guard is a review-checkpoint forcing-function (@file-agnostic); broadening changes only the block/op match-set + adds update/closure coverage. Cleaning is a per-item declarative rewrite preserving substance; session-notes excluded (rule 6). Audit baseline: analysis/2026-06-09-rhetorical-register-block-audit.md."
+}

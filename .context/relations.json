@@ -4221,5 +4221,31 @@
       "refname": "feature-decomposition"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "83b542ad005a85837f29afacd4818514",
+      "refname": "TASK-044"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "93f4e2eb7f52c8ea4c9f12735fd1a7af",
+      "refname": "FGAP-074"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "83b542ad005a85837f29afacd4818514",
+      "refname": "TASK-044"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

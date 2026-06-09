@@ -10,6 +10,7 @@ import { structureForRead } from "@davidorex/pi-context/read-element";
 import {
 	authDecision,
 	buildCliDispatchContext,
+	buildHelpModel,
 	deriveHelp,
 	deriveTopHelp,
 	fieldType,
@@ -314,6 +315,104 @@ test("deriveHelp renders a string-enum field's choices as the TYPE tag", () => {
 	assert.ok(op);
 	const help = deriveHelp(op);
 	assert.ok(help.includes("--op <eq|neq|in|matches>"));
+});
+
+// ── TASK-042: best-of-breed per-op help template ─────────────────────────────
+test("deriveHelp renders SYNOPSIS, EXAMPLES, RELATED and the footer", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	assert.ok(help.includes("SYNOPSIS"));
+	assert.ok(help.includes("pi-context append-block-item"));
+	assert.ok(help.includes("EXAMPLES"));
+	// The authored example substring must surface verbatim.
+	assert.ok(help.includes("--block framework-gaps --arrayKey gaps --autoId true"));
+	assert.ok(help.includes("RELATED"));
+	assert.ok(help.includes("update-block-item"));
+	assert.ok(help.includes("for machine-readable help."));
+});
+
+test("deriveHelp synopsis brackets arrayKey as optional (auto-derived); block/item required", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	const synopsisLine = help.split("\n").find((l) => l.includes("pi-context append-block-item"));
+	assert.ok(synopsisLine);
+	// arrayKey is schema-required but auto-derived → bracketed-optional,
+	// never a bare required token.
+	assert.ok(synopsisLine.includes("[--arrayKey"));
+	assert.ok(!/(?<!\[)--arrayKey </.test(synopsisLine));
+	// A genuinely-required field stays unbracketed.
+	assert.ok(synopsisLine.includes("--block <string>"));
+	assert.ok(!synopsisLine.includes("[--block"));
+});
+
+// ── TASK-042: examples-coverage guard ────────────────────────────────────────
+// Every surfaced op MUST carry ≥1 authored example. A future use-op added without
+// examples FAILS here — the guard against a synthetic/empty floor.
+test("every use-op carries at least one authored example", () => {
+	for (const op of useOps) {
+		assert.ok(
+			Array.isArray(op.examples) && op.examples.length > 0,
+			`use-op '${op.name}' has no examples — author a pi-context invocation`,
+		);
+	}
+});
+
+// ── TASK-042: buildHelpModel pure unit ───────────────────────────────────────
+test("buildHelpModel treats arrayKey as non-synopsis-required and derives related from the help group", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	assert.equal(model.name, "append-block-item");
+	assert.ok(model.synopsis.startsWith("pi-context append-block-item"));
+	// arrayKey: schema-required but auto-derived → bracketed-optional in the synopsis.
+	assert.ok(model.synopsis.includes("[--arrayKey"));
+	assert.ok(!/(?<!\[)--arrayKey </.test(model.synopsis));
+	// block IS synopsis-required (unbracketed, leads the synopsis).
+	assert.ok(/pi-context append-block-item --block <string>/.test(model.synopsis));
+	// related == sorted same-group siblings, self excluded.
+	const expectedRelated = useOps
+		.filter((o) => o.name !== "append-block-item" && groupForOp(o.name) === groupForOp("append-block-item"))
+		.map((o) => o.name)
+		.sort();
+	assert.deepEqual(model.related, expectedRelated);
+	assert.ok(model.related.includes("update-block-item"));
+	assert.ok(!model.related.includes("append-block-item"));
+});
+
+// ── TASK-042: writer-exemption applies where the op genuinely declares writer ─
+// promote-item declares a `writer` property in its op schema (ops-registry.ts),
+// so the auto-inject exemption (`&& f !== "writer"`) must render it
+// bracketed-optional rather than as a bare required token.
+test("buildHelpModel brackets writer as optional on promote-item (which declares writer)", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const m = buildHelpModel(op);
+	assert.ok(m.synopsis.includes("[--writer"));
+});
+
+// ── TASK-042: machine-readable help (--help --format json) ───────────────────
+test("per-op --help --format json emits the HelpModel", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help", "--format", "json"]);
+	assert.equal(code, 0);
+	const m = JSON.parse(out);
+	assert.equal(m.name, "append-block-item");
+	assert.ok(typeof m.synopsis === "string" && m.synopsis.startsWith("pi-context append-block-item"));
+	const blockFlag = m.flags.find((f: { name: string }) => f.name === "block");
+	assert.deepEqual(blockFlag, { name: "block", type: "string", required: true, description: blockFlag.description });
+	assert.equal(blockFlag.type, "string");
+	assert.equal(blockFlag.required, true);
+	assert.ok(Array.isArray(m.examples) && m.examples.length >= 1);
+	assert.ok(Array.isArray(m.related) && m.related.includes("update-block-item"));
+});
+
+test("per-op --help text round-trip exits 0 with SYNOPSIS/EXAMPLES/RELATED", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help"]);
+	assert.equal(code, 0);
+	assert.ok(out.includes("SYNOPSIS"));
+	assert.ok(out.includes("EXAMPLES"));
+	assert.ok(out.includes("RELATED"));
 });
 
 // ── DispatchContext threading (TASK-006) ─────────────────────────────────────

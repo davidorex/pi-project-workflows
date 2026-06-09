@@ -564,27 +564,128 @@ export function authDecision(op: OpDefinition, opts: { yes: boolean; interactive
 	};
 }
 
-/** Per-op help text: description + one line per declared field. */
-export function deriveHelp(op: OpDefinition): string {
+/**
+ * One flag descriptor in the machine-readable help model (CHANGE 3 / TASK-042).
+ * `type` is the enum-join (`eq|neq|in|matches`) for string-enum fields, else the
+ * coarse FieldType tag. `required` reflects the op's declared schema `required` set
+ * verbatim (writer/arrayKey ARE marked required here — the synopsis, not the flag
+ * list, is where their auto-injection is reflected by bracketing).
+ */
+export interface HelpFlag {
+	name: string;
+	type: string;
+	required: boolean;
+	description?: string;
+}
+
+/**
+ * Structured per-op help model — the single source both the text template
+ * (deriveHelp) and the `--help --format json` machine help render from.
+ *
+ * `synopsis` treats `writer` and `arrayKey` as OPTIONAL even when the schema lists
+ * them required, because both are auto-injected after parse (writer from the
+ * resolved operator identity; arrayKey from config.block_kinds[].array_key) — the
+ * same exemption parseOpArgs applies to its required-field check. So a flag is
+ * synopsis-required iff it is schema-required AND not writer/arrayKey.
+ *
+ * `related` is the sibling use-ops sharing this op's top-level help group
+ * (groupForOp — the single grouping source the top-level help uses), name-sorted,
+ * self excluded. pi-bound modes are not useOps, so they never appear.
+ */
+export interface HelpModel {
+	name: string;
+	synopsis: string;
+	summary: string;
+	flags: HelpFlag[];
+	examples: string[];
+	related: string[];
+}
+
+/** writer/arrayKey are auto-injected post-parse, so they are never synopsis-required. */
+function isSynopsisRequired(field: string, schemaRequired: Set<string>): boolean {
+	return schemaRequired.has(field) && field !== "writer" && field !== "arrayKey";
+}
+
+/**
+ * Build the structured per-op help model from the op's typebox parameters +
+ * the registry `examples` + the help-group siblings. Pure — no I/O.
+ */
+export function buildHelpModel(op: OpDefinition): HelpModel {
 	const schema = objectSchema(op);
 	const props = schema.properties ?? {};
 	const required = new Set(schema.required ?? []);
-	const lines = [`${op.name} — ${op.description}`, ""];
-	const entries = Object.entries(props);
-	if (entries.length === 0) {
+
+	const flags: HelpFlag[] = Object.entries(props).map(([name, fschema]) => {
+		const vals = stringEnumValues(fschema);
+		return {
+			name,
+			type: vals ? vals.join("|") : fieldType(fschema),
+			required: required.has(name),
+			...(fschema.description ? { description: fschema.description } : {}),
+		};
+	});
+
+	// Synopsis: required (sans writer/arrayKey) then optional, each `--<f> <type>`,
+	// optionals bracketed. writer/arrayKey fall into the optional/bracketed set.
+	const synReq: string[] = [];
+	const synOpt: string[] = [];
+	for (const f of flags) {
+		const token = `--${f.name} <${f.type}>`;
+		if (isSynopsisRequired(f.name, required)) synReq.push(token);
+		else synOpt.push(`[${token}]`);
+	}
+	const synopsis = [`pi-context ${op.name}`, ...synReq, ...synOpt].join(" ");
+
+	const group = groupForOp(op.name);
+	const related = useOps
+		.filter((o) => o.name !== op.name && groupForOp(o.name) === group)
+		.map((o) => o.name)
+		.sort();
+
+	return {
+		name: op.name,
+		synopsis,
+		summary: op.promptSnippet ?? op.description,
+		flags,
+		examples: op.examples ?? [],
+		related,
+	};
+}
+
+/**
+ * Best-of-breed per-op help text (TASK-042): `<name> — <description>` → SYNOPSIS →
+ * Flags (per-field, enum joins + required/optional + desc; json fields show
+ * `<json | @file>`) → EXAMPLES → RELATED (omitted when empty) → footer →
+ * the Global flags trailer. Plain text.
+ */
+export function deriveHelp(op: OpDefinition): string {
+	const model = buildHelpModel(op);
+	const lines = [`${op.name} — ${op.description}`, "", "SYNOPSIS", `  ${model.synopsis}`, ""];
+
+	if (model.flags.length === 0) {
 		lines.push("  (no parameters)");
 	} else {
 		lines.push("Flags:");
-		for (const [field, fschema] of entries) {
-			const vals = stringEnumValues(fschema);
-			const t = vals ? vals.join("|") : fieldType(fschema);
-			const req = required.has(field) ? "required" : "optional";
-			const desc = fschema.description ? ` — ${fschema.description}` : "";
-			lines.push(`  --${field} <${t}>  (${req})${desc}`);
+		for (const f of model.flags) {
+			const typeShown = f.type === "json" ? "json | @file" : f.type;
+			const req = f.required ? "required" : "optional";
+			const desc = f.description ? ` — ${f.description}` : "";
+			lines.push(`  --${f.name} <${typeShown}>  (${req})${desc}`);
 		}
 	}
+
+	if (model.examples.length > 0) {
+		lines.push("", "EXAMPLES");
+		for (const ex of model.examples) lines.push(`  ${ex}`);
+	}
+
+	if (model.related.length > 0) {
+		lines.push("", "RELATED", `  ${model.related.join("  ")}`);
+	}
+
 	lines.push(
 		"",
+		`Run 'pi-context --help' for all commands; '${op.name} --help --format json' for machine-readable help.`,
 		"Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --show-schema  --dry-run  --help",
 	);
 	return lines.join("\n");
@@ -837,7 +938,15 @@ export async function main(argv: string[]): Promise<number> {
 	}
 
 	if (parsed.help) {
-		process.stdout.write(`${deriveHelp(op)}\n`);
+		// `--help --format json` (or `--help --json`) emits the machine-readable
+		// HelpModel; otherwise the text template. table → text fallback (only json
+		// diverges). parsed.format/parsed.json are already populated by parseOpArgs.
+		const helpFormat = parsed.format ?? (parsed.json ? "json" : "text");
+		if (helpFormat === "json") {
+			process.stdout.write(`${JSON.stringify(buildHelpModel(op))}\n`);
+		} else {
+			process.stdout.write(`${deriveHelp(op)}\n`);
+		}
 		return 0;
 	}
 

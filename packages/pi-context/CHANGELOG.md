@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Added
+- Each surfaced op now carries an optional `examples` field — copy-pasteable `pi-context <op> …` invocation strings consumed by the CLI's per-op `--help` (its `EXAMPLES` section and `--help --format json` model). It is help metadata only and is not part of the in-pi tool surface (the registered pi tool still exposes only name/label/description/promptSnippet/parameters).
+
 ### Fixed
 - An addressed-single-node read now returns the WHOLE addressed subtree (capped), not a 50-item page of one incidental array child. `read-schema --path`, `read-config --registry` (and `--registry --id`), `list-tools name=<tool>`, and `read-samples-catalog kind=<kind>` each name ONE node; the op now passes `whole: true` to the addressed `structureForRead`, so an object node carrying an array child serializes every sibling key instead of collapsing to a page of that one array (dropping siblings). The 50KB read cap is retained — applied unconditionally after the whole-skip — so an over-cap addressed node still fails closed (`data: null`, `complete: false`, `truncated: true`); `whole: true` skips paging only, it does not bypass the cap. The whole-config / whole-schema no-arg wrapper reads and every intentional collection-paging read are unchanged.
 

@@ -17,6 +17,7 @@ function makeProject(opts: {
 		derived_from_field?: string | null;
 		bins: string[];
 		kind?: "target" | "composition";
+		members?: Array<{ lens?: string; from?: string; where?: Record<string, string | number | boolean> }>;
 		render_uncategorized?: boolean;
 	}>;
 	blocks?: Record<string, { key: string; items: Array<Record<string, unknown>> }>;
@@ -194,5 +195,87 @@ describe("context-lens-view op", () => {
 		const data = summary.data as { bins: Record<string, number>; total: number };
 		assert.equal(data.bins.heavy, 30);
 		assert.equal(data.total, 30);
+	});
+
+	it("composition lens summary: dispatches through loadLensView, bins from the unioned member items", () => {
+		// kind=composition lens mirroring context.test.ts's resolveComposition
+		// fixtures — a single 'from' member unions the tasks block, then
+		// derived_from_field="status" groups the unioned set into declared bins.
+		// The op path is lens-kind-agnostic (run() calls loadLensView, which
+		// routes kind=composition through resolveComposition); this drives that
+		// non-target kind at the op level.
+		tmpRoot = makeProject({
+			lenses: [
+				{
+					id: "all-tasks-by-status",
+					kind: "composition",
+					derived_from_field: "status",
+					bins: ["planned", "completed", "empty-bin"],
+					members: [{ from: "tasks" }],
+				},
+			],
+			blocks: {
+				tasks: {
+					key: "tasks",
+					items: [
+						{ id: "TASK-1", status: "planned" },
+						{ id: "TASK-2", status: "completed" },
+						{ id: "TASK-3", status: "completed" },
+						{ id: "TASK-4", status: "blocked" },
+					],
+				},
+			},
+		});
+		const read = run(tmpRoot, { lensId: "all-tasks-by-status" });
+		assert.equal(read.complete, true);
+		const data = read.data as {
+			lens: string;
+			kind: string;
+			bins: Record<string, number>;
+			uncategorized: number;
+			total: number;
+		};
+		assert.equal(data.lens, "all-tasks-by-status");
+		assert.equal(data.kind, "composition");
+		assert.equal(data.bins.planned, 1);
+		assert.equal(data.bins.completed, 2);
+		assert.equal(data.bins["empty-bin"], 0);
+		// TASK-4 (status "blocked") is not in any declared bin -> uncategorized.
+		assert.equal(data.uncategorized, 1);
+		// total = unioned member item count (all four tasks).
+		assert.equal(data.total, 4);
+	});
+
+	it("composition lens per-bin paging: that bin's unioned items, total = bin size, hasMore", () => {
+		tmpRoot = makeProject({
+			lenses: [
+				{
+					id: "all-tasks-by-status",
+					kind: "composition",
+					derived_from_field: "status",
+					bins: ["completed", "planned"],
+					members: [{ from: "tasks" }],
+				},
+			],
+			blocks: {
+				tasks: {
+					key: "tasks",
+					items: [
+						{ id: "TASK-1", status: "planned" },
+						{ id: "TASK-2", status: "completed" },
+						{ id: "TASK-3", status: "completed" },
+					],
+				},
+			},
+		});
+		const page = run(tmpRoot, { lensId: "all-tasks-by-status", bin: "completed", limit: 1 });
+		assert.equal(page.complete, true);
+		const pageData = page.data as { items: Array<{ id: string }>; total: number; hasMore: boolean };
+		assert.ok(pageData.items.length <= 1);
+		assert.equal(pageData.items.length, 1);
+		// total reflects the full "completed" bin (2 items), not the page size.
+		assert.equal(pageData.total, 2);
+		assert.equal(pageData.hasMore, true);
+		assert.equal(pageData.items[0]?.id, "TASK-2");
 	});
 });

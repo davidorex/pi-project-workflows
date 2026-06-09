@@ -2235,6 +2235,47 @@
       "closed_by": "VER-035 / TASK-042 — per-op <op> --help now renders the best-of-breed template (SYNOPSIS + Flags + EXAMPLES + RELATED + footer) via a pure buildHelpModel; OpDefinition gained an additive examples? field authored for all ~50 use-ops; --help --format json emits the structured help model; RELATED derives from the single groupForOp source; the auto-supplied set is single-sourced to AUTO_SUPPLIED (Flags annotate (required; auto-derived/auto-injected)) and the TASK-019 parity gate migrated to read its keys. Additive: in-pi ops frozen, parity gate green.",
       "closed_at": "2026-06-09T00:00:00.000Z",
       "content_parent": "d4c531d8d037d425e9b8b8168119da355a856ba908087599d028465b46a919c6"
+    },
+    {
+      "title": "The reflecting pi-context CLI has no op to project a config-declared target-lens as a binned item-view (the lens-view primitive exists but is reachable only inside a roadmap)",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "FILED AT THE GENERAL CLASS ALTITUDE per the gap-explore-surfaces-class convention. Triggering instance (experience gap, surfaced by dogfooding the CLI): wanting to 'see open gaps', config.lenses[] declares a gaps-by-status target-lens (target framework-gaps, derived_from_field status, bins identified/accepted/in-progress/closed/wontfix) but the CLI has no op that renders it as a binned item-view. The GENERAL gap: the reflecting CLI has no op to project ANY config-declared lens as a binned view — it covers all four declared target-lenses (gaps-by-status, gaps-by-priority, tasks-by-status, features-by-status) and, since the underlying primitive is lens-kind-agnostic, also kind=composition and hand-curated-edge lenses; i.e. the entire config.lenses[] registry is unreachable as a queryable view surface. ROOT CAUSE — exists-but-unexposed, NOT not-implemented: the binned-view primitives are fully implemented in packages/pi-context/src/lens-view.ts — loadLensView(cwd, lensId) (lens-view.ts:43-97) resolves a named lens, reads its target block's items, computes edges, and groups items into the lens's declared bins (handles both kind:target and kind:composition); renderLensView(view, naming) (lens-view.ts:105-150) renders that as markdown (bins -> headings, items -> id/status/title lines) — exactly the 'open gaps binned by status' rendering wanted. But neither is reflected as a standalone op. The op-registry's only lensId-keyed op is context-edges-for-lens (ops-registry.ts:1795-1810), whose handler returns flat Edge[] ({parent:<bin>, child:<itemId>, relation_type}, paginated, no item bodies, no grouping) — edges, NOT the view. loadLensView/renderLensView are reached ONLY embedded in a roadmap: context-roadmap-load/render (ops-registry.ts:1901-1944) materialize per-phase lens-views via loadRoadmap -> serializeRoadmapView (keyed by roadmapId, reading roadmap.json phases). There is no path to render a standalone config.lenses[] entry by its lensId. SUPER-CLASS NOTE (not filed at this altitude, per gap-explore-surfaces-class rule 2 — too diffuse for one FGAP): this gap and FEAT-004's state-derivation gap are both members of a broader 'config-declared vocabulary (lenses / status_buckets / invariants / state-derivation) is under-surfaced as queryable CLI ops' class; lenses/invariants/status_buckets/state-derivation have distinct primitives + distinct fixes (FEAT-004 already owns the state-derivation member), so the right-sized coherent unit is the lens-view-op class, not the super-class. FEAT-004 (config-driven context-current-state/status) is adjacent but does NOT cover lens projection.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/lens-view.ts",
+          "lines": "43-97",
+          "reference": "loadLensView(cwd, lensId) — resolves config.lenses[] entry, reads target items, groups into declared bins (kind:target lines 76-96, kind:composition 61-74); returns {lens, items, edges, grouped, uncategorized, suggestionTemplate} — the binned view. Exists, fully capable of standalone use."
+        },
+        {
+          "file": "packages/pi-context/src/lens-view.ts",
+          "lines": "105-150",
+          "reference": "renderLensView(view, naming) — renders the loaded view as markdown (## <bin> headings, - **<id>** [<status>] — <title> lines). The 'see gaps binned by status' rendering."
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1795-1810",
+          "reference": "context-edges-for-lens — the ONLY lensId-keyed op; returns flat Edge[] (bin-as-parent, id-as-child, paginated, no item bodies, no grouping) — NOT the view. Confirmed: context-edges-for-lens --lensId gaps-by-status --json -> 72 edge records, no titles/status."
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1901-1944",
+          "reference": "context-roadmap-load/render — the ONLY reflected entry points to loadLensView/renderLensView, keyed by roadmapId (roadmap.json phases via serializeRoadmapView), not by a standalone config.lenses[] lensId. No op grep hit for context-lens-view / read-lens / view in the 54-op registry."
+        },
+        {
+          "file": "packages/pi-context/src/config (config.lenses[])",
+          "reference": "read-config --registry lenses --json: four target-lenses declared (gaps-by-status, gaps-by-priority, tasks-by-status, features-by-status) — all unreachable as a binned view; the workaround filter-block-items --block framework-gaps --field status --op eq --value '\"identified\"' returns one bin one status at a time (and over-cap data:null at totalBytes 56933), not the lens."
+        }
+      ],
+      "impact": "The substrate declares a lens vocabulary + ships the binning/render primitives, but the reflecting CLI — the dogfooding + new-user surface — cannot answer 'show me <block> grouped by <status/priority>' for any declared lens. A caller wanting open gaps (or tasks-by-status, features-by-status) must hand-run filter-block-items one bin/one status-value at a time (and hit the 50KB read cap on framework-gaps), reconstructing by hand what loadLensView already computes. The lens model is a first-class config concept that is invisible at the CLI; every target-lens inherits the gap.",
+      "canonical_vocabulary": "config-declared lens projected as a binned item-view via a reflected op",
+      "proposed_resolution": "Add a reflected op (e.g. context-lens-view / read-lens) keyed by --lensId <id> that calls the existing loadLensView(cwd, lensId) (lens-view.ts:43) and returns the grouped item-view (bins -> item records with id/status/title), with the text/--format surface optionally rendering via the existing renderLensView (lens-view.ts:105). Serves ALL config.lenses[] entries (target, composition, hand-curated) since both primitives are lens-kind-agnostic. ADDITIVE: a new op reusing two shipped primitives; context-edges-for-lens + every other op byte-unchanged (consistent with the FEAT-008 additive invariant). The op<->CLI parity gate (parity-check.ts) auto-covers a newly-registered op; the per-op --help template (FGAP-072/TASK-042) auto-renders its synopsis/flags/examples. Route the view through structureForRead / the boundary read-cap (per FGAP-015) so a large lens view (framework-gaps already exceeds 50KB) fail-closes gracefully — the per-bin breakdown is itself the affordance to page by bin. Decompose per feature-decomposition when scheduled.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T00:00:00.000Z",
+      "id": "FGAP-073",
+      "oid": "204bd4df63719f6f0f23fb86c95fbd08",
+      "content_hash": "fe23bcf6e562988534f21f235846cba20ab64280f6ff2f84892bb28f63b0f1ab"
     }
   ]
 }

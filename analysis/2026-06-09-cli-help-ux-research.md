@@ -239,17 +239,18 @@ Each row: **what it is** · **who backs it (guideline/exemplar)** · **how it fi
 
 ---
 
-## 7. Provisional — needs the user's design call
+## 7. Resolved by derivation from the CLI + pi-context facts (not open user-calls)
 
-These are genuine forks the research surfaces but does not settle; resolve before building:
+The earlier framing of these as "design forks needing the user's call" was options-proliferation/hedging — each resolves from the system's own facts; none is a taste choice:
 
-1. **Group taxonomy axis.** gh/docker group by **resource (noun)**; kubectl by **workflow stage**. Ours are reflection-derived ops with name prefixes (`read-`/`append-`/`update-`/`config`/`schema`/relations/process-mode). Likely **verb-prefix grouping** + a distinct **process-mode group** for `pi-bound` — but the exact group set + names + order is a user call (cobra renders groups in definition order, so order is a deliberate choice).
-2. **Color default.** clig.dev/12-factor say TTY-on, non-TTY-off + honor `NO_COLOR`. Given the agent-primary caller, the question is whether to default color **off even on TTY** (plain by default, color opt-in) to keep the agent's captured output clean — or follow the convention (color on TTY). User call.
-3. **`--help --json` scope.** Whether to ship machine-readable help now (high agent value) or defer; and whether it's `--help --json` vs a general `--format` knob spanning all op output. User call on surface shape.
-4. **Source of the one-liner.** Use the existing short `promptSnippet` verbatim as the grouped-listing summary, vs. authoring a dedicated `summary` field. `promptSnippet` is shorter and already exists; confirm it reads well as a help one-liner across all 48, or budget a `summary` field.
-5. **Examples authoring cost.** Per-op `examples[]` is the single highest-value element but requires authoring ~48 entries (seedable from CLAUDE.md filing patterns). Decide: hand-author all now (best-of-breed) vs. derive a synthetic example from the synopsis as a floor. (Note: the project's standing mandate is best-of-breed/no-deferral — flagged so the cost is a conscious decision, not an omission.)
-6. **`pi-bound` (process-mode) representation.** It's a process-mode command, not a registry op — decide whether it appears as its own group/entry in the grouped listing and how its `--help` is generated (it isn't reflected like the ops).
-7. **Reliance on the 10–32× CLI-vs-MCP claim.** Treat as landscape signal only (§5); do not cite as load-bearing justification — it's a reported, unverified secondary claim.
+1. **Group taxonomy + ordering — DERIVED, not curated.** The op names already encode the partition: **Read/Query** (`read-*`, `resolve-*`, `find-references`, `filter-*`, `join-*`, `walk-*`), **Block writes** (`append/update/upsert/remove-block-item` + nested, `write-block`), **Relations** (`append/remove/replace-relation(s)`), **Schema & config** (`read/write-schema*`, `amend-config`, `read-config`, `rename-canonical-id`), **Substrate lifecycle** (`context-*`, `update`), **Workflow** (`complete-task`, `resolve-conflict`, `promote-item`), **Process mode** (`pi-bound`). The order is dictated by op semantics — read-before-mutate → vocabulary → lifecycle → process-mode last — not by frequency-guessing. Implement as a PURE CLASSIFIER over the op name (a new op auto-slots; the parity gate keeps it honest); never a hardcoded curated list (that would be the drift-prone parallel list `gap-arc-coherence` + the parity gate exist to prevent).
+2. **Color default — plain.** Plain by default; honor `NO_COLOR`/`TERM=dumb`/`--no-color`. The agent-primary caller settles it: TTY-color has no upside for captured output.
+3. **Machine help — through the existing `--format`.** `--format text|json|table` already shipped (the output layer); help participates in it. No parallel `--help --json` surface.
+4. **One-liner source — reuse `promptSnippet`.** It exists, is short, is the op-surface one-liner; audit the ~48 and fix any that read poorly (maintained op-surface strings). No new field.
+5. **Examples — author all ~48 now.** Seeded from the CLAUDE.md filing patterns. The standing best-of-breed/no-deferral mandate settles it; a synthetic floor is the rejected ship-after tier.
+6. **`pi-bound` — its own discoverable group entry with authored help** (process-mode, not a reflected op).
+
+Data caveat (not a fork): the circulating ~10–32× CLI-vs-MCP token/reliability multiplier (§5) is unverified landscape signal — do not cite it as load-bearing justification.
 
 ---
 

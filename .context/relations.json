@@ -4065,5 +4065,31 @@
       "refname": "FGAP-021"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9556ca047e5d0a0ff7c9ac7d7337c2f9",
+      "refname": "TASK-041"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
+      "refname": "FEAT-007"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9556ca047e5d0a0ff7c9ac7d7337c2f9",
+      "refname": "TASK-041"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "refname": "derive-decisions-from-facts"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

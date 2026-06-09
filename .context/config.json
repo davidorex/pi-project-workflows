@@ -505,6 +505,28 @@
       "target_kinds": [
         "*"
       ]
+    },
+    {
+      "canonical_id": "decision_derived_from_item",
+      "display_name": "derived from",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "decision_escalates_underdetermined",
+      "display_name": "escalates underdetermined choice",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
     }
   ],
   "lenses": [
@@ -714,6 +736,18 @@
       "direction": "as_parent",
       "severity": "error",
       "message": "Task '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "decision-shows-derivation",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "decision_derived_from_item",
+        "decision_escalates_underdetermined"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Decision '{id}' shows no derivation basis — add a decision_derived_from_item edge to the fact its resolution derives from, or a decision_escalates_underdetermined edge to the framework-gap capturing a genuinely-underdetermined escalated choice (derive-decisions-from-facts)"
     }
   ],
   "tool_operations": [],

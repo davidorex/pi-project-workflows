@@ -296,7 +296,7 @@
     },
     {
       "description": "Behavioral parity gate — the regression guard that locks in TASK-015/016/017/018. Asserts in-pi op <-> reflecting-CLI parity: the CLI is a faithful ADDITIVE reflection of the op-registry. The orchestrator scripts are composers/launch-support, NOT a parity reference; the two canonical routes are the in-pi op and the reflecting CLI. Extends scripts/parity-check.ts AFTER its existing hard static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) with two new HARD op<->CLI checks, and RETIRES the soft op<->orchestrator-script comparison (checkDualSurfaceParity + its scriptsDir/DUAL_SURFACE machinery). Check 1 (required-but-derivable, FGAP-019 class): parse the CLI required-filter exemptions from cli.ts source and assert every config-derivable required op param (arrayKey, derived by injectArrayKey) is exempted by the CLI — FAILs if arrayKey is dropped from the filter or a new config-derivable required param is added without an exemption. Check 2 (output-shape, FGAP-020/027 class): run read-schema --path at an object node via BOTH routes in-process (the op run() and the CLI main() --json) on a fixture substrate and assert the op's r.read.data equals the CLI's output.data (boundedJsonOutput unwraps {read} so output === r.read) — FAILs on any op/CLI output divergence. In-process harness (not a subprocess of dist/bin.js) because husky pre-commit does not build dist. Folds into the same violations[]/exit-1 aggregation; main() becomes async. Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; durability mechanism.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "scripts/parity-check.ts",
         "test fixtures (new fixture substrate)"
@@ -314,8 +314,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-019",
       "oid": "a68e51861de5dd7113768b3052d18661",
-      "content_hash": "aeaca5d4fb215deac92b413de57d8b6956c946c81937c05ae67717a7ce6407b0",
-      "content_parent": "f46995577149a2e350db061653b70b59059ef4146b3a7f5757c34e604efaca4d"
+      "content_hash": "5b6333377d21dd8b744009a7c1a91c2727ef89802526039f26d0d95ff5464ac1",
+      "content_parent": "aeaca5d4fb215deac92b413de57d8b6956c946c81937c05ae67717a7ce6407b0"
     },
     {
       "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals; the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",

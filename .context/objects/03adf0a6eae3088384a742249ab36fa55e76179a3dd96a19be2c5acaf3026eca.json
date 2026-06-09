@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-09T00:00:00.000Z",
+  "evidence": "TASK-019 (FEAT-008 order 5/6) the behavioral parity gate, REFRAMED to in-pi op <-> reflecting-CLI parity (the orchestrator scripts are off the table as a parity reference) and verified end-to-end incl. a live bite demonstration. Closes no gap directly — it is the durability guard that locks in TASK-015/016/017/018, converting the parity class from found-by-dogfooding to caught-at-commit. scripts/parity-check.ts (8ae30ff): RETIRED the soft op<->orchestrator-script comparison (checkDualSurfaceParity + scriptsDir/DUAL_SURFACE machinery; scriptParsesFlag refactored to a generic AST extractStringLiterals); the 3 pre-existing HARD static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) are intact. Added two HARD op<->CLI checks into the same violations[]/exit-1 aggregation: (1) checkRequiredButDerivable (FGAP-019 class) parses the CLI required-filter exemptions from packages/pi-context-cli/src/cli.ts source via AST string-literal extraction and asserts every config-derivable required op param (DERIVABLE={arrayKey}) is CLI-exempted (a global assertion + a per-op assertion); (2) checkOutputShapeParity (FGAP-020/027 class) runs read-schema --path at an object node via the op route (ops.find.run -> r.read) AND the in-process real CLI route (import { main } from @davidorex/pi-context-cli -> parseOpArgs -> inject -> run -> boundedJsonOutput -> envelope.output) and asserts deep-equal via pure diffReadPayload. main() is async. A tsconfig.json source alias @davidorex/pi-context-cli -> ./packages/pi-context-cli/src/cli.ts (the only workspace package previously lacking one) enables the in-process CLI import under tsc+tsx with NO dist dependency — load-bearing because husky pre-commit does not build dist (a subprocess of dist/bin.js would observe a stale bin). Verification: the gate runs green on the current tree (npx tsx scripts/parity-check.ts exit 0, 'op<->CLI input + output parity OK'); LIVE BITE — dropping arrayKey from cli.ts:420's exemption makes the gate exit 1 with 8 required-but-derivable violations (global + per arrayKey-requiring op), reverted; the output-shape check is a GENUINE independent comparison (the probe injected a CLI-side transform mutating output.data and the gate caught it exit 1 — not tautological). build+check+full-test green (fail 0 all packages; parity-check.test.ts negative fixtures + the real-tree integration green). Fresh adversarial probe PASS zero defects: no op<->script reference remains, the 3 static checks intact, required-but-derivable bites + AST extraction robust to quote-style/reformatting, output-shape genuinely bites its own class, in-process no-stale-dist with the alias load-bearing + zero other importers, main() async exit-code correct, the tsconfig alias broke no package type-check. NOTE: the gate verifies SOURCE-level op<->CLI parity by design (in-process main, not the global binary); the output-shape fixture anchors on read-schema --path (the FGAP-020/027 class anchor).",
+  "criteria_results": [
+    {
+      "criterion": "The gate FAILs on a reintroduced required-but-derivable param (the CLI no longer exempts a config-derivable required op param) — FGAP-019 class",
+      "status": "passed",
+      "evidence": "live bite: dropping arrayKey from cli.ts:420 -> gate exit 1 with global + per-op violations; AST string-literal extraction robust to reformatting"
+    },
+    {
+      "criterion": "The gate FAILs on an in-pi-op vs reflecting-CLI output-shape divergence on the read-schema --path fixture — FGAP-020/027 class",
+      "status": "passed",
+      "evidence": "genuine independent comparison (CLI route drives the real main dispatch); probe injected a CLI output.data transform -> gate exit 1; diffReadPayload negative tests bite"
+    },
+    {
+      "criterion": "The soft op<->orchestrator-script comparison is retired; no op<->script parity reference remains (scripts off the table)",
+      "status": "passed",
+      "evidence": "checkDualSurfaceParity + scriptsDir/scriptParsesFlag/DUAL_SURFACE removed; the only scripts/orchestrator mention is the comment stating they are NOT a parity reference"
+    },
+    {
+      "criterion": "The gate's new checks are pure/unit-testable and PROVEN to bite via negative fixtures; the real-tree integration is green",
+      "status": "passed",
+      "evidence": "checkRequiredButDerivable + diffReadPayload pure + injectable; negative fixtures bite; integration green; parity-check.test.ts fail 0"
+    },
+    {
+      "criterion": "Runs as the existing husky/CI parity-check phase after the static checks (same exit-1 aggregation); green on the current tree",
+      "status": "passed",
+      "evidence": "folded into main() violations[] after the static checks; husky pre-commit + CI invocation unchanged; gate exit 0 on the current tree"
+    },
+    {
+      "criterion": "Canonical pipeline green (incl. runtime demo of the gate + a bite demonstration + fresh adversarial audit)",
+      "status": "passed",
+      "evidence": "build/check/test fail 0; gate runtime demo + live FGAP-019 bite + probe-injected output divergence bite; fresh adversarial probe PASS zero defects"
+    }
+  ]
+}

@@ -2318,6 +2318,41 @@
       "created_at": "2026-06-09T10:47:57.307Z",
       "oid": "93f4e2eb7f52c8ea4c9f12735fd1a7af",
       "content_hash": "759ecc91228fff086f5a37c785616293e92bb113cc0da996ef095dc66628f24b"
+    },
+    {
+      "title": "check-changelog watched-surface derivation over-includes non-shipping files — build-excluded *.test.ts and monitor examples/*.patterns.json learned-pattern stores",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "scripts/check-changelog.ts derives a package's watched published surface from package.json files[], mapping the shipped dist/ to the whole src/ tree (watchDirsFromFiles, scripts/check-changelog.ts:56-72). This over-includes files that do not ship: (1) *.test.ts — every tsconfig.build.json excludes **/*.test.ts, so tests never compile to dist/; (2) the behavior-monitor learned-pattern stores packages/pi-behavior-monitors/examples/*.patterns.json (hedge, fragility, commit-hygiene, unauthorized-action, work-quality) — a monitor test rewrites them on each run, and examples/ is in that package's files[]. A change confined to either class is flagged 'published-surface change without a [Unreleased] entry,' demanding a changelog line for a change that never reaches dist/. General class: the dist/->src/ whole-tree watch counts build-excluded files and data-dir files that are not shipped API; the two classes above are its instances.",
+      "evidence": [
+        {
+          "file": "scripts/check-changelog.ts",
+          "lines": "56-72",
+          "reference": "watchDirsFromFiles maps a files[] dist/ entry to the whole packages/<pkg>/src/ prefix (or *.ts for root-source packages), with no exclusion for *.test.ts."
+        },
+        {
+          "file": "packages/pi-context/tsconfig.build.json",
+          "lines": "8",
+          "reference": "exclude includes **/*.test.ts — test files never compile to dist/ and never ship."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/package.json",
+          "reference": "files[] ships examples/, so check-changelog watches packages/pi-behavior-monitors/examples/ — including the *.patterns.json learned-pattern stores."
+        },
+        {
+          "file": "packages/pi-behavior-monitors/examples/hedge.patterns.json",
+          "reference": "rewritten by a behavior-monitor test run (learned-pattern append), producing a tracked-file diff that the gate counts as a published-surface change."
+        }
+      ],
+      "impact": "A change confined to non-shipping test files or to a monitor learned-pattern store cannot be committed without adding a spurious [Unreleased] line for a change that does not ship. The gate's published-surface model is broader than the shipped dist/ artifact.",
+      "canonical_vocabulary": "published-surface derivation matching the shipped artifact",
+      "proposed_resolution": "Add a subtractive isExemptSurface(path) predicate in check-changelog.ts exempting /\\.test\\.[cm]?tsx?$/ and packages/pi-behavior-monitors/examples/ paths ending in .patterns.json; filter changedPaths through it at the top of changedPackages, before classification. Subtractive and orthogonal — watchDirsFromFiles/pathInWatchSet/unreleasedGrew unchanged; a genuine src/*.ts (non-test) and a real examples/*.monitor.json still flag. Extend check-changelog.test.ts with the exempt-passes and the real-surface-still-flags cases.",
+      "id": "FGAP-075",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T16:02:20.407Z",
+      "oid": "cc70d9e9aa6271bc6a565563cd641e8f",
+      "content_hash": "9c052f84eab6169026f45c74030a1343b1b1e7c0f0bd23dc8851cb3d3eaca891"
     }
   ]
 }

@@ -839,6 +839,26 @@
       "id": "TASK-044",
       "oid": "83b542ad005a85837f29afacd4818514",
       "content_hash": "56690ad82064bef5d5b0e73e0782fc028e38fd3f42058f1a535dd53fe12167c5"
+    },
+    {
+      "description": "Fix the check-changelog watched-surface over-flag — closes FGAP-075. Add a subtractive isExemptSurface(path) predicate to scripts/check-changelog.ts and filter changedPaths through it at the top of changedPackages, so build-excluded *.test.ts and the monitor packages/pi-behavior-monitors/examples/*.patterns.json learned-pattern stores no longer count as published surface. Orthogonal to watchDirsFromFiles/pathInWatchSet/unreleasedGrew; a genuine src/*.ts or examples/*.monitor.json still flags.",
+      "status": "planned",
+      "files": [
+        "scripts/check-changelog.ts",
+        "scripts/check-changelog.test.ts"
+      ],
+      "acceptance_criteria": [
+        "isExemptSurface(path) returns true for a path matching /\\.test\\.[cm]?tsx?$/ and for a packages/pi-behavior-monitors/examples/ path ending in .patterns.json; false for src/*.ts and examples/*.monitor.json.",
+        "changedPackages filters exempt paths before classification: a change set of only *.test.ts and/or examples/*.patterns.json yields no flagged package; a change set including a real src/*.ts (non-test) still flags its package.",
+        "check-changelog.test.ts covers: (a) a *.test.ts-only set passes; (b) an examples/*.patterns.json set passes while an examples/*.monitor.json set still flags pi-behavior-monitors; (c) regression — a real src/*.ts set still flags; the existing block-api.ts case still passes; plus a direct isExemptSurface unit test.",
+        "Runtime: with the staged TASK-043 lens-view-op.test.ts + hedge.patterns.json, `npx tsx scripts/check-changelog.ts` exits 0 (no demand); staging a genuine src/*.ts with no [Unreleased] line still exits 1 (the gate still bites).",
+        "npm run build + npm run check (scripts/ is biome-scoped — tabs/format-clean) + npm test fail 0; the full husky pre-commit passes for the gate-fix commit.",
+        "FGAP-075 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-075. Subtractive predicate + filter only; no change to the watch-set derivation or matching. The gate fix lives in scripts/ (not a watched package surface), so committing it does not self-trip. Unblocks the TASK-043 composition-test + hedge.patterns.json commit. Separate, noted-not-fixed: a monitor test mutates the shipped hedge.patterns.json on each run (test-hygiene).",
+      "id": "TASK-045",
+      "oid": "ccd67db743977afcb388fe54f42b2e51",
+      "content_hash": "4e47b8a9f3bbf419a76d21ac34900585ee2170634b318a751219e8bc9c69f0d8"
     }
   ]
 }

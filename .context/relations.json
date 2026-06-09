@@ -4195,5 +4195,31 @@
       "refname": "TASK-042"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "418e56f7c6d4d87abbb80bf2405746a0",
+      "refname": "TASK-043"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "204bd4df63719f6f0f23fb86c95fbd08",
+      "refname": "FGAP-073"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "418e56f7c6d4d87abbb80bf2405746a0",
+      "refname": "TASK-043"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

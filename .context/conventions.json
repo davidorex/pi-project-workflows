@@ -64,6 +64,14 @@
       "oid": "45b494a39bd09cddaebff5816be095f9",
       "content_hash": "a35eae9032f980e8b328612af26c352d508522e4f8d9a323b56482783675e974",
       "content_parent": "12c22d5c69decace1b26aa07799dbea00473f99d0637cb04b0dd658543d510de"
+    },
+    {
+      "id": "gap-explore-surfaces-class",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "When exploring/investigating a gap (an experience gap, defect, or any FGAP candidate), the investigation MUST identify and surface whether the specific gap is an INSTANCE of a more general class — and if so, characterize that class. Apply during the explore step of the canonical pipeline, alongside root-cause / shape / reproducible-conditions / prior-art-search.\n1. The investigating agent's brief asks explicitly: 'is the gap being explored a class of a more general thing?' The agent answers it with evidence (the sibling instances the general gap would also cover), not silence.\n2. File the gap at the level the class warrants: the GENERAL gap, with the specific symptom named as its triggering instance — not the narrow symptom alone. Filing the symptom leaves the class unaddressed (architectural debt) and invites duplicate filings for sibling instances.\n3. If the explore concludes the gap is genuinely atomic (no broader class), state that conclusion explicitly with the reasoning — the surfacing is mandatory, the generalization is not assumed.\n4. This generalizes the iterate-to-zero 'fix the class, not the one symptom' rule UP to the gap-identification step: recognize that the gap ITSELF may be a narrow instance of a broader gap, and frame/file at the right altitude.\nWorked example: 'the CLI cannot render gaps-by-status as a binned view' is an instance of the general 'the reflecting CLI has no op to project ANY config-declared target-lens (gaps/tasks/features by status/priority) as a view' — file the general gap, cite the gaps-view as the trigger.\nEnforcement: at review of the explore output + the FGAP filing; structurally, a filed gap whose body does not address the class question is incomplete.",
+      "oid": "c6b4ddf46743609c19104c07ff334c37",
+      "content_hash": "d8a12e921526e7114f7868c186382d0bc65e719abadc8f3d8ba5f53dbf323046"
     }
   ]
 }

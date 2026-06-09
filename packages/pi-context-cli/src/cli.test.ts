@@ -347,6 +347,74 @@ test("deriveHelp synopsis brackets arrayKey as optional (auto-derived); block/it
 	assert.ok(!synopsisLine.includes("[--block"));
 });
 
+// ── TASK-042 iterate-to-zero: auto-supplied Flags-line annotation ────────────
+// A CLI-auto-supplied param (arrayKey/writer) is schema-required, so the Flags
+// block shows (required) — reconciled with the bracketed-optional synopsis by
+// appending the provenance phrase. Non-auto-supplied required params keep a plain
+// (required) with NO marker.
+test("deriveHelp annotates the arrayKey Flags line auto-derived; block stays a plain (required)", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	// Flags-block lines are indented `  --<name> <type>  (...)`; the SYNOPSIS line
+	// also names the flags, so select the indented Flags-block line by its tag.
+	const arrayKeyLine = help.split("\n").find((l) => l.startsWith("  --arrayKey <"));
+	assert.ok(arrayKeyLine);
+	assert.ok(arrayKeyLine.includes("auto-derived from --block"));
+	assert.ok(arrayKeyLine.includes("(required; auto-derived from --block)"));
+	// A non-exempt required field carries no provenance marker.
+	const blockLine = help.split("\n").find((l) => l.startsWith("  --block <"));
+	assert.ok(blockLine);
+	assert.ok(blockLine.includes("(required)"));
+	assert.ok(!blockLine.includes("auto-derived"));
+	assert.ok(!blockLine.includes("auto-injected"));
+});
+
+test("deriveHelp annotates the writer Flags line auto-injected on promote-item", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const help = deriveHelp(op);
+	const writerLine = help.split("\n").find((l) => l.startsWith("  --writer <"));
+	assert.ok(writerLine);
+	assert.ok(writerLine.includes("auto-injected"));
+	assert.ok(writerLine.includes("(required; auto-injected)"));
+});
+
+// ── TASK-042 iterate-to-zero: auto-supplied carried in the help model ────────
+test("buildHelpModel carries autoSupplied on arrayKey (schema-required) and omits it on block", () => {
+	const op = resolveOp("append-block-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	const arrayKeyFlag = model.flags.find((f) => f.name === "arrayKey");
+	assert.ok(arrayKeyFlag);
+	assert.equal(arrayKeyFlag.autoSupplied, "auto-derived from --block");
+	assert.equal(arrayKeyFlag.required, true);
+	const blockFlag = model.flags.find((f) => f.name === "block");
+	assert.ok(blockFlag);
+	assert.equal(blockFlag.autoSupplied, undefined);
+});
+
+test("buildHelpModel carries autoSupplied on writer for promote-item", () => {
+	const op = resolveOp("promote-item");
+	assert.ok(op);
+	const model = buildHelpModel(op);
+	const writerFlag = model.flags.find((f) => f.name === "writer");
+	assert.ok(writerFlag);
+	assert.equal(writerFlag.autoSupplied, "auto-injected");
+});
+
+test("per-op --help --format json carries autoSupplied on arrayKey, not on block", async () => {
+	const { code, out } = await captureMainStdout(["append-block-item", "--help", "--format", "json"]);
+	assert.equal(code, 0);
+	const m = JSON.parse(out);
+	const arrayKeyFlag = m.flags.find((f: { name: string }) => f.name === "arrayKey");
+	assert.ok(arrayKeyFlag);
+	assert.equal(arrayKeyFlag.autoSupplied, "auto-derived from --block");
+	const blockFlag = m.flags.find((f: { name: string }) => f.name === "block");
+	assert.ok(blockFlag);
+	assert.equal(blockFlag.autoSupplied, undefined);
+});
+
 // ── TASK-042: examples-coverage guard ────────────────────────────────────────
 // Every surfaced op MUST carry ≥1 authored example. A future use-op added without
 // examples FAILS here — the guard against a synthetic/empty floor.

@@ -568,14 +568,18 @@ export function authDecision(op: OpDefinition, opts: { yes: boolean; interactive
  * One flag descriptor in the machine-readable help model (CHANGE 3 / TASK-042).
  * `type` is the enum-join (`eq|neq|in|matches`) for string-enum fields, else the
  * coarse FieldType tag. `required` reflects the op's declared schema `required` set
- * verbatim (writer/arrayKey ARE marked required here — the synopsis, not the flag
- * list, is where their auto-injection is reflected by bracketing).
+ * verbatim (writer/arrayKey ARE marked required here — schema-truth). `autoSupplied`
+ * carries the AUTO_SUPPLIED provenance phrase when the CLI fills the param after
+ * parse (writer / arrayKey), else omitted — the Flags block + json help render it as
+ * `(required; <autoSupplied>)` so a schema-required-but-CLI-supplied param is not
+ * mistaken for one the caller must pass.
  */
 export interface HelpFlag {
 	name: string;
 	type: string;
 	required: boolean;
 	description?: string;
+	autoSupplied?: string;
 }
 
 /**
@@ -601,9 +605,31 @@ export interface HelpModel {
 	related: string[];
 }
 
-/** writer/arrayKey are auto-injected post-parse, so they are never synopsis-required. */
+/**
+ * Single source for the CLI's auto-supplied params: a field declared `required`
+ * by the op schema that the CLI fills after parse, so the caller never passes it.
+ * Maps the param name to its provenance phrase. This map is the ONE source for
+ * both the synopsis exemption (bracketed-optional, `isSynopsisRequired`) and the
+ * per-flag `autoSupplied` annotation surfaced in the Flags block + json help —
+ * reconciling the Flags `(required)` schema-truth with the optional synopsis so
+ * neither surface contradicts the other (TASK-042 iterate-to-zero finding):
+ *   - writer:   injectWriter fills it from the resolved operator identity
+ *   - arrayKey: injectArrayKey derives it from config.block_kinds[].array_key
+ */
+const AUTO_SUPPLIED: Record<string, string> = {
+	writer: "auto-injected",
+	arrayKey: "auto-derived from --block",
+};
+
+/**
+ * A field is synopsis-required iff the schema lists it required AND the CLI does
+ * NOT auto-supply it. Auto-supplied params (AUTO_SUPPLIED) are post-parse fills,
+ * so they render bracketed-optional in the synopsis even when schema-required —
+ * derived from AUTO_SUPPLIED so the exemption and the `autoSupplied` annotation
+ * share one source (no hardcoded writer/arrayKey literal here).
+ */
 function isSynopsisRequired(field: string, schemaRequired: Set<string>): boolean {
-	return schemaRequired.has(field) && field !== "writer" && field !== "arrayKey";
+	return schemaRequired.has(field) && !(field in AUTO_SUPPLIED);
 }
 
 /**
@@ -622,6 +648,7 @@ export function buildHelpModel(op: OpDefinition): HelpModel {
 			type: vals ? vals.join("|") : fieldType(fschema),
 			required: required.has(name),
 			...(fschema.description ? { description: fschema.description } : {}),
+			...(name in AUTO_SUPPLIED ? { autoSupplied: AUTO_SUPPLIED[name] } : {}),
 		};
 	});
 
@@ -668,9 +695,13 @@ export function deriveHelp(op: OpDefinition): string {
 		lines.push("Flags:");
 		for (const f of model.flags) {
 			const typeShown = f.type === "json" ? "json | @file" : f.type;
-			const req = f.required ? "required" : "optional";
+			// required/optional is schema-truth; an auto-supplied param appends its
+			// provenance (`required; auto-derived from --block`) so the (required) tag
+			// here does not contradict the bracketed-optional synopsis.
+			const baseTag = f.required ? "required" : "optional";
+			const tag = f.autoSupplied ? `${baseTag}; ${f.autoSupplied}` : baseTag;
 			const desc = f.description ? ` — ${f.description}` : "";
-			lines.push(`  --${f.name} <${typeShown}>  (${req})${desc}`);
+			lines.push(`  --${f.name} <${typeShown}>  (${tag})${desc}`);
 		}
 	}
 

@@ -4000,5 +4000,70 @@
       "refname": "TASK-019"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
+      "refname": "R-0011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e460e331ed4de4200a6d09a86138fb14",
+      "refname": "FEAT-008"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
+      "refname": "R-0011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9e43e32a0b1bd729a3259f1faff3972b",
+      "refname": "TASK-040"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
+      "refname": "R-0011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6e97fee15ea7746c3535e2ce37a4b16e",
+      "refname": "FGAP-062"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
+      "refname": "R-0011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ce58a2be65cf437b2c58bc5b4986c14",
+      "refname": "FGAP-063"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
+      "refname": "R-0011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a23d5835258e1b607bfa3e3f59f87e88",
+      "refname": "FGAP-021"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

@@ -795,7 +795,7 @@
     },
     {
       "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context-cli/src/cli.ts",
@@ -816,8 +816,8 @@
       "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased].",
       "id": "TASK-043",
       "oid": "418e56f7c6d4d87abbb80bf2405746a0",
-      "content_hash": "1b1c6669fd61cab3f7fa945bd76e176c8dba3aee79cf9ce9764b73d5c112b32b",
-      "content_parent": "d543306b45359b333d83fcb4c31e2fd995b15374d2d20be5618d15e9e2f450bb"
+      "content_hash": "3792a69f8fa1242c0eb6422c1291344a752bd44f0a0c9e6a1c345bd5f0ed15cd",
+      "content_parent": "1b1c6669fd61cab3f7fa945bd76e176c8dba3aee79cf9ce9764b73d5c112b32b"
     },
     {
       "description": "Broaden the rhetorical-register checkpoint guard and clean the existing violating context atoms. Closes FGAP-074. Two parts: (1) extend the register-checkpoint hook (.claude/hooks/, currently framework-gaps-only) to cover append AND update/closure writes for tasks, verification, decisions, issues, research, features, and framework-gaps; exclude session-notes. (2) Rewrite every existing violating block body (the ~118 items in the FGAP-074 audit) to declarative current-truth per rhetorical-register, preserving all load-bearing content.",

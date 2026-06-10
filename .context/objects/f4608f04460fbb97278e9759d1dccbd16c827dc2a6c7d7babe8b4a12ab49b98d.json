@@ -1,0 +1,15 @@
+{
+  "description": "Make pi-context update --dryRun predict the precise catalog-ahead outcome — closes FGAP-066. In updateContext's catalog-ahead dry branch (packages/pi-context/src/index.ts:1239-1262), replace the unconditional `resynced` push with a READ-ONLY simulation of the live resync: find the catalog migration chain, forward-migrate the populated block in memory, and AJV-validate the migrated items against the new schema, classifying the schema as resynced / migrated / blocked exactly as the live resyncSchema (:599-641) would — without writing. Report migrationsRegistered only for non-blocked outcomes (a live blocked run rolls the decls back). Dry and live outcomes must be identical for every catalog-ahead schema.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "The catalog-ahead dry branch forward-migrates the populated block in memory and AJV-validates against the new schema, classifying resynced/migrated/blocked by the same logic as the live resyncSchema, writing nothing (schema/block/migrations.json/config byte-unchanged after --dryRun).",
+    "Dry/live OUTCOME PARITY: for any catalog-ahead schema, `update --dryRun` reports the same per-schema bucket (resynced | migrated | blocked) that a subsequent live `update` produces. Demonstrated on a substrate where a 1.0.0->1.0.1 bump adds a required field the existing items lack: --dryRun reports `blocked` (not `resynced`), matching the live run.",
+    "migrationsRegistered under --dryRun lists decls only for non-blocked outcomes — a schema the dry run classifies `blocked` lists no would-register decls (parity with the live rollback).",
+    "A catalog-ahead schema whose items DO forward-migrate cleanly is reported `migrated` (or `resynced` when there are no items) under --dryRun, matching live.",
+    "build + check + full test pass; a runtime demo shows dry and live producing identical buckets on both a clean-migrate and a blocked substrate; FGAP-066 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-066. Scope is the dry-branch faithfulness only — the live path (resyncSchema) is already correct. Empirical grounding + reproduction: R-0012 / analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md. The registry-propagation-on-blocked transactional question is a SEPARATE finding (a decision + a legibility gap), not this task."
+}

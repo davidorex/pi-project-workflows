@@ -863,7 +863,7 @@
     },
     {
       "description": "Make pi-context update --dryRun predict the precise catalog-ahead outcome — closes FGAP-066. In updateContext's catalog-ahead dry branch (packages/pi-context/src/index.ts:1239-1262), replace the unconditional `resynced` push with a READ-ONLY simulation of the live resync: find the catalog migration chain, forward-migrate the populated block in memory, and AJV-validate the migrated items against the new schema, classifying the schema as resynced / migrated / blocked exactly as the live resyncSchema (:599-641) would — without writing. Report migrationsRegistered only for non-blocked outcomes (a live blocked run rolls the decls back). Dry and live outcomes must be identical for every catalog-ahead schema.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts"
       ],
@@ -877,7 +877,8 @@
       "notes": "Closes FGAP-066. Scope is the dry-branch faithfulness only — the live path (resyncSchema) is already correct. Empirical grounding + reproduction: R-0012 / analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md. The registry-propagation-on-blocked transactional question is a SEPARATE finding (a decision + a legibility gap), not this task.",
       "id": "TASK-046",
       "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
-      "content_hash": "d7cddef5f6a629c2b5466af26f53dbade7c9e6928c5beae7896ac3e6c7705473"
+      "content_hash": "f4608f04460fbb97278e9759d1dccbd16c827dc2a6c7d7babe8b4a12ab49b98d",
+      "content_parent": "d7cddef5f6a629c2b5466af26f53dbade7c9e6928c5beae7896ac3e6c7705473"
     },
     {
       "description": "Add the advancer-completion invariant class to the validator — closes FGAP-082. Extend InvariantDecl (context.ts:202-214) and validateContext's invariant executor with a third config-declarable class: for a source item entering when_bucket (complete), every target reached via the declared relation_types (task_advances_story / feature_advances_story) must be met — met = at least one incoming advancer edge whose endpoint item is in met_bucket (complete) — with self_satisfies so the completing item counts as its own stories' advancer (the single-advancer case must not deadlock). Severity error at context-validate. Code change: full canonical pipeline.",

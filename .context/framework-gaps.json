@@ -2389,6 +2389,155 @@
       "created_at": "2026-06-09T22:20:35.633Z",
       "oid": "ce550805023c174d4626b03da56911a7",
       "content_hash": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
+    },
+    {
+      "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "No surface reports which item id, field, and constraint cause a block's items to fail a schema. update's resyncSchema discards the AJV error at an unbound catch (index.ts:622), returning a bare {status:blocked}. context-validate runs referential-integrity + invariant checks only, not per-item schema validation. No op validates a block's items against a target schema and returns the failures. The AJV detail is fully present at the throw site (allErrors:true; instancePath, keyword, params, message) and dropped. An operator facing a blocked schema must hand-validate the block against the catalog schema to learn what failed.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "622",
+          "reference": "resyncSchema's catch is unbound — the thrown ValidationError carrying errors[] is discarded; returns {status:blocked, registeredMigrations:[]}"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "reference": "validate compiles with allErrors:true and throws ValidationError holding the full per-item AJV errors[] (instancePath/keyword/params/message)"
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "reference": "validateContext checks edge referential integrity + config-declared invariants only; it never AJV-validates block items against their schemas"
+        }
+      ],
+      "impact": "A blocked schema is opaque: the operator cannot see which item or field failed, cannot distinguish a real invalid item from a migrate/validate fault, and must reverse-engineer the failure by hand-validating the block.",
+      "canonical_vocabulary": "per-item schema-validation diagnostic",
+      "proposed_resolution": "A returns-not-throws per-item validator — block items against a target schema version yielding per-item {item id, field, keyword, params} — surfaced both as a standalone op and within update's blocked output, mapping instancePath /<arrayKey>/N to the item id. Reuses the AJV errors validate/validateBlockWithMigrationForDir already produce; shares the in-memory migrate+validate primitive with FGAP-066/TASK-046. Distinct from FGAP-076 (partial-application legibility).",
+      "id": "FGAP-077",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T00:02:37.461Z",
+      "oid": "5c221bb7122f1ee3f7905a2557ebefc4",
+      "content_hash": "d9508776afb7c3b787f8482dffa46b8546d61ed29a89555aaaf7ed6a958d71a9"
+    },
+    {
+      "title": "check-status reports no version gap — which schemas are behind the catalog, and by how much, is not surfaced",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "checkStatus computes baseline_version and catalog_version per asset (CheckStatusAsset), but renderCheckStatus prints only the per-state name buckets and drops the version fields, and check-status is reachable only as an in-pi command (no CLI op — FGAP-030). No surface reports which schemas are behind the catalog or the version delta. A behind-by-version readout must also cover content-only drift: catalog-ahead is a content-hash comparison, so a schema can be behind with no version-number change.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "CheckStatusAsset carries baseline_version + catalog_version per asset"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "renderCheckStatus groups schema names by state and omits the version fields"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "checkStatus classifies catalog-ahead by content-hash comparison (catalogHash !== baseline), not version arithmetic"
+        }
+      ],
+      "impact": "From check-status the operator cannot see which schemas are behind the catalog or by how much — only the raw drift state, and only from inside pi.",
+      "canonical_vocabulary": "version-gap drift reporting",
+      "proposed_resolution": "check-status reports, per behind schema, the baseline->catalog version delta, and handles content-only drift (behind with no version-number change). Depends on FGAP-030 (expose check-status as a CLI op).",
+      "id": "FGAP-078",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T00:02:44.761Z",
+      "oid": "dcc2f8ed71723eb06e5c2f887faafa6b",
+      "content_hash": "cab803e0081cb9972f406347cf338a0be95a8851de782795971bcf627002364d"
+    },
+    {
+      "title": "Catalog schema is not locally diffable — no sidecar or fetch surfaces the schema body, only a projection",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "No surface yields the catalog schema body for local diff against an installed schema. read-samples-catalog returns a projection (title, item-shape, relations, invariants, lenses), not the raw JSON Schema (no properties/definitions/$id). The catalog lives under the package at samples/schemas/*.schema.json, i.e. node_modules/@davidorex/pi-context/samples/schemas/ when installed as a dependency.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/samples-catalog.ts",
+          "reference": "buildSampleKind re-projects each schema to title + item-shape; the raw schema body (properties/definitions/$id) is not emitted"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "resolveCatalog resolves samplesRoot one dir up from the compiled module — node_modules/@davidorex/pi-context/samples/ when installed as a dependency"
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "reference": "installedSchemaDestPath writes the installed schema at <substrate>/schemas/<name>.schema.json — where a sidecar would sit beside it"
+        }
+      ],
+      "impact": "To diff an installed schema against the catalog, the operator must open the package's samples/schemas/ inside node_modules; the reflecting CLI exposes no catalog schema body.",
+      "canonical_vocabulary": "catalog schema local access",
+      "proposed_resolution": "A sidecar catalog schema written beside <substrate>/schemas/<name>.schema.json on install/update, or a fetch op emitting the catalog body (path.join(samplesRoot, kind.schema_path), or the object-store base body via getObject).",
+      "id": "FGAP-079",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T00:02:51.179Z",
+      "oid": "2c068661ac0880a6df03ba5014d63df3",
+      "content_hash": "2b27f6542ac98cf06b50168b767c5acb6e3a35bf4b739e624005c45083dfb1f0"
+    },
+    {
+      "title": "blocked is a dead-end — no persisted state and no command to re-validate, advance the base, and write a corrected schema",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "A blocked outcome leaves the schema, block, and migrations.json byte-unchanged and records nothing actionable: resyncSchema's rollback restores migrations.json and returns {status:blocked, registeredMigrations:[]}, so the target schema version, the migration chain, and the per-item failure set are not persisted. Unlike a conflict — surfaced as {base,ours,theirs} and committed via resolve-conflict, which advances the merge base — blocked offers no resolution affordance. No command re-validates a corrected block against the target schema, advances the merge base, and writes the new schema.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "622-640",
+          "reference": "resyncSchema blocked path rolls everything back and persists no pending state"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "resolveConflict + stampBaselineFromBody — the conflict resolution template that commits a reconciliation and advances the merge base to the catalog so it converges"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1289-1291",
+          "reference": "updateContext buckets a blocked schema by name only — no surfaced state, no affordance"
+        }
+      ],
+      "impact": "A blocked schema cannot be resolved through the tool: after fixing the items or local schema the operator re-runs full update, with no convergence affordance and no record of what to fix.",
+      "canonical_vocabulary": "blocked resolution loop",
+      "proposed_resolution": "A persisted pending-blocked state (target schema body/version, migration chain, per-item failure set) plus a resolve-blocked / update --continue commit op that re-validates the corrected block against the target schema, advances the merge base via stampBaselineFromBody, and writes the schema — mirroring resolve-conflict. Reuses the object store, stampBaselineFromBody, and validateBlockWithMigrationForDir. Pairs with the in-file markers gap.",
+      "id": "FGAP-080",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T00:02:57.608Z",
+      "oid": "fe716b9c5318124ccbd923252daeb47d",
+      "content_hash": "1c5db89ce82811630dca8629b7f7f354720a042647a57d9059a3878075d21f43"
+    },
+    {
+      "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "On a blocked schema update writes nothing into the block: the failure is visible only in a CLI report, and the blocked contract leaves the block byte-unchanged (index.ts:491-508). The operator opens the block and sees no marking of the offending items or fields.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "491-508",
+          "reference": "the byte-unchanged blocked contract — the block is never written on the blocked path"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "reference": "writeBlockForDir is the whole-block writer; identity-stamping recomputes content_hash and pre-write AJV rejects non-schema marker fields, so in-file markers are not free"
+        },
+        {
+          "file": "packages/pi-context/src/object-store.ts",
+          "reference": "putObject/getObject — the as-installed block/schema body is recoverable, so 'no damage' can hold without 'never written'"
+        }
+      ],
+      "impact": "A blocked schema's failures are not visible at the point of fix — in the block file — only in a separate report the operator must cross-reference by hand.",
+      "canonical_vocabulary": "in-file failure markers",
+      "proposed_resolution": "git-merge-style failure markers written into the block at the offending items/fields, with the pre-marker block recoverable from the object store. This supersedes the byte-unchanged blocked contract with a marker-mode (the operator's git model: markers in-file, fix, resolve via the blocked resolution loop). Pairs with the blocked resolution loop and DEC-0018.",
+      "id": "FGAP-081",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T00:03:03.956Z",
+      "oid": "c51cb146f1a01db985597d4b70a6a2e4",
+      "content_hash": "0c32aae353632de0d43ccc06e3b5aa508158a2969413ef54b74c03757be4cfc6"
     }
   ]
 }

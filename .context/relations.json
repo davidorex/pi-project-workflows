@@ -4403,5 +4403,44 @@
       "refname": "feature-decomposition"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bd4314b1ececae87000027e9f73f7ca6",
+      "refname": "R-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5c221bb7122f1ee3f7905a2557ebefc4",
+      "refname": "FGAP-077"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bd4314b1ececae87000027e9f73f7ca6",
+      "refname": "R-0012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "112cebdeb44629475e8e58999a9905e8",
+      "refname": "issue-003"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5c221bb7122f1ee3f7905a2557ebefc4",
+      "refname": "FGAP-077"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "112cebdeb44629475e8e58999a9905e8",
+      "refname": "issue-003"
+    },
+    "relation_type": "gap_relates_to_issue"
   }
 ]

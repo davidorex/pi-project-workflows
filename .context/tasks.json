@@ -981,25 +981,26 @@
       "content_parent": "f0b3f874a4b66c263c99ec8cd3d3ea99ffb87987eff9892ac89021b8a369541b"
     },
     {
-      "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. A new explicitly-declared marker-mode superseding the byte-unchanged blocked contract for the block file only; markers are stripped by the TASK-051 resolution commit (resolve-blocked / update --continue), which refuses while markers remain unaddressed. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
+      "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. Markers are the DEFAULT behavior of a live validation-failed block (STORY-013: the operator expects them; no flag, no mode — the supersession of the byte-unchanged contract for the block file is user-decided); a dry run never writes, and a no-chain block has no failures to mark. Markers are stripped by the TASK-051 resolution commit (resolve-blocked), which refuses while the named violations persist. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
       "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/block-api.ts"
       ],
       "acceptance_criteria": [
-        "On a blocked schema (marker-mode), the block file carries failure markers at each offending item/field naming the violated constraint — the operator opens the block and sees the problem inline.",
+        "On a live validation-failed blocked schema, the block file carries failure markers at each offending item/field naming the violated constraint — the operator opens the block and sees the problem inline. Default behavior, no flag.",
         "The pre-marker block is recoverable from the object store; recovery demonstrated (byte-exact restore).",
-        "The TASK-051 commit op strips the markers on a passing resolution; a block with unresolved markers cannot be committed.",
-        "Schemas/blocks not in marker-mode keep the byte-unchanged blocked contract; migrations.json and the schema file stay byte-unchanged in all modes.",
+        "The TASK-051 commit op strips the markers on a passing resolution; a block whose named violations persist cannot be committed.",
+        "A dry run writes no markers; a no-chain block (no failures) stays byte-unchanged; migrations.json and the schema file stay byte-unchanged in all cases.",
+        "Item identity survives the marker round-trip: oids preserved, content_parent lineage intact (no re-mint).",
         "build + check + full test green; parity-check exit 0; runtime demo (block -> markers -> fix -> resolve -> markers gone, schema converged); fresh adversarial probe.",
         "FGAP-081 closed via verification_verifies_item + complete-task."
       ],
       "notes": "Closes FGAP-081; advances STORY-013/014. Depends on TASK-051 (the resolution loop the markers feed). The contract supersession (in-file markers, object-store recoverability) is user-decided; pairs with DEC-0018.",
       "id": "TASK-052",
       "oid": "b014aeaada390c1a3d37b1467afdd81f",
-      "content_hash": "33ca4085cab6e3de5fc9c02911c8f4a1af7efa8372b4399b8fcff27ad77e1952",
-      "content_parent": "18def7337a6c4202e4cf6e90cef2474f62ff539e4b3e1e3e2f9c28320d273bbc"
+      "content_hash": "fb4816e687585f846430813329e4ea352478f6ccf23a06915d6b55bf8e0863cd",
+      "content_parent": "33ca4085cab6e3de5fc9c02911c8f4a1af7efa8372b4399b8fcff27ad77e1952"
     }
   ]
 }

@@ -2564,6 +2564,73 @@
       "created_at": "2026-06-10T10:31:32.921Z",
       "oid": "ce05514b1831f35b27cd8fa9c485c153",
       "content_hash": "fb025faa767f3302f7e0f220941a350bc7e6b2bc179c92e1803acc2015f7488f"
+    },
+    {
+      "title": "--block-taking ops ignore the config-declared prefix->block mapping — neither input normalization nor error enrichment",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "Ops that take a --block name resolve it verbatim; a wrong-but-derivable name (--block task, --block decision) fails with a bare 'Block file not found' although config block_kinds declares both canonical_id and prefix, and expectedBlockForId (context-sdk.ts:1110) already computes TASK-046 -> tasks from it. The mapping is used neither to normalize the input (accept the singular / derive the block from a kind-prefixed id) nor to enrich the error (name the block that would have worked). resolve-item-by-id exists to bridge kind-id -> block, but the name-scoped readers' failure path never reaches for it. Class: every --block-taking op; triggering instance: read-block-item --block task. Full investigation: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "764",
+          "reference": "readBlockForDir raises the generic 'Block file not found' without consulting the prefix->block mapping"
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "1110",
+          "reference": "expectedBlockForId already derives the block from an id's kind-prefix via config block_kinds"
+        },
+        {
+          "file": "analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md",
+          "reference": "agent investigation: root cause, verbatim repro, op enumeration, class verdict, prior-art (extends closed FGAP-032/FGAP-019 normalization precedents to the block-name axis)"
+        }
+      ],
+      "impact": "A natural-but-wrong block name costs a failed invocation and a help round-trip on every --block-taking op, although the substrate already holds the data to resolve or explain it.",
+      "canonical_vocabulary": "prefix-aware block-name resolution",
+      "proposed_resolution": "Leverage the existing prefix->block mapping at the --block resolution layer: enrich the not-found error with the derivable block name (and accept an id-derived block where the op also receives an id). CLI/dispatch-layer change; ops' canonical semantics unchanged. Verification per the investigation's CLI-provable conditions.",
+      "id": "FGAP-083",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T11:08:27.528Z",
+      "oid": "0166694b1cc10e80c96530c1c46f5df3",
+      "content_hash": "c979ee8a25db7dc04d92486c33f0318eb41c464419912d44bc69e9a13797ca0a"
+    },
+    {
+      "title": "CSV shorthand is a one-param special case, not a type-driven normalization for string-array params",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context-cli",
+      "description": "Array-typed op params are classified json and parsed with strict JSON.parse (cli.ts:126-142, 388-408); the only CSV affordance is a hardcoded post-loop split gated on field === 'value' AND op === 'in' (cli.ts:415-423, the FGAP-025 closure). So resolve-items-by-id --ids TASK-046,DEC-0018 fails (exit 2, 'not valid JSON') although --ids is Type.Array(Type.String()) (ops-registry.ts:1746) and the CSV intent is unambiguous. --ids is currently the sole string-array param on the use-op surface; all other array-shaped params (--edges, --item, --match, ...) are object/record arrays a CSV transform must not touch. Class: CSV-for-string-arrays should be type-driven, covering --ids and every future string-array param; the one-param special case is the instance pattern. Full investigation: analysis/2026-06-10-array-param-csv-shorthand-gap.md.",
+      "evidence": [
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "388-408",
+          "reference": "array params parsed with strict JSON.parse; CSV re-throws as UsageError"
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "415-423",
+          "reference": "the FGAP-025 CSV split is gated on field === 'value' AND op === 'in' — param-specific, not type-driven"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1746",
+          "reference": "resolve-items-by-id ids is Type.Array(Type.String()) — the sole string-array use-op param"
+        },
+        {
+          "file": "analysis/2026-06-10-array-param-csv-shorthand-gap.md",
+          "reference": "agent investigation: root cause, verbatim repro (hit by two independent agents), full array-param enumeration, class verdict, FGAP-025 scope quoted"
+        }
+      ],
+      "impact": "The natural CSV form fails on string-array params with a JSON-parse error; every future string-array param inherits the footgun unless normalization is type-driven.",
+      "canonical_vocabulary": "type-driven string-array CSV shorthand",
+      "proposed_resolution": "In parseOpArgs, when a param's schema is an array of strings and the value is not valid JSON, split CSV to a string array — type-driven, covering --ids and future string-array params; object-array params and the JSON form unchanged. Verification per the investigation's CLI-provable conditions.",
+      "id": "FGAP-084",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T11:08:40.127Z",
+      "oid": "62dd9448dac29b7f842781f77cd2c4dc",
+      "content_hash": "00e912a3fbf6a609413471e31ee8a84cdc7752d8991dd526dc50b725f1e3e860"
     }
   ]
 }

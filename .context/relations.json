@@ -4442,5 +4442,31 @@
       "refname": "issue-003"
     },
     "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "refname": "TASK-047"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ce05514b1831f35b27cd8fa9c485c153",
+      "refname": "FGAP-082"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "refname": "TASK-047"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

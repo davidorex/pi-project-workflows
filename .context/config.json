@@ -115,7 +115,7 @@
     },
     {
       "canonical_id": "story",
-      "display_name": "Stories",
+      "display_name": "User Stories",
       "prefix": "STORY-",
       "schema_path": "schemas/story.schema.json",
       "array_key": "stories",
@@ -526,6 +526,28 @@
       ],
       "target_kinds": [
         "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "task_advances_story",
+      "display_name": "advances story",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "story"
+      ]
+    },
+    {
+      "canonical_id": "feature_advances_story",
+      "display_name": "advances story",
+      "category": "data_flow",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "story"
       ]
     }
   ],

@@ -878,6 +878,26 @@
       "id": "TASK-046",
       "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
       "content_hash": "d7cddef5f6a629c2b5466af26f53dbade7c9e6928c5beae7896ac3e6c7705473"
+    },
+    {
+      "description": "Add the advancer-completion invariant class to the validator — closes FGAP-082. Extend InvariantDecl (context.ts:202-214) and validateContext's invariant executor with a third config-declarable class: for a source item entering when_bucket (complete), every target reached via the declared relation_types (task_advances_story / feature_advances_story) must be met — met = at least one incoming advancer edge whose endpoint item is in met_bucket (complete) — with self_satisfies so the completing item counts as its own stories' advancer (the single-advancer case must not deadlock). Severity error at context-validate. Code change: full canonical pipeline.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/src/context-sdk.ts"
+      ],
+      "acceptance_criteria": [
+        "InvariantDecl accepts class advancer-completion with relation_types, when_bucket, met_bucket, self_satisfies; existing requires-edge and status-consistency declarations behave byte-identically.",
+        "A feature in the complete bucket advancing 3 stories with 2 met -> context-validate reports an error naming the feature and the unmet story.",
+        "A task that is its sole story's only advancer completes without an error (self_satisfies — no deadlock).",
+        "A story with any complete advancer (task or feature) counts as met for every item advancing it.",
+        "A non-completing advancer is ungated (the invariant fires only on when_bucket sources).",
+        "CLI-provable: the four conditions above demonstrated via pi-context context-validate against a seeded substrate; build + check + full test green; fresh adversarial probe; FGAP-082 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-082. Enables enforcement of the user-stories completion rule (analysis/2026-06-10-user-stories-block-DRAFT.md); the rule's config declaration lands with this task. Engine grounding: analysis/2026-06-10-story-completion-invariant-engine-audit.md. Write-time blocking (a completeTask/write-path hook) is out of scope — context-validate error only.",
+      "id": "TASK-047",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "content_hash": "aaae3a75ce14f58084d3f87ad580594ecd414fb10a7b7336a83523e014009766"
     }
   ]
 }

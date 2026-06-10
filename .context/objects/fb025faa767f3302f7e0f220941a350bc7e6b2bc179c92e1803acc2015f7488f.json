@@ -1,0 +1,21 @@
+{
+  "title": "Invariant engine cannot express exists-a-complete-advancer rules — no aggregate-over-incoming-edges invariant class",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "InvariantDecl (context.ts:202-214) declares two classes: requires-edge (edge presence, status-blind) and status-consistency (per-edge comparison of the gated source's when_bucket against one target's own status bucket). Neither can express a rule whose predicate aggregates over an item's INCOMING edges with a status condition on the far endpoints — e.g. the user-stories completion rule: a task or feature can't be complete until every story it advances is met, where met(story) = exists an advancer (via task_advances_story / feature_advances_story) whose status is complete, and the completing item counts as its own story's advancer (single-advancer no-deadlock). status-consistency has no existential quantifier, reads only the single target's own status, and has no self-satisfies construct. Triggering instance: the user-stories block completion rule (analysis/2026-06-10-user-stories-block-DRAFT.md). General class: any invariant of the shape 'source in bucket X requires each related target to satisfy an aggregate over the target's own edges' is inexpressible; advancer-completion is its first required instance.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "202-214",
+      "reference": "InvariantDecl: class is requires-edge | status-consistency; predicates are when_bucket / require_target_bucket / forbid_target_bucket — single-target, no quantifier, no self-reference"
+    },
+    {
+      "file": "analysis/2026-06-10-story-completion-invariant-engine-audit.md",
+      "reference": "the engine audit: named analogs (task-completed-gap-closed etc.) are config data over the two classes; the advancer-completion rule is inexpressible; enforcement binds only at context-validate"
+    }
+  ],
+  "impact": "The user-stories completion rule — and any future aggregate-over-incoming-edges invariant — cannot be declared; the rule is unenforced until the engine gains the class.",
+  "canonical_vocabulary": "advancer-completion invariant class",
+  "proposed_resolution": "Add a config-declarable invariant class (advancer-completion: for a source item entering when_bucket, every target via the declared relation_types must have at least one incoming advancer edge whose endpoint is in met_bucket, with self_satisfies counting the completing item). Config data, not a hardcoded check, per the existing direction (the analogs are declarations). Binds at context-validate as severity error."
+}

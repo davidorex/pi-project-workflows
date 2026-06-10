@@ -2,8 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/story",
   "version": "1.0.1",
-  "title": "Stories",
-  "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
+  "title": "User Stories",
+  "description": "Top-level user-story array-block. A user story is a desideratum in the form 'As a <user_kind>, I want/expect …, so that …' (the statement lives in description; user_kind names the kind of user, free text). Stories function two ways, both via relations.json closure-table edges — NOT as inline arrays on the story: (1) as a beginning point for research, exploration, or gap/issue filing (downstream item -> item_derived_from_item -> story); (2) as mandatory verifiable success criteria for work (task_advances_story / feature_advances_story). A story is met when the task or feature advancing it has met its success criteria; a task or feature can't be complete until every story it advances is met. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item) also live in relations.json edges.",
   "type": "object",
   "required": [
     "stories"
@@ -40,6 +40,10 @@
               "blocked"
             ],
             "description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation deferred to a future status-schema unification."
+          },
+          "user_kind": {
+            "type": "string",
+            "description": "The kind of user the story speaks for — free text, no enum (e.g. cli-user, in-pi-llm-user, in-pi-human-user)."
           },
           "description": {
             "type": "string",

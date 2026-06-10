@@ -969,6 +969,100 @@ test("CLI update (text surface): an irreconcilable conflict is SURFACED via rend
 	}
 });
 
+// ── TASK-048 / FGAP-077: blocked-resync diagnostic surface ───────────────────
+// Build a catalog-ahead `tasks` substrate at the older 1.0.0 version with a
+// populated block whose item fails the catalog 1.0.1 schema (a bad `status`
+// enum) → the 1.0.0 → 1.0.1 identity migration passes it through unchanged, the
+// re-validation FAILS → resyncSchema refuses → blocked with a validation-failed
+// diagnostic naming the failing item id / field / constraint.
+function makeBlockedTasksSubstrate(): string {
+	const dir = mkdtempSync(path.join(tmpdir(), "picli-update-blocked-"));
+	writeBootstrapPointer(dir, ".project");
+	mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+	writeFileSync(
+		path.join(dir, ".project", "config.json"),
+		JSON.stringify(
+			{
+				schema_version: "1.0.0",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: ["tasks"],
+				installed_blocks: [],
+			},
+			null,
+			2,
+		),
+	);
+	const dest = path.join(dir, ".project", "schemas", "tasks.schema.json");
+	installContext(dir);
+	// Override the installed schema's version to the older 1.0.0 + re-baseline FROM
+	// it → checkStatus classifies tasks catalog-ahead (catalog ships 1.0.1).
+	const schema = JSON.parse(readFileSync(dest, "utf-8")) as Record<string, unknown>;
+	schema.version = "1.0.0";
+	writeFileSync(dest, JSON.stringify(schema, null, 2));
+	installContext(dir);
+	// Seed a substrate_id so the live identity-stamping path can mint oids (a
+	// missing id otherwise makes the live populated-block migrate throw inside
+	// resyncSchema's try and refuse — which would mask the validation-failed reason).
+	const cfgPath = path.join(dir, ".project", "config.json");
+	const cfg = JSON.parse(readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
+	cfg.substrate_id = "sub-0123456789abcdef";
+	writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+	writeFileSync(
+		path.join(dir, ".project", "tasks.json"),
+		JSON.stringify(
+			{ schema_version: "1.0.0", tasks: [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }] },
+			null,
+			2,
+		),
+	);
+	return dir;
+}
+
+test("CLI update (text surface): a blocked resync surfaces the per-item validation diagnostic", async () => {
+	const cwd = makeBlockedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout(["update", "--cwd", cwd]);
+		assert.equal(code, 0, "the update op exits 0");
+		assert.match(out, /Schema resync blocked/, "the blocked report header is surfaced");
+		assert.match(out, /blocked: tasks \(1\.0\.0 -> 1\.0\.1\)/, "the schema + version pair is named");
+		assert.match(out, /TASK-001/, "the failing item id is named in the per-item line");
+		assert.match(out, /status/, "the failing field is named");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI validate-block-items --json: the per-item failure list is parseable", async () => {
+	const cwd = makeBlockedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout(["validate-block-items", "--block", "tasks", "--json", "--cwd", cwd]);
+		assert.equal(code, 0, "a read-only diagnostic exits 0 even when items are invalid");
+		const env = JSON.parse(out);
+		assert.equal(env.ok, true);
+		assert.equal(env.op, "validate-block-items");
+		assert.equal(env.output.block, "tasks");
+		assert.equal(env.output.valid, false, "the bad-item block is reported invalid");
+		assert.ok(Array.isArray(env.output.failures) && env.output.failures.length >= 1, "failures are listed");
+		const f = env.output.failures.find((x: { instancePath: string }) => x.instancePath === "/tasks/0/status");
+		assert.ok(f, "the failing status field is reported");
+		assert.equal(f.itemId, "TASK-001", "the failing item id is resolved");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI validate-block-items: an unknown block exits non-zero", async () => {
+	const cwd = makeBlockedTasksSubstrate();
+	try {
+		const { code } = await captureMainStdout(["validate-block-items", "--block", "not-a-real-block", "--cwd", cwd]);
+		assert.notEqual(code, 0, "an unknown block is a non-zero exit");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 // ── TASK-015 (FEAT-008 1/6): CLI pre-call input layer ─────────────────────────
 // Four additive affordances entirely in cli.ts's pre-call path — the in-pi op
 // schemas + handlers stay byte-unchanged (the ops still receive + require their

@@ -135,7 +135,9 @@ pi-context resolve-conflict --schemaName <name> --schema '<reconciled-json>'
 
 `update` also additively propagates catalog-new config-registry entries (`relation_types` / `invariants` / `block_kinds` / `lenses`) absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten; the added ids are reported under `registryAdditions`).
 
-`--dryRun` predicts the precise per-schema outcome (resync / migrate / block / merge / conflict) by running the forward-migration and re-validation in memory, alongside the config-registry entries that would be added, and writes nothing.
+A `catalog-ahead` schema whose resync is refused (`blocked`) carries its diagnostic under `blockedDetail` (one entry per blocked schema): the refusal reason — `no-migration-chain` (no shipped chain reaches the catalog version) vs `validation-failed` (the forward-migrated items fail the catalog schema) — the installed→catalog version pair, and for a validation failure the per-item failures naming the failing item id, field, and constraint. Under `--json` the `blockedDetail` array rides in the op-result envelope; on the default text surface the CLI renders a readable per-schema report below the op output (`blocked: <name> (<from> -> <to>)` then the no-chain line or the per-item failure lines). The standalone `pi-context validate-block-items --block <name>` runs the same per-item check on demand (read-only, returns `{ block, from?, to?, valid, failures[] }`).
+
+`--dryRun` predicts the precise per-schema outcome (resync / migrate / block / merge / conflict) by running the forward-migration and re-validation in memory, alongside the per-blocked-schema diagnostic detail and the config-registry entries that would be added, and writes nothing.
 
 ```bash
 pi-context update --dryRun                   # predict the precise per-schema outcome (in-memory migrate + re-validate) + config-registry additions

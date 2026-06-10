@@ -74,6 +74,7 @@ import {
 	switchToExisting,
 	switchToPrevious,
 	updateContext,
+	validateBlockItemsAgainstCatalog,
 } from "./index.js";
 import {
 	edgesForLensByName,
@@ -1431,9 +1432,9 @@ export const ops: OpDefinition[] = [
 		name: "update",
 		label: "Update Installed Model",
 		description:
-			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body AND advances the merge base to the catalog so update stops re-reporting it (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). Pass dryRun to preview the per-schema action plan; dryRun predicts the precise per-schema catalog-ahead outcome (resync / migrate / block / merge / conflict) by running the forward-migration + re-validation in memory, the config-registry entries that would be added, AND the migration declarations that would be registered, writing nothing.",
+			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body AND advances the merge base to the catalog so update stops re-reporting it (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). A blocked (refused) catalog-ahead schema additionally carries its diagnostic detail under blockedDetail (one entry per blocked schema): the refusal reason — no-migration-chain (no shipped chain reaches the catalog version) vs validation-failed (the forward-migrated items fail the catalog schema) — the installed -> catalog version pair, and for a validation failure the per-item failures naming the failing item id, field, and constraint. Pass dryRun to preview the per-schema action plan; dryRun predicts the precise per-schema catalog-ahead outcome (resync / migrate / block / merge / conflict) by running the forward-migration + re-validation in memory, the per-blocked-schema diagnostic detail, the config-registry entries that would be added, AND the migration declarations that would be registered, writing nothing.",
 		promptSnippet:
-			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → returned in the op output + a report for the calling agent to reconcile and commit via resolve-conflict; --dry-run predicts the precise per-schema outcome — resync / migrate / block / merge / conflict — via in-memory forward-migration + re-validation, writing nothing)",
+			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → returned in the op output + a report for the calling agent to reconcile and commit via resolve-conflict; a blocked resync carries blockedDetail — reason, version pair, per-item failures; --dry-run predicts the precise per-schema outcome — resync / migrate / block / merge / conflict — via in-memory forward-migration + re-validation, writing nothing)",
 		examples: [`pi-context update --dryRun true --json`],
 		parameters: Type.Object({
 			dryRun: Type.Optional(
@@ -1445,6 +1446,22 @@ export const ops: OpDefinition[] = [
 			const result = updateContext(cwd, { dryRun: params.dryRun === true });
 			if (result.error) return result.error;
 			return { json: result };
+		},
+	},
+	{
+		name: "validate-block-items",
+		label: "Validate Block Items",
+		description:
+			"Validate a block's items against the catalog schema version — returns the per-item failures (item id, field, constraint) without writing. Resolves the block's catalog block_kind, loads the installed block, forward-migrates its items in memory through the shipped chain when the block lags the catalog version (a fresh registry; never warms the project's cache), and validates against the catalog schema body. Returns block / from (the block's declared version) / to (the catalog version) / valid / failures[] (each: itemId — the failing item's id when the instancePath resolves to one — instancePath, keyword, message). Read-only: never overwrites the schema, the block, or migrations.json. An unknown block or a missing installed block file throws.",
+		promptSnippet:
+			"Validate a block's items against the catalog schema version — returns the per-item failures (item id, field, constraint) without writing",
+		examples: [`pi-context validate-block-items --block tasks --json`],
+		parameters: Type.Object({
+			block: Type.String({ description: "Block name (e.g. 'tasks')" }),
+		}),
+		surface: "use",
+		run(cwd: string, params: { block: string }): OpResult {
+			return { json: validateBlockItemsAgainstCatalog(cwd, params.block) };
 		},
 	},
 	{

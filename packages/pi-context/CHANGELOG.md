@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Documentation
+- Regenerated `skills/pi-context/SKILL.md` for the `update` op's corrected `dryRun` description (the preview now states the precise per-schema outcome — resync / migrate / block — computed by in-memory forward-migration + re-validation).
+
 ### Added
 - New `context-lens-view` op (`pi-context context-lens-view --lensId <id>`) projects a config-declared lens (`config.lenses[]`) as a binned item-view, reusing `loadLensView`. Without `--bin` it returns a bin→count summary — `{ lens, kind, bins: { <bin>: count }, uncategorized, total }` over every declared bin (including empty bins → 0) plus the uncategorized count and the total item count, serialized whole (always under the read cap). With `--bin <name>` it returns that bin's items paged by `--offset`/`--limit` through the shared `pageArray` (`{ items, total, hasMore }`). Both routes serialize through `structureForRead` so an over-cap per-bin page fails closed (`data: null`, `complete: false`). Serves target, composition, and hand-curated lenses. An unknown lens id (or, with `--bin`, an undeclared bin) throws — surfacing a non-zero CLI exit.
 - Each surfaced op now carries an optional `examples` field — copy-pasteable `pi-context <op> …` invocation strings consumed by the CLI's per-op `--help` (its `EXAMPLES` section and `--help --format json` model). It is help metadata only and is not part of the in-pi tool surface (the registered pi tool still exposes only name/label/description/promptSnippet/parameters).
@@ -12,6 +15,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - An addressed-single-node read now returns the WHOLE addressed subtree (capped), not a 50-item page of one incidental array child. `read-schema --path`, `read-config --registry` (and `--registry --id`), `list-tools name=<tool>`, and `read-samples-catalog kind=<kind>` each name ONE node; the op now passes `whole: true` to the addressed `structureForRead`, so an object node carrying an array child serializes every sibling key instead of collapsing to a page of that one array (dropping siblings). The 50KB read cap is retained — applied unconditionally after the whole-skip — so an over-cap addressed node still fails closed (`data: null`, `complete: false`, `truncated: true`); `whole: true` skips paging only, it does not bypass the cap. The whole-config / whole-schema no-arg wrapper reads and every intentional collection-paging read are unchanged.
 
 ### Changed
+- `/context update --dryRun` now predicts the precise per-schema catalog-ahead outcome (`resynced` / `migrated` / `blocked`) by an in-memory forward-migration + re-validation, rather than listing every `catalog-ahead` schema under `resynced`. The dryRun plan buckets each catalog-ahead schema as the outcome a live `--update` would land; a dry-blocked schema reports no would-register migration declarations (`migrationsRegistered` excludes them).
 - Regenerated the generated `SKILL.md` so the surfaced skill doc carries the new `resolve-conflict` op and the caller-reconciles conflict route.
 
 ### Added

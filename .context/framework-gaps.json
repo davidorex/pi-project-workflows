@@ -2021,7 +2021,7 @@
     },
     {
       "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "Under --dryRun, updateContext's catalog-ahead arm short-circuits BEFORE resyncSchema (no write) and reports the schema under `resynced` as the would-act set, because the concrete resynced/migrated/blocked outcome is unknowable without running the forward migration. So a version-bump schema that a live run would `migrate` (items forward-migrated) — or `block` (no safe chain, or migrated items fail revalidation) — is previewed as `resynced`. The would-register migration declarations (migrationsRegistered) are computed accurately read-only, but a live blocked run rolls those declarations back, so --dryRun can also list migrationsRegistered a live run would not keep. This undercuts FEAT-006's stated guarantee that --dry-run reports the full set of changes update would make: the per-schema OUTCOME under dryRun is optimistic, not exact, precisely when a schema is at risk of blocking.",
@@ -2038,7 +2038,10 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-066",
       "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
-      "content_hash": "a62cfe70c7e9d0bf5936e19281c618ba519845d4a591e8877bb5bafe9675ba46"
+      "content_hash": "36e047af1270c23dccc0c7118fd8050c06afe1d739373a46171b0c21086b2423",
+      "closed_by": "VER-038 / TASK-046 — update --dryRun predicts the precise catalog-ahead outcome (resynced/migrated/blocked) via simulateResyncOutcome: an in-memory forward-migration + AJV re-validation against the catalog schema, classifying by the live resyncSchema logic, writing nothing; a dry-blocked schema reports no would-register migration declarations. resyncSchema and the live arm byte-unchanged.",
+      "closed_at": "2026-06-10T12:00:00.000Z",
+      "content_parent": "a62cfe70c7e9d0bf5936e19281c618ba519845d4a591e8877bb5bafe9675ba46"
     },
     {
       "title": "pi-context update does not reconcile a catalog registry entry whose body changed against a user-modified entry of the same id (additive-only) — the config-registry analog of the schema 3-way merge",

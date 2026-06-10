@@ -93,16 +93,17 @@
     },
     {
       "title": "dryRun runs real forward-migration + re-validation",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want update --dryRun to prospectively run the actual forward-migration + re-validation against the block items, so it never predicts resynced when the live run will hit blocked.",
       "id": "STORY-008",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:30.737Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:30.737Z",
+      "modified_at": "2026-06-10T13:02:44.342Z",
       "oid": "a5637405a1b143c0570fd04121ed0f70",
-      "content_hash": "99bd199c4e4ba8906642d20f62fdf6bd4289e5771eb379a7c0b416dd6c0f52ef"
+      "content_hash": "a931d2a8946080116b7d65dc6e9402e864f65ab0b421606f8b6d08d2bde64268",
+      "content_parent": "99bd199c4e4ba8906642d20f62fdf6bd4289e5771eb379a7c0b416dd6c0f52ef"
     },
     {
       "title": "Per-blocked-schema: item id, field, constraint",

@@ -5417,5 +5417,18 @@
       "refname": "TASK-051"
     },
     "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "05d2b456b9fd94a5b326560ab01a8433",
+      "refname": "VER-038"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
+      "refname": "TASK-046"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

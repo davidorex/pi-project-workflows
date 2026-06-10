@@ -1003,6 +1003,42 @@
       ],
       "oid": "ede00f8ac7cfe4bb8b071c08fdc21dbe",
       "content_hash": "3cbbb1c1b9928e1fc0a84f6673539dc02045df684de211128a8ec1dccc7a2261"
+    },
+    {
+      "id": "VER-038",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T12:00:00.000Z",
+      "evidence": "TASK-046 verified end-to-end; closes FGAP-066. update --dryRun's catalog-ahead arm predicts the precise per-schema outcome via the new pure-read helper simulateResyncOutcome (index.ts, adjacent to computeWouldRegisterMigrations): same/unreadable version -> resynced; no catalog chain -> blocked; version bump + chain + no items -> migrated; in-memory forward-migrate (own createRegistry seeded from substrate decls + the catalog chain, migrationFnFor, runMigrations) + AJV validate against the catalog schema object -> migrated on pass, blocked on throw with migrationsRegistered [] (the live rollback truth) and the ValidationError errors captured but not plumbed (the TASK-048 seam). The dry branch dispatches buckets from the helper inside the existing per-asset tolerance (helper failure falls back to resynced + no decls). resyncSchema, the live arm, and UpdateResult are byte-unchanged; the helper never writes and never touches the cached substrate registry. Runtime demo (throwaway substrates): the R-0012 reproduction now yields dry==live blocked + migrationsRegistered [] with every file byte-unchanged after dry (probe re-verified with full-tree sha256); the valid-item variant yields dry==live migrated + the 1.0.0->1.0.1 decl. Tests: a four-case dry==live parity describe (blocked/validation-fail with the [] no-leak criterion; migrated/populated; same-version resynced + version-bump-no-items migrated; no-chain blocked) plus the extended FGAP-050 dry test asserting the migrated bucket; the dry no-write invariant test routes through the new helper path and stays green; fixture seeds config.substrate_id so the live populated-block migrate stamps (test-harness only). build + check + full test fail 0; parity-check exit 0. Fresh adversarial probe PASS: arm-fidelity verified 1:1 including the unreadable-block-treated-populated, block-version-equals-catalog, broken-mid-chain, and non-ValidationError-throw edges; one MINOR finding (three READMEs carried the old would-act dryRun wording) fixed at the five enumerated locations and re-audited to zero stale occurrences. Op description/promptSnippet corrected; SKILL.md regenerated; CHANGELOG entries filed.",
+      "criteria_results": [
+        {
+          "criterion": "the catalog-ahead dry branch forward-migrates in memory and AJV-validates, classifying by the live logic, writing nothing",
+          "status": "passed",
+          "evidence": "simulateResyncOutcome pure-read (probe-verified: no write calls; full-tree sha256 identical after dry); classification mirrors resyncSchema's five arms"
+        },
+        {
+          "criterion": "dry/live outcome parity demonstrated incl. a bump adding a required field the items lack -> dry blocked matching live",
+          "status": "passed",
+          "evidence": "the R-0012 reproduction: dry==live blocked; the parity test suite covers blocked/migrated/resynced/no-chain"
+        },
+        {
+          "criterion": "migrationsRegistered under dryRun lists decls only for non-blocked outcomes",
+          "status": "passed",
+          "evidence": "dry-blocked reports [] (test deep-equal + the reproduction); migrated lists the chain decls"
+        },
+        {
+          "criterion": "a cleanly-migrating catalog-ahead schema reports migrated (or resynced when same-version) under dryRun, matching live",
+          "status": "passed",
+          "evidence": "the valid-item driver: dry==live migrated; same-version fixture: resynced both"
+        },
+        {
+          "criterion": "build + check + full test pass; runtime demo dry==live on clean-migrate and blocked substrates",
+          "status": "passed",
+          "evidence": "all gates 0; both throwaway-substrate demos; fresh adversarial probe PASS with the README finding fixed + re-audited"
+        }
+      ],
+      "oid": "05d2b456b9fd94a5b326560ab01a8433",
+      "content_hash": "23d3e1b4c45c27d215f67772d673ea3f28d95c5d5e32c1c7638656ceff81a414"
     }
   ]
 }

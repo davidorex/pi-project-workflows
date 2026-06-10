@@ -87,7 +87,7 @@ afterEach(() => {
 });
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
-	it("contains all 18 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 + TASK-094 extensions + resolve-conflict)", () => {
+	it("contains all 19 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 + TASK-094 extensions + resolve-conflict + resolve-blocked)", () => {
 		// Aim: pin the list verbatim against the FGAP-134 plan + the
 		// FGAP-136 write-schema-migration extension + the TASK-094
 		// /context switch family extension (context-switch + context-archive;
@@ -104,6 +104,7 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 			"write-block",
 			"rename-canonical-id",
 			"resolve-conflict",
+			"resolve-blocked",
 			"context-init",
 			"context-accept-all",
 			"context-switch",

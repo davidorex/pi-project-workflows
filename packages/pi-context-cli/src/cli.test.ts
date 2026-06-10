@@ -280,6 +280,36 @@ test("authDecision defers to a prompt for a gated op on an interactive TTY", () 
 	if (d.allow === false) assert.equal(d.needsPrompt, true);
 });
 
+// TASK-051 — FGAP-080: resolve-blocked is authGated. The pure decision refuses it
+// non-interactively without --yes with the authorization-refusal message, and main
+// returns non-zero (the refusal is written to stderr + exits 1).
+test("authDecision refuses resolve-blocked non-interactively without --yes", () => {
+	const op = resolveOp("resolve-blocked");
+	assert.ok(op, "resolve-blocked must be a registered op");
+	const d = authDecision(op, { yes: false, interactive: false });
+	assert.equal(d.allow, false);
+	if (d.allow === false) {
+		assert.equal(d.needsPrompt, false);
+		assert.match(d.reason, /resolve-blocked requires authorization; re-run with --yes/);
+	}
+});
+
+test("main refuses resolve-blocked without --yes non-interactively (non-zero exit, refusal on stderr)", async () => {
+	const origErr = process.stderr.write;
+	let err = "";
+	process.stderr.write = ((chunk: unknown): boolean => {
+		err += typeof chunk === "string" ? chunk : Buffer.from(chunk as Uint8Array).toString("utf8");
+		return true;
+	}) as typeof process.stderr.write;
+	try {
+		const { code } = await captureMainStdout(["resolve-blocked", "--schemaName", "tasks"]);
+		assert.notEqual(code, 0, "a refused gated op must exit non-zero");
+		assert.match(err, /resolve-blocked requires authorization; re-run with --yes/);
+	} finally {
+		process.stderr.write = origErr;
+	}
+});
+
 // ── --cwd resolution ─────────────────────────────────────────────────────────
 test("parseOpArgs defaults --cwd to the provided base and resolves relative paths", () => {
 	const op = resolveOp("read-block");

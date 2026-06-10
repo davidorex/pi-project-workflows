@@ -47,6 +47,11 @@ import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl
 import { getObject, putObject } from "./object-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
+import {
+	loadPendingBlockedForDir,
+	type PendingBlockedEntry,
+	reconcilePendingBlockedForDir,
+} from "./pending-blocked-store.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
 import { createRegistry, runMigrations } from "./schema-migrations.js";
@@ -867,9 +872,38 @@ function resyncSchema(
 	status: "resynced" | "migrated" | "blocked";
 	registeredMigrations: Array<{ schema: string; from: string; to: string }>;
 	blockedDetail?: { reason: BlockedDetail["reason"]; from?: string; to?: string; failures?: BlockValidationFailure[] };
+	pendingEntry?: PendingBlockedEntry;
 } {
 	const catalogVersion = readDeclaredVersion(sourceFile);
 	const installedVersion = readDeclaredVersion(destFile);
+
+	// TASK-051 / FGAP-080: build the pending-blocked record for a refused resync.
+	// Pin the TARGET catalog schema body into the object store (computeContentHash
+	// + putObject — idempotent on the content hash) so resolve-blocked can later
+	// re-validate the corrected block against the SAME pinned target this run
+	// blocked on, and carry the chain reaching it (empty for a no-chain refusal).
+	// resyncSchema RETURNS this entry; updateContext owns the sidecar write so the
+	// helper's contract stays narrow (it does not touch pending-blocked.json).
+	const buildPendingEntry = (
+		reason: PendingBlockedEntry["reason"],
+		chain: MigrationDecl[],
+		failures?: BlockValidationFailure[],
+	): PendingBlockedEntry => {
+		const targetBody = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+		const targetHash = computeContentHash(targetBody);
+		putObject(destRoot, targetHash, targetBody);
+		const entry: PendingBlockedEntry = {
+			name,
+			reason,
+			target_hash: targetHash,
+			chain,
+			blocked_at: new Date().toISOString(),
+		};
+		if (installedVersion !== undefined) entry.from = installedVersion;
+		if (catalogVersion !== undefined) entry.to = catalogVersion;
+		if (failures) entry.failures = failures;
+		return entry;
+	};
 
 	// (A) Same version (or either version unreadable / non-versioned): there is no
 	// version transition to migrate across, so the drift is description-only —
@@ -893,6 +927,7 @@ function resyncSchema(
 			status: "blocked",
 			registeredMigrations: [],
 			blockedDetail: { reason: "no-migration-chain", from: installedVersion, to: catalogVersion },
+			pendingEntry: buildPendingEntry("no-migration-chain", []),
 		};
 	}
 
@@ -1004,6 +1039,7 @@ function resyncSchema(
 			status: "blocked",
 			registeredMigrations: [],
 			blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+			pendingEntry: buildPendingEntry("validation-failed", chain, failures),
 		};
 	}
 }
@@ -1613,6 +1649,15 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// installer + detector use, so the sourceFile derivation matches checkStatus's.
 	const { samplesRoot, byId } = resolveCatalog();
 
+	// TASK-051 / FGAP-080: the live run's pending-blocked records. Each blocked
+	// catalog-ahead resync returns a pinned `pendingEntry`; after the schema loop
+	// the LIVE path reconciles pending-blocked.json to exactly this set (an empty
+	// set removes the sidecar — no stale empty file). The dryRun path collects
+	// nothing and the post-loop reconcile is !dryRun-guarded, so a preview never
+	// touches the sidecar (nor the object store, since resyncSchema is never called
+	// under dryRun).
+	const pendingBlockedEntries: PendingBlockedEntry[] = [];
+
 	for (const asset of report.perAsset) {
 		const { name, state } = asset;
 		switch (state) {
@@ -1673,6 +1718,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 					status: outcome,
 					registeredMigrations,
 					blockedDetail,
+					pendingEntry,
 				} = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
 				// FGAP-050: surface the decls the live resync actually appended.
 				for (const m of registeredMigrations) result.migrationsRegistered.push(m);
@@ -1688,6 +1734,9 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						// TASK-048: carry the live refusal diagnostic (reason + version pair +
 						// per-item failures) into blockedDetail alongside the bare name.
 						if (blockedDetail) result.blockedDetail.push({ name, ...blockedDetail });
+						// TASK-051 / FGAP-080: collect the pinned pending-blocked record so the
+						// post-loop reconcile persists it (resolve-blocked consumes it later).
+						if (pendingEntry) pendingBlockedEntries.push(pendingEntry);
 						break;
 				}
 				break;
@@ -1756,6 +1805,14 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				break;
 		}
 	}
+
+	// TASK-051 / FGAP-080: reconcile pending-blocked.json to THIS run's blocked set
+	// (live only — the dryRun arm collected nothing and writes nothing). When the
+	// run produced blocked entries, persist exactly them; when it produced none,
+	// REMOVE any prior sidecar so a now-unblocked model leaves no stale record. The
+	// blocked contract (schema/block/migrations.json byte-unchanged) is untouched —
+	// this sidecar + the pinned object are additive, outside that contract.
+	if (!dryRun) reconcilePendingBlockedForDir(destRoot, pendingBlockedEntries);
 
 	// Baseline refresh for the schemas this run actually brought current. A resync
 	// overwrites the installed schema file with the catalog source but does NOT, by
@@ -1975,6 +2032,177 @@ export function resolveConflict(
 }
 
 /**
+ * Blocked-resolution commit op (TASK-051 — FGAP-080) — the resolution half of
+ * the blocked-resync loop `update` opens. After `update` REFUSES a catalog-ahead
+ * resync (blocked) it persists a pending-blocked record pinning the TARGET
+ * catalog schema body (in the object store) + the migration chain reaching it.
+ * The calling agent then fixes the block's failing items (or widens the local
+ * schema) and runs THIS op to commit the resolution against the SAME pinned
+ * target the run blocked on — so a subsequent `update` converges (in-sync)
+ * instead of re-blocking.
+ *
+ * Flow:
+ *   1. Load the pending-blocked record; an absent entry for `name` throws a
+ *      field-named error (run `update` first to produce one).
+ *   2. Retrieve the pinned target schema body by its `target_hash` from the
+ *      object store; a missing object throws (the pin is the resolution contract).
+ *   3. Re-validate the CURRENT block against the PINNED target body: load the
+ *      installed block, forward-migrate its items IN MEMORY through the entry's
+ *      chain when the block's declared `schema_version` differs from the target
+ *      `to` version (a FRESH registry seeded existing-decls-first + the chain,
+ *      mirroring validateBlockItemsAgainstCatalog), then `validate`.
+ *   4. FAIL → return `{ resolved: false, failures }` and WRITE NOTHING — the
+ *      pending record stays intact so the caller can correct + retry.
+ *   5. PASS → in order: register the chain decls not already on disk (collecting
+ *      the registered set), write the target schema (replace), advance the
+ *      migrated block's `schema_version` envelope to `to` + persist it (skipping
+ *      the block write when it had no items — schema still written, base still
+ *      advanced, mirroring the live no-items handling), advance the merge base to
+ *      the target body, and clear the entry from pending-blocked.json (removing
+ *      the file when it becomes empty). Return `{ resolved: true,
+ *      registeredMigrations, baseAdvancedTo }`.
+ *
+ * Throws (no write) when the substrate dir is unresolvable, no pending entry
+ * names `name`, or the pinned target object is missing.
+ */
+export function resolveBlocked(
+	cwd: string,
+	name: string,
+	ctx?: DispatchContext,
+):
+	| { schemaName: string; resolved: false; failures: BlockValidationFailure[] }
+	| {
+			schemaName: string;
+			resolved: true;
+			registeredMigrations: Array<{ schema: string; from: string; to: string }>;
+			baseAdvancedTo: string | null;
+	  } {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		throw new Error(`resolve-blocked: no active substrate resolved for '${cwd}'`);
+	}
+	const pending = loadPendingBlockedForDir(destRoot);
+	const entry = pending?.entries.find((e) => e.name === name);
+	if (!entry) {
+		throw new Error(`schemaName: no pending-blocked entry for '${name}' — run update first`);
+	}
+
+	const targetBody = getObject(destRoot, entry.target_hash);
+	if (targetBody === null) {
+		throw new Error(
+			`schemaName: pinned target schema object ${entry.target_hash} missing for '${name}' — cannot re-validate the block`,
+		);
+	}
+
+	// Load the installed block (the validateBlockItemsAgainstCatalog load pattern).
+	const blockFile = installedBlockDestPath(destRoot, name);
+	let blockData: unknown;
+	try {
+		blockData = fs.existsSync(blockFile) ? JSON.parse(fs.readFileSync(blockFile, "utf-8")) : undefined;
+	} catch (err) {
+		return {
+			schemaName: name,
+			resolved: false,
+			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+		};
+	}
+
+	const blockVersion =
+		blockData && typeof blockData === "object" && "schema_version" in (blockData as Record<string, unknown>)
+			? ((blockData as Record<string, unknown>).schema_version as unknown)
+			: undefined;
+	const targetVersion = entry.to;
+
+	// Determine whether the block carries items (mirrors resyncSchema's hasItems).
+	let hasItems = false;
+	if (blockData && typeof blockData === "object") {
+		forEachBlockArray(blockData, (_arrayKey, arr) => {
+			if (arr.length > 0) hasItems = true;
+		});
+	}
+
+	// Re-validate the block against the PINNED target body, forward-migrating its
+	// items in memory through the entry chain when the block lags the target. A
+	// FRESH registry seeded existing-decls-first + the chain, deduped on
+	// (schemaName, fromVersion) — never warm the project's cached registry.
+	let migrated: unknown = blockData;
+	try {
+		if (
+			typeof blockVersion === "string" &&
+			typeof targetVersion === "string" &&
+			blockVersion !== targetVersion &&
+			entry.chain.length > 0
+		) {
+			const registry = createRegistry();
+			const seeded = new Set<string>();
+			const existing = loadMigrationsFileForDir(destRoot);
+			for (const decl of [...(existing?.migrations ?? []), ...entry.chain]) {
+				const key = `${decl.schemaName} ${decl.fromVersion}`;
+				if (seeded.has(key)) continue;
+				registry.register({
+					schemaName: decl.schemaName,
+					fromVersion: decl.fromVersion,
+					toVersion: decl.toVersion,
+					migrate: migrationFnFor(decl),
+				});
+				seeded.add(key);
+			}
+			migrated = runMigrations(registry, name, blockVersion, targetVersion, blockData);
+		}
+		validate(targetBody, migrated, name);
+	} catch (err) {
+		const failures =
+			err instanceof ValidationError
+				? mapValidationFailures(err.errors, blockData)
+				: [{ instancePath: "", keyword: "error", message: String(err) }];
+		return { schemaName: name, resolved: false, failures };
+	}
+
+	// PASS — commit the resolution. (1) Register the chain decls not already on
+	// disk (the resyncSchema dedup), collecting the registered set.
+	const existing = loadMigrationsFileForDir(destRoot);
+	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
+	for (const decl of entry.chain) {
+		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		if (present.has(key)) continue;
+		appendMigrationDeclForDir(destRoot, decl, ctx);
+		present.add(key);
+		registeredMigrations.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
+	}
+
+	// (2) Write the target schema (replace — meta-validated, nested-id-guarded, atomic).
+	writeSchemaCheckedForDir(destRoot, name, targetBody, "replace", ctx);
+
+	// (3) Advance the migrated block's schema_version envelope to the target + persist
+	// it (skip when the block had no items — schema still written, base still advanced,
+	// mirroring the live no-items handling). Identity stamping re-runs on the write.
+	if (hasItems) {
+		if (
+			migrated &&
+			typeof migrated === "object" &&
+			!Array.isArray(migrated) &&
+			typeof (migrated as Record<string, unknown>).schema_version === "string" &&
+			typeof targetVersion === "string"
+		) {
+			(migrated as Record<string, unknown>).schema_version = targetVersion;
+		}
+		writeBlockForDir(destRoot, name, migrated);
+	}
+
+	// (4) Advance the merge base to the target body so a subsequent update converges
+	// (base === catalog) instead of re-deriving drift.
+	const baseAdvancedTo = stampBaselineFromBody(cwd, name, targetBody, targetVersion ?? "");
+
+	// (5) Clear the resolved entry from pending-blocked.json (remove the file when
+	// it becomes empty — no stale empty sidecar).
+	const remaining = (pending?.entries ?? []).filter((e) => e.name !== name);
+	reconcilePendingBlockedForDir(destRoot, remaining, ctx);
+
+	return { schemaName: name, resolved: true, registeredMigrations, baseAdvancedTo };
+}
+
+/**
  * Render an `UpdateResult["conflicts"]` set as a readable conflict report
  * (TASK-037 — FEAT-006 T4 / FGAP-069) — the surface the `update` op + CLI hand
  * to the CALLING agent, which reconciles each conflict into a resolved body and
@@ -2048,6 +2276,9 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 			lines.push(`    ${subject}:${fieldClause} ${describeBlockedFailure(f)}`);
 		}
 	}
+	lines.push(
+		"To resolve each: fix the named items (or widen the local schema), then resolve-blocked --schemaName <name> --yes — it re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
+	);
 	return lines.join("\n");
 }
 

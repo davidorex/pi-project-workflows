@@ -1,0 +1,6 @@
+{
+  "title": "No reverse-engineering failure from schema diff",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, I don't have to reverse-engineer the failure from the schema diff."
+}

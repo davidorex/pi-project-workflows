@@ -1,0 +1,6 @@
+{
+  "title": "check-status reports schemas behind catalog + version gap",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want check-status to report which installed schemas are behind the catalog, and by what version gap."
+}

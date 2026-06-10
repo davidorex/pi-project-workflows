@@ -1,0 +1,6 @@
+{
+  "title": "Drop catalog schema as sidecar for local diff",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want update to drop the catalog schema as a sidecar file (or provide a command to fetch it), so I can diff locally without hunting through node_modules."
+}

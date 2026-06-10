@@ -1,0 +1,6 @@
+{
+  "title": "Diagnostic to unblock, not stopping at no safe migration",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, the tool gives me the diagnostic needed to unblock, instead of stopping at \"no safe migration.\""
+}

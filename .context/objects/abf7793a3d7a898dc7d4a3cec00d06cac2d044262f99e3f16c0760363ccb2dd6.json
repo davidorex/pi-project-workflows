@@ -1,0 +1,6 @@
+{
+  "title": "resolve-conflict-style command advances merge base",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want a resolve-conflict-style command for blocked schemas — I fix the items or widen the local schema, run it, and the merge base advances so the schema stops re-blocking."
+}

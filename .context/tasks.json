@@ -902,7 +902,7 @@
     },
     {
       "description": "Surface the per-item validation diagnostic on update's blocked path + as a standalone op — closes FGAP-077. Bind the ValidationError resyncSchema's unbound catch discards (index.ts:622): map each AJV error's instancePath (/<arrayKey>/N) to the item id, thread {item id, field, keyword, params, value} per failing item into the update result's blocked entry (structured + CLI text), distinguish the no-chain block from the validation block, and expose the same returns-not-throws per-item validator as a standalone op (validate a block's items against a target schema version -> per-item failures). Builds on TASK-046's in-memory migrate+validate helper.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/ops-registry.ts"
@@ -918,8 +918,8 @@
       "notes": "Closes FGAP-077; advances STORY-001/002/003/004/005/009. Depends on TASK-046 (the shared in-memory migrate+validate primitive). Grounding: analysis/2026-06-10-update-blocked-diagnostic-task-DRAFT.md user stories + R-0012.",
       "id": "TASK-048",
       "oid": "8f8c688fa6d7bcc189d8d1cd7df68b49",
-      "content_hash": "c59a00b6ef8ee0d25a3e1e238f293be652fce8dd7ddafd0c4f66b972f9a458ac",
-      "content_parent": "81c7b1930791748c35544fe1b39dc256d00a0c60d193b080b294f60d1b9be4e6"
+      "content_hash": "4d407495eb661f3cbdc9193a1584130073180fd35a482de5bac9802b0437df42",
+      "content_parent": "c59a00b6ef8ee0d25a3e1e238f293be652fce8dd7ddafd0c4f66b972f9a458ac"
     },
     {
       "description": "Expose check-status as a reflected CLI op and report the version gap — closes FGAP-030 + FGAP-078. Add the context-check-status op (run -> checkStatus(cwd), the existing CheckStatusReport) so the drift report is reachable from the reflecting CLI, and extend the report/render to state, per behind schema, the baseline->catalog version delta — covering content-only drift (catalog-ahead is a hash comparison; a schema can be behind with no version-number change). One surface: the checkStatus report + its render + the op entry.",

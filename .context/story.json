@@ -2,68 +2,73 @@
   "stories": [
     {
       "title": "Blocked schema names failing item + field",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, when `update` blocks a schema, I can see which item and which field caused the validation failure.",
       "id": "STORY-001",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:38:49.523Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:38:49.523Z",
+      "modified_at": "2026-06-10T14:49:02.505Z",
       "oid": "f7325f8f92f7d2607aaf346b2f79a753",
-      "content_hash": "be268762eb762fdc20fc6cc87fb1ae3e045245ef39182d6e1a14bbfa046a3007"
+      "content_hash": "4ee0c0a22cba5fbc5b29f8ca01a17c471f61f9b26dd082b25da9f70f2700739a",
+      "content_parent": "be268762eb762fdc20fc6cc87fb1ae3e045245ef39182d6e1a14bbfa046a3007"
     },
     {
       "title": "Blocked gets the same diagnostic conflicts gives",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I get the same diagnostic for `blocked` that `conflicts` already gives, instead of `blocked` being opaque.",
       "id": "STORY-002",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:38:55.151Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:38:55.151Z",
+      "modified_at": "2026-06-10T14:49:23.759Z",
       "oid": "a5ed4566cb2afb2274d7f444ae820940",
-      "content_hash": "a494a5bc51343a171e264c88f540fd1abbb05c6967d944016ac5d8598050c6f5"
+      "content_hash": "8e180901bd1dd7d1188656617892ee43aec2fd3e1097c5d50c01d6095ea20c0e",
+      "content_parent": "a494a5bc51343a171e264c88f540fd1abbb05c6967d944016ac5d8598050c6f5"
     },
     {
       "title": "No reverse-engineering failure from schema diff",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I don't have to reverse-engineer the failure from the schema diff.",
       "id": "STORY-003",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:38:59.872Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:38:59.872Z",
+      "modified_at": "2026-06-10T14:49:35.658Z",
       "oid": "019e780890bc758faa6556b5aa75a218",
-      "content_hash": "8d95eff398b44a24827ed7afe9883ac833472a98def4d427ea14a0e6f1adab7f"
+      "content_hash": "5badbb7311dc2dc66db2e00ec2a813a877c3e97e299f0fc7adf28eed564670a5",
+      "content_parent": "8d95eff398b44a24827ed7afe9883ac833472a98def4d427ea14a0e6f1adab7f"
     },
     {
       "title": "Diagnostic to unblock, not stopping at no safe migration",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, the tool gives me the diagnostic needed to unblock, instead of stopping at \"no safe migration.\"",
       "id": "STORY-004",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:05.249Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:05.249Z",
+      "modified_at": "2026-06-10T14:49:57.166Z",
       "oid": "317944906bbb2d6c5d068c5934d34120",
-      "content_hash": "8a1c59ba7515b0cc88be70fb296be0575611a51ee05ca0edab54b7a5be68b55a"
+      "content_hash": "6a3d711302368cf28ae379702dc3485395e6bd464a36d0b99516816b24a98a63",
+      "content_parent": "8a1c59ba7515b0cc88be70fb296be0575611a51ee05ca0edab54b7a5be68b55a"
     },
     {
       "title": "Validate block items directly against target catalog schema",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I can validate the block items directly against the target catalog schema and see what fails — which `update` doesn't expose and `context-validate` doesn't do.",
       "id": "STORY-005",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:10.518Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:10.518Z",
+      "modified_at": "2026-06-10T14:50:15.697Z",
       "oid": "c261e5e4b8c53752ded4b7a86b858676",
-      "content_hash": "defa1f24c1d7e521cfff7eb37c25a20f669cb9462677d96d966bda3b7534a5d6"
+      "content_hash": "6fa368a976475d2bea2d90b7044e43599f2039c4b1d31ff432a0955fb6fc4380",
+      "content_parent": "defa1f24c1d7e521cfff7eb37c25a20f669cb9462677d96d966bda3b7534a5d6"
     },
     {
       "title": "Fix items or local schema then re-run update",
@@ -107,16 +112,17 @@
     },
     {
       "title": "Per-blocked-schema: item id, field, constraint",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want update to report, per blocked schema, which item id failed, on which field, against which constraint — so I can act without diffing schemas and hand-auditing the block.",
       "id": "STORY-009",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:46.333Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:46.333Z",
+      "modified_at": "2026-06-10T14:50:38.549Z",
       "oid": "add00fdcfefe59eebc9772263b296c64",
-      "content_hash": "6dfab42b90c9ced0850c1ff83b3417b11102b10dde872b0cc0be98ec0a69df52"
+      "content_hash": "87f2564308dc5249a8545b787de53f3e55686705805aed2c48b7bcf95c4cd970",
+      "content_parent": "6dfab42b90c9ced0850c1ff83b3417b11102b10dde872b0cc0be98ec0a69df52"
     },
     {
       "title": "Drop catalog schema as sidecar for local diff",

@@ -1,0 +1,6 @@
+{
+  "title": "Blocked gets the same diagnostic conflicts gives",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, I get the same diagnostic for `blocked` that `conflicts` already gives, instead of `blocked` being opaque."
+}

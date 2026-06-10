@@ -1039,6 +1039,42 @@
       ],
       "oid": "05d2b456b9fd94a5b326560ab01a8433",
       "content_hash": "23d3e1b4c45c27d215f67772d673ea3f28d95c5d5e32c1c7638656ceff81a414"
+    },
+    {
+      "id": "VER-039",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T14:00:00.000Z",
+      "evidence": "TASK-048 verified end-to-end; closes FGAP-077. update's blocked outcome carries the per-item validation diagnostic on BOTH paths: an additive UpdateResult.blockedDetail (name, reason no-migration-chain | validation-failed, the installed->catalog version pair, and per failing item {itemId, instancePath, keyword, message}) populated by simulateResyncOutcome's blocked arms (dry) and resyncSchema's now-bound catch (live, rollback byte-identical); blocked: string[] unchanged (zero existing assertions broken). itemIdForPath maps AJV instancePath /<arrayKey>/N to the item id with safe undefined on envelope-level errors, id-less items, and non-array keys; a non-ValidationError throw yields a String(err) fallback failure entry. The standalone validate-block-items op validates a named block's items against the catalog schema version and RETURNS the per-item failures (exit 0 + valid:false on validation failure; field-named throw + non-zero exit on unknown block or missing block file; never writes — substrate hash-identical before/after, probe-verified). renderBlocked (exported beside renderConflicts, keyword phrasing mirroring formatAjvError without a cross-package import cycle) surfaces the detail on the update CLI text surface beside the conflicts special-case; --json carries the structured field with no double-emit. Runtime demo on the R-0012 reproduction: dry AND live blockedDetail identically name CONV-001, /rules/0 required 'rationale' and /rules/0/enforcement enum, with from 1.0.0 to 1.0.1; pi-context validate-block-items --block conventions returns the same failure list; --block bogus exits 1 field-named. Dry/live detail divergence reasoned impossible (same schema bytes, same migration keying, same deduped registry edge set, deterministic AJV ordering) and asserted by deepEqual parity tests on both arms. build + check + full test fail 0 (all six packages); parity-check exit 0; examples-coverage + groupForOp drift-guard green (the op slotted in Read & query); the op appears in both regenerated SKILL.md tool tags (pi-bound allowlist). Docs synced usage-only: update op strings name blockedDetail; new op strings; READMEs gained the diagnostic clause preserving the TASK-046-corrected dry-run wording; CHANGELOG entries in pi-context, pi-context-cli, pi-project-workflows. Fresh adversarial probe PASS, zero defects; iterate-to-zero converged on the first pass.",
+      "criteria_results": [
+        {
+          "criterion": "a blocked schema's update result names per failing item the id, field, violated constraint, and value context on both the structured result and the CLI text surface",
+          "status": "passed",
+          "evidence": "blockedDetail + renderBlocked; the R-0012 demo names CONV-001 /rules/0 required + /rules/0/enforcement enum on dry, live, and the text surface"
+        },
+        {
+          "criterion": "a no-chain block is reported distinctly from a validation block",
+          "status": "passed",
+          "evidence": "reason no-migration-chain (+ version pair, no failures) vs validation-failed (+ failures); parity tests assert both arms"
+        },
+        {
+          "criterion": "a standalone reflected op validates a named block's items against a target schema version and RETURNS the per-item failure list; unknown block/version -> field-named error + non-zero exit",
+          "status": "passed",
+          "evidence": "validate-block-items: exit 0 valid:false with failures on the failing block; exit 1 field-named on bogus + missing block file; never writes (hash-verified)"
+        },
+        {
+          "criterion": "resyncSchema's rollback behavior byte-identical; the diagnostic is read-only reporting",
+          "status": "passed",
+          "evidence": "probe diffed the catch region — the three rollback statements unchanged; only the binding + return shape gained detail"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo on a seeded blocked substrate; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "all gates 0; the R-0012 demo; probe PASS zero defects"
+        }
+      ],
+      "oid": "683a3557867a8c68c1438e23c04dd7d5",
+      "content_hash": "7b46ed0840cec9b29d6c6044c9bcb37a3d371f0f38834cb2f3a7185bfa5ed1b0"
     }
   ]
 }

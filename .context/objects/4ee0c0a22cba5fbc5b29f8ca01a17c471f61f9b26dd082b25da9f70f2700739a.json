@@ -1,0 +1,6 @@
+{
+  "title": "Blocked schema names failing item + field",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, when `update` blocks a schema, I can see which item and which field caused the validation failure."
+}

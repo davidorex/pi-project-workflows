@@ -429,6 +429,21 @@ export function migrationsPath(cwd: string): string {
 	return migrationsPathForDir(resolveContextDir(cwd));
 }
 
+/**
+ * `<substrateDir>/pending-blocked.json` — substrate-managed sidecar recording the
+ * catalog-ahead schema resyncs the last live `update` run refused (blocked). Each
+ * entry pins the target catalog schema body (by content_hash, into the object
+ * store) plus the migration chain reaching it, so `resolve-blocked` can later
+ * re-validate the corrected block against the SAME pinned target and commit the
+ * resolution. Dir-targeted twin of {@link migrationsPathForDir}: pointer-resolved,
+ * substrate-dir-relative, no fallback default. Lives BESIDE the blocked contract
+ * (the byte-unchanged schema/block/migrations.json) — it is an additive resolution
+ * sidecar, outside that contract.
+ */
+export function pendingBlockedPathForDir(substrateDir: string): string {
+	return path.join(substrateDir, "pending-blocked.json");
+}
+
 // ── Substrate identity (content-addressed substrate identity, Cycle 3) ────────
 
 /**

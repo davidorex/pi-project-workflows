@@ -1,0 +1,185 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"$id": "pi-context://schemas/pending-blocked",
+	"version": "1.0.0",
+	"title": "pi-context substrate-persisted pending-blocked resync records",
+	"description": "Records of catalog-ahead schema resyncs that `update` refused (blocked) on the last live run. Each entry pins the target catalog schema (by content_hash into the object store) plus the migration chain reaching it, so `resolve-blocked` can re-validate the corrected block against the SAME pinned target the run blocked on, then — on pass — register the chain, write the target schema, advance the merge base, and clear the entry. Replaced wholesale each live `update` run (an empty set removes the file); never an append-only log.",
+	"type": "object",
+	"required": ["schema_version", "entries"],
+	"additionalProperties": false,
+	"properties": {
+		"schema_version": {
+			"type": "string",
+			"description": "Schema version of this pending-blocked.json file itself. Decoupled from any block schema version it references."
+		},
+		"entries": {
+			"type": "array",
+			"description": "One PendingBlockedEntry per schema the last live update run refused (blocked). The set is replaced wholesale each live run; an empty set means the file is removed.",
+			"items": { "$ref": "#/definitions/PendingBlockedEntry" }
+		}
+	},
+	"definitions": {
+		"PendingBlockedEntry": {
+			"type": "object",
+			"required": ["name", "reason", "target_hash", "chain", "blocked_at"],
+			"additionalProperties": false,
+			"properties": {
+				"name": {
+					"type": "string",
+					"description": "Canonical schema id (block_kind canonical_id) the resync was refused for."
+				},
+				"from": {
+					"type": "string",
+					"description": "Installed schema version the resync would walk forward FROM (the block's declared version pre-resync). Omitted when unreadable."
+				},
+				"to": {
+					"type": "string",
+					"description": "Target catalog schema version the resync would advance TO. Omitted when unreadable."
+				},
+				"reason": {
+					"type": "string",
+					"enum": ["no-migration-chain", "validation-failed"],
+					"description": "Why the live resync refused: no-migration-chain = no shipped chain reaches the catalog version; validation-failed = the forward-migrated items fail the catalog schema."
+				},
+				"target_hash": {
+					"type": "string",
+					"pattern": "^[0-9a-f]{64}$",
+					"description": "content_hash of the pinned target catalog schema body, stored in the object store. resolve-blocked re-validates the corrected block against THIS body."
+				},
+				"chain": {
+					"type": "array",
+					"description": "Ordered MigrationDecl list reaching the target version (one per hop). Empty when reason='no-migration-chain' (no chain reaches the target).",
+					"items": { "$ref": "#/definitions/MigrationDecl" }
+				},
+				"failures": {
+					"type": "array",
+					"description": "For reason='validation-failed', the per-item constraint failures the live resync produced. Omitted for no-migration-chain.",
+					"items": { "$ref": "#/definitions/BlockValidationFailure" }
+				},
+				"blocked_at": {
+					"type": "string",
+					"format": "date-time",
+					"description": "ISO-8601 timestamp the live update run recorded the block refusal."
+				}
+			}
+		},
+		"BlockValidationFailure": {
+			"type": "object",
+			"required": ["instancePath", "keyword", "message"],
+			"additionalProperties": false,
+			"properties": {
+				"itemId": {
+					"type": "string",
+					"description": "Failing block item's `id` when the instancePath resolves to one; omitted for envelope-level errors."
+				},
+				"instancePath": {
+					"type": "string",
+					"description": "AJV raw JSON pointer of the failing constraint."
+				},
+				"keyword": {
+					"type": "string",
+					"description": "AJV constraint keyword that failed (or 'error' for a synthetic non-AJV throw)."
+				},
+				"message": {
+					"type": "string",
+					"description": "AJV constraint message text."
+				}
+			}
+		},
+		"MigrationDecl": {
+			"type": "object",
+			"required": ["schemaName", "fromVersion", "toVersion", "kind", "created_by", "created_at"],
+			"additionalProperties": false,
+			"properties": {
+				"schemaName": {
+					"type": "string",
+					"description": "Canonical schema id (matches the schema's $id minus the URN prefix)."
+				},
+				"fromVersion": {
+					"type": "string",
+					"description": "Semver string of the source schema version this migration walks forward from."
+				},
+				"toVersion": {
+					"type": "string",
+					"description": "Semver string of the destination schema version this migration produces."
+				},
+				"kind": {
+					"type": "string",
+					"enum": ["identity", "declarative-transform"],
+					"description": "identity = data shape unchanged across the bump (no transform). declarative-transform = transform.operations[] applies to the data."
+				},
+				"transform": {
+					"$ref": "#/definitions/TransformSpec",
+					"description": "Required when kind='declarative-transform'; forbidden when kind='identity'."
+				},
+				"created_by": {
+					"type": "string",
+					"description": "Operator identity (writer.user) recorded at declaration write."
+				},
+				"created_at": {
+					"type": "string",
+					"format": "date-time",
+					"description": "ISO-8601 timestamp recorded at declaration write."
+				}
+			}
+		},
+		"TransformSpec": {
+			"type": "object",
+			"required": ["operations"],
+			"additionalProperties": false,
+			"properties": {
+				"operations": {
+					"type": "array",
+					"description": "Ordered TransformOp sequence applied in order to the block-item data shape.",
+					"items": { "$ref": "#/definitions/TransformOp" }
+				}
+			}
+		},
+		"TransformOp": {
+			"oneOf": [
+				{
+					"type": "object",
+					"required": ["op", "from", "to"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["rename"] },
+						"from": { "type": "string" },
+						"to": { "type": "string" }
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["set"] },
+						"path": { "type": "string" },
+						"value": {}
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["delete"] },
+						"path": { "type": "string" }
+					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path", "type"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["coerce"] },
+						"path": { "type": "string" },
+						"type": {
+							"type": "string",
+							"enum": ["string", "number", "boolean", "array", "object"]
+						}
+					}
+				}
+			]
+		}
+	}
+}

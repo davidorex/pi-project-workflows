@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Regenerated the aggregate `SKILL.md` to surface the new pi-context `resolve-blocked` op (commits the resolution of a blocked schema: re-validates the corrected block against the pinned target schema, registers the migration chain, writes the target schema, advances the merge base, clears the pending record) and the `update` op's pending-blocked-record description; see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context `validate-block-items` op (validates a block's items against the catalog schema version, returning the per-item failures — item id, field, constraint — without writing) and the `update` op's blocked-diagnostic description (`blockedDetail`); see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context `context-lens-view` op (projects a config-declared lens as a binned item-view — a bin→count summary, or one bin's items paged by `--offset`/`--limit`); see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context `resolve-conflict` op (the calling agent commits a reconciled schema conflict — writes the resolved schema and advances the merge base to the catalog so a subsequent `update` converges); see the `pi-context` changelog for the member-package detail.

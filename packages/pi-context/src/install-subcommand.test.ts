@@ -6,15 +6,17 @@ import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { computeContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
-import { writeBootstrapPointer } from "./context-dir.js";
+import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.js";
 import {
 	checkStatus,
 	installContext,
+	resolveBlocked,
 	resolveConflict,
 	updateContext,
 	validateBlockItemsAgainstCatalog,
 } from "./index.js";
 import { getObject } from "./object-store.js";
+import { loadPendingBlockedForDir } from "./pending-blocked-store.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 
@@ -1805,5 +1807,212 @@ describe("installContext idempotent block skip (FGAP-051)", () => {
 		assert.deepEqual(result.skipped, [], "a differing empty block must NOT be skipped");
 		const after = fs.readFileSync(dest, "utf-8");
 		assert.ok(!after.includes("extra_marker"), "the block must be replaced by the catalog starter");
+	});
+});
+
+// ---- TASK-051 — FGAP-080: pending-blocked record + resolve-blocked commit ----
+// The blocked-resync resolution loop: a live `update` that BLOCKS a catalog-ahead
+// schema persists pending-blocked.json (pinning the target catalog schema + the
+// chain), the calling agent fixes the failing items, and `resolveBlocked` commits
+// the resolution against the SAME pinned target so the next `update` converges.
+describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", () => {
+	const FIXTURE_SUBSTRATE_ID = "sub-0123456789abcdef";
+
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Pre-place an installed `tasks` schema = the catalog body with `version`
+	// overridden to `version`, install so the baseline is recorded FROM that older
+	// on-disk body → catalog-ahead, seed a substrate_id so live identity-stamping
+	// can mint oids, and write a populated tasks.json block with the supplied items.
+	function makeCatalogAheadTasks(dir: string, version: string, items: Array<Record<string, unknown>>): void {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", "tasks.schema.json"), JSON.stringify(catalog, null, 2));
+		installContext(dir); // baseline FROM the on-disk older body → catalog-ahead
+		const cfgPath = path.join(dir, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
+		cfg.substrate_id = FIXTURE_SUBSTRATE_ID;
+		fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: version, tasks: items }, null, 2),
+		);
+		const state = checkStatus(dir).perAsset.find((a) => a.name === "tasks")?.state;
+		assert.equal(state, "catalog-ahead", `precondition: tasks must be catalog-ahead (installed ${version})`);
+	}
+
+	const catalogTasksBody = (): Record<string, unknown> =>
+		JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"));
+
+	it("end-to-end loop: live blocked → pending record + pinned object → fix item → resolveBlocked → update converges", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// A populated block whose item FAILS the catalog 1.0.1 schema (bad status enum).
+		// The 1.0.0→1.0.1 identity chain ships, so the live resync forward-migrates the
+		// item (identity no-op) and re-validates → validation-failed → blocked.
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+
+		const schemaDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		const mp = path.join(tmpRoot, ".project", "migrations.json");
+		const schemaBefore = fs.readFileSync(schemaDest);
+		const blockBefore = fs.readFileSync(blockDest);
+		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+
+		const live = updateContext(tmpRoot);
+		assert.deepEqual(live.blocked, ["tasks"], "the item failing the catalog schema blocks the resync");
+
+		// The blocked contract: schema/block/migrations.json byte-unchanged.
+		assert.ok(fs.readFileSync(schemaDest).equals(schemaBefore), "blocked schema byte-unchanged");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "blocked block byte-unchanged");
+		if (migrationsBefore === null) {
+			assert.ok(!fs.existsSync(mp), "migrations.json absent after a blocked outcome (absent pre-call)");
+		} else {
+			assert.ok(fs.readFileSync(mp).equals(migrationsBefore), "migrations.json byte-unchanged after blocked");
+		}
+
+		// pending-blocked.json exists with the entry; the pinned target object is present.
+		const pending = loadPendingBlockedForDir(path.join(tmpRoot, ".project"));
+		assert.ok(pending, "pending-blocked.json was written by the live blocked run");
+		assert.equal(pending?.entries.length, 1, "one pending entry");
+		const entry = pending?.entries[0];
+		assert.equal(entry?.name, "tasks");
+		assert.equal(entry?.reason, "validation-failed");
+		assert.equal(entry?.from, "1.0.0");
+		assert.equal(entry?.to, "1.0.1");
+		assert.ok(Array.isArray(entry?.chain) && entry.chain.length >= 1, "the chain reaching the target is pinned");
+		assert.ok(Array.isArray(entry?.failures) && entry.failures.length >= 1, "the per-item failures are recorded");
+		const targetHash = entry?.target_hash as string;
+		const targetObj = getObject(path.join(tmpRoot, ".project"), targetHash);
+		assert.ok(targetObj, "the pinned target catalog schema body is in the object store");
+		assert.deepEqual(targetObj, catalogTasksBody(), "the pinned body equals the catalog tasks schema");
+
+		// Fix the failing item directly in the block fixture (the agent's correction).
+		fs.writeFileSync(
+			blockDest,
+			JSON.stringify(
+				{ schema_version: "1.0.0", tasks: [{ id: "TASK-001", description: "x", status: "planned" }] },
+				null,
+				2,
+			),
+		);
+
+		const res = resolveBlocked(tmpRoot, "tasks");
+		assert.equal(res.resolved, true, "the corrected block resolves");
+		if (res.resolved === true) {
+			assert.deepEqual(
+				res.registeredMigrations,
+				[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
+				"the chain decl was registered",
+			);
+		}
+
+		// The schema file now equals the pinned target body.
+		assert.deepEqual(
+			JSON.parse(fs.readFileSync(schemaDest, "utf-8")),
+			targetObj,
+			"the on-disk schema equals the pinned target after resolve",
+		);
+		// The block envelope advanced to the target version.
+		const blockAfter = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { schema_version?: string };
+		assert.equal(blockAfter.schema_version, "1.0.1", "the block envelope advanced to the target version");
+		// The merge base advanced to the target hash.
+		const cfgAfter = loadConfig(tmpRoot);
+		assert.equal(
+			cfgAfter?.installed_from?.assets?.tasks?.content_hash,
+			targetHash,
+			"installed_from baseline advanced to the target content_hash",
+		);
+		// The pending entry is gone (file removed when empty).
+		assert.ok(
+			!fs.existsSync(pendingBlockedPathForDir(path.join(tmpRoot, ".project"))),
+			"pending-blocked.json removed once the only entry is cleared",
+		);
+		// A fresh update re-run reports the schema in-sync (convergence).
+		const reRun = updateContext(tmpRoot);
+		assert.deepEqual(reRun.inSync, ["tasks"], "the schema converges to in-sync after resolution");
+		assert.deepEqual(reRun.blocked, [], "no schema re-blocks");
+	});
+
+	it("no-write-on-fail: a still-failing block resolves false, all files byte-unchanged, pending intact", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+		updateContext(tmpRoot); // → blocked, pending written
+
+		const schemaDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		const mp = path.join(tmpRoot, ".project", "migrations.json");
+		const cfgPath = path.join(tmpRoot, ".project", "config.json");
+		const pendingPath = pendingBlockedPathForDir(path.join(tmpRoot, ".project"));
+		const snapshot = new Map<string, Buffer>();
+		for (const f of [schemaDest, blockDest, cfgPath, pendingPath]) snapshot.set(f, fs.readFileSync(f));
+		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
+
+		// The item is STILL invalid (not corrected) → resolveBlocked must fail + write nothing.
+		const res = resolveBlocked(tmpRoot, "tasks");
+		assert.equal(res.resolved, false, "an uncorrected block does not resolve");
+		if (res.resolved === false) {
+			assert.ok(res.failures.length >= 1, "the remaining per-item failures are reported");
+		}
+
+		for (const [f, before] of snapshot) {
+			assert.ok(fs.readFileSync(f).equals(before), `resolveBlocked fail must not modify ${path.basename(f)}`);
+		}
+		if (migrationsBefore === null) {
+			assert.ok(!fs.existsSync(mp), "migrations.json absent — resolve fail wrote no decls");
+		} else {
+			assert.ok(fs.readFileSync(mp).equals(migrationsBefore), "migrations.json byte-unchanged on resolve fail");
+		}
+		const pending = loadPendingBlockedForDir(path.join(tmpRoot, ".project"));
+		assert.equal(pending?.entries.length, 1, "the pending entry stays intact on resolve fail");
+	});
+
+	it("dryRun blocked leaves NO pending file and adds no new object", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+		const objectsDir = path.join(tmpRoot, ".project", "objects");
+		const objectsBefore = fs.existsSync(objectsDir) ? fs.readdirSync(objectsDir).sort() : [];
+
+		const dry = updateContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(dry.blocked, ["tasks"], "dry predicts blocked");
+		assert.ok(
+			!fs.existsSync(pendingBlockedPathForDir(path.join(tmpRoot, ".project"))),
+			"dryRun must NOT write pending-blocked.json",
+		);
+		const objectsAfter = fs.existsSync(objectsDir) ? fs.readdirSync(objectsDir).sort() : [];
+		assert.deepEqual(objectsAfter, objectsBefore, "dryRun must pin no new target object");
+	});
+
+	it("no-chain entry (chain []) resolves when the block already validates against the pinned target", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// Installed at 0.9.0 (no chain reaches catalog 1.0.1) with an item that ALREADY
+		// satisfies the catalog 1.0.1 schema → live resync blocks no-migration-chain,
+		// pinning chain:[]. resolveBlocked re-validates the block as-is (no migration) →
+		// passes → commits.
+		makeCatalogAheadTasks(tmpRoot, "0.9.0", [{ id: "TASK-001", description: "x", status: "planned" }]);
+		const live = updateContext(tmpRoot);
+		assert.deepEqual(live.blocked, ["tasks"], "no-chain catalog-ahead blocks");
+		const pending = loadPendingBlockedForDir(path.join(tmpRoot, ".project"));
+		assert.equal(pending?.entries[0]?.reason, "no-migration-chain");
+		assert.deepEqual(pending?.entries[0]?.chain, [], "no-chain entry pins an empty chain");
+
+		const res = resolveBlocked(tmpRoot, "tasks");
+		assert.equal(res.resolved, true, "a block that validates as-is resolves under a no-chain entry");
+		if (res.resolved === true) {
+			assert.deepEqual(res.registeredMigrations, [], "a no-chain resolution registers no decls");
+		}
+		assert.ok(
+			!fs.existsSync(pendingBlockedPathForDir(path.join(tmpRoot, ".project"))),
+			"the pending entry is cleared after a no-chain resolution",
+		);
+	});
+
+	it("absent pending entry → throws /schemaName:/", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot); // in-sync; nothing blocked
+		assert.throws(() => resolveBlocked(tmpRoot, "tasks"), /schemaName:/);
 	});
 });

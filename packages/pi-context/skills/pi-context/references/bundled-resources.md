@@ -1,12 +1,13 @@
 # Bundled Resources
 
-## schemas/ (11 files)
+## schemas/ (12 files)
 
 - `schemas/bootstrap.schema.json`
 - `schemas/config.schema.json`
 - `schemas/context-registry.schema.json`
 - `schemas/layer.schema.json`
 - `schemas/migrations.schema.json`
+- `schemas/pending-blocked.schema.json`
 - `schemas/priority.schema.json`
 - `schemas/relations.schema.json`
 - `schemas/severity.schema.json`

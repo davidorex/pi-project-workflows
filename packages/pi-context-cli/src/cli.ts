@@ -807,6 +807,7 @@ const HELP_GROUPS: HelpGroup[] = [
 			"amend-config",
 			"update",
 			"resolve-conflict",
+			"resolve-blocked",
 			"rename-canonical-id",
 		),
 	},

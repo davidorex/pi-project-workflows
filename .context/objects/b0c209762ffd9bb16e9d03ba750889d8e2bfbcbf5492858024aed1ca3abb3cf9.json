@@ -1,0 +1,10 @@
+{
+  "title": "update blocked-diagnostic + resolution loop — story-driven",
+  "status": "approved",
+  "layer": "L4",
+  "description": "Bring pi-context update's blocked outcome from an opaque dead-end to a diagnosed, resolvable state, and make the dry-run predict the live outcome. The work container for the update-arc gap set: FGAP-066 (dry/live outcome parity), FGAP-077 (per-item validation diagnostic), FGAP-030+FGAP-078 (check-status exposed as a CLI op + version-gap reporting), FGAP-079 (catalog schema locally diffable), FGAP-080 (pending-blocked state + resolve-blocked / update --continue), FGAP-081 (in-file failure markers, object-store recoverable). INVARIANT (every task preserves it): the per-schema byte-exact rollback and per-component application (DEC-0018) are preserved; no data loss on any blocked path; the only blocked-path write is the explicitly-declared marker-mode of FGAP-081, with the pre-marker block recoverable from the object store; in-pi op behavior changes only where a gap names it. The feature's success criteria are the user stories it advances — STORY-001..014, filed verbatim from the operator's in-pi reports — not embedded criteria text.",
+  "motivation": "An operator hit blocked on a live update the dry-run had predicted safe, with no diagnostic naming the failing item/field and no resolution path — the inciting incident the 14 user stories articulate. The standard is best-of-breed: diagnose, fix, retry, with the dry-run telling the truth.",
+  "acceptance_criteria": [
+    "Every user story this feature advances (the feature_advances_story edges -> STORY-001..014) is met — a story is met when a task or feature advancing it has met its success criteria. The stories carry the criteria; this entry references them without duplication."
+  ]
+}

@@ -898,6 +898,104 @@
       "id": "TASK-047",
       "oid": "b16073c8c524650178110c637a6b8ba5",
       "content_hash": "aaae3a75ce14f58084d3f87ad580594ecd414fb10a7b7336a83523e014009766"
+    },
+    {
+      "description": "Surface the per-item validation diagnostic on update's blocked path + as a standalone op — closes FGAP-077. Bind the ValidationError resyncSchema's unbound catch discards (index.ts:622): map each AJV error's instancePath (/<arrayKey>/N) to the item id, thread {item id, field, keyword, params, value} per failing item into the update result's blocked entry (structured + CLI text), distinguish the no-chain block from the validation block, and expose the same returns-not-throws per-item validator as a standalone op (validate a block's items against a target schema version -> per-item failures). Builds on TASK-046's in-memory migrate+validate helper.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "A blocked schema's update result names, per failing item: item id, field, violated constraint (keyword+params), and value — on both the structured result and the CLI text surface.",
+        "A no-chain block is reported distinctly from a validation block (the version gap + no chain, vs the per-item failures).",
+        "A standalone reflected op validates a named block's items against a target schema version and RETURNS the per-item failure list (no throw, no write); unknown block/version -> field-named error + non-zero exit.",
+        "resyncSchema's rollback behavior is byte-identical (the diagnostic is read-only reporting; schema/block/migrations.json untouched on blocked).",
+        "build + check + full test green; parity-check exit 0; runtime demo on a seeded blocked substrate; fresh adversarial probe.",
+        "FGAP-077 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-077; advances STORY-001/002/003/004/005/009. Depends on TASK-046 (the shared in-memory migrate+validate primitive). Grounding: analysis/2026-06-10-update-blocked-diagnostic-task-DRAFT.md user stories + R-0012.",
+      "id": "TASK-048",
+      "oid": "8f8c688fa6d7bcc189d8d1cd7df68b49",
+      "content_hash": "81c7b1930791748c35544fe1b39dc256d00a0c60d193b080b294f60d1b9be4e6"
+    },
+    {
+      "description": "Expose check-status as a reflected CLI op and report the version gap — closes FGAP-030 + FGAP-078. Add the context-check-status op (run -> checkStatus(cwd), the existing CheckStatusReport) so the drift report is reachable from the reflecting CLI, and extend the report/render to state, per behind schema, the baseline->catalog version delta — covering content-only drift (catalog-ahead is a hash comparison; a schema can be behind with no version-number change). One surface: the checkStatus report + its render + the op entry.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-context context-check-status --json returns the per-asset drift report (name, state, baseline_version, catalog_version) for every installed schema.",
+        "The report names which schemas are behind the catalog and the version delta (e.g. 1.0.0 -> 1.0.1); a content-only-drift schema (same version, different content) is reported behind with the basis stated.",
+        "The in-pi /context check-status render carries the same version-gap information (renderCheckStatus no longer drops the version fields).",
+        "checkStatus classification logic is unchanged (reporting only); build + check + full test green; parity-check exit 0; runtime demo against a catalog-ahead substrate; fresh adversarial probe.",
+        "FGAP-030 + FGAP-078 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-030 + FGAP-078 (same surface: the drift report + its exposure); advances STORY-007. Independent of the other slices.",
+      "id": "TASK-049",
+      "oid": "3916923de91f76c83e9d68fd624dd367",
+      "content_hash": "78fe93559a480b96176118b5c50a7e9c08bb4729af4cdda478989047429acf2e"
+    },
+    {
+      "description": "Make the catalog schema locally diffable — closes FGAP-079. Provide the catalog schema BODY to the operator without hunting node_modules: a reflected op that emits the catalog schema verbatim (resolveCatalog samplesRoot + kind.schema_path; read-samples-catalog returns only a projection today), and/or a sidecar write beside installedSchemaDestPath during update when a schema is behind. The implementation Explore resolves fetch-op vs sidecar vs both from the stories' use (diff locally).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "The operator obtains the catalog schema body for a named kind via one CLI invocation (or finds it as a sidecar beside the installed schema after an update that reports the schema behind) — diffable locally against <substrate>/schemas/<name>.schema.json without touching node_modules.",
+        "The body is the verbatim catalog *.schema.json (raw JSON Schema: properties/definitions/$id), not the read-samples-catalog projection.",
+        "No installed schema, block, or config is mutated by the read path; a sidecar (if chosen) is clearly suffixed and never consumed by the loader.",
+        "build + check + full test green; parity-check exit 0; runtime demo (fetch + local diff against a catalog-ahead substrate); fresh adversarial probe.",
+        "FGAP-079 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-079; advances STORY-010. Independent of the other slices. Grounding: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md is unrelated; the catalog-access grounding is the user-stories DRAFT + the explore that located resolveCatalog/samplesRoot.",
+      "id": "TASK-050",
+      "oid": "53a76d00da4a7a4345d9e1066fd73d24",
+      "content_hash": "81eff6b9881fa39caeccf5f565b2a20eb18d16bfc6b587b90fc4e1be52a40e75"
+    },
+    {
+      "description": "Persist a pending-blocked state and add the resolve-blocked / update --continue commit op — closes FGAP-080. When resyncSchema blocks, persist what the rollback currently discards (target schema body/version, the migration chain, the per-item failure set from TASK-048's diagnostic), and add a commit op mirroring resolve-conflict: re-validate the corrected block against the target schema, on success write the new schema via writeSchemaCheckedForDir and advance the merge base via stampBaselineFromBody — so the schema converges and stops re-blocking. The diagnose -> fix -> retry loop, end-to-end, matching the conflicts/resolve-conflict model.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "A blocked update persists a pending-blocked record (target schema version/body reference, migration chain, per-item failure set); the schema/block/migrations.json byte-unchanged contract is preserved (the record lives outside them).",
+        "After the operator fixes the items or widens the local schema, ONE command (resolve-blocked or update --continue) re-validates the block against the target schema; on pass it writes the new schema and advances the merge base so a subsequent update reports in-sync (no re-block); on fail it reports the remaining per-item failures and writes nothing.",
+        "The flow mirrors resolve-conflict end-to-end: surfaced detail -> operator fix -> commit op -> base advance; demonstrated on a seeded blocked substrate through to convergence.",
+        "Per-schema rollback and per-component application (DEC-0018) unchanged for schemas not being resolved.",
+        "build + check + full test green; parity-check exit 0; fresh adversarial probe.",
+        "FGAP-080 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-080; advances STORY-006/011/012/014. Depends on TASK-048 (the persisted failure set is its diagnostic). Reuses stampBaselineFromBody, writeSchemaCheckedForDir, validateBlockWithMigrationForDir, the object store.",
+      "id": "TASK-051",
+      "oid": "8d6e1e91f0bc21d0f189fd6efede76ef",
+      "content_hash": "ccc0828966d95aad5e61c3e20101f8513382b7b2be39bbb9a9679b3eb2acbc11"
+    },
+    {
+      "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. A new explicitly-declared marker-mode superseding the byte-unchanged blocked contract for the block file only; markers are stripped by the TASK-051 resolution commit (resolve-blocked / update --continue), which refuses while markers remain unaddressed. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/block-api.ts"
+      ],
+      "acceptance_criteria": [
+        "On a blocked schema (marker-mode), the block file carries failure markers at each offending item/field naming the violated constraint — the operator opens the block and sees the problem inline.",
+        "The pre-marker block is recoverable from the object store; recovery demonstrated (byte-exact restore).",
+        "The TASK-051 commit op strips the markers on a passing resolution; a block with unresolved markers cannot be committed.",
+        "Schemas/blocks not in marker-mode keep the byte-unchanged blocked contract; migrations.json and the schema file stay byte-unchanged in all modes.",
+        "build + check + full test green; parity-check exit 0; runtime demo (block -> markers -> fix -> resolve -> markers gone, schema converged); fresh adversarial probe.",
+        "FGAP-081 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-081; advances STORY-013/014. Depends on TASK-051 (the resolution loop the markers feed). The contract supersession (in-file markers, object-store recoverability) is user-decided; pairs with DEC-0018.",
+      "id": "TASK-052",
+      "oid": "b014aeaada390c1a3d37b1467afdd81f",
+      "content_hash": "18def7337a6c4202e4cf6e90cef2474f62ff539e4b3e1e3e2f9c28320d273bbc"
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "description": "Make the catalog schema locally diffable — closes FGAP-079. Provide the catalog schema BODY to the operator without hunting node_modules: a reflected op that emits the catalog schema verbatim (resolveCatalog samplesRoot + kind.schema_path; read-samples-catalog returns only a projection today), and/or a sidecar write beside installedSchemaDestPath during update when a schema is behind. The implementation Explore resolves fetch-op vs sidecar vs both from the stories' use (diff locally).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "The operator obtains the catalog schema body for a named kind via one CLI invocation (or finds it as a sidecar beside the installed schema after an update that reports the schema behind) — diffable locally against <substrate>/schemas/<name>.schema.json without touching node_modules.",
+    "The body is the verbatim catalog *.schema.json (raw JSON Schema: properties/definitions/$id), not the read-samples-catalog projection.",
+    "No installed schema, block, or config is mutated by the read path; a sidecar (if chosen) is clearly suffixed and never consumed by the loader.",
+    "build + check + full test green; parity-check exit 0; runtime demo (fetch + local diff against a catalog-ahead substrate); fresh adversarial probe.",
+    "FGAP-079 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-079; advances STORY-010. Independent of the other slices. Grounding: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md is unrelated; the catalog-access grounding is the user-stories DRAFT + the explore that located resolveCatalog/samplesRoot."
+}

@@ -135,10 +135,10 @@ pi-context resolve-conflict --schemaName <name> --schema '<reconciled-json>'
 
 `update` also additively propagates catalog-new config-registry entries (`relation_types` / `invariants` / `block_kinds` / `lenses`) absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten; the added ids are reported under `registryAdditions`).
 
-`--dryRun` previews the per-schema action plan (resync / merge / conflict) and the config-registry entries that would be added, and writes nothing.
+`--dryRun` predicts the precise per-schema outcome (resync / migrate / block / merge / conflict) by running the forward-migration and re-validation in memory, alongside the config-registry entries that would be added, and writes nothing.
 
 ```bash
-pi-context update --dryRun                   # preview the per-schema action plan + config-registry additions
+pi-context update --dryRun                   # predict the precise per-schema outcome (in-memory migrate + re-validate) + config-registry additions
 pi-context update                            # apply: resync + auto-merge; conflicts → surfaced (op output + report) for the caller to reconcile + commit via resolve-conflict
 ```
 

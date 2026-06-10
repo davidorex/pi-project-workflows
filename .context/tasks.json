@@ -982,7 +982,7 @@
     },
     {
       "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. A new explicitly-declared marker-mode superseding the byte-unchanged blocked contract for the block file only; markers are stripped by the TASK-051 resolution commit (resolve-blocked / update --continue), which refuses while markers remain unaddressed. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/block-api.ts"
@@ -998,7 +998,8 @@
       "notes": "Closes FGAP-081; advances STORY-013/014. Depends on TASK-051 (the resolution loop the markers feed). The contract supersession (in-file markers, object-store recoverability) is user-decided; pairs with DEC-0018.",
       "id": "TASK-052",
       "oid": "b014aeaada390c1a3d37b1467afdd81f",
-      "content_hash": "18def7337a6c4202e4cf6e90cef2474f62ff539e4b3e1e3e2f9c28320d273bbc"
+      "content_hash": "33ca4085cab6e3de5fc9c02911c8f4a1af7efa8372b4399b8fcff27ad77e1952",
+      "content_parent": "18def7337a6c4202e4cf6e90cef2474f62ff539e4b3e1e3e2f9c28320d273bbc"
     }
   ]
 }

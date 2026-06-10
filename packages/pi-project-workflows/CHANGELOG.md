@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Regenerated the aggregate `SKILL.md` to surface the new pi-context `validate-block-items` op (validates a block's items against the catalog schema version, returning the per-item failures — item id, field, constraint — without writing) and the `update` op's blocked-diagnostic description (`blockedDetail`); see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context `context-lens-view` op (projects a config-declared lens as a binned item-view — a bin→count summary, or one bin's items paged by `--offset`/`--limit`); see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to surface the new pi-context `resolve-conflict` op (the calling agent commits a reconciled schema conflict — writes the resolved schema and advances the merge base to the catalog so a subsequent `update` converges); see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate `SKILL.md` to reflect the pi-context `update` op's drift-aware description (resync `in-sync`/`catalog-ahead`; 3-way merge `locally-modified`/`both-diverged` preserving non-conflicting edits; irreconcilable conflicts returned in the op output + a report for the calling agent to reconcile and commit via `resolve-conflict`; `--dryRun` previews); see the `pi-context` changelog for the member-package detail.

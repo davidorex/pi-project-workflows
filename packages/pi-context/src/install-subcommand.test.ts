@@ -7,7 +7,13 @@ import { fileURLToPath } from "node:url";
 import { computeContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { checkStatus, installContext, resolveConflict, updateContext } from "./index.js";
+import {
+	checkStatus,
+	installContext,
+	resolveConflict,
+	updateContext,
+	validateBlockItemsAgainstCatalog,
+} from "./index.js";
 import { getObject } from "./object-store.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
@@ -1541,6 +1547,29 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.deepEqual(live.blocked, ["tasks"], "live: the same fixture blocks");
 		assert.deepEqual(live.migrationsRegistered, [], "live: a blocked (rolled-back) outcome registers nothing");
 		fs.rmSync(liveDir, { recursive: true, force: true });
+
+		// TASK-048 / FGAP-077: dry == live blockedDetail for the validation-failed case.
+		// Re-derive both fresh (the dirs above were removed) and compare the diagnostic
+		// detail (reason + version pair + per-item failures naming the failing item id).
+		const dryDetailDir = makeCatalogAheadTasks("1.0.0", [badItem]);
+		const dryDetail = updateContext(dryDetailDir, { dryRun: true }).blockedDetail;
+		fs.rmSync(dryDetailDir, { recursive: true, force: true });
+		const liveDetailDir = makeCatalogAheadTasks("1.0.0", [badItem]);
+		const liveDetail = updateContext(liveDetailDir).blockedDetail;
+		fs.rmSync(liveDetailDir, { recursive: true, force: true });
+		assert.deepEqual(dryDetail, liveDetail, "TASK-048: dry blockedDetail == live blockedDetail (validation-failed)");
+		assert.equal(dryDetail.length, 1, "one blocked-schema detail entry");
+		const d = dryDetail[0];
+		assert.equal(d.name, "tasks");
+		assert.equal(d.reason, "validation-failed");
+		assert.equal(d.from, "1.0.0");
+		assert.equal(d.to, "1.0.1");
+		assert.ok(Array.isArray(d.failures) && d.failures.length >= 1, "validation-failed carries per-item failures");
+		const enumFailure = d.failures?.find((f) => f.instancePath === "/tasks/0/status");
+		assert.ok(enumFailure, "the failing status field is reported by instancePath");
+		assert.equal(enumFailure?.itemId, "TASK-001", "the failing item id is resolved from the instancePath");
+		assert.equal(typeof enumFailure?.keyword, "string");
+		assert.equal(typeof enumFailure?.message, "string");
 	});
 
 	it("(b) migrated — a populated block that migrates + re-validates clean: dry == live == migrated, decls listed", () => {
@@ -1620,6 +1649,119 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.deepEqual(live.blocked, ["tasks"], "live: no-chain version bump blocks");
 		assert.deepEqual(live.migrationsRegistered, [], "live: a no-chain blocked outcome registers nothing");
 		fs.rmSync(liveDir, { recursive: true, force: true });
+
+		// TASK-048 / FGAP-077: dry == live blockedDetail for the no-migration-chain case.
+		const dryDetailDir = makeCatalogAheadTasks("0.9.0");
+		const dryDetail = updateContext(dryDetailDir, { dryRun: true }).blockedDetail;
+		fs.rmSync(dryDetailDir, { recursive: true, force: true });
+		const liveDetailDir = makeCatalogAheadTasks("0.9.0");
+		const liveDetail = updateContext(liveDetailDir).blockedDetail;
+		fs.rmSync(liveDetailDir, { recursive: true, force: true });
+		assert.deepEqual(dryDetail, liveDetail, "TASK-048: dry blockedDetail == live blockedDetail (no-chain)");
+		assert.deepEqual(
+			dryDetail,
+			[{ name: "tasks", reason: "no-migration-chain", from: "0.9.0", to: "1.0.1" }],
+			"no-chain blockedDetail carries reason + version pair, no failures",
+		);
+	});
+});
+
+// ── TASK-048 / FGAP-077: itemIdForPath mapper + validateBlockItemsAgainstCatalog ─
+describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	const FIXTURE_SUBSTRATE_ID = "sub-0123456789abcdef";
+
+	// A catalog-ahead `tasks` fixture at the older `version` with a populated block.
+	function makeTasksFixture(version: string, items: Array<Record<string, unknown>>): string {
+		const dir = makeProject(["tasks"], []);
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", "tasks.schema.json"), JSON.stringify(catalog, null, 2));
+		installContext(dir);
+		const cfgPath = path.join(dir, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
+		cfg.substrate_id = FIXTURE_SUBSTRATE_ID;
+		fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: version, tasks: items }, null, 2),
+		);
+		return dir;
+	}
+
+	it("a failing block → valid:false + failures naming the item id / field / keyword", () => {
+		const badItem = { id: "TASK-001", description: "x", status: "not-a-valid-status" };
+		tmpRoot = makeTasksFixture("1.0.0", [badItem]);
+		const r = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(r.block, "tasks");
+		assert.equal(r.valid, false, "a schema-failing item is not valid");
+		assert.ok(r.failures.length >= 1, "at least one failure");
+		const enumFailure = r.failures.find((f) => f.instancePath === "/tasks/0/status");
+		assert.ok(enumFailure, "the failing status field is reported by instancePath");
+		assert.equal(enumFailure?.itemId, "TASK-001", "the failing item id is resolved");
+		assert.equal(typeof enumFailure?.keyword, "string");
+	});
+
+	it("a clean block → valid:true with no failures", () => {
+		const goodItem = { id: "TASK-001", description: "x", status: "planned" };
+		tmpRoot = makeTasksFixture("1.0.0", [goodItem]);
+		const r = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(r.valid, true, "a catalog-conformant item validates clean");
+		assert.deepEqual(r.failures, [], "a clean block reports no failures");
+		assert.equal(r.to, "1.0.1", "the catalog version is reported as `to`");
+	});
+
+	it("an unknown block throws a field-named error", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		assert.throws(
+			() => validateBlockItemsAgainstCatalog(tmpRoot, "not-a-real-block"),
+			/block:/,
+			"an unknown block throws a field-named Error",
+		);
+	});
+
+	// Mapper cases (TASK-048 itemIdForPath), observed through the diagnostic: an
+	// id-less item failing the schema yields a failure whose itemId is undefined
+	// (the indexed item has no string `id` to resolve); an envelope-level failure
+	// (a non-array `tasks`) yields a failure whose instancePath has no
+	// `/<arrayKey>/<index>` prefix, so itemId is likewise undefined.
+	it("id-less failing item → failure.itemId undefined; envelope-level failure → itemId undefined", () => {
+		// id-less: omit the required `id` → the `required` error reports at /tasks/0,
+		// whose item carries no `id`, so itemIdForPath returns undefined.
+		tmpRoot = makeTasksFixture("1.0.0", [{ description: "x", status: "planned" }]);
+		const idless = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(idless.valid, false, "an id-less item fails the required-id constraint");
+		assert.ok(
+			idless.failures.every((f) => f.itemId === undefined),
+			"an id-less item resolves no itemId",
+		);
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+
+		// envelope-level: `tasks` not an array → the error reports at /tasks (no index
+		// segment), so itemIdForPath returns undefined.
+		tmpRoot = makeProject(["tasks"], []);
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = "1.0.1";
+		fs.writeFileSync(path.join(tmpRoot, ".project", "schemas", "tasks.schema.json"), JSON.stringify(catalog, null, 2));
+		installContext(tmpRoot);
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: "1.0.1", tasks: "not-an-array" }, null, 2),
+		);
+		const envelope = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(envelope.valid, false, "a non-array tasks fails the type constraint");
+		assert.ok(
+			envelope.failures.every((f) => f.itemId === undefined),
+			"an envelope-level failure resolves no itemId",
+		);
 	});
 });
 

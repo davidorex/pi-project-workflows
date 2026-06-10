@@ -358,6 +358,78 @@ export interface InstallResult {
 }
 
 /**
+ * One per-item validation failure mapped from an AJV `ErrorObject`, in the
+ * minimal shape the blocked-diagnostic surfaces consume (TASK-048 / FGAP-077).
+ * `itemId` is the failing block item's `id` when the AJV `instancePath` resolves
+ * to one (envelope-level errors leave it undefined); `instancePath` is AJV's raw
+ * JSON pointer; `keyword` + `message` carry the constraint that failed and its
+ * AJV text. The shape is deliberately minimal — no full `params` plumbing.
+ */
+export interface BlockValidationFailure {
+	itemId?: string;
+	instancePath: string;
+	keyword: string;
+	message: string;
+}
+
+/**
+ * Per-schema blocked-resync diagnostic detail (TASK-048 / FGAP-077). Carried by
+ * `simulateResyncOutcome` / `resyncSchema` on the blocked arms and surfaced via
+ * `UpdateResult.blockedDetail`, so a refused catalog-ahead resync reports WHY it
+ * refused — distinguishing a missing migration chain from items that fail the
+ * catalog schema, with the version pair and (for validation failures) the per-
+ * item failures naming id / field / constraint.
+ *   - `no-migration-chain`: no shipped chain reaches `to` from `from`; the
+ *     version pair is carried, `failures` omitted.
+ *   - `validation-failed`: the in-memory forward-migrate + re-validate threw; the
+ *     version pair is carried, `failures` lists the per-item constraint failures
+ *     (a single synthetic `{instancePath:"", keyword:"error", …}` entry when the
+ *     throw was not an AJV ValidationError).
+ */
+export interface BlockedDetail {
+	name: string;
+	reason: "no-migration-chain" | "validation-failed";
+	from?: string;
+	to?: string;
+	failures?: BlockValidationFailure[];
+}
+
+/**
+ * Resolve the failing block item's `id` from an AJV `instancePath` (TASK-048).
+ * The AJV pointer for a block-item error is `/<arrayKey>/<index>/<field>…`; this
+ * matches the leading `/<arrayKey>/<index>` segment, resolves
+ * `blockData[arrayKey][index]`, and returns its `id` when that is a string.
+ * Returns undefined when the path is envelope-level (no `/<arrayKey>/<index>`
+ * prefix), the indexed item is absent, or its `id` is not a string.
+ */
+function itemIdForPath(blockData: unknown, instancePath: string): string | undefined {
+	const m = /^\/([^/]+)\/(\d+)/.exec(instancePath);
+	if (!m) return undefined;
+	const [, arrayKey, indexStr] = m;
+	if (!blockData || typeof blockData !== "object") return undefined;
+	const arr = (blockData as Record<string, unknown>)[arrayKey];
+	if (!Array.isArray(arr)) return undefined;
+	const item = arr[Number(indexStr)];
+	if (!item || typeof item !== "object") return undefined;
+	const id = (item as Record<string, unknown>).id;
+	return typeof id === "string" ? id : undefined;
+}
+
+/**
+ * Map AJV `ErrorObject[]` to the minimal {@link BlockValidationFailure} shape,
+ * resolving each error's failing item `id` from `blockData` via {@link
+ * itemIdForPath}. `message` is the AJV message (`""` when absent).
+ */
+function mapValidationFailures(errors: ErrorObject[], blockData: unknown): BlockValidationFailure[] {
+	return errors.map((e) => ({
+		itemId: itemIdForPath(blockData, e.instancePath),
+		instancePath: e.instancePath,
+		keyword: e.keyword,
+		message: e.message ?? "",
+	}));
+}
+
+/**
  * Resolve the package samples catalog once: the absolute `samplesRoot` plus a
  * `byId` map from each block_kind's `canonical_id` to its declared
  * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
@@ -509,13 +581,14 @@ function computeWouldRegisterMigrations(
  *      catalogVersion, blockData)`; absent ⇒ validate as-is. Then
  *      `validate(catalogSchema, migrated, name)`. Pass → `migrated`; any throw
  *      (no path, migration throw, validation failure) → `blocked` with
- *      `wouldRegister: []` and the captured `errors` (ValidationError.errors
- *      only — this helper does NOT plumb errors into UpdateResult; that is
- *      TASK-048's surfacing).
+ *      `wouldRegister: []` and a `detail` (TASK-048): `reason:"validation-failed"`,
+ *      the version pair, and the per-item failures mapped from
+ *      `ValidationError.errors` (a single synthetic failure for a non-AJV throw).
  *
- * `errors` is captured for the caller's possible future use but the `blocked`
- * arms otherwise report `wouldRegister: []`, mirroring `resyncSchema`'s
- * post-rollback truth that a refused re-sync leaves nothing registered.
+ * `detail` carries the blocked diagnostic the dryRun arm pushes into
+ * `UpdateResult.blockedDetail`; the `blocked` arms still report `wouldRegister:
+ * []`, mirroring `resyncSchema`'s post-rollback truth that a refused re-sync
+ * leaves nothing registered. (Supersedes the prior unconsumed `errors` field.)
  */
 function simulateResyncOutcome(
 	destRoot: string,
@@ -526,7 +599,7 @@ function simulateResyncOutcome(
 ): {
 	outcome: "resynced" | "migrated" | "blocked";
 	wouldRegister: Array<{ schema: string; from: string; to: string }>;
-	errors?: ErrorObject[];
+	detail?: { reason: BlockedDetail["reason"]; from?: string; to?: string; failures?: BlockValidationFailure[] };
 } {
 	const catalogVersion = readDeclaredVersion(sourceFile);
 	const installedVersion = readDeclaredVersion(destFile);
@@ -538,10 +611,15 @@ function simulateResyncOutcome(
 	}
 
 	// Arm 2 — version bump with NO shipped chain reaching the catalog version: the
-	// live path refuses, leaving everything unchanged → blocked, no decls.
+	// live path refuses, leaving everything unchanged → blocked, no decls. The
+	// blocked detail records the no-chain reason + the version pair (TASK-048).
 	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
 	if (chain === null) {
-		return { outcome: "blocked", wouldRegister: [] };
+		return {
+			outcome: "blocked",
+			wouldRegister: [],
+			detail: { reason: "no-migration-chain", from: installedVersion, to: catalogVersion },
+		};
 	}
 
 	// Arm 3 — the decls a live resync WOULD register (chain minus already-present),
@@ -623,13 +701,124 @@ function simulateResyncOutcome(
 	} catch (err) {
 		// Migrated items would NOT validate against the catalog schema (or the
 		// migration walk threw) → the live path refuses → blocked. Post-rollback
-		// truth: nothing registers, so report no decls. Capture the AJV errors when
-		// the throw is a ValidationError (for the caller's future surfacing).
+		// truth: nothing registers, so report no decls. The blocked detail records
+		// the validation-failed reason + the version pair + (when the throw is an AJV
+		// ValidationError) the per-item failures mapped against the loaded block data;
+		// a non-AJV throw becomes a single synthetic failure (TASK-048).
+		const failures =
+			err instanceof ValidationError
+				? mapValidationFailures(err.errors, blockData)
+				: [{ instancePath: "", keyword: "error", message: String(err) }];
 		return {
 			outcome: "blocked",
 			wouldRegister: [],
-			errors: err instanceof ValidationError ? err.errors : undefined,
+			detail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
 		};
+	}
+}
+
+/**
+ * Validate ONE installed block's items against the CATALOG schema version,
+ * read-only (TASK-048 — FGAP-077). The standalone diagnostic underneath the
+ * `validate-block-items` op: it answers "would these items pass the catalog
+ * schema (after the shipped forward-migration, when the block lags the catalog
+ * version)?" WITHOUT writing anything — no schema overwrite, no block re-write, no
+ * migration registration.
+ *
+ * Resolution mirrors the catalog-ahead resync path so the diagnostic predicts the
+ * same pass/fail `resyncSchema` would reach:
+ *   - resolve the block_kind via `resolveCatalog().byId` (an unknown block throws
+ *     a field-named Error); read the catalog schema body off `samplesRoot`.
+ *   - load the installed block via `installedBlockDestPath` (a missing block file
+ *     throws field-named).
+ *   - when the block's declared envelope `schema_version` is a string differing
+ *     from the catalog `version` AND a shipped chain reaches the catalog version,
+ *     forward-migrate the block IN MEMORY through a FRESH registry seeded from the
+ *     substrate's existing decls + the chain's absent edges (deduped on
+ *     (schemaName, fromVersion)); otherwise validate as-is. No registry warming.
+ *   - `validate(catalogSchema, data, blockName)` in try/catch → pass:
+ *     `{valid:true, failures:[]}`; ValidationError → `{valid:false, failures}`
+ *     mapped against the (migrated) data; any other throw → a single synthetic
+ *     `{instancePath:"", keyword:"error", message:String(err)}` failure.
+ *
+ * Returns `{ block, from?, to?, valid, failures }`: `from`/`to` are the block's
+ * declared version and the catalog version (each undefined when unreadable).
+ * NEVER writes.
+ */
+export function validateBlockItemsAgainstCatalog(
+	cwd: string,
+	blockName: string,
+): { block: string; from?: string; to?: string; valid: boolean; failures: BlockValidationFailure[] } {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		throw new Error(
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.",
+		);
+	}
+	const { samplesRoot, byId } = resolveCatalog();
+	const kind = byId.get(blockName);
+	if (!kind) {
+		throw new Error(`block: '${blockName}' is not a known catalog block_kind (no canonical_id matches)`);
+	}
+	const sourceFile = path.join(samplesRoot, kind.schema_path);
+	const blockFile = installedBlockDestPath(destRoot, blockName);
+	if (!fs.existsSync(blockFile)) {
+		throw new Error(`block: installed block file not found for '${blockName}' at ${blockFile}`);
+	}
+
+	const catalogVersion = readDeclaredVersion(sourceFile);
+	let blockData: unknown;
+	try {
+		blockData = JSON.parse(fs.readFileSync(blockFile, "utf-8"));
+	} catch (err) {
+		return {
+			block: blockName,
+			to: catalogVersion,
+			valid: false,
+			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+		};
+	}
+
+	const blockVersion =
+		blockData && typeof blockData === "object" && "schema_version" in (blockData as Record<string, unknown>)
+			? ((blockData as Record<string, unknown>).schema_version as unknown)
+			: undefined;
+	const fromVersion = typeof blockVersion === "string" ? blockVersion : undefined;
+
+	try {
+		const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+		let toValidate: unknown = blockData;
+		if (typeof blockVersion === "string" && catalogVersion !== undefined && blockVersion !== catalogVersion) {
+			const chain = findCatalogMigrationChain(samplesRoot, blockName, blockVersion, catalogVersion);
+			if (chain !== null) {
+				// FRESH registry seeded from the substrate's existing decls + the chain's
+				// absent edges, deduped on (schemaName, fromVersion) — never warm the
+				// project's cached registry from a read-only diagnostic.
+				const registry = createRegistry();
+				const seeded = new Set<string>();
+				const existing = loadMigrationsFileForDir(destRoot);
+				for (const decl of [...(existing?.migrations ?? []), ...chain]) {
+					const key = `${decl.schemaName} ${decl.fromVersion}`;
+					if (seeded.has(key)) continue;
+					registry.register({
+						schemaName: decl.schemaName,
+						fromVersion: decl.fromVersion,
+						toVersion: decl.toVersion,
+						migrate: migrationFnFor(decl),
+					});
+					seeded.add(key);
+				}
+				toValidate = runMigrations(registry, blockName, blockVersion, catalogVersion, blockData);
+			}
+		}
+		validate(catalogSchema, toValidate, blockName);
+		return { block: blockName, from: fromVersion, to: catalogVersion, valid: true, failures: [] };
+	} catch (err) {
+		const failures =
+			err instanceof ValidationError
+				? mapValidationFailures(err.errors, blockData)
+				: [{ instancePath: "", keyword: "error", message: String(err) }];
+		return { block: blockName, from: fromVersion, to: catalogVersion, valid: false, failures };
 	}
 }
 
@@ -677,6 +866,7 @@ function resyncSchema(
 ): {
 	status: "resynced" | "migrated" | "blocked";
 	registeredMigrations: Array<{ schema: string; from: string; to: string }>;
+	blockedDetail?: { reason: BlockedDetail["reason"]; from?: string; to?: string; failures?: BlockValidationFailure[] };
 } {
 	const catalogVersion = readDeclaredVersion(sourceFile);
 	const installedVersion = readDeclaredVersion(destFile);
@@ -697,8 +887,13 @@ function resyncSchema(
 	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
 	if (chain === null) {
 		// No shipped chain reaches the catalog version → refuse, leave unchanged.
-		// Nothing was registered, so the report is empty.
-		return { status: "blocked", registeredMigrations: [] };
+		// Nothing was registered, so the report is empty. The blocked detail records
+		// the no-chain reason + the version pair (TASK-048).
+		return {
+			status: "blocked",
+			registeredMigrations: [],
+			blockedDetail: { reason: "no-migration-chain", from: installedVersion, to: catalogVersion },
+		};
 	}
 
 	// Capture migrations.json raw bytes BEFORE any decl append so the refuse path
@@ -780,7 +975,7 @@ function resyncSchema(
 		// Identity stamping is mandatory for every write.
 		writeBlockForDir(destRoot, name, migrated);
 		return { status: "migrated", registeredMigrations };
-	} catch {
+	} catch (err) {
 		// Migrated items would NOT validate against the new schema (or migration
 		// threw). Refuse: restore the original schema bytes verbatim so the schema
 		// file is byte-unchanged, and invalidate the registry cache warmed above so
@@ -797,8 +992,19 @@ function resyncSchema(
 		}
 		invalidateMigrationRegistryForDir(destRoot);
 		// Rollback reverted migrations.json to its pre-call bytes, so report no
-		// registered migrations (post-rollback truth — nothing is stuck on disk).
-		return { status: "blocked", registeredMigrations: [] };
+		// registered migrations (post-rollback truth — nothing is stuck on disk). The
+		// blocked detail records the validation-failed reason + the version pair + the
+		// per-item failures (a single synthetic failure for a non-AJV throw) so the
+		// caller surfaces WHY the resync refused (TASK-048).
+		const failures =
+			err instanceof ValidationError
+				? mapValidationFailures(err.errors, blockData)
+				: [{ instancePath: "", keyword: "error", message: String(err) }];
+		return {
+			status: "blocked",
+			registeredMigrations: [],
+			blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+		};
 	}
 }
 
@@ -1266,6 +1472,17 @@ export interface UpdateResult {
 	migrated: string[];
 	/** `catalog-ahead` schemas whose resync was refused by `resyncSchema` (no safe migration). */
 	blocked: string[];
+	/**
+	 * Per-schema blocked-resync diagnostic detail (TASK-048 — FGAP-077), one entry
+	 * per name in `blocked`. Each carries the refusal `reason` (`no-migration-chain`
+	 * — no shipped chain reaches the catalog version — vs `validation-failed` — the
+	 * forward-migrated items fail the catalog schema), the installed→catalog version
+	 * pair, and (for `validation-failed`) the per-item `failures` naming the failing
+	 * item id, field (the `instancePath`), constraint `keyword`, and AJV `message`.
+	 * Under `dryRun` this is the predicted detail; the live run reports the detail
+	 * `resyncSchema` produced on refusal. The `blocked: string[]` list is unchanged.
+	 */
+	blockedDetail: BlockedDetail[];
 	/** `locally-modified` / `both-diverged` schemas — refused, never overwritten (DEC-0017). */
 	refused: string[];
 	/**
@@ -1365,6 +1582,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		resynced: [],
 		migrated: [],
 		blocked: [],
+		blockedDetail: [],
 		refused: [],
 		merged: [],
 		conflicts: [],
@@ -1418,7 +1636,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						if (kind) {
 							const sourceFile = path.join(samplesRoot, kind.schema_path);
 							const destFile = installedSchemaDestPath(destRoot, name);
-							const { outcome, wouldRegister } = simulateResyncOutcome(
+							const { outcome, wouldRegister, detail } = simulateResyncOutcome(
 								destRoot,
 								samplesRoot,
 								sourceFile,
@@ -1427,6 +1645,12 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 							);
 							result[outcome].push(name);
 							for (const m of wouldRegister) result.migrationsRegistered.push(m);
+							// TASK-048: a predicted-blocked schema carries its diagnostic detail
+							// (reason + version pair + per-item failures) into blockedDetail so the
+							// dryRun plan surfaces WHY it would refuse, matching the live run.
+							if (outcome === "blocked" && detail) {
+								result.blockedDetail.push({ name, ...detail });
+							}
 						} else {
 							result.resynced.push(name);
 						}
@@ -1445,13 +1669,11 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				}
 				const sourceFile = path.join(samplesRoot, kind.schema_path);
 				const destFile = installedSchemaDestPath(destRoot, name);
-				const { status: outcome, registeredMigrations } = resyncSchema(
-					destRoot,
-					samplesRoot,
-					sourceFile,
-					destFile,
-					name,
-				);
+				const {
+					status: outcome,
+					registeredMigrations,
+					blockedDetail,
+				} = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
 				// FGAP-050: surface the decls the live resync actually appended.
 				for (const m of registeredMigrations) result.migrationsRegistered.push(m);
 				switch (outcome) {
@@ -1463,6 +1685,9 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						break;
 					case "blocked":
 						result.blocked.push(name);
+						// TASK-048: carry the live refusal diagnostic (reason + version pair +
+						// per-item failures) into blockedDetail alongside the bare name.
+						if (blockedDetail) result.blockedDetail.push({ name, ...blockedDetail });
 						break;
 				}
 				break;
@@ -1781,6 +2006,63 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
 		"To resolve each: reconcile the conflicting paths into a schema, then resolve-conflict --schemaName <name> --schema <reconciled> — it writes your schema AND advances the merge base to the catalog so update stops re-reporting it.",
 	);
 	return lines.join("\n");
+}
+
+/**
+ * Render the per-schema blocked-resync diagnostic (TASK-048 — FGAP-077) as a
+ * readable report the CLI surfaces below `update`'s output when a catalog-ahead
+ * resync was refused. One section per blocked schema `name`:
+ *   - header `blocked: <name> (<from> -> <to>)` (the installed→catalog version
+ *     pair; `?` substitutes a missing version).
+ *   - `no-migration-chain` → one line `no migration chain reaches <to> from
+ *     <from>`.
+ *   - `validation-failed` → one line per failing item, naming the item id (or the
+ *     `instancePath` when no id resolved), the field (the tail of `instancePath`),
+ *     and the constraint phrased keyword-aware — MIRRORING the CLI's
+ *     `formatAjvError` keyword switch (required / type / enum / additionalProperties
+ *     fall through to the raw message), reproduced here rather than imported to
+ *     avoid a pi-context → pi-context-cli dependency cycle (render.ts imports this
+ *     package). A failure carrying no AJV `keyword` mapping prints its raw message.
+ * Pure: no I/O, no writes.
+ */
+export function renderBlocked(blockedDetail: BlockedDetail[]): string {
+	const lines: string[] = [];
+	lines.push("Schema resync blocked — refused per schema (no writes performed):");
+	if (blockedDetail.length === 0) {
+		lines.push("  (no blocked schemas)");
+		return lines.join("\n");
+	}
+	for (const d of blockedDetail) {
+		const from = d.from ?? "?";
+		const to = d.to ?? "?";
+		lines.push(`  blocked: ${d.name} (${from} -> ${to})`);
+		if (d.reason === "no-migration-chain") {
+			lines.push(`    no migration chain reaches ${to} from ${from}`);
+			continue;
+		}
+		// validation-failed
+		for (const f of d.failures ?? []) {
+			const subject = f.itemId ?? f.instancePath ?? "(item)";
+			const field = f.instancePath ? f.instancePath.split("/").filter(Boolean).pop() : undefined;
+			const fieldClause = field ? ` field \`${field}\`` : "";
+			lines.push(`    ${subject}:${fieldClause} ${describeBlockedFailure(f)}`);
+		}
+	}
+	return lines.join("\n");
+}
+
+/**
+ * Phrase ONE blocked validation failure keyword-aware, mirroring the CLI's
+ * `formatAjvError` keyword switch (TASK-048). The minimal {@link
+ * BlockValidationFailure} shape drops the AJV `params`, so the required /
+ * additionalProperties branches that need `missingProperty` / `additionalProperty`
+ * fall back to the raw AJV `message` (which already names them); type / enum and
+ * every other keyword likewise surface the AJV message, prefixed by the constraint
+ * keyword so the failing constraint is named even without params.
+ */
+function describeBlockedFailure(f: BlockValidationFailure): string {
+	const msg = f.message || "invalid";
+	return f.keyword && f.keyword !== "error" ? `${f.keyword} — ${msg}` : msg;
 }
 
 /**

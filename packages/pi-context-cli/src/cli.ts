@@ -28,7 +28,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
-import { renderConflicts } from "@davidorex/pi-context";
+import { renderBlocked, renderConflicts } from "@davidorex/pi-context";
 import { nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import { loadConfig } from "@davidorex/pi-context/context";
 import { schemaPath } from "@davidorex/pi-context/context-dir";
@@ -776,6 +776,7 @@ const HELP_GROUPS: HelpGroup[] = [
 				"context-validate",
 				"context-validate-relations",
 				"gather-execution-context",
+				"validate-block-items",
 			)(n),
 	},
 	{
@@ -1150,10 +1151,25 @@ export async function main(argv: string[]): Promise<number> {
 		// envelope above — do NOT double-emit. A non-`update` op, or an `update` with no
 		// conflicts, is a no-op here.
 		if (format !== "json" && op.name === "update" && r && typeof r === "object" && "json" in r) {
-			const update = (r as { json: { conflicts?: Parameters<typeof renderConflicts>[0] } }).json;
+			const update = (
+				r as {
+					json: {
+						conflicts?: Parameters<typeof renderConflicts>[0];
+						blockedDetail?: Parameters<typeof renderBlocked>[0];
+					};
+				}
+			).json;
 			const conflicts = update?.conflicts;
 			if (Array.isArray(conflicts) && conflicts.length > 0) {
 				process.stdout.write(`${renderConflicts(conflicts)}\n`);
+			}
+			// TASK-048 — FGAP-077: surface the per-schema blocked-resync diagnostic
+			// (reason, version pair, per-item failures) below the op's own output on the
+			// non-json surface. Under --format json the structured blockedDetail array
+			// already prints in the op-result envelope above — do NOT double-emit.
+			const blockedDetail = update?.blockedDetail;
+			if (Array.isArray(blockedDetail) && blockedDetail.length > 0) {
+				process.stdout.write(`${renderBlocked(blockedDetail)}\n`);
 			}
 		}
 		return 0;

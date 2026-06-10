@@ -12,6 +12,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - An addressed-single-node read now returns the WHOLE addressed subtree (capped), not a 50-item page of one incidental array child. `read-schema --path`, `read-config --registry` (and `--registry --id`), `list-tools name=<tool>`, and `read-samples-catalog kind=<kind>` each name ONE node; the op now passes `whole: true` to the addressed `structureForRead`, so an object node carrying an array child serializes every sibling key instead of collapsing to a page of that one array (dropping siblings). The 50KB read cap is retained — applied unconditionally after the whole-skip — so an over-cap addressed node still fails closed (`data: null`, `complete: false`, `truncated: true`); `whole: true` skips paging only, it does not bypass the cap. The whole-config / whole-schema no-arg wrapper reads and every intentional collection-paging read are unchanged.
 
 ### Changed
+- `/context update --dryRun` now predicts the precise per-schema catalog-ahead outcome (`resynced` / `migrated` / `blocked`) by an in-memory forward-migration + re-validation, rather than listing every `catalog-ahead` schema under `resynced`. The dryRun plan buckets each catalog-ahead schema as the outcome a live `--update` would land; a dry-blocked schema reports no would-register migration declarations (`migrationsRegistered` excludes them).
 - Regenerated the generated `SKILL.md` so the surfaced skill doc carries the new `resolve-conflict` op and the caller-reconciles conflict route.
 
 ### Added

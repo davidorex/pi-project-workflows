@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import type { ErrorObject } from "ajv";
 import { forEachBlockArray, readBlock, readBlockForDir, writeBlockForDir } from "./block-api.js";
 import { computeContentHash, computeFileContentHash } from "./content-hash.js";
 import {
@@ -37,14 +38,19 @@ import { contextState, findAppendableBlocks, validateContext } from "./context-s
 import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
-import { getProjectMigrationRegistryForDir, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
+import {
+	getProjectMigrationRegistryForDir,
+	invalidateMigrationRegistryForDir,
+	migrationFnFor,
+} from "./migration-registry-loader.js";
 import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
 import { getObject, putObject } from "./object-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
-import { validateBlockWithMigrationForDir } from "./schema-validator.js";
+import { createRegistry, runMigrations } from "./schema-migrations.js";
+import { ValidationError, validate, validateBlockWithMigrationForDir } from "./schema-validator.js";
 import { writeSchemaCheckedForDir } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
 
@@ -470,6 +476,161 @@ function computeWouldRegisterMigrations(
 		present.add(key);
 	}
 	return out;
+}
+
+/**
+ * Pure-read simulation of `resyncSchema`'s outcome for ONE catalog-ahead schema
+ * (FGAP-066 / TASK-046 faithful dryRun). Predicts which of `resyncSchema`'s
+ * three terminal statuses (`resynced` / `migrated` / `blocked`) a live re-sync
+ * WOULD produce, by mirroring `resyncSchema`'s five decision arms 1:1 over an
+ * IN-MEMORY forward-migration + re-validation — WITHOUT writing any file and
+ * WITHOUT touching the project's cached migration registry. The aim is a dryRun
+ * plan whose per-schema bucket matches what `--update` (no dryRun) would land,
+ * so the preview no longer lists every catalog-ahead schema as `resynced`
+ * regardless of the true outcome.
+ *
+ * Arm mapping to `resyncSchema` (lines noted are that helper's, not this one's):
+ *   1. Same/either-undefined version → `resynced`, `wouldRegister: []`
+ *      (mirrors the same-version verbatim-overwrite arm).
+ *   2. No catalog chain reaching the catalog version → `blocked`,
+ *      `wouldRegister: []` (mirrors the no-chain refuse arm).
+ *   3. `wouldRegister` = the chain decls not already present in migrations.json
+ *      (reuses `computeWouldRegisterMigrations`' dedup, shared by call).
+ *   4. Block file absent / zero items → `migrated`, `wouldRegister` (mirrors the
+ *      no-items register-the-chain + advance arm). An UNREADABLE block file is
+ *      treated as POPULATED (the same safety default `resyncSchema` applies),
+ *      routing it through the validate path which throws → `blocked`.
+ *   5. Populated block → build a FRESH in-memory registry (the substrate's
+ *      existing decls + the catalog chain's absent edges via `migrationFnFor`,
+ *      deduped on (schemaName, fromVersion) since `register` throws on
+ *      duplicates), then mirror `validateBlockWithMigrationForDir`'s keying in
+ *      memory: when the block carries a string `schema_version` differing from
+ *      the catalog version, `runMigrations(registry, name, blockVersion,
+ *      catalogVersion, blockData)`; absent ⇒ validate as-is. Then
+ *      `validate(catalogSchema, migrated, name)`. Pass → `migrated`; any throw
+ *      (no path, migration throw, validation failure) → `blocked` with
+ *      `wouldRegister: []` and the captured `errors` (ValidationError.errors
+ *      only — this helper does NOT plumb errors into UpdateResult; that is
+ *      TASK-048's surfacing).
+ *
+ * `errors` is captured for the caller's possible future use but the `blocked`
+ * arms otherwise report `wouldRegister: []`, mirroring `resyncSchema`'s
+ * post-rollback truth that a refused re-sync leaves nothing registered.
+ */
+function simulateResyncOutcome(
+	destRoot: string,
+	samplesRoot: string,
+	sourceFile: string,
+	destFile: string,
+	name: string,
+): {
+	outcome: "resynced" | "migrated" | "blocked";
+	wouldRegister: Array<{ schema: string; from: string; to: string }>;
+	errors?: ErrorObject[];
+} {
+	const catalogVersion = readDeclaredVersion(sourceFile);
+	const installedVersion = readDeclaredVersion(destFile);
+
+	// Arm 1 — same version (or either unreadable / non-versioned): no transition
+	// to migrate across, the live path overwrites verbatim → resynced, no decls.
+	if (installedVersion === catalogVersion || catalogVersion === undefined || installedVersion === undefined) {
+		return { outcome: "resynced", wouldRegister: [] };
+	}
+
+	// Arm 2 — version bump with NO shipped chain reaching the catalog version: the
+	// live path refuses, leaving everything unchanged → blocked, no decls.
+	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
+	if (chain === null) {
+		return { outcome: "blocked", wouldRegister: [] };
+	}
+
+	// Arm 3 — the decls a live resync WOULD register (chain minus already-present),
+	// reusing the same dedup the live path applies.
+	const wouldRegister = computeWouldRegisterMigrations(destRoot, samplesRoot, sourceFile, destFile, name);
+
+	// Arm 4 — load the block exactly as the live path does (same dest path; missing
+	// file ⇒ no items; unreadable ⇒ treat populated AND route to the validate path).
+	const blockFile = installedBlockDestPath(destRoot, name);
+	let blockData: unknown;
+	let hasItems = false;
+	if (fs.existsSync(blockFile)) {
+		try {
+			blockData = JSON.parse(fs.readFileSync(blockFile, "utf-8"));
+			forEachBlockArray(blockData, (_arrayKey, arr) => {
+				if (arr.length > 0) hasItems = true;
+			});
+		} catch {
+			// Unreadable block — POPULATED safety default; the validate attempt below
+			// will throw on the undefined blockData, predicting the live blocked path.
+			hasItems = true;
+		}
+	}
+	if (!hasItems) {
+		// No items to migrate — the live path overwrites + registers the chain and
+		// reports migrated. Mirror that bucket; the decls would register.
+		return { outcome: "migrated", wouldRegister };
+	}
+
+	// Arm 5 — populated block: simulate the forward-migrate + re-validate IN MEMORY
+	// against a FRESH registry (never the project's cached registry, which a dryRun
+	// must not warm) and the catalog schema object read off disk.
+	try {
+		// Build the registry the live path would resolve against: the substrate's
+		// existing decls plus the catalog chain's absent edges, deduped on
+		// (schemaName, fromVersion) — createRegistry().register throws on a
+		// duplicate edge, so seed each key at most once.
+		const registry = createRegistry();
+		const seeded = new Set<string>();
+		const existing = loadMigrationsFileForDir(destRoot);
+		for (const decl of existing?.migrations ?? []) {
+			const key = `${decl.schemaName} ${decl.fromVersion}`;
+			if (seeded.has(key)) continue;
+			registry.register({
+				schemaName: decl.schemaName,
+				fromVersion: decl.fromVersion,
+				toVersion: decl.toVersion,
+				migrate: migrationFnFor(decl),
+			});
+			seeded.add(key);
+		}
+		for (const decl of chain) {
+			const key = `${decl.schemaName} ${decl.fromVersion}`;
+			if (seeded.has(key)) continue;
+			registry.register({
+				schemaName: decl.schemaName,
+				fromVersion: decl.fromVersion,
+				toVersion: decl.toVersion,
+				migrate: migrationFnFor(decl),
+			});
+			seeded.add(key);
+		}
+
+		const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+
+		// Mirror validateBlockWithMigrationForDir's keying IN MEMORY: fromVersion =
+		// the block's declared schema_version (when a string), toVersion = the
+		// catalog schema's version. Absent / non-string envelope ⇒ validate as-is.
+		const blockVersion =
+			blockData && typeof blockData === "object" && "schema_version" in (blockData as Record<string, unknown>)
+				? ((blockData as Record<string, unknown>).schema_version as unknown)
+				: undefined;
+		let toValidate: unknown = blockData;
+		if (typeof blockVersion === "string" && blockVersion !== catalogVersion) {
+			toValidate = runMigrations(registry, name, blockVersion, catalogVersion, blockData);
+		}
+		validate(catalogSchema, toValidate, name);
+		return { outcome: "migrated", wouldRegister };
+	} catch (err) {
+		// Migrated items would NOT validate against the catalog schema (or the
+		// migration walk threw) → the live path refuses → blocked. Post-rollback
+		// truth: nothing registers, so report no decls. Capture the AJV errors when
+		// the throw is a ValidationError (for the caller's future surfacing).
+		return {
+			outcome: "blocked",
+			wouldRegister: [],
+			errors: err instanceof ValidationError ? err.errors : undefined,
+		};
+	}
 }
 
 /**
@@ -1183,13 +1344,18 @@ export interface UpdateResult {
  *                            or absent, not acted on.
  *
  * When `dryRun` is true NO writes occur: `checkStatus` is consulted and the action
- * plan is computed (every `catalog-ahead` schema is listed under `resynced` as the
- * would-act set, since the concrete resync outcome is only known by running it),
- * but `resyncSchema` is NOT invoked. The dryRun arm DOES compute the would-register
- * migration decls read-only (`computeWouldRegisterMigrations`) onto
- * `migrationsRegistered` (FGAP-050) without writing. The live path mutates only via
- * `resyncSchema` (the catalog-ahead branch) and surfaces the decls it appended onto
- * `migrationsRegistered`; `installContext` and its install handler are NOT touched.
+ * plan is computed, but `resyncSchema` is NOT invoked. For each `catalog-ahead`
+ * schema the dryRun arm calls `simulateResyncOutcome`, which mirrors
+ * `resyncSchema`'s decision arms 1:1 over an IN-MEMORY forward-migration +
+ * re-validation (FGAP-066 / TASK-046) and predicts the precise outcome bucket —
+ * `resynced` / `migrated` / `blocked` — the live path would land, so the schema is
+ * pushed onto `result[outcome]` rather than unconditionally onto `resynced`. The
+ * would-register migration decls it returns (the same FGAP-050 read-only set:
+ * catalog chain minus the decls already on disk; empty on a blocked prediction)
+ * are surfaced onto `migrationsRegistered` without writing. The live path mutates
+ * only via `resyncSchema` (the catalog-ahead branch) and surfaces the decls it
+ * appended onto `migrationsRegistered`; `installContext` and its install handler
+ * are NOT touched.
  * Resolves the catalog / dest paths through the SAME `resolveCatalog` +
  * `installedSchemaDestPath` helpers the installer + detector use.
  */
@@ -1237,27 +1403,36 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				break;
 			case "catalog-ahead": {
 				if (dryRun) {
-					// Preview only — never call resyncSchema (it writes). The concrete
-					// resynced/migrated/blocked outcome is unknowable without running it,
-					// so report the schema as the would-act (resynced) set.
-					result.resynced.push(name);
-					// FGAP-050: in addition, compute READ-ONLY the migration decls a
-					// version-bump resync WOULD register, so the plan surfaces them without
-					// writing. computeWouldRegisterMigrations reads only (catalog chain
-					// minus the decls already present in migrations.json); a missing kind,
-					// same version, no chain, or all-already-present yields an empty list.
-					// Wrapped so a read/parse failure cannot crash the plan (mirrors the
-					// per-asset error tolerance the merge arm applies).
+					// Preview only — never call resyncSchema (it writes).
+					// FGAP-066 / TASK-046: predict the PRECISE per-schema outcome by running
+					// resyncSchema’s decision arms 1:1 over an in-memory forward-migration +
+					// re-validation (simulateResyncOutcome), so the plan buckets the schema as
+					// the resynced / migrated / blocked it WOULD land — not as resynced
+					// unconditionally. The would-register decls it returns are the same FGAP-050
+					// set (empty on a blocked prediction — post-rollback truth that a refused
+					// resync registers nothing). Wrapped in the merge-arm per-asset error
+					// tolerance: on a thrown helper failure, fall back to the prior behavior
+					// (resynced + no decls) so the plan never crashes.
 					try {
 						const kind = byId.get(name);
 						if (kind) {
 							const sourceFile = path.join(samplesRoot, kind.schema_path);
 							const destFile = installedSchemaDestPath(destRoot, name);
-							for (const m of computeWouldRegisterMigrations(destRoot, samplesRoot, sourceFile, destFile, name)) {
-								result.migrationsRegistered.push(m);
-							}
+							const { outcome, wouldRegister } = simulateResyncOutcome(
+								destRoot,
+								samplesRoot,
+								sourceFile,
+								destFile,
+								name,
+							);
+							result[outcome].push(name);
+							for (const m of wouldRegister) result.migrationsRegistered.push(m);
+						} else {
+							result.resynced.push(name);
 						}
-					} catch {}
+					} catch {
+						result.resynced.push(name);
+					}
 					break;
 				}
 				const kind = byId.get(name);

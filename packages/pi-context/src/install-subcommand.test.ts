@@ -1398,6 +1398,12 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 
 		const result = updateContext(tmpRoot, { dryRun: true });
 		assert.equal(result.dryRun, true, "the plan must declare it is a dry run");
+		// TASK-046 / FGAP-066: the faithful dryRun predicts the PRECISE outcome — this
+		// fixture is a version-bump (1.0.0 → 1.0.1) with NO items, so the live path
+		// reports `migrated`; the dry prediction must bucket it `migrated`, not
+		// `resynced`.
+		assert.deepEqual(result.migrated, ["tasks"], "a version-bump no-items dryRun predicts migrated, not resynced");
+		assert.deepEqual(result.resynced, [], "a version-bump no-items dryRun is NOT predicted as resynced");
 		assert.deepEqual(
 			result.migrationsRegistered,
 			[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
@@ -1460,6 +1466,160 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 		assert.deepEqual(result.blocked, ["tasks"], "no shipped chain → blocked");
 		assert.deepEqual(result.migrated, []);
 		assert.deepEqual(result.migrationsRegistered, [], "a blocked (rolled-back) outcome registers nothing");
+	});
+});
+
+// TASK-046 / FGAP-066 — faithful dryRun outcome prediction. `update --dryRun`
+// must predict the PRECISE per-schema catalog-ahead bucket (resynced / migrated /
+// blocked) the live (`!dryRun`) path would land, by an in-memory forward-migration
+// + re-validation. Each case runs dry on a fixture, asserts the bucket, then runs
+// live on an IDENTICAL fixture and asserts the SAME bucket (dry == live parity).
+describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Pre-place an installed schema dest = the catalog body with its `version`
+	// overridden to an older value, then install so the baseline is recorded FROM
+	// that on-disk older body → checkStatus classifies it catalog-ahead. (Mirrors
+	// the FGAP-050 suite's installOlderSchema.)
+	function installOlderSchema(dir: string, name: string, version: string): void {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", `${name}.schema.json`), JSON.stringify(catalog, null, 2));
+	}
+
+	// A valid substrate_id (`^sub-[0-9a-f]{16}$`) seeded into the fixture config so
+	// the LIVE path's identity-stamping (writeBlockForDir → substrateIdForDir) does
+	// not throw. Without it, a live populated-block migrate is caught inside
+	// resyncSchema's try and refused as `blocked` (the pre-identity substrate
+	// behavior the skipped S4 migrate test documents), which would defeat the
+	// dry==live migrated parity these cases assert.
+	const FIXTURE_SUBSTRATE_ID = "sub-0123456789abcdef";
+
+	// Build a catalog-ahead `tasks` fixture at the older `version`, optionally with
+	// a populated tasks.json block carrying `schema_version` + the supplied items.
+	function makeCatalogAheadTasks(version: string, items?: Array<Record<string, unknown>>): string {
+		const dir = makeProject(["tasks"], []);
+		installOlderSchema(dir, "tasks", version);
+		installContext(dir); // baseline FROM the on-disk older body → catalog-ahead
+		// Seed a substrate_id post-install so the live stamping path can mint oids.
+		const cfgPath = path.join(dir, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf-8")) as Record<string, unknown>;
+		cfg.substrate_id = FIXTURE_SUBSTRATE_ID;
+		fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+		if (items) {
+			fs.writeFileSync(
+				path.join(dir, ".project", "tasks.json"),
+				JSON.stringify({ schema_version: version, tasks: items }, null, 2),
+			);
+		}
+		const state = checkStatus(dir).perAsset.find((a) => a.name === "tasks")?.state;
+		assert.equal(state, "catalog-ahead", `precondition: tasks must be catalog-ahead (installed ${version})`);
+		return dir;
+	}
+
+	it("(a) blocked — a populated block whose item fails the catalog schema (chain present): dry == live == blocked, no decl leak", () => {
+		// 1.0.0 → 1.0.1 identity chain ships; the item passes through the identity
+		// migration unchanged and must re-validate against the catalog 1.0.1 schema.
+		// An invalid `status` enum value makes that re-validation FAIL → blocked.
+		const badItem = { id: "TASK-001", description: "x", status: "not-a-valid-status" };
+		const dryDir = makeCatalogAheadTasks("1.0.0", [badItem]);
+		const dry = updateContext(dryDir, { dryRun: true });
+		assert.deepEqual(dry.blocked, ["tasks"], "dry: a validation-failing populated block predicts blocked");
+		assert.deepEqual(
+			dry.migrationsRegistered,
+			[],
+			"FGAP-066: a dry-blocked schema must leak NO would-register migration decls",
+		);
+		fs.rmSync(dryDir, { recursive: true, force: true });
+
+		const liveDir = makeCatalogAheadTasks("1.0.0", [badItem]);
+		const live = updateContext(liveDir);
+		assert.deepEqual(live.blocked, ["tasks"], "live: the same fixture blocks");
+		assert.deepEqual(live.migrationsRegistered, [], "live: a blocked (rolled-back) outcome registers nothing");
+		fs.rmSync(liveDir, { recursive: true, force: true });
+	});
+
+	it("(b) migrated — a populated block that migrates + re-validates clean: dry == live == migrated, decls listed", () => {
+		// A valid item passes the identity migration and re-validates against the
+		// catalog 1.0.1 schema → migrated; the would-register decl is surfaced.
+		const goodItem = { id: "TASK-001", description: "x", status: "planned" };
+		const expectedDecls = [{ schema: "tasks", from: "1.0.0", to: "1.0.1" }];
+		const dryDir = makeCatalogAheadTasks("1.0.0", [goodItem]);
+		const dry = updateContext(dryDir, { dryRun: true });
+		assert.deepEqual(dry.migrated, ["tasks"], "dry: a clean-migrating populated block predicts migrated");
+		assert.deepEqual(dry.blocked, [], "dry: a clean migration is not blocked");
+		assert.deepEqual(dry.migrationsRegistered, expectedDecls, "dry: the would-register decl is listed");
+		fs.rmSync(dryDir, { recursive: true, force: true });
+
+		const liveDir = makeCatalogAheadTasks("1.0.0", [goodItem]);
+		const live = updateContext(liveDir);
+		assert.deepEqual(live.migrated, ["tasks"], "live: the same fixture migrates");
+		assert.deepEqual(live.migrationsRegistered, expectedDecls, "live: the registered decl is surfaced");
+		fs.rmSync(liveDir, { recursive: true, force: true });
+	});
+
+	it("(c) resynced + migrated — same-version drift resyncs; version-bump zero-items migrates: dry == live", () => {
+		// Same-version catalog-ahead (the stale-marker trick) → no transition →
+		// resynced. Dry must predict resynced; live must land resynced.
+		const makeSameVersionDrift = (): string => {
+			const dir = makeProject(["tasks"], []);
+			installContext(dir);
+			const dest = path.join(dir, ".project", "schemas", "tasks.schema.json");
+			const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+			obj.__stale_marker = true;
+			fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+			installContext(dir); // re-baseline FROM the stale body → catalog-ahead, SAME version
+			assert.equal(
+				checkStatus(dir).perAsset.find((a) => a.name === "tasks")?.state,
+				"catalog-ahead",
+				"precondition: tasks catalog-ahead at the SAME version",
+			);
+			return dir;
+		};
+		const dryDriftDir = makeSameVersionDrift();
+		const dryDrift = updateContext(dryDriftDir, { dryRun: true });
+		assert.deepEqual(dryDrift.resynced, ["tasks"], "dry: same-version drift predicts resynced");
+		assert.deepEqual(dryDrift.migrationsRegistered, [], "dry: a same-version resync registers no decls");
+		fs.rmSync(dryDriftDir, { recursive: true, force: true });
+
+		const liveDriftDir = makeSameVersionDrift();
+		const liveDrift = updateContext(liveDriftDir);
+		assert.deepEqual(liveDrift.resynced, ["tasks"], "live: same-version drift resyncs");
+		assert.deepEqual(liveDrift.migrationsRegistered, [], "live: a same-version resync registers no decls");
+		fs.rmSync(liveDriftDir, { recursive: true, force: true });
+
+		// Version-bump with ZERO items (no block file) → migrated.
+		const dryBumpDir = makeCatalogAheadTasks("1.0.0");
+		const dryBump = updateContext(dryBumpDir, { dryRun: true });
+		assert.deepEqual(dryBump.migrated, ["tasks"], "dry: version-bump zero-items predicts migrated");
+		assert.deepEqual(dryBump.resynced, [], "dry: version-bump zero-items is not resynced");
+		fs.rmSync(dryBumpDir, { recursive: true, force: true });
+
+		const liveBumpDir = makeCatalogAheadTasks("1.0.0");
+		const liveBump = updateContext(liveBumpDir);
+		assert.deepEqual(liveBump.migrated, ["tasks"], "live: version-bump zero-items migrates");
+		assert.deepEqual(liveBump.resynced, [], "live: version-bump zero-items is not resynced");
+		fs.rmSync(liveBumpDir, { recursive: true, force: true });
+	});
+
+	it("(d) blocked — a version bump with NO shipped chain reaching the catalog version: dry == live == blocked", () => {
+		// No 0.9.0 → 1.0.1 chain ships → the live path refuses; the dry prediction
+		// must bucket it blocked, with no decl leak.
+		const dryDir = makeCatalogAheadTasks("0.9.0");
+		const dry = updateContext(dryDir, { dryRun: true });
+		assert.deepEqual(dry.blocked, ["tasks"], "dry: no-chain version bump predicts blocked");
+		assert.deepEqual(dry.migrationsRegistered, [], "dry: a no-chain blocked prediction leaks no decls");
+		fs.rmSync(dryDir, { recursive: true, force: true });
+
+		const liveDir = makeCatalogAheadTasks("0.9.0");
+		const live = updateContext(liveDir);
+		assert.deepEqual(live.blocked, ["tasks"], "live: no-chain version bump blocks");
+		assert.deepEqual(live.migrationsRegistered, [], "live: a no-chain blocked outcome registers nothing");
+		fs.rmSync(liveDir, { recursive: true, force: true });
 	});
 });
 

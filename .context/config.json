@@ -612,6 +612,14 @@
       "relation_type": "task_advances_story",
       "derived_from_field": null,
       "bins": []
+    },
+    {
+      "id": "story-advancers-features",
+      "kind": "target",
+      "target": "story",
+      "relation_type": "feature_advances_story",
+      "derived_from_field": null,
+      "bins": []
     }
   ],
   "layers": [],

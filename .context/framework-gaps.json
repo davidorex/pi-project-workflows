@@ -2486,7 +2486,7 @@
     },
     {
       "title": "blocked is a dead-end — no persisted state and no command to re-validate, advance the base, and write a corrected schema",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "A blocked outcome leaves the schema, block, and migrations.json byte-unchanged and records nothing actionable: resyncSchema's rollback restores migrations.json and returns {status:blocked, registeredMigrations:[]}, so the target schema version, the migration chain, and the per-item failure set are not persisted. Unlike a conflict — surfaced as {base,ours,theirs} and committed via resolve-conflict, which advances the merge base — blocked offers no resolution affordance. No command re-validates a corrected block against the target schema, advances the merge base, and writes the new schema.",
@@ -2513,7 +2513,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:57.608Z",
       "oid": "fe716b9c5318124ccbd923252daeb47d",
-      "content_hash": "1c5db89ce82811630dca8629b7f7f354720a042647a57d9059a3878075d21f43"
+      "content_hash": "8d57870cf93fb8d2f7058155340ecf2a0b5ff6893ef935e06289aa3df5938885",
+      "closed_by": "VER-040 / TASK-051 — a blocked update persists a pending-blocked record (pending-blocked.json + the target schema body pinned in the object store: name/reason/version pair/chain/failures) and the authGated resolve-blocked op commits the resolution: re-validates the corrected block against the pinned target, on pass registers the chain, writes the target schema, advances the merge base (base := target), and clears the entry — a re-run update reports in-sync; on fail it reports the remaining per-item failures and writes nothing. The blocked byte-unchanged contract and per-component application unchanged.",
+      "closed_at": "2026-06-11T10:00:00.000Z",
+      "content_parent": "1c5db89ce82811630dca8629b7f7f354720a042647a57d9059a3878075d21f43"
     },
     {
       "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
@@ -2658,6 +2661,32 @@
       "created_at": "2026-06-10T11:13:56.098Z",
       "oid": "cf5414d2d870289cb0c761344c3a585d",
       "content_hash": "61f851ceb34beb316a96d2ad9657838edf6b5576f1c3096dd641c42469b1dc3d"
+    },
+    {
+      "title": "AJV validator cache keyed by unversioned $id — a long-lived process can validate against a stale compile when same-$id schema bodies evolve",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "validate (schema-validator.ts:111) reuses the shared AJV instance's compiled validator keyed by the schema's unversioned $id (pi-context://schemas/<name>). When one long-lived process compiles a different body under the same $id — e.g. a catalog body evolving across substrates, or a pinned target differing from a previously-compiled installed body — a later validate call runs against the stale compile, not the supplied body. Every supported flow is cache-coherent (the CLI is process-per-invocation; the canonical update/resolve loop compiles the same body the pin records); the stale case reproduces only by mutating same-$id bodies across substrates within one process. Surfaced by the TASK-051 adversarial probe; pre-existing, not introduced by the pending-blocked/resolve-blocked change. Class: $id-keyed compile caching vs evolving same-$id schema bodies — any consumer passing a schema OBJECT to validate can silently get the cached twin.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "lines": "111",
+          "reference": "validate compiles/reuses via the shared AJV instance keyed by the schema $id; the supplied body is ignored when a compile for that $id exists"
+        },
+        {
+          "file": "analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md",
+          "reference": "the update/resolve flows that now pass pinned schema bodies to validate — the consumers the class could affect in a long-lived process"
+        }
+      ],
+      "impact": "In a single long-lived process validating different bodies under one $id, validation verdicts can reflect the first-compiled body — a wrong pass or wrong fail with no error. No supported CLI/op flow currently hits it; the exposure is future in-pi long-running consumers.",
+      "canonical_vocabulary": "version-aware validator caching",
+      "proposed_resolution": "Key the compile cache by content (the schema's content hash or $id+version) or compile uncached when a body is supplied explicitly — determined by the investigating/implementing pass; verification: one process validating two different same-$id bodies returns body-correct verdicts for each.",
+      "id": "FGAP-086",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-10T22:20:41.734Z",
+      "oid": "bde73d76c6af1ea31a585e00bfa17674",
+      "content_hash": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2"
     }
   ]
 }

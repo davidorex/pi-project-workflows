@@ -1,0 +1,6 @@
+{
+  "title": "Blocked resolution loop mirrors conflicts end-to-end",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want the resolution loop for blocked to mirror conflicts/resolve-conflict end-to-end: diagnose → fix → retry, not a dead end."
+}

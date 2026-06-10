@@ -72,16 +72,17 @@
     },
     {
       "title": "Fix items or local schema then re-run update",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, once I see why the block items don't validate, I can fix either the items or the local schema and re-run `update`.",
       "id": "STORY-006",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:21.568Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:21.568Z",
+      "modified_at": "2026-06-10T22:20:54.510Z",
       "oid": "176d6d62bc2e03f4919e7bb45613f8e7",
-      "content_hash": "925356c1cf7d5e2b19d75e6944c9e0abc1218e63c551343c1cc1db8357f0ab37"
+      "content_hash": "494fab50b2a1fe0375c54b30230ce238bb0a962f811124dc8264f9cdc557406c",
+      "content_parent": "925356c1cf7d5e2b19d75e6944c9e0abc1218e63c551343c1cc1db8357f0ab37"
     },
     {
       "title": "check-status reports schemas behind catalog + version gap",
@@ -139,29 +140,31 @@
     },
     {
       "title": "resolve-conflict-style command advances merge base",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want a resolve-conflict-style command for blocked schemas — I fix the items or widen the local schema, run it, and the merge base advances so the schema stops re-blocking.",
       "id": "STORY-011",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:40:03.318Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:40:03.318Z",
+      "modified_at": "2026-06-10T22:21:05.753Z",
       "oid": "398b9221b279a59bc80d6a56b3142025",
-      "content_hash": "abf7793a3d7a898dc7d4a3cec00d06cac2d044262f99e3f16c0760363ccb2dd6"
+      "content_hash": "3905258cb7983d8b854022efe5e82ada867f91879adb3a43db73379a46691468",
+      "content_parent": "abf7793a3d7a898dc7d4a3cec00d06cac2d044262f99e3f16c0760363ccb2dd6"
     },
     {
       "title": "Blocked resolution loop mirrors conflicts end-to-end",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want the resolution loop for blocked to mirror conflicts/resolve-conflict end-to-end: diagnose → fix → retry, not a dead end.",
       "id": "STORY-012",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:40:19.912Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:40:19.912Z",
+      "modified_at": "2026-06-10T22:21:19.581Z",
       "oid": "baaaaace6ef4ba7fb30e630ee277470a",
-      "content_hash": "1d6f6a35bd996cea4c3efe6094ab82d3ef720558d57bcd5ca4bfce1c3a95e16c"
+      "content_hash": "5fc6132707cf2844a6df93536897c729c6d5516a05892ab341467460cc51abd3",
+      "content_parent": "1d6f6a35bd996cea4c3efe6094ab82d3ef720558d57bcd5ca4bfce1c3a95e16c"
     },
     {
       "title": "In-file git-style failure markers at offending items/fields",

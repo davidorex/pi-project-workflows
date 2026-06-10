@@ -1,0 +1,21 @@
+{
+  "title": "AJV validator cache keyed by unversioned $id — a long-lived process can validate against a stale compile when same-$id schema bodies evolve",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "validate (schema-validator.ts:111) reuses the shared AJV instance's compiled validator keyed by the schema's unversioned $id (pi-context://schemas/<name>). When one long-lived process compiles a different body under the same $id — e.g. a catalog body evolving across substrates, or a pinned target differing from a previously-compiled installed body — a later validate call runs against the stale compile, not the supplied body. Every supported flow is cache-coherent (the CLI is process-per-invocation; the canonical update/resolve loop compiles the same body the pin records); the stale case reproduces only by mutating same-$id bodies across substrates within one process. Surfaced by the TASK-051 adversarial probe; pre-existing, not introduced by the pending-blocked/resolve-blocked change. Class: $id-keyed compile caching vs evolving same-$id schema bodies — any consumer passing a schema OBJECT to validate can silently get the cached twin.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "lines": "111",
+      "reference": "validate compiles/reuses via the shared AJV instance keyed by the schema $id; the supplied body is ignored when a compile for that $id exists"
+    },
+    {
+      "file": "analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md",
+      "reference": "the update/resolve flows that now pass pinned schema bodies to validate — the consumers the class could affect in a long-lived process"
+    }
+  ],
+  "impact": "In a single long-lived process validating different bodies under one $id, validation verdicts can reflect the first-compiled body — a wrong pass or wrong fail with no error. No supported CLI/op flow currently hits it; the exposure is future in-pi long-running consumers.",
+  "canonical_vocabulary": "version-aware validator caching",
+  "proposed_resolution": "Key the compile cache by content (the schema's content hash or $id+version) or compile uncached when a body is supplied explicitly — determined by the investigating/implementing pass; verification: one process validating two different same-$id bodies returns body-correct verdicts for each."
+}

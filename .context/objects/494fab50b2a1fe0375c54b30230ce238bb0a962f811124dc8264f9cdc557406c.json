@@ -1,0 +1,6 @@
+{
+  "title": "Fix items or local schema then re-run update",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, once I see why the block items don't validate, I can fix either the items or the local schema and re-run `update`."
+}

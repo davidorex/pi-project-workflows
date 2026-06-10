@@ -1,0 +1,26 @@
+{
+  "title": "blocked is a dead-end — no persisted state and no command to re-validate, advance the base, and write a corrected schema",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A blocked outcome leaves the schema, block, and migrations.json byte-unchanged and records nothing actionable: resyncSchema's rollback restores migrations.json and returns {status:blocked, registeredMigrations:[]}, so the target schema version, the migration chain, and the per-item failure set are not persisted. Unlike a conflict — surfaced as {base,ours,theirs} and committed via resolve-conflict, which advances the merge base — blocked offers no resolution affordance. No command re-validates a corrected block against the target schema, advances the merge base, and writes the new schema.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "622-640",
+      "reference": "resyncSchema blocked path rolls everything back and persists no pending state"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resolveConflict + stampBaselineFromBody — the conflict resolution template that commits a reconciliation and advances the merge base to the catalog so it converges"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1289-1291",
+      "reference": "updateContext buckets a blocked schema by name only — no surfaced state, no affordance"
+    }
+  ],
+  "impact": "A blocked schema cannot be resolved through the tool: after fixing the items or local schema the operator re-runs full update, with no convergence affordance and no record of what to fix.",
+  "canonical_vocabulary": "blocked resolution loop",
+  "proposed_resolution": "A persisted pending-blocked state (target schema body/version, migration chain, per-item failure set) plus a resolve-blocked / update --continue commit op that re-validates the corrected block against the target schema, advances the merge base via stampBaselineFromBody, and writes the schema — mirroring resolve-conflict. Reuses the object store, stampBaselineFromBody, and validateBlockWithMigrationForDir. Pairs with the in-file markers gap."
+}

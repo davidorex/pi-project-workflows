@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T10:00:00.000Z",
+  "evidence": "TASK-051 verified end-to-end; closes FGAP-080. A live update that blocks a schema persists a pending-blocked record (<substrate>/pending-blocked.json, schema-versioned: per entry name, reason, from/to, target_hash, chain, failures, blocked_at) with the TARGET catalog schema body pinned into the content-addressed object store at block time; updateContext owns the sidecar write post-loop behind !dryRun (resyncSchema returns the entry, never writes it), REPLACING entries each live run and removing the file when the set is empty; a dry run writes neither the sidecar nor the pinned object (probe full-tree-hash verified). The blocked three-file contract (schema/block/migrations.json byte-unchanged) is intact — the sidecar + object are additive, outside it. The new authGated resolve-blocked op (resolveBlocked(cwd, name, ctx?)) commits a resolution: re-validates the corrected block against the PINNED target (in-memory forward-migrate through the pinned chain when the block lags), on FAIL returns {resolved:false, failures} writing nothing (pending intact), on PASS registers the chain decls not present, writes the pinned target schema (writeSchemaCheckedForDir replace), advances the block's schema_version envelope + persists it, advances the merge base to the target (stampBaselineFromBody, the FGAP-070 convergence rule), and clears the pending entry — a re-run update reports the schema in-sync. Runtime demo (the R-0012 reproduction, tmp): blocked -> pending (validation-failed, 2 failures, chain 1) + pinned object -> premature resolve refused naming CONV-001 /rules/0 required + /rules/0/enforcement enum with all files byte-identical -> fix -> resolved, base advanced to the target hash, schema + envelope at 1.0.1, pending removed -> re-run inSync [conventions]. Fresh adversarial probe (29/29 independent asserts) PASS: dry-writes-nothing hash-verified; pinned-vs-moved catalog commits the pinned 1.0.1 body and a re-run classifies the 1.0.2 bump fresh (no stale-pending artifact); clearing semantics (a clean re-run drops the entry, empty set removes the file); absent entry + missing pinned object -> field-named throws, nothing written; the no-chain entry resolves as-is; auth: bare non-interactive without --yes refused on both the repo bin and the global CLI, gatedTools carries resolve-blocked, the auth-gate canonical test asserts 19 including it; pending-blocked.schema.json ships (files[] covers schemas/). Gates: build + check + full test fail 0; parity-check exit 0; examples + groupForOp drift guards green. Probe findings resolved in-loop: the update op promptSnippet extended with the pending-record/resolve-blocked clause lockstep with the description (SKILL regenerated, re-audited); the probe-surfaced pre-existing AJV $id-keyed validator-cache class filed as its own gap, not introduced by this change. Docs synced usage-only across the op strings, both SKILLs, the three READMEs, and four CHANGELOGs.",
+  "criteria_results": [
+    {
+      "criterion": "a blocked update persists a pending-blocked record (target schema version/body reference, migration chain, per-item failure set); the byte-unchanged contract preserved",
+      "status": "passed",
+      "evidence": "the sidecar + pinned object on the live blocked path; the three files byte-unchanged (probe-diffed rollback identical)"
+    },
+    {
+      "criterion": "ONE command re-validates the corrected block against the target schema; on pass writes the schema and advances the merge base so a subsequent update reports in-sync; on fail reports the remaining failures and writes nothing",
+      "status": "passed",
+      "evidence": "resolveBlocked: the demo's fail-then-fix-then-converge loop; no-write-on-fail byte-identical across five files"
+    },
+    {
+      "criterion": "the flow mirrors resolve-conflict end-to-end: surfaced detail -> operator fix -> commit op -> base advance; demonstrated through to convergence",
+      "status": "passed",
+      "evidence": "the R-0012 demo through inSync; renderBlocked's guidance tail names the command"
+    },
+    {
+      "criterion": "per-schema rollback and per-component application (DEC-0018) unchanged for schemas not being resolved",
+      "status": "passed",
+      "evidence": "resyncSchema rollback byte-identical; the pending set replaced per-run, other schemas untouched"
+    },
+    {
+      "criterion": "build + check + full test green; parity-check exit 0; fresh adversarial probe",
+      "status": "passed",
+      "evidence": "all gates 0; probe PASS with two findings resolved in-loop (the promptSnippet fix; the pre-existing cache class filed separately)"
+    }
+  ]
+}

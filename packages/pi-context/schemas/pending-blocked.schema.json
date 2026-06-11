@@ -56,6 +56,11 @@
 					"description": "For reason='validation-failed', the per-item constraint failures the live resync produced. Omitted for no-migration-chain.",
 					"items": { "$ref": "#/definitions/BlockValidationFailure" }
 				},
+				"premarker_hash": {
+					"type": "string",
+					"pattern": "^[0-9a-f]{64}$",
+					"description": "content_hash of the wrapped pre-marker block-file bytes, stored in the object store, written when a live update inscribed git-style failure markers into the validation-blocked block file. Present only on marker-bearing entries; lets the caller restore the block file to its pre-marker bytes. Omitted when no markers were written."
+				},
 				"blocked_at": {
 					"type": "string",
 					"format": "date-time",

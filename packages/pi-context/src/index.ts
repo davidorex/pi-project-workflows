@@ -39,9 +39,9 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
 import {
+	buildFreshRegistryWithChain,
 	getProjectMigrationRegistryForDir,
 	invalidateMigrationRegistryForDir,
-	migrationFnFor,
 } from "./migration-registry-loader.js";
 import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
 import { getObject, putObject } from "./object-store.js";
@@ -54,7 +54,7 @@ import {
 } from "./pending-blocked-store.js";
 import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
 import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
-import { createRegistry, runMigrations } from "./schema-migrations.js";
+import { runMigrations } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigrationForDir } from "./schema-validator.js";
 import { writeSchemaCheckedForDir } from "./schema-write.js";
 import { checkForUpdates } from "./update-check.js";
@@ -524,6 +524,22 @@ function locateFailureLine(lines: string[], instancePath: string): number | null
 }
 
 /**
+ * The git-style conflict sentinel contract — ONE source of truth shared by the
+ * marker WRITER (`composeMarkerText` builds its open/close lines from these
+ * tokens) and the marker DETECTORS (every blocked-marker scan derives its regex
+ * from `MARKER_LINE_RE`). The seven-character `<<<<<<<` / `>>>>>>>` literals are
+ * intentionally confined to these two token constants so the writer and the
+ * detectors can never drift to different sentinels. `MARKER_LINE_RE` matches a
+ * line that STARTS with either token (no `m` flag — single-line tests);
+ * `MARKER_LINE_RE_MULTILINE` is its multiline twin (same source, `m` flag) for
+ * whole-file scans where the marker may be on any line.
+ */
+const MARKER_OPEN = "<<<<<<<";
+const MARKER_CLOSE = ">>>>>>>";
+const MARKER_LINE_RE = new RegExp(`^(${MARKER_OPEN}|${MARKER_CLOSE})`);
+const MARKER_LINE_RE_MULTILINE = new RegExp(MARKER_LINE_RE.source, "m");
+
+/**
  * TASK-052 / FGAP-081: compose the marker-bearing block-file text for a
  * validation-blocked resync. Given the raw pretty-printed block bytes and the
  * per-item failures, inserts FULL-LINE git-style conflict sentinels around the
@@ -566,9 +582,9 @@ function composeMarkerText(
 	const openFor = (f: BlockValidationFailure): string => {
 		const kw = f.keyword && f.keyword !== "error" ? ` [${f.keyword}]` : "";
 		const ip = f.instancePath ? ` ${f.instancePath}` : "";
-		return `<<<<<<< BLOCKED ${name} ${fromTok} -> ${toTok}${ip}${kw}: ${describeBlockedFailure(f)}`;
+		return `${MARKER_OPEN} BLOCKED ${name} ${fromTok} -> ${toTok}${ip}${kw}: ${describeBlockedFailure(f)}`;
 	};
-	const closeLine = `>>>>>>> target: ${name}@${toTok}`;
+	const closeLine = `${MARKER_CLOSE} target: ${name}@${toTok}`;
 	const targetIdxs = [...byLine.keys()].sort((a, b) => b - a);
 	for (const idx of targetIdxs) {
 		const lineFailures = byLine.get(idx) ?? [];
@@ -809,33 +825,8 @@ function simulateResyncOutcome(
 	try {
 		// Build the registry the live path would resolve against: the substrate's
 		// existing decls plus the catalog chain's absent edges, deduped on
-		// (schemaName, fromVersion) — createRegistry().register throws on a
-		// duplicate edge, so seed each key at most once.
-		const registry = createRegistry();
-		const seeded = new Set<string>();
-		const existing = loadMigrationsFileForDir(destRoot);
-		for (const decl of existing?.migrations ?? []) {
-			const key = `${decl.schemaName} ${decl.fromVersion}`;
-			if (seeded.has(key)) continue;
-			registry.register({
-				schemaName: decl.schemaName,
-				fromVersion: decl.fromVersion,
-				toVersion: decl.toVersion,
-				migrate: migrationFnFor(decl),
-			});
-			seeded.add(key);
-		}
-		for (const decl of chain) {
-			const key = `${decl.schemaName} ${decl.fromVersion}`;
-			if (seeded.has(key)) continue;
-			registry.register({
-				schemaName: decl.schemaName,
-				fromVersion: decl.fromVersion,
-				toVersion: decl.toVersion,
-				migrate: migrationFnFor(decl),
-			});
-			seeded.add(key);
-		}
+		// (schemaName, fromVersion). FRESH, never the project's cached registry.
+		const registry = buildFreshRegistryWithChain(destRoot, chain);
 
 		const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
 
@@ -948,20 +939,7 @@ export function validateBlockItemsAgainstCatalog(
 				// FRESH registry seeded from the substrate's existing decls + the chain's
 				// absent edges, deduped on (schemaName, fromVersion) — never warm the
 				// project's cached registry from a read-only diagnostic.
-				const registry = createRegistry();
-				const seeded = new Set<string>();
-				const existing = loadMigrationsFileForDir(destRoot);
-				for (const decl of [...(existing?.migrations ?? []), ...chain]) {
-					const key = `${decl.schemaName} ${decl.fromVersion}`;
-					if (seeded.has(key)) continue;
-					registry.register({
-						schemaName: decl.schemaName,
-						fromVersion: decl.fromVersion,
-						toVersion: decl.toVersion,
-						migrate: migrationFnFor(decl),
-					});
-					seeded.add(key);
-				}
+				const registry = buildFreshRegistryWithChain(destRoot, chain);
 				toValidate = runMigrations(registry, blockName, blockVersion, catalogVersion, blockData);
 			}
 		}
@@ -1984,7 +1962,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 			const blockFile = installedBlockDestPath(destRoot, entry.name);
 			if (!fs.existsSync(blockFile)) continue;
 			const rawBytes = fs.readFileSync(blockFile, "utf-8");
-			if (/^(<{7}|>{7})/m.test(rawBytes)) {
+			if (MARKER_LINE_RE_MULTILINE.test(rawBytes)) {
 				// Already marked (a re-run): the freshly-built candidate `entry` is DEGRADED
 				// — its failures were re-derived from the marker-bearing (non-JSON) block file,
 				// which parses to a synthetic envelope-level failure ([{instancePath:"",
@@ -2327,11 +2305,11 @@ export function resolveBlocked(
 	try {
 		if (fs.existsSync(blockFile)) {
 			const rawText = fs.readFileSync(blockFile, "utf-8");
-			wasMarked = /^(<{7}|>{7})/m.test(rawText);
+			wasMarked = MARKER_LINE_RE_MULTILINE.test(rawText);
 			strippedText = wasMarked
 				? rawText
 						.split("\n")
-						.filter((line) => !/^(<{7}|>{7})/.test(line))
+						.filter((line) => !MARKER_LINE_RE.test(line))
 						.join("\n")
 				: rawText;
 			blockData = JSON.parse(strippedText);
@@ -2372,20 +2350,7 @@ export function resolveBlocked(
 			blockVersion !== targetVersion &&
 			entry.chain.length > 0
 		) {
-			const registry = createRegistry();
-			const seeded = new Set<string>();
-			const existing = loadMigrationsFileForDir(destRoot);
-			for (const decl of [...(existing?.migrations ?? []), ...entry.chain]) {
-				const key = `${decl.schemaName} ${decl.fromVersion}`;
-				if (seeded.has(key)) continue;
-				registry.register({
-					schemaName: decl.schemaName,
-					fromVersion: decl.fromVersion,
-					toVersion: decl.toVersion,
-					migrate: migrationFnFor(decl),
-				});
-				seeded.add(key);
-			}
+			const registry = buildFreshRegistryWithChain(destRoot, entry.chain);
 			migrated = runMigrations(registry, name, blockVersion, targetVersion, blockData);
 		}
 		validate(targetBody, migrated, name);

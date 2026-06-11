@@ -799,6 +799,32 @@ test("CLI --json: a READ op emits `output` as a structured JSON value (single-pa
 	}
 });
 
+// FGAP-030 / FGAP-078 / TASK-049: context-check-status is a {json} data op — its
+// `--json` envelope must carry the CheckStatusReport (perAsset + summary) as a real
+// structured value (single-parse), so a caller can read the drift report + the
+// per-asset version gap without a second JSON.parse.
+test("CLI --json: context-check-status emits the drift report (perAsset + summary) as a structured value", async () => {
+	const cwd = seedTasksSubstrate(); // no installed_schemas → an empty, well-formed report
+	try {
+		const { code, out } = await captureMainStdout(["context-check-status", "--json", "--cwd", cwd]);
+		assert.equal(code, 0);
+		const envelope = JSON.parse(out) as { ok: boolean; op: string; output: unknown };
+		assert.equal(envelope.ok, true);
+		assert.equal(envelope.op, "context-check-status");
+		// THE load-bearing assertion: `output` is the already-structured CheckStatusReport.
+		assert.equal(typeof envelope.output, "object");
+		assert.notEqual(envelope.output, null);
+		const report = envelope.output as {
+			perAsset?: Array<{ name: string; state: string; behind?: boolean; version_delta?: unknown }>;
+			summary?: { total?: number };
+		};
+		assert.ok(Array.isArray(report.perAsset), "the report carries a perAsset array");
+		assert.equal(typeof report.summary?.total, "number", "the report carries a summary.total count");
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
 test("CLI --json: resolve-item-by-id emits a structured {read} value (single-parse; ItemLocation under data)", async () => {
 	// TASK-013 / FGAP-015: resolve-item-by-id now routes through {read}, so its
 	// `--json` output is a ReadStructured carrying the un-stringified ItemLocation

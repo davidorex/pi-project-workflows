@@ -12,6 +12,7 @@ import {
 	checkStatus,
 	installContext,
 	renderBlocked,
+	renderCheckStatus,
 	resolveBlocked,
 	resolveConflict,
 	updateContext,
@@ -382,6 +383,104 @@ describe("checkStatus (read-only drift detector)", () => {
 		checkStatus(tmpRoot);
 		const after = fs.readFileSync(cfgPath);
 		assert.ok(before.equals(after), "checkStatus must not modify config.json (byte-identical before/after)");
+	});
+
+	// FGAP-078 / STORY-007 ("report which installed schemas are behind the catalog,
+	// and by what version gap"): the additive `behind` / `version_delta` reporting
+	// fields. Computed AFTER the classification arm — the state classifications above
+	// are untouched. `installOlderSchema` overwrites the installed schema body with a
+	// lower `version` so the post-install re-baseline records that older version, and
+	// the catalog source (1.0.1) is then ahead → a version-bump catalog-ahead.
+	function installOlderSchema(dir: string, name: string, version: string): void {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", `${name}.schema.json`), JSON.stringify(catalog, null, 2));
+	}
+
+	it("version-bump behind: a catalog-ahead asset carries behind + a version-bump delta (from/to versions)", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "1.0.0"); // installed older than catalog (1.0.1)
+		installContext(tmpRoot); // baseline FROM the on-disk 1.0.0 body → catalog-ahead
+		const tasks = checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks");
+		assert.ok(tasks);
+		assert.equal(tasks.state, "catalog-ahead", "precondition: older installed version → catalog-ahead");
+		assert.equal(tasks.behind, true, "a catalog-ahead asset is behind the catalog");
+		assert.ok(tasks.version_delta, "a behind asset carries a version_delta");
+		assert.equal(tasks.version_delta?.from, "1.0.0", "delta.from is the install baseline version");
+		assert.equal(tasks.version_delta?.to, "1.0.1", "delta.to is the catalog version");
+		assert.equal(tasks.version_delta?.basis, "version-bump", "distinct from/to versions → version-bump basis");
+	});
+
+	it("content-only behind: a catalog-ahead asset with no version bump carries behind + a content-only delta", () => {
+		// The `__stale_marker` idiom (the simulated catalog-ahead fixture above): install,
+		// mutate the installed schema body WITHOUT changing its version, then RE-install to
+		// re-baseline from the stale body. Catalog content differs (hash) but the version
+		// string is unchanged → content-only basis.
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__stale_marker = true; // content diverges; version untouched
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		installContext(tmpRoot); // re-baseline FROM the stale body → catalog-ahead, same version
+		const tasks = checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks");
+		assert.ok(tasks);
+		assert.equal(tasks.state, "catalog-ahead", "precondition: content drift with equal version → catalog-ahead");
+		assert.equal(tasks.behind, true, "a catalog-ahead asset is behind the catalog");
+		assert.equal(tasks.version_delta?.basis, "content-only", "equal/undefined versions → content-only basis");
+		assert.equal(
+			tasks.version_delta?.from,
+			tasks.version_delta?.to,
+			"a content-only drift has matching from/to versions",
+		);
+	});
+
+	it("not-behind assets (locally-modified + in-sync) carry NEITHER behind nor version_delta", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		installContext(tmpRoot);
+		// Mutate the installed `tasks` dest so it is locally-modified; `decisions` stays in-sync.
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__local_edit_marker = true;
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		const byName = Object.fromEntries(checkStatus(tmpRoot).perAsset.map((a) => [a.name, a]));
+		assert.equal(byName.tasks.state, "locally-modified");
+		assert.equal(byName.tasks.behind, undefined, "a locally-modified asset is not behind");
+		assert.equal(byName.tasks.version_delta, undefined, "a not-behind asset carries no version_delta");
+		assert.equal(byName.decisions.state, "in-sync");
+		assert.equal(byName.decisions.behind, undefined, "an in-sync asset is not behind");
+		assert.equal(byName.decisions.version_delta, undefined, "an in-sync asset carries no version_delta");
+	});
+
+	it("renderCheckStatus annotates behind assets with the version gap (both bases) and keeps the state grouping", () => {
+		// version-bump asset
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "1.0.0");
+		installContext(tmpRoot);
+		const bumpRender = renderCheckStatus(checkStatus(tmpRoot));
+		assert.ok(bumpRender.includes("catalog-ahead"), "the state grouping (catalog-ahead) is preserved");
+		assert.ok(
+			bumpRender.includes("tasks (1.0.0 -> 1.0.1)"),
+			"a version-bump behind asset shows the from -> to version pair inline",
+		);
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+
+		// content-only asset
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		obj.__stale_marker = true;
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		installContext(tmpRoot);
+		const contentRender = renderCheckStatus(checkStatus(tmpRoot));
+		assert.ok(contentRender.includes("catalog-ahead"), "the state grouping is preserved for content-only drift");
+		assert.ok(
+			/tasks \([^)]*content changed\)/.test(contentRender),
+			"a content-only behind asset is annotated 'content changed'",
+		);
 	});
 });
 

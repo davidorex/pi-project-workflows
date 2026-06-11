@@ -1022,6 +1022,22 @@
       "oid": "1d9d2ff832fac03de7650caef78d8d96",
       "content_hash": "4aef3038e20fcbfe0e07bf75b720ede24c56250f86693bc91ef3461ab9e4f32e",
       "content_parent": "84d4e0289e1fb180e9e4b2ddfc2515be7757542960a87d658d988b0286324a23"
+    },
+    {
+      "description": "Behavior-preserving refinement, the code-simplifier evaluation's finding #2 verbatim: Duplicated raw tmp+rename marker-write block (2 sites) — packages/pi-context/src/index.ts:2026-2028 (mark) and :2426-2428 (unmark). Identical three-line shape: const tmpPath = `${blockFile}.<verb>-${process.pid}.tmp`; fs.writeFileSync(tmpPath, text); fs.renameSync(tmpPath, blockFile);. A small local helper rawWriteBlockText(blockFile, text, verb) would DRY this and name why it bypasses writeTypedFile (the marker text / stripped text is written outside the AJV-validating writer deliberately). The writeTypedFile atomic writer at block-api.ts:870 cannot be reused (it validates), so a dedicated raw helper is the right level. Behavior-preserving: same tmp path scheme, same atomic rename. (Line numbers are as evaluated pre-TASK-053; relocate by content.)",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "A rawWriteBlockText(blockFile, text, verb) helper replaces both raw tmp+rename sites; its comment states why it bypasses the AJV-validating writer.",
+        "Same tmp path scheme, same atomic rename — behavior-preserving: the full test suite passes UNCHANGED (zero test edits).",
+        "build + check + full test + parity-check green; the blocked -> markers -> fix -> resolve-blocked -> in-sync runtime loop converges."
+      ],
+      "notes": "Surfaced by the post-TASK-052 code-simplifier evaluation (its optional finding #2); filed verbatim on user direction. Internal-only — no exported-surface, op, or schema change.",
+      "id": "TASK-054",
+      "oid": "eb7d80d82c66f39ac1409303e90e7932",
+      "content_hash": "15014af3a00acdc5557c918472e6a05901cd5980cc0e86ab65640d0862e16027"
     }
   ]
 }

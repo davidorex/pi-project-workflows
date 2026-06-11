@@ -435,6 +435,146 @@ function mapValidationFailures(errors: ErrorObject[], blockData: unknown): Block
 }
 
 /**
+ * TASK-052 / FGAP-081: locate the 0-based source-text line index of the field a
+ * `validation-failed` failure's `instancePath` points at, within the pretty-printed
+ * block-file lines. The AJV pointer is `/<arrayKey>/<index>/<field>…`; this finds the
+ * `"<arrayKey>":` line, then walks forward counting STRUCTURAL `{`/`[`/`}`/`]` (a
+ * per-line lexer skips JSON string literals — quote-to-quote with backslash escapes —
+ * so braces/brackets inside string VALUES are never miscounted) to reach the index-th
+ * item object, then finds the `"<field>":` line within it. Returns null when the path
+ * is envelope-level (no `/<arrayKey>/<index>` prefix) or the line cannot be located —
+ * the caller then places a header marker block at the TOP of the file. Line-granular
+ * only (no column); the marker write is always a full-line sentinel above/below.
+ */
+function locateFailureLine(lines: string[], instancePath: string): number | null {
+	const m = /^\/([^/]+)\/(\d+)(?:\/(.+))?$/.exec(instancePath);
+	if (!m) return null;
+	const [, arrayKey, indexStr, fieldTail] = m;
+	const index = Number(indexStr);
+	const arrayKeyRe = new RegExp(`^\\s*"${arrayKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\s*:`);
+	let arrLine = -1;
+	for (let i = 0; i < lines.length; i++) {
+		if (arrayKeyRe.test(lines[i])) {
+			arrLine = i;
+			break;
+		}
+	}
+	if (arrLine === -1) return null;
+	let depth = 0;
+	let inArray = false;
+	let itemCount = -1;
+	let itemStart = -1;
+	for (let i = arrLine; i < lines.length; i++) {
+		const line = lines[i];
+		// Per-line lexer: count structural brackets only OUTSIDE string literals so a
+		// brace/bracket inside a string VALUE never shifts the depth (the string-aware
+		// fix — a naive char scan would mis-place the sentinel).
+		let inString = false;
+		let escaped = false;
+		for (let c = 0; c < line.length; c++) {
+			const ch = line[c];
+			if (inString) {
+				if (escaped) {
+					escaped = false;
+				} else if (ch === "\\") {
+					escaped = true;
+				} else if (ch === '"') {
+					inString = false;
+				}
+				continue;
+			}
+			if (ch === '"') {
+				inString = true;
+				continue;
+			}
+			if (ch === "[") {
+				if (!inArray) inArray = true;
+			} else if (ch === "]") {
+				if (inArray && depth === 0) return null;
+			} else if (ch === "{") {
+				if (inArray && depth === 0) {
+					itemCount++;
+					if (itemCount === index) itemStart = i;
+				}
+				depth++;
+			} else if (ch === "}") {
+				depth--;
+				if (inArray && depth === 0 && itemCount === index) {
+					if (!fieldTail) return itemStart >= 0 ? itemStart : null;
+					const fieldKey = fieldTail.split("/")[0];
+					const fieldRe = new RegExp(`^\\s*"${fieldKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"\\s*:`);
+					for (let j = itemStart; j <= i; j++) {
+						if (fieldRe.test(lines[j])) return j;
+					}
+					return itemStart >= 0 ? itemStart : null;
+				}
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * TASK-052 / FGAP-081: compose the marker-bearing block-file text for a
+ * validation-blocked resync. Given the raw pretty-printed block bytes and the
+ * per-item failures, inserts FULL-LINE git-style conflict sentinels around the
+ * offending line(s):
+ *
+ *   `<<<<<<< BLOCKED <name> <from> -> <to> <instancePath> [<keyword>]: <message>`
+ *   ...the offending line...
+ *   `>>>>>>> target: <name>@<to>`
+ *
+ * The message reuses `describeBlockedFailure`'s keyword phrasing so the in-file text
+ * and the CLI `renderBlocked` report read identically. A failure whose line cannot be
+ * located (envelope-level path, or the field line is not found) gets a marker block at
+ * the TOP of the file. Sentinels are inserted bottom-up by descending line index so an
+ * earlier insertion does not shift a later one. The result is NOT valid JSON (by
+ * design — the markers make the block fail any JSON read until stripped by
+ * `resolveBlocked`).
+ */
+function composeMarkerText(
+	rawBytes: string,
+	name: string,
+	from: string | undefined,
+	to: string | undefined,
+	failures: BlockValidationFailure[],
+): string {
+	const fromTok = from ?? "?";
+	const toTok = to ?? "?";
+	const lines = rawBytes.split("\n");
+	const topMarkers: BlockValidationFailure[] = [];
+	const byLine = new Map<number, BlockValidationFailure[]>();
+	for (const f of failures) {
+		const idx = locateFailureLine(lines, f.instancePath);
+		if (idx === null) {
+			topMarkers.push(f);
+		} else {
+			const list = byLine.get(idx) ?? [];
+			list.push(f);
+			byLine.set(idx, list);
+		}
+	}
+	const openFor = (f: BlockValidationFailure): string => {
+		const kw = f.keyword && f.keyword !== "error" ? ` [${f.keyword}]` : "";
+		const ip = f.instancePath ? ` ${f.instancePath}` : "";
+		return `<<<<<<< BLOCKED ${name} ${fromTok} -> ${toTok}${ip}${kw}: ${describeBlockedFailure(f)}`;
+	};
+	const closeLine = `>>>>>>> target: ${name}@${toTok}`;
+	const targetIdxs = [...byLine.keys()].sort((a, b) => b - a);
+	for (const idx of targetIdxs) {
+		const lineFailures = byLine.get(idx) ?? [];
+		const opens = lineFailures.map(openFor);
+		lines.splice(idx + 1, 0, closeLine);
+		lines.splice(idx, 0, ...opens);
+	}
+	if (topMarkers.length > 0) {
+		const header = [...topMarkers.map(openFor), closeLine];
+		lines.unshift(...header);
+	}
+	return lines.join("\n");
+}
+
+/**
  * Resolve the package samples catalog once: the absolute `samplesRoot` plus a
  * `byId` map from each block_kind's `canonical_id` to its declared
  * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
@@ -1812,7 +1952,47 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// REMOVE any prior sidecar so a now-unblocked model leaves no stale record. The
 	// blocked contract (schema/block/migrations.json byte-unchanged) is untouched —
 	// this sidecar + the pinned object are additive, outside that contract.
-	if (!dryRun) reconcilePendingBlockedForDir(destRoot, pendingBlockedEntries);
+	// TASK-052 / FGAP-081: git-style in-file failure markers are the DEFAULT behavior
+	// of a live validation-blocked schema (no flag, no mode). For every blocked entry
+	// whose reason is validation-failed with non-empty failures, inscribe full-line
+	// conflict sentinels INTO the block file at the offending items/fields so the
+	// operator sees the problem inline (STORY-013). (1) Pin the PRE-MARKER block-file
+	// bytes (wrapped so the object faithfully identifies the raw text) into the object
+	// store and set `premarker_hash` on the entry BEFORE the sidecar write, so the
+	// record carries the byte-exact restore point. (2) Compose the marker-bearing text
+	// and raw-write it back via tmp+rename — NOT writeBlockForDir (the marker file is
+	// not valid JSON; routing it through the block writer would throw). The SCHEMA and
+	// migrations.json stay byte-unchanged (the blocked contract for those is intact);
+	// only the block file changes, by design. A re-run over a block whose file ALREADY
+	// carries sentinels RETAINS the prior entry's premarker_hash and does NOT re-mark
+	// (CHANGE 4) — the marker file is composed once, from the genuine pre-marker bytes.
+	// dryRun writes nothing (this whole block is !dryRun-guarded); a no-chain entry is
+	// never marked (validation-failed only).
+	if (!dryRun) {
+		const priorPending = loadPendingBlockedForDir(destRoot);
+		for (const entry of pendingBlockedEntries) {
+			if (entry.reason !== "validation-failed" || !entry.failures || entry.failures.length === 0) continue;
+			const blockFile = installedBlockDestPath(destRoot, entry.name);
+			if (!fs.existsSync(blockFile)) continue;
+			const rawBytes = fs.readFileSync(blockFile, "utf-8");
+			if (/^(<{7}|>{7})/m.test(rawBytes)) {
+				// Already marked (a re-run): retain the prior entry's restore pin + leave
+				// the marker file untouched (do not re-mark, do not re-pin).
+				const prior = priorPending?.entries.find((e) => e.name === entry.name);
+				if (prior?.premarker_hash) entry.premarker_hash = prior.premarker_hash;
+				continue;
+			}
+			const wrapper = { kind: "raw-block-bytes", block: entry.name, bytes: rawBytes };
+			const premarkerHash = computeContentHash(wrapper);
+			putObject(destRoot, premarkerHash, wrapper);
+			entry.premarker_hash = premarkerHash;
+			const markerText = composeMarkerText(rawBytes, entry.name, entry.from, entry.to, entry.failures);
+			const tmpPath = `${blockFile}.markers-${process.pid}.tmp`;
+			fs.writeFileSync(tmpPath, markerText);
+			fs.renameSync(tmpPath, blockFile);
+		}
+		reconcilePendingBlockedForDir(destRoot, pendingBlockedEntries);
+	}
 
 	// Baseline refresh for the schemas this run actually brought current. A resync
 	// overwrites the installed schema file with the catalog source but does NOT, by
@@ -2095,10 +2275,33 @@ export function resolveBlocked(
 	}
 
 	// Load the installed block (the validateBlockItemsAgainstCatalog load pattern).
+	// TASK-052 / FGAP-081: read the RAW text first. A live update inscribes git-style
+	// failure markers INTO the block file (full-line `<<<<<<<`/`>>>>>>>` sentinels), so
+	// the file is no longer valid JSON. Detect the sentinels by a full-line scan, STRIP
+	// the marker lines, and parse the remainder. `strippedText` is retained so the PASS
+	// path can raw-write it to disk BEFORE the commit's writeBlockForDir — the identity
+	// stamp's prior-read then parses the ON-DISK stripped file and matches items by oid,
+	// preserving oids (content_parent advances only on genuinely changed items, no
+	// re-mint). A strip that still does not parse falls through to the parse-fail path;
+	// on FAIL the marker file is left untouched (the no-write-on-fail contract).
 	const blockFile = installedBlockDestPath(destRoot, name);
 	let blockData: unknown;
+	let wasMarked = false;
+	let strippedText: string | undefined;
 	try {
-		blockData = fs.existsSync(blockFile) ? JSON.parse(fs.readFileSync(blockFile, "utf-8")) : undefined;
+		if (fs.existsSync(blockFile)) {
+			const rawText = fs.readFileSync(blockFile, "utf-8");
+			wasMarked = /^(<{7}|>{7})/m.test(rawText);
+			strippedText = wasMarked
+				? rawText
+						.split("\n")
+						.filter((line) => !/^(<{7}|>{7})/.test(line))
+						.join("\n")
+				: rawText;
+			blockData = JSON.parse(strippedText);
+		} else {
+			blockData = undefined;
+		}
 	} catch (err) {
 		return {
 			schemaName: name,
@@ -2178,6 +2381,16 @@ export function resolveBlocked(
 	// it (skip when the block had no items — schema still written, base still advanced,
 	// mirroring the live no-items handling). Identity stamping re-runs on the write.
 	if (hasItems) {
+		// TASK-052 / FGAP-081 (oid stability): when the on-disk block carried markers,
+		// raw-write the STRIPPED text to the block file (tmp+rename) BEFORE
+		// writeBlockForDir, so the identity-stamp prior-read parses the marker-free
+		// on-disk file and preserves each item's oid (no re-mint; content_parent advances
+		// only on genuinely changed items).
+		if (wasMarked && strippedText !== undefined) {
+			const tmpPath = `${blockFile}.unmark-${process.pid}.tmp`;
+			fs.writeFileSync(tmpPath, strippedText);
+			fs.renameSync(tmpPath, blockFile);
+		}
 		if (
 			migrated &&
 			typeof migrated === "object" &&
@@ -2251,11 +2464,19 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
  *     fall through to the raw message), reproduced here rather than imported to
  *     avoid a pi-context → pi-context-cli dependency cycle (render.ts imports this
  *     package). A failure carrying no AJV `keyword` mapping prints its raw message.
- * Pure: no I/O, no writes.
+ *
+ * TASK-052 / FGAP-081: a live `update` that blocks a `validation-failed` resync
+ * inscribes git-style failure markers INTO the block file at the offending items; the
+ * header and trailing guidance state that truth (open the block file, fix the marked
+ * items, then `resolve-blocked` — which strips the markers and re-validates), and that
+ * the schema + `migrations.json` stay byte-unchanged (only the block file carries
+ * markers). Pure: no I/O, no writes.
  */
 export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 	const lines: string[] = [];
-	lines.push("Schema resync blocked — refused per schema (no writes performed):");
+	lines.push(
+		"Schema resync blocked — git-style failure markers written into the block file(s) (schema + migrations.json unchanged):",
+	);
 	if (blockedDetail.length === 0) {
 		lines.push("  (no blocked schemas)");
 		return lines.join("\n");
@@ -2277,7 +2498,7 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 		}
 	}
 	lines.push(
-		"To resolve each: fix the named items (or widen the local schema), then resolve-blocked --schemaName <name> --yes — it re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
+		"Git-style failure markers were written INTO the block file(s): open each block file, fix the items between the `<<<<<<< BLOCKED …` / `>>>>>>> target: …` markers, then resolve-blocked --schemaName <name> --yes — it strips the markers, re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
 	);
 	return lines.join("\n");
 }

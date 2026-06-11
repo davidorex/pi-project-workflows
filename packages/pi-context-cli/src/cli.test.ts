@@ -1059,6 +1059,7 @@ test("CLI update (text surface): a blocked resync surfaces the per-item validati
 		assert.match(out, /blocked: tasks \(1\.0\.0 -> 1\.0\.1\)/, "the schema + version pair is named");
 		assert.match(out, /TASK-001/, "the failing item id is named in the per-item line");
 		assert.match(out, /status/, "the failing field is named");
+		assert.match(out, /markers were written INTO the block file/i, "the marker resolution guidance is surfaced");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

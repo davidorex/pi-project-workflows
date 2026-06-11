@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
+import { readBlock, writeBlockForDir } from "./block-api.js";
 import { computeContentHash } from "./content-hash.js";
 import { loadConfig } from "./context.js";
 import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.js";
@@ -1865,9 +1866,33 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		const live = updateContext(tmpRoot);
 		assert.deepEqual(live.blocked, ["tasks"], "the item failing the catalog schema blocks the resync");
 
-		// The blocked contract: schema/block/migrations.json byte-unchanged.
+		// The blocked contract: schema + migrations.json byte-unchanged. TASK-052: the
+		// block file is NO longer byte-unchanged — the live blocked run inscribes git-style
+		// failure markers INTO it (default behavior). Assert the sentinels are present and
+		// POSITIONED at the offending item (the status line of TASK-001).
 		assert.ok(fs.readFileSync(schemaDest).equals(schemaBefore), "blocked schema byte-unchanged");
-		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "blocked block byte-unchanged");
+		const markedText = fs.readFileSync(blockDest, "utf-8");
+		assert.ok(/^<{7} BLOCKED tasks /m.test(markedText), "an open sentinel was written into the block");
+		assert.ok(/^>{7} target: tasks@1\.0\.1/m.test(markedText), "a close sentinel was written into the block");
+		const markedLines = markedText.split("\n");
+		const openIdx = markedLines.findIndex((l) => /^<{7} BLOCKED tasks /.test(l));
+		assert.ok(openIdx >= 0, "open sentinel located");
+		assert.ok(
+			/"status"\s*:/.test(markedLines[openIdx + 1] ?? ""),
+			"the open sentinel sits directly above the offending status line",
+		);
+		// The premarker pin records the byte-exact pre-marker restore point.
+		const markedEntry = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0];
+		assert.ok(markedEntry?.premarker_hash, "the entry carries a premarker_hash");
+		const premarkerObj = getObject(path.join(tmpRoot, ".project"), markedEntry?.premarker_hash as string) as {
+			kind?: string;
+			bytes?: string;
+		} | null;
+		assert.equal(premarkerObj?.kind, "raw-block-bytes", "the pinned premarker wrapper is the raw-block-bytes kind");
+		assert.ok(
+			blockBefore.equals(Buffer.from(premarkerObj?.bytes ?? "", "utf-8")),
+			"the pinned bytes equal the pre-marker block byte-for-byte",
+		);
 		if (migrationsBefore === null) {
 			assert.ok(!fs.existsSync(mp), "migrations.json absent after a blocked outcome (absent pre-call)");
 		} else {
@@ -1935,6 +1960,121 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		const reRun = updateContext(tmpRoot);
 		assert.deepEqual(reRun.inSync, ["tasks"], "the schema converges to in-sync after resolution");
 		assert.deepEqual(reRun.blocked, [], "no schema re-blocks");
+	});
+
+	it("oid stability: marker round-trip preserves item oids; fixed item advances content_parent, sibling untouched", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// Seed VALID items so the identity writer (which validates against the installed
+		// catalog body) can stamp each item with an oid + content_hash.
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [
+			{ id: "TASK-001", description: "x", status: "planned" },
+			{ id: "TASK-002", description: "y", status: "planned" },
+		]);
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		const seeded = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as Record<string, unknown>;
+		writeBlockForDir(path.join(tmpRoot, ".project"), "tasks", seeded);
+		const beforeItems = (JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { tasks: Array<Record<string, unknown>> })
+			.tasks;
+		const oidBefore = new Map(beforeItems.map((t) => [t.id as string, t.oid as string]));
+		const hashBefore = new Map(beforeItems.map((t) => [t.id as string, t.content_hash as string]));
+
+		// Raw-mutate ONLY TASK-001's status to invalid on disk, preserving its stamped
+		// oid + content_hash, so the live update marks an oid-bearing block (the writer
+		// would reject a bad status, so this is a deliberate raw write of the offending
+		// state the operator's edit would have produced).
+		const dirty = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { tasks: Array<Record<string, unknown>> };
+		dirty.tasks[0].status = "not-a-valid-status";
+		fs.writeFileSync(blockDest, JSON.stringify(dirty, null, 2));
+
+		updateContext(tmpRoot); // → blocked + markers
+		assert.ok(/^<{7} BLOCKED tasks /m.test(fs.readFileSync(blockDest, "utf-8")), "markers written");
+
+		// Fix TASK-001's status back to valid AND change its description (a genuine
+		// content change), keeping every item's stamped oid + content_hash on the wire
+		// (the writer re-stamps from the on-disk prior index — the stripped marker-free
+		// file CHANGE 3 raw-writes before the commit). TASK-002 is left untouched.
+		const fixedBlock = {
+			schema_version: "1.0.0",
+			tasks: [{ ...beforeItems[0], description: "fixed", status: "planned" }, { ...beforeItems[1] }],
+		};
+		fs.writeFileSync(blockDest, JSON.stringify(fixedBlock, null, 2));
+		const res = resolveBlocked(tmpRoot, "tasks");
+		assert.equal(res.resolved, true, "the corrected block resolves");
+
+		const afterItems = (JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { tasks: Array<Record<string, unknown>> })
+			.tasks;
+		for (const t of afterItems) {
+			assert.equal(t.oid, oidBefore.get(t.id as string), `${t.id} oid preserved across the marker round-trip`);
+		}
+		const fixed = afterItems.find((t) => t.id === "TASK-001");
+		const sibling = afterItems.find((t) => t.id === "TASK-002");
+		// The fixed item genuinely changed → its content_parent advances to the prior
+		// on-disk content_hash (= the seeded hash CHANGE 3 preserved across the round-trip).
+		assert.equal(
+			fixed?.content_parent,
+			hashBefore.get("TASK-001"),
+			"the fixed item's content_parent = its prior content_hash",
+		);
+		// The untouched sibling's content_hash is unchanged (a real no-re-mint round-trip).
+		assert.equal(
+			sibling?.content_hash,
+			hashBefore.get("TASK-002"),
+			"the untouched sibling's content_hash is unchanged",
+		);
+	});
+
+	it("string-brace targeting: braces inside string values do not mis-place the marker", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		// description carries literal braces/brackets in its STRING value; status is the
+		// failing field. A naive brace counter would over-count depth and mis-locate the
+		// item; the string-aware lexer must still target the status line.
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [
+			{ id: "TASK-001", description: "weird { [ } ] braces", status: "not-a-valid-status" },
+		]);
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		updateContext(tmpRoot);
+		const lines = fs.readFileSync(blockDest, "utf-8").split("\n");
+		const openIdx = lines.findIndex((l) => /^<{7} BLOCKED tasks /.test(l));
+		assert.ok(openIdx >= 0, "a sentinel was written");
+		assert.ok(
+			/"status"\s*:/.test(lines[openIdx + 1] ?? ""),
+			"the sentinel targets the status line despite string braces",
+		);
+	});
+
+	it("re-run while marked: a second live update retains the entry + premarker_hash and does not double-mark", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		updateContext(tmpRoot); // first mark
+		const firstText = fs.readFileSync(blockDest, "utf-8");
+		const firstHash = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0]?.premarker_hash;
+		assert.ok(firstHash, "first run pinned a premarker_hash");
+		const openCountFirst = (firstText.match(/^<{7} BLOCKED/gm) ?? []).length;
+
+		updateContext(tmpRoot); // second run over the still-marked block
+		const secondText = fs.readFileSync(blockDest, "utf-8");
+		const secondHash = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0]?.premarker_hash;
+		assert.equal(secondHash, firstHash, "the premarker_hash is retained across a re-run");
+		const openCountSecond = (secondText.match(/^<{7} BLOCKED/gm) ?? []).length;
+		assert.equal(openCountSecond, openCountFirst, "the block is not double-marked on a re-run");
+		// And the original pre-marker bytes are still restorable from the retained pin.
+		const obj = getObject(path.join(tmpRoot, ".project"), secondHash as string) as { bytes?: string } | null;
+		assert.ok(JSON.parse(obj?.bytes ?? "null"), "the pinned pre-marker bytes parse as the original JSON block");
+	});
+
+	it("reader behavior on a marked block: readBlock throws invalid-JSON; validate-block-items degrades gracefully", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+		updateContext(tmpRoot); // marks the block
+		assert.throws(
+			() => readBlock(tmpRoot, "tasks"),
+			/Invalid JSON in block file/,
+			"readBlock surfaces a labeled parse error on a marked block",
+		);
+		const v = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(v.valid, false, "validate-block-items degrades to invalid on a marked (unparseable) block, no throw");
+		assert.ok(v.failures.length >= 1, "it returns a failure rather than throwing");
 	});
 
 	it("no-write-on-fail: a still-failing block resolves false, all files byte-unchanged, pending intact", () => {

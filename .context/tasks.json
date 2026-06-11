@@ -1004,7 +1004,7 @@
     },
     {
       "description": "Behavior-preserving refinement of the update/marker machinery. (1) Extract the triplicated in-memory migration-registry seeding into one helper in migration-registry-loader.ts — buildFreshRegistryWithChain(substrateDir, chain): substrate on-disk decls + the extra chain decls, deduped on (schemaName, fromVersion) with the substrate decl winning, cache-untouched — and swap the three call sites (simulateResyncOutcome, validateBlockItemsAgainstCatalog, resolveBlocked). The on-disk appendMigrationDeclForDir loops and the live path's cache-warming getProjectMigrationRegistryForDir are a different operation and stay untouched. (2) Hoist the marker sentinel-line pattern (/^(<{7}|>{7})/, inlined at four detection/strip sites) into one named module constant kept in lockstep with the tokens composeMarkerText emits.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/migration-registry-loader.ts",
         "packages/pi-context/src/index.ts"
@@ -1020,7 +1020,8 @@
       "notes": "Refinement debt surfaced by the post-TASK-052 code-simplifier evaluation and confirmed by investigation: the three seeding blocks are behaviorally identical (same dedup, same substrate-wins precedence, same error posture; the loop-vs-spread spelling is cosmetic); the sentinel regex is the invariant most likely to break silently under future edits. Internal-only — no exported-surface, op, or schema change.",
       "id": "TASK-053",
       "oid": "1d9d2ff832fac03de7650caef78d8d96",
-      "content_hash": "aa041f6565f8716d35b00c35b8224ed860aa23087d1aa22b4113dc6cef9e0ec8"
+      "content_hash": "84d4e0289e1fb180e9e4b2ddfc2515be7757542960a87d658d988b0286324a23",
+      "content_parent": "aa041f6565f8716d35b00c35b8224ed860aa23087d1aa22b4113dc6cef9e0ec8"
     }
   ]
 }

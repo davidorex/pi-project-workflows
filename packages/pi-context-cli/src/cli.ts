@@ -771,6 +771,7 @@ const HELP_GROUPS: HelpGroup[] = [
 				"context-edges-for-lens",
 				"context-lens-view",
 				"context-status",
+				"context-check-status",
 				"context-current-state",
 				"context-bootstrap-state",
 				"context-validate",

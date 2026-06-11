@@ -1433,6 +1433,23 @@ export interface CheckStatusAsset {
 	baseline_version?: string;
 	catalog_version?: string;
 	installed_modified?: boolean;
+	/**
+	 * True for an asset whose CATALOG copy has moved past the install baseline
+	 * (states `catalog-ahead` / `both-diverged`) — i.e. the installed schema is
+	 * behind the catalog. Absent (undefined) on not-behind assets. (FGAP-078 /
+	 * STORY-007: "report which installed schemas are behind the catalog".)
+	 */
+	behind?: boolean;
+	/**
+	 * The version gap for a `behind` asset (FGAP-078). `from`/`to` are the
+	 * baseline and catalog versions (either may be undefined when a schema body
+	 * omits `version`). `basis` distinguishes a declared version bump
+	 * (`from !== to`, both present) from a content-only drift (same or
+	 * undefined versions, yet the content hash moved — `catalog-ahead` is a hash
+	 * comparison, so a behind asset can have an unchanged version string).
+	 * Absent (undefined) on not-behind assets.
+	 */
+	version_delta?: { from?: string; to?: string; basis: "version-bump" | "content-only" };
 }
 
 /**
@@ -1541,12 +1558,33 @@ export function checkStatus(cwd: string): CheckStatusReport {
 			}
 		}
 
+		// FGAP-078 / STORY-007: surface, per asset, whether the catalog has moved
+		// past the install baseline and by what version gap. Computed AFTER the
+		// classification arm above (the arm is unchanged). `behind` is true exactly
+		// for the catalog-moved states; the version delta carries the baseline →
+		// catalog version pair and a `basis` that records whether the catalog drift
+		// was a declared version bump or a content-only change (catalog-ahead is a
+		// hash comparison, so the version string can be unchanged while the body moved).
+		const behind = state === "catalog-ahead" || state === "both-diverged";
+		const baselineVersion = baselineAsset?.version;
+		const versionDelta: CheckStatusAsset["version_delta"] | undefined = behind
+			? {
+					from: baselineVersion,
+					to: catalogVersion,
+					basis:
+						baselineVersion !== undefined && catalogVersion !== undefined && baselineVersion !== catalogVersion
+							? "version-bump"
+							: "content-only",
+				}
+			: undefined;
+
 		perAsset.push({
 			name,
 			state,
-			baseline_version: baselineAsset?.version,
+			baseline_version: baselineVersion,
 			catalog_version: catalogVersion,
 			installed_modified,
+			...(behind ? { behind: true, version_delta: versionDelta } : {}),
 		});
 	}
 
@@ -1578,9 +1616,21 @@ export function renderCheckStatus(report: CheckStatusReport): string {
 		"missing-installed",
 	];
 	for (const state of order) {
-		const names = report.perAsset.filter((a) => a.state === state).map((a) => a.name);
-		if (names.length === 0) continue;
-		lines.push(`  ${state} (${names.length}): ${names.join(", ")}`);
+		const assets = report.perAsset.filter((a) => a.state === state);
+		if (assets.length === 0) continue;
+		// For a behind asset (catalog-ahead / both-diverged) annotate the name with
+		// the version gap: `name (1.0.0 -> 1.0.1)` for a declared bump, or
+		// `name (1.0.1, content changed)` / `name (content changed)` (versions
+		// undefined) for a content-only drift — so the version pair is scannable
+		// inline (FGAP-078 / STORY-007).
+		const labels = assets.map((a) => {
+			if (!a.behind || !a.version_delta) return a.name;
+			const { from, to, basis } = a.version_delta;
+			if (basis === "version-bump") return `${a.name} (${from} -> ${to})`;
+			const v = to ?? from;
+			return v !== undefined ? `${a.name} (${v}, content changed)` : `${a.name} (content changed)`;
+		});
+		lines.push(`  ${state} (${assets.length}): ${labels.join(", ")}`);
 	}
 	if (report.perAsset.length === 0) {
 		lines.push("  (no installed schemas declared — nothing to compare)");

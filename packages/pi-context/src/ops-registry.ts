@@ -67,6 +67,7 @@ import { gatherExecutionContext } from "./execution-context.js";
 // closures (lazy), never at this module's top level.
 import {
 	archiveSubstrate,
+	checkStatus,
 	initProject,
 	listSubstrates,
 	resolveBlocked,
@@ -930,6 +931,19 @@ export const ops: OpDefinition[] = [
 		run(cwd: string, _params: Record<string, never>): OpResult {
 			const result = contextState(cwd);
 			return { json: result };
+		},
+	},
+	{
+		name: "context-check-status",
+		label: "Context Check Status",
+		description:
+			"Read-only installed-vs-catalog schema drift report — per installed schema the drift state, the baseline and catalog versions, and for behind schemas (catalog-ahead / both-diverged) the version delta (baseline -> catalog) or the content-only basis when the version string is unchanged. The front of the check-status -> update --dryRun -> update sequence; writes nothing.",
+		promptSnippet: "Report installed-vs-catalog schema drift + the version gap for behind schemas (read-only)",
+		examples: [`pi-context context-check-status --json`],
+		parameters: Type.Object({}),
+		surface: "use",
+		run(cwd: string, _params: Record<string, never>): OpResult {
+			return { json: checkStatus(cwd) };
 		},
 	},
 	{

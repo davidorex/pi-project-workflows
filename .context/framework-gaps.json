@@ -2520,7 +2520,7 @@
     },
     {
       "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "On a blocked schema update writes nothing into the block: the failure is visible only in a CLI report, and the blocked contract leaves the block byte-unchanged (index.ts:491-508). The operator opens the block and sees no marking of the offending items or fields.",
@@ -2546,7 +2546,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:03:03.956Z",
       "oid": "c51cb146f1a01db985597d4b70a6a2e4",
-      "content_hash": "0c32aae353632de0d43ccc06e3b5aa508158a2969413ef54b74c03757be4cfc6"
+      "content_hash": "c3294895f241552f629fd32977c2ee3b2fbd0e107b9a4f758b737a715c67504d",
+      "closed_by": "VER-041 / TASK-052 — git-style in-file failure markers are the default behavior of a live validation-failed block: full-line sentinels at the offending items/fields (string-aware placement), the pre-marker block pinned to the object store and restored byte-exact, resolve-blocked strips on a passing resolution and refuses while the named violations persist, item identity preserved across the round-trip; dry and no-chain runs write nothing; schema and migrations.json byte-unchanged on every path.",
+      "closed_at": "2026-06-11T16:00:00.000Z",
+      "content_parent": "0c32aae353632de0d43ccc06e3b5aa508158a2969413ef54b74c03757be4cfc6"
     },
     {
       "title": "Invariant engine cannot express exists-a-complete-advancer rules — no aggregate-over-incoming-edges invariant class",
@@ -2687,6 +2690,27 @@
       "created_at": "2026-06-10T22:20:41.734Z",
       "oid": "bde73d76c6af1ea31a585e00bfa17674",
       "content_hash": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2"
+    },
+    {
+      "title": "A block whose array key holds a non-array value takes the no-items resync path and migrates without validation",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "A block file whose declared array key holds a non-array value (e.g. tasks: {}) is treated as having no items by the resync hasItems probe, so a catalog-ahead version bump resyncs it as migrated without validating the malformed content against the new schema — it never blocks, never marks. Uninvestigated — root cause confirmation, the class across the resync/validate surface, and prior-art are for the investigating agent.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "the resyncSchema hasItems probe (forEachBlockArray over the parsed block) yields no items for a non-array value at the array key; the no-items arm returns migrated without running validate"
+        }
+      ],
+      "impact": "A malformed block silently passes a version bump unvalidated; the blocked/marker diagnostic surface never engages for it.",
+      "canonical_vocabulary": "non-array block content on resync",
+      "proposed_resolution": "To be determined by the investigation (Experience-Gap Handling): whether the no-items arm must distinguish absent/empty arrays from malformed non-array content, and the class across every consumer of the hasItems probe.",
+      "id": "FGAP-087",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-11T12:10:45.615Z",
+      "oid": "9630b64f2a71eafa06e2534a003662e7",
+      "content_hash": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7"
     }
   ]
 }

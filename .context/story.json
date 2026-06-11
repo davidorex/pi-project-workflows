@@ -168,29 +168,31 @@
     },
     {
       "title": "In-file git-style failure markers at offending items/fields",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, when update blocks a schema, I expect failure markers written INTO the block file at the offending items and fields — the way git merge writes conflict markers into source files — so I open the block and see the problem inline, not only in a CLI report.",
       "id": "STORY-013",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:40:38.191Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:40:38.191Z",
+      "modified_at": "2026-06-11T12:10:00.552Z",
       "oid": "9a32baf5683f1b165516ecdd57f4ed2d",
-      "content_hash": "3bf37e2eae9dd01ee702f99f2b98462867ac891e3753cce669cc4c85d39b3ca4"
+      "content_hash": "4cecd1249b249ee5dda8e7fa77560e40b7fc94f03822ec4634dc14db81748d06",
+      "content_parent": "3bf37e2eae9dd01ee702f99f2b98462867ac891e3753cce669cc4c85d39b3ca4"
     },
     {
       "title": "resolve-blocked / update --continue re-validates + advances",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, when I've fixed the in-file markers for a blocked schema, I expect a single command — resolve-blocked or update --continue — that re-validates the block against the target schema, advances the merge base, and writes the new schema file. The git model: fix conflicts → git add → git merge --continue.",
       "id": "STORY-014",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:40:49.284Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:40:49.284Z",
+      "modified_at": "2026-06-11T12:10:16.297Z",
       "oid": "a75f9a0fd7c1af06f2db6843aa87bd8c",
-      "content_hash": "26715fcc1eb17cff23b81f748a675345acc5044f187b07492057e18ac4a4ba8b"
+      "content_hash": "3b0ef3cac37bd3f7dec9f6b3dbab5dd1dc9bcb60f982e3dbb150ca63474ef757",
+      "content_parent": "26715fcc1eb17cff23b81f748a675345acc5044f187b07492057e18ac4a4ba8b"
     }
   ]
 }

@@ -1,0 +1,16 @@
+{
+  "description": "Expose check-status as a reflected CLI op and report the version gap — closes FGAP-030 + FGAP-078. Add the context-check-status op (run -> checkStatus(cwd), the existing CheckStatusReport) so the drift report is reachable from the reflecting CLI, and extend the report/render to state, per behind schema, the baseline->catalog version delta — covering content-only drift (catalog-ahead is a hash comparison; a schema can be behind with no version-number change). One surface: the checkStatus report + its render + the op entry.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "acceptance_criteria": [
+    "pi-context context-check-status --json returns the per-asset drift report (name, state, baseline_version, catalog_version) for every installed schema.",
+    "The report names which schemas are behind the catalog and the version delta (e.g. 1.0.0 -> 1.0.1); a content-only-drift schema (same version, different content) is reported behind with the basis stated.",
+    "The in-pi /context check-status render carries the same version-gap information (renderCheckStatus no longer drops the version fields).",
+    "checkStatus classification logic is unchanged (reporting only); build + check + full test green; parity-check exit 0; runtime demo against a catalog-ahead substrate; fresh adversarial probe.",
+    "FGAP-030 + FGAP-078 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-030 + FGAP-078 (same surface: the drift report + its exposure); advances STORY-007. Independent of the other slices."
+}

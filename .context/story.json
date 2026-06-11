@@ -86,16 +86,17 @@
     },
     {
       "title": "check-status reports schemas behind catalog + version gap",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want check-status to report which installed schemas are behind the catalog, and by what version gap.",
       "id": "STORY-007",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:26.513Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-10T10:39:26.513Z",
+      "modified_at": "2026-06-11T22:31:04.648Z",
       "oid": "5416b2fe0f959e8942f3dd8993c5900f",
-      "content_hash": "08868195908161dc2df2b3e36d114175e45afc1fcc70339e71032ff69483e36e"
+      "content_hash": "0d2f41b900f369d17896b25e43b1127ba08c11e2af1ccbe718e77375e11a948c",
+      "content_parent": "08868195908161dc2df2b3e36d114175e45afc1fcc70339e71032ff69483e36e"
     },
     {
       "title": "dryRun runs real forward-migration + re-validation",

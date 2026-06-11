@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-12T10:00:00.000Z",
+  "evidence": "TASK-049 verified end-to-end; closes FGAP-030 + FGAP-078. The drift report is a reflected op: context-check-status (zero params, surface use, the context-status template) returns { json: checkStatus(cwd) } — per installed schema the drift state, baseline_version, catalog_version, and the additive reporting fields behind (true iff state is catalog-ahead or both-diverged) and version_delta ({from, to, basis: version-bump | content-only}; basis is version-bump iff both versions present and differ — catalog-ahead is a hash comparison, so behind at equal versions reports the content-only basis). Not-behind assets carry neither field (wire-absent, probe-verified after a JSON round-trip). The classification arm is byte-identical (probe diffed the function across the commit: empty diff through the if/else arm; the existing classification tests untouched, additions only). renderCheckStatus keeps the state grouping + Total and annotates behind names inline — name (1.0.0 -> 1.0.1) for a version bump, name (1.0.1, content changed) for content-only, graceful when a version is undefined; the in-pi /context check-status handler renders the same report. The op is slotted in Read & query with an example; --json is the single-parse envelope; bare text is the JSON.stringify precedent; zero params confirmed behaviorally (an unknown flag exits 2). Adversarial fixtures verified: version-bump behind, content-only behind (the stale-marker idiom), both-diverged behind, locally-modified NOT behind (fields absent), in-sync/no-baseline/missing-catalog/missing-installed unannotated, the undefined-catalog-version edge (no crash, content-only basis, sane render). Runtime demo: a 1.0.0-vs-1.0.1 substrate answers the operator question on the op, the library, and the render. Gates: build + check + full test fail 0; parity-check exit 0; examples + groupForOp drift guards green; SKILL regen zero-drift, both SKILLs carry the op; READMEs + skill-narrative audited to the version-gap wording; three CHANGELOGs; no substrate ids in shipped md. Fresh adversarial probe (Fable) PASS, zero defects; the verbatim-delta check against the operator story found no qualifier.",
+  "criteria_results": [
+    {
+      "criterion": "pi-context context-check-status --json returns the per-asset drift report (name, state, baseline_version, catalog_version) for every installed schema",
+      "status": "passed",
+      "evidence": "the op envelope on the catalog-ahead fixture; the context-status template; zero params"
+    },
+    {
+      "criterion": "the report names which schemas are behind the catalog and the version delta; content-only drift is reported behind with the basis stated",
+      "status": "passed",
+      "evidence": "behind + version_delta fields; version-bump and content-only fixtures both probe-verified; both-diverged included, locally-modified excluded"
+    },
+    {
+      "criterion": "the in-pi check-status render carries the same version-gap information",
+      "status": "passed",
+      "evidence": "renderCheckStatus annotates behind names inline both bases; the handler wires the same report"
+    },
+    {
+      "criterion": "checkStatus classification logic is unchanged (reporting only)",
+      "status": "passed",
+      "evidence": "the probe's byte-diff of the function across the commit: classification arm identical; existing tests untouched"
+    },
+    {
+      "criterion": "build + check + full test green; parity-check exit 0; runtime demo against a catalog-ahead substrate; fresh adversarial probe",
+      "status": "passed",
+      "evidence": "all gates 0; the 1.0.0->1.0.1 demo on op/library/render; probe PASS zero defects"
+    }
+  ]
+}

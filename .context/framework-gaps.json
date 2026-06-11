@@ -1087,7 +1087,7 @@
     },
     {
       "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "The pure-read schema-drift report (checkStatus in packages/pi-context/src/index.ts, rendered by renderCheckStatus) is surfaced ONLY as the /context check-status command handler (CONTEXT_SUBCOMMANDS in index.ts). There is no OpDefinition for it in the op-registry, and the reflecting pi-context-cli only surfaces surface:\"use\" ops — so check-status is unreachable from the CLI (a human or agent driving node packages/pi-context-cli/dist/bin.js cannot get the drift report). This is at odds with the CLI-parity direction (R-0003) and inconsistent with how /context status pairs with the context-status op. checkStatus is pure-read (returns CheckStatusReport, writes nothing), so it is a clean op candidate with no writer-classification or cap concerns.",
@@ -1112,8 +1112,10 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-030",
       "oid": "78ac46a06f4b91e021f3b0a7ba0e1533",
-      "content_hash": "46b60576f92717a1205365485664b06e794ff1f3e430c3197f836cc94b3664ed",
-      "content_parent": "93bc0ee89efb54cb753fff286763c3f5d0056d4f3f14fb4663162f06eab49f6a"
+      "content_hash": "a6b04e43b5c10a2d6b3d2e1c9eb49062accb3cecfe51d7616ca5147abd81323b",
+      "content_parent": "46b60576f92717a1205365485664b06e794ff1f3e430c3197f836cc94b3664ed",
+      "closed_by": "VER-043 / TASK-049 — the drift report is the reflected context-check-status op (zero params, the context-status template): per installed schema the drift state, baseline and catalog versions, and for behind schemas the version delta or content-only basis; slotted in Read & query with an example; --json carries the structured report.",
+      "closed_at": "2026-06-12T10:00:00.000Z"
     },
     {
       "title": "Target state: invoke pi-context-cli as the first-class `pi-context` command, not `node .../dist/bin.js`",
@@ -2428,7 +2430,7 @@
     },
     {
       "title": "check-status reports no version gap — which schemas are behind the catalog, and by how much, is not surfaced",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "checkStatus computes baseline_version and catalog_version per asset (CheckStatusAsset), but renderCheckStatus prints only the per-state name buckets and drops the version fields, and check-status is reachable only as an in-pi command (no CLI op — FGAP-030). No surface reports which schemas are behind the catalog or the version delta. A behind-by-version readout must also cover content-only drift: catalog-ahead is a content-hash comparison, so a schema can be behind with no version-number change.",
@@ -2453,7 +2455,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:44.761Z",
       "oid": "dcc2f8ed71723eb06e5c2f887faafa6b",
-      "content_hash": "cab803e0081cb9972f406347cf338a0be95a8851de782795971bcf627002364d"
+      "content_hash": "969e232797f46394bc5929a6cf29e3e269e3ac2561c9c925af28cc382bb85bb3",
+      "closed_by": "VER-043 / TASK-049 — checkStatus reports the version gap: additive per-asset behind + version_delta fields (basis version-bump or content-only — catalog-ahead is a hash comparison, so behind at equal versions states the content basis), and renderCheckStatus annotates behind names inline with the delta; the classification arm byte-unchanged.",
+      "closed_at": "2026-06-12T10:00:00.000Z",
+      "content_parent": "cab803e0081cb9972f406347cf338a0be95a8851de782795971bcf627002364d"
     },
     {
       "title": "Catalog schema is not locally diffable — no sidecar or fetch surfaces the schema body, only a projection",

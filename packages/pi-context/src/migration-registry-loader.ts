@@ -244,6 +244,39 @@ export function buildRegistryFromSubstrateForDir(substrateDir: string): Migratio
 	return reg;
 }
 
+/**
+ * The chain-merging sibling of `buildRegistryFromSubstrateForDir`: build a
+ * fresh MigrationRegistry seeded from the substrate's persisted decls PLUS an
+ * in-memory `chain` of catalog edges, deduped on (schemaName, fromVersion).
+ * Existing decls are seeded first so the substrate decl WINS a key collision
+ * with a chain edge — `createRegistry().register` throws on a duplicate
+ * (schemaName, fromVersion), so each key is registered at most once.
+ *
+ * Aims to centralize the registry-seeding shape that the read-only update /
+ * diagnostic paths (resync simulation, catalog validation, blocked
+ * resolution) each constructed inline. Touches neither the registry cache nor
+ * disk: those paths intentionally need a FRESH registry so they never warm the
+ * project's cached `getProjectMigrationRegistryForDir` entry from a read-only
+ * operation.
+ */
+export function buildFreshRegistryWithChain(substrateDir: string, chain: MigrationDecl[]): MigrationRegistry {
+	const reg = createRegistry();
+	const seeded = new Set<string>();
+	const existing = loadMigrationsFileForDir(substrateDir);
+	for (const decl of [...(existing?.migrations ?? []), ...chain]) {
+		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		if (seeded.has(key)) continue;
+		reg.register({
+			schemaName: decl.schemaName,
+			fromVersion: decl.fromVersion,
+			toVersion: decl.toVersion,
+			migrate: migrationFnFor(decl),
+		});
+		seeded.add(key);
+	}
+	return reg;
+}
+
 export function buildRegistryFromSubstrate(cwd: string): MigrationRegistry {
 	return buildRegistryFromSubstrateForDir(resolveContextDir(cwd));
 }

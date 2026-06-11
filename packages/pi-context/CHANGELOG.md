@@ -5,6 +5,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 ## [Unreleased]
 
 ### Changed
+- Internal refactor (usage unchanged): the in-memory migration-registry seeding shared by the read-only update/diagnostic paths is centralized in one `buildFreshRegistryWithChain` helper, and the git-style block-marker sentinel tokens are defined once as named constants the writer and detectors derive from.
 - A repeat live `update` over a block that already carries failure markers retains the existing pending-blocked entry whole (the per-item failures, the migration chain, and the pre-marker restore reference) — the re-run report keeps the per-item diagnostic. The blocked report claims markers were written only for schemas where they actually were; dry-run and no-migration-chain reports carry no write claim.
 
 ### Documentation

@@ -1001,6 +1001,26 @@
       "oid": "b014aeaada390c1a3d37b1467afdd81f",
       "content_hash": "69f9a8bb42cc858ad199c996cfef46121a927a3b24752ab1ac3cda7780261a3f",
       "content_parent": "fb4816e687585f846430813329e4ea352478f6ccf23a06915d6b55bf8e0863cd"
+    },
+    {
+      "description": "Behavior-preserving refinement of the update/marker machinery. (1) Extract the triplicated in-memory migration-registry seeding into one helper in migration-registry-loader.ts — buildFreshRegistryWithChain(substrateDir, chain): substrate on-disk decls + the extra chain decls, deduped on (schemaName, fromVersion) with the substrate decl winning, cache-untouched — and swap the three call sites (simulateResyncOutcome, validateBlockItemsAgainstCatalog, resolveBlocked). The on-disk appendMigrationDeclForDir loops and the live path's cache-warming getProjectMigrationRegistryForDir are a different operation and stay untouched. (2) Hoist the marker sentinel-line pattern (/^(<{7}|>{7})/, inlined at four detection/strip sites) into one named module constant kept in lockstep with the tokens composeMarkerText emits.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/migration-registry-loader.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "buildFreshRegistryWithChain lives in migration-registry-loader.ts beside buildRegistryFromSubstrateForDir; the three former seeding blocks in index.ts call it; no in-memory createRegistry + seed-merge block remains at a call site.",
+        "The helper preserves the exact semantics: existing substrate decls first (substrate wins on a key collision), dedup key `${schemaName} ${fromVersion}`, migrationFnFor per decl, no cache warming, no disk writes.",
+        "The on-disk register loops in resyncSchema and resolveBlocked and the live getProjectMigrationRegistryForDir call are byte-unchanged.",
+        "The marker sentinel pattern is defined once as a named constant used by every detection and strip site; composeMarkerText's emitted sentinel tokens and the constant cannot drift independently (one source).",
+        "Behavior-preserving: the full test suite passes UNCHANGED (no test edits needed); build + check + parity-check green; a runtime blocked -> markers -> fix -> resolve-blocked -> in-sync loop still converges.",
+        "Fresh adversarial probe confirms zero behavioral drift (the three registry paths, the marker detect/strip sites)."
+      ],
+      "notes": "Refinement debt surfaced by the post-TASK-052 code-simplifier evaluation and confirmed by investigation: the three seeding blocks are behaviorally identical (same dedup, same substrate-wins precedence, same error posture; the loop-vs-spread spelling is cosmetic); the sentinel regex is the invariant most likely to break silently under future edits. Internal-only — no exported-surface, op, or schema change.",
+      "id": "TASK-053",
+      "oid": "1d9d2ff832fac03de7650caef78d8d96",
+      "content_hash": "aa041f6565f8716d35b00c35b8224ed860aa23087d1aa22b4113dc6cef9e0ec8"
     }
   ]
 }

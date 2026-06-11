@@ -11,6 +11,7 @@ import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.j
 import {
 	checkStatus,
 	installContext,
+	renderBlocked,
 	resolveBlocked,
 	resolveConflict,
 	updateContext,
@@ -1560,7 +1561,20 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		const liveDetailDir = makeCatalogAheadTasks("1.0.0", [badItem]);
 		const liveDetail = updateContext(liveDetailDir).blockedDetail;
 		fs.rmSync(liveDetailDir, { recursive: true, force: true });
-		assert.deepEqual(dryDetail, liveDetail, "TASK-048: dry blockedDetail == live blockedDetail (validation-failed)");
+		// TASK-052 / FGAP-081 FIX 2: the live run inscribes markers and records premarker_hash
+		// on its blockedDetail (the write attestation renderBlocked keys its past-tense claim
+		// on); the dry preview writes nothing and carries no premarker_hash — an INTENDED
+		// divergence. The TASK-048 diagnostic detail (reason + version pair + per-item failures)
+		// must still be identical, so compare with premarker_hash stripped, then assert the
+		// attestation is present live / absent dry.
+		const strip = (ds: typeof dryDetail) => ds.map(({ premarker_hash, ...rest }) => rest);
+		assert.deepEqual(
+			strip(dryDetail),
+			strip(liveDetail),
+			"TASK-048: dry blockedDetail == live blockedDetail diagnostic (validation-failed), premarker_hash aside",
+		);
+		assert.ok(!dryDetail[0]?.premarker_hash, "FIX 2: dry preview carries no premarker_hash (nothing written)");
+		assert.ok(liveDetail[0]?.premarker_hash, "FIX 2: the live run records premarker_hash (markers written)");
 		assert.equal(dryDetail.length, 1, "one blocked-schema detail entry");
 		const d = dryDetail[0];
 		assert.equal(d.name, "tasks");
@@ -2048,19 +2062,99 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
 		updateContext(tmpRoot); // first mark
 		const firstText = fs.readFileSync(blockDest, "utf-8");
-		const firstHash = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0]?.premarker_hash;
+		const firstEntry = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0];
+		const firstHash = firstEntry?.premarker_hash;
 		assert.ok(firstHash, "first run pinned a premarker_hash");
 		const openCountFirst = (firstText.match(/^<{7} BLOCKED/gm) ?? []).length;
 
-		updateContext(tmpRoot); // second run over the still-marked block
+		const second = updateContext(tmpRoot); // second run over the still-marked block
 		const secondText = fs.readFileSync(blockDest, "utf-8");
-		const secondHash = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0]?.premarker_hash;
+		const secondEntry = loadPendingBlockedForDir(path.join(tmpRoot, ".project"))?.entries[0];
+		const secondHash = secondEntry?.premarker_hash;
 		assert.equal(secondHash, firstHash, "the premarker_hash is retained across a re-run");
+		// FIX 1: the whole entry is retained — not just premarker_hash. The re-run's
+		// freshly-built candidate would have degraded `failures` (re-derived from the
+		// marker-bearing, non-JSON block file → a synthetic envelope-level "must be
+		// object" failure); the retained entry carries the genuine per-item failures.
+		assert.deepEqual(
+			secondEntry,
+			firstEntry,
+			"the re-run retains the prior pending entry WHOLE (failures/chain/from-to)",
+		);
+		assert.ok(
+			secondEntry?.failures?.some((f) => f.itemId === "TASK-001"),
+			"the retained failures name the offending item (not the degraded must-be-object placeholder)",
+		);
+		assert.ok(
+			!secondEntry?.failures?.some((f) => f.message === "must be object" && f.instancePath === ""),
+			"the degraded envelope-level placeholder is NOT what got persisted",
+		);
+		// And the re-run's result.blockedDetail carries those genuine per-item failures.
+		const detail = second.blockedDetail.find((d) => d.name === "tasks");
+		assert.ok(detail, "the re-run reports tasks as blocked");
+		assert.ok(
+			detail?.failures?.some((f) => f.itemId === "TASK-001"),
+			"the re-run blockedDetail carries the per-item failures, not the degraded must-be-object placeholder",
+		);
+		assert.ok(detail?.premarker_hash, "the re-run blockedDetail carries premarker_hash (markers are present)");
 		const openCountSecond = (secondText.match(/^<{7} BLOCKED/gm) ?? []).length;
 		assert.equal(openCountSecond, openCountFirst, "the block is not double-marked on a re-run");
 		// And the original pre-marker bytes are still restorable from the retained pin.
 		const obj = getObject(path.join(tmpRoot, ".project"), secondHash as string) as { bytes?: string } | null;
 		assert.ok(JSON.parse(obj?.bytes ?? "null"), "the pinned pre-marker bytes parse as the original JSON block");
+	});
+
+	// FIX 2: renderBlocked's past-tense "markers were written INTO the block file(s)"
+	// claim is keyed on the per-entry premarker_hash — present ONLY when a live update
+	// actually inscribed markers. A dryRun preview (writes nothing) and a
+	// no-migration-chain entry (never marked) must NOT claim a write that did not happen.
+	it("render: a dryRun blocked report does NOT claim markers were written", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeCatalogAheadTasks(tmpRoot, "1.0.0", [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }]);
+		const blockDest = path.join(tmpRoot, ".project", "tasks.json");
+		const blockBefore = fs.readFileSync(blockDest);
+
+		const preview = updateContext(tmpRoot, { dryRun: true });
+		// Precondition: dryRun wrote nothing — the block file carries no sentinels.
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "dryRun leaves the block file byte-unchanged");
+		const detail = preview.blockedDetail.find((d) => d.name === "tasks");
+		assert.ok(detail, "the dryRun plan surfaces tasks as blocked");
+		assert.ok(!detail?.premarker_hash, "no premarker_hash on a dryRun blocked entry (nothing was written)");
+
+		const out = renderBlocked(preview.blockedDetail);
+		assert.match(out, /Schema resync blocked/, "the blocked header is present");
+		assert.doesNotMatch(out, /were written INTO/i, "a dryRun report does NOT claim markers were written");
+		assert.match(out, /No markers were written/, "it surfaces the neutral fix-then-resolve guidance");
+	});
+
+	it("render: a no-migration-chain-only report does NOT claim markers were written", () => {
+		const out = renderBlocked([{ name: "tasks", reason: "no-migration-chain", from: "1.0.0", to: "2.0.0" }]);
+		assert.match(out, /no migration chain reaches 2\.0\.0 from 1\.0\.0/, "the no-chain reason is named");
+		assert.doesNotMatch(out, /were written INTO/i, "a no-chain entry never carries markers, so no write claim");
+		assert.match(out, /No markers were written/, "it surfaces the neutral guidance");
+	});
+
+	it("render: a marked validation-failed entry (premarker_hash present) DOES claim markers were written", () => {
+		const out = renderBlocked([
+			{
+				name: "tasks",
+				reason: "validation-failed",
+				from: "1.0.0",
+				to: "1.0.1",
+				failures: [
+					{
+						itemId: "TASK-001",
+						instancePath: "/tasks/0/status",
+						keyword: "enum",
+						message: "must be equal to one of the allowed values",
+					},
+				],
+				premarker_hash: "abc123",
+			},
+		]);
+		assert.match(out, /TASK-001/, "the failing item is named");
+		assert.match(out, /were written INTO/i, "a marker-bearing entry truthfully claims markers were written");
+		assert.doesNotMatch(out, /No markers were written/, "the neutral guidance is NOT emitted when markers exist");
 	});
 
 	it("reader behavior on a marked block: readBlock throws invalid-JSON; validate-block-items degrades gracefully", () => {

@@ -4,6 +4,9 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+### Changed
+- A repeat live `update` over a block that already carries failure markers retains the existing pending-blocked entry whole (the per-item failures, the migration chain, and the pre-marker restore reference) — the re-run report keeps the per-item diagnostic. The blocked report claims markers were written only for schemas where they actually were; dry-run and no-migration-chain reports carry no write claim.
+
 ### Documentation
 - Regenerated `skills/pi-context/SKILL.md` for the `update` op's corrected `dryRun` description (the preview now states the precise per-schema outcome — resync / migrate / block — computed by in-memory forward-migration + re-validation).
 - The `update` op's `promptSnippet` now states that a blocked resync persists a pending-blocked record (target catalog schema + the chain reaching it) resolved via `resolve-blocked` once the block's items are fixed — lockstep with the op's `description`.

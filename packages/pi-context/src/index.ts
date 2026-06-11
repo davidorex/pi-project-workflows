@@ -397,6 +397,15 @@ export interface BlockedDetail {
 	from?: string;
 	to?: string;
 	failures?: BlockValidationFailure[];
+	/**
+	 * content_hash of the pinned pre-marker block bytes, set ONLY when the live
+	 * update actually inscribed git-style failure markers into this schema's block
+	 * file (TASK-052 / FGAP-081). `renderBlocked` keys its past-tense "markers were
+	 * written INTO the block file" claim on this field's presence: a dryRun preview
+	 * (writes nothing) and a `no-migration-chain` entry (never marked) leave it
+	 * omitted, so the rendered guidance for those does not falsely claim a write.
+	 */
+	premarker_hash?: string;
 }
 
 /**
@@ -1976,16 +1985,43 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 			if (!fs.existsSync(blockFile)) continue;
 			const rawBytes = fs.readFileSync(blockFile, "utf-8");
 			if (/^(<{7}|>{7})/m.test(rawBytes)) {
-				// Already marked (a re-run): retain the prior entry's restore pin + leave
-				// the marker file untouched (do not re-mark, do not re-pin).
+				// Already marked (a re-run): the freshly-built candidate `entry` is DEGRADED
+				// — its failures were re-derived from the marker-bearing (non-JSON) block file,
+				// which parses to a synthetic envelope-level failure ([{instancePath:"",
+				// keyword:"type",message:"must be object"}]) rather than the genuine per-item
+				// failures. RETAIN the prior pending entry WHOLE (failures, chain, from/to,
+				// reason, blocked_at, premarker_hash) and discard the degraded candidate; the
+				// marker file is left untouched (do not re-mark, do not re-pin). When no prior
+				// entry exists (sentinels present but no sidecar — e.g. a hand-marked file or a
+				// removed sidecar), there is nothing genuine to retain; keep the candidate as-is.
 				const prior = priorPending?.entries.find((e) => e.name === entry.name);
-				if (prior?.premarker_hash) entry.premarker_hash = prior.premarker_hash;
+				if (prior) {
+					const idx = pendingBlockedEntries.indexOf(entry);
+					if (idx >= 0) pendingBlockedEntries[idx] = prior;
+					// Re-derive this run's blockedDetail for the schema from the retained entry
+					// (the per-loop result.blockedDetail push carried the same degraded failures
+					// the candidate did). Carry premarker_hash so renderBlocked can truthfully
+					// assert that markers were written for this entry.
+					const detail = result.blockedDetail.find((d) => d.name === prior.name);
+					if (detail) {
+						detail.reason = prior.reason;
+						detail.from = prior.from;
+						detail.to = prior.to;
+						detail.failures = prior.failures;
+						detail.premarker_hash = prior.premarker_hash;
+					}
+				}
 				continue;
 			}
 			const wrapper = { kind: "raw-block-bytes", block: entry.name, bytes: rawBytes };
 			const premarkerHash = computeContentHash(wrapper);
 			putObject(destRoot, premarkerHash, wrapper);
 			entry.premarker_hash = premarkerHash;
+			// Mirror the pin onto this run's blockedDetail so renderBlocked can truthfully
+			// assert that markers were written for this entry (only marker-bearing entries
+			// carry premarker_hash; dryRun and no-chain entries never reach this arm).
+			const detail = result.blockedDetail.find((d) => d.name === entry.name);
+			if (detail) detail.premarker_hash = premarkerHash;
 			const markerText = composeMarkerText(rawBytes, entry.name, entry.from, entry.to, entry.failures);
 			const tmpPath = `${blockFile}.markers-${process.pid}.tmp`;
 			fs.writeFileSync(tmpPath, markerText);
@@ -2465,18 +2501,19 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
  *     avoid a pi-context → pi-context-cli dependency cycle (render.ts imports this
  *     package). A failure carrying no AJV `keyword` mapping prints its raw message.
  *
- * TASK-052 / FGAP-081: a live `update` that blocks a `validation-failed` resync
- * inscribes git-style failure markers INTO the block file at the offending items; the
- * header and trailing guidance state that truth (open the block file, fix the marked
- * items, then `resolve-blocked` — which strips the markers and re-validates), and that
- * the schema + `migrations.json` stay byte-unchanged (only the block file carries
- * markers). Pure: no I/O, no writes.
+ * TASK-052 / FGAP-081: a LIVE `update` that blocks a `validation-failed` resync
+ * inscribes git-style failure markers INTO the block file at the offending items —
+ * and ONLY then does the trailing guidance claim, in the past tense, that markers
+ * "were written INTO the block file(s)". That claim is keyed on the per-entry
+ * `premarker_hash` (set only when markers were actually inscribed): a dryRun preview
+ * writes nothing and a `no-migration-chain` entry is never marked, so neither carries
+ * `premarker_hash` — for those the report keeps each entry's reason line + neutral
+ * fix-then-resolve guidance WITHOUT the past-tense write claim. In all cases the
+ * schema + `migrations.json` stay byte-unchanged. Pure: no I/O, no writes.
  */
 export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 	const lines: string[] = [];
-	lines.push(
-		"Schema resync blocked — git-style failure markers written into the block file(s) (schema + migrations.json unchanged):",
-	);
+	lines.push("Schema resync blocked (schema + migrations.json unchanged):");
 	if (blockedDetail.length === 0) {
 		lines.push("  (no blocked schemas)");
 		return lines.join("\n");
@@ -2497,9 +2534,20 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 			lines.push(`    ${subject}:${fieldClause} ${describeBlockedFailure(f)}`);
 		}
 	}
-	lines.push(
-		"Git-style failure markers were written INTO the block file(s): open each block file, fix the items between the `<<<<<<< BLOCKED …` / `>>>>>>> target: …` markers, then resolve-blocked --schemaName <name> --yes — it strips the markers, re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
-	);
+	// Past-tense write claim ONLY when at least one entry actually carries markers
+	// (premarker_hash present). Otherwise the resync was refused without inscribing
+	// anything (dryRun preview, or only no-migration-chain entries) — emit neutral
+	// fix-then-resolve guidance that does NOT assert a write that did not happen.
+	const anyMarked = blockedDetail.some((d) => d.premarker_hash);
+	if (anyMarked) {
+		lines.push(
+			"Git-style failure markers were written INTO the block file(s): open each block file, fix the items between the `<<<<<<< BLOCKED …` / `>>>>>>> target: …` markers, then resolve-blocked --schemaName <name> --yes — it strips the markers, re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
+		);
+	} else {
+		lines.push(
+			"No markers were written (preview, or no migration chain to mark against). Resolve a validation-failed block by correcting the offending items in the block file, then resolve-blocked --schemaName <name> --yes — it re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
+		);
+	}
 	return lines.join("\n");
 }
 

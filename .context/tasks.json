@@ -1039,6 +1039,27 @@
       "id": "TASK-054",
       "oid": "eb7d80d82c66f39ac1409303e90e7932",
       "content_hash": "15014af3a00acdc5557c918472e6a05901cd5980cc0e86ab65640d0862e16027"
+    },
+    {
+      "description": "Add a pre-flight committed-substrate check to update — warn or refuse on a dirty substrate — with guidance text naming `git tag` as the restore-point workflow, visible in three places: (1) the runtime dirty-substrate message printed by update says \"commit or git tag first to keep a restore point\" — the operator sees it at exactly the moment it matters; (2) the update op's description/promptSnippet in ops-registry, which is also what reflection and SKILL.md render; (3) SKILL.md + READMEs via skill-narrative.md regen and the package/root README update sections, per the normal docs-surface-sync pass. No new doc artifact — the text rides the op's existing strings and the new warning. No substrate-tag op: per DEC-0004 (enacted) git owns refs/snapshots; the substrate including objects/ is git-tracked, so `git tag` before update + `git checkout <tag> -- <substrate-dir>` is the restore workflow.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/README.md",
+        "README.md"
+      ],
+      "acceptance_criteria": [
+        "update performs a pre-flight check that the substrate is committed; on a dirty substrate it warns or refuses, and the runtime message says \"commit or git tag first to keep a restore point.\"",
+        "The update op's description/promptSnippet in ops-registry carry the git-tag restore-point guidance (rendered by --help, reflection, and SKILL.md).",
+        "SKILL.md + the package and root READMEs carry the guidance via skill-narrative.md regen and the README update sections, per docs-surface-sync.",
+        "No new doc artifact; no substrate-tag op."
+      ],
+      "notes": "User-granted G1-derived filing (the operator-story think-out): the safety gap (update mutates with no committed-baseline pre-flight) + the knowledge gap (no surface names the git-tag restore workflow) closed in one item. Prior-art sweep found no existing item covering snapshot/restore or an update pre-flight.",
+      "id": "TASK-055",
+      "oid": "90f33ed68bc91d4eb4901cdf588e8660",
+      "content_hash": "8d8ee9b756f940bc99eec1af3894710d5ddbca3decf31bb73d7e12a1768dfe76"
     }
   ]
 }

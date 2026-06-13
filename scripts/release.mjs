@@ -150,8 +150,19 @@ function checkUnreleasedAgainstChanges() {
 		const watch = watchDirsFromFiles(pkgJson.files ?? [], pkgDir);
 		if (watch.length === 0) continue;
 
-		const logCmd = `git log ${lastTag}..HEAD --format=%h -- ${watch.join(" ")}`;
-		const surfaceCommits = run(logCmd, { silent: true, env: cleanGitEnv() })?.trim() ?? "";
+		const logCmd = `git diff ${lastTag}..HEAD --name-only -- ${watch.join(" ")}`;
+		const changedPaths = (run(logCmd, { silent: true, env: cleanGitEnv() })?.trim() ?? "").split("\n").filter(Boolean);
+		// Exempt non-shipped surface — mirrors check-changelog.ts isExemptSurface:
+		// build-excluded tests + monitor learned-pattern stores.
+		const surfaceCommits = changedPaths
+			.filter(
+				(p) =>
+					!(
+						/\.test\.[cm]?tsx?$/.test(p) ||
+						(p.startsWith("packages/pi-behavior-monitors/examples/") && p.endsWith(".patterns.json"))
+					),
+			)
+			.join("\n");
 		const changelog = readFileSync(join(pkgDir, "CHANGELOG.md"), "utf-8");
 		const body = unreleasedNonBlank(changelog);
 

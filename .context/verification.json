@@ -1229,6 +1229,42 @@
       ],
       "oid": "816b2a82675b937d14ab7bdbc8a93bd5",
       "content_hash": "ae56454e95961b24569a08346416e194c5b2d57d6fe826ed4bc570387c5a48dc"
+    },
+    {
+      "id": "VER-044",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-050 verified end-to-end; closes FGAP-079, advances STORY-010 (the last FEAT-009 slice — 14 of 14 stories met). The read-catalog-schema op fetches and prints the verbatim catalog *.schema.json body for a named kind: readCatalogSchemaText(kindName) resolves the catalog (resolveCatalog samplesRoot + canonical_id->schema_path), reads the raw file via fs.readFileSync untouched, returns the text; the op returns the bare string; the CLI emits it byte-exact on the text surface via a declared verbatimText flag on OpDefinition (no appended trailing newline). Runtime demo on a tmp catalog-ahead substrate (never the live .context): `read-catalog-schema --kind tasks | diff <samples-file> -` is EMPTY (byte-identical — AC2); `| diff <behind installed schema> -` shows only the real drift (version 1.0.0->1.0.1, the added description/files/acceptance_criteria/assigned_agent/notes/oid/content_hash/content_parent, the cancelled enum value) with NO phantom trailing-newline line (AC1 diffable). The body parses to raw JSON Schema (top-level properties + $id), distinct from the read-samples-catalog projection (AC2). Unknown kind throws naming the kind. The read path takes no cwd and reads only the package-bundled samples dir — mutates no installed schema, block, or config (AC3). Iterate-to-zero: the runtime demo found a trailing-newline doubling defect (the CLI print path appended a second \\n, doubling the file's own }\\n to }\\n\\n, surfacing a phantom diff line); fixed by the declared verbatimText flag honored at the single text-emit locus (byte-exact, no append), re-verified (the samples diff is now empty), and a fresh adversarial probe re-audited the whole implementation across 8 vectors — all MET, zero defects. Gates: build + check + full test fail 0; parity-check exit 0; the read-* family auto-slots the op into the CLI Read & query group (groupForOp + examples drift guards green); both SKILLs regenerated carry the op. Fresh adversarial probe PASS zero defects; the verbatim-delta check against STORY-010 + the ACs found no qualifier (the verbatimText flag is an internal mechanism, not a user-facing qualifier).",
+      "criteria_results": [
+        {
+          "criterion": "The operator obtains the catalog schema body for a named kind via a single read-only CLI invocation that fetches and prints it — diffable locally against <substrate>/schemas/<name>.schema.json without touching node_modules.",
+          "status": "passed",
+          "evidence": "pi-context read-catalog-schema --kind tasks prints the body; piped to diff against a behind installed schema it shows only the real drift, no phantom line; package-intrinsic (bundled samples), no node_modules hunt"
+        },
+        {
+          "criterion": "The body is the verbatim catalog *.schema.json (raw JSON Schema: properties/definitions/$id), not the read-samples-catalog projection.",
+          "status": "passed",
+          "evidence": "the op output diffed against samples/schemas/tasks.schema.json is byte-identical (empty diff); parses to top-level properties + $id; the test contrasts it against the projection which carries neither"
+        },
+        {
+          "criterion": "No installed schema, block, or config is mutated by the read path.",
+          "status": "passed",
+          "evidence": "readCatalogSchemaText takes one param (no cwd), reads only the bundled samplesRoot via fs.readFileSync; the op run ignores cwd; the test pins arity 1 + stable repeat reads"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo (fetch + local diff against a catalog-ahead substrate); fresh adversarial probe.",
+          "status": "passed",
+          "evidence": "all gates 0; the tmp catalog-ahead demo (empty samples diff + drift-only installed diff); fresh probe PASS 8 vectors zero defects"
+        },
+        {
+          "criterion": "FGAP-079 closed via verification_verifies_item + complete-task.",
+          "status": "passed",
+          "evidence": "this VER-044 + the verification_verifies_item edge to TASK-050 + complete-task; FGAP-079 closed in the same cascade"
+        }
+      ],
+      "oid": "b893686beb028b9de3b717b2486c330a",
+      "content_hash": "673a430d54ad4a6818db0f96400e2c9b7f8e1106205b88e0f70a11256d9e95dc"
     }
   ]
 }

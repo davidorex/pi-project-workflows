@@ -943,7 +943,7 @@
     },
     {
       "description": "Make the catalog schema locally diffable — closes FGAP-079. Provide the catalog schema BODY to the operator without hunting node_modules: a single read-only reflected op that fetches and prints the catalog schema verbatim (resolveCatalog samplesRoot + kind.schema_path; read-samples-catalog returns only a projection today). No sidecar.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/index.ts"
@@ -958,8 +958,8 @@
       "notes": "Closes FGAP-079; advances STORY-010. Independent of the other slices. Grounding: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md is unrelated; the catalog-access grounding is the user-stories DRAFT + the explore that located resolveCatalog/samplesRoot.",
       "id": "TASK-050",
       "oid": "53a76d00da4a7a4345d9e1066fd73d24",
-      "content_hash": "5e19c41113b56a995997555ea42b07aa7109e482bdd0ec68adb6244f16e357cd",
-      "content_parent": "65988d10114d2069eb788076853765e604b80e258dc165076bb60c510cccea52"
+      "content_hash": "c9bdfc5b25ecd592745744350ced3c85884d75c6947937048b015e435f36276c",
+      "content_parent": "5e19c41113b56a995997555ea42b07aa7109e482bdd0ec68adb6244f16e357cd"
     },
     {
       "description": "Persist a pending-blocked state and add the resolve-blocked / update --continue commit op — closes FGAP-080. When resyncSchema blocks, persist what the rollback currently discards (target schema body/version, the migration chain, the per-item failure set from TASK-048's diagnostic), and add a commit op mirroring resolve-conflict: re-validate the corrected block against the target schema, on success write the new schema via writeSchemaCheckedForDir and advance the merge base via stampBaselineFromBody — so the schema converges and stops re-blocking. The diagnose -> fix -> retry loop, end-to-end, matching the conflicts/resolve-conflict model.",

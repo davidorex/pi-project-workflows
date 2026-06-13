@@ -128,17 +128,17 @@
     },
     {
       "title": "Fetch catalog schema for local diff",
-      "status": "proposed",
+      "status": "complete",
       "user_kind": "cli-user",
       "description": "As an operator, I want a command to fetch the catalog schema, so I can diff locally without hunting through node_modules.",
       "id": "STORY-010",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:39:54.446Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-13T01:43:46.921Z",
+      "modified_at": "2026-06-13T03:21:30.588Z",
       "oid": "6470003cddc705a4398f43a877b09c55",
-      "content_hash": "c7004a8686200e7c34f464efaa31e21225fe00f97339e1cd9bfceba066624ee9",
-      "content_parent": "5f3c180f73129501ed7dd809c07531b54016fc30060b90a00f3e1428cb608a32"
+      "content_hash": "2c3b463aa5045d549be7c877aae2795db56b94ae9227505ae21d9dd587e48969",
+      "content_parent": "c7004a8686200e7c34f464efaa31e21225fe00f97339e1cd9bfceba066624ee9"
     },
     {
       "title": "resolve-conflict-style command advances merge base",

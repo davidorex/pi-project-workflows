@@ -2219,6 +2219,7 @@ test("groupForOp slots representative ops into the right group", () => {
 	assert.equal(groupForOp("remove-relation"), "Relations");
 	assert.equal(groupForOp("write-schema"), "Schema & config");
 	assert.equal(groupForOp("context-init"), "Substrate lifecycle");
+	assert.equal(groupForOp("context-install"), "Substrate lifecycle");
 	assert.equal(groupForOp("complete-task"), "Workflow");
 	assert.equal(groupForOp("context-roadmap-render"), "Workflow");
 });

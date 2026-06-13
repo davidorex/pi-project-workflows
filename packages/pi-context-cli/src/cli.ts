@@ -814,7 +814,14 @@ const HELP_GROUPS: HelpGroup[] = [
 	},
 	{
 		label: "Substrate lifecycle",
-		match: oneOf("context-init", "context-accept-all", "context-switch", "context-list", "context-archive"),
+		match: oneOf(
+			"context-init",
+			"context-accept-all",
+			"context-install",
+			"context-switch",
+			"context-list",
+			"context-archive",
+		),
 	},
 	{
 		label: "Workflow",

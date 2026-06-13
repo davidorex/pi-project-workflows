@@ -1,0 +1,17 @@
+{
+  "description": "Scope the PreToolUse enforcement hooks to the active substrate. Make .claude/hooks/gap-register-guard.sh and .claude/hooks/block-pi-context-glue.sh fire only when the write/invocation targets the active substrate — parse --cwd from the command string (default to the project cwd when absent), resolve .pi-context.json contextDir at that cwd, and guard only active-substrate targets; a write/invocation whose --cwd names a non-active/throwaway substrate passes. The not-installed block-substrate-cli-bypass.sh spec (analysis/2026-06-06-substrate-cli-bypass-prevention-hook-spec.md) is the resource-scoped recognizer pattern. Closes FGAP-089.",
+  "status": "cancelled",
+  "files": [
+    ".claude/hooks/gap-register-guard.sh",
+    ".claude/hooks/block-pi-context-glue.sh"
+  ],
+  "acceptance_criteria": [
+    "gap-register-guard.sh exits 2 (block) on an un-sentineled append-block-item --block tasks with no --cwd (active substrate).",
+    "gap-register-guard.sh exits 0 (pass) on the identical command with --cwd /tmp/<non-active> (a substrate whose .pi-context.json contextDir differs from the project's active contextDir).",
+    "block-pi-context-glue.sh exits 2 on a direct-drive violation (pipe to grep/jq/etc, redirect, or echo-$? glue) against the active substrate, AND exits 0 on the identical violation with --cwd /tmp/<non-active>.",
+    "Active-substrate behavior is unchanged: an un-sentineled active-substrate planning write still blocks; the same write with the `# provenance-reviewed` sentinel passes; reads and non-covered-block writes still pass (no regression).",
+    "End-to-end provable in the TASK-033 /tmp demo: `pi-context append-block-item --block tasks --cwd /tmp/<dir>` succeeds (no guard block), then `pi-context context-validate --cwd /tmp/<dir>` WARNS (not errors) on the unarticulated item.",
+    "FGAP-089 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "User-directed fix-task for FGAP-089 (enforcement hooks scoped by op-shape, not target-substrate). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. The hooks are local gitignored files; the criteria are testable by piping a synthetic tool_input JSON to each hook and checking the exit code. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md."
+}

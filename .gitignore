@@ -1,7 +1,8 @@
 dist/
 docs/
 node_modules/
-.claude/
+.claude/*
+!.claude/hooks/
 .pi/
 .workflow/
 .workflows/

@@ -871,6 +871,74 @@
       "modified_at": "2026-06-09T22:18:47.435Z",
       "oid": "bd4314b1ececae87000027e9f73f7ca6",
       "content_hash": "33fffb2cacd4794f47a24c3f1798f064981cdf23db20644a0787052fcc508045"
+    },
+    {
+      "id": "R-0013",
+      "title": "pi tool surface + how pi-bound bounds/excludes it",
+      "status": "complete",
+      "layer": "L4",
+      "type": "investigative",
+      "question": "What is the full tool surface a pi (sub)agent sees, and by what mechanism does `pi-context pi-bound` narrow/exclude that surface?",
+      "method": "code-inspection of pi-bound.ts + cli.ts + ops-registry.ts + auth-gate.ts + the four extensions' tool registrations + pi-bound.test.ts; cross-referenced against the generated SKILL.md tool tags and CLAUDE.md's `pi -p` usage.",
+      "scope": [
+        "packages/pi-context-cli/src/pi-bound.ts (composePiBoundTools, deriveSkillToolNames, runPiBound)",
+        "packages/pi-context-cli/src/cli.ts:963-965 (verb dispatch) + :53 (surface:use partition)",
+        "packages/pi-context/src/ops-registry.ts (ops[] surface use/process; list-tools)",
+        "packages/pi-agent-dispatch/src/auth-gate.ts (AUTH_REQUIRED_TOOLS execution gate)",
+        "packages/pi-workflows + pi-behavior-monitors + pi-agent-dispatch tool registrations",
+        "scripts/launch-constrained-pi.sh (the shell original)"
+      ],
+      "findings_summary": "pi-bound is a pi-context-cli process mode (packages/pi-context-cli/src/pi-bound.ts), not a substrate op: cli.ts:963-965 dispatches the bare `pi-bound` verb before resolveOp. It bounds the tool surface by default-deny via an explicit `--tools` allowlist handed to a real pi child process (`pi --tools <csv> ...passthrough`, pi-bound.ts:305) — an in-process TS port of scripts/launch-constrained-pi.sh. The allowlist (composePiBoundTools, pi-bound.ts:161-170) is the deduped union of three sets: (1) staticTools — every `<tool name>` parsed from the two skill packages' SKILL.md (the extension surface: pi-context's 57 surface:use ops + pi-workflows 9 + pi-agent-dispatch 6 + pi-behavior-monitors 5); (2) BUILTIN_READONLY_TOOLS = read,ls,grep,find (unconditional, pi-bound.ts:32); (3) the active substrate's config.tool_operations[] composites. `--grant <id>` (repeatable) is the only pi-bound-specific lever and narrows ONLY the composite portion (grants.length>0 ? grants : declaredComposites); static + read-only are unconditional. Everything else (--model/--no-skills/-c/--mode) is pi passthrough (pi-bound.ts:76-77, forwarded at :305). Exclusion is by omission: a tool not in a SKILL.md, not a read-only built-in, and not a declared composite is absent — so pi's mutating built-ins write/edit/bash are excluded by default. A distinct second exclusion layer is the pi-agent-dispatch auth-gate (auth-gate.ts:148-161): AUTH_REQUIRED_TOOLS (the per-package authGated/gatedTools union) is blocked at call time when ctx.hasUI===false, so Bucket-2 tools are effectively excluded in a non-interactive session even when allowlisted. pi-bound does NOT reuse the pi-jit-agents executeAgent grant-clamp (child subset-of parent, jit-runtime.ts:483-491) — that is an independent in-process layer. The pi -p --tools path (CLAUDE.md CLI-Access) bounds via the SAME pi --tools primitive with a caller-authored list, distinct from pi-bound's composed list. The complete pi built-in tool registry and pi's --tools match semantics are pi-runtime-internal (not in this repo); the live set is enumerable via the surface:process list-tools op (getAllTools/getActiveTools). Verify exclusion: call list-tools inside the session, or inspect the composed --tools CSV via the exported composePiBoundTools/deriveSkillToolNames.",
+      "findings_document": "analysis/2026-06-13-pi-tool-surface-and-pi-bound-exclusion.md",
+      "grounding": {
+        "revisions": [
+          "context-jit-spec-v2 @ 2026-06-13 (analysis commit 8d7c915)"
+        ]
+      },
+      "stale_conditions": [
+        "composePiBoundTools (pi-bound.ts:161-170) changes its union sources (the SKILL-derived static set, the read-only built-ins, or the composite source)",
+        "BUILTIN_READONLY_TOOLS (pi-bound.ts:32) changes",
+        "the pi-agent-dispatch auth-gate AUTH_REQUIRED_TOOLS derivation (auth-gate.ts) changes",
+        "pi's --tools flag match semantics change (pi-runtime-internal)"
+      ],
+      "citations": [
+        {
+          "label": "allowlist composition — union of static SKILL tools, read-only built-ins, composites",
+          "path": "packages/pi-context-cli/src/pi-bound.ts",
+          "lines": "161-170"
+        },
+        {
+          "label": "launch — pi --tools <csv> ...passthrough child process",
+          "path": "packages/pi-context-cli/src/pi-bound.ts",
+          "lines": "305"
+        },
+        {
+          "label": "unconditional read-only built-ins read,ls,grep,find",
+          "path": "packages/pi-context-cli/src/pi-bound.ts",
+          "lines": "32"
+        },
+        {
+          "label": "bare pi-bound verb dispatch before resolveOp",
+          "path": "packages/pi-context-cli/src/cli.ts",
+          "lines": "963-965"
+        },
+        {
+          "label": "execution-time auth-gate — blocks gated tools when ctx.hasUI=false",
+          "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
+          "lines": "148-161"
+        },
+        {
+          "label": "list-tools surface:process introspection op (live tool enumeration)",
+          "path": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1034-1058"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-13T00:00:00.000Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-13T09:37:29.278Z",
+      "oid": "c8dfb42f2ed93b1994758c6e470f2e72",
+      "content_hash": "7aae967c719be6687a6fff889acb3dfa026e3c282e04631f74fe8d69414c65e3"
     }
   ]
 }

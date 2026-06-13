@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
-import { installContext } from "@davidorex/pi-context";
+import { installContext, readCatalogSchemaText } from "@davidorex/pi-context";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { boundedJsonOutput, type OpResult, ops, renderOpResultText } from "@davidorex/pi-context/ops";
 import { structureForRead } from "@davidorex/pi-context/read-element";
@@ -823,6 +823,64 @@ test("CLI --json: context-check-status emits the drift report (perAsset + summar
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}
+});
+
+// STORY-010 / FGAP-079 / TASK-050: read-catalog-schema is a raw-string op — its
+// `--json` envelope carries the VERBATIM catalog schema text as a string (the
+// raw JSON Schema bytes, not the read-samples-catalog projection), so a caller
+// can capture the body and diff it locally. Package-intrinsic: no substrate.
+test("CLI --json: read-catalog-schema carries the verbatim catalog schema text as a string (raw JSON Schema)", async () => {
+	const { code, out } = await captureMainStdout(["read-catalog-schema", "--kind", "tasks", "--json"]);
+	assert.equal(code, 0);
+	const envelope = JSON.parse(out) as { ok: boolean; op: string; output: unknown };
+	assert.equal(envelope.ok, true);
+	assert.equal(envelope.op, "read-catalog-schema");
+	// THE load-bearing assertion: `output` is the raw schema TEXT — a string, not
+	// a re-serialized object (the bytes the operator diffs ride through verbatim).
+	assert.equal(typeof envelope.output, "string");
+	// Parsing that string yields the raw JSON Schema (properties + $id), proving
+	// it is the verbatim catalog body and not the projection.
+	const parsed = JSON.parse(envelope.output as string) as Record<string, unknown>;
+	assert.ok(parsed.properties && typeof parsed.properties === "object", "raw schema carries top-level properties");
+	assert.equal(typeof parsed.$id, "string", "raw schema carries a top-level $id");
+});
+
+// STORY-010 / FGAP-079 / TASK-050: on the TEXT surface read-catalog-schema is
+// declared `verbatimText`, so the CLI emits the raw catalog schema bytes byte-exact
+// — it reproduces the file's own bytes (its single trailing `\n` included) and does
+// NOT append a second newline. The catalog *.schema.json files DO end with a trailing
+// `\n` (last bytes `}\n`) and installed schemas are copied from them verbatim, so the
+// text output must be byte-identical to the library fn's verbatim text (which reads the
+// same bundled bytes). The defect this guards was the CLI APPENDING a second newline
+// (doubling it to `}\n\n`), which `read-catalog-schema --kind <k> | diff <installed> -`
+// surfaces as a phantom trailing-empty-line even when content matches.
+test("CLI text: read-catalog-schema emits the verbatim catalog schema bytes byte-exact (no appended trailing newline)", async () => {
+	const { code, out } = await captureMainStdout(["read-catalog-schema", "--kind", "tasks"]);
+	assert.equal(code, 0);
+	// Oracle: the byte-verbatim library fn over the SAME bundled catalog file.
+	const verbatim = readCatalogSchemaText("tasks").text;
+	assert.equal(out, verbatim, "text-surface output is byte-identical to the verbatim catalog body");
+	// Guard the specific defect: the CLI must NOT append an extra newline beyond the
+	// file's own bytes (the file already ends with a single `\n`; doubling it to `}\n\n`
+	// is the phantom-line defect).
+	assert.notEqual(
+		out,
+		`${verbatim}\n`,
+		"no APPENDED trailing newline — the CLI must not double the catalog file's own trailing \\n",
+	);
+});
+
+// Scoped-regression: the verbatimText flag must NOT globalize. A normal string-
+// returning op WITHOUT verbatimText (read-samples-catalog, the projection sibling,
+// also package-intrinsic / no substrate) still gets its trailing newline appended on
+// the text surface, proving the no-newline path is gated on the declared flag alone.
+test("CLI text: a non-verbatimText string op still gets its appended trailing newline (fix is scoped, not global)", async () => {
+	const samplesOp = ops.find((o) => o.name === "read-samples-catalog");
+	assert.ok(samplesOp, "read-samples-catalog op present in the registry");
+	assert.notEqual(samplesOp?.verbatimText, true, "read-samples-catalog is NOT declared verbatimText");
+	const { code, out } = await captureMainStdout(["read-samples-catalog", "--kind", "tasks"]);
+	assert.equal(code, 0);
+	assert.equal(out.endsWith("\n"), true, "non-verbatim op keeps the appended trailing newline");
 });
 
 test("CLI --json: resolve-item-by-id emits a structured {read} value (single-parse; ItemLocation under data)", async () => {

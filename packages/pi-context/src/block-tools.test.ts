@@ -9,12 +9,15 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { appendToBlock, readBlock, updateItemInBlock } from "./block-api.js";
 import { loadConfig } from "./context.js";
 import { resolveContextDir, schemaPath, writeBootstrapPointer } from "./context-dir.js";
 import { findAppendableBlocks } from "./context-sdk.js";
+import { readCatalogSchemaText } from "./index.js";
 import { type OpDefinition, ops } from "./ops-registry.js";
 import type { ReadStructured } from "./read-element.js";
+import { samplesCatalog } from "./samples-catalog.js";
 import { ValidationError } from "./schema-validator.js";
 import { readSchema } from "./schema-write.js";
 
@@ -883,5 +886,71 @@ describe("addressed-single-node reads return the whole subtree (capped)", () => 
 		assert.strictEqual(read.data, null, "over-cap node returns data:null");
 		assert.strictEqual(read.complete, false, "over-cap node is not complete");
 		assert.strictEqual(read.truncated, true, "over-cap node is flagged truncated");
+	});
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// read-catalog-schema — readCatalogSchemaText fetches the VERBATIM bundled
+// catalog *.schema.json body (raw JSON Schema), not the read-samples-catalog
+// projection. The fetch is read-only + substrate-independent (no cwd). The op
+// returns the bare raw bytes as a prose-string OpResult (STORY-010 / FGAP-079,
+// TASK-050).
+// ─────────────────────────────────────────────────────────────────────────
+
+const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
+
+describe("read-catalog-schema — verbatim catalog body fetch (readCatalogSchemaText)", () => {
+	it("returns .text byte-identical to the bundled catalog schema file", () => {
+		const file = path.join(SAMPLES_DIR, "schemas/tasks.schema.json");
+		const expected = fs.readFileSync(file, "utf-8");
+		const result = readCatalogSchemaText("tasks");
+		assert.strictEqual(result.kind, "tasks");
+		assert.strictEqual(result.schemaPath, file, "schemaPath is the bundled samples schema file");
+		assert.strictEqual(result.text, expected, "text is byte-identical to the catalog file");
+	});
+
+	it("the body is the RAW JSON Schema (properties + $id), NOT the read-samples-catalog projection (AC2)", () => {
+		const parsed = JSON.parse(readCatalogSchemaText("tasks").text) as Record<string, unknown>;
+		assert.ok(parsed.properties && typeof parsed.properties === "object", "raw schema carries top-level properties");
+		assert.strictEqual(typeof parsed.$id, "string", "raw schema carries a top-level $id");
+		// Contrast: the projection has no properties/$id at top level — it is the
+		// kinds/relationTypes/lenses/... summary view, a different shape entirely.
+		const projection = samplesCatalog({ kind: "tasks" }) as Record<string, unknown>;
+		assert.ok(!("properties" in projection), "projection has no top-level properties");
+		assert.ok(!("$id" in projection), "projection has no top-level $id");
+		assert.ok("kinds" in projection, "projection is the summary view (carries kinds)");
+	});
+
+	it("throws on an unknown kind, naming the kind in the message", () => {
+		assert.throws(
+			() => readCatalogSchemaText("not-a-real-kind"),
+			(err: unknown) => err instanceof Error && err.message.includes("not-a-real-kind"),
+			"throws an Error naming the unknown kind",
+		);
+	});
+
+	it("touches no substrate — the fn takes no cwd, so the read path reaches no installed schema/block/config (AC3)", () => {
+		// AC3 by construction: readCatalogSchemaText has no cwd parameter and
+		// resolves only the package-bundled samplesRoot. Calling it twice yields
+		// the same bytes regardless of any project on disk; nothing is written.
+		assert.strictEqual(readCatalogSchemaText.length, 1, "single param (kindName) — no cwd, no substrate reachable");
+		const a = readCatalogSchemaText("tasks").text;
+		const b = readCatalogSchemaText("tasks").text;
+		assert.strictEqual(a, b, "repeat reads are stable (pure read of the bundled catalog)");
+	});
+});
+
+describe("read-catalog-schema op — raw-string OpResult", () => {
+	it("returns the bare raw schema text (a string, not a {json}/{read} wrap)", () => {
+		const result = op("read-catalog-schema").run("/unused/cwd", { kind: "tasks" });
+		assert.strictEqual(typeof result, "string", "the op returns a bare string OpResult");
+		const expected = fs.readFileSync(path.join(SAMPLES_DIR, "schemas/tasks.schema.json"), "utf-8");
+		assert.strictEqual(result, expected, "the string is byte-identical to the catalog file");
+	});
+
+	it("is surface:use and NOT authGated (a read-only fetch)", () => {
+		const def = op("read-catalog-schema");
+		assert.strictEqual(def.surface, "use");
+		assert.notStrictEqual(def.authGated, true, "read-only fetch is not auth-gated");
 	});
 });

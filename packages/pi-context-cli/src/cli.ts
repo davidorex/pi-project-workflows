@@ -1140,7 +1140,17 @@ export async function main(argv: string[]): Promise<number> {
 		} else {
 			// Default text surface stays byte-identical to before: the shared renderer
 			// reproduces each op's prior `run()` text (prose / JSON.stringify / read footer).
-			process.stdout.write(`${renderOpResultText(r)}\n`);
+			// Ops declaring `verbatimText` (e.g. read-catalog-schema) emit their string
+			// OpResult byte-exact — reproducing the file's own bytes (its single trailing
+			// `\n` included) WITHOUT appending a second one — so the output round-trips to
+			// a file / diffs cleanly against an on-disk source whose bytes it reproduces
+			// verbatim (the catalog schema file carries its own trailing `\n`; appending
+			// another would double it to `}\n\n` and show a phantom trailing-empty-line).
+			if (op.verbatimText) {
+				process.stdout.write(renderOpResultText(r));
+			} else {
+				process.stdout.write(`${renderOpResultText(r)}\n`);
+			}
 		}
 
 		// TASK-037 — FEAT-006 T4: the `update` op returns the whole UpdateResult under

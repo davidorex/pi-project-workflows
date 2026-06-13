@@ -70,6 +70,7 @@ import {
 	checkStatus,
 	initProject,
 	listSubstrates,
+	readCatalogSchemaText,
 	resolveBlocked,
 	resolveConflict,
 	switchAndCreate,
@@ -220,6 +221,14 @@ export interface OpDefinition<P = any> {
 	parameters: TSchema;
 	run(cwd: string, params: P, ctx?: DispatchContext): OpResult | Promise<OpResult>;
 	authGated?: boolean;
+	/**
+	 * When true, the op's string OpResult is emitted byte-exact on the CLI text
+	 * surface — no trailing newline appended by the print path — so the output
+	 * round-trips to a file / is diffable against an on-disk source whose bytes it
+	 * reproduces verbatim. Carried for that CLI consumer (like `authGated`); the
+	 * default-unset behavior keeps the prior text-surface trailing-newline framing.
+	 */
+	verbatimText?: boolean;
 	surface: "use" | "process";
 }
 
@@ -1111,6 +1120,34 @@ export const ops: OpDefinition[] = [
 					: { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
 			});
 			return { read };
+		},
+	},
+	{
+		name: "read-catalog-schema",
+		label: "Read Catalog Schema",
+		description:
+			"Fetch and print the verbatim catalog schema body (raw JSON Schema: properties/definitions/$id) for a named block kind — diffable locally against the installed `<substrate>/schemas/<name>.schema.json` without touching node_modules. Read-only; the projection-returning sibling is read-samples-catalog.",
+		promptSnippet:
+			"Fetch and print the verbatim catalog schema body for a named block kind (raw JSON Schema, diffable locally)",
+		examples: ["pi-context read-catalog-schema --kind tasks", "pi-context read-catalog-schema --kind tasks --json"],
+		parameters: Type.Object({
+			kind: Type.String({ description: "Catalog block_kind canonical_id (e.g. 'tasks')" }),
+		}),
+		surface: "use",
+		// The catalog schema file carries its own trailing newline (`}\n`); emit the file
+		// bytes exactly — preserving that single newline, appending none — so
+		// `read-catalog-schema --kind <k> | diff <installed> -` shows no phantom line when
+		// content matches (the pre-flag defect was the print path appending a second
+		// newline, doubling it to `}\n\n`).
+		verbatimText: true,
+		run(_cwd: string, params: { kind: string }): OpResult {
+			// Package-intrinsic: reads the extension's bundled catalog schema file,
+			// not the project substrate — cwd is unused (like read-samples-catalog).
+			// Returns the RAW TEXT bytes as a prose-string OpResult so the verbatim
+			// catalog body prints as-is (renderOpResultText) and rides the --json
+			// envelope as a string; no {json}/{read} wrap that would re-serialize and
+			// alter the bytes the operator diffs.
+			return readCatalogSchemaText(params.kind).text;
 		},
 	},
 	{

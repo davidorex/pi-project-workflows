@@ -16,7 +16,7 @@ Because the reflecting CLI surfaces only op-registry ops, `install` is invisible
 
 ### Shape
 
-The CLI exposes `context-init` (bootstrap pointer + dirs + skeleton config) and `context-accept-all` (adopt the conception as config) but not the third lifecycle step that turns the declared `installed_schemas[]`/`installed_blocks[]` into on-disk schema files and block files. A CLI-only operator can reach a config-complete-but-unmaterialized substrate and has no CLI op to advance it; the only non-ad-hoc completion is dropping to a `pi -p "/context install"` subprocess (which loads the extension and runs the slash command).
+The CLI exposes `context-init` (bootstrap pointer + dirs + skeleton config) and `context-accept-all` (adopt the conception as config) but not the third lifecycle step that turns the declared `installed_schemas[]`/`installed_blocks[]` into on-disk schema files and block files. A CLI-only operator can reach a config-complete-but-unmaterialized substrate and has no CLI op to advance it. Install is reachable ONLY via an interactive pi session's slash command — there is no non-interactive path (see Reproducible conditions: `pi -p "/context install"` does not dispatch it).
 
 ### Reproducible conditions (run, observed)
 
@@ -33,13 +33,7 @@ ls -la /tmp/gapAtest/.context/schemas   # EMPTY — no schema files materialized
 
 After `init` + `accept-all`, `config.json` declares 16 schemas + 16 blocks but `schemas/` is empty and no block JSON exists. A subsequent `append-block-item --block tasks --arrayKey tasks --autoId true …` therefore cannot succeed: with `--autoId` the first failure is the schema lookup, throwing `nextId: schema not found for block '<block>' at <schemaFile>` (`block-api.ts:2311`), not the read-time `Block file not found: <filePath>` (`block-api.ts:764`) — that read-time message is what a non-autoId append or a block read raises once the schema exists but the block file does not. (The original finding cited "Block file not found"; for the `--autoId` repro the actual error is the `nextId: schema not found` throw, since `nextId` runs before the block read. Correction noted.)
 
-The only completion path on the CLI surface is the in-pi subprocess seam:
-
-```
-pi -p "/context install" --cwd /tmp/gapAtest   # loads the extension, runs the slash-command handler -> installContext
-```
-
-This is the genuine seam. (Not separately re-run here — it requires a pi credentialed subprocess and would mutate the throwaway substrate; the slash-command-only surfacing is confirmed directly from `index.ts:3098-3149` + the op-registry absence + `--help`.)
+There is NO non-interactive completion path. `pi -p "/context install"` does NOT run install: prompt-mode hands the text to an agent as a user message, which does not slash-dispatch — observed live, the agent (haiku-4.5) replied "the `context install` command you're trying to run doesn't seem to be a standard command" and materialized nothing (the `/tmp` substrate's `schemas/` stayed empty). And install is not a registered op/tool (the op-registry absence), so no agent can call it as a tool either. Install is reachable ONLY by typing `/context install` in an interactive pi session, where the slash router dispatches the handler -> installContext. (An earlier draft of this report called `pi -p "/context install"` "the genuine seam"; that was wrong — corrected here to current truth: no non-interactive path exists.)
 
 ### Whether install SHOULD be a reflected op
 
@@ -61,7 +55,7 @@ Instance of a broader class: **substrate-lifecycle operations unevenly reflected
 
 ### Filing recommendation (NOT yet filed)
 
-File at the **class altitude**: an FGAP for "the install ceremony is command-only — no reflected `context-install` op, so a CLI-driven bootstrap reaches a config-complete-but-unmaterialized substrate with no CLI op to advance it; completion requires `pi -p \"/context install\"`," with the `INTENTIONALLY_UNEXPOSED_WRITERS:2171-2175` rationale named as the assertion to revisit and FGAP-030 cited as the resolution precedent. Symptom (the `nextId: schema not found` / unmaterialized-substrate repro) is the triggering instance. The orchestrator proposes the filing to the user; this report does not file it.
+File at the **class altitude**: an FGAP for "the install ceremony is command-only — no reflected `context-install` op, so a CLI-driven bootstrap reaches a config-complete-but-unmaterialized substrate with no CLI op to advance it, and there is no non-interactive path (install is reachable only by `/context install` in an interactive pi session; `pi -p` does not slash-dispatch it)," with the `INTENTIONALLY_UNEXPOSED_WRITERS:2171-2175` rationale named as the assertion to revisit and FGAP-030 cited as the resolution precedent. Symptom (the `nextId: schema not found` / unmaterialized-substrate repro) is the triggering instance. FILED as FGAP-088 (corrected to current truth); the fix is TASK-059.
 
 ---
 
@@ -112,4 +106,4 @@ Instance of a broader class: **enforcement hooks scoped by op-shape rather than 
 
 ### Filing recommendation (NOT yet filed)
 
-File at the **class altitude**: an FGAP for "the project's PreToolUse enforcement hooks (`gap-register-guard.sh`, `block-pi-context-glue.sh`) scope on op-shape + block-name, never on the target substrate (`--cwd` / `.pi-context.json` `contextDir`), so they fire on writes to throwaway/non-active substrates outside the convention they protect," with the provenance-guard `--cwd /tmp` block as the triggering instance and `block-pi-context-glue.sh` named as the confirmed sibling. Contrast the resource-scoped `block-substrate-cli-bypass.sh` spec as the available scoping pattern. Note the subtlety (hook input carries the `--cwd` text but not a structured active-substrate resolution) without over-specifying the fix. The orchestrator proposes the filing to the user; this report does not file it.
+File at the **class altitude**: an FGAP for "the project's PreToolUse enforcement hooks (`gap-register-guard.sh`, `block-pi-context-glue.sh`) scope on op-shape + block-name, never on the target substrate (`--cwd` / `.pi-context.json` `contextDir`), so they fire on writes to throwaway/non-active substrates outside the convention they protect," with the provenance-guard `--cwd /tmp` block as the triggering instance and `block-pi-context-glue.sh` named as the confirmed sibling. Contrast the resource-scoped `block-substrate-cli-bypass.sh` spec as the available scoping pattern. Note the subtlety (hook input carries the `--cwd` text but not a structured active-substrate resolution) without over-specifying the fix. FILED as FGAP-089; the fix is TASK-060.

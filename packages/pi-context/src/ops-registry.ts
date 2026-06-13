@@ -69,6 +69,7 @@ import {
 	archiveSubstrate,
 	checkStatus,
 	initProject,
+	installContext,
 	listSubstrates,
 	readCatalogSchemaText,
 	resolveBlocked,
@@ -1500,6 +1501,30 @@ export const ops: OpDefinition[] = [
 		},
 	},
 	{
+		name: "context-install",
+		label: "Context Install",
+		description:
+			"Install (materialize) the schemas and starter blocks declared in config.json's installed_schemas / installed_blocks from the package samples catalog. Default skip-if-exists (installed files never overwritten without --update); populated block data is always preserved (even with --update); empty or absent blocks get the catalog starter. Records the install baseline (config.installed_from: catalog source + per-schema fingerprint) for installed-vs-catalog drift detection (schemas only). A re-install on an unchanged substrate is idempotent.",
+		promptSnippet:
+			"Install declared schemas + starter blocks from the samples catalog (skip-if-exists; --update re-syncs schemas + replaces empty blocks; records the config.installed_from baseline)",
+		examples: ["pi-context context-install --json", "pi-context context-install --update true --json"],
+		parameters: Type.Object({
+			update: Type.Optional(
+				Type.Boolean({
+					description:
+						"When true, re-sync existing installed schemas (migration-aware) and replace empty blocks with the catalog starter; populated block data is never overwritten. When false (default), skip existing files.",
+				}),
+			),
+		}),
+		surface: "use",
+		authGated: true,
+		run(cwd: string, params: { update?: boolean }): OpResult {
+			const result = installContext(cwd, { overwrite: params.update === true });
+			if (result.error) return result.error;
+			return { json: result };
+		},
+	},
+	{
 		name: "update",
 		label: "Update Installed Model",
 		description:
@@ -2167,11 +2192,6 @@ export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
 		libraryFn: "rollbackBlockFiles",
 		reason:
 			"workflow-executor transactional rollback (graduated-failure undo); internal recovery path with no operator-facing op by design",
-	},
-	{
-		libraryFn: "installContext",
-		reason:
-			"the /context install command engine — operator-facing via the install command handler, not the op-registry; writes config.json to record the install baseline",
 	},
 ];
 

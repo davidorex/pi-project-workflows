@@ -70,6 +70,7 @@ import {
 	checkStatus,
 	initProject,
 	listSubstrates,
+	readCatalogSchemaText,
 	resolveBlocked,
 	resolveConflict,
 	switchAndCreate,
@@ -1111,6 +1112,28 @@ export const ops: OpDefinition[] = [
 					: { overCapDirective: { tool: "read-samples-catalog", hint: "kind=<canonical_id>" } }),
 			});
 			return { read };
+		},
+	},
+	{
+		name: "read-catalog-schema",
+		label: "Read Catalog Schema",
+		description:
+			"Fetch and print the verbatim catalog schema body (raw JSON Schema: properties/definitions/$id) for a named block kind — diffable locally against the installed `<substrate>/schemas/<name>.schema.json` without touching node_modules. Read-only; the projection-returning sibling is read-samples-catalog.",
+		promptSnippet:
+			"Fetch and print the verbatim catalog schema body for a named block kind (raw JSON Schema, diffable locally)",
+		examples: ["pi-context read-catalog-schema --kind tasks", "pi-context read-catalog-schema --kind tasks --json"],
+		parameters: Type.Object({
+			kind: Type.String({ description: "Catalog block_kind canonical_id (e.g. 'tasks')" }),
+		}),
+		surface: "use",
+		run(_cwd: string, params: { kind: string }): OpResult {
+			// Package-intrinsic: reads the extension's bundled catalog schema file,
+			// not the project substrate — cwd is unused (like read-samples-catalog).
+			// Returns the RAW TEXT bytes as a prose-string OpResult so the verbatim
+			// catalog body prints as-is (renderOpResultText) and rides the --json
+			// envelope as a string; no {json}/{read} wrap that would re-serialize and
+			// alter the bytes the operator diffs.
+			return readCatalogSchemaText(params.kind).text;
 		},
 	},
 	{

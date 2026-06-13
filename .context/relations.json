@@ -5573,5 +5573,31 @@
       "refname": "cli-command-form"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e9aa3e678507797950d994a75198a59f",
+      "refname": "TASK-058"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e9aa3e678507797950d994a75198a59f",
+      "refname": "TASK-058"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6cb0179a4968a2022406c5eb47114b38",
+      "refname": "cli-command-form"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

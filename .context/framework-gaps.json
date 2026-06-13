@@ -2723,7 +2723,7 @@
     {
       "id": "FGAP-088",
       "title": "The install ceremony has no reflected CLI op — a CLI-driven bootstrap reaches a config-complete-but-unmaterialized substrate with no CLI op to advance it",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "installContext is surfaced to the operator only as the /context install slash-command handler and is listed in INTENTIONALLY_UNEXPOSED_WRITERS, so the reflecting CLI has no context-install op while its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive) are reflected ops. A CLI-only operator runs context-init + context-accept-all to a config-complete substrate whose schemas/ is empty and whose block files do not exist, with no CLI op to materialize them. Install is reachable ONLY via an interactive pi session's slash command: pi -p \"/context install\" does NOT dispatch it — prompt-mode hands the text to an agent, and install is not a registered op/tool, so no agent can call it either. There is no non-interactive path to install. Class: substrate-lifecycle operations unevenly reflected to the CLI — the CLI-parity family FGAP-030 named (FGAP-021..026 + FGAP-030); install is the last unreflected member of the init -> accept-all -> install bootstrap triad, so the CLI bootstrap is structurally incompletable on its own surface. The INTENTIONALLY_UNEXPOSED_WRITERS rationale (install is operator-facing via the command handler, not the op-registry) is the assertion to revisit; FGAP-030 set the precedent that a command-only surface unreachable from the CLI is a gap resolved by adding the reflected op.",
@@ -2754,8 +2754,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:11.027Z",
       "oid": "077caf30c88f6c44cbf996ec5aa361f0",
-      "content_hash": "2a2cc86d0c70dfa98140bac9fe51365e59ad52ea677fe7f5ce66de3800f6ffab",
-      "content_parent": "ee96def368fc3b56c3c10ffe5b8453d36c5f733422127b28bab4ce8478ae902c"
+      "content_hash": "3526b36f9fcc669f1f1dac42df9e43dd9358df51b1fa5e157073f34bf9a8d537",
+      "content_parent": "2a2cc86d0c70dfa98140bac9fe51365e59ad52ea677fe7f5ce66de3800f6ffab",
+      "closed_by": "VER-045 / TASK-059 — the reflected context-install op completes the CLI bootstrap triad (init -> accept-all -> install); installContext is op-backed (removed from INTENTIONALLY_UNEXPOSED_WRITERS) with no behavior fork; a pure-CLI bootstrap materializes schemas + blocks + baseline and a subsequent append succeeds.",
+      "closed_at": "2026-06-13T00:00:00.000Z"
     },
     {
       "id": "FGAP-089",

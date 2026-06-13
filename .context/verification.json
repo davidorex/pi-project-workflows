@@ -1265,6 +1265,42 @@
       ],
       "oid": "b893686beb028b9de3b717b2486c330a",
       "content_hash": "673a430d54ad4a6818db0f96400e2c9b7f8e1106205b88e0f70a11256d9e95dc"
+    },
+    {
+      "id": "VER-045",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-059 verified end-to-end; closes FGAP-088. The context-install OpDefinition reflects the existing installContext engine with no behavior fork: run(cwd, params) calls installContext(cwd, { overwrite: params.update === true }) and returns { json: InstallResult } (or the error string) — the same engine and same options derivation as the /context install slash handler (index.ts:3103, overwrite from --update). surface use, authGated true (matches the gated lifecycle siblings). installContext removed from INTENTIONALLY_UNEXPOSED_WRITERS; parity-check exit 0 classifying it op-backed-direct via the op run. context-install slotted into the CLI Substrate lifecycle help group; the auth-gate canonical-membership pin grown 19 -> 20 (the op auto-joins AUTH_REQUIRED_TOOLS from authGated). Runtime demo on a fresh /tmp substrate (never the live .context): context-init -> context-accept-all -> pi-context context-install --cwd /tmp/t59 --yes materialized all 16 installed_schemas[] (<dir>/schemas/<name>.schema.json) + all 16 installed_blocks[] (<dir>/<name>.json) and recorded 16 config.installed_from.assets baseline entries; a subsequent append-block-item --block requirements (REQ-001) against the bootstrapped substrate succeeded — the FGAP-088 repro (init+accept-all then unmaterialized) is resolved, the CLI bootstrap triad is complete. Gates: build + check + full test fail 0; parity-check exit 0; both SKILLs regenerated carry the op. Fresh adversarial probe PASS, 8 vectors zero defects; the verbatim-delta check found the update param faithful to the engine's overwrite + the slash --update (no invented qualifier).",
+      "criteria_results": [
+        {
+          "criterion": "pi-context context-install appears in `pi-context --help` under Substrate lifecycle, and groupForOp does not throw for it.",
+          "status": "passed",
+          "evidence": "context-install added to the Substrate lifecycle oneOf in cli.ts; the groupForOp exhaustive/disjoint drift-guard passes"
+        },
+        {
+          "criterion": "After context-init + context-accept-all, pi-context context-install --cwd <dir> --yes creates <dir>/schemas/<name>.schema.json for every config.installed_schemas[] entry AND <dir>/<name>.json for every config.installed_blocks[] entry (each file exists).",
+          "status": "passed",
+          "evidence": "the /tmp/t59 demo: 16 schema files + 16 block files materialized on disk (ls confirmed)"
+        },
+        {
+          "criterion": "After it, config.installed_from.assets is populated for every installed schema, byte-equivalent to what the /context install slash command produces (same installContext engine, no behavior fork).",
+          "status": "passed",
+          "evidence": "16 content_hash baseline entries in /tmp/t59 config.json; the op test asserts the op result deep-equals a direct installContext call (no fork)"
+        },
+        {
+          "criterion": "A pure-CLI context-init -> context-accept-all -> context-install lets a subsequent append-block-item succeed.",
+          "status": "passed",
+          "evidence": "append-block-item --block requirements --cwd /tmp/t59 appended REQ-001 successfully against the bootstrapped substrate"
+        },
+        {
+          "criterion": "parity-check exits 0 with installContext reflected (its INTENTIONALLY_UNEXPOSED_WRITERS entry removed); build + check + full test green.",
+          "status": "passed",
+          "evidence": "installContext removed from the allowlist; parity-check exit 0 (op-backed-direct=28); build + check + full test fail 0"
+        }
+      ],
+      "oid": "3b700fafe6bc3b02ee1326e8f2a78e6c",
+      "content_hash": "cad55734cc393eb6fa1c25ac3742aea797282752d6e7c2d3cb267889a194c18c"
     }
   ]
 }

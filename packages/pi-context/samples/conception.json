@@ -328,6 +328,20 @@
       "target_kinds": ["decisions"]
     },
     {
+      "canonical_id": "item_governed_by_convention",
+      "display_name": "governed by convention",
+      "category": "data_flow",
+      "source_kinds": ["decisions", "features", "tasks"],
+      "target_kinds": ["conventions"]
+    },
+    {
+      "canonical_id": "item_acknowledges_missing_convention",
+      "display_name": "acknowledges missing convention",
+      "category": "data_flow",
+      "source_kinds": ["decisions", "features", "tasks"],
+      "target_kinds": ["framework-gaps"]
+    },
+    {
       "canonical_id": "item_derived_from_item",
       "display_name": "derived from",
       "category": "data_flow",
@@ -479,6 +493,42 @@
       "forbid_target_bucket": "unknown",
       "severity": "warning",
       "message": "Task '{id}' is governed by a superseded or cancelled decision"
+    },
+    {
+      "id": "decision-articulates-convention",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Decision '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "feature-articulates-convention",
+      "class": "requires-edge",
+      "block": "features",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Feature '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "task-articulates-convention",
+      "class": "requires-edge",
+      "block": "tasks",
+      "relation_types": [
+        "item_governed_by_convention",
+        "item_acknowledges_missing_convention"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Task '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
     }
   ],
   "tool_operations": [],

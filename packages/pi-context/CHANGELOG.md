@@ -15,6 +15,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - Regenerated `skills/pi-context/SKILL.md` for the `update` op's extended `promptSnippet` (the pending-blocked record + `resolve-blocked` resolution clause).
 - Regenerated `skills/pi-context/SKILL.md` to surface the new `read-catalog-schema` op.
 - Regenerated `skills/pi-context/SKILL.md` to surface the new `context-install` op.
+- Regenerated `skills/pi-context/SKILL.md` to carry the fresh-substrate advisory convention-articulation note (the catalog's `*-articulates-convention` warning-severity invariants).
 
 ### Fixed
 - The `read-catalog-schema` op's text-surface output is now byte-exact: it emits the catalog `*.schema.json` bytes verbatim (the file's own trailing newline preserved, none appended) via a declared `verbatimText` flag on the op honored by the CLI print path. Previously the print path appended a second newline, doubling the file's trailing `}\n` to `}\n\n` and surfacing a phantom trailing-empty-line under `read-catalog-schema --kind <k> | diff <installed-schema> -` even when content matched.

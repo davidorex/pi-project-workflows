@@ -2719,6 +2719,73 @@
       "created_at": "2026-06-11T12:10:45.615Z",
       "oid": "9630b64f2a71eafa06e2534a003662e7",
       "content_hash": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7"
+    },
+    {
+      "id": "FGAP-088",
+      "title": "The install ceremony has no reflected CLI op — a CLI-driven bootstrap reaches a config-complete-but-unmaterialized substrate with no CLI op to advance it",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "installContext is surfaced to the operator only as the /context install slash-command handler and is listed in INTENTIONALLY_UNEXPOSED_WRITERS, so the reflecting CLI has no context-install op while its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive) are reflected ops. A CLI-only operator runs context-init + context-accept-all to a config-complete substrate whose schemas/ is empty and whose block files do not exist, with no CLI op to materialize them; the only non-ad-hoc completion is dropping to a pi -p \"/context install\" subprocess. Class: substrate-lifecycle operations unevenly reflected to the CLI — the CLI-parity family FGAP-030 named (FGAP-021..026 + FGAP-030); install is the last unreflected member of the init -> accept-all -> install bootstrap triad, so the CLI bootstrap is structurally incompletable on its own surface. The INTENTIONALLY_UNEXPOSED_WRITERS rationale (install is operator-facing via the command handler, not the op-registry) is the assertion to revisit; FGAP-030 set the precedent that a command-only surface unreachable from the CLI is a gap resolved by adding the reflected op.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1211",
+          "reference": "installContext(cwd, {overwrite}) — the install engine: copies installed_schemas[] bodies into <substrate>/schemas/, installed_blocks[] starters into <substrate>/<name>.json, base-stamps install baselines"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "3098-3149",
+          "reference": "the install entry of CONTEXT_SUBCOMMANDS — installContext is surfaced ONLY as the /context install slash-command handler"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "2171-2175",
+          "reference": "installContext listed in INTENTIONALLY_UNEXPOSED_WRITERS with the rationale that it is operator-facing via the command handler, not the op-registry — the stale assertion this gap revisits"
+        },
+        {
+          "file": "analysis/2026-06-13-install-surface-and-guard-scope-gaps.md",
+          "reference": "the full investigation: root cause, the init+accept-all-then-empty-schemas/ repro, the pi -p seam, the FGAP-030 precedent, the class verdict"
+        }
+      ],
+      "impact": "A CLI-driven or agent-driven (non-pi) consumer cannot bootstrap a substrate to a usable state: init + accept-all leave schemas/ empty and no block files, and a subsequent append-block-item --autoId throws 'nextId: schema not found' (block-api.ts:2311). The capability is reachable only by dropping to a pi -p \"/context install\" subprocess.",
+      "canonical_vocabulary": "CLI bootstrap completability / lifecycle-op reflection parity",
+      "proposed_resolution": "Determined by the implementing pass (Experience-Gap Handling): reflect install as a context-install OpDefinition like its lifecycle siblings (writer-classified via the DEC-0006 ctx/writer channel that context-init/context-accept-all already carry), revisiting the INTENTIONALLY_UNEXPOSED_WRITERS entry. Verification: a pure-CLI context-init -> context-accept-all -> context-install bootstrap materializes schemas + block files with no pi -p subprocess. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-13T05:14:11.027Z",
+      "oid": "077caf30c88f6c44cbf996ec5aa361f0",
+      "content_hash": "ee96def368fc3b56c3c10ffe5b8453d36c5f733422127b28bab4ce8478ae902c"
+    },
+    {
+      "id": "FGAP-089",
+      "title": "PreToolUse enforcement hooks scope on op-shape + block-name, never on the target substrate — they fire on writes to throwaway/non-active substrates outside the convention they protect",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "gap-register-guard.sh matches on write-op name (append/update/upsert-block-item) AND planning-block name/array-key, and block-pi-context-glue.sh matches on the pi-context CLI invocation shape; neither inspects --cwd or the active-substrate pointer (.pi-context.json contextDir). A planning-block write or a CLI invocation whose --cwd targets a throwaway/non-active substrate is blocked identically to one against the active substrate, though the filing-provenance and direct-drive conventions the hooks enforce scope to the active substrate (filings composed verbatim downstream INTO the active substrate; direct-drive discipline against the live substrate). The hook input carries the --cwd text in tool_input.command but the hooks do not parse it. Class: enforcement hooks scoped by op-shape rather than target-substrate, firing outside the active substrate they protect — covers both installed Bash-matcher hooks (gap-register-guard.sh, block-pi-context-glue.sh). The not-installed block-substrate-cli-bypass.sh spec (analysis/2026-06-06-substrate-cli-bypass-prevention-hook-spec.md) is the resource-scoped counter-example, matching the .context* family by path.",
+      "evidence": [
+        {
+          "file": ".claude/hooks/gap-register-guard.sh",
+          "lines": "20-21",
+          "reference": "the sole match test: (write-op name) AND (planning block-name or array-key); never reads --cwd or resolves the active-substrate pointer"
+        },
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "lines": "22",
+          "reference": "the confirmed sibling: matches the pi-context CLI invocation shape alone; its block tests inspect only command-string glue, never --cwd or the active substrate"
+        },
+        {
+          "file": "analysis/2026-06-13-install-surface-and-guard-scope-gaps.md",
+          "reference": "the investigation: matching logic quoted, the --cwd /tmp/gapAtest block repro, the block-pi-context-glue sibling confirmation, the block-substrate-cli-bypass.sh resource-scoped counter-example, the class verdict"
+        }
+      ],
+      "impact": "Every runtime demo or test that must seed a planning block into a throwaway --cwd substrate, or drive the CLI against one, hits the active-substrate guards — blocking legitimate non-active-substrate work. It blocked the TASK-033 runtime-demo seed against /tmp.",
+      "canonical_vocabulary": "target-substrate-scoped hook enforcement",
+      "proposed_resolution": "Determined by the implementing pass (Experience-Gap Handling): scope the hooks to the active substrate — parse --cwd from the command string (default to the project cwd when absent), resolve .pi-context.json contextDir at that cwd, and guard only writes/invocations targeting the active substrate; or a coarser approximation (guard only when --cwd is absent or names a .context* dir). The not-installed block-substrate-cli-bypass.sh spec's resource-scoped recognizer is the available pattern. Subtlety to honor: the hook input carries the --cwd text but no structured active-substrate resolution. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-13T05:14:18.108Z",
+      "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
+      "content_hash": "e6af966270fded2a8d2263a5b8e20e7025a0aca90983ad6e4c467f0b168d33e0"
     }
   ]
 }

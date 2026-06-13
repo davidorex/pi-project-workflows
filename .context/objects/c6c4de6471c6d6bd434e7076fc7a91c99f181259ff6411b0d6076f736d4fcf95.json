@@ -1,0 +1,54 @@
+{
+  "title": "install ceremony has no reflected CLI op + enforcement hooks scoped by op-shape not target-substrate (TASK-033 dogfooding)",
+  "status": "complete",
+  "layer": "L4",
+  "type": "investigative",
+  "question": "Why can a CLI-driven pi-context bootstrap not complete (no reflected install op), and why do the PreToolUse enforcement hooks fire on writes to non-active/throwaway substrates?",
+  "method": "code-inspection (installContext + the /context install slash handler + ops-registry + gap-register-guard.sh + block-pi-context-glue.sh + parity-check) + empirical reproduction (a /tmp substrate: init+accept-all leaves schemas/ empty; pi -p \"/context install\" observed not to dispatch; the guard blocking a --cwd /tmp append) + substrate prior-art search.",
+  "scope": [
+    "packages/pi-context/src/index.ts (installContext :1211; the /context install CONTEXT_SUBCOMMANDS handler :3098-3149)",
+    "packages/pi-context/src/ops-registry.ts (INTENTIONALLY_UNEXPOSED_WRITERS :2172-2175, now removed by TASK-059)",
+    ".claude/hooks/gap-register-guard.sh (:20-21) + .claude/hooks/block-pi-context-glue.sh (:22)",
+    "reproduction: a /tmp throwaway substrate, init+accept-all then unmaterialized; pi -p prompt-mode non-dispatch of /context install",
+    "substrate prior-art: FGAP-030 (CLI-parity precedent), FGAP-074, the block-substrate-cli-bypass.sh spec"
+  ],
+  "findings_summary": "A TASK-033 runtime-demo dogfooding pass surfaced two experience gaps, agent-investigated to root cause / shape / repro / class. GAP A (FGAP-088, RESOLVED by TASK-059): the install ceremony had no reflected CLI op — installContext (index.ts:1211) was surfaced only as the /context install slash-command handler (index.ts:3098-3149) and allowlisted in INTENTIONALLY_UNEXPOSED_WRITERS (ops-registry.ts:2172-2175), while its five lifecycle siblings (init/accept-all/switch/list/archive) are reflected ops. A CLI-driven init+accept-all reached a config-complete-but-unmaterialized substrate (schemas/ empty, no block files) with no CLI op to advance it; a subsequent --autoId append threw 'nextId: schema not found' (block-api.ts:2311). There was no non-interactive path to install: pi -p \"/context install\" does NOT dispatch it (prompt-mode hands the text to an agent that does not slash-dispatch — observed: haiku-4.5 replied the command 'doesn't seem to be a standard command' and materialized nothing), and install is not a registered op/tool. Install was reachable only via an interactive pi slash command. Class: substrate-lifecycle operations unevenly reflected to the CLI (the CLI-parity family FGAP-030 named); install was the last unreflected member of the init -> accept-all -> install bootstrap triad. GAP B (FGAP-089, OPEN — TASK-060): the PreToolUse enforcement hooks scope on op-shape + block-name, never on the target substrate. gap-register-guard.sh (:20-21) matches write-op name + planning-block name/array-key, and block-pi-context-glue.sh (:22) matches the pi-context CLI invocation shape; neither inspects --cwd or the active-substrate pointer (.pi-context.json contextDir), so both fire on writes to throwaway/non-active --cwd substrates outside the convention they protect (it blocked the TASK-033 demo seed). The hook input carries the --cwd text but the hooks do not parse it. Class: enforcement hooks scoped by op-shape rather than target-substrate, firing outside the active substrate they protect — covers both installed Bash-matcher hooks; the not-installed block-substrate-cli-bypass.sh spec is the resource-scoped counter-example. Both gaps were untracked before this investigation; both filed at class altitude (FGAP-088 / FGAP-089), fixes TASK-059 (landed) / TASK-060 (pending).",
+  "findings_document": "analysis/2026-06-13-install-surface-and-guard-scope-gaps.md",
+  "grounding": {
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-13"
+    ]
+  },
+  "stale_conditions": [
+    "GAP-A grounding superseded by TASK-059: the reflected context-install op landed and installContext was removed from INTENTIONALLY_UNEXPOSED_WRITERS — the no-reflected-install-op finding is historical",
+    "GAP-B resolved when the hooks are scoped to the active substrate (TASK-060) — the op-shape-not-target-substrate finding becomes historical",
+    "pi's --tools / slash-dispatch semantics change (pi-runtime-internal), altering the pi -p non-dispatch finding"
+  ],
+  "citations": [
+    {
+      "label": "installContext engine + the /context install slash-command handler",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "1211, 3098-3149"
+    },
+    {
+      "label": "the --autoId append throw on an unmaterialized substrate (nextId before block read)",
+      "path": "packages/pi-context/src/block-api.ts",
+      "lines": "2311"
+    },
+    {
+      "label": "INTENTIONALLY_UNEXPOSED_WRITERS installContext entry (removed by TASK-059)",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "2172-2175"
+    },
+    {
+      "label": "gap-register-guard.sh — op-name + block-name match, no --cwd inspection",
+      "path": ".claude/hooks/gap-register-guard.sh",
+      "lines": "20-21"
+    },
+    {
+      "label": "block-pi-context-glue.sh — CLI-invocation-shape match, no --cwd inspection (the confirmed sibling)",
+      "path": ".claude/hooks/block-pi-context-glue.sh",
+      "lines": "22"
+    }
+  ]
+}

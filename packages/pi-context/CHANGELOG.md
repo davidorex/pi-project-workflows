@@ -12,6 +12,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 - Regenerated `skills/pi-context/SKILL.md` for the `update` op's corrected `dryRun` description (the preview now states the precise per-schema outcome — resync / migrate / block — computed by in-memory forward-migration + re-validation).
 - The `update` op's `promptSnippet` now states that a blocked resync persists a pending-blocked record (target catalog schema + the chain reaching it) resolved via `resolve-blocked` once the block's items are fixed — lockstep with the op's `description`.
 - Regenerated `skills/pi-context/SKILL.md` for the `update` op's extended `promptSnippet` (the pending-blocked record + `resolve-blocked` resolution clause).
+- Regenerated `skills/pi-context/SKILL.md` to surface the new `read-catalog-schema` op.
 
 ### Fixed
 - The `read-catalog-schema` op's text-surface output is now byte-exact: it emits the catalog `*.schema.json` bytes verbatim (the file's own trailing newline preserved, none appended) via a declared `verbatimText` flag on the op honored by the CLI print path. Previously the print path appended a second newline, doubling the file's trailing `}\n` to `}\n\n` and surfacing a phantom trailing-empty-line under `read-catalog-schema --kind <k> | diff <installed-schema> -` even when content matched.

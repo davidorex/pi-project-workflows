@@ -639,6 +639,32 @@ function readDeclaredVersion(file: string): string | undefined {
 }
 
 /**
+ * Read the verbatim bundled catalog `*.schema.json` body for a named
+ * block_kind. Resolves the catalog via the shared `resolveCatalog()` (same
+ * `samplesRoot` + `canonical_id`→`schema_path` map the installer and the drift
+ * detector use), then reads the catalog schema file's raw bytes. The returned
+ * `text` is the unparsed source (raw JSON Schema — properties/definitions/$id),
+ * NOT the `read-samples-catalog` projection, so an operator can diff it locally
+ * against the installed `<substrate>/schemas/<name>.schema.json` without
+ * touching node_modules (STORY-010 / FGAP-079, TASK-050).
+ *
+ * Read-only and substrate-independent: it touches only the package's bundled
+ * `samplesRoot` and takes no cwd, so no installed schema, block, or config is
+ * reachable from this path. Throws on an unknown kind, matching the unknown-kind
+ * throw idiom in validateBlockItemsAgainstCatalog / resolveConflict.
+ */
+export function readCatalogSchemaText(kindName: string): { kind: string; schemaPath: string; text: string } {
+	const { samplesRoot, byId } = resolveCatalog();
+	const kind = byId.get(kindName);
+	if (!kind) {
+		throw new Error(`no catalog block_kind named '${kindName}'`);
+	}
+	const schemaPath = path.join(samplesRoot, kind.schema_path);
+	const text = fs.readFileSync(schemaPath, "utf-8");
+	return { kind: kindName, schemaPath, text };
+}
+
+/**
  * Walk the shipped catalog migration chain for `schemaName` from `fromVersion`
  * to `toVersion`, returning the ordered MigrationDecl list (one per hop) when a
  * complete chain exists, or `null` when no chain reaches `toVersion`.

@@ -1060,6 +1060,25 @@
       "id": "TASK-055",
       "oid": "90f33ed68bc91d4eb4901cdf588e8660",
       "content_hash": "8d8ee9b756f940bc99eec1af3894710d5ddbca3decf31bb73d7e12a1768dfe76"
+    },
+    {
+      "description": "Enrich resolve-blocked's success report: running resolve-blocked exactly as today prints a summary that reads the way `git show --stat` reads after a merge — what was written, what changed, from-state → to-state. The command surface itself is untouched: no new op, no new flag. The report carries the old vs new schema version, which items were forward-migrated (or left unchanged), and the merge-base advance from→to — facts already computed in memory at the success point and currently discarded (today's output is effectively `resolved: true` plus one hash, and `registeredMigrations` is empty in the normal case because the blocking update run already registered the chain).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "resolve-blocked's success output shows what changed: the old vs new schema version, which items were forward-migrated (or left unchanged), and the merge-base advance from→to — not just `resolved: true` or \"0 remaining failures.\"",
+        "The text surface prints a summary that reads the way `git show --stat` reads after a merge: what was written, what changed, from-state → to-state.",
+        "The command surface is untouched — no new op, no new flag.",
+        "Canonical pipeline green (build + check + full test, parity-check, runtime demo of the blocked → fix → resolve-blocked loop showing the summary, fresh adversarial probe); docs-surface-sync pass for the changed op strings."
+      ],
+      "notes": "Origin: the operator-story think-out — the D2 and G5 statements (confirmed duplicates; one filing). D2's proposed --diff flag spelling is not adopted: the command surface is untouched. Same legibility principle as FGAP-076 (update's partial-application report).",
+      "id": "TASK-056",
+      "oid": "8c47096771a1ded2d024dec89b232a1a",
+      "content_hash": "8b7aded9f1ffd779782e5c6edc18889fc78f36633322d768c9608c718e755d5a"
     }
   ]
 }

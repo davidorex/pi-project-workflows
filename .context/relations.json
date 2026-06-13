@@ -5534,5 +5534,18 @@
       "refname": "docs-surface-sync"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8c47096771a1ded2d024dec89b232a1a",
+      "refname": "TASK-056"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

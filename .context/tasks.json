@@ -1127,7 +1127,7 @@
     {
       "id": "TASK-059",
       "description": "Reflect the install ceremony as a context-install OpDefinition in ops-registry.ts, surfacing the existing installContext engine (index.ts:1211) on the CLI like its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive). No engine fork — the op calls installContext; writer-classified via the DEC-0006 ctx channel that context-init/context-accept-all already carry; remove or update its INTENTIONALLY_UNEXPOSED_WRITERS entry (ops-registry.ts:2171-2175). Makes the init -> accept-all -> install bootstrap fully scriptable from the CLI with no pi session. Closes FGAP-088.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/index.ts"
@@ -1142,7 +1142,8 @@
       ],
       "notes": "User-directed fix-task for FGAP-088 (the install ceremony has no reflected CLI op). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md; FGAP-030 is the resolution precedent (a command-only surface unreachable from the CLI resolved by adding the reflected op).",
       "oid": "7892aea13d11264c22a417a0261a71bb",
-      "content_hash": "07f33c1bc738f23266e144de4244c89eed93b42341c2a0e1dfbe37be65ecb3fa"
+      "content_hash": "294a799ea4c79f2fee40c99c88378340278972921785cbf835110258b77b9042",
+      "content_parent": "07f33c1bc738f23266e144de4244c89eed93b42341c2a0e1dfbe37be65ecb3fa"
     },
     {
       "id": "TASK-060",

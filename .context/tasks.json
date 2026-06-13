@@ -1148,7 +1148,7 @@
     {
       "id": "TASK-060",
       "description": "Scope the PreToolUse enforcement hooks to the active substrate. Make .claude/hooks/gap-register-guard.sh and .claude/hooks/block-pi-context-glue.sh fire only when the write/invocation targets the active substrate — parse --cwd from the command string (default to the project cwd when absent), resolve .pi-context.json contextDir at that cwd, and guard only active-substrate targets; a write/invocation whose --cwd names a non-active/throwaway substrate passes. The not-installed block-substrate-cli-bypass.sh spec (analysis/2026-06-06-substrate-cli-bypass-prevention-hook-spec.md) is the resource-scoped recognizer pattern. Closes FGAP-089.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         ".claude/hooks/gap-register-guard.sh",
         ".claude/hooks/block-pi-context-glue.sh"
@@ -1163,7 +1163,8 @@
       ],
       "notes": "User-directed fix-task for FGAP-089 (enforcement hooks scoped by op-shape, not target-substrate). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. The hooks are local gitignored files; the criteria are testable by piping a synthetic tool_input JSON to each hook and checking the exit code. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
       "oid": "252e7091c59ee1f1c709c5454c8313b1",
-      "content_hash": "a8d483a1e8be6cb8ddc7b486471c7fb2fed12664e3db8c03c95df19fd0ab0bf8"
+      "content_hash": "ecccd9de154286da8d749280e382f41d8ee76e8fc7dfd4623810e8697c8d29c1",
+      "content_parent": "a8d483a1e8be6cb8ddc7b486471c7fb2fed12664e3db8c03c95df19fd0ab0bf8"
     }
   ]
 }

@@ -1,0 +1,17 @@
+{
+  "description": "Reflect the install ceremony as a context-install OpDefinition in ops-registry.ts, surfacing the existing installContext engine (index.ts:1211) on the CLI like its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive). No engine fork — the op calls installContext; writer-classified via the DEC-0006 ctx channel that context-init/context-accept-all already carry; remove or update its INTENTIONALLY_UNEXPOSED_WRITERS entry (ops-registry.ts:2171-2175). Makes the init -> accept-all -> install bootstrap fully scriptable from the CLI with no pi session. Closes FGAP-088.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "pi-context context-install appears in `pi-context --help` under Substrate lifecycle, and groupForOp does not throw for it.",
+    "Against a substrate after context-init + context-accept-all, `pi-context context-install --cwd <dir> --yes` creates <dir>/schemas/<name>.schema.json for every config.installed_schemas[] entry AND <dir>/<name>.json for every config.installed_blocks[] entry (each file exists on disk).",
+    "After that op, config.installed_from.assets is populated for every installed schema (install baseline recorded), byte-equivalent to what the /context install slash command produces (same installContext engine, no behavior fork).",
+    "A pure-CLI bootstrap context-init -> context-accept-all -> context-install (no pi session, no pi -p) yields a substrate where a subsequent `pi-context append-block-item --block tasks --cwd <dir>` succeeds — no 'nextId: schema not found' and no 'Block file not found'.",
+    "parity-check exits 0 with installContext reflected (its INTENTIONALLY_UNEXPOSED_WRITERS entry removed or updated to reflect the op); build + check + full test green.",
+    "docs-surface-sync done (the op description/promptSnippet + package & root README + SKILL regen); CHANGELOG [Unreleased] entry; FGAP-088 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "User-directed fix-task for FGAP-088 (the install ceremony has no reflected CLI op). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md; FGAP-030 is the resolution precedent (a command-only surface unreachable from the CLI resolved by adding the reflected op)."
+}

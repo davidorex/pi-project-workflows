@@ -5612,5 +5612,57 @@
       "refname": "TASK-050"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7892aea13d11264c22a417a0261a71bb",
+      "refname": "TASK-059"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "077caf30c88f6c44cbf996ec5aa361f0",
+      "refname": "FGAP-088"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7892aea13d11264c22a417a0261a71bb",
+      "refname": "TASK-059"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "252e7091c59ee1f1c709c5454c8313b1",
+      "refname": "TASK-060"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
+      "refname": "FGAP-089"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "252e7091c59ee1f1c709c5454c8313b1",
+      "refname": "TASK-060"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

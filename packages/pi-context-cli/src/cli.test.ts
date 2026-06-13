@@ -825,6 +825,26 @@ test("CLI --json: context-check-status emits the drift report (perAsset + summar
 	}
 });
 
+// STORY-010 / FGAP-079 / TASK-050: read-catalog-schema is a raw-string op — its
+// `--json` envelope carries the VERBATIM catalog schema text as a string (the
+// raw JSON Schema bytes, not the read-samples-catalog projection), so a caller
+// can capture the body and diff it locally. Package-intrinsic: no substrate.
+test("CLI --json: read-catalog-schema carries the verbatim catalog schema text as a string (raw JSON Schema)", async () => {
+	const { code, out } = await captureMainStdout(["read-catalog-schema", "--kind", "tasks", "--json"]);
+	assert.equal(code, 0);
+	const envelope = JSON.parse(out) as { ok: boolean; op: string; output: unknown };
+	assert.equal(envelope.ok, true);
+	assert.equal(envelope.op, "read-catalog-schema");
+	// THE load-bearing assertion: `output` is the raw schema TEXT — a string, not
+	// a re-serialized object (the bytes the operator diffs ride through verbatim).
+	assert.equal(typeof envelope.output, "string");
+	// Parsing that string yields the raw JSON Schema (properties + $id), proving
+	// it is the verbatim catalog body and not the projection.
+	const parsed = JSON.parse(envelope.output as string) as Record<string, unknown>;
+	assert.ok(parsed.properties && typeof parsed.properties === "object", "raw schema carries top-level properties");
+	assert.equal(typeof parsed.$id, "string", "raw schema carries a top-level $id");
+});
+
 test("CLI --json: resolve-item-by-id emits a structured {read} value (single-parse; ItemLocation under data)", async () => {
 	// TASK-013 / FGAP-015: resolve-item-by-id now routes through {read}, so its
 	// `--json` output is a ReadStructured carrying the un-stringified ItemLocation

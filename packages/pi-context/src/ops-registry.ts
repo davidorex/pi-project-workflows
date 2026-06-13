@@ -221,6 +221,14 @@ export interface OpDefinition<P = any> {
 	parameters: TSchema;
 	run(cwd: string, params: P, ctx?: DispatchContext): OpResult | Promise<OpResult>;
 	authGated?: boolean;
+	/**
+	 * When true, the op's string OpResult is emitted byte-exact on the CLI text
+	 * surface — no trailing newline appended by the print path — so the output
+	 * round-trips to a file / is diffable against an on-disk source whose bytes it
+	 * reproduces verbatim. Carried for that CLI consumer (like `authGated`); the
+	 * default-unset behavior keeps the prior text-surface trailing-newline framing.
+	 */
+	verbatimText?: boolean;
 	surface: "use" | "process";
 }
 
@@ -1126,6 +1134,12 @@ export const ops: OpDefinition[] = [
 			kind: Type.String({ description: "Catalog block_kind canonical_id (e.g. 'tasks')" }),
 		}),
 		surface: "use",
+		// The catalog schema file carries its own trailing newline (`}\n`); emit the file
+		// bytes exactly — preserving that single newline, appending none — so
+		// `read-catalog-schema --kind <k> | diff <installed> -` shows no phantom line when
+		// content matches (the pre-flag defect was the print path appending a second
+		// newline, doubling it to `}\n\n`).
+		verbatimText: true,
 		run(_cwd: string, params: { kind: string }): OpResult {
 			// Package-intrinsic: reads the extension's bundled catalog schema file,
 			// not the project substrate — cwd is unused (like read-samples-catalog).

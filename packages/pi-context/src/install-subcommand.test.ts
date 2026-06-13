@@ -19,6 +19,7 @@ import {
 	validateBlockItemsAgainstCatalog,
 } from "./index.js";
 import { getObject } from "./object-store.js";
+import { type OpDefinition, ops } from "./ops-registry.js";
 import { loadPendingBlockedForDir } from "./pending-blocked-store.js";
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
@@ -2347,5 +2348,94 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		tmpRoot = makeProject(["tasks"], []);
 		installContext(tmpRoot); // in-sync; nothing blocked
 		assert.throws(() => resolveBlocked(tmpRoot, "tasks"), /schemaName:/);
+	});
+});
+
+// TASK-059 / FGAP-088: the reflected `context-install` op surfaces the install
+// ceremony as a CLI/Pi op. It calls `installContext` with NO behavior fork — the
+// op's `run` is the same engine + call shape the `/context install` slash handler
+// runs (overwrite derived from `--update`). These tests exercise the op's own
+// `run` (the surfaced path), asserting it materializes the declared schemas +
+// blocks, records the install baseline, and equals a direct `installContext` call.
+describe("op: context-install (reflected install ceremony)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	const op = (name: string): OpDefinition => {
+		const found = ops.find((o) => o.name === name);
+		assert.ok(found, `op '${name}' must be registered`);
+		return found;
+	};
+
+	it("materializes every declared schema file + block file on disk", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], ["tasks", "decisions"]);
+		const result = op("context-install").run(tmpRoot, {});
+		assert.ok(
+			typeof result !== "string",
+			"a successful context-install returns a { json } result, not an error string",
+		);
+		// Every declared schema → <substrate>/schemas/<name>.schema.json exists.
+		for (const name of ["tasks", "decisions"]) {
+			assert.ok(
+				fs.existsSync(path.join(tmpRoot, ".project", "schemas", `${name}.schema.json`)),
+				`schemas/${name}.schema.json must exist after context-install`,
+			);
+			// Every declared block → <substrate>/<name>.json exists.
+			assert.ok(
+				fs.existsSync(path.join(tmpRoot, ".project", `${name}.json`)),
+				`${name}.json must exist after context-install`,
+			);
+		}
+	});
+
+	it("records config.installed_from.assets for every installed schema", () => {
+		tmpRoot = makeProject(["tasks", "decisions"], []);
+		op("context-install").run(tmpRoot, {});
+		const from = loadConfig(tmpRoot)?.installed_from;
+		assert.ok(from, "config.installed_from must be recorded by the reflected op");
+		assert.deepEqual(
+			Object.keys(from.assets).sort(),
+			["decisions", "tasks"],
+			"one installed_from.assets entry per installed schema",
+		);
+	});
+
+	it("equals a direct installContext(cwd, {overwrite:false}) call — no behavior fork", () => {
+		// Run the op against one substrate and a direct installContext against an
+		// IDENTICALLY-declared sibling; the InstallResult payloads must be deep-equal.
+		tmpRoot = makeProject(["tasks", "decisions"], ["tasks"]);
+		const opResult = op("context-install").run(tmpRoot, {});
+		assert.ok(typeof opResult !== "string" && "json" in opResult, "the op returns its InstallResult via { json }");
+
+		const directRoot = makeProject(["tasks", "decisions"], ["tasks"]);
+		try {
+			const direct = installContext(directRoot, { overwrite: false });
+			assert.deepEqual(opResult.json, direct, "the op result must equal a direct installContext call (no fork)");
+		} finally {
+			fs.rmSync(directRoot, { recursive: true, force: true });
+		}
+	});
+
+	it("a pure-op context-install lets a fresh substrate's schema model materialize (the install ceremony succeeds)", () => {
+		// init → accept-all → install via the reflected ops only (no slash handler):
+		// the op chain must leave a usable substrate (schemas materialized, baseline
+		// recorded), the precondition an append-block-item then relies on.
+		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-install-op-chain-"));
+		const dir = ".project";
+		op("context-init").run(tmpRoot, { contextDir: dir });
+		op("context-accept-all").run(tmpRoot, {});
+		const result = op("context-install").run(tmpRoot, {});
+		assert.ok(typeof result !== "string", "the install op must not return an error string after init + accept-all");
+		const cfg = loadConfig(tmpRoot);
+		assert.ok(cfg, "config must load after the reflected install ceremony");
+		assert.ok(cfg.installed_from, "the install ceremony must record the installed_from baseline");
+		// At least one declared schema materialized on disk.
+		for (const name of cfg.installed_schemas ?? []) {
+			assert.ok(
+				fs.existsSync(path.join(tmpRoot, dir, "schemas", `${name}.schema.json`)),
+				`schemas/${name}.schema.json must exist after the reflected install ceremony`,
+			);
+		}
 	});
 });

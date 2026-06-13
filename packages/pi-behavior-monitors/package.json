@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-behavior-monitors",
-	"version": "0.30.0",
+	"version": "0.31.0",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -56,9 +56,9 @@
 	},
 	"dependencies": {
 		"nunjucks": "^3.2.4",
-		"@davidorex/pi-jit-agents": "^0.30.0",
-		"@davidorex/pi-context": "^0.30.0",
-		"@davidorex/pi-workflows": "^0.30.0",
+		"@davidorex/pi-jit-agents": "^0.31.0",
+		"@davidorex/pi-context": "^0.31.0",
+		"@davidorex/pi-workflows": "^0.31.0",
 		"@earendil-works/pi-ai": "^0.75.4",
 		"@earendil-works/pi-coding-agent": "^0.75.4",
 		"@earendil-works/pi-tui": "^0.75.4"

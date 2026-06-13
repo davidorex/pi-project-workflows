@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-06-13
+
 ### Changed
 - The auth-gate's canonical authorization-required set now includes `context-install` (the `pi-context` reflected install-ceremony op): invoking it requires user authorization at the pi-dispatch auth-gate (interactive confirm, or `--yes`/`--force` on the CLI). Membership is derived from the op-registries' `authGated` flags, so the set picked it up automatically from the op's `authGated: true`; the canonical-membership pin test is extended to 20 names to track the derived set.
 - The auth-gate's canonical authorization-required set now includes `resolve-blocked` (the `pi-context` blocked-resolution commit op): invoking it requires user authorization at the pi-dispatch auth-gate (interactive confirm, or `--yes`/`--force` on the CLI). Membership is derived from the op-registries' `authGated` flags, so the set picked it up automatically; the canonical-membership pin test is extended to 19 names to track the derived set.

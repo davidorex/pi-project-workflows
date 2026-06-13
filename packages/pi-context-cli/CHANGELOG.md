@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-06-13
+
 ### Changed
 - The CLI auto-supplied params (`writer`, `arrayKey` — filled after parse so a caller need not pass them) are now described by one internal source that drives all of: their exemption from the missing-required check, their bracketed-optional rendering in the per-op synopsis, and their `autoSupplied` annotation in the `--help` Flags block. Observable behavior is unchanged — these params remain optional to pass and auto-filled.
 

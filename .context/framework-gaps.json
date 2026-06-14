@@ -2829,6 +2829,50 @@
       "created_at": "2026-06-14T01:25:55.291Z",
       "oid": "89c4e44ff0668ae999b544ac9426a111",
       "content_hash": "eafa0983e7114c5ee5dd3e3a5c44d5f7426bed07c3417f4a90fbebff2d67c5d7"
+    },
+    {
+      "title": "no forcing function for warranted non-invariant closure-table edges: edge presence is enforced only for requires-edge-backed relation_types, so warranted task_governed_by_decision / task_addresses_gap / research_informs_item edges are omitted with nothing to flag the absence",
+      "status": "identified",
+      "package": "pi-context",
+      "canonical_vocabulary": "forcing-function coverage for warranted non-invariant closure-table edges",
+      "description": "Closure-table edge presence is enforced only for relation_types backed by a requires-edge invariant: completed-task-has-verification, decision-cites-forcing-artifact, the three *-articulates-convention invariants, and decision-shows-derivation. The vocabulary-free requires-edge loop (the mechanism DEC-0016 establishes, context-sdk.ts:2055-2078) flags at context-validate any item in the invariant's block missing an edge of the named relation_types. Every other warranted relation_type — task_governed_by_decision, task_addresses_gap, task_addresses_feature, research_informs_item, the data_flow links — has no requires-edge invariant and is filed only by a manual append-relation step that runs after the item write; no surface flags a warranted-but-absent non-invariant edge. The forcing-function absence is both-surface: write-time has no completeness check tying an item's filed body to the edges its text entails, and context-validate has no rule flagging a missing non-invariant edge. Warranted means entailed by an item's filed text or by the relation_type's intended population — not universal (not every task addresses a gap), so a blanket requires-edge invariant is not the answer for every type. Edges an item's own text entails are written inconsistently or omitted, concentrated in pre-discipline history. General class: the five missing TASK->decision/gap edges (TASK-010->DEC-0008 and ->FGAP-012, TASK-012->DEC-0009 and ->FGAP-015, TASK-014->FGAP-014) are the triggering instance; FGAP-071 (gap->arc binding) is a contained sibling instance already filed narrowly.",
+      "evidence": [
+        {
+          "file": ".context/config.json",
+          "reference": "read-config --registry invariants: six requires-edge invariants (completed-task-has-verification, decision-cites-forcing-artifact, decision/feature/task-articulates-convention, decision-shows-derivation); the status-consistency invariants compare buckets on an already-existing edge and never require edge presence"
+        },
+        {
+          "file": ".context/config.json",
+          "reference": "read-config --registry relation_types: 38 relation_types; only the six requires-edge-named ones are forced; task_governed_by_decision / task_addresses_gap / research_informs_item carry no invariant"
+        },
+        {
+          "file": ".context/relations.json",
+          "reference": "context-validate: 17 decision-shows-derivation warnings (an invariant-backed absence IS flagged) and zero warnings for any absent task_governed_by_decision / task_addresses_gap edge — the asymmetry"
+        },
+        {
+          "file": ".context/relations.json",
+          "reference": "find-references TASK-010: edges VER-009 + two conventions; no edge to DEC-0008 or FGAP-012 though TASK-010 description names 'Per DEC-0008 / FGAP-012'"
+        },
+        {
+          "file": ".context/relations.json",
+          "reference": "find-references TASK-012: edges VER-007 + two conventions; no edge to DEC-0009 or FGAP-015 though TASK-012 is FGAP-013's fix and DEC-0009's enacting task"
+        },
+        {
+          "file": ".context/relations.json",
+          "reference": "find-references TASK-014: edges VER-008 + one convention; no edge to FGAP-014 though TASK-014 description names 'Closes FGAP-014'"
+        },
+        {
+          "file": "analysis/2026-06-14-edge-coverage-forcing-function-investigation.md",
+          "reference": "the grounded investigation; page-through of all 90 framework-gaps found no item titling the class; TASK-041 + FGAP-071 are per-type instances, DEC-0016 the mechanism, FGAP-090 / FGAP-007 adjacent edge-write axes"
+        }
+      ],
+      "impact": "The closure-table graph is systematically incomplete for non-invariant relations: task_governed_by_decision, task_addresses_gap, research_informs_item are inconsistently populated. Any consumer reading the graph for provenance or derivation (gate-aware derivation FGAP-061, lineage walks, 'what addressed this gap') gets a partial answer, and the absences are invisible — no flag — so they accumulate silently as item counts grow; the flat-list-drift pattern FGAP-071 names for gaps, generalized to all warranted edges.",
+      "proposed_resolution": "Generalize the TASK-041 / DEC-0016 pattern to the under-filed warranted relation_types. Per relation_type: where presence is universally entailed (a completed task that closed a gap; the enacting task of an enacted decision), add a requires-edge invariant making the edge unfileable-without, gated behind a backfill (the TASK-041 backfill-then-raise template, severity warning->error after backfill); where presence is conditional (not every task addresses a gap), add a validator check that flags an item whose body text names a closure or enactment ('closes FGAP-...', 'per DEC-...') without the corresponding edge — a text-entailment check rather than a blanket requirement. Whether any rule needs the FGAP-082 aggregate-over-edges invariant class is part of the mechanism choice. Relate to TASK-041 (per-type precedent), DEC-0016 (mechanism), FGAP-071 (contained instance), FGAP-082 (engine axis); the precise relates/informed-by relation types for gap->task, gap->decision, and gap->gap do not exist (intersects FGAP-090) and gap_addressed_by_decision would mistype the link as a resolution, so no typed relation edge to those relatives is written until those types land.",
+      "id": "FGAP-091",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-14T02:08:01.945Z",
+      "oid": "59e28b0f7b432759d5234348ebc6aca9",
+      "content_hash": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
     }
   ]
 }

@@ -5690,5 +5690,109 @@
       "refname": "TASK-033"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5538a6800cd86ab6b94d2732b058a70",
+      "refname": "TASK-061"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "89c4e44ff0668ae999b544ac9426a111",
+      "refname": "FGAP-090"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d2774b32a86cec88a02c70b767ce5329",
+      "refname": "TASK-062"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "89c4e44ff0668ae999b544ac9426a111",
+      "refname": "FGAP-090"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8951f7d27ac9c6c539b24e8077bf0252",
+      "refname": "TASK-063"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "89c4e44ff0668ae999b544ac9426a111",
+      "refname": "FGAP-090"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8951f7d27ac9c6c539b24e8077bf0252",
+      "refname": "TASK-063"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b5538a6800cd86ab6b94d2732b058a70",
+      "refname": "TASK-061"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5538a6800cd86ab6b94d2732b058a70",
+      "refname": "TASK-061"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d2774b32a86cec88a02c70b767ce5329",
+      "refname": "TASK-062"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d2774b32a86cec88a02c70b767ce5329",
+      "refname": "TASK-062"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8951f7d27ac9c6c539b24e8077bf0252",
+      "refname": "TASK-063"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

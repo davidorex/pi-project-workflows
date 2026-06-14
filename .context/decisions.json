@@ -402,7 +402,7 @@
     {
       "id": "DEC-0013",
       "title": "The pi-context command ships as its own publish unit (@davidorex/pi-context-cli carries the bin)",
-      "status": "open",
+      "status": "enacted",
       "context": "The global pi-context command (FGAP-047) and --pi-bound (FEAT-005) need a publish unit that hosts the CLI bin. Two shapes compete: the CLI as its own published package depending on @davidorex/pi-context (and, for --pi-bound, the meta-package), versus folding the bin into the meta-package @davidorex/pi-project-workflows. The meta-package ships only *.ts/*.md/skills/ with no dist/ or built CLI entry.",
       "decision": "Keep the bin in @davidorex/pi-context-cli as its own publish unit; npm i -g @davidorex/pi-context-cli pulls the dependency tree, mirroring how pi ships its CLI. Do not relocate the CLI build into the meta-package.",
       "consequences": [
@@ -424,12 +424,13 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "18f1129016b8ea678c74a1a106a1fa50",
-      "content_hash": "a3e40d2346d304c3fce4aa553bf86b158ad1eff4db72e95e799b050e6cd7b932"
+      "content_hash": "d0c7bddb1e07347175fffa784a1dfb224cc7d5bdcb954beaf97dbb156448ad2f",
+      "content_parent": "a3e40d2346d304c3fce4aa553bf86b158ad1eff4db72e95e799b050e6cd7b932"
     },
     {
       "id": "DEC-0014",
       "title": "pi-context pi-bound is a CLI process mode routed before op resolution, not a substrate op",
-      "status": "open",
+      "status": "enacted",
       "context": "pi-bound launches an interactive pi subprocess; it is not a request->response substrate operation. It must not enter the reflected surface:use op set the CLI exposes, and it cannot run through the op-dispatch/auth path.",
       "decision": "Expose pi-bound as a bare subcommand (per the cli-command-form convention: an alternate run-and-exit mode is a bare verb, not a flag). Route it inside the CLI main() before op resolution — main() dispatches when the first positional is 'pi-bound' — and exclude it from the reflected op surface. It is a process-launch mode of the pi-context bin, parallel to list-tools' process surface, not a registered op.",
       "consequences": [
@@ -454,13 +455,13 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "3f12dad148043269e9efc4002eab0b15",
-      "content_hash": "b37b2f31b0ce6a6b9aca2c3e6e20c0bf61b841f1ae2ecab5e8ad3f170028086b",
-      "content_parent": "3d4eabd5f7a29f864a9d77dfdaf900b7ba0f963f239882f780c59a006bec83df"
+      "content_hash": "a0f4b2a357e3da98922aa86765593f8b9c14e04e2a45198d84147eb14f69e01b",
+      "content_parent": "b37b2f31b0ce6a6b9aca2c3e6e20c0bf61b841f1ae2ecab5e8ad3f170028086b"
     },
     {
       "id": "DEC-0015",
       "title": "pi-context --pi-bound composes context in-process via loadContext, replacing the script's tsx+python3 pipeline",
-      "status": "open",
+      "status": "enacted",
       "context": "scripts/launch-constrained-pi.sh derives per-target context through a two-stage shell pipeline (a tsx JSON emit feeding a python3 JSON->CSV stage). Porting to the CLI can either shell the same pipeline or compose in-process.",
       "decision": "Compose the context in-process via a single loadContext call in the CLI, replacing the tsx+python3 two-stage pipeline. This is a deliberate replacement, not a behavior-preserving port of the shell stages.",
       "consequences": [
@@ -482,7 +483,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "2a280f513f2e006b0231459377931714",
-      "content_hash": "c5f3d92a0e66fa6a8082f6842c159bf6224e2ad96bc830dc67607dc7cb697ced"
+      "content_hash": "38a70bfb2cb7f67d904bc2c3332b797fd1988f3daabb26a3fdcd2502e90498a0",
+      "content_parent": "c5f3d92a0e66fa6a8082f6842c159bf6224e2ad96bc830dc67607dc7cb697ced"
     },
     {
       "id": "DEC-0016",

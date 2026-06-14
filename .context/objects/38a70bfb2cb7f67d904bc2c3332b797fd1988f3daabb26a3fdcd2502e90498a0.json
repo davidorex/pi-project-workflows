@@ -1,0 +1,22 @@
+{
+  "title": "pi-context --pi-bound composes context in-process via loadContext, replacing the script's tsx+python3 pipeline",
+  "status": "enacted",
+  "context": "scripts/launch-constrained-pi.sh derives per-target context through a two-stage shell pipeline (a tsx JSON emit feeding a python3 JSON->CSV stage). Porting to the CLI can either shell the same pipeline or compose in-process.",
+  "decision": "Compose the context in-process via a single loadContext call in the CLI, replacing the tsx+python3 two-stage pipeline. This is a deliberate replacement, not a behavior-preserving port of the shell stages.",
+  "consequences": [
+    "No tsx or python3 subprocess dependency at launch.",
+    "The composition logic moves into typed CLI code, testable in-process.",
+    "Output equivalence to the script's pipeline must be demonstrated, since the mechanism differs."
+  ],
+  "references": [
+    {
+      "label": "pi-bound spec — in-process loadContext note",
+      "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
+    },
+    {
+      "label": "script's two-stage context pipeline",
+      "path": "scripts/launch-constrained-pi.sh",
+      "lines": "104-109"
+    }
+  ]
+}

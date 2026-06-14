@@ -3,7 +3,7 @@
  *
  * The catalog reads the extension's OWN bundled samples/ — it is
  * package-intrinsic (no cwd). These cases pin the live conception:
- *   - structural completeness (16 kinds; 31 relation_types; registries present)
+ *   - structural completeness (16 kinds; 34 relation_types; registries present)
  *   - DEC-0023 live-data guard (every kind has title + description + shape)
  *   - endpoint-participation semantics (wildcard, alias/split, convergence)
  *   - per-kind invariant / lens attachment
@@ -45,9 +45,9 @@ describe("samplesCatalog", () => {
 		}
 	});
 
-	it("exposes the full top-level registries (31 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
+	it("exposes the full top-level registries (34 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
 		const c = samplesCatalog();
-		assert.strictEqual(c.relationTypes.length, 31);
+		assert.strictEqual(c.relationTypes.length, 34);
 		assert.ok(Array.isArray(c.lenses));
 		assert.ok(Array.isArray(c.invariants));
 		assert.ok(Array.isArray(c.layers));

@@ -1332,6 +1332,41 @@
       ],
       "oid": "b34bcba9d7b75fca15fca7f0da51f6f4",
       "content_hash": "ef89f572cbe38ccf6d1d7917d17869053f3ddf66cdac71f528c4bea4a5b8e2b7"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-061 verified end-to-end. The three relation_types are in the active .context config (amend-config, committed e44a144) and the packaged catalog samples/conception.json relation_types[] (committed a582939). read-config --registry relation_types returns decision_raises_gap {data_flow, decisions->framework-gaps}, decision_gated_by_item {ordering, decisions->*}, gap_relates_to_gap {data_flow, framework-gaps->framework-gaps}. A fresh /tmp substrate (context-init -> context-accept-all) carries decision_raises_gap (read-config against /tmp), the catalog adopted wholesale. context-validate warnings-only baseline (no new issue from the additions). npm run build + full npm test across all four packages exited 0 on the merged integration state.",
+      "criteria_results": [
+        {
+          "criterion": "read-config --registry relation_types lists the three with exact category/source/target",
+          "status": "passed",
+          "evidence": "read-config returned each with the exact shape (data_flow decisions->framework-gaps; ordering decisions->*; data_flow framework-gaps->framework-gaps)"
+        },
+        {
+          "criterion": "samples/conception.json relation_types[] carries the three; read-samples-catalog surfaces them",
+          "status": "passed",
+          "evidence": "catalog edit committed a582939; context-accept-all adopts the catalog wholesale (a fresh substrate carries them)"
+        },
+        {
+          "criterion": "a fresh /tmp accept-all+install substrate carries the three relation_types",
+          "status": "passed",
+          "evidence": "/tmp/fgap090-verify via context-init+context-accept-all; read-config --cwd returned decision_raises_gap"
+        },
+        {
+          "criterion": "context-validate warnings-only with no new issue from the additions",
+          "status": "passed",
+          "evidence": "context-validate status warnings, the pre-existing 17 decision-shows-derivation + 2 layer-plans baseline unchanged"
+        },
+        {
+          "criterion": "npm run build + check + full test pass with 0 failures",
+          "status": "passed",
+          "evidence": "build clean; full npm test EXIT=0 across pi-context/pi-workflows/pi-behavior-monitors/pi-agent-dispatch"
+        }
+      ],
+      "id": "VER-047",
+      "oid": "bfb96bb1f45d40ab83b38b9f8545ab63",
+      "content_hash": "1ed61f691744fc26a9baef9d2ea8b9a38af0707edacb4631087490e4050cfc89"
     }
   ]
 }

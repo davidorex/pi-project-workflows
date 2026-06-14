@@ -1,0 +1,11 @@
+{
+  "description": "Add three relation_types to the pi-context registry at BOTH loci (active .context config via amend-config --registry relation_types --operation add; and the packaged catalog packages/pi-context/samples/conception.json relation_types[] — the durable home, since mergeCatalogRegistries is additive catalog->config and a config-only add would not survive a fresh accept-all): decision_raises_gap (category data_flow, source_kinds [decisions], target_kinds [framework-gaps]); decision_gated_by_item (category ordering, source_kinds [decisions], target_kinds [*]); gap_relates_to_gap (category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]). Pure config/catalog addition, no .ts or schema change (the TASK-033 template: item_governed_by_convention was catalog-only). Resolves the expressibility half of FGAP-090. category is inert in code today (derivation selects edges by literal relation_type name, never reads category), so decision_gated_by_item:ordering is forward-looking vocabulary a future FGAP-061 deriver consumes by name; added now, valid, inert until that deriver lands.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "read-config --registry relation_types lists all three with exactly: decision_raises_gap = {category data_flow, source_kinds [decisions], target_kinds [framework-gaps]}; decision_gated_by_item = {category ordering, source_kinds [decisions], target_kinds [*]}; gap_relates_to_gap = {category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]}.",
+    "packages/pi-context/samples/conception.json relation_types[] contains the three entries with the same canonical_id/category/source_kinds/target_kinds; read-samples-catalog surfaces them.",
+    "A fresh /tmp substrate via context-init -> context-accept-all -> context-install carries all three relation_types.",
+    "context-validate on .context returns warnings-only with no new issue from the additions.",
+    "npm run build + check + full test pass with 0 failures."
+  ]
+}

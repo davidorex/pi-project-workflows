@@ -1000,6 +1000,69 @@
       "modified_at": "2026-06-13T09:40:40.203Z",
       "oid": "105c8dad04eef47ef75ee80a77d5a86c",
       "content_hash": "c6c4de6471c6d6bd434e7076fc7a91c99f181259ff6411b0d6076f736d4fcf95"
+    },
+    {
+      "title": "pi-context leverage audit: how fully pi-project-workflows dogfoods the tool for its own PM, and the shipped-but-unused vs blocked-on-tracked-gap leverage gaps",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "Which pi-context features and functionalities does pi-project-workflows under-use or not use for managing its own development in .context, and which should it leverage to fully use the tool for its purposes — distinguishing shipped-but-unused (closable by discipline) from blocked-on-a-tracked-capability-gap?",
+      "method": "code-inspection (ops-registry.ts, SKILL.md, monorepo + package README, CHANGELOG) + config/substrate inspection via the pi-context CLI (read-config block_kinds/relation_types/lenses/invariants, read-block-page per kind, context-current-state) + cross-reference against .context open framework-gaps/features about pi-context capability",
+      "scope": [
+        "packages/pi-context (ops-registry, samples/conception.json, SKILL, README, CHANGELOG)",
+        "monorepo README + scripts/orchestrator",
+        ".context substrate block_kinds/relation_types/lenses/invariants populations",
+        "the open FGAPs/FEATs about pi-context capability",
+        "repo at a38cca9 (2026-06-15)"
+      ],
+      "findings_summary": "pi-project-workflows both develops pi-context AND uses pi-context's .context substrate as its own PM system; this audits how fully the project leverages pi-context's capability surface for that PM purpose. Leverage is substantial but uneven. The write, query, and schema-evolution surfaces are driven hard — 93 framework-gaps, 64 tasks, 50 verifications, 17 migrations, live invariant enforcement; the update / resolve-blocked / resolve-conflict arc IS the dev work. But the organizational and derivational surfaces are under-used: ~7 of 17 block kinds sit empty (context-contracts, phase, requirements, rationale, spec-reviews, layer-plans, work-orders) and only ~13 of 40 relation_types carry any edges. Top leverage gaps: (1) No release/version vocabulary — no first-class binding of a version to its completed dev-items + changelog lines, for a lockstep-release monorepo [FGAP-011, accepted]. (2) context-current-state is non-load-bearing — returns 'no active focus' and derives blocked only from task_depends_on_task, ignoring *_gated_by_item gates; the project shadows it with the hand-maintained CLAUDE.md active-arc tracker, violating substrate-as-single-source [FGAP-061 gate-aware derivation + FEAT-004 config-driven derivation]. (3) context-contracts + gather-execution-context sit empty while the orchestrator hand-composes the exact subagent context bundles that op assembles — a shipped capability unused [discipline]. (4) feature/story containment edges, spec-reviews, phases, and roadmaps are shipped-but-empty — the orphan tasks and the unshipped FEAT-001..004 arc have no structural rollup, which is why release-pinning and focus are not derivable [discipline + the derivation gaps]. (5) Warranted non-invariant closure-table edges are systematically under-filed (only requires-edge-invariant-backed relation_types are enforced) [FGAP-091, forcing-function as residual]. Split: ~6 leverage gaps are closable today by filing-discipline alone (populate context-contracts; file feature/story containment edges; backfill warranted edges; use spec-reviews; file phases/roadmap; file session edges); 4 are blocked on a tracked capability landing (FGAP-011 release vocab, FGAP-061 gate-aware derivation, FEAT-004 config-driven derivation, FGAP-091 forcing-function). Critically: no untracked capability gap surfaced — every 'the tool can't do this' is already filed in .context; the remainder is pure dogfooding-discipline debt. Headline implication: the project's inability to derive its own focus / status / release-plan (the recurring operating-context pain) is NOT a missing tool capability but a combination of under-population of shipped organizational vocabulary and the small set of tracked derivation/vocabulary gaps.",
+      "findings_document": "analysis/2026-06-15-pi-context-leverage-audit.md",
+      "grounding": {
+        "revisions": [
+          "repo at a38cca9 (2026-06-15)"
+        ]
+      },
+      "grounded_at": "2026-06-15",
+      "stale_conditions": [
+        "FGAP-011 lands (release/version vocabulary added) — the no-release-vocabulary finding becomes obsolete",
+        "FGAP-061 and/or FEAT-004 land (gate-aware / config-driven derivation) — context-current-state becomes load-bearing and the CLAUDE.md shadow tracker retires",
+        "FGAP-091's forcing-function invariant lands — the under-filed-edges finding changes",
+        "the currently-empty block kinds (context-contracts, spec-reviews, phase, requirements, rationale, work-orders) or the feature/story containment edges become populated",
+        "the op surface or the block_kinds/relation_types/lenses/invariants registries change materially from the a38cca9 baseline"
+      ],
+      "citations": [
+        {
+          "label": "the full leverage audit (capability surface inventory, current-usage inventory, prioritized leverage gaps, the discipline-vs-tracked-gap split)",
+          "path": "analysis/2026-06-15-pi-context-leverage-audit.md"
+        },
+        {
+          "label": "gap-task-feature coverage + release-pinnability audit (45 open gaps, sparse coverage, 4 release-pinnable features)",
+          "path": "analysis/2026-06-14-gap-task-feature-coverage-audit.md"
+        },
+        {
+          "label": "FGAP-011 — no release/version vocabulary (accepted)",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "FGAP-061 — gate-aware readiness derivation (identified)",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "FGAP-091 — no forcing-function for warranted non-invariant edges (identified)",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "FEAT-004 — config-driven state derivation",
+          "path": ".context/features.json"
+        }
+      ],
+      "id": "R-0015",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-14T23:36:55.610Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-14T23:36:55.610Z",
+      "oid": "602ad155df54de2092304a24eab8e610",
+      "content_hash": "888989bf0a8b5b63e2e87b54c67ed6a2c7375bbe82f73297e5ded735d291c532"
     }
   ]
 }

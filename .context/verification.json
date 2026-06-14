@@ -1367,6 +1367,41 @@
       "id": "VER-047",
       "oid": "bfb96bb1f45d40ab83b38b9f8545ab63",
       "content_hash": "1ed61f691744fc26a9baef9d2ea8b9a38af0707edacb4631087490e4050cfc89"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-062 verified end-to-end on the built/merged integration state. Real-CLI runtime demo: a kind-mismatched append-relation (gap_relates_to_gap with a tasks parent) is rejected at write — 'Edge rejected at write time ... source kind tasks not in source_kinds [framework-gaps] for relation_type gap_relates_to_gap' — and nothing is persisted; the four kind-correct TASK-063 edges were accepted and persisted by the same validator. pi-context suite 1147 pass / 0 fail (includes edge-write.test.ts and the issue-order regression test). Fresh adversarial probe: validateContext issue shape byte-identical pre/post refactor (no regression), false-pass/over-reject/parity/dryRun all pass, presence-gate (relation_type with neither source_kinds nor target_kinds) not over-rejected. The probe-found issue-order regression was fixed (289e9ed restores registration-class before kind-class) and independently re-verified.",
+      "criteria_results": [
+        {
+          "criterion": "a kind-mismatched real append-relation is rejected at write naming the offending endpoint kind + relation_type, edge not persisted",
+          "status": "passed",
+          "evidence": "CLI append-relation gap_relates_to_gap TASK-061->FGAP-090 rejected: source kind tasks not in source_kinds [framework-gaps]; relations file unchanged"
+        },
+        {
+          "criterion": "a kind-correct append-relation succeeds and persists the edge",
+          "status": "passed",
+          "evidence": "the four kind-correct TASK-063 edges accepted and persisted (append-relations: appended 4)"
+        },
+        {
+          "criterion": "a relation_type with neither source_kinds nor target_kinds is not rejected at write (presence-gate preserved)",
+          "status": "passed",
+          "evidence": "adversarial probe property 3 PASS — presence-gate honored at the write surface, matching context-sdk.ts:1990"
+        },
+        {
+          "criterion": "write-time and validate-time kind semantics agree; existing validateContext unchanged",
+          "status": "passed",
+          "evidence": "shared validateEdgeAgainstRegistry helper used by both surfaces; probe property 1+4: validateContext issues byte-identical pre/post (incl. order after 289e9ed), parity holds"
+        },
+        {
+          "criterion": "npm build + check + full test pass with 0 failures; adversarial probe on over-reject/parity",
+          "status": "passed",
+          "evidence": "pi-context suite 1147/0; full npm test EXIT=0 across all packages; probe found no over-reject"
+        }
+      ],
+      "id": "VER-048",
+      "oid": "8c4f19b8298d94714fdc17f47e15f544",
+      "content_hash": "fe22d0752682526c8a54bd1e840b2ce04691a0f1ba5a75888a164e30782f10f2"
     }
   ]
 }

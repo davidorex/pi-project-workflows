@@ -1183,7 +1183,7 @@
     },
     {
       "description": "Add a write-time edge kind/category validator. When an edge is written via appendRelationByRef (packages/pi-context/src/context-sdk.ts:1412) and appendRelationsByRef (:1549), check the parent item's kind against the relation_type's source_kinds and the child's against target_kinds (with the * wildcard) and the edge against the relation_type's category, and REJECT a mismatched edge at write with a clear error naming the offending endpoint kind and relation_type. This hoists the existing post-hoc kind check (validateContext, context-sdk.ts:1987-2021, FGAP-086/DEC-0037) to the write surface (the raw appendRelationsForDir, context.ts:649, cannot resolve endpoint kinds under the documented layering at context.ts:617-625). Presence-gate on source_kinds/target_kinds exactly as the validate-time check (context-sdk.ts:1990) so currently-passing writes are unaffected. Resolves the write-time-enforcement half of FGAP-090. Distinct from TASK-027 (ordering-edge endpoint-role DIRECTION, ordering-only; this checks source/target KIND + category across all relation_types).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/context-sdk.ts"
       ],
@@ -1196,8 +1196,8 @@
       ],
       "id": "TASK-062",
       "oid": "d2774b32a86cec88a02c70b767ce5329",
-      "content_hash": "601f010d27a1abc25f1dedc875a9e5d0d0ba86084b614cb771cfbcc6d0a0f68d",
-      "content_parent": "ade6016ebf1c4b1918b39ef825544b420513d1f1d32f20f083c942117b075db6"
+      "content_hash": "1fb21b4078e431b28d131aaccf453afbe2e03acd252faf5ebc137b14dd30b724",
+      "content_parent": "601f010d27a1abc25f1dedc875a9e5d0d0ba86084b614cb771cfbcc6d0a0f68d"
     },
     {
       "description": "Apply FGAP-090's new vocabulary to correct the mistyped/absent edges (depends on TASK-A). In order: (1) File DEC-0018's true forcing artifact as a framework-gaps item — the problem that forced DEC-0018: pi-context update's post-loop registry propagation writes config.json even when a schema returns blocked, ungated on the schema-loop outcome (packages/pi-context/src/index.ts:1391-1421); this is the cause DEC-0018 ruled on (affirming per-component), distinct from FGAP-076 which is the legibility consequence DEC-0018 spawned. (2) Add a decision_addresses_gap edge DEC-0018 -> the new forcing gap, restoring genuine decision-cites-forcing-artifact satisfaction (cause, not consequence). (3) Retype the DEC-0018 -> FGAP-076 edge from decision_addresses_gap to decision_raises_gap via replace-relation — non-breaking once step 2 is in place. (4) Add a decision_gated_by_item edge DEC-0018 -> FGAP-076 (gated thing = parent, gate = child). (5) Add gap_relates_to_gap edges FGAP-090 -> FGAP-007 and FGAP-090 -> FGAP-061. Resolves the edge-correction half of FGAP-090 and repairs DEC-0018's backwards forcing-artifact citation. The step-1 forcing-artifact filing is its own provenance-stopped write.",

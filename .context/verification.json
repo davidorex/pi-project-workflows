@@ -1437,6 +1437,31 @@
       "id": "VER-049",
       "oid": "7506c3109f486112c3de366da0a060d7",
       "content_hash": "bdcba3a667757479b19e05956818a9097127701db258b6deb0a59b3405bed775"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-064 verified via CLI. Re-confirmed via find-references that all seven warranted edges were absent and entailed by the items' filed text: TASK-010 and TASK-011 each lacked task_governed_by_decision->DEC-0008 and task_addresses_gap->FGAP-012 (both bodies say 'Per DEC-0008 / FGAP-012'); TASK-012 lacked ->DEC-0009 and ->FGAP-015; TASK-014 lacked ->FGAP-014. append-relations wrote 7, all accepted by the write-time validator (kind-correct). context-validate warnings-only baseline — no edge_endpoint_dangling (all targets exist), no new issue.",
+      "criteria_results": [
+        {
+          "criterion": "the complete warranted-but-absent set is re-confirmed via find-references (the five audit-enumerated edges plus the symmetric sibling)",
+          "status": "passed",
+          "evidence": "find-references on TASK-010/011/012/014 confirmed all seven edges absent; TASK-011 confirmed as the symmetric sibling (its text 'Per DEC-0008 / FGAP-012')"
+        },
+        {
+          "criterion": "each absent edge is written via append-relation and accepted as kind-correct",
+          "status": "passed",
+          "evidence": "append-relations: appended 7, skipped 0; all kind-correct (tasks->decisions, tasks->framework-gaps), accepted by the TASK-062 validator"
+        },
+        {
+          "criterion": "find-references shows the new edges; context-validate warnings-only with no new issue",
+          "status": "passed",
+          "evidence": "context-validate warnings-only baseline, no edge_endpoint_dangling, no new code; edges persisted"
+        }
+      ],
+      "id": "VER-050",
+      "oid": "c3bb0879d38ebf54994eeeee66f79fcb",
+      "content_hash": "2285acf74f77229da2e4bcc1fafaac87c34937ebf3fad1b5052bcac37f798e71"
     }
   ]
 }

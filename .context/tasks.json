@@ -604,7 +604,7 @@
     {
       "id": "TASK-033",
       "description": "Ship the governance vocabulary in the samples catalog: add the two relation_types and three requires-edge invariants (severity warning, for fresh substrates) to packages/pi-context/samples/conception.json, with CHANGELOG + usage docs, then release. Fresh install/accept-all substrates then carry advisory convention-articulation.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/samples/conception.json",
         "packages/pi-context/CHANGELOG.md"
@@ -618,8 +618,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "c435caaec915d903d4782a80cb42b307",
-      "content_hash": "d4295ea731ec60f2d29feac832e8d53e21df51c285e4e62ca89b4c809bc10a00",
-      "content_parent": "4673c7a3655e2d8970bd97e3271d5de801b0b409a115fc9ed893ba4bdd2bdfeb"
+      "content_hash": "71a00812717d2aa9ead319c853f94ef0c7fec52b4aed909c00162aa6cccc2243",
+      "content_parent": "d4295ea731ec60f2d29feac832e8d53e21df51c285e4e62ca89b4c809bc10a00"
     },
     {
       "id": "TASK-034",

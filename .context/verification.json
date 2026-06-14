@@ -1301,6 +1301,37 @@
       ],
       "oid": "3b700fafe6bc3b02ee1326e8f2a78e6c",
       "content_hash": "cad55734cc393eb6fa1c25ac3742aea797282752d6e7c2d3cb267889a194c18c"
+    },
+    {
+      "id": "VER-046",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-033 verified end-to-end; the last FEAT-007 slice. Criterion 1: samples/conception.json declares the two governance relation_types (item_governed_by_convention: decisions/features/tasks -> conventions; item_acknowledges_missing_convention: decisions/features/tasks -> framework-gaps) and the three requires-edge invariants (decision/feature/task-articulates-convention) at severity warning, byte-identical to the .context copies but for severity (merged to integration at 1383af2). Criterion 2: a fresh /tmp substrate built through the genuine CLI bootstrap (context-init -> context-accept-all -> context-install) carries the vocabulary at severity warning (read-config confirmed), and an un-sentineled unarticulated task appended there yields context-validate status 'warnings' with the task-articulates-convention WARNING (not error) on that item — run twice (the convergent e2e). Criterion 3: CHANGELOG [Unreleased] + skill-narrative + READMEs updated (usage-only); build + check + full test fail 0; parity-check exit 0; SKILL regen carries the advisory-convention note. Criterion 4: released v0.31.0 via npm run release:minor — lockstep version bump across all packages, the surface gate green (after the release.mjs learned-pattern-store exemption fix 4425ff2), commit 307199a + tag v0.31.0; npm publish + git push remain the user's downstream steps. The release also cut the accumulated [Unreleased] (read-catalog-schema/TASK-050, context-install/TASK-059, the governance vocab/TASK-033, the earlier FEAT-009 ops) into [0.31.0]. The mechanism is config-only — no validator code change (FEAT-007 criterion 3).",
+      "criteria_results": [
+        {
+          "criterion": "[subagent] samples/conception.json declares the two governance relation_types and three requires-edge invariants at severity warning.",
+          "status": "passed",
+          "evidence": "the merged conception.json diff: 2 relation_types + 3 *-articulates-convention invariants at severity:warning"
+        },
+        {
+          "criterion": "[orchestrator] A fresh install/accept-all substrate carries the vocabulary; context-validate WARNS (does not error) on an unarticulated planning artifact.",
+          "status": "passed",
+          "evidence": "the /tmp e2e (twice): init->accept-all->context-install, append an unarticulated task, context-validate -> status warnings + task-articulates-convention WARNING (not error)"
+        },
+        {
+          "criterion": "[orchestrator] CHANGELOG [Unreleased] + usage docs updated; build + check + full test suite green.",
+          "status": "passed",
+          "evidence": "CHANGELOG + skill-narrative + READMEs updated; build+check+full test fail 0; parity-check exit 0"
+        },
+        {
+          "criterion": "[orchestrator] released via npm run release:* (authorization-gated).",
+          "status": "passed",
+          "evidence": "npm run release:minor ran with user authorization: v0.31.0 lockstep bump, commit 307199a, tag v0.31.0; npm publish + push are the user's downstream steps"
+        }
+      ],
+      "oid": "b34bcba9d7b75fca15fca7f0da51f6f4",
+      "content_hash": "ef89f572cbe38ccf6d1d7917d17869053f3ddf66cdac71f528c4bea4a5b8e2b7"
     }
   ]
 }

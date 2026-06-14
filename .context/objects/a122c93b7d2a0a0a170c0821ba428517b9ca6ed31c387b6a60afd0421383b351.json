@@ -1,0 +1,35 @@
+{
+  "title": "relation_type registry coverage is incomplete and edge direction is unenforced: a decision raising a gap, a decision gated by an item, and a gap related to a gap are all unexpressible, and raise-edges are mistyped as the resolve-direction decision_addresses_gap",
+  "status": "closed",
+  "package": "pi-context",
+  "canonical_vocabulary": "relation_type registry coverage completeness + write-time edge-direction enforcement",
+  "description": "The relation_type registry's coverage is incomplete and edge direction is unenforced. Three warranted inter-item relations are unexpressible. (A) A decision RAISING/SPAWNING a framework-gap: the only decision->framework-gaps types are decision_addresses_gap and decision_escalates_underdetermined, both category data_flow and both resolve/escalate direction (the decision disposes of the gap); no raise-direction type exists. (B) A decision GATED BY / DEPENDING ON another item for enactment: decisions is the source_kind of no ordering relation_type except decision_supersedes_decision; features/stories/tasks each have *_gated_by_item and *_depends_on_item, decisions have no analog. (C) A framework-gap related to another framework-gap: the only framework-gaps-source types are gap_addressed_by_decision, gap_addressed_by_feature, gap_relates_to_issue, none targeting framework-gaps, so sibling/related gaps cannot be cross-referenced by a typed edge. relation_types entries carry only canonical_id/display_name/category/source_kinds/target_kinds with no description field, so an edge's direction is conveyed by the type name alone and no write-time check validates a written edge's direction and kinds against the type definition. Consequence: a decision that raises a gap and whose enactment depends on that gap's resolution (DEC-0018 -> FGAP-076) is filed as decision_addresses_gap, which a consumer reads as the decision resolving the gap (the inverse), and this gap itself cannot be typed-linked to its sibling gaps FGAP-007/FGAP-061. Root cause: the registry grew resolve-first and kind-by-kind, so relation coverage is partial and direction is unchecked; DEC-0018 is the first decision to raise-and-depend-on a gap, exposing the omissions together.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types: decision->framework-gaps types are only decision_addresses_gap and decision_escalates_underdetermined, both category data_flow (resolve/escalate direction); no raise-direction decision->gap type exists"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types: decisions is a source_kind of no ordering type except decision_supersedes_decision; feature_gated_by_item / story_gated_by_item / task_gated_by_item have no decision-source analog"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types: framework-gaps-source types are only gap_addressed_by_decision, gap_addressed_by_feature, gap_relates_to_issue; none target framework-gaps, so no gap->gap relation exists"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types entries carry canonical_id/display_name/category/source_kinds/target_kinds and no description field; edge direction is name-only and unchecked at write"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "DEC-0018 --decision_addresses_gap--> FGAP-076: a decision that raises a gap and is enactment-gated by its resolution, typed as the resolve-direction data_flow edge (the triggering instance)"
+    },
+    {
+      "file": "analysis/2026-06-14-dec0018-fgap076-relation-type-direction-audit.md",
+      "reference": "registry-gap verdict; established usage DEC-0001->FGAP-001 and DEC-0002->FGAP-002 use decision_addresses_gap as resolve; class A+B characterization and root cause"
+    }
+  ],
+  "impact": "A gate-aware deriver (FGAP-061) cannot compute a decision's open-because-blocked-on-gap state: the only decision->gap edge is data_flow (inert to ordering/readiness derivation), and consuming decision_addresses_gap as a gate would read the dependency backwards (treat the gap as resolved by the decision rather than blocking it). Decision enactment-dependencies are invisible to status/readiness derivation. Sibling and related gaps cannot be typed-linked, fragmenting the gap graph and pushing those cross-references into prose. Raise-vs-resolve and other misdirected edges accumulate substrate-wide with no write-time guard to catch them.",
+  "proposed_resolution": "Add three relation_types: a data_flow decision->framework-gaps raise type (decision_raises_gap); a decisions-source ordering gate type (decision_gated_by_item, target *) that FGAP-061's deriver consumes; and a framework-gaps->framework-gaps relation type (gap_relates_to_gap) for sibling/related-gap cross-reference. Retype the DEC-0018->FGAP-076 edge from decision_addresses_gap to decision_raises_gap, add a decision_gated_by_item edge from DEC-0018 to FGAP-076, and add gap_relates_to_gap edges from this gap to FGAP-007 and FGAP-061. Add a write-time check validating a written edge's source/target kinds and category against the relation_type definition so a misdirected edge is rejected at write. Precondition for FGAP-061 (gate-aware derivation) to gate decisions correctly; pairs with FGAP-007 (ordering-edge endpoint-role metadata + write-time direction enforcement)."
+}

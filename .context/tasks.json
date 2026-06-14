@@ -1216,7 +1216,7 @@
     },
     {
       "description": "Backfill the warranted-but-absent closure-table edges that early tasks' filed text entails but that were never written — the concrete instances of FGAP-091's under-filing. The relation-graph completeness audit (analysis/2026-06-14-substrate-relation-graph-completeness-audit.md) enumerated: TASK-010 task_governed_by_decision -> DEC-0008 and task_addresses_gap -> FGAP-012; TASK-012 task_governed_by_decision -> DEC-0009 and task_addresses_gap -> FGAP-015; TASK-014 task_addresses_gap -> FGAP-014. First re-confirm the complete warranted-but-absent set via find-references against the items' filed text (including any symmetric sibling such as TASK-011), then write each absent edge via append-relation — each kind-correct, accepted by the write-time validator. Pure data backfill, no code. Partial addressing of FGAP-091 (the concrete missing edges; the forcing-function invariant is FGAP-091's separate residual).",
-      "status": "planned",
+      "status": "in-progress",
       "acceptance_criteria": [
         "The complete warranted-but-absent edge set is re-confirmed via find-references against the early tasks' filed text — the five audit-enumerated edges plus any symmetric sibling (e.g. TASK-011) — and every confirmed absent-but-entailed edge is included.",
         "Each absent edge is written via append-relation and accepted as kind-correct: TASK-010->DEC-0008 (task_governed_by_decision), TASK-010->FGAP-012 (task_addresses_gap), TASK-012->DEC-0009 (task_governed_by_decision), TASK-012->FGAP-015 (task_addresses_gap), TASK-014->FGAP-014 (task_addresses_gap), plus any sibling confirmed in criterion 1.",
@@ -1224,7 +1224,8 @@
       ],
       "id": "TASK-064",
       "oid": "c841bd71e28725ff8d11ea2023957b30",
-      "content_hash": "de9cf5b5e6b58f398bf76d01d49ec23ca5e054ed651abe972e6a131e6874c8df"
+      "content_hash": "edbb2e7c270cebd35a01b9ebbfcdaf450096c19f052f98adb061388784f4fbb9",
+      "content_parent": "de9cf5b5e6b58f398bf76d01d49ec23ca5e054ed651abe972e6a131e6874c8df"
     }
   ]
 }

@@ -5911,5 +5911,96 @@
       "refname": "feature-branch-workflow"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "63d1d6c7c1a87a58ea878d2f062706d2",
+      "refname": "TASK-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f9054ab5211214db0e95f1b56ebfdfc0",
+      "refname": "DEC-0008"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "63d1d6c7c1a87a58ea878d2f062706d2",
+      "refname": "TASK-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "687d105852ff67bd9e56446eb678f78d",
+      "refname": "FGAP-012"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2da2de9e36b6484b6278fea1a3d1f79b",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f9054ab5211214db0e95f1b56ebfdfc0",
+      "refname": "DEC-0008"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2da2de9e36b6484b6278fea1a3d1f79b",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "687d105852ff67bd9e56446eb678f78d",
+      "refname": "FGAP-012"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2d53607622e5d5e8e196e27680ca7909",
+      "refname": "TASK-012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7f1ce44ff7e89b1ff0ef7186f2d8ba7c",
+      "refname": "DEC-0009"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2d53607622e5d5e8e196e27680ca7909",
+      "refname": "TASK-012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bbc9dfeee30d0619adc92a7d1481c785",
+      "refname": "FGAP-015"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "893b6605d4bbfa54310290b82975dd25",
+      "refname": "TASK-014"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "baf3754f16b1076610852345a624b60e",
+      "refname": "FGAP-014"
+    },
+    "relation_type": "task_addresses_gap"
   }
 ]

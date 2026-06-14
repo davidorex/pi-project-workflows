@@ -285,7 +285,16 @@ describe("structured-endpoints: porcelain resolution", () => {
 		assert.equal((ep as { refname?: string }).refname, "FGAP-1");
 		assert.equal((ep as { substrate_id?: string }).substrate_id, undefined);
 
-		const { appended, edge } = appendRelationByRef(cwd, { parent: "FGAP-1", child: "FGAP-2", relation_type: "rt" });
+		// relation_type must be registered in the adopted conception catalog (the
+		// write-time edge-registry gate, TASK-062, now rejects unregistered types):
+		// gap_relates_to_gap carries framework-gaps as both source and target kinds,
+		// matching the FGAP-1/FGAP-2 endpoints (which dangle here — no items written —
+		// so the presence-gated kind check is skipped; registration is what passes).
+		const { appended, edge } = appendRelationByRef(cwd, {
+			parent: "FGAP-1",
+			child: "FGAP-2",
+			relation_type: "gap_relates_to_gap",
+		});
 		assert.equal(appended, true);
 		assert.equal(endpointKey(edge.parent), "FGAP-1");
 		assert.equal(endpointKey(edge.child), "FGAP-2");
@@ -293,7 +302,11 @@ describe("structured-endpoints: porcelain resolution", () => {
 		assert.equal(onDisk.length, 1);
 		assert.equal(endpointKey(onDisk[0].parent), "FGAP-1");
 		// second identical append is a no-op (dedup identity).
-		const second = appendRelationByRef(cwd, { parent: "FGAP-1", child: "FGAP-2", relation_type: "rt" });
+		const second = appendRelationByRef(cwd, {
+			parent: "FGAP-1",
+			child: "FGAP-2",
+			relation_type: "gap_relates_to_gap",
+		});
 		assert.equal(second.appended, false);
 	});
 

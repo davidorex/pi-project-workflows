@@ -1398,6 +1398,106 @@ function edgeIdentityKey(edge: Edge): string {
 }
 
 /**
+ * Shared edge-registry validator (TASK-062). The single source of edge
+ * registration + endpoint-kind semantics, invoked BOTH at write time (the
+ * `appendRelationByRef` / `appendRelationsByRef` porcelain, so a bad edge throws
+ * before the raw write) AND post-hoc in {@link validateContext} (so write-time
+ * and validate-time verdicts are guaranteed identical).
+ *
+ * Returns an ARRAY of human-readable error messages — empty when the edge is
+ * acceptable. Each message is byte-identical to the wording `validateContext`
+ * historically emitted inline, so the validate-time issue stream is unchanged;
+ * the write path joins the array into the thrown Error message.
+ *
+ * Checks (registration + source/target-kind ONLY — NO `category` check; the
+ * relation_type `category` attribute has no per-edge referent anywhere in code):
+ *  - (a) `edge.relation_type` MUST be registered in `config.relation_types[]`
+ *        (matched by `canonical_id`). Unregistered → the registration message;
+ *        when unregistered the kind check is short-circuited (no rt to read).
+ *  - (b) PRESENCE-GATED source/target-kind membership: a relation_type with
+ *        NEITHER `source_kinds` NOR `target_kinds` is unchecked (mirrors the
+ *        `if (!rt.source_kinds && !rt.target_kinds) continue;` gate). When a set
+ *        is present, the resolved endpoint block (via `resolve(...).loc.block`)
+ *        MUST be in it, honoring the `"*"` wildcard. A lens_bin / dangling /
+ *        unregistered endpoint carries no `loc` and is skipped for the kind
+ *        check (endpoint-resolution failures are validateContext's own surface,
+ *        not this helper's).
+ *
+ * `resolve` is the caller-supplied endpoint resolver (the same pass-bound
+ * `resolveRef` closure validateContext builds; the write path builds a fresh one
+ * over a freshly-built active index).
+ */
+export function validateEdgeAgainstRegistry(
+	edge: Edge,
+	config: ConfigBlock,
+	resolve: (ref: RawEndpoint) => ResolvedRef,
+): string[] {
+	const errors: string[] = [];
+	const parentKey = endpointKey(edge.parent);
+	const childKey = endpointKey(edge.child);
+
+	const rt = (config.relation_types ?? []).find((r) => r.canonical_id === edge.relation_type);
+	if (!rt) {
+		errors.push(`Edge relation_type '${edge.relation_type}' is not registered in config.relation_types`);
+		// Short-circuit: with no registered relation_type there is no source/target
+		// metadata to gate on (mirrors validateContext's `if (!rt) continue;`).
+		return errors;
+	}
+
+	// Presence gate — neither set declared → endpoint kinds unchecked.
+	if (!rt.source_kinds && !rt.target_kinds) return errors;
+
+	const parentLoc = resolve(edge.parent).loc;
+	const childLoc = resolve(edge.child).loc;
+	if (parentLoc && rt.source_kinds && !(rt.source_kinds.includes("*") || rt.source_kinds.includes(parentLoc.block))) {
+		errors.push(
+			`Edge ${parentKey} -> ${childKey}: source kind '${parentLoc.block}' not in source_kinds [${rt.source_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+		);
+	}
+	if (childLoc && rt.target_kinds && !(rt.target_kinds.includes("*") || rt.target_kinds.includes(childLoc.block))) {
+		errors.push(
+			`Edge ${parentKey} -> ${childKey}: target kind '${childLoc.block}' not in target_kinds [${rt.target_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+		);
+	}
+	return errors;
+}
+
+/**
+ * Build the per-call edge-validation resolver for the WRITE-TIME porcelain — a
+ * `resolveRef` closure bound to a freshly-built active index + a fresh foreign
+ * cache for this write, plus the loaded config. Mirrors the pass-bound resolver
+ * validateContext constructs, so the two paths resolve endpoints identically.
+ * Returns `null` when no config is present (a pre-bootstrap substrate has no
+ * relation_types registry to validate against → write-time check is a no-op,
+ * matching validateContext's `if (config)` gate).
+ */
+function buildWriteTimeEdgeValidator(
+	cwd: string,
+): { config: ConfigBlock; resolve: (ref: RawEndpoint) => ResolvedRef } | null {
+	const config = loadConfig(cwd);
+	if (!config) return null;
+	const activeIndex = buildIdIndex(cwd);
+	const foreignCache = new Map<string, SubstrateIndex>();
+	const resolve = (ref: RawEndpoint): ResolvedRef => resolveRef(cwd, ref, { activeIndex, foreignCache });
+	return { config, resolve };
+}
+
+/**
+ * Single-edge write-time gate (TASK-062): build the validator for `cwd` and
+ * THROW if `edge` fails the shared registry check. A no-op when no config is
+ * present (pre-bootstrap substrate). The thrown message names the offending
+ * endpoint kind / relation_type / expected kinds (the helper's wording).
+ */
+function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
+	const validator = buildWriteTimeEdgeValidator(cwd);
+	if (!validator) return;
+	const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
+	if (edgeErrors.length > 0) {
+		throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
+	}
+}
+
+/**
  * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
  * `child` STRING selectors to structured `EdgeEndpoint`s via
  * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
@@ -1421,6 +1521,11 @@ export function appendRelationByRef(
 		relation_type: rel.relation_type,
 		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
 	};
+	// Write-time edge-registry gate (TASK-062): reject an unregistered
+	// relation_type or a source/target-kind-violating endpoint BEFORE any write
+	// (dryRun included — preview must surface the same rejection). The shared
+	// helper guarantees this verdict is identical to validateContext's.
+	assertEdgeValidForWrite(cwd, edge);
 	if (opts?.dryRun) {
 		// Preview parity: run the SAME validation the write path applies (the
 		// prospective Edge[] against the whole relations schema — what
@@ -1558,6 +1663,21 @@ export function appendRelationsByRef(
 		relation_type: rel.relation_type,
 		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
 	}));
+	// Write-time edge-registry gate (TASK-062): every resolved edge in the batch
+	// is checked BEFORE any write (dryRun included). Build the validator once for
+	// the batch (config + active index built once) and reject if any edge fails —
+	// an all-or-nothing batch (no partial write past a bad edge).
+	const validator = buildWriteTimeEdgeValidator(cwd);
+	if (validator) {
+		for (const edge of resolved) {
+			const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
+			if (edgeErrors.length > 0) {
+				throw new Error(
+					`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`,
+				);
+			}
+		}
+	}
 	if (opts?.dryRun) {
 		// Preview parity: replay the bulk dedup the raw appendRelations applies —
 		// skip an edge whose identity is already on disk OR earlier in THIS batch
@@ -1912,7 +2032,6 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// false-pass a zero-edge substrate. The edge-integrity loop below is a
 	// no-op on empty relations, so it needs no separate guard.
 	if (config) {
-		const registeredRelTypes = new Set((config.relation_types ?? []).map((rt) => rt.canonical_id));
 		// Per-pass foreign-index cache (Constraint 3): N foreign edges into the same
 		// registered substrate build that substrate's index ONCE within this pass.
 		const foreignCache = new Map<string, SubstrateIndex>();
@@ -1964,56 +2083,26 @@ export function validateContext(cwd: string): ContextValidationResult {
 					code: "edge_endpoint_dangling",
 				});
 			}
-			if (!registeredRelTypes.has(edge.relation_type)) {
-				issues.push({
-					severity: "error",
-					message: `Edge relation_type '${edge.relation_type}' is not registered in config.relation_types`,
-					block: "relations",
-					field: `${parentKey}->${childKey}`,
-				});
-			}
 		}
 
-		// ── Edge endpoint-kind check (FGAP-086, DEC-0037) ─────────────────────
-		// Presence-gated: a relation_type with neither source_kinds nor
-		// target_kinds is unchecked, so the frozen .project substrate (whose
-		// relation_types carry no endpoint metadata) is not retroactively failed.
-		// When metadata is present, an edge endpoint whose resolved block is not in
-		// the declared kind set (and the set is not the "*" wildcard) is an error.
-		// loc.block is the data-file basename; the source/target_kinds name
-		// block_kind canonical_ids — the loc.block==canonical_id assumption is
-		// inherited from the invariant loop below (~:1140), where inv.block (a
-		// canonical_id) is matched directly against loc.block.
+		// ── Edge registration + endpoint-kind check (FGAP-086, DEC-0037; TASK-062
+		// factored into the shared validateEdgeAgainstRegistry helper so the
+		// write-time porcelain and this validate-time loop reach an IDENTICAL
+		// verdict). The helper performs (a) relation_type-registration and
+		// (b) PRESENCE-GATED source/target-kind membership ("*" wildcard honored);
+		// a relation_type with neither kind set is unchecked (the frozen .project
+		// substrate, whose relation_types carry no endpoint metadata, is not
+		// retroactively failed). Its returned messages are byte-identical to the
+		// wording this loop historically emitted inline (registration message +
+		// source/target kind messages), each mapped to the same issue shape
+		// (severity error, block "relations", field parent->child, no code).
 		for (const edge of relations) {
-			const rt = config.relation_types?.find((r) => r.canonical_id === edge.relation_type);
-			if (!rt) continue; // unregistered relation_type already reported above
-			if (!rt.source_kinds && !rt.target_kinds) continue; // metadata absent → unchecked
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
-			// Use the resolved location for item endpoints (active OR foreign), so a
-			// foreign item's block is kind-checked against source/target_kinds too. A
-			// lens_bin endpoint (endpointKind:"lens_bin") carries no loc and is skipped
-			// — it never routes through item-block resolution.
-			const parentRes = resolve(edge.parent);
-			const childRes = resolve(edge.child);
-			const parentLoc = parentRes.loc;
-			const childLoc = childRes.loc;
-			if (
-				parentLoc &&
-				rt.source_kinds &&
-				!(rt.source_kinds.includes("*") || rt.source_kinds.includes(parentLoc.block))
-			) {
+			for (const message of validateEdgeAgainstRegistry(edge, config, resolve)) {
 				issues.push({
 					severity: "error",
-					message: `Edge ${parentKey} -> ${childKey}: source kind '${parentLoc.block}' not in source_kinds [${rt.source_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
-					block: "relations",
-					field: `${parentKey}->${childKey}`,
-				});
-			}
-			if (childLoc && rt.target_kinds && !(rt.target_kinds.includes("*") || rt.target_kinds.includes(childLoc.block))) {
-				issues.push({
-					severity: "error",
-					message: `Edge ${parentKey} -> ${childKey}: target kind '${childLoc.block}' not in target_kinds [${rt.target_kinds.join(", ")}] for relation_type '${edge.relation_type}'`,
+					message,
 					block: "relations",
 					field: `${parentKey}->${childKey}`,
 				});

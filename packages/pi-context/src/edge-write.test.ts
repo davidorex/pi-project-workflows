@@ -17,7 +17,12 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { appendRelation, appendRelations, type Edge, loadRelations } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
-import { validateContext } from "./context-sdk.js";
+import {
+	appendRelationByRef,
+	appendRelationsByRef,
+	validateContext,
+	validateEdgeAgainstRegistry,
+} from "./context-sdk.js";
 import { ValidationError } from "./schema-validator.js";
 
 /** mkdtemp + bootstrap pointer at `.project` + ensure the substrate dir exists. */
@@ -226,3 +231,243 @@ describe("deferred guards (write succeeds; validateContext catches)", () => {
 		assert.ok(issue, "validateContext should report edge_cycle_detected for a→b→a");
 	});
 });
+
+// ── TASK-062: write-time edge-registry rejection (the ByRef porcelain) ────────
+//
+// The shared validateEdgeAgainstRegistry helper is invoked at write time by
+// appendRelationByRef / appendRelationsByRef, so a kind-mismatched or
+// unregistered edge THROWS before any persist (vs the deferred-guard proofs
+// above, which exercise the RAW appendRelation surface that stays deferred).
+// Endpoint blocks resolve from the data-file basename: writeItems writes
+// items.json → block "items"; writeKinded writes <kind>.json → block "<kind>".
+
+/** A relation_type carrying source_kinds/target_kinds (presence-gate ON). */
+const KINDED_REL = [
+	{
+		canonical_id: "kinded_rel",
+		display_name: "kinded rel",
+		category: "data_flow" as const,
+		source_kinds: ["tasks"],
+		target_kinds: ["gaps"],
+	},
+];
+
+/** A relation_type with NO endpoint metadata (presence-gate OFF → unchecked). */
+const UNKINDED_REL = [{ canonical_id: "rel", display_name: "rel", category: "data_flow" as const }];
+
+/** Write each id into its own <block>.json so buildIdIndex resolves loc.block. */
+function writeKinded(cwd: string, byBlock: Record<string, string[]>): void {
+	for (const [block, ids] of Object.entries(byBlock)) {
+		fs.writeFileSync(
+			path.join(cwd, ".project", `${block}.json`),
+			JSON.stringify({ [block]: ids.map((id) => ({ id })) }),
+		);
+	}
+}
+
+describe("write-time edge-registry rejection (TASK-062)", () => {
+	it("L: appendRelationByRef THROWS on a source-kind mismatch and persists nothing", (t) => {
+		const cwd = makeTmpDir("l-bykind-source");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		// g1 lives in gaps (source kind 'gaps' ∉ source_kinds ["tasks"]) → reject.
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "g1", child: "t1", relation_type: "kinded_rel" }),
+			/source kind 'gaps' not in source_kinds/,
+		);
+		// Nothing written — relations.json absent (no prior valid edge seeded).
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("M: appendRelationByRef THROWS on a target-kind mismatch and persists nothing", (t) => {
+		const cwd = makeTmpDir("m-bykind-target");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		// child t1 lives in tasks (target kind 'tasks' ∉ target_kinds ["gaps"]) → reject.
+		writeKinded(cwd, { tasks: ["t1", "t2"], gaps: ["g1"] });
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "t1", child: "t2", relation_type: "kinded_rel" }),
+			/target kind 'tasks' not in target_kinds/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("N: appendRelationByRef THROWS on an unregistered relation_type and persists nothing", (t) => {
+		const cwd = makeTmpDir("n-byref-unregistered");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL); // registers only "rel"
+		writeItems(cwd, ["p1", "c1"]);
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "nope_rel" }),
+			/relation_type 'nope_rel' is not registered/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("O: appendRelationByRef SUCCEEDS on a kind-correct edge; the edge is persisted", (t) => {
+		const cwd = makeTmpDir("o-byref-ok");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		// parent in tasks, child in gaps → both kinds match.
+		const r = appendRelationByRef(cwd, { parent: "t1", child: "g1", relation_type: "kinded_rel" });
+		assert.equal(r.appended, true);
+		const stored = loadRelations(cwd);
+		assert.equal(stored.length, 1);
+		assert.equal(stored[0].relation_type, "kinded_rel");
+	});
+
+	it("P: presence-gate — a relation_type with NO source_kinds/target_kinds is NOT rejected at write", (t) => {
+		const cwd = makeTmpDir("p-byref-gate");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL); // "rel" has no endpoint metadata → gate OFF
+		writeItems(cwd, ["p1", "c1"]);
+
+		// Same shape that the KINDED_REL would reject, but unchecked here.
+		const r = appendRelationByRef(cwd, { parent: "p1", child: "c1", relation_type: "rel" });
+		assert.equal(r.appended, true);
+		assert.equal(loadRelations(cwd).length, 1);
+	});
+
+	it("Q: appendRelationsByRef is all-or-nothing — a bad edge throws, the whole batch persists nothing", (t) => {
+		const cwd = makeTmpDir("q-bulk-byref");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		assert.throws(
+			() =>
+				appendRelationsByRef(cwd, [
+					{ parent: "t1", child: "g1", relation_type: "kinded_rel" }, // valid
+					{ parent: "g1", child: "t1", relation_type: "kinded_rel" }, // source-kind mismatch
+				]),
+			/source kind 'gaps' not in source_kinds/,
+		);
+		// The whole batch is rejected before any write — no file produced.
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("R: dryRun also rejects — appendRelationByRef({dryRun}) on a bad edge throws, writes nothing", (t) => {
+		const cwd = makeTmpDir("r-dryrun-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		assert.throws(
+			() =>
+				appendRelationByRef(cwd, { parent: "g1", child: "t1", relation_type: "kinded_rel" }, undefined, {
+					dryRun: true,
+				}),
+			/source kind 'gaps' not in source_kinds/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+});
+
+// ── TASK-062: write-time ↔ validate-time PARITY ──────────────────────────────
+//
+// The same edge reaches the same verdict at write time (appendRelationByRef)
+// and at validate time (validateContext), because both route through the shared
+// validateEdgeAgainstRegistry helper. We assert: an edge the write path REJECTS
+// is exactly an edge validateContext flags; an edge the write path ACCEPTS
+// validates clean (on the edge surface).
+
+describe("write-time ↔ validate-time parity (TASK-062)", () => {
+	it("S: a kind-mismatched edge is rejected at write AND flagged by validateContext (same wording)", (t) => {
+		const cwd = makeTmpDir("s-parity-bad");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		// Write path: rejects.
+		let writeError: Error | null = null;
+		try {
+			appendRelationByRef(cwd, { parent: "g1", child: "t1", relation_type: "kinded_rel" });
+		} catch (e) {
+			writeError = e as Error;
+		}
+		assert.ok(writeError, "write path should reject the kind-mismatched edge");
+
+		// Validate path: the RAW append persists the same edge (deferred), and
+		// validateContext flags it with the byte-identical kind-mismatch wording.
+		appendRelation(cwd, { parent: "g1", child: "t1", relation_type: "kinded_rel" });
+		const result = validateContext(cwd);
+		assert.equal(result.status, "invalid");
+		const vIssue = result.issues.find((i) => i.message.includes("source kind 'gaps' not in source_kinds"));
+		assert.ok(vIssue, "validateContext should flag the same kind mismatch");
+		// Parity of wording: validateContext's message is contained in the thrown one.
+		assert.ok(
+			writeError!.message.includes("source kind 'gaps' not in source_kinds"),
+			"write-time throw should carry the same kind-mismatch wording as validateContext",
+		);
+	});
+
+	it("T: a kind-correct edge is accepted at write AND validates clean on the edge surface", (t) => {
+		const cwd = makeTmpDir("t-parity-good");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		const r = appendRelationByRef(cwd, { parent: "t1", child: "g1", relation_type: "kinded_rel" });
+		assert.equal(r.appended, true);
+
+		const result = validateContext(cwd);
+		assert.ok(
+			!result.issues.some(
+				(i) => i.message.includes("not in source_kinds") || i.message.includes("not in target_kinds"),
+			),
+			"no kind-mismatch issue should fire for the accepted edge",
+		);
+	});
+
+	it("U: helper-level parity — validateEdgeAgainstRegistry returns [] iff the write path accepts", (t) => {
+		const cwd = makeTmpDir("u-helper-parity");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, KINDED_REL);
+		writeKinded(cwd, { tasks: ["t1"], gaps: ["g1"] });
+
+		// A trivial resolver suffices: loc.block from the file basename is what the
+		// real resolveRef returns; here we hand-map the two ids to their blocks to
+		// exercise the helper's gate + membership logic directly.
+		const resolve = (ref: unknown) => {
+			const key = ref as string;
+			const block = key === "t1" ? "tasks" : "gaps";
+			return { status: "active", endpointKind: "item", loc: { id: key, block, item: {} } } as never;
+		};
+		const goodEdge: Edge = { parent: "t1", child: "g1", relation_type: "kinded_rel" };
+		const badEdge: Edge = { parent: "g1", child: "t1", relation_type: "kinded_rel" };
+		assert.deepEqual(validateEdgeAgainstRegistry(goodEdge, KINDED_REL_CONFIG(), resolve), []);
+		// g1->t1 mismatches BOTH endpoints: g1(gaps) ∉ source_kinds[tasks] AND
+		// t1(tasks) ∉ target_kinds[gaps] → two messages.
+		const badErrs = validateEdgeAgainstRegistry(badEdge, KINDED_REL_CONFIG(), resolve);
+		assert.equal(badErrs.length, 2);
+		assert.ok(badErrs.some((m) => m.includes("source kind 'gaps' not in source_kinds")));
+		assert.ok(badErrs.some((m) => m.includes("target kind 'tasks' not in target_kinds")));
+	});
+});
+
+/** Minimal ConfigBlock-shaped object carrying the kinded relation_type. */
+function KINDED_REL_CONFIG(): never {
+	return {
+		schema_version: "1.0.0",
+		root: ".project",
+		block_kinds: [],
+		relation_types: KINDED_REL,
+		invariants: [],
+	} as never;
+}

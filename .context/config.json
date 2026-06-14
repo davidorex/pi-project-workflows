@@ -549,6 +549,39 @@
       "target_kinds": [
         "story"
       ]
+    },
+    {
+      "canonical_id": "decision_raises_gap",
+      "display_name": "raises gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "decision_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "gap_relates_to_gap",
+      "display_name": "relates to gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
     }
   ],
   "lenses": [

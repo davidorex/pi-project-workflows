@@ -1168,7 +1168,7 @@
     },
     {
       "description": "Add three relation_types to the pi-context registry at BOTH loci (active .context config via amend-config --registry relation_types --operation add; and the packaged catalog packages/pi-context/samples/conception.json relation_types[] — the durable home, since mergeCatalogRegistries is additive catalog->config and a config-only add would not survive a fresh accept-all): decision_raises_gap (category data_flow, source_kinds [decisions], target_kinds [framework-gaps]); decision_gated_by_item (category ordering, source_kinds [decisions], target_kinds [*]); gap_relates_to_gap (category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]). Pure config/catalog addition, no .ts or schema change (the TASK-033 template: item_governed_by_convention was catalog-only). Resolves the expressibility half of FGAP-090. category is inert in code today (derivation selects edges by literal relation_type name, never reads category), so decision_gated_by_item:ordering is forward-looking vocabulary a future FGAP-061 deriver consumes by name; added now, valid, inert until that deriver lands.",
-      "status": "planned",
+      "status": "in-progress",
       "acceptance_criteria": [
         "read-config --registry relation_types lists all three with exactly: decision_raises_gap = {category data_flow, source_kinds [decisions], target_kinds [framework-gaps]}; decision_gated_by_item = {category ordering, source_kinds [decisions], target_kinds [*]}; gap_relates_to_gap = {category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]}.",
         "packages/pi-context/samples/conception.json relation_types[] contains the three entries with the same canonical_id/category/source_kinds/target_kinds; read-samples-catalog surfaces them.",
@@ -1178,7 +1178,8 @@
       ],
       "id": "TASK-061",
       "oid": "b5538a6800cd86ab6b94d2732b058a70",
-      "content_hash": "85d97da532cb05a51f6ccf8baf36b50d6cdf99cc96bf98c450ef3f80444f3abe"
+      "content_hash": "507e4a5ee43032fe8df84d184356d22da795b2b098453b9ce4a1a2353f099b2c",
+      "content_parent": "85d97da532cb05a51f6ccf8baf36b50d6cdf99cc96bf98c450ef3f80444f3abe"
     },
     {
       "description": "Add a write-time edge kind/category validator. When an edge is written via appendRelationByRef (packages/pi-context/src/context-sdk.ts:1412) and appendRelationsByRef (:1549), check the parent item's kind against the relation_type's source_kinds and the child's against target_kinds (with the * wildcard) and the edge against the relation_type's category, and REJECT a mismatched edge at write with a clear error naming the offending endpoint kind and relation_type. This hoists the existing post-hoc kind check (validateContext, context-sdk.ts:1987-2021, FGAP-086/DEC-0037) to the write surface (the raw appendRelationsForDir, context.ts:649, cannot resolve endpoint kinds under the documented layering at context.ts:617-625). Presence-gate on source_kinds/target_kinds exactly as the validate-time check (context-sdk.ts:1990) so currently-passing writes are unaffected. Resolves the write-time-enforcement half of FGAP-090. Distinct from TASK-027 (ordering-edge endpoint-role DIRECTION, ordering-only; this checks source/target KIND + category across all relation_types).",

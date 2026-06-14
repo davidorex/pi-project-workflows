@@ -471,3 +471,63 @@ function KINDED_REL_CONFIG(): never {
 		invariants: [],
 	} as never;
 }
+
+// ── TASK-062 regression: issues[] is class-grouped (registration before kind) ──
+//
+// context-validate prints issues[], so the emission ORDER of the edge-registry
+// diagnostics is a UX surface. The pre-refactor validateContext ran two passes —
+// all relation_type-registration issues across every edge, THEN all
+// source/target-kind issues across every edge. The 92dde2d refactor to the
+// shared validateEdgeAgainstRegistry helper briefly emitted them interleaved
+// per-edge (A-reg, A-kind, B-reg, B-kind). This pins the restored class-grouped
+// order so the two passes cannot re-interleave.
+describe("validateContext issue ordering (TASK-062 regression)", () => {
+	it("V: every registration-class issue precedes every kind-class issue in issues[]", (t) => {
+		const cwd = makeTmpDir("v-issue-order");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		// config registers ONLY "kinded_rel" (source_kinds ["tasks"], target_kinds
+		// ["gaps"]); "bad_rel_1"/"bad_rel_2" are unregistered → registration-class.
+		writeConfig(cwd, KINDED_REL);
+		// endpoints resolve from their file basename: tasks.json → "tasks", etc.
+		writeKinded(cwd, { tasks: ["t1", "t2"], gaps: ["g1", "g2"] });
+
+		// RAW appendRelation persists each edge WITHOUT the write-time registry
+		// gate (the deferred surface), so all four reach validateContext. The
+		// append order INTERLEAVES the two classes (kind, registration, kind,
+		// registration) — under the pre-fix per-edge loop issues[] would interleave;
+		// the class-grouped pass must re-collate them.
+		// kind-class edge #1: g1(gaps)->t1(tasks) mismatches BOTH source+target kinds.
+		appendRelation(cwd, { parent: "g1", child: "t1", relation_type: "kinded_rel" });
+		// registration-class edge #1: "bad_rel_1" is not registered.
+		appendRelation(cwd, { parent: "t1", child: "g1", relation_type: "bad_rel_1" });
+		// kind-class edge #2: g2(gaps)->t2(tasks) mismatches BOTH source+target kinds.
+		appendRelation(cwd, { parent: "g2", child: "t2", relation_type: "kinded_rel" });
+		// registration-class edge #2: "bad_rel_2" is not registered.
+		appendRelation(cwd, { parent: "t2", child: "g2", relation_type: "bad_rel_2" });
+
+		const result = validateContext(cwd);
+		assert.equal(result.status, "invalid");
+
+		// Project to the edge-registry diagnostics only (registration + kind), in
+		// emission order. block "relations" + no code distinguishes them from the
+		// endpoint-resolution / cycle issues (which carry a `code`).
+		const isRegistration = (m: string) => /is not registered/.test(m);
+		const isKind = (m: string) => /source kind|target kind/.test(m);
+		const ordered = result.issues
+			.filter((i) => i.block === "relations" && !i.code && (isRegistration(i.message) || isKind(i.message)))
+			.map((i) => i.message);
+
+		// Sanity: the set is ≥2 registration-class and ≥2 kind-class issues.
+		const regCount = ordered.filter(isRegistration).length;
+		const kindCount = ordered.filter(isKind).length;
+		assert.ok(regCount >= 2, `expected ≥2 registration-class issues, got ${regCount}`);
+		assert.ok(kindCount >= 2, `expected ≥2 kind-class issues, got ${kindCount}`);
+
+		// The ordering invariant: the LAST registration-class issue must appear
+		// before the FIRST kind-class issue.
+		const lastReg = ordered.reduce((acc, m, i) => (isRegistration(m) ? i : acc), -1);
+		const firstKind = ordered.findIndex(isKind);
+		assert.ok(lastReg < firstKind, `registration-class must precede kind-class; ordered=${JSON.stringify(ordered)}`);
+	});
+});

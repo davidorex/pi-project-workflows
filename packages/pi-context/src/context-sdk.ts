@@ -2096,18 +2096,35 @@ export function validateContext(cwd: string): ContextValidationResult {
 		// wording this loop historically emitted inline (registration message +
 		// source/target kind messages), each mapped to the same issue shape
 		// (severity error, block "relations", field parent->child, no code).
+		// Order discipline (TASK-062): context-validate prints issues[], so the
+		// emission order is a UX surface and must match the pre-refactor two-pass
+		// shape — ALL relation_type-registration issues across every edge first,
+		// THEN ALL source/target-kind issues across every edge (class-grouped, not
+		// interleaved per edge). The shared helper returns both classes per edge;
+		// we collect once then partition by message text (registration messages
+		// carry "is not registered"; kind messages carry "source kind"/"target
+		// kind"). Issue set/count/wording/severity and the registration
+		// short-circuit are unchanged — this is order-only.
+		const registrationIssues: ContextValidationIssue[] = [];
+		const kindIssues: ContextValidationIssue[] = [];
 		for (const edge of relations) {
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
 			for (const message of validateEdgeAgainstRegistry(edge, config, resolve)) {
-				issues.push({
+				const issue: ContextValidationIssue = {
 					severity: "error",
 					message,
 					block: "relations",
 					field: `${parentKey}->${childKey}`,
-				});
+				};
+				if (message.includes("is not registered")) {
+					registrationIssues.push(issue);
+				} else {
+					kindIssues.push(issue);
+				}
 			}
 		}
+		issues.push(...registrationIssues, ...kindIssues);
 
 		// Cycle detection — delegate to validateRelations. It performs its own
 		// lens/hierarchy/relation_type resolution and emits several edge codes;

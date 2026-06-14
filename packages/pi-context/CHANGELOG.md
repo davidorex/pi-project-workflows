@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- The packaged catalog (`samples/conception.json`) now ships three relation_types: `decision_raises_gap` (a decision raising a framework-gap), `decision_gated_by_item` (a decision enactment-gated by an item), and `gap_relates_to_gap` (a framework-gap related to another framework-gap), so fresh `accept-all`/`install` substrates carry them.
+
 ## [0.31.0] - 2026-06-13
 
 ### Changed

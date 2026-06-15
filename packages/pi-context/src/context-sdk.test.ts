@@ -2677,6 +2677,235 @@ describe("currentState", () => {
 		);
 	});
 
+	it("task_gated_by_item: gate-blocked while target incomplete; released once target completes", (t) => {
+		const tmpDir = makeTmpDir("cs-gate");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// edge parent=TASK-G child=FGAP-1 ⇒ TASK-G is gated by FGAP-1.
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-G", child: "FGAP-1", relation_type: "task_gated_by_item" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated", status: "planned" }] }),
+		);
+
+		// Phase 1: gap identified (todo bucket, not complete) → TASK-G blocked by FGAP-1.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "gate", status: "identified" }] }),
+		);
+		let state = currentState(tmpDir);
+		const gEntry = state.blocked.find((b) => b.id === "TASK-G");
+		assert.ok(gEntry, "TASK-G should be gate-blocked");
+		assert.deepStrictEqual(gEntry!.blockedBy, ["FGAP-1"]);
+		assert.ok(!state.nextActions.some((a) => a.id === "TASK-G"), "gate-blocked task absent from nextActions");
+
+		// Phase 2: gap closed (complete bucket) → gate releases → TASK-G ready.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "gate", status: "closed" }] }),
+		);
+		state = currentState(tmpDir);
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-G"), "TASK-G should no longer be blocked");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-G" && a.kind === "task"),
+			"TASK-G should be a ready next-action",
+		);
+	});
+
+	it("task_gated_by_item: cross-kind gate targets release at their complete bucket", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-crosskind");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// Three tasks, each gated by a different kind of target: a decision, a
+		// feature, and another task. Each target sits at its complete-bucket status
+		// (decision→enacted, feature→complete, task→completed) ⇒ all gates released.
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "TASK-D", child: "DEC-1", relation_type: "task_gated_by_item" },
+				{ parent: "TASK-F", child: "FEAT-1", relation_type: "task_gated_by_item" },
+				{ parent: "TASK-T", child: "TASK-P", relation_type: "task_gated_by_item" },
+			]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-D", description: "gated-by-decision", status: "planned" },
+					{ id: "TASK-F", description: "gated-by-feature", status: "planned" },
+					{ id: "TASK-T", description: "gated-by-task", status: "planned" },
+					{ id: "TASK-P", description: "prereq task", status: "completed" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "DEC-1", title: "d", status: "enacted" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "features.json"),
+			JSON.stringify({ features: [{ id: "FEAT-1", title: "f", status: "complete" }] }),
+		);
+
+		let state = currentState(tmpDir);
+		assert.deepStrictEqual(state.blocked, [], "no gate should block when every target is complete-bucketed");
+		for (const id of ["TASK-D", "TASK-F", "TASK-T"]) {
+			assert.ok(
+				state.nextActions.some((a) => a.id === id && a.kind === "task"),
+				`${id} should be ready`,
+			);
+		}
+
+		// Flip the decision to a non-complete bucket (open→todo) ⇒ TASK-D re-blocks,
+		// the other two stay ready (kind-general bucket check, no special-casing).
+		fs.writeFileSync(
+			path.join(projectDir, "decisions.json"),
+			JSON.stringify({ decisions: [{ id: "DEC-1", title: "d", status: "open" }] }),
+		);
+		state = currentState(tmpDir);
+		const dEntry = state.blocked.find((b) => b.id === "TASK-D");
+		assert.ok(dEntry, "TASK-D should re-block when its decision gate is open");
+		assert.deepStrictEqual(dEntry!.blockedBy, ["DEC-1"]);
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-F"),
+			"TASK-F stays ready",
+		);
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-T"),
+			"TASK-T stays ready",
+		);
+	});
+
+	it("task with BOTH a dep and a gate: blockedBy is the union of unsatisfied dep-parents and gate-targets", (t) => {
+		const tmpDir = makeTmpDir("cs-dep-gate-union");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// TASK-X depends on TASK-A (incomplete) AND is gated by FGAP-1 (incomplete).
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "TASK-A", child: "TASK-X", relation_type: "task_depends_on_task" },
+				{ parent: "TASK-X", child: "FGAP-1", relation_type: "task_gated_by_item" },
+			]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "prereq", status: "planned" },
+					{ id: "TASK-X", description: "dep+gate", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "gate", status: "identified" }] }),
+		);
+
+		let state = currentState(tmpDir);
+		const xEntry = state.blocked.find((b) => b.id === "TASK-X");
+		assert.ok(xEntry, "TASK-X should be blocked");
+		// Dep parents discovered first, then gate targets (de-duplicated, order-preserving).
+		assert.deepStrictEqual(xEntry!.blockedBy, ["TASK-A", "FGAP-1"]);
+		assert.ok(!state.nextActions.some((a) => a.id === "TASK-X"));
+
+		// Complete only the dep → gate still holds → TASK-X stays blocked by FGAP-1 alone.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "prereq", status: "completed" },
+					{ id: "TASK-X", description: "dep+gate", status: "planned" },
+				],
+			}),
+		);
+		state = currentState(tmpDir);
+		const xEntry2 = state.blocked.find((b) => b.id === "TASK-X");
+		assert.ok(xEntry2, "TASK-X still blocked by its gate");
+		assert.deepStrictEqual(xEntry2!.blockedBy, ["FGAP-1"]);
+	});
+
+	it("task_gated_by_item: a dangling gate target (unknown id) is treated as satisfied (non-blocking)", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-dangling");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// Gate target GHOST-1 resolves to no item — mirror the dangling-dep guard.
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-G", child: "GHOST-1", relation_type: "task_gated_by_item" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated", status: "planned" }] }),
+		);
+
+		const state = currentState(tmpDir);
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-G"), "dangling gate target must not block");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-G" && a.kind === "task"),
+			"TASK-G should be ready",
+		);
+	});
+
+	it("task_gated_by_item: a terminal-abandoned gate target (wontfix) keeps the task blocked", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-abandoned");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-G", child: "FGAP-1", relation_type: "task_gated_by_item" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated", status: "planned" }] }),
+		);
+		// wontfix buckets to "unknown" (terminal-but-not-complete) → gate NOT released.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "gate", status: "wontfix" }] }),
+		);
+
+		const state = currentState(tmpDir);
+		const gEntry = state.blocked.find((b) => b.id === "TASK-G");
+		assert.ok(gEntry, "TASK-G stays blocked: wontfix is not the complete bucket");
+		assert.deepStrictEqual(gEntry!.blockedBy, ["FGAP-1"]);
+		assert.ok(!state.nextActions.some((a) => a.id === "TASK-G"));
+	});
+
+	it("scope confinement: decision_gated_by_item does NOT alter currentState (only task_gated_by_item)", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-scope");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// A decision_gated_by_item edge (and an unrelated gate kind) must be inert:
+		// currentState buckets only tasks, and the gate filter matches the literal
+		// "task_gated_by_item" — not a prefix/suffix.
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "DEC-1", child: "FGAP-1", relation_type: "decision_gated_by_item" },
+				{ parent: "FEAT-1", child: "FGAP-1", relation_type: "feature_gated_by_item" },
+			]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "ungated task", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "incomplete gate", status: "identified" }] }),
+		);
+
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(state.blocked, [], "no task is gated by task_gated_by_item, so nothing is blocked");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-G" && a.kind === "task"),
+			"TASK-G unaffected by decision/feature gate edges",
+		);
+	});
+
 	it("nextActions ranks open framework-gaps by priority (P1 before P3)", (t) => {
 		const tmpDir = makeTmpDir("cs-gap-priority");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

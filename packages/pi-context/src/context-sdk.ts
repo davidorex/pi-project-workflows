@@ -678,6 +678,27 @@ export function contextState(cwd: string): ContextState {
  * unblocked. (relation name source_verb_target = task_depends_on_task ⇒ child is
  * the source/dependent, parent is the target/prerequisite; config display_name
  * "depends on task".)
+ *
+ * Readiness ALSO honors `task_gated_by_item` gates (FGAP-061 NOW slice): a
+ * `task_gated_by_item` edge `{parent: T, child: G}` means task T is GATED BY
+ * item G (the gate target, of any kind — gap/decision/feature/task/…), so G must
+ * reach the "complete" bucket before T's gate releases. A planned task with any
+ * gate target NOT in the "complete" bucket is reported in `blocked` (the target
+ * id present in `blockedBy`, unioned with unsatisfied dep-parents) and excluded
+ * from `nextActions`; a gate target reaching "complete" releases the gate. Gate
+ * satisfaction is `bucket(target) === "complete"` via the same status-vocabulary
+ * the status-consistency invariant engine uses — kind-general, no per-kind
+ * special-casing (gap→closed, decision→enacted, feature→complete, task→completed
+ * all bucket to "complete"). A dangling gate target (id resolves to no item) is
+ * treated as satisfied/non-blocking, mirroring the dangling-dep guard.
+ *
+ * Scope is strictly the literal relation_type `task_gated_by_item`:
+ * `decision_gated_by_item` and other non-task `*_gated_by_item` edges are inert
+ * here (currentState buckets only tasks). A gate target in a terminal-abandoned
+ * status (wontfix/superseded/cancelled — buckets to "unknown", NOT "complete")
+ * keeps the gated task blocked under the `=== "complete"` rule; promoting such
+ * states to gate-releasing, and config-driven generalization to all gate
+ * relation kinds, is the FEAT-004 refinement boundary, out of scope here.
  */
 export function currentState(cwd: string): CurrentState {
 	// Tolerate any substrate-read failure (no .project, malformed config, etc.)
@@ -731,6 +752,22 @@ export function currentState(cwd: string): CurrentState {
 	const incompleteDeps = (taskId: string): string[] =>
 		depParentsOf(taskId).filter((dep) => index.byRefname.has(dep) && !isCompleted(dep));
 
+	// Gate adjacency from task_gated_by_item edges (FGAP-061 NOW slice): for task
+	// T, an edge {parent:T, child:G} means T is gated by item G. unsatisfiedGates(T)
+	// = the gate-target ids that both resolve to a known item AND are NOT in the
+	// "complete" bucket (a gate target reaching "complete" releases the gate;
+	// targets pointing at unknown ids are treated as satisfied, mirroring the
+	// dangling-dep guard). Reuses isCompleted (bucket(target) === "complete" via the
+	// config-resolved status vocabulary) — kind-general, no per-kind special-casing
+	// and no parallel completeness notion. Literal relation_type match only, so
+	// decision_gated_by_item / other non-task *_gated_by_item edges are inert here.
+	const gateTargetsOf = (taskId: string): string[] =>
+		edges
+			.filter((e) => e.relation_type === "task_gated_by_item" && endpointKey(e.parent) === taskId)
+			.map((e) => endpointKey(e.child));
+	const unsatisfiedGates = (taskId: string): string[] =>
+		gateTargetsOf(taskId).filter((target) => index.byRefname.has(target) && !isCompleted(target));
+
 	// Collect all to-do (ready/queued) tasks once — drives both blocked + ready
 	// derivations. "todo" bucket = planned/queued work (raw status "planned"
 	// buckets to todo under STATUS_VOCABULARY_DEFAULTS).
@@ -739,11 +776,26 @@ export function currentState(cwd: string): CurrentState {
 		if (loc.block === "tasks" && bucket(loc.item) === "todo") plannedTasks.push({ id: loc.id, loc });
 	}
 
-	// ── blocked: planned tasks with at least one incomplete dep parent ─────────
+	// blockedBy(T) = UNION of T's unsatisfied dep-parents and unsatisfied gate-
+	// targets, de-duplicated while preserving discovery order (deps first, then
+	// gates). With no gate edges present this collapses to incompleteDeps(T), so
+	// the dependency-only derivation is unchanged (output byte-identical).
+	const blockersOf = (taskId: string): string[] => {
+		const result: string[] = [];
+		const seen = new Set<string>();
+		for (const blocker of [...incompleteDeps(taskId), ...unsatisfiedGates(taskId)]) {
+			if (seen.has(blocker)) continue;
+			seen.add(blocker);
+			result.push(blocker);
+		}
+		return result;
+	};
+
+	// ── blocked: planned tasks with at least one unsatisfied dep parent or gate ──
 	const blocked: CurrentState["blocked"] = [];
 	const blockedIds = new Set<string>();
 	for (const { id, loc } of plannedTasks) {
-		const blockedBy = incompleteDeps(id);
+		const blockedBy = blockersOf(id);
 		if (blockedBy.length > 0) {
 			blocked.push({ id, block: loc.block, blockedBy });
 			blockedIds.add(id);
@@ -784,10 +836,15 @@ export function currentState(cwd: string): CurrentState {
 	//    pointing outside the planned set (e.g. already-completed prerequisites)
 	//    don't gate the ordering — we then filter the resulting order to the
 	//    ready (unblocked + planned) subset.
+	//    Gate targets fold into the predecessor set alongside dep parents so a
+	//    gate-blocked task never precedes its gate in the emitted order; topoSort
+	//    only counts predecessors that are themselves graph nodes (planned tasks),
+	//    so non-task / completed gate targets don't gate the ordering (the
+	//    blockedIds filter below already drops gate-blocked tasks from the output).
 	const { order } = topoSort(
 		plannedTasks,
 		(t) => t.id,
-		(t) => depParentsOf(t.id),
+		(t) => [...depParentsOf(t.id), ...gateTargetsOf(t.id)],
 	);
 	for (const id of order) {
 		if (blockedIds.has(id)) continue;

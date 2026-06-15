@@ -1,0 +1,24 @@
+{
+  "description": "Extend `currentState` (packages/pi-context/src/context-sdk.ts:682-825) — the derivation behind context-current-state / `/context status` — so task readiness honors `task_gated_by_item` gates, not only `task_depends_on_task`. A planned task carrying a `task_gated_by_item` edge to a target NOT in the `complete` bucket must be reported blocked (target id in `blockedBy`) and excluded from `nextActions`; a gate target reaching the `complete` bucket releases the gate. Gate satisfaction reuses `bucket(target) === \"complete\"` via resolveStatusVocabulary (status-vocab.ts) — kind-general, the same mechanism the status-consistency invariant engine uses (context-sdk.ts:2186-2227); NOT a net-new completeness check. Both consumption sites fold gate parents: `blocked` (incompleteDeps→depParentsOf, :727-730/:742-751) and the `nextActions` topo predecessor function (:790). Scope is strictly the literal relation_type `task_gated_by_item`; `decision_gated_by_item` and non-task `*_gated_by_item` are inert (currentState buckets only tasks) and OUT of scope — the config-driven generalization is FEAT-004. NOW slice of FGAP-061.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/skills/pi-context/SKILL.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "A planned (non-`complete`-bucket) task with a `task_gated_by_item` edge to a target NOT in the `complete` bucket is reported in `currentState().blocked` with that target id present in its `blockedBy`, and is absent from `nextActions`.",
+    "When the gate target reaches the `complete` bucket (gap→`closed`, decision→`enacted`, feature→`complete`, task→`completed`), the same task is reported ready (in `nextActions`, absent from `blocked`). Gate satisfaction is implemented as `bucket(target) === \"complete\"` via resolveStatusVocabulary — no kind-special-casing.",
+    "A task with BOTH `task_depends_on_task` and `task_gated_by_item`: `blockedBy` is the UNION of unsatisfied dep-parents and unsatisfied gate-targets; with no gate edges present, `currentState` output is byte-identical to current behavior (no regression to dependency derivation).",
+    "`nextActions` topo ordering excludes gate-blocked tasks — the topo predecessor function folds gate parents alongside dep parents (:790), so a gate-blocked task is never emitted as a next action.",
+    "A dangling `task_gated_by_item` target (id resolves to no item) is treated as satisfied (non-blocking), mirroring the dangling-dep guard (:732) — no throw, no block.",
+    "Scope confinement: `decision_gated_by_item` and any non-`task_gated_by_item` edge do NOT alter `currentState` output; the gate filter matches the literal `task_gated_by_item`.",
+    "A gate target in a terminal-abandoned status (`wontfix`/`superseded`/`cancelled`) keeps the gated task blocked (per criterion 2's `=== \"complete\"` rule); the `currentState` JSDoc (:674-680) documents this as the FEAT-004 refinement boundary.",
+    "New tests in `context-sdk.test.ts` (the `currentState` describe, :2604-2745, cloning the `task_depends_on_task` template at :2633-2678) cover: gate-blocked, gate-released-on-completion, cross-kind gate targets, dep+gate union, dangling gate target, terminal-abandoned gate target.",
+    "Gates green with full output (no pipe-to-tail): `npm run build`, `npm run check`, `npm test`. Runtime demo: real `context-current-state` (CLI) against a /tmp substrate showing a gated task as blocked, then ready after the gate target is completed — not a mocked assertion. Fresh-context adversarial probe on the gate logic (over-block, under-block, kind-leak into non-task gates, topo/`blocked` parity).",
+    "docs-surface-sync: extend the `currentState` JSDoc (:674-680) and the `context-current-state` op `description`/`promptSnippet` (ops-registry.ts:1154-1167) to state gate-aware readiness (usage-only, what it does); regen SKILL.md if the op string changed; add a CHANGELOG `[Unreleased]` entry."
+  ]
+}

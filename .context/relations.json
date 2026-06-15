@@ -6119,5 +6119,31 @@
       "refname": "TASK-041"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1e4bc7a01f1ffdce3e2cdacb812af97d",
+      "refname": "TASK-065"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "aeffe68d922894375b46f7f0f1121056",
+      "refname": "FGAP-061"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1e4bc7a01f1ffdce3e2cdacb812af97d",
+      "refname": "TASK-065"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

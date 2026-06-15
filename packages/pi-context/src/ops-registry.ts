@@ -1155,8 +1155,8 @@ export const ops: OpDefinition[] = [
 		name: "context-current-state",
 		label: "Context Current State",
 		description:
-			"Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. No writes; nothing hand-stored.",
-		promptSnippet: "Derive current project state — focus, in-flight, next actions, blocked",
+			"Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. Task readiness honors both `task_depends_on_task` dependencies and `task_gated_by_item` gates: a planned task whose dependency or gate target has not reached the complete bucket is reported blocked (the blocker id in blockedBy) and held out of nextActions; a gate target of any kind (gap/decision/feature/task) reaching its complete status releases the gate. No writes; nothing hand-stored.",
+		promptSnippet: "Derive current project state — focus, in-flight, next actions, dependency- and gate-aware blocked",
 		examples: [`pi-context context-current-state --json`],
 		parameters: Type.Object({}),
 		surface: "use",

@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "TASK-065 (gate-aware task readiness, NOW slice of FGAP-061) verified end-to-end. Gates: `npm run build` clean; `npm run check` exit 0; `npm test` exit 0, 0 failures across all packages. Runtime demo — real global `pi-context context-current-state` against freshly-built dist on a /tmp ceremony-built substrate: with the gate target open (FGAP-001 `identified`) TASK-001 reported in `blocked` with `blockedBy:[\"FGAP-001\"]` and absent from `nextActions`; with the gate target closed (FGAP-001 → `closed`) TASK-001 moved to `nextActions` and `blocked` emptied — both directions, real CLI, not mocked. Fresh-context adversarial probe (own fixtures, real CLI): all criteria hold; scope-leak hunt across decision_gated_by_item + prefix/suffix/substring trap relation_types inert (strict literal match); cross-task gates, self/mutual-gate cycles (no crash, no loop), structured-vs-string endpoints, in-progress/accepted non-terminal targets, and requirement→implemented release all confirmed. One probe finding — criterion-3 'byte-identical' falsified only for hand-duplicated task_depends_on_task edges, an input not producible via the dedup-on-write API (appendRelations skips an existing (parent,child,relation_type) triple) — resolved by appending acceptance criterion 11 (the blockersOf dedup contract); no code change warranted. docs-surface-sync: currentState JSDoc + context-current-state op description/promptSnippet + regenerated SKILL.md + CHANGELOG [Unreleased]. Merged to context-jit-spec-v2 at 3872012, rebuilt.",
+  "criteria_results": [
+    {
+      "criterion": "Gated task (target not complete) → blocked with target in blockedBy, absent from nextActions",
+      "status": "passed",
+      "evidence": "demo: TASK-001 blocked, blockedBy [FGAP-001]; probe HOLDS"
+    },
+    {
+      "criterion": "Gate target reaching complete bucket releases gate (kind-general via bucket===complete)",
+      "status": "passed",
+      "evidence": "demo gap→closed released; probe confirmed gap/decision/feature/task/requirement complete-bucket release"
+    },
+    {
+      "criterion": "dep+gate blockedBy union; no-gate path byte-identical to prior derivation",
+      "status": "passed",
+      "evidence": "probe TASK-UNION blockedBy [TASK-DEP,FGAP-5]; single-edge no-gate path byte-identical (criterion 11 records the duplicate-edge dedup nuance)"
+    },
+    {
+      "criterion": "nextActions topo excludes gate-blocked tasks; blocked/ready parity",
+      "status": "passed",
+      "evidence": "probe: no task ever in both blocked and nextActions"
+    },
+    {
+      "criterion": "Dangling gate target treated satisfied, no throw, no block",
+      "status": "passed",
+      "evidence": "probe TASK-DANGLE → NONEXISTENT-99 ready, no error"
+    },
+    {
+      "criterion": "Scope confinement to literal task_gated_by_item; other *_gated_by_item inert",
+      "status": "passed",
+      "evidence": "probe: 5 trap relation_types inert, only literal task_gated_by_item blocks"
+    },
+    {
+      "criterion": "Terminal-abandoned (wontfix/superseded/cancelled) target keeps task blocked",
+      "status": "passed",
+      "evidence": "probe gap→wontfix (bucket unknown): TASK-G stays blocked, no crash"
+    },
+    {
+      "criterion": "Six new currentState tests (gate-blocked/released/cross-kind/dep+gate/dangling/terminal-abandoned)",
+      "status": "passed",
+      "evidence": "context-sdk.test.ts +229 lines; full suite 0 failures"
+    },
+    {
+      "criterion": "build/check/test green; real-CLI runtime demo; fresh adversarial probe",
+      "status": "passed",
+      "evidence": "build/check/test exit 0; demo both directions; probe completed with one resolved finding"
+    },
+    {
+      "criterion": "docs-surface-sync: JSDoc + op string + SKILL regen + CHANGELOG [Unreleased]",
+      "status": "passed",
+      "evidence": "currentState JSDoc + context-current-state op + SKILL.md regen (74a8ff5) + CHANGELOG Unreleased + Documentation lines"
+    },
+    {
+      "criterion": "blockersOf dedups dep+gate union (deps before gates); duplicate-edge collapse a strict improvement",
+      "status": "passed",
+      "evidence": "probe confirmed dedup retains distinct blockers, collapses redundant duplicate; appendRelations write-API dedup makes it unreachable on API substrates"
+    }
+  ]
+}

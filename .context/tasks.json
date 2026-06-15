@@ -1248,11 +1248,13 @@
         "A gate target in a terminal-abandoned status (`wontfix`/`superseded`/`cancelled`) keeps the gated task blocked (per criterion 2's `=== \"complete\"` rule); the `currentState` JSDoc (:674-680) documents this as the FEAT-004 refinement boundary.",
         "New tests in `context-sdk.test.ts` (the `currentState` describe, :2604-2745, cloning the `task_depends_on_task` template at :2633-2678) cover: gate-blocked, gate-released-on-completion, cross-kind gate targets, dep+gate union, dangling gate target, terminal-abandoned gate target.",
         "Gates green with full output (no pipe-to-tail): `npm run build`, `npm run check`, `npm test`. Runtime demo: real `context-current-state` (CLI) against a /tmp substrate showing a gated task as blocked, then ready after the gate target is completed — not a mocked assertion. Fresh-context adversarial probe on the gate logic (over-block, under-block, kind-leak into non-task gates, topo/`blocked` parity).",
-        "docs-surface-sync: extend the `currentState` JSDoc (:674-680) and the `context-current-state` op `description`/`promptSnippet` (ops-registry.ts:1154-1167) to state gate-aware readiness (usage-only, what it does); regen SKILL.md if the op string changed; add a CHANGELOG `[Unreleased]` entry."
+        "docs-surface-sync: extend the `currentState` JSDoc (:674-680) and the `context-current-state` op `description`/`promptSnippet` (ops-registry.ts:1154-1167) to state gate-aware readiness (usage-only, what it does); regen SKILL.md if the op string changed; add a CHANGELOG `[Unreleased]` entry.",
+        "`blockersOf` de-duplicates the dep+gate union, preserving discovery order (deps before gates): a target appearing in both the unsatisfied-dependency and unsatisfied-gate sets, or a redundant exact-duplicate `task_depends_on_task` edge, is listed once in `blockedBy`. Exact-duplicate edges are not producible through the write API (`appendRelations` skips an existing `(parent, child, relation_type)` triple, context.ts:649-663), so on every API-produced substrate this dedup is invisible and the single-edge no-gate path stays byte-identical to the prior derivation; on a hand-duplicated-edge substrate it collapses the redundant blocker to a single entry — a strict improvement, not a dependency-derivation regression."
       ],
       "id": "TASK-065",
       "oid": "1e4bc7a01f1ffdce3e2cdacb812af97d",
-      "content_hash": "00ecef9531184bbd9cc7c89c86c801a160c1b6698b5ace3d2c7cf8dbb3496ad8"
+      "content_hash": "c67106e074ef5fbc96df335a5a18bc6633bb5daa6508ed0b8fbbdd2e01596fdc",
+      "content_parent": "00ecef9531184bbd9cc7c89c86c801a160c1b6698b5ace3d2c7cf8dbb3496ad8"
     }
   ]
 }

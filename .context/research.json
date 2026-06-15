@@ -1190,6 +1190,68 @@
       "modified_at": "2026-06-15T22:53:06.399Z",
       "oid": "a2a807f3e45e551c0024bb9a94c43403",
       "content_hash": "ba59422dc18598544b079845baf40bd7c40a2618100825fa88a6e124ed022d7d"
+    },
+    {
+      "title": "Phase-block dev-process control plane: forensic validation of the proposal — the phase block and the roadmap layer are distinct surfaces, and the zero-code core vs named-code-dependency split",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "Is the proposal that the empty `phase` block plus already-shipped pi-context elements form a discipline-closable dev-process control plane accurate against the real code and substrate, and which control-plane mechanisms are zero-code-usable today versus gated on named code?",
+      "method": "claim-by-claim forensic verification via the pi-context CLI (read-schema/read-config/read-block on phase, task_positioned_in_phase, phase_depends_on, invariants) + source inspection (currentState in context-sdk.ts, roadmap-plan.ts, execution-context.ts gatherExecutionContext, ops-registry.ts), with the two load-bearing claims orchestrator-re-verified at context-sdk.ts:864-876 and roadmap-plan.ts:149-156/307/318",
+      "scope": [
+        "the user-authored phase-block control-plane proposal",
+        "packages/pi-context/src (context-sdk.ts currentState, roadmap-plan.ts, execution-context.ts, ops-registry.ts)",
+        ".context phase/roadmap/context-contracts blocks + relation_types/invariants registries",
+        "repo at 2026-06-16 (context-jit-spec-v2)"
+      ],
+      "findings_summary": "The proposal's thesis — the empty `phase` block plus already-shipped pi-context elements form a largely discipline-closable dev-process control plane — holds at its substrate-write core but rests on a load-bearing conflation that the validation corrects. (1) The `phase` block and the `roadmap` layer are DISTINCT surfaces: the context-roadmap-* ops read `<root>/roadmap.json` and aggregate items through a named LENS (PhaseSpec{id,name,lens,milestone?,exit_criteria?}, roadmap-plan.ts:149-156), never the `phase` block nor task_positioned_in_phase edges; the `roadmap` block is opt-in and not installed in .context. (2) phase_depends_on is registered in NEITHER the catalog nor live .context/config.json (it is consumed by roadmap-plan.ts), so roadmap topo ordering is non-derivable today; the planned TASK-066 back-ports it. (3) currentState ALREADY reads the phase block for the focus-string fallback — an in-progress phase becomes focus when no task is in-flight (context-sdk.ts:864-876) — but it ignores task_positioned_in_phase and does not group tasks under phases; phase-positioning-driven focus is enabled-by, not shipped-by, the planned TASK-020 (a config-driven state-derivation registry rewiring currentState; the shipped conception declares only framework-gaps + tasks). (4) gatherExecutionContext (execution-context.ts:143) is contract-driven and walks the relation_types a context-contracts entry declares; the context-contracts block is empty, so the one-call vertical trace errors today and is gated on a filed contract. (5) A phase-completion invariant is net-new — no phase invariant ships in catalog (9) or live config (10); the cited task-completed-feature-complete is the status-consistency template but a phase check needs the inverse inbound-aggregate shape, closer to TASK-047's net-new advancer-completion class. Schema precision: phase.intent is required (not optional), success_criteria.verify_method is an enum command|inspect|human, specs.number is an integer discriminator. VERDICT on 'zero code, discipline-closable': PARTIAL — filing PHASE-* items, task_positioned_in_phase edges, and walking the FGAP→task_addresses_gap→TASK→task_positioned_in_phase→PHASE→task_addresses_feature→FEAT→item_governed_by_convention chain through registered relation_types is genuinely zero-code substrate discipline (the project has filed zero phases); three of the seven control-plane elements are gated on named planned work — roadmap ordering/render on TASK-066 plus authoring the uninstalled roadmap block, phase-completion enforcement on a net-new invariant, phase-positioning-driven focus on TASK-020. The illustrative backlog decomposition's named tasks and gap/feature bindings are real.",
+      "findings_document": "analysis/2026-06-16-phase-block-dev-process-control-plane.md",
+      "grounding": {
+        "revisions": [
+          "repo at 2026-06-16 (context-jit-spec-v2)"
+        ]
+      },
+      "grounded_at": "2026-06-16",
+      "stale_conditions": [
+        "TASK-066 lands (phase_depends_on registered in catalog + config) — roadmap topo ordering becomes derivable",
+        "TASK-020 lands (config-driven state derivation) — phase-positioning-driven current-state focus becomes declarable",
+        "a phase-completion status-consistency invariant is authored — element 3 is enforced",
+        "the roadmap block is installed + roadmap.json authored, or the phase/context-contracts blocks are populated",
+        "currentState, roadmap-plan.ts, execution-context.ts, or the relation_types/invariants registries change materially from the 2026-06-16 baseline"
+      ],
+      "citations": [
+        {
+          "label": "the full register-compliant validated control-plane writeup (shipped-today vs gated-on-named-code)",
+          "path": "analysis/2026-06-16-phase-block-dev-process-control-plane.md"
+        },
+        {
+          "label": "currentState reads the phase block only for the focus fallback",
+          "path": "packages/pi-context/src/context-sdk.ts"
+        },
+        {
+          "label": "the roadmap layer reads roadmap.json + aggregates via lens (distinct from the phase block)",
+          "path": "packages/pi-context/src/roadmap-plan.ts"
+        },
+        {
+          "label": "gatherExecutionContext is context-contracts-driven",
+          "path": "packages/pi-context/src/execution-context.ts"
+        },
+        {
+          "label": "TASK-066 back-ports phase_depends_on (roadmap ordering dependency)",
+          "path": ".context/tasks.json"
+        },
+        {
+          "label": "TASK-020 config-driven state derivation (phase-aware focus dependency)",
+          "path": ".context/tasks.json"
+        }
+      ],
+      "id": "R-0018",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-15T23:11:10.619Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-15T23:11:10.619Z",
+      "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
+      "content_hash": "69d4b4fca3c5e1a3e7169ebd6458a867f58115db5b84f650afe4ba4527826500"
     }
   ]
 }

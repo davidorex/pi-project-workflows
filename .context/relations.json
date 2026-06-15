@@ -6275,5 +6275,31 @@
       "refname": "FGAP-094"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
+      "refname": "R-0018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "602ad155df54de2092304a24eab8e610",
+      "refname": "R-0015"
+    },
+    "relation_type": "research_relates_to_research"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
+      "refname": "R-0018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b5428784e8fbdb7524f7f5780c65dd69",
+      "refname": "FEAT-004"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

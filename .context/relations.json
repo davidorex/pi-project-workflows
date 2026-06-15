@@ -6262,5 +6262,18 @@
       "refname": "TASK-067"
     },
     "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a2a807f3e45e551c0024bb9a94c43403",
+      "refname": "R-0017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
+      "refname": "FGAP-094"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

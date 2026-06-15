@@ -1,0 +1,57 @@
+{
+  "title": "Catalog↔config relation_type drift: task_gated_by_item consumed by a shipped derivation but missing from the packaged catalog — a class with no parity forcing-function",
+  "status": "complete",
+  "layer": "L3",
+  "type": "audit",
+  "question": "Why does a fresh accept-all substrate lack task_gated_by_item; what is the root cause, shape, and reproducible condition; is it an atomic omission or an instance of a broader class; and does the substrate already track it?",
+  "method": "git archaeology on the catalog (samples/conception.json) and live .context/config.json (git log -S per relation_type), pi-context CLI substrate inspection (read-config / read-samples-catalog / context-init→accept-all→install on a throwaway /tmp substrate), source trace of the write-time edge validator, and a prior-art search of framework-gaps/decisions by topic",
+  "scope": [
+    "packages/pi-context/samples/conception.json relation_types[]",
+    ".context/config.json relation_types[]",
+    "packages/pi-context/src/context-sdk.ts (validateEdgeAgainstRegistry / assertEdgeValidForWrite / appendRelationByRef)",
+    "the install ceremony (context-init/accept-all/install)",
+    "framework-gaps + decisions prior-art",
+    "repo at 2026-06-16"
+  ],
+  "findings_summary": "task_gated_by_item was hand-added to the live .context/config.json on 2026-06-07 (commit 669890c, to author the TASK-033→FEAT-006 edge) and never back-ported to the packaged catalog samples/conception.json; the one catalog gating-relation back-port (a582939 / TASK-061) was scoped to FGAP-090's three new relations and did not include this pre-existing sibling, so it fell between the cracks. It is NOT atomic: the catalog relation_types[] (34) is a strict subset of the live config (40), missing six live-only relations — task_gated_by_item, session_touches_item, task_advances_story, feature_advances_story, decision_derived_from_item, decision_escalates_underdetermined — each hand-added to live config (for an edge/lens/invariant) and never back-ported, with no forcing-function ensuring the catalog carries the vocabulary the shipped derivations consume and no record distinguishing intentionally-substrate-local from catalog-worthy. SHAPE: on a fresh install-ceremony substrate task_gated_by_item is not merely inert to gate-aware currentState (FGAP-061) but UNWRITABLE — the registration-first write-time validator validateEdgeAgainstRegistry (context-sdk.ts:1496-1502) short-circuits on the unregistered relation_type and assertEdgeValidForWrite (:1548) throws, so a task gate cannot be expressed at all while feature/story/decision gating ships. PRIOR-ART: the substrate did not track this class — nearest neighbors FGAP-060 (catalog→substrate propagation, opposite direction) and FGAP-010 (a build-time parity forcing-function over the code-surface trio, the structural precedent). DISPOSITION: filed as FGAP-094 (class-level, P2) and decomposed into TASK-066 (back-port the consumed-but-missing relations) + TASK-067 (a build-time catalog⊇consumed-vocabulary parity gate mirroring scripts/parity-check.ts). The catalog-worthiness rule is derivable — a relation_type is catalog-required iff a shipped src derivation consumes it by literal string — so the five non-consumed live-only relations are correctly substrate-local. The decomposition surfaced an adjacent instance of the same class beyond this document's six: phase_depends_on, consumed by shipped roadmap-plan.ts (:329/:505/:528) yet registered in NEITHER the catalog nor live config, folded into TASK-066/067.",
+  "findings_document": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md",
+  "grounding": {
+    "revisions": [
+      "repo at 2026-06-16 (context-jit-spec-v2)"
+    ]
+  },
+  "grounded_at": "2026-06-16",
+  "stale_conditions": [
+    "FGAP-094 is resolved / the catalog reaches parity with the consumed vocabulary (the drift finding becomes historical)",
+    "TASK-066 lands (task_gated_by_item + phase_depends_on back-ported) — the unwritable-on-fresh-substrate symptom is gone",
+    "TASK-067 lands (the build-time catalog⊇consumed-vocabulary parity gate) — the no-forcing-function class finding is closed",
+    "the catalog relation_types[] or live config relation_types[] change materially from the 2026-06-16 baseline",
+    "the write-time edge validator's registration-first short-circuit (context-sdk.ts) changes"
+  ],
+  "citations": [
+    {
+      "label": "the full investigation (root-cause git evidence, shape, repro, prior-art table, 6-member live-only diff)",
+      "path": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md"
+    },
+    {
+      "label": "catalog relation_types[] — task_gated_by_item absent",
+      "path": "packages/pi-context/samples/conception.json"
+    },
+    {
+      "label": "live config relation_types[] — task_gated_by_item present (669890c), strict superset",
+      "path": ".context/config.json"
+    },
+    {
+      "label": "registration-first write-time edge validator (unwritable on fresh substrate)",
+      "path": "packages/pi-context/src/context-sdk.ts"
+    },
+    {
+      "label": "FGAP-094 — the class-level gap this audit grounds",
+      "path": ".context/framework-gaps.json"
+    },
+    {
+      "label": "FGAP-010 — build-time parity forcing-function (structural precedent)",
+      "path": ".context/framework-gaps.json"
+    }
+  ]
+}

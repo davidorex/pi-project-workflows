@@ -1063,6 +1063,69 @@
       "modified_at": "2026-06-14T23:36:55.610Z",
       "oid": "602ad155df54de2092304a24eab8e610",
       "content_hash": "888989bf0a8b5b63e2e87b54c67ed6a2c7375bbe82f73297e5ded735d291c532"
+    },
+    {
+      "title": "Forensic accuracy evaluation of the Context Contracts leverage plan: core thesis sound, 5 inaccuracies (3 material — nonexistent work_order_dispatches_task, wrong decision-shows-derivation severity, unimplemented bundle->contextBlocks injection)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "Are the load-bearing claims of the Context Contracts leverage plan (schema/op behavior, the exact edges on named items, the relation_types each proposed CTX contract names, the lens/invariant/tool facts) accurate against the real pi-context code and the .context substrate, and which specifics are wrong?",
+      "method": "claim-by-claim forensic verification via the pi-context CLI (read-schema, read-config relation_types/invariants, find-references, read-block, context-validate-relations) + package source inspection (gatherExecutionContext, ops-registry, run-work-order-loop in pi-agent-dispatch)",
+      "scope": [
+        "the Context Contracts leverage plan (user-authored)",
+        "packages/pi-context (schemas/context-contracts.schema.json, ops-registry, gather-execution-context impl)",
+        "packages/pi-agent-dispatch (run-work-order-loop)",
+        ".context relation_types/invariants/conventions registries + the named items' edges",
+        "repo at d48bc5e (2026-06-15)"
+      ],
+      "findings_summary": "Forensic claim-by-claim verification of the Context Contracts leverage plan against the real pi-context code and the .context substrate. The plan's CORE THESIS is sound in mechanism: context-contract items + gather-execution-context do derive subagent dispatch context; the context-contracts and work-orders blocks are genuinely empty (so authoring contracts is the real unlock); the schema, op, direction semantics, per-relation-type bucketing, and (with one exception) the relation_type vocabulary exist as described; all the named-item edge claims (DEC-0018's six edges, FEAT-007's inbound/outbound set, FGAP-089's lone cancelled-TASK-060 inbound) are accurate and correctly typed. Five inaccuracies, three material: (1) work_order_dispatches_task does NOT exist — absent from the relation_types registry, zero source hits; the CTX-005 work-order contract would walk nothing / fail at edge-write; must be registered first [most material]. (2) decision-shows-derivation is severity WARNING, not error, and does NOT auto-gate every future decision — the derive-decisions-from-facts convention states verbatim it stays warning 'until the existing decisions are backfilled, then raised to error' (pending TASK-041); the plan's already-gated premise is false. (3) The bundle -> agent contextBlocks injection is UNIMPLEMENTED — gatherExecutionContext returns the payload only; nothing wires it into an agent spec, so the 'orchestrator never hand-composes again' end-state is net-new work, not shipped behavior. (4) unit_kind has no enum — the plan's invented task|decision|feature|gap|work-order enum does not exist; the schema accepts any string (low blast radius). (5) The validate-relations issue count is 29, not 30 (source/class correctly identified as the story-advancers / story-advancers-features lenses). Two negative-assumption corrections: run-work-order-loop IS real — it lives in pi-agent-dispatch (run-work-order-loop-tool.ts / work-order-loop.ts), not pi-context; and TASK-020/021 = FEAT-004 linkage is confirmed. Net for acting on the plan: register work_order_dispatches_task before any work-order contract, drop the decisions-already-gated premise, and treat bundle -> contextBlocks injection as work to build — contract-authoring + the gather-execution-context derivation are the genuine, shipped unlock.",
+      "findings_document": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md",
+      "grounding": {
+        "revisions": [
+          "repo at d48bc5e (2026-06-15)"
+        ]
+      },
+      "grounded_at": "2026-06-15",
+      "stale_conditions": [
+        "work_order_dispatches_task is registered as a relation_type — inaccuracy (1) becomes obsolete",
+        "decision-shows-derivation is raised from warning to error (TASK-041 lands) — inaccuracy (2) changes",
+        "the bundle -> contextBlocks injection is implemented — inaccuracy (3) is resolved",
+        "the context-contracts schema gains a unit_kind enum — inaccuracy (4) changes",
+        "the relation_types/invariants registries or gather-execution-context change materially from the d48bc5e baseline"
+      ],
+      "citations": [
+        {
+          "label": "the full forensic evaluation (claim-by-claim verdict table A/B/C/D)",
+          "path": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md"
+        },
+        {
+          "label": "relation_types registry — work_order_dispatches_task absent",
+          "path": ".context/config.json"
+        },
+        {
+          "label": "invariants registry — decision-shows-derivation severity warning",
+          "path": ".context/config.json"
+        },
+        {
+          "label": "derive-decisions-from-facts convention — warning-until-backfill clause",
+          "path": ".context/conventions.json"
+        },
+        {
+          "label": "run-work-order-loop lives in pi-agent-dispatch",
+          "path": "packages/pi-agent-dispatch/src"
+        },
+        {
+          "label": "R-0015 — the leverage audit that surfaced context-contracts as a leverage gap",
+          "path": ".context/research.json"
+        }
+      ],
+      "id": "R-0016",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-15T00:03:00.405Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-15T00:03:00.405Z",
+      "oid": "f59b05a894f00fe796d321bf50d094cb",
+      "content_hash": "72953425b6a44ac29bac8d9624114121462963c2fa6378c667e4ec575fbc8dad"
     }
   ]
 }

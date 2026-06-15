@@ -57,6 +57,8 @@ While the ready/blocked deriver does not honor gating relations (`FGAP-061`) and
 3. **FGAP-011** release/version block kind → features pin releases.
 4. **FGAP-093** (write↔validate edge-guard parity); **FGAP-089** (hook-scoping to active substrate, unsolved — develop against copies, never the live guards; see `analysis/2026-06-13-install-surface-and-guard-scope-gaps.md` + R-0014).
 
+**Standing research / leverage direction (filed this stretch — not yet acted on):** **R-0015** (leverage audit, `analysis/2026-06-15-pi-context-leverage-audit.md`) — the project under-uses pi-context's organizational/derivational surfaces (~7/17 block kinds empty, ~13/40 relation_types edged); its focus/status/release underivability is **dogfooding-discipline + the tracked gaps above, not a missing tool capability**. **R-0016** (`analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md`) — evaluates the **context-contracts leverage direction** (author CTX contracts + `gather-execution-context` to DERIVE subagent dispatch context instead of hand-composing it): core thesis sound, but blocked on 3 corrections before acting — `work_order_dispatches_task` is unregistered (must add), `decision-shows-derivation` is severity **warning** not error (TASK-041's raise-to-error still pending — do not assume decisions are gated), and the bundle→agent-`contextBlocks` injection is **unimplemented** (net-new work).
+
 **Releases HELD** (no `release:*` without explicit per-release authorization); v0.31.0 last; npm publish + git push are the user's downstream steps (OTP). Delete this note when `FGAP-061` lands (gate-aware derivation).
 
 ## Conventions

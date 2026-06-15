@@ -6197,5 +6197,70 @@
       "refname": "FGAP-061"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a67c8c765d626abab530ac88f14b33b8",
+      "refname": "TASK-066"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
+      "refname": "FGAP-094"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a67c8c765d626abab530ac88f14b33b8",
+      "refname": "TASK-066"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "refname": "TASK-067"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
+      "refname": "FGAP-094"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "refname": "TASK-067"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a67c8c765d626abab530ac88f14b33b8",
+      "refname": "TASK-066"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "refname": "TASK-067"
+    },
+    "relation_type": "task_depends_on_task"
   }
 ]

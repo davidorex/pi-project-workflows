@@ -1,0 +1,19 @@
+{
+  "description": "Build-time forcing-function preventing recurrence of FGAP-094's catalog↔config vocabulary drift: a gate that mechanically enumerates the relation_types consumed by literal string in shipped packages/pi-context/src/** derivations (the AST-reading pattern scripts/parity-check.ts already uses) and asserts the catalog packages/pi-context/samples/conception.json relation_types[] ⊇ that consumed set; a non-empty difference exits non-zero naming the missing relation_types. Wire into .husky/pre-commit AND .github/workflows/ci.yml sequenced alongside the existing parity-check.ts / check-changelog.ts gates, with a unit test mirroring parity-check.test.ts. At that task's plan step, derive whether to extend parity-check.ts with an added check-category or add a sibling scripts/catalog-vocab-parity.ts (parity-check.ts is an extensible gate aggregator). Include the explicit record classifying each live-only relation_type substrate-local-vs-catalog-worthy with its derivation (endpoint blocks shipped? consumed by a shipped derivation?). FORWARD class-fix slice of FGAP-094; mirrors FGAP-010's scripts/parity-check.ts structural answer for the catalog↔config vocabulary surface. Depends on TASK-066 (the gate goes green once the back-port lands).",
+  "status": "planned",
+  "files": [
+    "scripts/parity-check.ts",
+    "scripts/parity-check.test.ts",
+    ".husky/pre-commit",
+    ".github/workflows/ci.yml",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "The gate enumerates the relation_types consumed by literal string across shipped packages/pi-context/src/** (at minimum the known sites context-sdk.ts:750/766/2457, roadmap-plan.ts:329/505/528, promote-item.ts:236) and asserts the catalog relation_types[] is a superset.",
+    "The gate FAILS (non-zero, naming the missing relation_type) on a catalog with a consumed relation_type removed (proven via a throwaway), and PASSES on the TASK-066-corrected catalog.",
+    "Wired into .husky/pre-commit and .github/workflows/ci.yml alongside the existing gates, with a unit test mirroring scripts/parity-check.test.ts.",
+    "An explicit substrate-local-vs-catalog-worthy classification record for each live-only relation_type is present, with the derivation; the relations not consumed by shipped src (session_touches_item, task_advances_story, feature_advances_story, decision_derived_from_item, decision_escalates_underdetermined) are documented as intentionally substrate-local.",
+    "build/check/test green; the new gate green; fresh-context adversarial probe confirming no false-negative (a consumed literal the enumeration misses) and no false-positive (flagging an intentionally-substrate-local relation).",
+    "Edges: task_addresses_gap → FGAP-094; task_depends_on_task → TASK-066; item_governed_by_convention → feature-branch-workflow."
+  ]
+}

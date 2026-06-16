@@ -1527,6 +1527,41 @@
       "id": "VER-051",
       "oid": "9d2622f02ee01bef4385f7a10444d7e5",
       "content_hash": "dc435c1e8ac09a8a1e8708e400f9404c0f8d5cb485dffc953c96726939fa710e"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Milestone block arc (FGAP-037 milestone block kind; FGAP-039 phase→milestone placement relation; FGAP-041 story_includes_item wildcard) verified end-to-end on the integration branch. Gates: npm run build / check / test green, 0 failures. Real validated-write demo (block-api appendRelationByRef via tsx, NOT direct-write): a phase_positioned_in_milestone edge in parent=phase/child=milestone is ACCEPTED by the write-time validator and REJECTED in the reverse orientation (source kind milestone not in source_kinds [phase]); context-current-state then derives the milestone `reached` when its placed (parent) phase buckets to complete and `planned` otherwise; a milestone with zero edges or a dangling parent endpoint is `planned`, no throw. The reached-milestone-phases-complete invariant (severity error) fires on a milestone authored `reached` with an incomplete placed phase. Fresh-context adversarial probe: 6/6 checks hold, no residual wrong-direction artifact. The direction defect (the deriver read parent=milestone) and the canonical_id/data_path mismatch (milestones.json → milestone.json) were corrected in the iterate-to-zero (96d37ee) and re-verified. story_contains_task retired in favor of story_includes_item. Merged to context-jit-spec-v2 at 18cca3d; op strings + SKILL.md + bundled-resources + CHANGELOG synced; both READMEs audited-clean.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-037: a milestone block kind exists (schema + block_kind + catalog) with derived reached",
+          "status": "passed",
+          "evidence": "fresh install materializes .context/milestone.json; currentState derives milestones[].status"
+        },
+        {
+          "criterion": "FGAP-039: phases are placed in a milestone by a relation; milestone done-ness reads up it",
+          "status": "passed",
+          "evidence": "phase_positioned_in_milestone registered (source phase/target milestone); reached deriver rolls up the parent phases"
+        },
+        {
+          "criterion": "FGAP-041: story_includes_item (story → any) registered; story_contains_task retired",
+          "status": "passed",
+          "evidence": "registered in catalog + config; story_contains_task removed"
+        },
+        {
+          "criterion": "Edge direction is consistent across registration, validator, deriver, invariant (parent=phase/child=milestone)",
+          "status": "passed",
+          "evidence": "real validated write: correct orientation accepted, reverse rejected; deriver reads validator-accepted edge"
+        },
+        {
+          "criterion": "reached is derived, not authored; backstopped by the reached-milestone-phases-complete invariant",
+          "status": "passed",
+          "evidence": "currentState computes reached from placed-phase completion; invariant errors on a reached milestone with an incomplete placed phase"
+        }
+      ],
+      "id": "VER-052",
+      "oid": "7a311b7bc27e7492b65c00343e3dfb2f",
+      "content_hash": "dad7785803808e45587d8c78dcc6d3100d46a1e92671720815c2aed4c7fbc356"
     }
   ]
 }

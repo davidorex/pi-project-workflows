@@ -1306,7 +1306,7 @@
     {
       "id": "FGAP-037",
       "title": "No milestones block — add a milestone block kind (samples catalog + active .context)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "There is no milestone block kind, yet phases need a checkpoint to roll up into. Add a milestone block. Fields: id (MILE-NNN), name, status (planned | reached, no missed), optional release to group gaps/issues/tasks/phases into a release (e.g. 0.30.1). No intent field. No evidence_block/evidence_query. reached is derived: a milestone is reached when its placed phases are done (placement relation, FGAP-039); stories attach to it via the wildcard relation (FGAP-041). Lands in both the packaged samples catalog (via the pi-context update CLI) and the active .context substrate.",
@@ -1329,8 +1329,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "eb340f2333abb437c6cff7e8036499a1",
-      "content_hash": "053667287c83c068919eb0a25e8f0640ba9ffca6334d1df23ac3a6fa87f645a6",
-      "content_parent": "29182b87440c57b09c50b44c5d2825b8abd987b77a80cd808392b0b6fb50ec02"
+      "content_hash": "279263801462ca96b7d385c821f20ec273b3b08ddf7153fc371382afbf602d58",
+      "content_parent": "053667287c83c068919eb0a25e8f0640ba9ffca6334d1df23ac3a6fa87f645a6",
+      "closed_by": "Milestone block kind + schema + derived reached phase-rollup + reached-milestone-phases-complete invariant shipped; VER-052; merged 18cca3d (direction-corrected 96d37ee)",
+      "closed_at": "2026-06-17T00:00:00.000Z"
     },
     {
       "id": "FGAP-038",
@@ -1359,7 +1361,7 @@
     {
       "id": "FGAP-039",
       "title": "Milestone groups phases via a placement relation",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "A phase is placed in a milestone by a relation mirroring task_positioned_in_phase. A milestone is reached when its placed phases are done.",
@@ -1374,7 +1376,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "fa867fd3ebbc861862763db310c92f63",
-      "content_hash": "34b0092734ce0efa5a1052a696dc8622fc0004f43a674d05a684340eb55cab39"
+      "content_hash": "61373cd2b04bbc0aea4b0d32bdae8742055324f87f572c43ae43aff7af96c9a3",
+      "closed_by": "phase_positioned_in_milestone placement relation (phase->milestone) registered + consumed by the reached phase-rollup deriver; VER-052; merged 18cca3d",
+      "closed_at": "2026-06-17T00:00:00.000Z",
+      "content_parent": "34b0092734ce0efa5a1052a696dc8622fc0004f43a674d05a684340eb55cab39"
     },
     {
       "id": "FGAP-040",
@@ -1400,7 +1405,7 @@
     {
       "id": "FGAP-041",
       "title": "Stories attach to any item via one wildcard relation",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "One relation story_includes_item (source story, target any kind) links a story to any task, phase, or milestone. A story's scope is its outbound story_includes_item edges.",
@@ -1415,7 +1420,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "89bf9b62592f4e56cb963332b58272df",
-      "content_hash": "ff00edf762c4f0784be4c7faf11cc7ecb65c172469b8bf9d1dcdc13a10618213"
+      "content_hash": "8a754f0cce5de4104e1ff2f20006c2be6b7b9aab47d295ec5c436fd94d93100e",
+      "closed_by": "story_includes_item (story->any) registered and story_contains_task retired; VER-052; merged 18cca3d",
+      "closed_at": "2026-06-17T00:00:00.000Z",
+      "content_parent": "ff00edf762c4f0784be4c7faf11cc7ecb65c172469b8bf9d1dcdc13a10618213"
     },
     {
       "id": "FGAP-042",

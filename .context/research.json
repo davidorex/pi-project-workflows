@@ -1252,6 +1252,63 @@
       "modified_at": "2026-06-15T23:11:10.619Z",
       "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
       "content_hash": "69d4b4fca3c5e1a3e7169ebd6458a867f58115db5b84f650afe4ba4527826500"
+    },
+    {
+      "title": "Best-next-steps sequencing determination, validated to substrate truth: re-derived counts/dependencies, the FGAP-061 NOW-slice-shipped correction, and the zero-code vs gated-on-unshipped-code split",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "What is the leverage-ordered next-steps sequencing of the .context backlog validated against current substrate truth — which counts and dependencies hold, which proposal claims are stale or false, and which moves are genuinely zero-code substrate writes versus gated on the canonical pipeline or on unshipped code?",
+      "method": "claim-by-claim forensic verification via the pi-context CLI (context-status for counts, find-references for dependency + task_addresses_feature edges, read-config for invariant severity, read-block-item for task scopes) cross-referenced against R-0015 (leverage audit) and R-0016 (context-contracts evaluation); load-bearing claims orchestrator-re-verified (find-references FEAT-007)",
+      "scope": [
+        "the user-authored Best Next Steps — Determination sequencing proposal",
+        ".context backlog (tasks/framework-gaps/features/decisions/invariants) at 2026-06-16 (context-jit-spec-v2)",
+        "R-0015 + R-0016 as cited prior evaluations"
+      ],
+      "findings_summary": "Forensic validation of a leverage-ordered backlog sequencing proposal against current substrate truth, rewritten declarative and non-hedging (findings_document). Counts re-derived: 17 planned tasks (not 15), 41 identified framework-gaps (not 39), 7 of 17 block kinds empty (accurate), 10 invariants live. Headline correction — FGAP-061 is NOT 'non-load-bearing' anymore: TASK-065 (completed) shipped the NOW slice, so currentState (behind /context status) reports a planned task gated by a non-complete task_gated_by_item target as blocked and excludes it from nextActions; task-level gate-aware focus IS derivable today, and the residual is the FORWARD slice (config-declared all-kinds + feature/story readiness) bound to FEAT-004. So the next derivation step is extending a working deriver (via TASK-020/FEAT-004), not repairing a broken one. Phase-1 'zero-code' claims corrected: (1a) authoring CTX context contracts is genuinely zero-code (context-contracts.schema.json v1.0.1, unit_kind a plain string, fileable today) but the deterministic-dispatch PAYOFF is gated on the unimplemented bundle->agent-contextBlocks injection (R-0016), and a work-order contract additionally needs work_order_dispatches_task registered first; (1c) the proposed task_addresses_feature backfill is ALREADY DONE — find-references FEAT-007 shows TASK-031/032/033/041 edges all present, so the premise 'join returns empty for all features' is false; (1b/1d) are the two halves of TASK-041 (edge backfill, then raise decision-shows-derivation warning->error), the raise gated on the backfill per the derive-decisions-from-facts convention; decision-shows-derivation is at warning, not enforcing-at-error. Dependency DAG confirmed among planned tasks: TASK-020->TASK-021, TASK-004->TASK-005, TASK-066->TASK-067 (three chains); all other planned tasks dependency-free. FGAP-089 (P3, identified) is held for a user decision — its only addresser TASK-060 is cancelled, no replacement. Priority is the user's; the document's authoritative content is the verified facts (counts, dependency DAG, the zero-code/code/gated split), not the ranking, which is advisory.",
+      "findings_document": "analysis/2026-06-16-best-next-steps-determination.md",
+      "grounding": {
+        "revisions": [
+          "repo at 2026-06-16 (context-jit-spec-v2)"
+        ]
+      },
+      "grounded_at": "2026-06-16",
+      "stale_conditions": [
+        "the planned-task or identified-gap counts change (any task/gap status transition or new filing) — the situation counts go stale",
+        "TASK-041 backfill lands and decision-shows-derivation is raised warning->error — the governance-status finding changes",
+        "TASK-065's FGAP-061 FORWARD slice (FEAT-004 / TASK-020) lands — the headline derivation correction is superseded",
+        "the bundle->agent-contextBlocks injection ships — 1a's gated-payoff finding is obsolete",
+        "the task_depends_on_task DAG among planned tasks changes — the dependency section goes stale"
+      ],
+      "citations": [
+        {
+          "label": "the full register-compliant validated sequencing determination (advisory order + DAG + zero-code/code/gated split)",
+          "path": "analysis/2026-06-16-best-next-steps-determination.md"
+        },
+        {
+          "label": "FEAT-007 already carries the four task_addresses_feature edges (1c premise false)",
+          "path": ".context/relations.json"
+        },
+        {
+          "label": "FGAP-061 bound to FEAT-004 (FORWARD residual); NOW slice closed by TASK-065",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "R-0015 — pi-context leverage audit (the situation basis: empty block kinds, shipped-but-unused)",
+          "path": ".context/research.json"
+        },
+        {
+          "label": "R-0016 — context-contracts evaluation (1a's bundle->contextBlocks-unimplemented + work_order_dispatches_task-unregistered corrections)",
+          "path": ".context/research.json"
+        }
+      ],
+      "id": "R-0019",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-16T05:13:34.095Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-16T05:13:34.095Z",
+      "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
+      "content_hash": "1f876696f3eafb70660c9e6f4c74700a7f3d66600927735698c95de945a0e2e2"
     }
   ]
 }

@@ -6301,5 +6301,31 @@
       "refname": "FEAT-004"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
+      "refname": "R-0019"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "602ad155df54de2092304a24eab8e610",
+      "refname": "R-0015"
+    },
+    "relation_type": "research_relates_to_research"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
+      "refname": "R-0019"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f59b05a894f00fe796d321bf50d094cb",
+      "refname": "R-0016"
+    },
+    "relation_type": "research_relates_to_research"
   }
 ]

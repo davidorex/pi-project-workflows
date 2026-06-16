@@ -12,6 +12,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ### Documentation
 - Regenerated `skills/pi-context/SKILL.md` for the `context-current-state` op's gate-aware readiness surface — the tool entry now states that task readiness honors both `task_depends_on_task` dependencies and `task_gated_by_item` gates and that a gate target reaching its complete status releases the gate.
+- Regenerated `skills/pi-context/SKILL.md` + `references/bundled-resources.md` for the milestone block kind (now listed in the installable blocks/schemas inventory) and the corrected `context-roadmap-load`/`render`/`validate` op strings — a phase's milestone is a MILE- block id whose satisfaction reads the milestone's derived `reached` (a pure phase-rollup over the parent phases of its `phase_positioned_in_milestone` edges; phase is the parent, milestone the child), with the validate codes collapsed to `roadmap_milestone_missing`.
 
 ### Fixed
 - `context-validate` again groups its edge-registry diagnostics by class — every relation_type-registration issue across all edges before every source/target-kind issue across all edges — matching the order surfaced before the `validateEdgeAgainstRegistry` refactor. That refactor's per-edge loop had interleaved the two classes (one edge's registration and kind issues, then the next edge's), changing the printed `issues[]` order; the merged loop now collects then partitions by class so the emission order is class-grouped again. Order-only — the set, count, wording, and severity of the issues are unchanged.

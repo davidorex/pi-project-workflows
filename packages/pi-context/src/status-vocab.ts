@@ -44,6 +44,7 @@ export type { StatusBucket } from "./context.js";
  *   - layer-plans.status:    draft | proposed | decided | in-progress | complete | abandoned
  *   - issues.status:         open | resolved | deferred
  *   - phase.status:          planned | in-progress | completed
+ *   - milestone.status:      planned | reached  (DERIVED phase-rollup, not authored)
  *   - work-orders.status:    proposed | in-progress | real-check-passed | real-check-failed | completed | cancelled
  *
  * status-vocab.test.ts guards completeness: every samples/schemas status enum
@@ -65,6 +66,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	closed: "complete", // framework-gaps: gap resolved/done
 	verified: "complete", // requirements: terminal-done, beyond "implemented"
 	"real-check-passed": "complete", // work-orders: real-check verdict pass = lifecycle-complete equivalent (DEC-0018)
+	reached: "complete", // milestone: derived phase-rollup terminal state (all positioned phases complete)
 	// → in_progress
 	in_progress: "in_progress",
 	"in-progress": "in_progress",

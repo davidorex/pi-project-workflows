@@ -27,8 +27,8 @@ const SAMPLES_DIR = path.resolve(__dirname, "..", "samples");
 const FRAMEWORK_CONFIG_SCHEMA = path.resolve(__dirname, "..", "schemas", "config.schema.json");
 
 describe("samplesCatalog", () => {
-	it("enumerates all 16 packaged block kinds", () => {
-		assert.strictEqual(samplesCatalog().kinds.length, 16);
+	it("enumerates all 17 packaged block kinds", () => {
+		assert.strictEqual(samplesCatalog().kinds.length, 17);
 	});
 
 	it("every kind carries a non-null title and description (DEC-0023 live-data guard)", () => {
@@ -45,9 +45,9 @@ describe("samplesCatalog", () => {
 		}
 	});
 
-	it("exposes the full top-level registries (34 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
+	it("exposes the full top-level registries (35 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
 		const c = samplesCatalog();
-		assert.strictEqual(c.relationTypes.length, 34);
+		assert.strictEqual(c.relationTypes.length, 35);
 		assert.ok(Array.isArray(c.lenses));
 		assert.ok(Array.isArray(c.invariants));
 		assert.ok(Array.isArray(c.layers));

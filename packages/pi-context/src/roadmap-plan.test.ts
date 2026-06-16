@@ -299,6 +299,8 @@ interface RoadmapFixture {
 	issues?: Array<Record<string, unknown>>;
 	features?: Array<Record<string, unknown>>;
 	verifications?: Array<Record<string, unknown>>;
+	milestones?: Array<Record<string, unknown>>;
+	phases?: Array<Record<string, unknown>>;
 	naming?: Record<string, string>;
 	status_buckets?: Record<string, StatusBucket>;
 	display_strings?: Record<string, string>;
@@ -346,6 +348,15 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 			JSON.stringify({ verifications: fixture.verifications }, null, 2),
 		);
 	}
+	if (fixture.milestones) {
+		fs.writeFileSync(
+			path.join(dir, ".project", "milestone.json"),
+			JSON.stringify({ milestones: fixture.milestones }, null, 2),
+		);
+	}
+	if (fixture.phases) {
+		fs.writeFileSync(path.join(dir, ".project", "phase.json"), JSON.stringify({ phases: fixture.phases }, null, 2));
+	}
 	return dir;
 }
 
@@ -373,10 +384,15 @@ const ACYCLIC_PHASES = [
 		id: "PHASE-C",
 		name: "Verify",
 		lens: "lens-features",
-		milestone: "MILESTONE-001",
+		milestone: "MILE-001",
 		exit_criteria: ["all tests pass"],
 	},
 ];
+
+// Milestone-block item the roadmap's PHASE-C references by MILE- id. status is
+// schema-required but irrelevant to the derivation — loadRoadmap recomputes
+// reached from phase_positioned_in_milestone edges + phase completion.
+const ACYCLIC_MILESTONES = [{ id: "MILE-001", name: "All verified", status: "planned" }];
 
 function buildAcyclicRoadmap(extras: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
 	return {
@@ -385,14 +401,6 @@ function buildAcyclicRoadmap(extras: Partial<Record<string, unknown>> = {}): Rec
 		description: "Sequenced substrate landing.",
 		status: "active",
 		phases: ACYCLIC_PHASES,
-		milestones: [
-			{
-				id: "MILESTONE-001",
-				name: "All verified",
-				evidence_block: "verification",
-				evidence_query: { status: "passed" },
-			},
-		],
 		...extras,
 	};
 }
@@ -466,32 +474,51 @@ describe("loadRoadmap", () => {
 		assert.ok(result.cycles.length > 0);
 	});
 
-	it("evaluates milestoneSatisfied=true when evidence query matches at least one item", () => {
+	it("resolves milestone reached=true when all positioned phases are complete", () => {
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
-			relations: [],
+			relations: [
+				{ parent: "MILE-001", child: "PHASE-X", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "MILE-001", child: "PHASE-Y", relation_type: "phase_positioned_in_milestone" },
+			],
 			roadmaps: [buildAcyclicRoadmap()],
-			verifications: [{ id: "VER-001", status: "passed", target: "PHASE-C" }],
+			milestones: ACYCLIC_MILESTONES,
+			phases: [
+				{ id: "PHASE-X", name: "X", intent: "x", status: "completed" },
+				{ id: "PHASE-Y", name: "Y", intent: "y", status: "completed" },
+			],
 		});
 		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
 		assert.ok(!("error" in result));
 		const phaseC = result.phases.find((p) => p.phase.id === "PHASE-C");
 		assert.ok(phaseC);
-		assert.equal(phaseC.milestoneSatisfied, true);
+		assert.ok(phaseC.milestone);
+		assert.equal(phaseC.milestone.id, "MILE-001");
+		assert.equal(phaseC.milestone.status, "reached");
+		assert.equal(phaseC.milestoneReached, true);
 	});
 
-	it("evaluates milestoneSatisfied=false when no evidence matches", () => {
+	it("resolves milestone reached=false when a positioned phase is incomplete", () => {
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
-			relations: [],
+			relations: [
+				{ parent: "MILE-001", child: "PHASE-X", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "MILE-001", child: "PHASE-Y", relation_type: "phase_positioned_in_milestone" },
+			],
 			roadmaps: [buildAcyclicRoadmap()],
-			verifications: [{ id: "VER-001", status: "failed", target: "PHASE-C" }],
+			milestones: ACYCLIC_MILESTONES,
+			phases: [
+				{ id: "PHASE-X", name: "X", intent: "x", status: "completed" },
+				{ id: "PHASE-Y", name: "Y", intent: "y", status: "planned" },
+			],
 		});
 		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
 		assert.ok(!("error" in result));
 		const phaseC = result.phases.find((p) => p.phase.id === "PHASE-C");
 		assert.ok(phaseC);
-		assert.equal(phaseC.milestoneSatisfied, false);
+		assert.ok(phaseC.milestone);
+		assert.equal(phaseC.milestone.status, "planned");
+		assert.equal(phaseC.milestoneReached, false);
 	});
 });
 
@@ -534,6 +561,7 @@ describe("validateRoadmaps", () => {
 				{ parent: "PHASE-B", child: "PHASE-C", relation_type: "phase_depends_on" },
 			],
 			roadmaps: [buildAcyclicRoadmap()],
+			milestones: ACYCLIC_MILESTONES,
 			issues: [{ id: "issue-001", status: "resolved" }],
 			features: [{ id: "FEAT-001", status: "complete" }],
 			verifications: [{ id: "VER-001", status: "passed", target: "PHASE-C" }],
@@ -605,45 +633,17 @@ describe("validateRoadmaps", () => {
 		assert.ok(result.issues.some((i) => i.code === "roadmap_composition_cycle"));
 	});
 
-	it("emits roadmap_milestone_evidence_block_missing when evidence_block not loaded", () => {
-		const roadmap = buildAcyclicRoadmap({
-			milestones: [
-				{
-					id: "MILESTONE-001",
-					name: "X",
-					evidence_block: "doesnt-exist",
-					evidence_query: { status: "passed" },
-				},
-			],
-		});
+	it("emits roadmap_milestone_missing when a phase references a MILE- id absent from the milestone block", () => {
+		// PHASE-C references MILE-001 but no milestone block is written → the
+		// referenced id is absent → roadmap_milestone_missing.
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
 			relations: [],
-			roadmaps: [roadmap],
+			roadmaps: [buildAcyclicRoadmap()],
 		});
 		const result = validateRoadmaps(roadmapTmpRoot);
-		assert.ok(result.issues.some((i) => i.code === "roadmap_milestone_evidence_block_missing"));
-	});
-
-	it("emits roadmap_milestone_query_invalid when evidence_query has nested non-primitive", () => {
-		const roadmap = buildAcyclicRoadmap({
-			milestones: [
-				{
-					id: "MILESTONE-001",
-					name: "X",
-					evidence_block: "verification",
-					evidence_query: { nested: { not: "primitive" } },
-				},
-			],
-		});
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [roadmap],
-			verifications: [{ id: "VER-001", status: "passed" }],
-		});
-		const result = validateRoadmaps(roadmapTmpRoot);
-		assert.ok(result.issues.some((i) => i.code === "roadmap_milestone_query_invalid"));
+		assert.equal(result.status, "invalid");
+		assert.ok(result.issues.some((i) => i.code === "roadmap_milestone_missing"));
 	});
 
 	it("emits roadmap_status_unknown_value when roadmap.status is outside enum", () => {
@@ -671,6 +671,7 @@ describe("renderRoadmap (markdown shape, NO mermaid)", () => {
 				{ parent: "PHASE-B", child: "PHASE-C", relation_type: "phase_depends_on" },
 			],
 			roadmaps: [buildAcyclicRoadmap()],
+			milestones: ACYCLIC_MILESTONES,
 			issues: [{ id: "issue-001", status: "open", title: "First" }],
 			features: [{ id: "FEAT-001", status: "complete", title: "Done" }],
 			verifications: [{ id: "VER-001", status: "passed" }],
@@ -690,7 +691,7 @@ describe("renderRoadmap (markdown shape, NO mermaid)", () => {
 		assert.match(md, /\*\*Lens:\*\* lens-issues-by-phase/);
 		assert.match(md, /\*\*Depends on:\*\* (—|[A-Z0-9-]+(, [A-Z0-9-]+)*)/);
 		assert.match(md, /\*\*Counts:\*\* complete=\d+ in_progress=\d+ blocked=\d+ todo=\d+ unknown=\d+ \(total=\d+\)/);
-		assert.match(md, /\*\*Milestone:\*\* MILESTONE-001 — .+ — (satisfied|not yet satisfied)/);
+		assert.match(md, /\*\*Milestone:\*\* MILE-001 — .+ — (reached|planned)/);
 		assert.match(md, /\| Item +\| Status +\| Title +\|/);
 
 		// Negative regression assertion (against the prior fabrication defect).

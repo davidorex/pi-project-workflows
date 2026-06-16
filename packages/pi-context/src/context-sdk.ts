@@ -346,6 +346,13 @@ export interface CurrentState {
 	nextActions: { id: string; kind: string; priority?: string; reason: string }[];
 	/** planned tasks whose task_depends_on_task dependency parents are not ALL completed */
 	blocked: { id: string; block: string; blockedBy: string[] }[];
+	/**
+	 * derived phase-rollup — `reached` iff ≥1 phase_positioned_in_milestone child
+	 * AND all such child phases bucket to complete; else `planned`. `phaseCount`
+	 * is the number of phase_positioned_in_milestone edges parented by the
+	 * milestone (parent=milestone/child=phase).
+	 */
+	milestones: { id: string; status: "planned" | "reached"; phaseCount: number }[];
 }
 
 /**
@@ -856,6 +863,30 @@ export function currentState(cwd: string): CurrentState {
 	const NEXT_ACTIONS_CAP = 15;
 	const cappedNextActions = nextActions.slice(0, NEXT_ACTIONS_CAP);
 
+	// ── milestones (derived phase-rollup) ───────────────────────────────────────
+	// For each milestone-block item, member phases are the children of its
+	// phase_positioned_in_milestone edges (parent=milestone/child=phase, per the
+	// catalog relation_type source=phase/target=milestone + the
+	// reached-milestone-phases-complete invariant's direction:as_child). reached =
+	// (phaseCount ≥ 1) AND every member phase id resolves to a known item whose
+	// bucket is "complete"; any dangling or non-complete child → planned. Every
+	// status comparison routes through bucket() — no raw status literal compared.
+	const milestones: CurrentState["milestones"] = [];
+	for (const loc of index.byRefname.values()) {
+		if (loc.block !== "milestone") continue;
+		const childPhaseIds = edges
+			.filter((e) => e.relation_type === "phase_positioned_in_milestone" && endpointKey(e.parent) === loc.id)
+			.map((e) => endpointKey(e.child));
+		const phaseCount = childPhaseIds.length;
+		const allComplete = childPhaseIds.every((phaseId) => {
+			const phaseLoc = index.byRefname.get(phaseId);
+			return phaseLoc !== undefined && bucket(phaseLoc.item) === "complete";
+		});
+		const reached = phaseCount >= 1 && allComplete;
+		milestones.push({ id: loc.id, status: reached ? "reached" : "planned", phaseCount });
+	}
+	milestones.sort((a, b) => a.id.localeCompare(b.id));
+
 	// ── focus: single derived string ───────────────────────────────────────────
 	let focus: string;
 	if (inFlight.length > 0) {
@@ -878,7 +909,7 @@ export function currentState(cwd: string): CurrentState {
 		}
 	}
 
-	return { focus, inFlight, nextActions: cappedNextActions, blocked };
+	return { focus, inFlight, nextActions: cappedNextActions, blocked, milestones };
 }
 
 // ── Predicate Filter ────────────────────────────────────────────────────────

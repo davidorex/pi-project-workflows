@@ -30,7 +30,7 @@
  */
 import { readBlock } from "./block-api.js";
 import { type Edge, endpointKey, type ItemRecord, loadContext, type StatusBucket } from "./context.js";
-import { availableBlocks } from "./context-sdk.js";
+import { currentState } from "./context-sdk.js";
 import { type LensValidatorIssue, registerLensValidator } from "./lens-validator.js";
 import { type LoadedLensView, loadLensView } from "./lens-view.js";
 import { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS } from "./status-vocab.js";
@@ -151,22 +151,13 @@ export interface PhaseSpec {
 	name: string;
 	description?: string;
 	lens: string;
+	/**
+	 * Reference to a milestone item in the milestone block — a MILE- block id.
+	 * The phase's milestone satisfaction reads that milestone's derived `reached`
+	 * (a pure phase-rollup), NOT an inline roadmap-local milestone.
+	 */
 	milestone?: string;
 	exit_criteria?: string[];
-}
-
-/**
- * Inline milestone declared by a roadmap. evidence_block + evidence_query
- * together drive milestoneSatisfied evaluation: milestone is satisfied
- * when at least one item in evidence_block matches every key/value in
- * evidence_query by ===.
- */
-export interface MilestoneSpec {
-	id: string;
-	name: string;
-	criterion?: string;
-	evidence_block?: string;
-	evidence_query?: Record<string, unknown>;
 }
 
 /**
@@ -178,19 +169,22 @@ export interface RoadmapSpec {
 	description?: string;
 	status?: string;
 	phases: PhaseSpec[];
-	milestones?: MilestoneSpec[];
 }
 
 /**
  * Per-phase loaded view: phase spec + its lens-view (or error) + status
- * rollup over the lens's items + optional milestone resolution.
+ * rollup over the lens's items + optional resolved milestone. `milestone` is
+ * the milestone-block item a phase references by MILE- id (id + name + the
+ * derived `status`); `milestoneReached` is true iff that resolved milestone's
+ * derived status is "reached". Both are absent when the phase declares no
+ * milestone OR the referenced MILE- id resolves to no milestone-block item.
  */
 export interface PhaseView {
 	phase: PhaseSpec;
 	lensView: LoadedLensView | { error: string };
 	status: PhaseStatus;
-	milestone?: MilestoneSpec;
-	milestoneSatisfied?: boolean;
+	milestone?: { id: string; name?: string; status: "planned" | "reached" };
+	milestoneReached?: boolean;
 }
 
 /**
@@ -217,8 +211,7 @@ export interface RoadmapValidationIssue {
 		| "roadmap_lens_missing"
 		| "roadmap_phase_dep_missing"
 		| "roadmap_phase_cycle"
-		| "roadmap_milestone_evidence_block_missing"
-		| "roadmap_milestone_query_invalid"
+		| "roadmap_milestone_missing"
 		| "roadmap_composition_cycle"
 		| "roadmap_status_unknown_value";
 	message: string;
@@ -244,35 +237,26 @@ function readRoadmaps(cwd: string): RoadmapSpec[] | null {
 }
 
 /**
- * Determine whether a milestone is satisfied: when both evidence_block and
- * evidence_query are present, read the block defensively and return true
- * iff at least one item has every evidence_query key matching by ===.
- * Missing block / read error / no query → false (validator surfaces a
- * separate diagnostic where appropriate).
+ * Defensively read the milestone block's items keyed by id. The milestone
+ * block is opt-in (FGAP-037) — absence / read error → empty map. Each entry's
+ * `name` is carried through for PhaseView display; the derived `reached`
+ * status is supplied separately (currentState's phase-rollup), not stored on
+ * the item.
  */
-function evaluateMilestone(cwd: string, m: MilestoneSpec): boolean {
-	if (!m.evidence_block || !m.evidence_query) return false;
-	let items: ItemRecord[];
+function readMilestoneItems(cwd: string): Map<string, { id: string; name?: string }> {
+	const map = new Map<string, { id: string; name?: string }>();
 	try {
-		const data = readBlock(cwd, m.evidence_block) as Record<string, unknown>;
-		const arrayKey = Object.keys(data).find((k) => Array.isArray(data[k]));
-		if (!arrayKey) return false;
-		items = data[arrayKey] as ItemRecord[];
-	} catch {
-		return false;
-	}
-	const query = m.evidence_query;
-	for (const item of items) {
-		let match = true;
-		for (const [k, v] of Object.entries(query)) {
-			if (item[k] !== v) {
-				match = false;
-				break;
-			}
+		const data = readBlock(cwd, "milestone") as { milestones?: ItemRecord[] };
+		const items = Array.isArray(data.milestones) ? data.milestones : [];
+		for (const item of items) {
+			const id = typeof item.id === "string" ? item.id : undefined;
+			if (id === undefined) continue;
+			map.set(id, { id, ...(typeof item.name === "string" ? { name: item.name } : {}) });
 		}
-		if (match) return true;
+	} catch {
+		// opt-in block absent / unreadable — every referenced milestone is missing.
 	}
-	return false;
+	return map;
 }
 
 /**
@@ -284,8 +268,9 @@ function evaluateMilestone(cwd: string, m: MilestoneSpec): boolean {
  *   2. Defensively read roadmap.json; bail when absent.
  *   3. Lookup the roadmap by id; bail when unknown.
  *   4. Build PhaseView[] in authored input order (loadLensView per phase,
- *      rollupPhaseStatus over the resulting items, milestone resolution
- *      where declared).
+ *      rollupPhaseStatus over the resulting items, milestone-block resolution
+ *      where the phase declares a MILE- id — the milestone's derived `reached`
+ *      comes from currentState's phase-rollup).
  *   5. Compute the in-roadmap edge subset (phase_depends_on edges whose
  *      both endpoints are in the roadmap) and topo-sort to derive
  *      phaseOrder + cycles.
@@ -314,13 +299,28 @@ export function loadRoadmap(cwd: string, roadmapId: string): RoadmapView | { err
 	}
 
 	const vocabulary = resolveStatusVocabulary(cwd);
+	// Milestone-block resolution: a phase's `milestone` is a MILE- block id. The
+	// referenced milestone's derived `reached` status is the phase-rollup
+	// computed by currentState (which returns milestones[] with derived status).
+	// readMilestoneItems supplies the milestone's id + display name; the derived
+	// status is looked up from currentState's milestones[] by id.
+	const milestoneItems = readMilestoneItems(cwd);
+	const derivedMilestoneStatus = new Map(currentState(cwd).milestones.map((m) => [m.id, m.status]));
 	const phases: PhaseView[] = roadmap.phases.map((phase) => {
 		const lensView = loadLensView(cwd, phase.lens);
 		const items: ItemRecord[] = "error" in lensView ? [] : lensView.items;
 		const status = rollupPhaseStatus(items, vocabulary);
-		const milestone = phase.milestone ? roadmap.milestones?.find((m) => m.id === phase.milestone) : undefined;
-		const milestoneSatisfied = milestone ? evaluateMilestone(cwd, milestone) : undefined;
-		return { phase, lensView, status, milestone, milestoneSatisfied };
+		const milestoneEntry = phase.milestone ? milestoneItems.get(phase.milestone) : undefined;
+		if (milestoneEntry === undefined) {
+			return { phase, lensView, status };
+		}
+		const milestoneStatus = derivedMilestoneStatus.get(milestoneEntry.id) ?? "planned";
+		const milestone = {
+			id: milestoneEntry.id,
+			...(milestoneEntry.name ? { name: milestoneEntry.name } : {}),
+			status: milestoneStatus,
+		};
+		return { phase, lensView, status, milestone, milestoneReached: milestoneStatus === "reached" };
 	});
 
 	const inRoadmap = new Set(roadmap.phases.map((p) => p.id));
@@ -376,15 +376,20 @@ export function validateRoadmaps(cwd: string): {
 	if (!roadmaps || roadmaps.length === 0) return { status: "clean", issues: [] };
 
 	const lensIds = new Set((ctx.config.lenses ?? []).map((l) => l.id));
-	const blockNames = new Set(availableBlocks(cwd).map((b) => b.name));
 	const vocabulary = resolveStatusVocabulary(cwd);
 
 	const errorCodes: ReadonlySet<RoadmapValidationIssue["code"]> = new Set([
 		"roadmap_lens_missing",
 		"roadmap_phase_dep_missing",
 		"roadmap_phase_cycle",
+		"roadmap_milestone_missing",
 		"roadmap_composition_cycle",
 	]);
+
+	// Milestone-block ids known to the substrate. A phase referencing a MILE- id
+	// absent from this set emits roadmap_milestone_missing. The block is opt-in
+	// (absent → empty set → every referenced milestone is missing).
+	const milestoneBlockIds = new Set(readMilestoneItems(cwd).keys());
 
 	for (const roadmap of roadmaps) {
 		// roadmap.status — must be in known enum (warning when not).
@@ -401,11 +406,10 @@ export function validateRoadmaps(cwd: string): {
 		}
 
 		const inRoadmap = new Set(roadmap.phases.map((p) => p.id));
-		const milestoneIds = new Set((roadmap.milestones ?? []).map((m) => m.id));
 
 		// Per-phase checks: lens existence + composition cycle + status rollup
-		// for unknown-status warning + milestone validation (independent of
-		// lens resolution — milestone diagnostics surface even when the lens
+		// for unknown-status warning + milestone-reference validation (independent
+		// of lens resolution — milestone diagnostics surface even when the lens
 		// itself fails to load).
 		for (const phase of roadmap.phases) {
 			let lensResolved = false;
@@ -453,46 +457,21 @@ export function validateRoadmaps(cwd: string): {
 				}
 			}
 
-			// Milestone evidence_block + evidence_query checks — independent
-			// of lens resolution outcome.
-			if (phase.milestone) {
-				const milestone = roadmap.milestones?.find((m) => m.id === phase.milestone);
-				if (milestone) {
-					if (milestone.evidence_block && !blockNames.has(milestone.evidence_block)) {
-						issues.push({
-							code: "roadmap_milestone_evidence_block_missing",
-							message: diagMessage(
-								cwd,
-								"roadmap_milestone_evidence_block_missing",
-								`Milestone '${milestone.id}' in roadmap '${roadmap.id}' references evidence_block '${milestone.evidence_block}' which is not loaded.`,
-							),
-							roadmap_id: roadmap.id,
-							phase_id: phase.id,
-						});
-					}
-					if (milestone.evidence_query !== undefined) {
-						const q = milestone.evidence_query;
-						const ok =
-							q !== null &&
-							typeof q === "object" &&
-							!Array.isArray(q) &&
-							Object.values(q as Record<string, unknown>).every(
-								(v) => v === null || ["string", "number", "boolean"].includes(typeof v),
-							);
-						if (!ok) {
-							issues.push({
-								code: "roadmap_milestone_query_invalid",
-								message: diagMessage(
-									cwd,
-									"roadmap_milestone_query_invalid",
-									`Milestone '${milestone.id}' in roadmap '${roadmap.id}' has invalid evidence_query — expected plain object with primitive values only.`,
-								),
-								roadmap_id: roadmap.id,
-								phase_id: phase.id,
-							});
-						}
-					}
-				}
+			// Milestone-reference check — independent of lens resolution outcome.
+			// A phase's `milestone` is a MILE- block id; emit roadmap_milestone_missing
+			// when it references an id absent from the milestone block (block opt-in
+			// / absent → every reference is missing).
+			if (phase.milestone && !milestoneBlockIds.has(phase.milestone)) {
+				issues.push({
+					code: "roadmap_milestone_missing",
+					message: diagMessage(
+						cwd,
+						"roadmap_milestone_missing",
+						`Phase '${phase.id}' in roadmap '${roadmap.id}' references milestone '${phase.milestone}' that is not declared in the milestone block.`,
+					),
+					roadmap_id: roadmap.id,
+					phase_id: phase.id,
+				});
 			}
 			void lensResolved;
 		}
@@ -546,10 +525,6 @@ export function validateRoadmaps(cwd: string): {
 				cycle,
 			});
 		}
-
-		// milestoneIds is referenced for symmetry with future expansion; mark
-		// usage to satisfy noUnusedLocals without inserting noise downstream.
-		void milestoneIds;
 	}
 
 	let status: "clean" | "warnings" | "invalid" = "clean";
@@ -678,8 +653,7 @@ export function renderRoadmap(view: RoadmapView, naming: Record<string, string> 
 		}
 
 		if (pv.milestone) {
-			const verdict = pv.milestoneSatisfied ? "satisfied" : "not yet satisfied";
-			lines.push(`**Milestone:** ${pv.milestone.id} — ${pv.milestone.name} — ${verdict}`);
+			lines.push(`**Milestone:** ${pv.milestone.id} — ${pv.milestone.name ?? "(unnamed)"} — ${pv.milestone.status}`);
 			lines.push("");
 		}
 		if (p.exit_criteria && p.exit_criteria.length > 0) {
@@ -708,6 +682,7 @@ registerLensValidator({
 			"roadmap_lens_missing",
 			"roadmap_phase_dep_missing",
 			"roadmap_phase_cycle",
+			"roadmap_milestone_missing",
 			"roadmap_composition_cycle",
 		]);
 		const issues: LensValidatorIssue[] = result.issues.map((ri) => ({

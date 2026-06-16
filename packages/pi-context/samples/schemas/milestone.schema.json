@@ -3,7 +3,7 @@
   "$id": "pi-context://schemas/milestone",
   "version": "1.0.0",
   "title": "Milestones",
-  "description": "Array-block of project milestones. A milestone is a pure phase-rollup checkpoint with no work of its own: its `status` (planned | reached) is DERIVED, never authored — a milestone is `reached` iff it has at least one phase_positioned_in_milestone child and all such children bucket to complete, else `planned`. Phase membership lives in relations.json phase_positioned_in_milestone edges (phase -> milestone), not inline. `release` is an optional grouping string pending the normalized release entity.",
+  "description": "Array-block of project milestones. A milestone is a pure phase-rollup checkpoint with no work of its own: its `status` (planned | reached) is DERIVED, never authored — a milestone is `reached` iff at least one phase is positioned in it (a phase_positioned_in_milestone edge) and the parent phase of every such edge buckets to complete, else `planned`. Phase membership lives in relations.json phase_positioned_in_milestone edges (phase -> milestone), not inline. `release` is an optional grouping string pending the normalized release entity.",
   "type": "object",
   "required": [
     "milestones"
@@ -35,7 +35,7 @@
               "planned",
               "reached"
             ],
-            "description": "DERIVED phase-rollup, not authored: `reached` iff >=1 phase_positioned_in_milestone child and all such children bucket to complete; else `planned`. A milestone carries no work of its own; authored status is rejected by canon (substrate-derived-state)."
+            "description": "DERIVED phase-rollup, not authored: `reached` iff >=1 phase_positioned_in_milestone edge (in which the phase is the parent and the milestone the child) and the parent phase of every such edge buckets to complete; else `planned`. A milestone carries no work of its own; authored status is rejected by canon (substrate-derived-state)."
           },
           "release": {
             "type": "string",

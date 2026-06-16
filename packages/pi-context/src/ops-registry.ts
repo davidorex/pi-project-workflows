@@ -2055,7 +2055,7 @@ export const ops: OpDefinition[] = [
 		name: "context-roadmap-load",
 		label: "Context: load roadmap",
 		description:
-			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, resolved milestone, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). A phase's milestone is a MILE- milestone-block id; its satisfaction reads that milestone's derived `reached` (a pure phase-rollup over phase_positioned_in_milestone children), not inline evidence. Phase ordering lives in relations.json with relation_type='phase_depends_on'.",
+			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, resolved milestone, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). A phase's milestone is a MILE- milestone-block id; its satisfaction reads that milestone's derived `reached` (a pure phase-rollup over the parent phases of its phase_positioned_in_milestone edges, in which the phase is the parent and the milestone the child), not inline evidence. Phase ordering lives in relations.json with relation_type='phase_depends_on'.",
 		promptSnippet: "Load a roadmap by id",
 		examples: [`pi-context context-roadmap-load --roadmapId ROADMAP-001 --json`],
 		parameters: Type.Object({

@@ -478,8 +478,8 @@ describe("loadRoadmap", () => {
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
 			relations: [
-				{ parent: "MILE-001", child: "PHASE-X", relation_type: "phase_positioned_in_milestone" },
-				{ parent: "MILE-001", child: "PHASE-Y", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-X", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-Y", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
 			],
 			roadmaps: [buildAcyclicRoadmap()],
 			milestones: ACYCLIC_MILESTONES,
@@ -502,8 +502,8 @@ describe("loadRoadmap", () => {
 		roadmapTmpRoot = makeRoadmapProject({
 			lenses: ACYCLIC_LENSES,
 			relations: [
-				{ parent: "MILE-001", child: "PHASE-X", relation_type: "phase_positioned_in_milestone" },
-				{ parent: "MILE-001", child: "PHASE-Y", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-X", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-Y", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
 			],
 			roadmaps: [buildAcyclicRoadmap()],
 			milestones: ACYCLIC_MILESTONES,

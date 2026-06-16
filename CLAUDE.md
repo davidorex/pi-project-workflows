@@ -92,6 +92,10 @@ The orchestration shape that wraps the Completion Sequence below. A feature AND 
 
 Per-step detail (build/check/test, the probe's mutual-re-derivation rule, release, credentialed verification, publish) is the Completion Sequence below.
 
+## Subagent dispatch fit (Claude Code only — not the in-pi agent surface)
+
+Explore is a read-only search/trace agent — dispatch it ONLY for read/trace/enumerate work. Any task whose decisive step RUNS code or WRITES (a runtime experiment, a validated write, building or executing a fixture) goes to an executing (general-purpose) agent or the orchestrator runs it, never Explore. Every empirical step in a brief is a non-inferrable deliverable: demand the actual observed output and instruct "if blocked, STOP and report the blocker — never infer the result"; a reasoned-but-unrun conclusion is not a finding. The orchestrator independently re-runs or verifies the load-bearing empirical claim before relaying.
+
 ## Completion Sequence (mandatory after every code change)
 
 Work is not complete until the runtime can load it. Pi loads from `dist/`, not source. Every code change follows the full sequence:

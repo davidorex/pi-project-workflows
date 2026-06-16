@@ -136,6 +136,14 @@
       "array_key": "sessions",
       "data_path": "session-notes.json",
       "schema_path": "schemas/session-notes.schema.json"
+    },
+    {
+      "canonical_id": "milestone",
+      "display_name": "Milestones",
+      "prefix": "MILE-",
+      "schema_path": "schemas/milestone.schema.json",
+      "array_key": "milestones",
+      "data_path": "milestone.json"
     }
   ],
   "relation_types": [
@@ -393,17 +401,6 @@
       ]
     },
     {
-      "canonical_id": "story_contains_task",
-      "display_name": "contains task",
-      "category": "membership",
-      "source_kinds": [
-        "story"
-      ],
-      "target_kinds": [
-        "tasks"
-      ]
-    },
-    {
       "canonical_id": "rationale_supports_decision",
       "display_name": "supports decision",
       "category": "data_flow",
@@ -582,6 +579,28 @@
       "target_kinds": [
         "framework-gaps"
       ]
+    },
+    {
+      "canonical_id": "phase_positioned_in_milestone",
+      "display_name": "positioned in milestone",
+      "category": "membership",
+      "source_kinds": [
+        "phase"
+      ],
+      "target_kinds": [
+        "milestone"
+      ]
+    },
+    {
+      "canonical_id": "story_includes_item",
+      "display_name": "includes item",
+      "category": "membership",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "*"
+      ]
     }
   ],
   "lenses": [
@@ -673,7 +692,8 @@
     "context-contracts",
     "phase",
     "story",
-    "work-orders"
+    "work-orders",
+    "milestone"
   ],
   "installed_blocks": [
     "decisions",
@@ -691,7 +711,8 @@
     "context-contracts",
     "phase",
     "story",
-    "work-orders"
+    "work-orders",
+    "milestone"
   ],
   "invariants": [
     {
@@ -819,6 +840,19 @@
       "direction": "as_parent",
       "severity": "warning",
       "message": "Decision '{id}' shows no derivation basis — add a decision_derived_from_item edge to the fact its resolution derives from, or a decision_escalates_underdetermined edge to the framework-gap capturing a genuinely-underdetermined escalated choice (derive-decisions-from-facts)"
+    },
+    {
+      "id": "reached-milestone-phases-complete",
+      "class": "status-consistency",
+      "block": "milestone",
+      "relation_types": [
+        "phase_positioned_in_milestone"
+      ],
+      "direction": "as_child",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "error",
+      "message": "Reached milestone '{id}' has a positioned phase that is not complete — milestone.reached is a pure phase-rollup; a reached milestone requires the parent phase of every phase_positioned_in_milestone edge to be complete"
     }
   ],
   "tool_operations": [],
@@ -826,9 +860,9 @@
   "root": ".context",
   "substrate_id": "sub-394aad2658e4d9a7",
   "installed_from": {
-    "catalog": "@davidorex/pi-context@0.30.0",
+    "catalog": "@davidorex/pi-context@0.31.0",
     "catalog_version": "1.0.0",
-    "at": "2026-06-06T11:34:51.674Z",
+    "at": "2026-06-16T12:31:02.114Z",
     "assets": {
       "decisions": {
         "content_hash": "f13db02aa4831b06b913405b7b21f2290c6f62ebc46c9ad1068cbbf62469c2d4",
@@ -887,12 +921,16 @@
         "version": "2.0.1"
       },
       "story": {
-        "content_hash": "9a4187fe15225ed0be26b7e64bc43ef6881a9706e7ff4c591923126e2ad71737",
+        "content_hash": "c1e10bd05841c6617cb6992033133830355c682cd49e737438a1bb29cb851a3c",
         "version": "1.0.1"
       },
       "work-orders": {
         "content_hash": "200a6757d824b8d9e1c7cd3300d13b9cecee0184813f1a824a691504aa348b9d",
         "version": "1.0.1"
+      },
+      "milestone": {
+        "content_hash": "139f4887eb37e5fc43ac418d1af6aa4bdf6f00cf86f220a4d3d1b1c76011f09a",
+        "version": "1.0.0"
       }
     }
   }

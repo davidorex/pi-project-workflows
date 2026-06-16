@@ -2971,6 +2971,62 @@ describe("currentState", () => {
 		assert.deepStrictEqual(state.blocked, []);
 		assert.strictEqual(state.focus, "no active focus.");
 	});
+
+	it("milestone phase-rollup: reached iff ≥1 positioned phase and every parent phase complete (parent=phase/child=milestone)", (t) => {
+		const tmpDir = makeTmpDir("cs-milestone");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		// Edge orientation under test: parent=phase, child=milestone — the phase is
+		// positioned IN the milestone. block resolves from filename: phase.json →
+		// "phase", milestone.json → "milestone" (the deriver gates on those names).
+		const milestonePath = path.join(projectDir, "milestone.json");
+		const phasePath = path.join(projectDir, "phase.json");
+		const relationsPath = path.join(projectDir, "relations.json");
+		const mileItem = (id: string) => ({ id, name: id, status: "planned" });
+
+		const writeRels = (edges: Record<string, unknown>[]) => fs.writeFileSync(relationsPath, JSON.stringify(edges));
+		const writePhases = (phases: Record<string, unknown>[]) => fs.writeFileSync(phasePath, JSON.stringify({ phases }));
+		fs.writeFileSync(milestonePath, JSON.stringify({ milestones: [mileItem("MILE-001")] }));
+		const positioned = (phaseId: string) => ({
+			parent: phaseId,
+			child: "MILE-001",
+			relation_type: "phase_positioned_in_milestone",
+		});
+
+		// (a) all placed phases complete → milestone derives reached.
+		writeRels([positioned("PHASE-1"), positioned("PHASE-2")]);
+		writePhases([
+			{ id: "PHASE-1", name: "a", intent: "i", status: "completed" },
+			{ id: "PHASE-2", name: "b", intent: "i", status: "completed" },
+		]);
+		let mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.ok(mile, "MILE-001 should be derived");
+		assert.strictEqual(mile!.status, "reached");
+		assert.strictEqual(mile!.phaseCount, 2);
+
+		// (b) a placed parent phase incomplete → planned.
+		writePhases([
+			{ id: "PHASE-1", name: "a", intent: "i", status: "completed" },
+			{ id: "PHASE-2", name: "b", intent: "i", status: "in-progress" },
+		]);
+		mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.strictEqual(mile!.status, "planned");
+		assert.strictEqual(mile!.phaseCount, 2);
+
+		// (c) no placed phases (no edges) → planned, phaseCount 0.
+		writeRels([]);
+		mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.strictEqual(mile!.status, "planned");
+		assert.strictEqual(mile!.phaseCount, 0);
+
+		// (d) a dangling parent-phase endpoint (no such phase item) → does not throw,
+		// counts the edge, derives planned (the unknown phase cannot bucket complete).
+		writeRels([positioned("PHASE-MISSING")]);
+		assert.doesNotThrow(() => currentState(tmpDir));
+		mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.strictEqual(mile!.status, "planned");
+		assert.strictEqual(mile!.phaseCount, 1);
+	});
 });
 
 // ── status-consistency invariants (DEC-0040 / FGAP-073) ───────────────────────

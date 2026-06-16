@@ -606,7 +606,7 @@ Compose a ContextBundle for a work-unit by reading its context-contract (by unit
 </tool>
 
 <tool name="context-roadmap-load">
-Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, milestone resolution, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). Phase ordering lives in relations.json with relation_type='phase_depends_on'.
+Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, resolved milestone, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). A phase's milestone is a MILE- milestone-block id; its satisfaction reads that milestone's derived `reached` (a pure phase-rollup over the parent phases of its phase_positioned_in_milestone edges, in which the phase is the parent and the milestone the child), not inline evidence. Phase ordering lives in relations.json with relation_type='phase_depends_on'.
 
 *Load a roadmap by id*
 
@@ -616,7 +616,7 @@ Load a roadmap by id and return the materialized RoadmapView (phases, lens-views
 </tool>
 
 <tool name="context-roadmap-render">
-Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, milestone resolution, exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.
+Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, resolved milestone (MILE- block id + name + derived reached|planned phase-rollup), exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.
 
 *Render a roadmap as markdown*
 
@@ -626,7 +626,7 @@ Render a roadmap by id as pure-textual markdown — phase order list, per-phase 
 </tool>
 
 <tool name="context-roadmap-validate">
-Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_evidence_block_missing, roadmap_milestone_query_invalid, roadmap_status_unknown_value. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.
+Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_missing, roadmap_status_unknown_value. A phase's milestone is a MILE- milestone-block id; roadmap_milestone_missing fires when the referenced id is absent from the milestone block. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.
 
 *Validate roadmaps*
 
@@ -658,7 +658,7 @@ Subcommands: `init`, `switch`, `list`, `archive`, `install`, `check-status`, `ac
 </events>
 
 <bundled_resources>
-12 schemas, 34 samples bundled.
+12 schemas, 36 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -683,6 +683,7 @@ Names valid for the `installed_blocks` array in `<substrate-dir>/config.json`. I
 | `context-contracts` | `samples/blocks/context-contracts.json` |
 | `phase` | `samples/blocks/phase.json` |
 | `story` | `samples/blocks/story.json` |
+| `milestone` | `samples/blocks/milestone.json` |
 | `work-orders` | `samples/blocks/work-orders.json` |
 
 </installable_blocks>
@@ -708,6 +709,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `context-contracts` | `samples/schemas/context-contracts.schema.json` |
 | `phase` | `samples/schemas/phase.schema.json` |
 | `story` | `samples/schemas/story.schema.json` |
+| `milestone` | `samples/schemas/milestone.schema.json` |
 | `work-orders` | `samples/schemas/work-orders.schema.json` |
 
 </installable_schemas>
@@ -733,6 +735,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `context-contracts` | Context contracts | `contracts` | id, unit_kind, bundle_relation_types (array), description?, notes?, created_by, created_at, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 | `phase` | Phases | `phases` | id, name, intent, goal?, status (string (planned|in-progress|completed)), success_criteria? (array), specs? (array), artifacts_produced? (array), oid?, content_hash?, content_parent? |
 | `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
+| `milestone` | Milestones | `milestones` | id, name, status (string (planned|reached)), release?, created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 | `work-orders` | Work Orders | `work_orders` | id, title, status (string (proposed|in-progress|real-check-passed|real-check-failed|completed|cancelled)), target_agent, input_contract (object), context_blocks (array), output_contract (object), scope (object), real_check_criteria (object), description?, created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 
 **Status Enums:**
@@ -765,6 +768,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `conventions` | `severity` | error, warning, info |
 | `phase` | `status` | planned, in-progress, completed |
 | `story` | `status` | proposed, ready, in-progress, in-review, complete, blocked |
+| `milestone` | `status` | planned, reached |
 | `work-orders` | `status` | proposed, in-progress, real-check-passed, real-check-failed, completed, cancelled |
 
 </planning_vocabulary>

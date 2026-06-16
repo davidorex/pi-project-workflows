@@ -15,7 +15,7 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## samples/ (34 files)
+## samples/ (36 files)
 
 - `samples/blocks/context-contracts.json`
 - `samples/blocks/conventions.json`
@@ -24,6 +24,7 @@
 - `samples/blocks/framework-gaps.json`
 - `samples/blocks/issues.json`
 - `samples/blocks/layer-plans.json`
+- `samples/blocks/milestone.json`
 - `samples/blocks/phase.json`
 - `samples/blocks/rationale.json`
 - `samples/blocks/requirements.json`
@@ -42,6 +43,7 @@
 - `samples/schemas/framework-gaps.schema.json`
 - `samples/schemas/issues.schema.json`
 - `samples/schemas/layer-plans.schema.json`
+- `samples/schemas/milestone.schema.json`
 - `samples/schemas/phase.schema.json`
 - `samples/schemas/rationale.schema.json`
 - `samples/schemas/requirements.schema.json`

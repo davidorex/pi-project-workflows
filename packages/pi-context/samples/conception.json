@@ -122,6 +122,14 @@
       "data_path": "story.json"
     },
     {
+      "canonical_id": "milestone",
+      "display_name": "Milestones",
+      "prefix": "MILE-",
+      "schema_path": "schemas/milestone.schema.json",
+      "array_key": "milestones",
+      "data_path": "milestone.json"
+    },
+    {
       "canonical_id": "work-orders",
       "display_name": "Work Orders",
       "prefix": "WO-",
@@ -286,6 +294,13 @@
       "target_kinds": ["phase"]
     },
     {
+      "canonical_id": "phase_positioned_in_milestone",
+      "display_name": "positioned in milestone",
+      "category": "membership",
+      "source_kinds": ["phase"],
+      "target_kinds": ["milestone"]
+    },
+    {
       "canonical_id": "feature_contains_story",
       "display_name": "contains story",
       "category": "membership",
@@ -293,11 +308,11 @@
       "target_kinds": ["story"]
     },
     {
-      "canonical_id": "story_contains_task",
-      "display_name": "contains task",
+      "canonical_id": "story_includes_item",
+      "display_name": "includes item",
       "category": "membership",
       "source_kinds": ["story"],
-      "target_kinds": ["tasks"]
+      "target_kinds": ["*"]
     },
     {
       "canonical_id": "rationale_supports_decision",
@@ -416,6 +431,7 @@
     "context-contracts",
     "phase",
     "story",
+    "milestone",
     "work-orders"
   ],
   "installed_blocks": [
@@ -434,6 +450,7 @@
     "context-contracts",
     "phase",
     "story",
+    "milestone",
     "work-orders"
   ],
   "invariants": [
@@ -550,6 +567,19 @@
       "direction": "as_parent",
       "severity": "warning",
       "message": "Task '{id}' articulates no governing convention — add an item_governed_by_convention edge to a convention, or an item_acknowledges_missing_convention edge to a missing-convention gap"
+    },
+    {
+      "id": "reached-milestone-phases-complete",
+      "class": "status-consistency",
+      "block": "milestone",
+      "relation_types": [
+        "phase_positioned_in_milestone"
+      ],
+      "direction": "as_child",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "error",
+      "message": "Reached milestone '{id}' has a positioned phase that is not complete — milestone.reached is a pure phase-rollup; a reached milestone requires the parent phase of every phase_positioned_in_milestone edge to be complete"
     }
   ],
   "tool_operations": [],

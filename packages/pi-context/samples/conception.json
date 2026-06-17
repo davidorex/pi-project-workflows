@@ -415,6 +415,52 @@
   ],
   "layers": [],
   "status_buckets": {},
+  "state_derivation": {
+    "in_flight": {
+      "kinds": [
+        "tasks"
+      ],
+      "bucket": "in_progress"
+    },
+    "focus_fallback": {
+      "kind": "phase",
+      "bucket": "in_progress"
+    },
+    "next_ranked": [
+      {
+        "kind": "framework-gaps",
+        "label": "framework-gap",
+        "bucket": "todo",
+        "rank_field": "priority",
+        "rank_order": [
+          "P0",
+          "P1",
+          "P2",
+          "P3"
+        ]
+      },
+      {
+        "kind": "tasks",
+        "label": "task",
+        "bucket": "todo"
+      }
+    ],
+    "blocked_by": {
+      "relation_types": [
+        "task_depends_on_task",
+        "task_gated_by_item"
+      ]
+    },
+    "rollups": [
+      {
+        "kind": "milestone",
+        "membership_relation": "phase_positioned_in_milestone",
+        "complete_status": "reached",
+        "incomplete_status": "planned"
+      }
+    ],
+    "head_size": 15
+  },
   "installed_schemas": [
     "decisions",
     "framework-gaps",

@@ -417,8 +417,9 @@ const STOCK_STATE_DERIVATION = {
 			bucket: "todo",
 			rank_field: "priority",
 			rank_order: ["P0", "P1", "P2", "P3"],
+			reason_template: "open gap (priority {rank_value})",
 		},
-		{ kind: "tasks", label: "task", bucket: "todo" },
+		{ kind: "tasks", label: "task", bucket: "todo", reason_template: "unblocked planned task" },
 	],
 	blocked_by: { relation_types: ["task_depends_on_task", "task_gated_by_item"] },
 	rollups: [
@@ -3129,6 +3130,22 @@ describe("currentState", () => {
 		assert.deepStrictEqual(state.milestones, [{ id: "MILE-001", status: "planned", phaseCount: 1 }]);
 	});
 
+	it("UNSET rank value: a field-ranked item missing its rank_field emits the stock '... priority unset' template", (t) => {
+		const tmpDir = makeTmpDir("cs-unset");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir); // stock state_derivation (reason_template "open gap (priority {rank_value})")
+		// A framework-gap with NO `priority` field → {rank_value} resolves to "unset",
+		// reproducing the pre-rewire `priority ${s.value ?? "unset"}` literal.
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ "framework-gaps": [{ id: "FGAP-X", title: "no priority", status: "identified" }] }),
+		);
+		const state = currentState(tmpDir);
+		const fgap = state.nextActions.find((a) => a.id === "FGAP-X");
+		assert.ok(fgap, "FGAP-X should surface in nextActions");
+		assert.strictEqual(fgap!.reason, "open gap (priority unset)");
+	});
+
 	it("NOT-CONFIGURED signal: a config WITHOUT state_derivation reports the not-configured state exactly", (t) => {
 		const tmpDir = makeTmpDir("cs-notconfigured");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
@@ -3162,7 +3179,7 @@ describe("currentState", () => {
 		const customSd = {
 			in_flight: { kinds: ["issues"], bucket: "in_progress" },
 			focus_fallback: { kind: "epic", bucket: "in_progress" },
-			next_ranked: [{ kind: "issues", label: "issue", bucket: "todo" }],
+			next_ranked: [{ kind: "issues", label: "issue", bucket: "todo", reason_template: "ready issue {id}" }],
 			blocked_by: { relation_types: ["issue_blocks_issue"] },
 			rollups: [
 				{ kind: "epic", membership_relation: "issue_in_epic", complete_status: "done", incomplete_status: "open" },
@@ -3198,9 +3215,34 @@ describe("currentState", () => {
 		// ISS-D blocked by ISS-P via the custom dependency relation; ISS-D excluded from ready.
 		assert.deepStrictEqual(state.blocked, [{ id: "ISS-D", block: "issues", blockedBy: ["ISS-P"] }]);
 		assert.ok(state.nextActions.every((a) => a.id !== "ISS-D"));
-		assert.ok(state.nextActions.some((a) => a.id === "ISS-P" && a.kind === "issue"));
+		// reason is the configured custom template ({id} substituted) — NOT the stock
+		// kind-coupled "unblocked planned task"; proves no reason literal survives.
+		assert.ok(
+			state.nextActions.some((a) => a.id === "ISS-P" && a.kind === "issue" && a.reason === "ready issue ISS-P"),
+		);
+		assert.ok(state.nextActions.every((a) => a.reason !== "unblocked planned task"));
 		// rollup over epic via issue_in_epic: member ISS-D ("open") not complete → incomplete_status.
 		assert.deepStrictEqual(state.milestones, [{ id: "EPIC-1", status: "open", phaseCount: 1 }]);
+
+		// focus-fallback uses the CUSTOM focus_fallback.kind prefix ("epic: "), not the
+		// stock "phase: ": demote ISS-A out of in_progress so nothing is in-flight, and
+		// give EPIC-1 the fallback bucket.
+		fs.writeFileSync(
+			path.join(projectDir, "issues.json"),
+			JSON.stringify({
+				issues: [
+					{ id: "ISS-A", description: "active", status: "open" },
+					{ id: "ISS-P", description: "prereq", status: "open" },
+					{ id: "ISS-D", description: "dependent", status: "open" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "epic.json"),
+			JSON.stringify({ epics: [{ id: "EPIC-1", name: "e", status: "in-progress" }] }),
+		);
+		const fallbackState = currentState(tmpDir);
+		assert.strictEqual(fallbackState.focus, "epic: EPIC-1 (e)");
 	});
 
 	it("HEAD-SIZE honored: ranked head truncates at the configured size; a lower kind is not hidden when head accommodates it", (t) => {

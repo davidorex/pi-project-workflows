@@ -94,7 +94,7 @@
 				},
 				"next_ranked": {
 					"type": "array",
-					"description": "Ordered cross-kind push order for nextActions. Each entry selects items of `kind` at `bucket`, labels them `label`; optional `rank_field` + `rank_order` rank within the entry (absent → topo over the dep/gate graph). Stock: framework-gaps (priority-ranked) then tasks (topo).",
+					"description": "Ordered cross-kind push order for nextActions. Each entry selects items of `kind` at `bucket`, labels them `label`, and emits its `reason_template` (with `{rank_value}`/`{id}` tokens substituted) as each item's `reason`; optional `rank_field` + `rank_order` rank within the entry (absent → topo over the dep/gate graph). Stock: framework-gaps (priority-ranked) then tasks (topo).",
 					"items": {
 						"type": "object",
 						"additionalProperties": false,
@@ -104,7 +104,8 @@
 							"label": { "type": "string" },
 							"bucket": { "type": "string" },
 							"rank_field": { "type": "string" },
-							"rank_order": { "type": "array", "items": { "type": "string" } }
+							"rank_order": { "type": "array", "items": { "type": "string" } },
+							"reason_template": { "type": "string", "description": "The `reason` string emitted for each item this entry surfaces. Tokens substituted literally: `{rank_value}` → the item's rank_field value (or 'unset' when absent; meaningful only for a field-ranked entry); `{id}` → the item id. Stock field-ranked (framework-gaps): 'open gap (priority {rank_value})'; stock topo (tasks): 'unblocked planned task'." }
 						}
 					}
 				},

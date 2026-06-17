@@ -709,6 +709,22 @@ export function contextState(cwd: string): ContextState {
  * states to gate-releasing, and config-driven generalization to all gate
  * relation kinds, is the FEAT-004 refinement boundary, out of scope here.
  */
+
+/**
+ * Render a `next_ranked` entry's `reason_template`, substituting `{token}`
+ * occurrences from `tokens` (every value stringified). Tokens absent from the
+ * map are left literal. An undefined template yields the empty string — the
+ * deriver carries no kind-coupled reason default; the stock registry declares
+ * the templates that reproduce the canonical reason strings.
+ */
+function renderReasonTemplate(template: string | undefined, tokens: Record<string, string | undefined>): string {
+	if (template === undefined) return "";
+	return template.replace(/\{(\w+)\}/g, (match, key: string) => {
+		const v = tokens[key];
+		return v !== undefined ? v : match;
+	});
+}
+
 export function currentState(cwd: string): CurrentState {
 	// Tolerate any substrate-read failure (no .project, malformed config, etc.)
 	// by collapsing to the empty state — this is a pure read surface.
@@ -868,7 +884,7 @@ export function currentState(cwd: string): CurrentState {
 					id: s.id,
 					kind: entry.label,
 					...(s.value !== undefined ? { [rankField]: s.value } : {}),
-					reason: `open gap (priority ${s.value ?? "unset"})`,
+					reason: renderReasonTemplate(entry.reason_template, { rank_value: s.value ?? "unset", id: s.id }),
 				});
 			}
 		} else {
@@ -883,7 +899,7 @@ export function currentState(cwd: string): CurrentState {
 			);
 			for (const id of order) {
 				if (blockedIds.has(id)) continue;
-				nextActions.push({ id, kind: entry.label, reason: "unblocked planned task" });
+				nextActions.push({ id, kind: entry.label, reason: renderReasonTemplate(entry.reason_template, { id }) });
 			}
 		}
 	}
@@ -935,7 +951,7 @@ export function currentState(cwd: string): CurrentState {
 		}
 		if (fallbackItem !== null) {
 			const label = fallbackItem.name ? `${fallbackItem.id} (${fallbackItem.name})` : fallbackItem.id;
-			focus = `phase: ${label}`;
+			focus = `${sd.focus_fallback.kind}: ${label}`;
 		} else {
 			focus = "no active focus.";
 		}

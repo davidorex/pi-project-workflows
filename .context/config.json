@@ -956,12 +956,14 @@
           "P1",
           "P2",
           "P3"
-        ]
+        ],
+        "reason_template": "open gap (priority {rank_value})"
       },
       {
         "kind": "tasks",
         "label": "task",
-        "bucket": "todo"
+        "bucket": "todo",
+        "reason_template": "unblocked planned task"
       }
     ],
     "blocked_by": {

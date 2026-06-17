@@ -149,6 +149,17 @@ export interface NextRankedEntry {
 	bucket: string;
 	rank_field?: string;
 	rank_order?: string[];
+	/**
+	 * The `reason` string emitted for each item this entry surfaces in
+	 * `nextActions`. Interpolation tokens (replaced literally where they appear):
+	 * `{rank_value}` → the item's `rank_field` value, or `unset` when absent
+	 * (meaningful only for a field-ranked entry); `{id}` → the item id. The
+	 * deriver emits this verbatim with tokens substituted — no kind-coupled
+	 * reason literal lives in the deriver. Stock field-ranked (framework-gaps):
+	 * `open gap (priority {rank_value})`; stock topo (tasks): `unblocked planned
+	 * task`.
+	 */
+	reason_template?: string;
 }
 
 /**

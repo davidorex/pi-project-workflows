@@ -1,0 +1,19 @@
+{
+  "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type SET (task_depends_on_task + task_gated_by_item), a rollup spec (rollup kind + membership relation + derived status, generalizing the milestone phase-rollup), the next-actions head-size (cap), and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~711-915) to read it instead of ALL hardcoded literals — the tasks/framework-gaps/phase/milestone kinds, P0-P3, the task_depends_on_task + task_gated_by_item + phase_positioned_in_milestone relation literals, the reached/planned milestone status strings, and the fixed NEXT_ACTIONS_CAP=15 slice (context-sdk.ts:864-865); the shipped conception declares the stock derivation (framework-gaps+tasks + gate + milestone rollup + cap) so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/schemas/config.schema.json"
+  ],
+  "acceptance_criteria": [
+    "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+    "Stock .context behavior byte-preserved",
+    "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+    "All derivation couplings are config-driven, not just the original set: the blocked-by relation SET (task_depends_on_task + task_gated_by_item gate) and the milestone phase-rollup (block milestone + relation phase_positioned_in_milestone + the reached/planned status) are declared in the registry; no hardcoded relation/kind/status literal survives in the rewired currentState (verified by grep of the deriver)",
+    "A truthful not-configured signal is returned when no state-derivation registry is declared, distinguishable from a configured-but-empty substrate",
+    "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004"
+}

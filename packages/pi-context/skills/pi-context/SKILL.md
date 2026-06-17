@@ -267,9 +267,9 @@ Fetch and print the verbatim catalog schema body (raw JSON Schema: properties/de
 </tool>
 
 <tool name="context-current-state">
-Derive 'where are we + what's next' purely from the substrate — focus, in-flight tasks, ranked atomic-next actions (open framework-gaps then unblocked planned tasks), and blocked tasks. Task readiness honors both `task_depends_on_task` dependencies and `task_gated_by_item` gates: a planned task whose dependency or gate target has not reached the complete bucket is reported blocked (the blocker id in blockedBy) and held out of nextActions; a gate target of any kind (gap/decision/feature/task) reaching its complete status releases the gate. No writes; nothing hand-stored.
+Derive 'where are we + what's next' purely from the substrate — focus, in-flight items, ranked atomic-next actions, blocked items, and milestone rollups. Every facet derives from the config-declared `state_derivation` registry: which block kinds + status bucket count as in-flight, the focus fallback kind + bucket, the ordered cross-kind next-actions push order with per-entry ranking (a named field + ordered value list, e.g. gap priority P0..P3) or topo ordering over the blocking-relation graph, the relation_types whose edges contribute blockers (the stock set being `task_depends_on_task` dependencies + `task_gated_by_item` gates), the membership rollups (e.g. milestones over `phase_positioned_in_milestone`) with their complete/incomplete status strings, and the next-actions head-size cap. A blocked item's dependency/gate target that has not reached the complete bucket is reported in blockedBy and held out of nextActions; a target reaching its complete status releases it. A substrate whose config declares no `state_derivation` reports focus 'state-derivation not configured' with empty arrays. No writes; nothing hand-stored.
 
-*Derive current project state — focus, in-flight, next actions, dependency- and gate-aware blocked*
+*Derive current project state from the config-declared state_derivation registry — focus, in-flight, ranked next actions, blocked, milestone rollups*
 
 </tool>
 

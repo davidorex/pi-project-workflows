@@ -36,7 +36,7 @@ import { findReferencesInRepo } from "./lens-view.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { validateFromFile } from "./schema-validator.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
-import { resolveStatusVocabulary } from "./status-vocab.js";
+import { resolveStateDerivation, resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
 
 // Re-export substrate SDK so consumers can keep importing through context-sdk.
@@ -347,13 +347,14 @@ export interface CurrentState {
 	/** planned tasks whose task_depends_on_task dependency parents are not ALL completed */
 	blocked: { id: string; block: string; blockedBy: string[] }[];
 	/**
-	 * derived phase-rollup — `reached` iff ≥1 phase_positioned_in_milestone edge
-	 * (in which the phase is the parent and the milestone the child) AND every such
-	 * parent phase buckets to complete; else `planned`. `phaseCount` is the number
-	 * of phase_positioned_in_milestone edges whose child is this milestone
-	 * (parent=phase/child=milestone).
+	 * derived membership-rollups (milestones) per `state_derivation.rollups`. For
+	 * each rollup entry, members are the PARENT items of `membership_relation` edges
+	 * whose child is the rollup item; `status` is the rollup entry's `complete_status`
+	 * when ≥1 member exists and every member buckets to complete, else its
+	 * `incomplete_status`. `status` is a config-declared string (the stock rollup
+	 * emits `reached` / `planned`); `phaseCount` is the member count.
 	 */
-	milestones: { id: string; status: "planned" | "reached"; phaseCount: number }[];
+	milestones: { id: string; status: string; phaseCount: number }[];
 }
 
 /**
@@ -732,11 +733,22 @@ export function currentState(cwd: string): CurrentState {
 	const vocab = resolveStatusVocabulary(cwd);
 	const bucket = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
 
-	// ── inFlight: tasks-block items bucketing to in_progress ───────────────────
+	// Resolve the config-declared derivation registry (TASK-020 / FGAP-017). When
+	// it is ABSENT, every coupling below is unconfigured, so the function returns
+	// the truthful "state-derivation not configured" signal — a state distinct
+	// from a configured-but-empty substrate (which derives normally to
+	// `focus: "no active focus."` + empty arrays). All 16 couplings below read
+	// `sd.*`; no kind / relation / rank / status / head-size literal remains.
+	const sd = resolveStateDerivation(cwd);
+	if (sd === null) {
+		return { focus: "state-derivation not configured", inFlight: [], nextActions: [], blocked: [], milestones: [] };
+	}
+
+	// ── inFlight: items of an `in_flight.kinds` block bucketing to in_flight.bucket ─
 	const inFlight: CurrentState["inFlight"] = [];
 	for (const loc of index.byRefname.values()) {
-		if (loc.block !== "tasks") continue;
-		if (bucket(loc.item) !== "in_progress") continue;
+		if (!sd.in_flight.kinds.includes(loc.block)) continue;
+		if (bucket(loc.item) !== sd.in_flight.bucket) continue;
 		inFlight.push({
 			id: loc.id,
 			block: loc.block,
@@ -744,54 +756,68 @@ export function currentState(cwd: string): CurrentState {
 		});
 	}
 
-	// Task dependency adjacency from task_depends_on_task edges: for task T,
-	// depParents(T) = parents of edges {parent, child:T}. T is unblocked iff
-	// every dep parent that resolves to a known item is completed (deps pointing
-	// at unknown ids are treated as satisfied — a dangling edge is a relations
-	// integrity concern surfaced by validateRelations, not a blocker here).
-	const isCompleted = (taskId: string): boolean => {
-		const loc = index.byRefname.get(taskId);
+	// A target is complete when it resolves to a known item whose status buckets to
+	// "complete" — the SHARED status-vocab completeness notion (as TASK-065 left it,
+	// the same check the status-consistency invariant engine uses), kind-general and
+	// not a per-derivation literal.
+	const isCompleted = (itemId: string): boolean => {
+		const loc = index.byRefname.get(itemId);
 		return loc !== undefined && bucket(loc.item) === "complete";
 	};
-	const depParentsOf = (taskId: string): string[] =>
+
+	// Blocking-relation adjacency, driven by `sd.blocked_by.relation_types`. The
+	// two stock relations use OPPOSITE endpoint directions, preserved exactly:
+	//   • task_depends_on_task — DEPENDENCY direction: parents of edges whose CHILD
+	//     is the item (the prerequisites of the item).
+	//   • task_gated_by_item   — GATE direction: children of edges whose PARENT is
+	//     the item (the gate targets the item waits on).
+	// A relation present in the set with no known direction rule defaults to the
+	// DEPENDENCY direction (parent-of-edge-with-child=item). Which relations
+	// participate is gated on membership in `sd.blocked_by.relation_types`, so an
+	// empty/absent relation is simply not consulted.
+	const blockedByRels = new Set(sd.blocked_by.relation_types);
+	const depDirRels = new Set(
+		// task_gated_by_item is the one gate-direction relation; everything else in
+		// the configured set reads the dependency direction (incl. the default rule).
+		[...blockedByRels].filter((rt) => rt !== "task_gated_by_item"),
+	);
+	const dependencyPredsOf = (itemId: string): string[] =>
 		edges
-			.filter((e) => e.relation_type === "task_depends_on_task" && endpointKey(e.child) === taskId)
+			.filter((e) => depDirRels.has(e.relation_type) && endpointKey(e.child) === itemId)
 			.map((e) => endpointKey(e.parent));
-	const incompleteDeps = (taskId: string): string[] =>
-		depParentsOf(taskId).filter((dep) => index.byRefname.has(dep) && !isCompleted(dep));
+	const gatePredsOf = (itemId: string): string[] =>
+		blockedByRels.has("task_gated_by_item")
+			? edges
+					.filter((e) => e.relation_type === "task_gated_by_item" && endpointKey(e.parent) === itemId)
+					.map((e) => endpointKey(e.child))
+			: [];
+	// All preds (deps ∪ gates) in discovery order — used by the topo ordering below.
+	const allPredsOf = (itemId: string): string[] => [...dependencyPredsOf(itemId), ...gatePredsOf(itemId)];
+	const incompletePreds = (itemId: string): string[] =>
+		dependencyPredsOf(itemId).filter((dep) => index.byRefname.has(dep) && !isCompleted(dep));
+	const unsatisfiedGates = (itemId: string): string[] =>
+		gatePredsOf(itemId).filter((target) => index.byRefname.has(target) && !isCompleted(target));
 
-	// Gate adjacency from task_gated_by_item edges (FGAP-061 NOW slice): for task
-	// T, an edge {parent:T, child:G} means T is gated by item G. unsatisfiedGates(T)
-	// = the gate-target ids that both resolve to a known item AND are NOT in the
-	// "complete" bucket (a gate target reaching "complete" releases the gate;
-	// targets pointing at unknown ids are treated as satisfied, mirroring the
-	// dangling-dep guard). Reuses isCompleted (bucket(target) === "complete" via the
-	// config-resolved status vocabulary) — kind-general, no per-kind special-casing
-	// and no parallel completeness notion. Literal relation_type match only, so
-	// decision_gated_by_item / other non-task *_gated_by_item edges are inert here.
-	const gateTargetsOf = (taskId: string): string[] =>
-		edges
-			.filter((e) => e.relation_type === "task_gated_by_item" && endpointKey(e.parent) === taskId)
-			.map((e) => endpointKey(e.child));
-	const unsatisfiedGates = (taskId: string): string[] =>
-		gateTargetsOf(taskId).filter((target) => index.byRefname.has(target) && !isCompleted(target));
-
-	// Collect all to-do (ready/queued) tasks once — drives both blocked + ready
-	// derivations. "todo" bucket = planned/queued work (raw status "planned"
-	// buckets to todo under STATUS_VOCABULARY_DEFAULTS).
+	// The "planned tasks" set is the next_ranked entry that has NO rank_field (the
+	// stock tasks entry, topo-ordered). It drives both blocked + ready derivations.
+	const topoEntry = sd.next_ranked.find((e) => e.rank_field === undefined);
 	const plannedTasks: { id: string; loc: ItemLocation }[] = [];
-	for (const loc of index.byRefname.values()) {
-		if (loc.block === "tasks" && bucket(loc.item) === "todo") plannedTasks.push({ id: loc.id, loc });
+	if (topoEntry !== undefined) {
+		for (const loc of index.byRefname.values()) {
+			if (loc.block === topoEntry.kind && bucket(loc.item) === topoEntry.bucket) {
+				plannedTasks.push({ id: loc.id, loc });
+			}
+		}
 	}
 
-	// blockedBy(T) = UNION of T's unsatisfied dep-parents and unsatisfied gate-
-	// targets, de-duplicated while preserving discovery order (deps first, then
-	// gates). With no gate edges present this collapses to incompleteDeps(T), so
-	// the dependency-only derivation is unchanged (output byte-identical).
+	// blockedBy(T) = UNION of T's unsatisfied dependency-direction preds and
+	// unsatisfied gate-direction targets, de-duplicated while preserving discovery
+	// order (deps first, then gates). With no gate relation configured / no gate
+	// edges present this collapses to the dependency-only set.
 	const blockersOf = (taskId: string): string[] => {
 		const result: string[] = [];
 		const seen = new Set<string>();
-		for (const blocker of [...incompleteDeps(taskId), ...unsatisfiedGates(taskId)]) {
+		for (const blocker of [...incompletePreds(taskId), ...unsatisfiedGates(taskId)]) {
 			if (seen.has(blocker)) continue;
 			seen.add(blocker);
 			result.push(blocker);
@@ -799,7 +825,7 @@ export function currentState(cwd: string): CurrentState {
 		return result;
 	};
 
-	// ── blocked: planned tasks with at least one unsatisfied dep parent or gate ──
+	// ── blocked: planned tasks with at least one unsatisfied dep or gate ─────────
 	const blocked: CurrentState["blocked"] = [];
 	const blockedIds = new Set<string>();
 	for (const { id, loc } of plannedTasks) {
@@ -811,81 +837,85 @@ export function currentState(cwd: string): CurrentState {
 	}
 
 	// ── nextActions (atomic-next, ranked) ──────────────────────────────────────
+	// Iterate `sd.next_ranked` IN ARRAY ORDER — array order IS the cross-kind push
+	// order (stock: priority-ranked gaps, then topo-ordered tasks).
 	const nextActions: CurrentState["nextActions"] = [];
-
-	// 1. Open framework-gaps (gaps bucketing to todo — raw status "identified"
-	//    buckets to todo under STATUS_VOCABULARY_DEFAULTS), ranked
-	//    P0 > P1 > P2 > P3 (missing priority sorts last) then by id.
-	const priorityRank: Record<string, number> = { P0: 0, P1: 1, P2: 2, P3: 3 };
-	const openGaps: { id: string; priority?: string }[] = [];
-	for (const loc of index.byRefname.values()) {
-		if (loc.block !== "framework-gaps") continue;
-		if (bucket(loc.item) !== "todo") continue;
-		openGaps.push({ id: loc.id, priority: typeof loc.item.priority === "string" ? loc.item.priority : undefined });
+	for (const entry of sd.next_ranked) {
+		if (entry.rank_field !== undefined) {
+			// Field-ranked entry (stock: framework-gaps by `priority`). Select items of
+			// `entry.kind` at `entry.bucket`, rank by index in `entry.rank_order` (value
+			// not listed → large sentinel 99) then by id.
+			const rankField = entry.rank_field;
+			const rankIndex: Record<string, number> = {};
+			(entry.rank_order ?? []).forEach((v, i) => {
+				rankIndex[v] = i;
+			});
+			const selected: { id: string; value?: string }[] = [];
+			for (const loc of index.byRefname.values()) {
+				if (loc.block !== entry.kind) continue;
+				if (bucket(loc.item) !== entry.bucket) continue;
+				const raw = loc.item[rankField];
+				selected.push({ id: loc.id, value: typeof raw === "string" ? raw : undefined });
+			}
+			selected.sort((a, b) => {
+				const ra = a.value !== undefined ? (rankIndex[a.value] ?? 99) : 99;
+				const rb = b.value !== undefined ? (rankIndex[b.value] ?? 99) : 99;
+				if (ra !== rb) return ra - rb;
+				return a.id.localeCompare(b.id);
+			});
+			for (const s of selected) {
+				nextActions.push({
+					id: s.id,
+					kind: entry.label,
+					...(s.value !== undefined ? { [rankField]: s.value } : {}),
+					reason: `open gap (priority ${s.value ?? "unset"})`,
+				});
+			}
+		} else {
+			// Topo-ordered entry (stock: tasks). Ready = planned items NOT in `blocked`,
+			// ordered via topoSort over the planned nodes with preds = dependency preds
+			// ∪ gate targets. topoSort only counts edges between graph nodes, so preds
+			// outside the planned set (completed / non-task) don't gate the ordering.
+			const { order } = topoSort(
+				plannedTasks,
+				(t) => t.id,
+				(t) => allPredsOf(t.id),
+			);
+			for (const id of order) {
+				if (blockedIds.has(id)) continue;
+				nextActions.push({ id, kind: entry.label, reason: "unblocked planned task" });
+			}
+		}
 	}
-	openGaps.sort((a, b) => {
-		const ra = a.priority !== undefined ? (priorityRank[a.priority] ?? 99) : 99;
-		const rb = b.priority !== undefined ? (priorityRank[b.priority] ?? 99) : 99;
-		if (ra !== rb) return ra - rb;
-		return a.id.localeCompare(b.id);
-	});
-	for (const g of openGaps) {
-		nextActions.push({
-			id: g.id,
-			kind: "framework-gap",
-			...(g.priority !== undefined ? { priority: g.priority } : {}),
-			reason: `open gap (priority ${g.priority ?? "unset"})`,
-		});
-	}
 
-	// 2. Ready tasks: planned tasks NOT in `blocked`, ordered via topoSort over
-	//    the planned-task nodes with deps = their task_depends_on_task parents.
-	//    topoSort only counts edges between nodes present in the graph, so deps
-	//    pointing outside the planned set (e.g. already-completed prerequisites)
-	//    don't gate the ordering — we then filter the resulting order to the
-	//    ready (unblocked + planned) subset.
-	//    Gate targets fold into the predecessor set alongside dep parents so a
-	//    gate-blocked task never precedes its gate in the emitted order; topoSort
-	//    only counts predecessors that are themselves graph nodes (planned tasks),
-	//    so non-task / completed gate targets don't gate the ordering (the
-	//    blockedIds filter below already drops gate-blocked tasks from the output).
-	const { order } = topoSort(
-		plannedTasks,
-		(t) => t.id,
-		(t) => [...depParentsOf(t.id), ...gateTargetsOf(t.id)],
-	);
-	for (const id of order) {
-		if (blockedIds.has(id)) continue;
-		nextActions.push({ id, kind: "task", reason: "unblocked planned task" });
-	}
+	// Cap nextActions at the config-declared scannable head — derivation can
+	// surface a long backlog; the head is the actionable slice for "what's next".
+	const cappedNextActions = nextActions.slice(0, sd.head_size);
 
-	// Cap nextActions at a scannable head (first 15) — derivation can surface a
-	// long backlog; the head is the actionable slice for "what's next".
-	const NEXT_ACTIONS_CAP = 15;
-	const cappedNextActions = nextActions.slice(0, NEXT_ACTIONS_CAP);
-
-	// ── milestones (derived phase-rollup) ───────────────────────────────────────
-	// For each milestone-block item, member phases are the PARENT phases of its
-	// phase_positioned_in_milestone edges (parent=phase/child=milestone, per the
-	// catalog relation_type source=phase/target=milestone + the
-	// reached-milestone-phases-complete invariant's direction:as_child, meaning the
-	// milestone is the child). reached = (phaseCount ≥ 1) AND every parent phase id
-	// resolves to a known item whose bucket is "complete"; any dangling or
-	// non-complete parent phase → planned. Every status comparison routes through
-	// bucket() — no raw status literal compared.
+	// ── milestones: config-declared membership rollups ──────────────────────────
+	// For each `sd.rollups` entry, members are the PARENT items of
+	// `membership_relation` edges whose CHILD is the rollup item (the stock
+	// phase_positioned_in_milestone direction: parent=phase/child=milestone). The
+	// rollup emits `complete_status` when ≥1 member exists and every member id
+	// resolves to a known item bucketing to complete; else `incomplete_status`
+	// (covering no-members + any-incomplete). Every comparison routes through
+	// bucket() — no raw status literal.
 	const milestones: CurrentState["milestones"] = [];
-	for (const loc of index.byRefname.values()) {
-		if (loc.block !== "milestone") continue;
-		const parentPhaseIds = edges
-			.filter((e) => e.relation_type === "phase_positioned_in_milestone" && endpointKey(e.child) === loc.id)
-			.map((e) => endpointKey(e.parent));
-		const phaseCount = parentPhaseIds.length;
-		const allComplete = parentPhaseIds.every((phaseId) => {
-			const phaseLoc = index.byRefname.get(phaseId);
-			return phaseLoc !== undefined && bucket(phaseLoc.item) === "complete";
-		});
-		const reached = phaseCount >= 1 && allComplete;
-		milestones.push({ id: loc.id, status: reached ? "reached" : "planned", phaseCount });
+	for (const entry of sd.rollups) {
+		for (const loc of index.byRefname.values()) {
+			if (loc.block !== entry.kind) continue;
+			const memberIds = edges
+				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(e.child) === loc.id)
+				.map((e) => endpointKey(e.parent));
+			const phaseCount = memberIds.length;
+			const allComplete = memberIds.every((memberId) => isCompleted(memberId));
+			const reached = phaseCount >= 1 && allComplete;
+			milestones.push({
+				id: loc.id,
+				status: reached ? entry.complete_status : entry.incomplete_status,
+				phaseCount,
+			});
+		}
 	}
 	milestones.sort((a, b) => a.id.localeCompare(b.id));
 
@@ -894,17 +924,17 @@ export function currentState(cwd: string): CurrentState {
 	if (inFlight.length > 0) {
 		focus = `in-flight: ${inFlight.map((t) => t.id).join(", ")}`;
 	} else {
-		// Fall back to a phase bucketing to in_progress (phase.json phases[]
-		// array-block).
-		let inProgressPhase: { id?: string; name?: string } | null = null;
+		// Fall back to the first item of `focus_fallback.kind` bucketing to
+		// `focus_fallback.bucket` (stock: an in-progress phase).
+		let fallbackItem: { id?: string; name?: string } | null = null;
 		for (const loc of index.byRefname.values()) {
-			if (loc.block !== "phase") continue;
-			if (bucket(loc.item) !== "in_progress") continue;
-			inProgressPhase = { id: loc.id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
+			if (loc.block !== sd.focus_fallback.kind) continue;
+			if (bucket(loc.item) !== sd.focus_fallback.bucket) continue;
+			fallbackItem = { id: loc.id, name: typeof loc.item.name === "string" ? loc.item.name : undefined };
 			break;
 		}
-		if (inProgressPhase !== null) {
-			const label = inProgressPhase.name ? `${inProgressPhase.id} (${inProgressPhase.name})` : inProgressPhase.id;
+		if (fallbackItem !== null) {
+			const label = fallbackItem.name ? `${fallbackItem.id} (${fallbackItem.name})` : fallbackItem.id;
 			focus = `phase: ${label}`;
 		} else {
 			focus = "no active focus.";

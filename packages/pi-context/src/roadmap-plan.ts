@@ -175,15 +175,17 @@ export interface RoadmapSpec {
  * Per-phase loaded view: phase spec + its lens-view (or error) + status
  * rollup over the lens's items + optional resolved milestone. `milestone` is
  * the milestone-block item a phase references by MILE- id (id + name + the
- * derived `status`); `milestoneReached` is true iff that resolved milestone's
- * derived status is "reached". Both are absent when the phase declares no
- * milestone OR the referenced MILE- id resolves to no milestone-block item.
+ * derived `status`, the config-declared rollup status string from
+ * `state_derivation.rollups`); `milestoneReached` is true iff that resolved
+ * milestone's derived status is the stock complete value "reached". Both are
+ * absent when the phase declares no milestone OR the referenced MILE- id
+ * resolves to no milestone-block item.
  */
 export interface PhaseView {
 	phase: PhaseSpec;
 	lensView: LoadedLensView | { error: string };
 	status: PhaseStatus;
-	milestone?: { id: string; name?: string; status: "planned" | "reached" };
+	milestone?: { id: string; name?: string; status: string };
 	milestoneReached?: boolean;
 }
 

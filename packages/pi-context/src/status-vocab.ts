@@ -14,7 +14,7 @@
  * StatusBucket itself is declared in context.ts (the substrate type
  * surface) and imported/re-exported here; it is NOT redeclared.
  */
-import { loadContext, type StatusBucket } from "./context.js";
+import { loadContext, type StateDerivationConfig, type StatusBucket } from "./context.js";
 
 export type { StatusBucket } from "./context.js";
 
@@ -115,4 +115,16 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 export function resolveStatusVocabulary(cwd: string): Record<string, StatusBucket> {
 	const ctx = loadContext(cwd);
 	return { ...STATUS_VOCABULARY_DEFAULTS, ...(ctx.config?.status_buckets ?? {}) };
+}
+
+/**
+ * Resolve the config-declared `state_derivation` registry for `cwd` (TASK-020 /
+ * FGAP-017 / FEAT-004), or `null` when the substrate's config has none. Mirrors
+ * `resolveStatusVocabulary`'s loadContext precedent, but — unlike the status
+ * vocabulary — there is NO source-level default: `currentState` reads a `null`
+ * return as the "state-derivation not configured" signal (distinguishable from a
+ * configured-but-empty substrate). Pure: one loadContext read per call.
+ */
+export function resolveStateDerivation(cwd: string): StateDerivationConfig | null {
+	return loadContext(cwd).config?.state_derivation ?? null;
 }

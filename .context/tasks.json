@@ -318,7 +318,7 @@
       "content_parent": "aeaca5d4fb215deac92b413de57d8b6956c946c81937c05ae67717a7ce6407b0"
     },
     {
-      "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals; the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+      "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, the next-actions head-size (cap), and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals AND the fixed NEXT_ACTIONS_CAP=15 slice (context-sdk.ts:864-865); the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
       "status": "planned",
       "files": [
         "packages/pi-context/src/context-sdk.ts",
@@ -329,6 +329,7 @@
       "acceptance_criteria": [
         "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
         "Stock .context behavior byte-preserved",
+        "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
         "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)"
       ],
       "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004",
@@ -336,7 +337,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-020",
       "oid": "8efe7ef2b695613ea1eece89d83f3829",
-      "content_hash": "28f2968002a40568c1c0fc7a9cba8c1b2c9a6c6f4e4f569fc483ebd20e78c9f6"
+      "content_hash": "4f6436a895fd8f06abe19af37dba89887f86cbaca4fa5928933efd42c3d44589",
+      "content_parent": "28f2968002a40568c1c0fc7a9cba8c1b2c9a6c6f4e4f569fc483ebd20e78c9f6"
     },
     {
       "description": "Config-declared lifecycle metrics in context-status. Closes FGAP-018 (P3): make the lifecycle/metrics projection — currently special-casing phase/requirements/tasks/domain/verification with hardcoded fields + status literals in contextState() ~577-654 — config-declared (which kinds + which status values yield the lifecycle metrics), keeping the generic per-kind status summary as the default fallback. Pairs with the order-6 state-derivation registry. Advances FEAT-004.",

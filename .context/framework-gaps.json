@@ -551,7 +551,7 @@
       "status": "identified",
       "priority": "P2",
       "package": "pi-context",
-      "description": "currentState() (context-sdk.ts ~682-825), behind the context-current-state op, derives focus / in-flight / ranked atomic-next / blocked from HARDCODED stock kinds and couplings: block kinds tasks / framework-gaps / phase; the blocked-by relation_type task_depends_on_task; a literal priority rank P0/P1/P2/P3; and the kind strings framework-gap / task in nextActions. status->bucket IS already config-driven (status-vocab resolveStatusVocabulary + config.status_buckets), but the KIND / field / ranking / relation couplings are literal. On a substrate whose state-bearing kinds are not tasks/framework-gaps the op returns empty/inert — confirmed: against .context-jit-spec-v2 (axioms/concepts/dispatch-modes) currentState returns an empty result (no active focus, empty inFlight/nextActions/blocked). No config registry declares which kinds are focus-eligible / next-ranked / blocked-checked, which field gives order/ranking, or which relation_type is blocked-by.",
+      "description": "currentState() (context-sdk.ts ~682-825), behind the context-current-state op, derives focus / in-flight / ranked atomic-next / blocked from HARDCODED stock kinds and couplings: block kinds tasks / framework-gaps / phase; the blocked-by relation_type task_depends_on_task; a literal priority rank P0/P1/P2/P3; the kind strings framework-gap / task in nextActions; and a fixed next-actions head-size — NEXT_ACTIONS_CAP = 15 (context-sdk.ts:864-865), slicing nextActions to the first 15 — which, combined with the gaps-pushed-before-tasks order (:813-833 then :859), truncates all ready tasks below the open gaps whenever >=15 gaps are open. status->bucket IS already config-driven (status-vocab resolveStatusVocabulary + config.status_buckets), but the KIND / field / ranking / relation / head-size couplings are literal. On a substrate whose state-bearing kinds are not tasks/framework-gaps the op returns empty/inert — confirmed: against .context-jit-spec-v2 (axioms/concepts/dispatch-modes) currentState returns an empty result (no active focus, empty inFlight/nextActions/blocked). No config registry declares which kinds are focus-eligible / next-ranked / blocked-checked, which field gives order/ranking, which relation_type is blocked-by, or the next-actions head-size.",
       "evidence": [
         {
           "file": "packages/pi-context/src/context-sdk.ts",
@@ -574,17 +574,23 @@
           "reference": "hardcoded priorityRank P0/P1/P2/P3; ranking field hardcoded to priority"
         },
         {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "864-865",
+          "reference": "NEXT_ACTIONS_CAP=15 + nextActions.slice(0,15): fixed next-actions head-size, not config-declared; with gaps pushed before tasks (:813-833 then :859), >=15 open gaps truncate every ready task from nextActions (empirically a live run returned 15 framework-gaps, 0 of 14 ready tasks)"
+        },
+        {
           "file": "packages/pi-context/src/ops-registry.ts",
           "lines": "1037",
           "reference": "context-current-state op delegates to currentState(cwd)"
         }
       ],
       "impact": "where-are-we/what-next is a privilege of the stock PM vocabulary; a custom-vocabulary substrate with a real focus/next-state gets a silent empty result, not its own derivation. The op cannot serve any substrate that does not use framework-gaps + tasks.",
-      "proposed_resolution": "Add a config-declared state-derivation registry (which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, field+values -> open/blocked/done leveraging the existing status_buckets); rewire currentState() to read it instead of hardcoded literals; the shipped conception declares framework-gaps + tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+      "proposed_resolution": "Add a config-declared state-derivation registry (which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, the next-actions head-size (cap), field+values -> open/blocked/done leveraging the existing status_buckets); rewire currentState() to read it instead of hardcoded literals; the shipped conception declares framework-gaps + tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "oid": "8585502a1289ac63e708d521f94b7ab6",
-      "content_hash": "dd75d75fdb95a9b77af9f7a9ab4fcf90336c9695a836359274a8953c94b28735"
+      "content_hash": "e39b78595cb5f37f71e84e8af7927149ef9e5db3c54e4b9bf1bc98b4de3bce45",
+      "content_parent": "dd75d75fdb95a9b77af9f7a9ab4fcf90336c9695a836359274a8953c94b28735"
     },
     {
       "id": "FGAP-018",

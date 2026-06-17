@@ -401,18 +401,54 @@ const CANONICAL_INVARIANTS = [
 ];
 
 /**
+ * The stock `state_derivation` registry (TASK-020 / FGAP-017) — the exact values
+ * the packaged catalog ships, mirroring currentState's pre-rewire hardcoded
+ * couplings 1:1. Injected by default into `writeConfig` so the existing
+ * edge-model + currentState fixtures derive normally (byte-equivalent to the
+ * pre-rewire output). The not-configured test passes `null` to omit it.
+ */
+const STOCK_STATE_DERIVATION = {
+	in_flight: { kinds: ["tasks"], bucket: "in_progress" },
+	focus_fallback: { kind: "phase", bucket: "in_progress" },
+	next_ranked: [
+		{
+			kind: "framework-gaps",
+			label: "framework-gap",
+			bucket: "todo",
+			rank_field: "priority",
+			rank_order: ["P0", "P1", "P2", "P3"],
+		},
+		{ kind: "tasks", label: "task", bucket: "todo" },
+	],
+	blocked_by: { relation_types: ["task_depends_on_task", "task_gated_by_item"] },
+	rollups: [
+		{
+			kind: "milestone",
+			membership_relation: "phase_positioned_in_milestone",
+			complete_status: "reached",
+			incomplete_status: "planned",
+		},
+	],
+	head_size: 15,
+};
+
+/**
  * Write a config.json with the canonical relation_types registry. block_kinds is
  * left empty so buildIdIndex's prefix-vs-block invariant does not constrain the
  * fixtures' ad-hoc ids (t1/d1/etc.) — this isolates the edge-integrity surface
  * under test from prefix enforcement. By default declares the two canonical
  * invariants (DEC-0025) so existing fixtures retain their prior invariant
  * coverage; pass a custom `invariants` array to exercise other invariant shapes.
+ * Also injects the stock `state_derivation` registry by default (TASK-020) so
+ * currentState derives normally; pass `stateDerivation: null` to OMIT it (the
+ * not-configured signal) or a custom object to exercise custom vocabulary.
  */
 function writeConfig(
 	projectDir: string,
 	relationTypes: RelationTypeDecl[] = REL_TYPES,
 	invariants: unknown[] = CANONICAL_INVARIANTS,
 	statusBuckets?: Record<string, string>,
+	stateDerivation: unknown = STOCK_STATE_DERIVATION,
 ): void {
 	fs.writeFileSync(
 		path.join(projectDir, "config.json"),
@@ -423,6 +459,7 @@ function writeConfig(
 			relation_types: relationTypes,
 			invariants,
 			...(statusBuckets ? { status_buckets: statusBuckets } : {}),
+			...(stateDerivation !== null ? { state_derivation: stateDerivation } : {}),
 		}),
 	);
 }
@@ -2961,14 +2998,18 @@ describe("currentState", () => {
 		assert.strictEqual(currentState(tmpDir).focus, "no active focus.");
 	});
 
-	it("empty project (no blocks) → all arrays empty, focus 'no active focus.', no throw", (t) => {
+	it("configured-but-empty (state_derivation present, no block items) → all arrays empty, focus 'no active focus.', no throw", (t) => {
 		const tmpDir = makeTmpDir("cs-empty");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-		// No .project dir at all — buildIdIndex returns empty, loadRelations [].
+		// Config present (stock state_derivation) but no block files: the deriver
+		// runs over an empty index → empty arrays + 'no active focus.', DISTINCT
+		// from the not-configured signal (which requires an ABSENT registry).
+		setup(tmpDir);
 		const state = currentState(tmpDir);
 		assert.deepStrictEqual(state.inFlight, []);
 		assert.deepStrictEqual(state.nextActions, []);
 		assert.deepStrictEqual(state.blocked, []);
+		assert.deepStrictEqual(state.milestones, []);
 		assert.strictEqual(state.focus, "no active focus.");
 	});
 
@@ -3026,6 +3067,264 @@ describe("currentState", () => {
 		mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
 		assert.strictEqual(mile!.status, "planned");
 		assert.strictEqual(mile!.phaseCount, 1);
+	});
+
+	// ── TASK-020: config-driven state_derivation rewire ─────────────────────────
+
+	it("STOCK byte-equivalence: stock state_derivation reproduces the pre-rewire output shape", (t) => {
+		const tmpDir = makeTmpDir("cs-stock");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir); // writeConfig injects the stock state_derivation
+		// A populated substrate exercising every coupling at once: an in-flight task,
+		// an in-progress phase fallback (shadowed by the in-flight focus), a planned
+		// dependent task blocked by a planned prereq, priority-ranked open gaps, and a
+		// milestone over a positioned complete phase.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "active", status: "in-progress" },
+					{ id: "TASK-P", description: "prereq", status: "planned" },
+					{ id: "TASK-D", description: "dependent", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({
+				"framework-gaps": [
+					{ id: "FGAP-3", title: "low", status: "identified", priority: "P3" },
+					{ id: "FGAP-1", title: "high", status: "identified", priority: "P1" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "now", intent: "i", status: "in-progress" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "TASK-P", child: "TASK-D", relation_type: "task_depends_on_task" },
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		// focus: in-flight wins over the in-progress-phase fallback.
+		assert.strictEqual(state.focus, "in-flight: TASK-A");
+		assert.deepStrictEqual(state.inFlight, [{ id: "TASK-A", block: "tasks", description: "active" }]);
+		// nextActions: gaps (P1 before P3) THEN ready tasks (topo over planned). TASK-D
+		// is blocked by planned TASK-P; only TASK-P is ready.
+		assert.deepStrictEqual(state.nextActions, [
+			{ id: "FGAP-1", kind: "framework-gap", priority: "P1", reason: "open gap (priority P1)" },
+			{ id: "FGAP-3", kind: "framework-gap", priority: "P3", reason: "open gap (priority P3)" },
+			{ id: "TASK-P", kind: "task", reason: "unblocked planned task" },
+		]);
+		assert.deepStrictEqual(state.blocked, [{ id: "TASK-D", block: "tasks", blockedBy: ["TASK-P"] }]);
+		assert.deepStrictEqual(state.milestones, [{ id: "MILE-001", status: "planned", phaseCount: 1 }]);
+	});
+
+	it("NOT-CONFIGURED signal: a config WITHOUT state_derivation reports the not-configured state exactly", (t) => {
+		const tmpDir = makeTmpDir("cs-notconfigured");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, null); // OMIT state_derivation
+		// Even with block items present, an absent registry short-circuits to the signal.
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-A", description: "active", status: "in-progress" }] }),
+		);
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(state, {
+			focus: "state-derivation not configured",
+			inFlight: [],
+			nextActions: [],
+			blocked: [],
+			milestones: [],
+		});
+	});
+
+	it("CUSTOM-vocabulary: focus/nextActions/blocked/milestones derive from non-stock declarations", (t) => {
+		const tmpDir = makeTmpDir("cs-custom");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// Custom registry: in-flight over `issues` at in_progress; a single next_ranked
+		// over `issues` at todo (topo, no rank_field); blocked_by a custom relation
+		// `issue_blocks_issue` (dependency direction); a rollup over `epic` via
+		// `issue_in_epic` with custom done/open status strings; head 1.
+		const customSd = {
+			in_flight: { kinds: ["issues"], bucket: "in_progress" },
+			focus_fallback: { kind: "epic", bucket: "in_progress" },
+			next_ranked: [{ kind: "issues", label: "issue", bucket: "todo" }],
+			blocked_by: { relation_types: ["issue_blocks_issue"] },
+			rollups: [
+				{ kind: "epic", membership_relation: "issue_in_epic", complete_status: "done", incomplete_status: "open" },
+			],
+			head_size: 1,
+		};
+		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, customSd);
+		fs.writeFileSync(
+			path.join(projectDir, "issues.json"),
+			JSON.stringify({
+				issues: [
+					{ id: "ISS-A", description: "active", status: "in-progress" },
+					{ id: "ISS-P", description: "prereq", status: "open" },
+					{ id: "ISS-D", description: "dependent", status: "open" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "epic.json"),
+			JSON.stringify({ epics: [{ id: "EPIC-1", name: "e", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "ISS-P", child: "ISS-D", relation_type: "issue_blocks_issue" },
+				{ parent: "ISS-D", child: "EPIC-1", relation_type: "issue_in_epic" },
+			]),
+		);
+		const state = currentState(tmpDir);
+		// in-flight over issues (raw "in-progress" buckets in_progress); focus reflects it.
+		assert.deepStrictEqual(state.inFlight, [{ id: "ISS-A", block: "issues", description: "active" }]);
+		assert.strictEqual(state.focus, "in-flight: ISS-A");
+		// ISS-D blocked by ISS-P via the custom dependency relation; ISS-D excluded from ready.
+		assert.deepStrictEqual(state.blocked, [{ id: "ISS-D", block: "issues", blockedBy: ["ISS-P"] }]);
+		assert.ok(state.nextActions.every((a) => a.id !== "ISS-D"));
+		assert.ok(state.nextActions.some((a) => a.id === "ISS-P" && a.kind === "issue"));
+		// rollup over epic via issue_in_epic: member ISS-D ("open") not complete → incomplete_status.
+		assert.deepStrictEqual(state.milestones, [{ id: "EPIC-1", status: "open", phaseCount: 1 }]);
+	});
+
+	it("HEAD-SIZE honored: ranked head truncates at the configured size; a lower kind is not hidden when head accommodates it", (t) => {
+		const tmpDir = makeTmpDir("cs-headsize");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// head_size 2 over the stock next_ranked (gaps then tasks).
+		const sd2 = { ...STOCK_STATE_DERIVATION, head_size: 2 };
+		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, sd2);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({
+				"framework-gaps": [
+					{ id: "FGAP-1", title: "a", status: "identified", priority: "P0" },
+					{ id: "FGAP-2", title: "b", status: "identified", priority: "P1" },
+					{ id: "FGAP-3", title: "c", status: "identified", priority: "P2" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-A", description: "ready", status: "planned" }] }),
+		);
+		// head_size 2 truncates the 3 gaps + 1 task to the first two gaps; the task is hidden.
+		let state = currentState(tmpDir);
+		assert.strictEqual(state.nextActions.length, 2);
+		assert.deepStrictEqual(
+			state.nextActions.map((a) => a.id),
+			["FGAP-1", "FGAP-2"],
+		);
+
+		// With head_size 15 (stock) the same substrate surfaces all gaps AND the task —
+		// the lower-ranked tasks kind is NOT hidden when the head accommodates it.
+		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, STOCK_STATE_DERIVATION);
+		state = currentState(tmpDir);
+		assert.deepStrictEqual(
+			state.nextActions.map((a) => a.id),
+			["FGAP-1", "FGAP-2", "FGAP-3", "TASK-A"],
+		);
+	});
+
+	it("BLOCKED-BY SET: both task_depends_on_task and task_gated_by_item contribute to the unioned blockedBy", (t) => {
+		const tmpDir = makeTmpDir("cs-blockedset");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir); // stock blocked_by = both relations
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-DEP", description: "prereq", status: "planned" },
+					{ id: "TASK-T", description: "doubly blocked", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ "framework-gaps": [{ id: "FGAP-G", title: "gate", status: "identified", priority: "P1" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				// dependency direction: parent=TASK-DEP child=TASK-T ⇒ TASK-T depends on TASK-DEP.
+				{ parent: "TASK-DEP", child: "TASK-T", relation_type: "task_depends_on_task" },
+				// gate direction: parent=TASK-T child=FGAP-G ⇒ TASK-T gated by FGAP-G.
+				{ parent: "TASK-T", child: "FGAP-G", relation_type: "task_gated_by_item" },
+			]),
+		);
+		const state = currentState(tmpDir);
+		const t1 = state.blocked.find((b) => b.id === "TASK-T");
+		assert.ok(t1, "TASK-T should be blocked");
+		// union, deps-before-gates discovery order.
+		assert.deepStrictEqual(t1!.blockedBy, ["TASK-DEP", "FGAP-G"]);
+		assert.ok(state.nextActions.every((a) => a.id !== "TASK-T"));
+	});
+
+	it("ROLLUP from config: complete/incomplete status strings come from the rollup declaration", (t) => {
+		const tmpDir = makeTmpDir("cs-rollup");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// A rollup with NON-default status strings, proving the strings are config-driven.
+		const sd = {
+			...STOCK_STATE_DERIVATION,
+			rollups: [
+				{
+					kind: "milestone",
+					membership_relation: "phase_positioned_in_milestone",
+					complete_status: "SHIPPED",
+					incomplete_status: "PENDING",
+				},
+			],
+		};
+		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, sd);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-A", name: "a", status: "planned" },
+					{ id: "MILE-B", name: "b", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({
+				phases: [
+					{ id: "PHASE-1", name: "p1", intent: "i", status: "completed" },
+					{ id: "PHASE-2", name: "p2", intent: "i", status: "in-progress" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-A", relation_type: "phase_positioned_in_milestone" }, // complete member → SHIPPED
+				{ parent: "PHASE-2", child: "MILE-B", relation_type: "phase_positioned_in_milestone" }, // incomplete member → PENDING
+			]),
+		);
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(state.milestones, [
+			{ id: "MILE-A", status: "SHIPPED", phaseCount: 1 },
+			{ id: "MILE-B", status: "PENDING", phaseCount: 1 },
+		]);
 	});
 });
 

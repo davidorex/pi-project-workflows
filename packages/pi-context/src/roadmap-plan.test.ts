@@ -316,6 +316,24 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 		lenses: fixture.lenses ?? [],
 		installed_blocks: ["roadmap"],
 		block_kinds: [],
+		// Stock state_derivation (TASK-020): roadmap-plan's milestone resolution reads
+		// currentState().milestones[].status, which now requires a declared registry —
+		// the milestone rollup over phase_positioned_in_milestone (reached/planned).
+		state_derivation: {
+			in_flight: { kinds: ["tasks"], bucket: "in_progress" },
+			focus_fallback: { kind: "phase", bucket: "in_progress" },
+			next_ranked: [{ kind: "tasks", label: "task", bucket: "todo" }],
+			blocked_by: { relation_types: ["task_depends_on_task"] },
+			rollups: [
+				{
+					kind: "milestone",
+					membership_relation: "phase_positioned_in_milestone",
+					complete_status: "reached",
+					incomplete_status: "planned",
+				},
+			],
+			head_size: 15,
+		},
 	};
 	if (fixture.naming) config.naming = fixture.naming;
 	if (fixture.status_buckets) config.status_buckets = fixture.status_buckets;

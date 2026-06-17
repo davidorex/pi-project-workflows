@@ -202,6 +202,7 @@ export type AmendRegistry =
 	| "layers"
 	| "invariants"
 	| "status_buckets"
+	| "state_derivation"
 	| "display_strings"
 	| "naming"
 	| "installed_schemas"
@@ -1047,6 +1048,7 @@ const REGISTRY_DESCRIPTORS: Record<AmendRegistry, RegistryDescriptor> = {
 	layers: { kind: "keyed-array", idField: "id" },
 	invariants: { kind: "keyed-array", idField: "id" },
 	status_buckets: { kind: "map" },
+	state_derivation: { kind: "map" },
 	display_strings: { kind: "map" },
 	naming: { kind: "map" },
 	installed_schemas: { kind: "string-array" },
@@ -1095,6 +1097,14 @@ export interface RegistryAdditions {
  * entry survives an `update`). A missing/undefined registry array on either
  * side is treated as `[]`. `status_buckets` (a map) is out of scope and never
  * touched.
+ *
+ * `state_derivation` (a singleton config object, not a keyed array) is handled
+ * explicitly AFTER the keyed-array loop and is NOT tracked in `RegistryAdditions`:
+ * a substrate that LACKS one inherits the catalog's WHOLE `state_derivation`
+ * object verbatim, while a substrate that ALREADY has one keeps it untouched —
+ * the object is merged whole-or-not-at-all, never body-merged (the same
+ * additive-only, never-clobber discipline the keyed arrays use, applied at the
+ * granularity of the singleton).
  */
 export function mergeCatalogRegistries(
 	existing: ConfigBlock,
@@ -1120,6 +1130,13 @@ export function mergeCatalogRegistries(
 			}
 		}
 		mc[reg] = out;
+	}
+	// `state_derivation` is a SINGLETON object, not a keyed array: merge it
+	// whole-or-not-at-all and do NOT record it in `additions` (the four
+	// keyed-array registries). Inherit the catalog's whole object only when the
+	// existing config lacks one; an existing object is preserved verbatim.
+	if (mc.state_derivation === undefined && cat.state_derivation !== undefined) {
+		mc.state_derivation = cat.state_derivation;
 	}
 	return { merged, additions };
 }

@@ -1,9 +1,9 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/config",
-	"version": "1.6.0",
+	"version": "1.7.0",
 	"title": "pi-context substrate config",
-	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, and lens specs.",
+	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, lens specs, and the state-derivation registry that drives currentState (focus / in-flight / next-actions / blocked / milestone-rollup).",
 	"type": "object",
 	"required": ["schema_version", "block_kinds"],
 	"additionalProperties": false,
@@ -65,6 +65,78 @@
 			"additionalProperties": {
 				"type": "string",
 				"enum": ["complete", "in_progress", "blocked", "todo", "unknown"]
+			}
+		},
+		"state_derivation": {
+			"type": "object",
+			"description": "Config-declared derivation registry for currentState — the kind/relation/rank/status/head-size couplings that previously lived as hardcoded literals in the deriver. A substrate without it reports 'state-derivation not configured'.",
+			"additionalProperties": false,
+			"properties": {
+				"in_flight": {
+					"type": "object",
+					"description": "Which block kinds at which status bucket count as in-flight (drives inFlight + focus). Stock: kinds ['tasks'], bucket 'in_progress'.",
+					"additionalProperties": false,
+					"required": ["kinds", "bucket"],
+					"properties": {
+						"kinds": { "type": "array", "items": { "type": "string" } },
+						"bucket": { "type": "string" }
+					}
+				},
+				"focus_fallback": {
+					"type": "object",
+					"description": "Focus fallback when nothing is in-flight: an item of `kind` at status `bucket`. Stock: kind 'phase', bucket 'in_progress'.",
+					"additionalProperties": false,
+					"required": ["kind", "bucket"],
+					"properties": {
+						"kind": { "type": "string" },
+						"bucket": { "type": "string" }
+					}
+				},
+				"next_ranked": {
+					"type": "array",
+					"description": "Ordered cross-kind push order for nextActions. Each entry selects items of `kind` at `bucket`, labels them `label`; optional `rank_field` + `rank_order` rank within the entry (absent → topo over the dep/gate graph). Stock: framework-gaps (priority-ranked) then tasks (topo).",
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["kind", "label", "bucket"],
+						"properties": {
+							"kind": { "type": "string" },
+							"label": { "type": "string" },
+							"bucket": { "type": "string" },
+							"rank_field": { "type": "string" },
+							"rank_order": { "type": "array", "items": { "type": "string" } }
+						}
+					}
+				},
+				"blocked_by": {
+					"type": "object",
+					"description": "The relation_types whose edges contribute blockers. Stock: ['task_depends_on_task', 'task_gated_by_item'].",
+					"additionalProperties": false,
+					"required": ["relation_types"],
+					"properties": {
+						"relation_types": { "type": "array", "items": { "type": "string" } }
+					}
+				},
+				"rollups": {
+					"type": "array",
+					"description": "Membership rollups (milestones). Each: items of `kind` whose members are parents of `membership_relation` edges; reached → `complete_status` when all members complete, else `incomplete_status`. Stock: milestone over phase_positioned_in_milestone, reached/planned.",
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["kind", "membership_relation", "complete_status", "incomplete_status"],
+						"properties": {
+							"kind": { "type": "string" },
+							"membership_relation": { "type": "string" },
+							"complete_status": { "type": "string" },
+							"incomplete_status": { "type": "string" }
+						}
+					}
+				},
+				"head_size": {
+					"type": "integer",
+					"minimum": 0,
+					"description": "Truncation cap for the nextActions head. Stock: 15."
+				}
 			}
 		},
 		"display_strings": {

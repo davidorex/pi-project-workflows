@@ -52,6 +52,18 @@ export interface ConfigBlock {
 	layers?: LayerDecl[];
 	block_kinds: BlockKindDecl[];
 	status_buckets?: Record<string, StatusBucket>;
+	/**
+	 * Config-declared derivation registry consumed by `currentState` (TASK-020 /
+	 * FGAP-017 / FEAT-004). Replaces the previously-hardcoded kind / relation /
+	 * rank / status / head-size couplings in the deriver with config reads,
+	 * mirroring how `status_buckets` makes the status vocabulary config-driven.
+	 * Optional on the type so pre-TASK-020 configs (and substrates that simply
+	 * have not adopted it) remain valid; `currentState` reports a truthful
+	 * "state-derivation not configured" signal when it is absent. The packaged
+	 * conception ships the stock object (kinds tasks/phase/framework-gaps/
+	 * milestone, the two blocking relations, the P0..P3 gap rank, head 15).
+	 */
+	state_derivation?: StateDerivationConfig;
 	display_strings?: Record<string, string>;
 	relation_types?: RelationTypeDecl[];
 	hierarchy?: HierarchyDecl[];
@@ -80,6 +92,76 @@ export interface ConfigBlock {
 	};
 	tool_operations?: ToolOperationDecl[];
 	tool_operations_forbidden?: string[];
+}
+
+/**
+ * Config-declared `currentState` derivation registry (TASK-020 / FGAP-017 /
+ * FEAT-004). A SINGLETON config object modeled as a `map`-kind registry: its six
+ * top-level keys ARE the map entries (so `amend-config --registry
+ * state_derivation` writes per-key through the existing map path), while
+ * `currentState` reads the whole object as one singleton. Every field replaces a
+ * literal previously hardcoded in the deriver — there is no source-level default
+ * (an absent registry yields the "state-derivation not configured" signal).
+ */
+export interface StateDerivationConfig {
+	/**
+	 * In-flight selection: an item is in-flight when its block kind is in `kinds`
+	 * AND its status buckets to `bucket`. Drives `inFlight` + the primary `focus`.
+	 * Stock: `{ kinds: ["tasks"], bucket: "in_progress" }`.
+	 */
+	in_flight: { kinds: string[]; bucket: string };
+	/**
+	 * Focus fallback when nothing is in-flight: the first item of block kind `kind`
+	 * whose status buckets to `bucket`. Stock: `{ kind: "phase", bucket:
+	 * "in_progress" }`.
+	 */
+	focus_fallback: { kind: string; bucket: string };
+	/**
+	 * Ordered cross-kind push order for `nextActions` (array order IS the emit
+	 * order). Stock: framework-gaps (priority-ranked) then tasks (topo-ordered).
+	 */
+	next_ranked: NextRankedEntry[];
+	/**
+	 * The relation_types whose edges contribute blockers (drives `blocked` +
+	 * gating of ready tasks). Stock: `{ relation_types: ["task_depends_on_task",
+	 * "task_gated_by_item"] }`.
+	 */
+	blocked_by: { relation_types: string[] };
+	/**
+	 * Membership rollups (milestones). Stock: a single rollup over `milestone`
+	 * items via `phase_positioned_in_milestone`, reached→`reached` / else
+	 * `planned`.
+	 */
+	rollups: RollupDecl[];
+	/** Truncation cap for the `nextActions` head. Stock: `15`. */
+	head_size: number;
+}
+
+/**
+ * One entry in `state_derivation.next_ranked`. Selects items of `kind` at status
+ * `bucket`, emitted under `label`. With `rank_field` set, items rank by their
+ * position in `rank_order` (value not listed sorts last) then by id; absent →
+ * topo-ordered over the blocking-relation graph (the stock tasks entry).
+ */
+export interface NextRankedEntry {
+	kind: string;
+	label: string;
+	bucket: string;
+	rank_field?: string;
+	rank_order?: string[];
+}
+
+/**
+ * One entry in `state_derivation.rollups`. Members of a rollup item are the
+ * PARENTS of `membership_relation` edges whose CHILD is the rollup item; the
+ * rollup reports `complete_status` when ≥1 member exists and all members bucket
+ * complete, else `incomplete_status`.
+ */
+export interface RollupDecl {
+	kind: string;
+	membership_relation: string;
+	complete_status: string;
+	incomplete_status: string;
 }
 
 /**

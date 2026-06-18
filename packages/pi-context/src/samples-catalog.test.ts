@@ -45,9 +45,9 @@ describe("samplesCatalog", () => {
 		}
 	});
 
-	it("exposes the full top-level registries (35 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
+	it("exposes the full top-level registries (37 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
 		const c = samplesCatalog();
-		assert.strictEqual(c.relationTypes.length, 35);
+		assert.strictEqual(c.relationTypes.length, 37);
 		assert.ok(Array.isArray(c.lenses));
 		assert.ok(Array.isArray(c.invariants));
 		assert.ok(Array.isArray(c.layers));

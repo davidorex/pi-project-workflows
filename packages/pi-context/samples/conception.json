@@ -196,6 +196,20 @@
       "target_kinds": ["issues"]
     },
     {
+      "canonical_id": "task_addresses_issue",
+      "display_name": "addresses issue",
+      "category": "data_flow",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["issues"]
+    },
+    {
+      "canonical_id": "issue_relates_to_issue",
+      "display_name": "relates to issue",
+      "category": "data_flow",
+      "source_kinds": ["issues"],
+      "target_kinds": ["issues"]
+    },
+    {
       "canonical_id": "feature_depends_on_item",
       "display_name": "depends on item",
       "category": "ordering",
@@ -411,6 +425,29 @@
         "closed",
         "wontfix"
       ]
+    },
+    {
+      "id": "issues-by-status",
+      "kind": "target",
+      "target": "issues",
+      "derived_from_field": "status",
+      "bins": [
+        "open",
+        "resolved",
+        "deferred"
+      ]
+    },
+    {
+      "id": "issues-by-priority",
+      "kind": "target",
+      "target": "issues",
+      "derived_from_field": "priority",
+      "bins": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ]
     }
   ],
   "layers": [],
@@ -439,6 +476,19 @@
           "P3"
         ],
         "reason_template": "open gap (priority {rank_value})"
+      },
+      {
+        "kind": "issues",
+        "label": "issue",
+        "bucket": "todo",
+        "rank_field": "priority",
+        "rank_order": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
+        "reason_template": "open issue (priority {rank_value})"
       },
       {
         "kind": "tasks",
@@ -541,6 +591,19 @@
       "require_target_bucket": "complete",
       "severity": "warning",
       "message": "Completed task '{id}' addresses a gap that is not closed"
+    },
+    {
+      "id": "task-completed-issue-resolved",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_issue"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses an issue that is not resolved"
     },
     {
       "id": "task-completed-feature-complete",

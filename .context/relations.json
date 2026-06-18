@@ -6431,5 +6431,18 @@
       "refname": "FGAP-094"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "3045be571ddb51cb25782d95ec0b4fe6",
+      "refname": "FGAP-098"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
+      "refname": "FGAP-094"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

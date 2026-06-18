@@ -3087,6 +3087,32 @@
       "id": "FGAP-096",
       "oid": "ca82f3434231e4586e837a4d4feb5004",
       "content_hash": "6aefd66203156bb15200c6460f40a35606465610f803aba38336a7a84dd14839"
+    },
+    {
+      "title": "No additive / expand-contract discipline for config-schema changes",
+      "status": "identified",
+      "package": "pi-context",
+      "description": "Nothing prevents or flags a breaking (non-additive) config-schema shape change — a key removal/rename, or a new required field — before it ships. The config schema root is additionalProperties:false, so the moment a key is removed/renamed the existing config carries a now-unknown property and fails validation; a new required field strands a config that lacks it. This is an authoring/build-time gap, distinct from the runtime gaps FGAP-095 (no load-time migration) and FGAP-096 (no recovery path): even with migration and recovery in place, the absence of an additive discipline means every breaking change requires a migration rather than avoiding the break, and no gate catches a breaking config-schema diff before release. Distinct from FGAP-094, which is vocabulary/catalog-superset-config drift, not breaking-key discipline.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/schemas/config.schema.json",
+          "lines": "8-9",
+          "reference": "root required:[\"schema_version\",\"block_kinds\"] + additionalProperties:false — a removed/renamed key or a new required field invalidates an existing config on the next load"
+        },
+        {
+          "file": "packages/pi-context/schemas/config.schema.json",
+          "lines": "whole-file",
+          "reference": "no breaking-diff gate exists on config-schema edits: nothing in the build/release path compares an old->new config.schema.json shape and flags a non-additive change"
+        }
+      ],
+      "impact": "A breaking config-schema change can ship unflagged; combined with FGAP-095/096 it bricks the live substrate (the incident this set documents). An additive/expand-contract discipline would make most config bumps non-bricking by construction, independent of migration code — the cheapest structural mitigation of the brick class.",
+      "canonical_vocabulary": "expand-contract / parallel change (additive, backward-compatible schema evolution)",
+      "proposed_resolution": "Adopt an additive/expand-contract discipline for config-schema evolution — new fields land optional; existing fields are not removed/renamed until a later contract release — enforced by a build-time breaking-diff gate on config.schema.json that flags a non-additive change absent a paired migration. Pairs with FGAP-095 (load-time migration) and FGAP-096 (recovery path); build-time-gate family with FGAP-094.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "FGAP-097",
+      "oid": "c515c2449f95a83c0fd2bbf477e60830",
+      "content_hash": "60e843356eeadd515553a41eb5cbdb997390e6fa0d1ddc1db0dfcef6183ae720"
     }
   ]
 }

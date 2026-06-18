@@ -90,6 +90,10 @@
             "type": "string",
             "description": "Commit message or reference if resolved"
           },
+          "resolved_at": {
+            "type": "string",
+            "description": "ISO-8601 timestamp when the issue was resolved"
+          },
           "oid": {
             "type": "string",
             "pattern": "^[0-9a-f]{32}$",
@@ -108,5 +112,25 @@
         }
       }
     }
+  },
+  "x-lifecycle": {
+    "field": "status",
+    "states": [
+      "open",
+      "resolved",
+      "deferred"
+    ],
+    "transitions": [
+      {
+        "from": "open",
+        "to": "resolved",
+        "required_authority": "any"
+      },
+      {
+        "from": "open",
+        "to": "deferred",
+        "required_authority": "user"
+      }
+    ]
   }
 }

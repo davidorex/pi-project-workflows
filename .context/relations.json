@@ -6470,5 +6470,18 @@
       "refname": "docs-surface-sync"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1f84b7e0e7fe232c0838dd01a6492765",
+      "refname": "FGAP-046"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b9c214a91ec020a4f2461fc9bd23091e",
+      "refname": "issue-005"
+    },
+    "relation_type": "gap_relates_to_issue"
   }
 ]

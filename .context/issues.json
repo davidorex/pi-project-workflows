@@ -41,6 +41,19 @@
       "id": "issue-003",
       "oid": "112cebdeb44629475e8e58999a9905e8",
       "content_hash": "f1cc163943ec7bbba31fb9d224477c360003c66fcdfb84729ca8a8abe82c7172"
+    },
+    {
+      "title": "npm link couples the operator pi-context binary to the dev dist/ — a dev build mutates/bricks the live binary",
+      "body": "The global pi-context is an npm link symlink to packages/pi-context-cli/dist/bin.js; the package build is `rm -rf dist && tsc -p tsconfig.build.json && chmod +x dist/bin.js`. So npm run build repoints — and transiently (rm -rf) removes — the live-resolving operator binary: the dogfooding/operator binary IS the dev build target, with no separate installed copy. Incident: the TASK-020 config-schema bump rebuilt the linked binary to a new schema while live .context/config.json was still the old shape, so every config-loading op exit-5 bricked until the change was reverted. This is the binary-identity root coupling of that incident, distinct from the validation/migration side (FGAP-095 no load-time config migration / FGAP-096 validate-before-repair deadlock / FGAP-097 no additive discipline) and from FGAP-089 (PreToolUse hook scope). Structural fix (analysis/2026-06-18-proving-ground-prior-art-research.md): make the operator binary a COPY via npm pack + npm i -g <tarball> (or a custom prefix), refreshed by an explicit publish-free local promote step — symlink-free, so a routine dev build cannot touch it; npm link also does not validate packaging (files/exports/bin), so a packed-copy additionally catches packaging drift. Verified mechanics + derivation in analysis/2026-06-18-proving-ground-prior-art-research.md and analysis/2026-06-18-isolated-proving-ground-method.md.",
+      "location": "packages/pi-context-cli/package.json:31",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-context-cli",
+      "source": "human",
+      "id": "issue-004",
+      "oid": "0b63971e2c1396b97c644cbe71521979",
+      "content_hash": "dddd78d9254eb3cbd215d8703032b7873690c3a5646df32405a19626604d710d"
     }
   ]
 }

@@ -1301,6 +1301,31 @@
       "id": "TASK-067",
       "oid": "0839a88df621b05a05f673f7fc3f5f7c",
       "content_hash": "329214c5142297974efe6d087eed3f331885ef0881dcc33a0aa6f92ee2cbe1a5"
+    },
+    {
+      "status": "planned",
+      "description": "Make issues a gap-sibling first-class open-work kind: a task addresses an issue as it addresses a framework-gap; an open issue ranks and focuses in currentState as an open gap does; a completed task addressing an unresolved issue is invariant-flagged. Add the parity vocabulary in live .context config and the packaged catalog, plus two additive issue-schema fields. The deriver and lens-view are kind-general — change no deriver code. Preserve the divergences in criterion 7. Prerequisite for addressing issue-004 by a task.",
+      "acceptance_criteria": [
+        "relation_types task_addresses_issue (source tasks, target issues, data_flow) and issue_relates_to_issue (source/target issues, data_flow) registered in live config and samples/conception.json. A task_addresses_issue edge writes and passes context-validate-relations. A fresh accept-all substrate accepts the same edge.",
+        "Invariant task-completed-issue-resolved (severity warning) registered in live config and catalog. context-validate raises it for a completed task that task_addresses_issue an issue with status != resolved; silent when resolved.",
+        "state_derivation.next_ranked has an issues entry: kind issues, label issue, bucket todo, rank_field priority, rank_order [critical, high, medium, low], reason_template — in live config and catalog. currentState ranks an open issue in nextActions, ordered as an open gap. No deriver code change.",
+        "schemas/issues.schema.json gains additive optional resolved_at and an x-lifecycle block, in the live schema and catalog. Existing issue items validate unchanged.",
+        "Lenses issues-by-status and issues-by-priority registered in live config and catalog; bins project correctly.",
+        "A fresh init -> accept-all -> install substrate carries every new relation_type, invariant, lens, and schema field. No live-only vocabulary.",
+        "Unchanged: issues status labels (open/resolved/deferred), priority scale (low..critical), category facet, and the escalation-sink asymmetry (no decision_raises_issue or issue->missing-convention analogs).",
+        "build, check, test: 0 failures. Cross-substrate runtime demo on live .context and a fresh catalog substrate: a task addresses an issue; an open issue ranks and focuses in currentState as a gap; completing the task resolves the issue and the invariant is satisfied. Fresh adversarial probe: no live-only vocabulary, no deriver code change, additive-only schema, divergences intact."
+      ],
+      "files": [
+        ".context/config.json",
+        "packages/pi-context/schemas/issues.schema.json",
+        "packages/pi-context/samples/conception.json"
+      ],
+      "notes": "Addresses FGAP-098. Prerequisite for addressing issue-004 by a task. Catalog back-port interacts with FGAP-094, TASK-066, TASK-067.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "TASK-068",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "content_hash": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
     }
   ]
 }

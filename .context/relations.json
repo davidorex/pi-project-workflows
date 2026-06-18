@@ -6444,5 +6444,31 @@
       "refname": "FGAP-094"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "refname": "TASK-068"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3045be571ddb51cb25782d95ec0b4fe6",
+      "refname": "FGAP-098"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "refname": "TASK-068"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

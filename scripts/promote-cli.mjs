@@ -22,24 +22,29 @@
  * 1. Resolve a TARGET PREFIX (default = the real global npm prefix; overridable
  *    via `--prefix <dir>` or `PROMOTE_PREFIX=<dir>` so the promote can be tested
  *    against a throwaway dir without touching the real global binary). The
- *    real-global resolution is NON-POISONABLE: if an `npm_config_prefix` is
- *    inherited in the environment it is REFUSED as the real global (the caller
- *    must pass an explicit `--prefix`/`PROMOTE_PREFIX` for an intended target),
- *    and the `npm prefix -g` probe runs with all `npm_config_*` env scrubbed so
- *    the resolved prefix reflects the true global, not an inherited override.
- *    The resolved target is then VALIDATED (absolute; not the repo root or under
- *    it; for the real-global arm, an existing dir with lib/node_modules) BEFORE
- *    any destructive op runs — no `npm rm -g` / `npm i -g` is reachable until
- *    the target passes validation.
+ *    real-global resolution is NON-POISONABLE: an inherited `npm_config_prefix`
+ *    in ANY letter-case (npm honors case variants) is REFUSED as the real global
+ *    (the caller must pass an explicit `--prefix`/`PROMOTE_PREFIX` for an
+ *    intended target), and the `npm prefix -g` probe runs with all `npm_config_*`
+ *    env scrubbed so the resolved prefix reflects the true global, not an
+ *    inherited override. The resolved target is then VALIDATED (absolute; its
+ *    REALPATH — nearest-existing-ancestor-resolved, so a symlink into the repo is
+ *    caught even before the target dir exists — neither the realpath of the repo
+ *    root nor under it; for the real-global arm, an existing dir with
+ *    lib/node_modules) BEFORE any destructive op runs — `npm i -g` is not
+ *    reachable until the target passes validation.
  * 2. Build the working tree (`npm run build`) so each packed `dist/` is current
  *    — `npm pack` does NOT build (only a publish fires `prepublishOnly`).
  * 3. Pack the @davidorex workspace set into a temp dir (one tarball per package).
- * 4. In ONE `npm i -g --prefix <prefix> <tarball...> --force`, install the whole
- *    packed set co-installed, so each package's `@davidorex/*@^0.31.0` deps
- *    resolve to the CO-INSTALLED packed siblings (not the registry). External
- *    deps (typebox etc.) come from the registry. When the target is the real
- *    global prefix, first `npm rm -g @davidorex/pi-context-cli` to retire any
- *    existing link.
+ * 4. In ONE `npm i -g --prefix <prefix> <tarball...> --force`, run under an env
+ *    with every `npm_config_*` scrubbed (so no ambient override can redirect the
+ *    install; the explicit `--prefix` takes precedence), install the whole packed
+ *    set co-installed, so each package's `@davidorex/*@^0.31.0` deps resolve to
+ *    the CO-INSTALLED packed siblings (not the registry). External deps (typebox
+ *    etc.) come from the registry. `--force` over an existing npm-link cleanly
+ *    replaces it with a copied directory, so no separate `npm rm -g` precedes it
+ *    (removing the only unpinned destructive op and the remove-then-install
+ *    window in which a failed install could leave the operator uninstalled).
  * 5. Verify + log: the installed `<prefix>/bin/pi-context` (npm's standard shim
  *    symlink) has a realpath resolving UNDER the prefix and NOT into this repo,
  *    and report the resolved prefix + what it did.
@@ -52,6 +57,10 @@ import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+// Realpath of the repo root (REPO_ROOT always exists) so containment checks
+// compare resolved paths, not literal strings — a symlink whose realpath is
+// inside the repo cannot slip past a literal-string comparison.
+const REPO_ROOT_REAL = realpathSync(REPO_ROOT);
 
 // The @davidorex workspace set, enumerated from packages/* (each dir whose
 // package.json is an @davidorex package). Lockstep-versioned; co-installed so
@@ -137,9 +146,13 @@ function resolveTargetPrefix() {
 	// it would steer `npm prefix -g` to an arbitrary (possibly hostile) override
 	// while still being labelled the real global. The caller must name an
 	// intended override target explicitly (--prefix / PROMOTE_PREFIX).
-	if (process.env.npm_config_prefix) {
+	// npm honors npm_config_prefix in any letter-case (NPM_CONFIG_PREFIX,
+	// npm_config_prefix, etc.), so scan for any key whose lowercase matches
+	// rather than checking the lowercase-exact name only.
+	const inheritedPrefixKey = Object.keys(process.env).find((k) => k.toLowerCase() === "npm_config_prefix");
+	if (inheritedPrefixKey) {
 		console.error(
-			`Error: the global npm prefix is being driven by an inherited npm_config_prefix=${process.env.npm_config_prefix}.`,
+			`Error: the global npm prefix is being driven by an inherited ${inheritedPrefixKey}=${process.env[inheritedPrefixKey]}.`,
 		);
 		console.error("Refusing to treat that inherited override as the real global prefix.");
 		console.error("For an intended target, pass --prefix <dir> or PROMOTE_PREFIX=<dir> explicitly.");
@@ -156,16 +169,41 @@ function resolveTargetPrefix() {
 }
 
 /**
+ * Realpath of the nearest existing ancestor of `p`, with the non-existent leaf
+ * segments re-appended. If `p` exists, returns its realpath directly. Otherwise
+ * walks up via dirname until realpathSync succeeds, then re-joins the segments
+ * that did not exist. If the filesystem root is reached without success, returns
+ * `p` unchanged. This lets containment checks resolve symlinks even for a target
+ * that npm has not yet created (e.g. a throwaway PROMOTE_PREFIX).
+ */
+function nearestExistingRealpath(p) {
+	const trailing = [];
+	let cur = p;
+	for (;;) {
+		try {
+			const real = realpathSync(cur);
+			return trailing.length === 0 ? real : join(real, ...trailing);
+		} catch {
+			const parent = dirname(cur);
+			if (parent === cur) return p; // reached filesystem root, none existed
+			trailing.unshift(cur.slice(parent.length + sep.length));
+			cur = parent;
+		}
+	}
+}
+
+/**
  * Refuse to proceed unless the resolved target prefix is safe to install into.
- * Called BEFORE any build/pack and BEFORE the destructive `npm rm -g` /
- * `npm i -g` so neither is reachable until the target passes. All arms require
- * an absolute path that is neither the repo root nor under it (path.sep-guarded
- * so a sibling dir sharing the repo-root prefix string does not match). The
- * real-global arm additionally requires the prefix to be an existing directory
- * whose lib/node_modules exists — a real global install root. Override arms
- * (--prefix / PROMOTE_PREFIX) deliberately do NOT require existence, so an
- * intended throwaway target (e.g. PROMOTE_PREFIX=/tmp/fresh) npm will create
- * still passes.
+ * Called BEFORE any build/pack and BEFORE the destructive `npm i -g` so it is
+ * not reachable until the target passes. All arms require an absolute path whose
+ * REALPATH (nearest-existing-ancestor-resolved, so a symlink-into-repo is caught
+ * even before the target is created) is neither the realpath of the repo root
+ * nor under it (path.sep-guarded so a sibling dir sharing the repo-root prefix
+ * string does not match). The real-global arm additionally requires the prefix
+ * to be an existing directory whose lib/node_modules exists — a real global
+ * install root. Override arms (--prefix / PROMOTE_PREFIX) deliberately do NOT
+ * require existence, so an intended throwaway target (e.g. PROMOTE_PREFIX=
+ * /tmp/fresh) npm will create still passes.
  */
 function assertSafeTargetPrefix(p, { isRealGlobal }) {
 	const refuse = (reason) => {
@@ -173,8 +211,9 @@ function assertSafeTargetPrefix(p, { isRealGlobal }) {
 		process.exit(1);
 	};
 	if (!isAbsolute(p)) refuse("not an absolute path.");
-	if (p === REPO_ROOT) refuse("equals this repo's root.");
-	if (p.startsWith(REPO_ROOT + sep)) refuse("is under this repo's root.");
+	const resolved = nearestExistingRealpath(p);
+	if (resolved === REPO_ROOT_REAL) refuse("resolves to this repo's root.");
+	if (resolved.startsWith(REPO_ROOT_REAL + sep)) refuse("resolves under this repo's root.");
 	if (isRealGlobal) {
 		let dirOk = false;
 		try {
@@ -223,18 +262,16 @@ if (tarballs.length === 0) {
 }
 console.log(`  ${tarballs.length} tarball(s) packed.\n`);
 
-// 4. Retire any existing link (real-global target only), then co-install the
-//    whole packed set in one install so inter-package @davidorex deps resolve
-//    to the co-installed packed siblings rather than the registry.
-if (isRealGlobal) {
-	console.log("Retiring any existing global @davidorex/pi-context-cli (link or prior copy)...");
-	run("npm rm -g @davidorex/pi-context-cli", { ignoreError: true });
-	console.log();
-}
-
+// 4. Co-install the whole packed set in one install so inter-package @davidorex
+//    deps resolve to the co-installed packed siblings rather than the registry.
+//    No separate `npm rm -g`: `npm i -g --force` over an existing npm-link
+//    cleanly replaces it with a real copied directory, so the removal is
+//    redundant. The install runs under cleanNpmEnv() so no ambient npm_config_*
+//    can redirect it; the explicit --prefix takes precedence over the scrubbed
+//    environment.
 const quotedTarballs = tarballs.map((t) => `"${t}"`).join(" ");
 console.log("Installing the packed set into the target prefix (single co-install)...");
-run(`npm i -g --prefix "${prefix}" ${quotedTarballs} --force`);
+run(`npm i -g --prefix "${prefix}" ${quotedTarballs} --force`, { env: cleanNpmEnv() });
 console.log();
 
 // 5. Verify: the installed bin's realpath resolves UNDER the prefix and NOT into this repo.

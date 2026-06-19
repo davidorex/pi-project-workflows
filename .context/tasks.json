@@ -1327,6 +1327,33 @@
       "oid": "df2330cca310ed86af56062af0e17c1c",
       "content_hash": "fa656149af7cf77c2b5a1061a3c8cf5b1939bd1692ce298d3dddc130fa35f86b",
       "content_parent": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
+    },
+    {
+      "status": "planned",
+      "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
+      "acceptance_criteria": [
+        "/opt/homebrew/bin/pi-context is a regular-file copy, not a symlink into the repo; npm ls -g --link does not list @davidorex/pi-context-cli as linked to packages/pi-context-cli.",
+        "A repo npm run build (rm -rf dist && tsc … && chmod +x dist/bin.js, packages/pi-context-cli/package.json:31) leaves the operator binary's inode and hash unchanged and pi-context --version still runs.",
+        "With packages/pi-context-cli/dist/ deleted, pi-context --help exits 0.",
+        "With the repo workspace absent or moved, pi-context context-status --cwd <dir> runs and reflects working-tree behavior — the operator carries the working-tree @davidorex/pi-context (and @davidorex/pi-project-workflows for pi-context pi-bound), not the stale registry version.",
+        "A promote:cli root npm-task installs the operator copy publish-free (pack + global install, never npm link); scripts/promote-cli.mjs contains no npm link; the task fronts a scripts/*.mjs choreographer matching the release:* / version:* convention.",
+        "The promote builds the working tree before packing, so the installed copy carries current source; a second promote replaces a same-version copy (verified by a changed operator-binary hash after a source edit + re-promote).",
+        "npm pack of packages/pi-context-cli ships the runnable shape (dist/bin.js; bin.pi-context -> ./dist/bin.js); the installed tarball yields a working pi-context.",
+        "docs-surface-sync: a repo-wide audit finds no doc instructing npm link for the operator binary; packages/pi-context-cli/README.md:10 and root README.md:22,42 state the copy install. Audit only — edit only what the change makes stale."
+      ],
+      "files": [
+        "package.json",
+        "scripts/promote-cli.mjs",
+        "packages/pi-context-cli/package.json",
+        "packages/pi-context-cli/README.md",
+        "README.md"
+      ],
+      "notes": "Addresses issue-004. Scope: the binary coupling only.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "TASK-069",
+      "oid": "ff628bd9b604a36ace94cb5051df5fa8",
+      "content_hash": "b4fed610f7b59ac7b6d725557691f272fbddf439558890e2218eed0317d23fe1"
     }
   ]
 }

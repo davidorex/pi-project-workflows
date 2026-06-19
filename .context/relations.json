@@ -6509,5 +6509,31 @@
       "refname": "issue-005"
     },
     "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ff628bd9b604a36ace94cb5051df5fa8",
+      "refname": "TASK-069"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0b63971e2c1396b97c644cbe71521979",
+      "refname": "issue-004"
+    },
+    "relation_type": "task_addresses_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ff628bd9b604a36ace94cb5051df5fa8",
+      "refname": "TASK-069"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "refname": "docs-surface-sync"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

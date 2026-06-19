@@ -21,7 +21,16 @@
  * What it does:
  * 1. Resolve a TARGET PREFIX (default = the real global npm prefix; overridable
  *    via `--prefix <dir>` or `PROMOTE_PREFIX=<dir>` so the promote can be tested
- *    against a throwaway dir without touching the real global binary).
+ *    against a throwaway dir without touching the real global binary). The
+ *    real-global resolution is NON-POISONABLE: if an `npm_config_prefix` is
+ *    inherited in the environment it is REFUSED as the real global (the caller
+ *    must pass an explicit `--prefix`/`PROMOTE_PREFIX` for an intended target),
+ *    and the `npm prefix -g` probe runs with all `npm_config_*` env scrubbed so
+ *    the resolved prefix reflects the true global, not an inherited override.
+ *    The resolved target is then VALIDATED (absolute; not the repo root or under
+ *    it; for the real-global arm, an existing dir with lib/node_modules) BEFORE
+ *    any destructive op runs — no `npm rm -g` / `npm i -g` is reachable until
+ *    the target passes validation.
  * 2. Build the working tree (`npm run build`) so each packed `dist/` is current
  *    — `npm pack` does NOT build (only a publish fires `prepublishOnly`).
  * 3. Pack the @davidorex workspace set into a temp dir (one tarball per package).
@@ -37,9 +46,9 @@
  */
 
 import { execSync } from "node:child_process";
-import { lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -86,9 +95,29 @@ function run(cmd, options = {}) {
 }
 
 /**
+ * A shallow copy of the current environment with every `npm_config_*` key
+ * removed (case-insensitive). Used to probe the TRUE global npm prefix: with
+ * an inherited `npm_config_prefix` present, `npm prefix -g` returns that
+ * (poisoned) override; with all `npm_config_*` scrubbed it returns the true
+ * global (e.g. /opt/homebrew). Returns a plain object suitable as `execSync`'s
+ * `env`.
+ */
+function cleanNpmEnv() {
+	const out = {};
+	for (const [k, v] of Object.entries(process.env)) {
+		if (/^npm_config_/i.test(k)) continue;
+		out[k] = v;
+	}
+	return out;
+}
+
+/**
  * Resolve the target prefix: `--prefix <dir>` arg wins, then `PROMOTE_PREFIX`
  * env, else the real global npm prefix. The override path is what lets the
  * promote be exercised against a throwaway dir without touching the real binary.
+ * The real-global arm is non-poisonable: an inherited `npm_config_prefix` is
+ * refused (the caller must name an intended target explicitly), and the probe
+ * runs with `npm_config_*` scrubbed so it reflects the true global.
  */
 function resolveTargetPrefix() {
 	const argv = process.argv.slice(2);
@@ -104,7 +133,21 @@ function resolveTargetPrefix() {
 	if (process.env.PROMOTE_PREFIX) {
 		return { prefix: resolve(process.env.PROMOTE_PREFIX), source: "PROMOTE_PREFIX" };
 	}
-	const real = run("npm prefix -g", { silent: true })?.trim();
+	// Real-global arm. Refuse an inherited npm_config_prefix as the real global:
+	// it would steer `npm prefix -g` to an arbitrary (possibly hostile) override
+	// while still being labelled the real global. The caller must name an
+	// intended override target explicitly (--prefix / PROMOTE_PREFIX).
+	if (process.env.npm_config_prefix) {
+		console.error(
+			`Error: the global npm prefix is being driven by an inherited npm_config_prefix=${process.env.npm_config_prefix}.`,
+		);
+		console.error("Refusing to treat that inherited override as the real global prefix.");
+		console.error("For an intended target, pass --prefix <dir> or PROMOTE_PREFIX=<dir> explicitly.");
+		process.exit(1);
+	}
+	// Scrub npm_config_* from the probe env so the resolved prefix reflects the
+	// TRUE global, never an inherited override.
+	const real = run("npm prefix -g", { silent: true, env: cleanNpmEnv() })?.trim();
 	if (!real) {
 		console.error("Error: could not resolve the global npm prefix (npm prefix -g).");
 		process.exit(1);
@@ -112,8 +155,43 @@ function resolveTargetPrefix() {
 	return { prefix: real, source: "npm prefix -g (real global)" };
 }
 
+/**
+ * Refuse to proceed unless the resolved target prefix is safe to install into.
+ * Called BEFORE any build/pack and BEFORE the destructive `npm rm -g` /
+ * `npm i -g` so neither is reachable until the target passes. All arms require
+ * an absolute path that is neither the repo root nor under it (path.sep-guarded
+ * so a sibling dir sharing the repo-root prefix string does not match). The
+ * real-global arm additionally requires the prefix to be an existing directory
+ * whose lib/node_modules exists — a real global install root. Override arms
+ * (--prefix / PROMOTE_PREFIX) deliberately do NOT require existence, so an
+ * intended throwaway target (e.g. PROMOTE_PREFIX=/tmp/fresh) npm will create
+ * still passes.
+ */
+function assertSafeTargetPrefix(p, { isRealGlobal }) {
+	const refuse = (reason) => {
+		console.error(`Error: refusing to promote into target prefix ${p}: ${reason}`);
+		process.exit(1);
+	};
+	if (!isAbsolute(p)) refuse("not an absolute path.");
+	if (p === REPO_ROOT) refuse("equals this repo's root.");
+	if (p.startsWith(REPO_ROOT + sep)) refuse("is under this repo's root.");
+	if (isRealGlobal) {
+		let dirOk = false;
+		try {
+			dirOk = statSync(p).isDirectory();
+		} catch {
+			dirOk = false;
+		}
+		if (!dirOk) refuse("is not an existing directory (real-global target).");
+		if (!existsSync(join(p, "lib", "node_modules"))) {
+			refuse("has no lib/node_modules (not a real global install root).");
+		}
+	}
+}
+
 const { prefix, source } = resolveTargetPrefix();
 const isRealGlobal = source === "npm prefix -g (real global)";
+assertSafeTargetPrefix(prefix, { isRealGlobal });
 
 console.log("\n=== Promote operator pi-context (publish-free local packed copy) ===\n");
 console.log(`Target prefix: ${prefix}`);

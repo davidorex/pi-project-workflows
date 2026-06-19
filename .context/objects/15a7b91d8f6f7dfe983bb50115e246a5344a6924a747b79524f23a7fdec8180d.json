@@ -1,0 +1,28 @@
+{
+  "status": "in-progress",
+  "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
+  "acceptance_criteria": [
+    "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+    "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+    "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+    "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+    "After a repo npm run build, pi-context --version exits 0.",
+    "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+    "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+    "No file under the repo instructs npm link for the operator binary.",
+    "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+    "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+    "Every global install or removal the promote performs acts only on the validated target prefix.",
+    "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+    "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+    "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context."
+  ],
+  "files": [
+    "package.json",
+    "scripts/promote-cli.mjs",
+    "packages/pi-context-cli/package.json",
+    "packages/pi-context-cli/README.md",
+    "README.md"
+  ],
+  "notes": "Addresses issue-004. Scope: the binary coupling only."
+}

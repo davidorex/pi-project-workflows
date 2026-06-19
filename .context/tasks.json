@@ -1344,7 +1344,8 @@
         "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
         "Every global install or removal the promote performs acts only on the validated target prefix.",
         "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
-        "A failed global install leaves the prior operator runnable and its installed payload unchanged."
+        "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+        "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context."
       ],
       "files": [
         "package.json",
@@ -1358,8 +1359,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "f2a318db59fa7154008c085d2d538b6c39ff157882d519a31e888df450dca76b",
-      "content_parent": "6d79f8936f59ec773419ee71fe2b2a534dcd1a82859dc1ce5a42d30730fe50b3"
+      "content_hash": "15a7b91d8f6f7dfe983bb50115e246a5344a6924a747b79524f23a7fdec8180d",
+      "content_parent": "f2a318db59fa7154008c085d2d538b6c39ff157882d519a31e888df450dca76b"
     }
   ]
 }

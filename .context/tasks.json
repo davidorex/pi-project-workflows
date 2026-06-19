@@ -1329,7 +1329,7 @@
       "content_parent": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
     },
     {
-      "status": "planned",
+      "status": "in-progress",
       "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
       "acceptance_criteria": [
         "/opt/homebrew/bin/pi-context is a regular-file copy, not a symlink into the repo; npm ls -g --link does not list @davidorex/pi-context-cli as linked to packages/pi-context-cli.",
@@ -1353,7 +1353,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "b4fed610f7b59ac7b6d725557691f272fbddf439558890e2218eed0317d23fe1"
+      "content_hash": "27138083c638b219c0f367ff7e1711fabfd473896f7aa5568555644614f1bcd9",
+      "content_parent": "b4fed610f7b59ac7b6d725557691f272fbddf439558890e2218eed0317d23fe1"
     }
   ]
 }

@@ -20,19 +20,23 @@
  *
  * What it does:
  * 1. Resolve a TARGET PREFIX (default = the real global npm prefix; overridable
- *    via `--prefix <dir>` or `PROMOTE_PREFIX=<dir>` so the promote can be tested
- *    against a throwaway dir without touching the real global binary). The
- *    real-global resolution is NON-POISONABLE: an inherited `npm_config_prefix`
- *    in ANY letter-case (npm honors case variants) is REFUSED as the real global
- *    (the caller must pass an explicit `--prefix`/`PROMOTE_PREFIX` for an
- *    intended target), and the `npm prefix -g` probe runs with all `npm_config_*`
- *    env scrubbed so the resolved prefix reflects the true global, not an
- *    inherited override. The resolved target is then VALIDATED (absolute; its
- *    REALPATH — nearest-existing-ancestor-resolved, so a symlink into the repo is
- *    caught even before the target dir exists — neither the realpath of the repo
- *    root nor under it; for the real-global arm, an existing dir with
- *    lib/node_modules) BEFORE any destructive op runs — `npm i -g` is not
- *    reachable until the target passes validation.
+ *    via `--prefix <dir>`, the glued `--prefix=<dir>` form, or `PROMOTE_PREFIX=
+ *    <dir>` so the promote can be tested against a throwaway dir without touching
+ *    the real global binary; both `--prefix` forms are honored, first occurrence
+ *    wins). The real-global resolution is NON-POISONABLE: an inherited
+ *    `npm_config_prefix` in ANY letter-case (npm honors case variants) is REFUSED
+ *    as the real global (the caller must pass an explicit `--prefix`/
+ *    `PROMOTE_PREFIX` for an intended target), and the `npm prefix -g` probe runs
+ *    with all `npm_config_*` env scrubbed so the resolved prefix reflects the
+ *    true global, not an inherited override. The resolved target is then
+ *    VALIDATED (absolute; its REALPATH — nearest-existing-ancestor-resolved, so a
+ *    symlink into the repo is caught even before the target dir exists — neither
+ *    the realpath of the repo root nor under it; for the real-global arm, an
+ *    existing dir with lib/node_modules, checked on the resolved realpath) BEFORE
+ *    any destructive op runs — `npm i -g` is not reachable until the target
+ *    passes validation. The validator RETURNS that resolved realpath, and the
+ *    install and verify both consume it (so the path validated is exactly the
+ *    path installed into — no second resolution downstream).
  * 2. Build the working tree (`npm run build`) so each packed `dist/` is current
  *    — `npm pack` does NOT build (only a publish fires `prepublishOnly`).
  * 3. Pack the @davidorex workspace set into a temp dir (one tarball per package).
@@ -46,8 +50,10 @@
  *    (removing the only unpinned destructive op and the remove-then-install
  *    window in which a failed install could leave the operator uninstalled).
  * 5. Verify + log: the installed `<prefix>/bin/pi-context` (npm's standard shim
- *    symlink) has a realpath resolving UNDER the prefix and NOT into this repo,
- *    and report the resolved prefix + what it did.
+ *    symlink) has a realpath resolving UNDER the prefix and NOT into this repo —
+ *    the post-install guard compares that realpath against the repo-root REALPATH
+ *    with a path.sep boundary (the same realpath-normalized form the validation
+ *    arm uses), and reports the resolved prefix + what it did.
  */
 
 import { execSync } from "node:child_process";
@@ -130,9 +136,15 @@ function cleanNpmEnv() {
  */
 function resolveTargetPrefix() {
 	const argv = process.argv.slice(2);
-	const flagIdx = argv.indexOf("--prefix");
+	// Honor BOTH the space form (`--prefix <dir>`) and the glued form
+	// (`--prefix=<dir>`): scan for the first token that is exactly `--prefix`
+	// (value = next argv token) or starts with `--prefix=` (value = the suffix).
+	// First occurrence wins for repeats. The glued form previously fell through
+	// to the real-global arm, which would silently install into the true global.
+	const flagIdx = argv.findIndex((tok) => tok === "--prefix" || tok.startsWith("--prefix="));
 	if (flagIdx !== -1) {
-		const val = argv[flagIdx + 1];
+		const tok = argv[flagIdx];
+		const val = tok.startsWith("--prefix=") ? tok.slice("--prefix=".length) : argv[flagIdx + 1];
 		if (!val) {
 			console.error("Error: --prefix requires a directory argument.");
 			process.exit(1);
@@ -215,25 +227,35 @@ function assertSafeTargetPrefix(p, { isRealGlobal }) {
 	if (resolved === REPO_ROOT_REAL) refuse("resolves to this repo's root.");
 	if (resolved.startsWith(REPO_ROOT_REAL + sep)) refuse("resolves under this repo's root.");
 	if (isRealGlobal) {
+		// Existence checks operate on the SAME resolved realpath that downstream
+		// consumers (install --prefix, binPath) will use, not the literal `p` —
+		// so a symlink component repointed in the build/pack window cannot redirect
+		// the install to a target that was never validated (the TOCTOU window).
 		let dirOk = false;
 		try {
-			dirOk = statSync(p).isDirectory();
+			dirOk = statSync(resolved).isDirectory();
 		} catch {
 			dirOk = false;
 		}
 		if (!dirOk) refuse("is not an existing directory (real-global target).");
-		if (!existsSync(join(p, "lib", "node_modules"))) {
+		if (!existsSync(join(resolved, "lib", "node_modules"))) {
 			refuse("has no lib/node_modules (not a real global install root).");
 		}
 	}
+	// Return the validated resolved realpath so the caller installs into exactly
+	// what was validated (one resolved representation, validated == used).
+	return resolved;
 }
 
 const { prefix, source } = resolveTargetPrefix();
 const isRealGlobal = source === "npm prefix -g (real global)";
-assertSafeTargetPrefix(prefix, { isRealGlobal });
+// `safePrefix` is the validated resolved realpath; every post-validation consumer
+// (install --prefix, binPath, the location logs) uses it, so the path that was
+// validated is exactly the path installed into — no second resolution downstream.
+const safePrefix = assertSafeTargetPrefix(prefix, { isRealGlobal });
 
 console.log("\n=== Promote operator pi-context (publish-free local packed copy) ===\n");
-console.log(`Target prefix: ${prefix}`);
+console.log(`Target prefix: ${safePrefix}`);
 console.log(`  (resolved via ${source})\n`);
 
 const packages = workspacePackages();
@@ -271,11 +293,11 @@ console.log(`  ${tarballs.length} tarball(s) packed.\n`);
 //    environment.
 const quotedTarballs = tarballs.map((t) => `"${t}"`).join(" ");
 console.log("Installing the packed set into the target prefix (single co-install)...");
-run(`npm i -g --prefix "${prefix}" ${quotedTarballs} --force`, { env: cleanNpmEnv() });
+run(`npm i -g --prefix "${safePrefix}" ${quotedTarballs} --force`, { env: cleanNpmEnv() });
 console.log();
 
 // 5. Verify: the installed bin's realpath resolves UNDER the prefix and NOT into this repo.
-const binPath = join(prefix, "bin", "pi-context");
+const binPath = join(safePrefix, "bin", "pi-context");
 console.log(`Verifying installed operator binary at ${binPath} ...`);
 let st;
 try {
@@ -289,7 +311,12 @@ if (st.isSymbolicLink()) {
 	// package tree under the prefix — acceptable — but it must NOT resolve back
 	// into THIS repo (that would be the retired npm-link arrangement).
 	const target = realpathSync(binPath);
-	if (target.startsWith(REPO_ROOT)) {
+	// Mirror validation's containment test: compare the realpath against the
+	// repo-root REALPATH with a path.sep boundary (REPO_ROOT_REAL + sep), not
+	// the literal REPO_ROOT via a bare startsWith — so a sibling dir sharing
+	// the repo-root prefix string does not match and a symlinked repo root is
+	// still caught (the guard now matches the validation arm's form).
+	if (target === REPO_ROOT_REAL || target.startsWith(REPO_ROOT_REAL + sep)) {
 		console.error(`Error: ${binPath} is a symlink resolving back into this repo (${target}).`);
 		console.error("That is the retired npm-link arrangement, not a packed copy. Aborting.");
 		process.exit(1);
@@ -301,7 +328,7 @@ if (st.isSymbolicLink()) {
 
 console.log(`\n=== Done ===`);
 console.log(`Installed @davidorex/pi-context-cli (+ ${packages.length - 1} sibling package(s)) as a packed`);
-console.log(`copy under ${prefix}. The operator pi-context now resolves the working-tree code from the`);
+console.log(`copy under ${safePrefix}. The operator pi-context now resolves the working-tree code from the`);
 console.log(`packed set; a repo rebuild (rm -rf dist && tsc) no longer affects the operator binary.`);
 if (!isRealGlobal) {
 	console.log(`\nTarget was an override prefix (${source}); the real global binary was NOT touched.`);

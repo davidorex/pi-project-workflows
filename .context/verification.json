@@ -1562,6 +1562,83 @@
       "id": "VER-052",
       "oid": "7a311b7bc27e7492b65c00343e3dfb2f",
       "content_hash": "dad7785803808e45587d8c78dcc6d3100d46a1e92671720815c2aed4c7fbc356"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "Iterate-2 fix (scripts/promote-cli.mjs, commit 57d331d) verified by runtime demonstration against throwaway /tmp, poisoned-env, and symlink prefixes, plus a fresh independent adversarial probe. The real-global (O1-O7) and docs (D1-D2) criteria were not exercised — the real-global promote is paused pending these residuals. Two findings beyond S1-S4: a glued --prefix=<dir> is not recognized by argv.indexOf('--prefix') (line ~133) and falls through to the real-global arm, silently targeting /opt/homebrew; and the post-install verify guard (~line 292) uses literal REPO_ROOT with startsWith and no +sep guard, inconsistent with the validation's REPO_ROOT_REAL + sep.",
+      "criteria_results": [
+        {
+          "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+          "status": "skipped",
+          "evidence": "real-global promote paused; analog observed on throwaway (/tmp/s2target/bin/pi-context -> ../lib/node_modules/...), not on /opt/homebrew."
+        },
+        {
+          "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "After a repo npm run build, pi-context --version exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "No file under the repo instructs npm link for the operator binary.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "npm_config_prefix=/tmp/x, NPM_CONFIG_PREFIX=/tmp/x, and Npm_Config_Prefix=/tmp/x each exited non-zero before any global op, naming the matched key (case-insensitive scan, resolveTargetPrefix ~line 146)."
+        },
+        {
+          "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+          "status": "failed",
+          "evidence": "TOCTOU: assertSafeTargetPrefix validates the nearest-existing-ancestor realpath (~line 233) but the install passes the literal unresolved prefix to npm --prefix (~line 274); a path-component symlink repointed during the build/pack window redirects the install to a target validation never approved. The decoy-env case (NPM_CONFIG_PREFIX=/tmp/decoy + --prefix /tmp/s2target) did install only into /tmp/s2target with /tmp/decoy never created, but the invariant is not held under the race."
+        },
+        {
+          "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "--prefix /Users/david/Projects/workflowsPiExtension/packages refused ('resolves under this repo's root'); --prefix /tmp/sym-into-repo (symlink -> repo packages) refused on its resolved path; both before any build/pack/install."
+        },
+        {
+          "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+          "status": "passed",
+          "evidence": "no npm rm -g remains (grep of full promote output = 0); a forced install over a seeded npm-link cleanly replaced it; a failed npm i -g (bogus tarball) left the prior install intact (probe-reproduced)."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-053",
+      "oid": "06363fd7b928135339a1c7d4ce988f39",
+      "content_hash": "8280ec3b2f92685aa9369b14a9ea5c7e50e89b8aebc336265eacf01e73d7d463"
     }
   ]
 }

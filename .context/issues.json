@@ -72,27 +72,31 @@
       "title": "promote-cli runs `npm rm -g` against a poisonable, unvalidated target prefix before any guard",
       "body": "scripts/promote-cli.mjs resolves the install target via `npm prefix -g` (resolveTargetPrefix, line 107), which echoes an inherited `npm_config_prefix` rather than the true global; an invocation that set `--prefix` (e.g. `npm --prefix <dir> run`) exports `npm_config_prefix` into the child, so the resolved target becomes that value. `isRealGlobal` (line 116) is derived from the source label alone, which survives the poisoning, so a poisoned prefix is classified as the real global. When `isRealGlobal` is true the script runs the destructive `npm rm -g @davidorex/pi-context-cli` (line 153) before installing and before any validation of the target. The only validation — the realpath `startsWith(REPO_ROOT)` check (line 177) — is post-install, too late to prevent the rm. Effect: a global removal runs against an unvalidated prefix. Reproducing condition: `npm --prefix <repo> run promote:cli` resolves the target to the repo root, classifies it `isRealGlobal` true, and installs under the repo (`bin/`, `lib/node_modules/`); the post-install guard then aborts (exit 1). The destructive `npm rm -g` is aimed at the same poisoned prefix, so it does not touch the real global in this path — but the rm still runs unguarded against an unvalidated target. Class: a destructive operation executed before its precondition is validated, compounded by trusting a poisonable ambient environment for a safety-critical target. Fix: resolve the real global from a source that does not honor an inherited `npm_config_prefix` (or refuse the implicit real-global arm when the prefix is inherited); hoist a pre-destruction validation before line 153 carrying the `REPO_ROOT` check plus an intended-global assertion, so no destructive op runs until the target is validated; retain the post-install guard as defense-in-depth. Post-condition: no destructive op executes against an unvalidated target.",
       "location": "scripts/promote-cli.mjs:153",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-context-cli",
       "source": "agent",
       "id": "issue-006",
       "oid": "2158379b05144b5ed8c9eb44fd67b295",
-      "content_hash": "c9c65f34ac8c19346d6c4d178b6ee5c98dc7bd69bfe6da36b1c553ea5b3f6b78"
+      "content_hash": "5644bc17d94093f26550f2d942b69e371f33581eb74e78c068545d0cb96523f4",
+      "resolved_by": "409a71d (iterate-5: removed the refuse-on-inherited block) atop 73ede54/57d331d/8d4bdc7/60613cc; verified VER-055 against the real global. issue-006's post-condition (no destructive op executes against an unvalidated target) is met: the sole destructive global op (npm i -g --force) is reachable only after assertSafeTargetPrefix returns the fully-resolved validated realpath; the separate npm rm -g was dropped (npm i -g --force replaces an existing link). The poisonable-target class is closed by the cleanNpmEnv() scrub on both the npm prefix -g probe and the install (an inherited npm_config_prefix=/tmp/POISON resolves the true global /opt/homebrew regardless), NOT by refusing inherited prefixes (that refusal, the F2 guard added in 57d331d, broke the documented npm run promote:cli path and was removed in 409a71d as a determinate defect).",
+      "content_parent": "c9c65f34ac8c19346d6c4d178b6ee5c98dc7bd69bfe6da36b1c553ea5b3f6b78"
     },
     {
       "title": "promote-cli validates the resolved realpath of the target prefix but passes the literal unresolved prefix to npm i -g --prefix",
       "body": "assertSafeTargetPrefix validates the target prefix by realpath of its nearest-existing ancestor against the repo-root realpath; the install passes the literal unresolved prefix to npm i -g --prefix. The validated representation and the acted-upon representation differ. A symlinked path component of prefix re-pointed in the window between the validate call and the npm install — a window that spans the build and pack steps — is resolved by npm at install time but was not present at validation, so the global install can land on a target the validation never approved, including inside the repo. Precondition: a concurrent writer to a component of the resolved path during the run. Class: validated-target diverges from acted-upon-target — a TOCTOU between a realpath-validated check and a literal-path use.",
       "location": "scripts/promote-cli.mjs:274",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-context-cli",
       "source": "agent",
       "id": "issue-007",
       "oid": "e0e07476add823d0e06a11edd789ac29",
-      "content_hash": "9ce264c651b00504e1b97ec35a23a78ebc71523e447c3e6dac2df65e6c9314d4"
+      "content_hash": "c51f1f7aab0cbfcf1716dedc3bfbeb1e203b955c7b0be30bdd7db7ddb0745837",
+      "resolved_by": "60613cc (iterate-4: materialize + fully-resolve + re-validate the target prefix); verified VER-055 (criterion 11 passed) + the iterate-5 adversarial probe. The validated-target-diverges-from-acted-upon-target TOCTOU is closed: assertSafeTargetPrefix now mkdir -p materializes the target, realpathSync-resolves it fully, re-runs the repo-containment refusals on that resolved path, and RETURNS the fully-resolved realpath (safePrefix); the install (npm i -g --prefix safePrefix), the binPath verify, and the location logs all consume safePrefix, so no literal unresolved leaf and no symlink component survives to be re-pointed between validation and install. VER-054 had recorded the leaf-segment residual failed for a not-yet-created override target; 60613cc removed that residual.",
+      "content_parent": "9ce264c651b00504e1b97ec35a23a78ebc71523e447c3e6dac2df65e6c9314d4"
     },
     {
       "title": "promote-cli resolveTargetPrefix detects --prefix only in space-separated form; the glued --prefix=<dir> falls through to the real-global arm",

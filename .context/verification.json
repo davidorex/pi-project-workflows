@@ -1639,6 +1639,88 @@
       "id": "VER-053",
       "oid": "06363fd7b928135339a1c7d4ce988f39",
       "content_hash": "8280ec3b2f92685aa9369b14a9ea5c7e50e89b8aebc336265eacf01e73d7d463"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "Iterate-3 fix (scripts/promote-cli.mjs, commit 8d4bdc7) verified by runtime demonstration against throwaway /tmp, glued-flag, and symlink prefixes, plus a fresh independent adversarial probe. issue-008 and issue-009 closed; issue-007's ancestor window closed but a leaf-segment TOCTOU residual remains. The real-global (O1-O7) and docs (D1-D2) criteria were not exercised (real-global promote paused; docs audit pending). Residual (probe vector b, reproduced): nearestExistingRealpath re-appends the literal unresolved non-existent leaf segments, so for a not-yet-created override target safePrefix carries a literal leaf; a leaf created as a symlink-into-repo between validation and install redirects the install through it into the repo (the post-install guard detects the repo-resolving bin after the write, not before). The real-global arm is unaffected (its prefix must already exist, so safePrefix is fully resolved).",
+      "criteria_results": [
+        {
+          "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+          "status": "skipped",
+          "evidence": "real-global promote paused; install-shape demonstrated on throwaway prefixes."
+        },
+        {
+          "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "After a repo npm run build, pi-context --version exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "No file under the repo instructs npm link for the operator binary.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "NPM_CONFIG_PREFIX=/tmp/x (no override) exited non-zero before any global op, naming the matched key."
+        },
+        {
+          "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+          "status": "failed",
+          "evidence": "Ancestor window closed: assertSafeTargetPrefix returns the resolved realpath and the install/binPath/logs consume that safePrefix (verified --prefix /tmp/g7link -> reported and installed at /private/tmp/g7real). But the leaf-segment residual (probe vector b) remains: a not-yet-created override target's literal leaf, symlinked into the repo between validation and install, redirects the install through it. S2 not fully held under that race."
+        },
+        {
+          "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "--prefix=/Users/david/Projects/workflowsPiExtension/packages (glued, parsed as override) refused 'resolves under this repo's root'; symlink-into-repo refused on its resolved path; the post-install guard now compares against REPO_ROOT_REAL + sep."
+        },
+        {
+          "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+          "status": "passed",
+          "evidence": "carried from iterate-2: no npm rm -g; single npm i -g --force; failed install leaves prior intact (probe vector g confirmed)."
+        },
+        {
+          "criterion": "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context.",
+          "status": "passed",
+          "evidence": "--prefix=/tmp/g8target -> exit 0, /tmp/g8target/bin/pi-context present (shim into the prefix's node_modules)."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-054",
+      "oid": "6facc7debb75ae844bc79c9e91e90b91",
+      "content_hash": "950390b92e3fb337667f4741d33d5744bf3427a6e4e5456201b907559a554bef"
     }
   ]
 }

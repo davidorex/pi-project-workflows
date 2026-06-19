@@ -6639,5 +6639,18 @@
       "refname": "issue-006"
     },
     "relation_type": "issue_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6facc7debb75ae844bc79c9e91e90b91",
+      "refname": "VER-054"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ff628bd9b604a36ace94cb5051df5fa8",
+      "refname": "TASK-069"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

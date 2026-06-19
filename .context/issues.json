@@ -80,6 +80,45 @@
       "id": "issue-006",
       "oid": "2158379b05144b5ed8c9eb44fd67b295",
       "content_hash": "c9c65f34ac8c19346d6c4d178b6ee5c98dc7bd69bfe6da36b1c553ea5b3f6b78"
+    },
+    {
+      "title": "promote-cli validates the resolved realpath of the target prefix but passes the literal unresolved prefix to npm i -g --prefix",
+      "body": "assertSafeTargetPrefix validates the target prefix by realpath of its nearest-existing ancestor against the repo-root realpath; the install passes the literal unresolved prefix to npm i -g --prefix. The validated representation and the acted-upon representation differ. A symlinked path component of prefix re-pointed in the window between the validate call and the npm install — a window that spans the build and pack steps — is resolved by npm at install time but was not present at validation, so the global install can land on a target the validation never approved, including inside the repo. Precondition: a concurrent writer to a component of the resolved path during the run. Class: validated-target diverges from acted-upon-target — a TOCTOU between a realpath-validated check and a literal-path use.",
+      "location": "scripts/promote-cli.mjs:274",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-context-cli",
+      "source": "agent",
+      "id": "issue-007",
+      "oid": "e0e07476add823d0e06a11edd789ac29",
+      "content_hash": "9ce264c651b00504e1b97ec35a23a78ebc71523e447c3e6dac2df65e6c9314d4"
+    },
+    {
+      "title": "promote-cli resolveTargetPrefix detects --prefix only in space-separated form; the glued --prefix=<dir> falls through to the real-global arm",
+      "body": "resolveTargetPrefix detects the --prefix argument via argv.indexOf('--prefix'), matching only the space-separated form. npm's glued form --prefix=<dir> is a single argv token, so indexOf returns -1, resolution falls past the PROMOTE_PREFIX arm, and the run takes the real-global arm. A promote invoked as --prefix=/tmp/x targets the real global prefix (e.g. /opt/homebrew) instead of the intended throwaway target. The real-global arm is itself validated, so the safety invariant holds; the defect defeats the caller's chosen target. Class: an input form accepted in one spelling and mis-routed in another.",
+      "location": "scripts/promote-cli.mjs:133",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-context-cli",
+      "source": "agent",
+      "id": "issue-008",
+      "oid": "adf21e1c738caf05e34d9fa21e7f2019",
+      "content_hash": "62fac4c7360115f0b5133f840af96cac1d8743d4c4f797a32f8b226da1783c69"
+    },
+    {
+      "title": "promote-cli post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT) — literal REPO_ROOT, no path-separator boundary",
+      "body": "The post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT): literal REPO_ROOT, no trailing-separator boundary. The pre-install validation checks against REPO_ROOT_REAL (realpath-normalized) with a trailing separator. Two divergent representations of the same repo-containment property yield two manifestations: (1) missing separator boundary — a sibling directory whose path shares the REPO_ROOT string as a prefix matches as contained; (2) missing realpath normalization — a REPO_ROOT that differs from its own realpath is not matched against the binPath's resolved form. The guard aborts on match (fail-safe direction): a consistency/correctness defect, not an exploit. Class: two guards asserting one repo-containment property over divergent path representations.",
+      "location": "scripts/promote-cli.mjs:292",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-context-cli",
+      "source": "agent",
+      "id": "issue-009",
+      "oid": "75df093e24c0582bb837881cd823d5c5",
+      "content_hash": "02f01ec917d96661aa210e6cdf8161775f17206dc73a7a4374128b7bda39f6b9"
     }
   ]
 }

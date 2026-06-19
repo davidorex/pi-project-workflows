@@ -6600,5 +6600,44 @@
       "refname": "TASK-069"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e0e07476add823d0e06a11edd789ac29",
+      "refname": "issue-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2158379b05144b5ed8c9eb44fd67b295",
+      "refname": "issue-006"
+    },
+    "relation_type": "issue_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "adf21e1c738caf05e34d9fa21e7f2019",
+      "refname": "issue-008"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2158379b05144b5ed8c9eb44fd67b295",
+      "refname": "issue-006"
+    },
+    "relation_type": "issue_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "75df093e24c0582bb837881cd823d5c5",
+      "refname": "issue-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2158379b05144b5ed8c9eb44fd67b295",
+      "refname": "issue-006"
+    },
+    "relation_type": "issue_relates_to_issue"
   }
 ]

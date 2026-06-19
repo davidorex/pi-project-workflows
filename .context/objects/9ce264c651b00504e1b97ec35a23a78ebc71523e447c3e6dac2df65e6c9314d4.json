@@ -1,0 +1,10 @@
+{
+  "title": "promote-cli validates the resolved realpath of the target prefix but passes the literal unresolved prefix to npm i -g --prefix",
+  "body": "assertSafeTargetPrefix validates the target prefix by realpath of its nearest-existing ancestor against the repo-root realpath; the install passes the literal unresolved prefix to npm i -g --prefix. The validated representation and the acted-upon representation differ. A symlinked path component of prefix re-pointed in the window between the validate call and the npm install — a window that spans the build and pack steps — is resolved by npm at install time but was not present at validation, so the global install can land on a target the validation never approved, including inside the repo. Precondition: a concurrent writer to a component of the resolved path during the run. Class: validated-target diverges from acted-upon-target — a TOCTOU between a realpath-validated check and a literal-path use.",
+  "location": "scripts/promote-cli.mjs:274",
+  "status": "open",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-context-cli",
+  "source": "agent"
+}

@@ -34,6 +34,7 @@
 		"release:patch": "npm run build && node scripts/release.mjs patch",
 		"release:minor": "npm run build && node scripts/release.mjs minor",
 		"release:major": "npm run build && node scripts/release.mjs major",
+		"promote:cli": "node scripts/promote-cli.mjs",
 		"prepare": "husky"
 	},
 	"devDependencies": {

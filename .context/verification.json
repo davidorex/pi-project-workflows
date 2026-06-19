@@ -1761,23 +1761,23 @@
         },
         {
           "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
-          "status": "skipped",
-          "evidence": "Not exercised: a second full real-global promote after a source edit was not run this iterate. The promote re-installs the freshly-built packed copy (the npm i -g --force replaces the prior copy), so a source edit would change the packed bin's hash; the idempotent-content invariant (criterion 4) and the install path are demonstrated, but the edit-then-re-promote-changes-hash assertion itself is unproven this run."
+          "status": "passed",
+          "evidence": "Added a transient comment to packages/pi-context-cli/src/bin.ts and re-ran `npm run promote:cli` against the real global: installed bin sha256 changed 51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42 -> 7abd8fd41df9d462470536b4e32072d881382d4f10625c3ec142d69a53b14f18. Reverted the marker and re-promoted: the installed sha256 returned to 51161305... (the global is left on clean working-tree code) and pi-context --version exited 0."
         },
         {
           "criterion": "No file under the repo instructs npm link for the operator binary.",
-          "status": "skipped",
-          "evidence": "Docs audit (docs-surface-sync) not run this iterate."
+          "status": "passed",
+          "evidence": "Read-only docs audit: zero active instructions to npm link the operator. The two `npm link` mentions (root README line ~45, pi-context-cli README line ~21) are descriptive/historical ('no npm link', 'It uses no npm link.'), explicitly stating the retired approach is not used."
         },
         {
           "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
-          "status": "skipped",
-          "evidence": "Docs audit (docs-surface-sync) not run this iterate; HEAD commit 7ca6082 documented promote:cli but the audit against the iterate-5 behavior change is pending."
+          "status": "passed",
+          "evidence": "Both document `npm run promote:cli` as the packed-copy operator install: root README (the `npm run promote:cli` block under 'install the operator pi-context binary as a publish-free packed copy') and pi-context-cli/README.md (the `npm run promote:cli` fenced block + the packed-copy explanation). The CHANGELOG was corrected this iterate ([Unreleased] Fixed entry for the refusal removal; [0.31.0] stale 'REFUSES inherited' clauses corrected); READMEs carried no stale refusal prose."
         },
         {
           "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
           "status": "passed",
-          "evidence": "CRITERION-AS-WRITTEN IS A FILING DEFECT, corrected in TASK-069 this iterate. `npm run` always injects npm_config_prefix=<true global>, indistinguishable at the env-var level from a hostile override, so refusing inherited prefixes refused the tool's own documented happy path while providing no protection the scrub does not. The determinate non-poisonability mechanism — scrub-resolves-true-global + repo-containment validation before any destructive op — is verified: npm_config_prefix=/tmp/POISON, scrubbed probe still resolves /opt/homebrew; a --prefix under the repo root is refused. The corrected criterion (non-poisonability via scrub + containment, NOT via refusing inherited prefixes) is met."
+          "evidence": "CRITERION-AS-ORIGINALLY-WRITTEN WAS A FILING DEFECT, corrected in TASK-069 this iterate to the non-poisonability-via-scrub invariant. `npm run` always injects npm_config_prefix=<true global>, indistinguishable at the env-var level from a hostile override, so refusing inherited prefixes refused the tool's own documented happy path while providing no protection the scrub does not. The determinate non-poisonability mechanism — scrub-resolves-true-global + repo-containment validation before any destructive op — is verified: npm_config_prefix=/tmp/POISON, scrubbed probe still resolves /opt/homebrew; a --prefix under the repo root is refused. The corrected criterion (non-poisonability via scrub + containment, NOT via refusing inherited prefixes) is met."
         },
         {
           "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
@@ -1803,7 +1803,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "oid": "c644b34a128f7fbbc0305f9d26171768",
-      "content_hash": "6043174e344bea99e0b0f59d82990f80752f31784fb0406bbbe77ef31d04c7f2"
+      "content_hash": "49cb079041d27bfe850512587b7b428fd5856012bc59061c2d1053e52b7fe1d4",
+      "content_parent": "6043174e344bea99e0b0f59d82990f80752f31784fb0406bbbe77ef31d04c7f2"
     }
   ]
 }

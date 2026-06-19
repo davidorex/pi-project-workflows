@@ -6548,5 +6548,44 @@
       "refname": "issue-004"
     },
     "relation_type": "issue_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "702672901cff779f38aac4fc2a64d419",
+      "refname": "FGAP-100"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7b6e4b4aeb6fbe795e883daf85000d2f",
+      "refname": "FGAP-035"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "702672901cff779f38aac4fc2a64d419",
+      "refname": "FGAP-100"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8d71055d9de89506bbaafe2eb946260e",
+      "refname": "FGAP-036"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "702672901cff779f38aac4fc2a64d419",
+      "refname": "FGAP-100"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d20b20e4c30b2ce12911c902fb5c0aed",
+      "refname": "FGAP-038"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

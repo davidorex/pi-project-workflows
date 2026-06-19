@@ -1,0 +1,11 @@
+{
+  "title": "promote-cli post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT) — literal REPO_ROOT, no path-separator boundary",
+  "body": "The post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT): literal REPO_ROOT, no trailing-separator boundary. The pre-install validation checks against REPO_ROOT_REAL (realpath-normalized) with a trailing separator. Two divergent representations of the same repo-containment property yield two manifestations: (1) missing separator boundary — a sibling directory whose path shares the REPO_ROOT string as a prefix matches as contained; (2) missing realpath normalization — a REPO_ROOT that differs from its own realpath is not matched against the binPath's resolved form. The guard aborts on match (fail-safe direction): a consistency/correctness defect, not an exploit. Class: two guards asserting one repo-containment property over divergent path representations.",
+  "location": "scripts/promote-cli.mjs:292",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-context-cli",
+  "source": "agent",
+  "resolved_by": "8d4bdc7 (iterate-3); verified VER-054 — post-install guard compares realpathSync(binPath) against REPO_ROOT_REAL + sep, matching validation"
+}

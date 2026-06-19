@@ -98,27 +98,31 @@
       "title": "promote-cli resolveTargetPrefix detects --prefix only in space-separated form; the glued --prefix=<dir> falls through to the real-global arm",
       "body": "resolveTargetPrefix detects the --prefix argument via argv.indexOf('--prefix'), matching only the space-separated form. npm's glued form --prefix=<dir> is a single argv token, so indexOf returns -1, resolution falls past the PROMOTE_PREFIX arm, and the run takes the real-global arm. A promote invoked as --prefix=/tmp/x targets the real global prefix (e.g. /opt/homebrew) instead of the intended throwaway target. The real-global arm is itself validated, so the safety invariant holds; the defect defeats the caller's chosen target. Class: an input form accepted in one spelling and mis-routed in another.",
       "location": "scripts/promote-cli.mjs:133",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-context-cli",
       "source": "agent",
       "id": "issue-008",
       "oid": "adf21e1c738caf05e34d9fa21e7f2019",
-      "content_hash": "62fac4c7360115f0b5133f840af96cac1d8743d4c4f797a32f8b226da1783c69"
+      "content_hash": "a621167758f5905130537eddcb0d88a0635ff18eb1c3e0a7c305b9225ae78455",
+      "resolved_by": "8d4bdc7 (iterate-3); verified VER-054 — glued --prefix=<dir> honored as override, installs at <dir>/bin/pi-context",
+      "content_parent": "62fac4c7360115f0b5133f840af96cac1d8743d4c4f797a32f8b226da1783c69"
     },
     {
       "title": "promote-cli post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT) — literal REPO_ROOT, no path-separator boundary",
       "body": "The post-install verify guard checks realpathSync(binPath).startsWith(REPO_ROOT): literal REPO_ROOT, no trailing-separator boundary. The pre-install validation checks against REPO_ROOT_REAL (realpath-normalized) with a trailing separator. Two divergent representations of the same repo-containment property yield two manifestations: (1) missing separator boundary — a sibling directory whose path shares the REPO_ROOT string as a prefix matches as contained; (2) missing realpath normalization — a REPO_ROOT that differs from its own realpath is not matched against the binPath's resolved form. The guard aborts on match (fail-safe direction): a consistency/correctness defect, not an exploit. Class: two guards asserting one repo-containment property over divergent path representations.",
       "location": "scripts/promote-cli.mjs:292",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "critical",
       "package": "pi-context-cli",
       "source": "agent",
       "id": "issue-009",
       "oid": "75df093e24c0582bb837881cd823d5c5",
-      "content_hash": "02f01ec917d96661aa210e6cdf8161775f17206dc73a7a4374128b7bda39f6b9"
+      "content_hash": "04a76f2727f3164ab7351828eb402add2bd4cc744f0dcd0eb728819d41320fd0",
+      "resolved_by": "8d4bdc7 (iterate-3); verified VER-054 — post-install guard compares realpathSync(binPath) against REPO_ROOT_REAL + sep, matching validation",
+      "content_parent": "02f01ec917d96661aa210e6cdf8161775f17206dc73a7a4374128b7bda39f6b9"
     }
   ]
 }

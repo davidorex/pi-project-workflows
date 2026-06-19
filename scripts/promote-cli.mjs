@@ -11,11 +11,12 @@
  * The operator `pi-context` had been an `npm link` symlink into
  * packages/pi-context-cli/dist/bin.js — the repo's own build output. A routine
  * dev `npm run build` (`rm -rf dist && tsc …`) therefore transiently removed /
- * repointed the live operator binary. This script installs the operator binary
- * as a regular-file COPY of the working-tree CLI plus its @davidorex dependency
- * set, so the operator resolves those deps from the co-installed packed set
- * (CURRENT working-tree code, not the stale registry release) and a subsequent
- * repo rebuild cannot touch the installed copy. It contains NO `npm link`.
+ * repointed the live operator binary. This script installs the operator as a
+ * packed COPY of the working-tree CLI plus its @davidorex dependency set under
+ * the prefix's lib/node_modules, reached via npm's standard bin shim, so the
+ * operator resolves those deps from the co-installed packed set (CURRENT
+ * working-tree code, not the stale registry release) and a subsequent repo
+ * rebuild cannot touch the installed copy. It contains NO `npm link`.
  *
  * What it does:
  * 1. Resolve a TARGET PREFIX (default = the real global npm prefix; overridable
@@ -30,8 +31,9 @@
  *    deps (typebox etc.) come from the registry. When the target is the real
  *    global prefix, first `npm rm -g @davidorex/pi-context-cli` to retire any
  *    existing link.
- * 5. Verify + log: the installed `<prefix>/bin/pi-context` is a regular-file copy
- *    (NOT a symlink into this repo) and report the resolved prefix + what it did.
+ * 5. Verify + log: the installed `<prefix>/bin/pi-context` (npm's standard shim
+ *    symlink) has a realpath resolving UNDER the prefix and NOT into this repo,
+ *    and report the resolved prefix + what it did.
  */
 
 import { execSync } from "node:child_process";
@@ -157,7 +159,7 @@ console.log("Installing the packed set into the target prefix (single co-install
 run(`npm i -g --prefix "${prefix}" ${quotedTarballs} --force`);
 console.log();
 
-// 5. Verify: the installed bin is a regular-file copy, NOT a symlink into this repo.
+// 5. Verify: the installed bin's realpath resolves UNDER the prefix and NOT into this repo.
 const binPath = join(prefix, "bin", "pi-context");
 console.log(`Verifying installed operator binary at ${binPath} ...`);
 let st;
@@ -179,7 +181,7 @@ if (st.isSymbolicLink()) {
 	}
 	console.log(`  bin is a shim → ${target} (under the prefix, not this repo) — OK.`);
 } else {
-	console.log("  bin is a regular file (copy), not a symlink — OK.");
+	console.log("  bin is a regular file under the prefix (not resolving into this repo) — OK.");
 }
 
 console.log(`\n=== Done ===`);

@@ -67,6 +67,19 @@
       "id": "issue-005",
       "oid": "b9c214a91ec020a4f2461fc9bd23091e",
       "content_hash": "0af9de1a04c09bd55da9e36ec3c198f0b93acb15cde8d8c0ba0aafee10fecba4"
+    },
+    {
+      "title": "promote-cli runs `npm rm -g` against a poisonable, unvalidated target prefix before any guard",
+      "body": "scripts/promote-cli.mjs resolves the install target via `npm prefix -g` (resolveTargetPrefix, line 107), which echoes an inherited `npm_config_prefix` rather than the true global; an invocation that set `--prefix` (e.g. `npm --prefix <dir> run`) exports `npm_config_prefix` into the child, so the resolved target becomes that value. `isRealGlobal` (line 116) is derived from the source label alone, which survives the poisoning, so a poisoned prefix is classified as the real global. When `isRealGlobal` is true the script runs the destructive `npm rm -g @davidorex/pi-context-cli` (line 153) before installing and before any validation of the target. The only validation — the realpath `startsWith(REPO_ROOT)` check (line 177) — is post-install, too late to prevent the rm. Effect: a global removal runs against an unvalidated prefix. Reproducing condition: `npm --prefix <repo> run promote:cli` resolves the target to the repo root, classifies it `isRealGlobal` true, and installs under the repo (`bin/`, `lib/node_modules/`); the post-install guard then aborts (exit 1). The destructive `npm rm -g` is aimed at the same poisoned prefix, so it does not touch the real global in this path — but the rm still runs unguarded against an unvalidated target. Class: a destructive operation executed before its precondition is validated, compounded by trusting a poisonable ambient environment for a safety-critical target. Fix: resolve the real global from a source that does not honor an inherited `npm_config_prefix` (or refuse the implicit real-global arm when the prefix is inherited); hoist a pre-destruction validation before line 153 carrying the `REPO_ROOT` check plus an intended-global assertion, so no destructive op runs until the target is validated; retain the post-install guard as defense-in-depth. Post-condition: no destructive op executes against an unvalidated target.",
+      "location": "scripts/promote-cli.mjs:153",
+      "status": "open",
+      "category": "issue",
+      "priority": "critical",
+      "package": "pi-context-cli",
+      "source": "agent",
+      "id": "issue-006",
+      "oid": "2158379b05144b5ed8c9eb44fd67b295",
+      "content_hash": "c9c65f34ac8c19346d6c4d178b6ee5c98dc7bd69bfe6da36b1c553ea5b3f6b78"
     }
   ]
 }

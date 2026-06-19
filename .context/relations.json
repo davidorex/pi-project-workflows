@@ -6535,5 +6535,18 @@
       "refname": "docs-surface-sync"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2158379b05144b5ed8c9eb44fd67b295",
+      "refname": "issue-006"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0b63971e2c1396b97c644cbe71521979",
+      "refname": "issue-004"
+    },
+    "relation_type": "issue_relates_to_issue"
   }
 ]

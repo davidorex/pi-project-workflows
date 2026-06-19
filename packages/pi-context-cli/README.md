@@ -6,11 +6,21 @@ The command set is **auto-tracking**: every operation in pi-context's op-registr
 
 ## Install
 
+The published package installs globally:
+
 ```bash
 npm i -g @davidorex/pi-context-cli
 ```
 
-This provides a `pi-context` binary.
+For the operator `pi-context` binary in this monorepo, install a publish-free packed copy of the working tree from the repo root:
+
+```bash
+npm run promote:cli
+```
+
+`promote:cli` (`scripts/promote-cli.mjs`) builds the working tree, packs the `@davidorex` workspace set into tarballs, and installs the whole set into the global npm prefix as a real copy (one `npm i -g <tarball...>`). The installed binary resolves its `@davidorex/*` dependencies from the co-installed packed siblings — current working-tree code, not the registry release — and because it is a copy, a subsequent repo `npm run build` cannot touch it. It uses no `npm link`. Pass `--prefix <dir>` (or `PROMOTE_PREFIX=<dir>`) to install into a throwaway prefix instead of the real global.
+
+Either path provides a `pi-context` binary.
 
 ## Usage
 

@@ -41,6 +41,10 @@ pi install npm:@davidorex/pi-agent-dispatch
 # Optional: the standalone pi-context CLI (not a Pi extension; no running Pi required)
 npm i -g @davidorex/pi-context-cli
 
+# In this monorepo, install the operator pi-context binary as a publish-free
+# packed copy of the working tree (no npm link; a repo rebuild can't touch it):
+npm run promote:cli
+
 # Initialize project structure
 /context init <substrate-dir>  # bootstrap pointer + substrate/schemas dirs only (no config, no schemas, no blocks)
 /context accept-all  # adopt the packaged conception (samples/conception.json) as config.json

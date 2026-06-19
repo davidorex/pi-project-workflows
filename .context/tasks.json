@@ -1339,7 +1339,14 @@
         "A promote:cli root npm-task installs the operator copy publish-free (pack + global install, never npm link); scripts/promote-cli.mjs contains no npm link; the task fronts a scripts/*.mjs choreographer matching the release:* / version:* convention.",
         "After a repo source edit and a re-promote at the same version, the content hash of /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (the realpath target) differs from its pre-edit hash. (Promote builds the working tree before packing; the bin shim path is stable and is not measured.)",
         "npm pack of packages/pi-context-cli ships the runnable shape (dist/bin.js; bin.pi-context -> ./dist/bin.js); the installed tarball yields a working pi-context.",
-        "docs-surface-sync: a repo-wide audit finds no doc instructing npm link for the operator binary; packages/pi-context-cli/README.md:10 and root README.md:22,42 state the copy install. Audit only — edit only what the change makes stale."
+        "docs-surface-sync: a repo-wide audit finds no doc instructing npm link for the operator binary; packages/pi-context-cli/README.md:10 and root README.md:22,42 state the copy install. Audit only — edit only what the change makes stale.",
+        "scripts/promote-cli.mjs exits non-zero, emitting no npm rm -g or npm i -g, when the real-global arm is reached with an inherited npm_config_prefix present and no --prefix/PROMOTE_PREFIX given.",
+        "No npm rm -g or npm i -g executes unless the prefix passes validation: absolute path, not equal to the repo root, not under the repo root, and — for the real-global arm — an existing directory containing lib/node_modules.",
+        "After install, scripts/promote-cli.mjs runs the realpath guard.",
+        "scripts/promote-cli.mjs resolves the real-global prefix from npm prefix -g invoked with all npm_config_* variables removed from its environment.",
+        "Given --prefix <dir>, scripts/promote-cli.mjs uses <dir> as the prefix and completes the promote (emits npm rm -g/npm i -g against <dir>).",
+        "Given PROMOTE_PREFIX=<dir> and no --prefix, scripts/promote-cli.mjs uses <dir> as the prefix and completes the promote.",
+        "With no inherited npm_config_prefix, no --prefix, and no PROMOTE_PREFIX, scripts/promote-cli.mjs completes the real-global promote against the prefix from npm prefix -g."
       ],
       "files": [
         "package.json",
@@ -1353,8 +1360,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "2af5cd3c5849e5b1cc7eb4be03251f26d702b2807332e9028e33b083c1e7d99d",
-      "content_parent": "27138083c638b219c0f367ff7e1711fabfd473896f7aa5568555644614f1bcd9"
+      "content_hash": "6d79f8936f59ec773419ee71fe2b2a534dcd1a82859dc1ce5a42d30730fe50b3",
+      "content_parent": "2af5cd3c5849e5b1cc7eb4be03251f26d702b2807332e9028e33b083c1e7d99d"
     }
   ]
 }

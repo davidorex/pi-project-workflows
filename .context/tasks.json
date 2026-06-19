@@ -1332,21 +1332,19 @@
       "status": "in-progress",
       "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
       "acceptance_criteria": [
-        "realpath /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension. /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli is a regular directory, not a symlink. npm ls -g --link does not list @davidorex/pi-context-cli. (Measure the resolved package directory; the bin entry is a shim symlink and is not measured.)",
-        "After npm run build in the repo, /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (the realpath target of the bin shim) has an unchanged inode and an unchanged content hash relative to before the build. pi-context --version runs successfully.",
-        "With packages/pi-context-cli/dist/ deleted, pi-context --help exits 0.",
-        "With the repo workspace absent or moved, pi-context context-status --cwd <dir> runs and reflects working-tree behavior — the operator carries the working-tree @davidorex/pi-context (and @davidorex/pi-project-workflows for pi-context pi-bound), not the stale registry version.",
-        "A promote:cli root npm-task installs the operator copy publish-free (pack + global install, never npm link); scripts/promote-cli.mjs contains no npm link; the task fronts a scripts/*.mjs choreographer matching the release:* / version:* convention.",
-        "After a repo source edit and a re-promote at the same version, the content hash of /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (the realpath target) differs from its pre-edit hash. (Promote builds the working tree before packing; the bin shim path is stable and is not measured.)",
-        "npm pack of packages/pi-context-cli ships the runnable shape (dist/bin.js; bin.pi-context -> ./dist/bin.js); the installed tarball yields a working pi-context.",
-        "docs-surface-sync: a repo-wide audit finds no doc instructing npm link for the operator binary; packages/pi-context-cli/README.md:10 and root README.md:22,42 state the copy install. Audit only — edit only what the change makes stale.",
-        "scripts/promote-cli.mjs exits non-zero, emitting no npm rm -g or npm i -g, when the real-global arm is reached with an inherited npm_config_prefix present and no --prefix/PROMOTE_PREFIX given.",
-        "No npm rm -g or npm i -g executes unless the prefix passes validation: absolute path, not equal to the repo root, not under the repo root, and — for the real-global arm — an existing directory containing lib/node_modules.",
-        "After install, scripts/promote-cli.mjs runs the realpath guard.",
-        "scripts/promote-cli.mjs resolves the real-global prefix from npm prefix -g invoked with all npm_config_* variables removed from its environment.",
-        "Given --prefix <dir>, scripts/promote-cli.mjs uses <dir> as the prefix and completes the promote (emits npm rm -g/npm i -g against <dir>).",
-        "Given PROMOTE_PREFIX=<dir> and no --prefix, scripts/promote-cli.mjs uses <dir> as the prefix and completes the promote.",
-        "With no inherited npm_config_prefix, no --prefix, and no PROMOTE_PREFIX, scripts/promote-cli.mjs completes the real-global promote against the prefix from npm prefix -g."
+        "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+        "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+        "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+        "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+        "After a repo npm run build, pi-context --version exits 0.",
+        "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+        "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+        "No file under the repo instructs npm link for the operator binary.",
+        "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+        "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+        "Every global install or removal the promote performs acts only on the validated target prefix.",
+        "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+        "A failed global install leaves the prior operator runnable and its installed payload unchanged."
       ],
       "files": [
         "package.json",
@@ -1360,8 +1358,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "6d79f8936f59ec773419ee71fe2b2a534dcd1a82859dc1ce5a42d30730fe50b3",
-      "content_parent": "2af5cd3c5849e5b1cc7eb4be03251f26d702b2807332e9028e33b083c1e7d99d"
+      "content_hash": "f2a318db59fa7154008c085d2d538b6c39ff157882d519a31e888df450dca76b",
+      "content_parent": "6d79f8936f59ec773419ee71fe2b2a534dcd1a82859dc1ce5a42d30730fe50b3"
     }
   ]
 }

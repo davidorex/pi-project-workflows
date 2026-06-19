@@ -1341,7 +1341,7 @@
         "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
         "No file under the repo instructs npm link for the operator binary.",
         "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
-        "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+        "The real-global prefix is resolved non-poisonably: an inherited npm_config_prefix (which `npm run promote:cli`, the documented invocation, always injects as the true global) does NOT divert the resolved or installed target — the `npm prefix -g` probe and the `npm i -g` install both run under an env with every npm_config_* scrubbed, so the resolved prefix reflects the true global regardless of any inherited value. The inherited prefix is NOT refused: refusing it would break the tool's own documented path and provide no protection the scrub does not, since npm's legitimate injection and a hostile override are indistinguishable at the env-var level.",
         "Every global install or removal the promote performs acts only on the validated target prefix.",
         "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
         "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
@@ -1359,8 +1359,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "15a7b91d8f6f7dfe983bb50115e246a5344a6924a747b79524f23a7fdec8180d",
-      "content_parent": "f2a318db59fa7154008c085d2d538b6c39ff157882d519a31e888df450dca76b"
+      "content_hash": "2f6cb006b4aa1a3de505d904157cad44127f66147cde66b2a0eec6f148bc5bf2",
+      "content_parent": "15a7b91d8f6f7dfe983bb50115e246a5344a6924a747b79524f23a7fdec8180d"
     }
   ]
 }

@@ -23,12 +23,13 @@
  *    via `--prefix <dir>`, the glued `--prefix=<dir>` form, or `PROMOTE_PREFIX=
  *    <dir>` so the promote can be tested against a throwaway dir without touching
  *    the real global binary; both `--prefix` forms are honored, first occurrence
- *    wins). The real-global resolution is NON-POISONABLE: an inherited
- *    `npm_config_prefix` in ANY letter-case (npm honors case variants) is REFUSED
- *    as the real global (the caller must pass an explicit `--prefix`/
- *    `PROMOTE_PREFIX` for an intended target), and the `npm prefix -g` probe runs
- *    with all `npm_config_*` env scrubbed so the resolved prefix reflects the
- *    true global, not an inherited override. The resolved target is then
+ *    wins). The real-global resolution is NON-POISONABLE via env scrub, NOT via
+ *    refusal: `npm run promote:cli` (the documented invocation) itself exports
+ *    `npm_config_prefix=<true global>` into the script env, so refusing an
+ *    inherited prefix would refuse the tool's own happy path while providing no
+ *    protection the scrub does not. The `npm prefix -g` probe runs with all
+ *    `npm_config_*` env scrubbed, so the resolved prefix reflects the true
+ *    global regardless of any inherited override. The resolved target is then
  *    VALIDATED (absolute; its REALPATH — nearest-existing-ancestor-resolved, so a
  *    symlink into the repo is caught even before the target dir exists — neither
  *    the realpath of the repo root nor under it; for the real-global arm, an
@@ -143,9 +144,9 @@ function cleanNpmEnv() {
  * Resolve the target prefix: `--prefix <dir>` arg wins, then `PROMOTE_PREFIX`
  * env, else the real global npm prefix. The override path is what lets the
  * promote be exercised against a throwaway dir without touching the real binary.
- * The real-global arm is non-poisonable: an inherited `npm_config_prefix` is
- * refused (the caller must name an intended target explicitly), and the probe
- * runs with `npm_config_*` scrubbed so it reflects the true global.
+ * The real-global arm is non-poisonable via env scrub (not refusal): the probe
+ * runs with `npm_config_*` scrubbed so it reflects the true global regardless of
+ * any inherited `npm_config_prefix` (which `npm run` itself injects).
  */
 function resolveTargetPrefix() {
 	const argv = process.argv.slice(2);
@@ -167,24 +168,18 @@ function resolveTargetPrefix() {
 	if (process.env.PROMOTE_PREFIX) {
 		return { prefix: resolve(process.env.PROMOTE_PREFIX), source: "PROMOTE_PREFIX" };
 	}
-	// Real-global arm. Refuse an inherited npm_config_prefix as the real global:
-	// it would steer `npm prefix -g` to an arbitrary (possibly hostile) override
-	// while still being labelled the real global. The caller must name an
-	// intended override target explicitly (--prefix / PROMOTE_PREFIX).
-	// npm honors npm_config_prefix in any letter-case (NPM_CONFIG_PREFIX,
-	// npm_config_prefix, etc.), so scan for any key whose lowercase matches
-	// rather than checking the lowercase-exact name only.
-	const inheritedPrefixKey = Object.keys(process.env).find((k) => k.toLowerCase() === "npm_config_prefix");
-	if (inheritedPrefixKey) {
-		console.error(
-			`Error: the global npm prefix is being driven by an inherited ${inheritedPrefixKey}=${process.env[inheritedPrefixKey]}.`,
-		);
-		console.error("Refusing to treat that inherited override as the real global prefix.");
-		console.error("For an intended target, pass --prefix <dir> or PROMOTE_PREFIX=<dir> explicitly.");
-		process.exit(1);
-	}
-	// Scrub npm_config_* from the probe env so the resolved prefix reflects the
-	// TRUE global, never an inherited override.
+	// Real-global arm. An inherited `npm_config_prefix` is NOT refused here:
+	// `npm run promote:cli` (the documented invocation) itself exports
+	// `npm_config_prefix=<true global>` into the script env, so refusing any
+	// inherited value would refuse the tool's own normal happy path. The
+	// env-var carries no distinction between npm's own legitimate injection
+	// and a hostile override — both arrive identically — so a refusal provided
+	// no protection the scrub below does not already provide. The actual
+	// safety mechanism is the scrub: the `npm prefix -g` probe runs with every
+	// `npm_config_*` stripped, so the resolved prefix reflects the TRUE global
+	// regardless of any inherited override; the repo-containment validation in
+	// assertSafeTargetPrefix is the structural precondition before any
+	// destructive op runs.
 	const real = run("npm prefix -g", { silent: true, env: cleanNpmEnv() })?.trim();
 	if (!real) {
 		console.error("Error: could not resolve the global npm prefix (npm prefix -g).");

@@ -1332,12 +1332,12 @@
       "status": "in-progress",
       "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
       "acceptance_criteria": [
-        "/opt/homebrew/bin/pi-context is a regular-file copy, not a symlink into the repo; npm ls -g --link does not list @davidorex/pi-context-cli as linked to packages/pi-context-cli.",
-        "A repo npm run build (rm -rf dist && tsc … && chmod +x dist/bin.js, packages/pi-context-cli/package.json:31) leaves the operator binary's inode and hash unchanged and pi-context --version still runs.",
+        "realpath /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension. /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli is a regular directory, not a symlink. npm ls -g --link does not list @davidorex/pi-context-cli. (Measure the resolved package directory; the bin entry is a shim symlink and is not measured.)",
+        "After npm run build in the repo, /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (the realpath target of the bin shim) has an unchanged inode and an unchanged content hash relative to before the build. pi-context --version runs successfully.",
         "With packages/pi-context-cli/dist/ deleted, pi-context --help exits 0.",
         "With the repo workspace absent or moved, pi-context context-status --cwd <dir> runs and reflects working-tree behavior — the operator carries the working-tree @davidorex/pi-context (and @davidorex/pi-project-workflows for pi-context pi-bound), not the stale registry version.",
         "A promote:cli root npm-task installs the operator copy publish-free (pack + global install, never npm link); scripts/promote-cli.mjs contains no npm link; the task fronts a scripts/*.mjs choreographer matching the release:* / version:* convention.",
-        "The promote builds the working tree before packing, so the installed copy carries current source; a second promote replaces a same-version copy (verified by a changed operator-binary hash after a source edit + re-promote).",
+        "After a repo source edit and a re-promote at the same version, the content hash of /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (the realpath target) differs from its pre-edit hash. (Promote builds the working tree before packing; the bin shim path is stable and is not measured.)",
         "npm pack of packages/pi-context-cli ships the runnable shape (dist/bin.js; bin.pi-context -> ./dist/bin.js); the installed tarball yields a working pi-context.",
         "docs-surface-sync: a repo-wide audit finds no doc instructing npm link for the operator binary; packages/pi-context-cli/README.md:10 and root README.md:22,42 state the copy install. Audit only — edit only what the change makes stale."
       ],
@@ -1353,8 +1353,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-069",
       "oid": "ff628bd9b604a36ace94cb5051df5fa8",
-      "content_hash": "27138083c638b219c0f367ff7e1711fabfd473896f7aa5568555644614f1bcd9",
-      "content_parent": "b4fed610f7b59ac7b6d725557691f272fbddf439558890e2218eed0317d23fe1"
+      "content_hash": "2af5cd3c5849e5b1cc7eb4be03251f26d702b2807332e9028e33b083c1e7d99d",
+      "content_parent": "27138083c638b219c0f367ff7e1711fabfd473896f7aa5568555644614f1bcd9"
     }
   ]
 }

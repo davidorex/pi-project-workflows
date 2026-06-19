@@ -6483,5 +6483,31 @@
       "refname": "issue-005"
     },
     "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "202f544f1f6eacb06c13b407e5bb4a20",
+      "refname": "FGAP-099"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9a63822d8ac46e00f1527c96c790f66f",
+      "refname": "FGAP-095"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "202f544f1f6eacb06c13b407e5bb4a20",
+      "refname": "FGAP-099"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b9c214a91ec020a4f2461fc9bd23091e",
+      "refname": "issue-005"
+    },
+    "relation_type": "gap_relates_to_issue"
   }
 ]

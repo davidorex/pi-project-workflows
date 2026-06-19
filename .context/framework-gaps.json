@@ -3155,6 +3155,42 @@
       "id": "FGAP-098",
       "oid": "3045be571ddb51cb25782d95ec0b4fe6",
       "content_hash": "5f4b1db1ef2329b84e77a1c244fa2e2c0917e5267e33f9288038eada8e3dfea7"
+    },
+    {
+      "title": "Block data carries no schema_version — read-time validation and migration are inert for all blocks",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "description": "Block data files carry no schema_version: the write path (writeTypedFile / writeBlockForDir) stamps only author/identity fields and never adds one, and no block schema defines a top-level schema_version (envelopes are additionalProperties:false, which rejects it). Version lives only in the schema file. With schema_version absent from every block's data, two safety mechanisms are inert for all blocks: the read-time AJV hook (gated on schema_version presence, block-api.ts:785-789) never fires, and the version-mismatch branch of validateBlockWithMigrationForDir (schema-validator.ts:225-239) never triggers. Block schema-evolution safety runs only via the explicit install/update path (baseline content_hash-tracked), never on read. The class: read-time validation and migration are inert whenever the versioned-data envelope is absent.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "870-938, 1758-1767",
+          "reference": "writeTypedFile / writeBlockForDir stamp author/identity fields only; schema_version is carried through only if the incoming data already has it — nothing in the write path produces one"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/story.schema.json",
+          "reference": "representative block schema: declares only the array key as a top-level property under additionalProperties:false; the version lives in the schema file's version field, not in the data envelope"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "785-789",
+          "reference": "the read-time AJV hook is gated on schema_version being present in the block data; with it absent the hook never fires"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "lines": "225-239",
+          "reference": "validateBlockWithMigrationForDir's version-mismatch branch compares schema.version to data.schema_version; with data.schema_version absent it never triggers"
+        }
+      ],
+      "impact": "Block data is validated at write (whole-block AJV) and by explicit context-validate, but never on read and never migrated on a version gap, because schema_version is absent. A schema-evolution change is invisible until the next write to that block, and a catalog-declared version-bump migration never applies to existing block data on read. Block schema evolution has no read-time safety.",
+      "canonical_vocabulary": "versioned data envelope / schema_version stamping (read-time version-gated validation + forward migration)",
+      "proposed_resolution": "Stamp schema_version onto block data so the read-time AJV hook and the migration version-mismatch branch become active: the write path stamps the current schema version onto the block envelope (or items), and block schemas admit a top-level schema_version (relax the envelope additionalProperties:false for it). Then a version-bump migration applies on read and a stale-version block is caught.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "FGAP-099",
+      "oid": "202f544f1f6eacb06c13b407e5bb4a20",
+      "content_hash": "57df49135f92a35fc2543fd49116f7423f9b28c34a66baebee70a4f006a266db"
     }
   ]
 }

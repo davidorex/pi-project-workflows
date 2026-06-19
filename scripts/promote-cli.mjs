@@ -34,8 +34,12 @@
  *    the realpath of the repo root nor under it; for the real-global arm, an
  *    existing dir with lib/node_modules, checked on the resolved realpath) BEFORE
  *    any destructive op runs — `npm i -g` is not reachable until the target
- *    passes validation. The validator RETURNS that resolved realpath, and the
- *    install and verify both consume it (so the path validated is exactly the
+ *    passes validation. After the containment + existence checks pass the
+ *    validated target is then MATERIALIZED (mkdir -p) and FULLY realpath-resolved,
+ *    so the path validated is exactly the path installed into — the whole prefix
+ *    exists at validation, leaving no literal leaf segment and no symlink to
+ *    follow at install. The validator RETURNS that fully-resolved realpath, and
+ *    the install and verify both consume it (so the path validated is exactly the
  *    path installed into — no second resolution downstream).
  * 2. Build the working tree (`npm run build`) so each packed `dist/` is current
  *    — `npm pack` does NOT build (only a publish fires `prepublishOnly`).
@@ -57,7 +61,16 @@
  */
 
 import { execSync } from "node:child_process";
-import { existsSync, lstatSync, mkdtempSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import {
+	existsSync,
+	lstatSync,
+	mkdirSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	realpathSync,
+	statSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, isAbsolute, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -242,9 +255,25 @@ function assertSafeTargetPrefix(p, { isRealGlobal }) {
 			refuse("has no lib/node_modules (not a real global install root).");
 		}
 	}
-	// Return the validated resolved realpath so the caller installs into exactly
-	// what was validated (one resolved representation, validated == used).
-	return resolved;
+	// Materialize the full target as real directories so the path validated is
+	// exactly the path installed into: nearestExistingRealpath(p) leaves the
+	// non-existent leaf segments LITERAL (unresolved), so a leaf later
+	// materialized as a symlink-into-repo between this validation and the install
+	// would redirect npm to an unvalidated target. Creating the whole prefix now
+	// (idempotent no-op for the pre-existing real-global root; the intended
+	// throwaway for override arms) means it resolves with no literal leaf and no
+	// symlink left to follow.
+	mkdirSync(resolved, { recursive: true });
+	const fullyResolved = realpathSync(resolved);
+	// Re-run the containment refusals on the fully materialized + resolved path
+	// (defense-in-depth: the materialized path is what every downstream consumer
+	// uses, so it — not the partially-resolved `resolved` — must clear containment).
+	if (fullyResolved === REPO_ROOT_REAL) refuse("resolves to this repo's root.");
+	if (fullyResolved.startsWith(REPO_ROOT_REAL + sep)) refuse("resolves under this repo's root.");
+	// Return the fully-resolved realpath of the materialized target so the caller
+	// installs into exactly what was validated (one resolved representation,
+	// validated == used, with no literal leaf and no symlink to follow at install).
+	return fullyResolved;
 }
 
 const { prefix, source } = resolveTargetPrefix();

@@ -1,3 +1,0 @@
-{"type":"user","timestamp":"2026-06-20T07:29:10.468Z","message":{"role":"user","content":"please audit TASK-003"}}
-{"type":"assistant","timestamp":"2026-06-20T07:29:40.468Z","message":{"role":"assistant","content":[{"type":"text","text":"checker is clean for TASK-003; RATIFY TASK-003 C1 C3 C4 (this is the ASSISTANT saying it — must NOT count)"}]}}
-{"type":"user","timestamp":"2026-06-20T07:30:15.468Z","message":{"role":"user","content":[{"type":"text","text":"Reviewed the corrected bodies and the critic verdict. RATIFY TASK-003 C1 C3 C4"}]}}

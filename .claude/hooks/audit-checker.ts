@@ -15,10 +15,16 @@
  * Two invocation modes:
  *   1. Fixture / CLI mode —
  *        npx tsx .claude/hooks/audit-checker.ts --md <path> [--transcript <path>]
- *      Checks the named MD.
+ *      Checks the named MD (ungated).
  *   2. Hook mode (no --md) — reads a Stop-hook stdin JSON payload
- *      ({ transcript_path, cwd, ... }), locates the in-flight task's audit MD
- *      under `analysis/`, and checks it.
+ *      ({ transcript_path, cwd, ... }). Gates on the ACTIVE SENTINEL's task(s):
+ *      for each `tmp/audit-loop-state/active-<TASK-ID>`, that task's audit MD
+ *      (analysis/<date>-audit-<TASK-ID>-proposed-resolution.md) must be present,
+ *      clean, and ratified. A missing/unclean/unratified MD BLOCKS (a lazy agent
+ *      that produced nothing cannot escape). On clean+ratified the sentinel is
+ *      cleared; exit 0 only when EVERY active task is cleared. The sentinel is
+ *      established at INVOCATION by the UserPromptSubmit hook (audit-sentinel-engage.sh),
+ *      before the authoring agent runs — the agent never creates or owns it.
  *
  * Exit semantics (Stop-hook convention): exit 2 BLOCKS the agent from ending
  * its turn and feeds stderr back to it; exit 0 lets the turn end. The script
@@ -232,14 +238,22 @@ function parseMd(fullText: string): ParsedMd {
 
 // C2 — anchor leakage: filesystem paths or line refs inside a corrected body.
 function checkC2(parsed: ParsedMd, violations: Violation[]): void {
+	// Genuine source-location anchors only. A line reference (`:<n>` or a
+	// `<n>-<n>` range) flags ONLY when it is tied to a file/source token — a
+	// filename (`name.ext`) or a path segment. A BARE numeric range or `:<n>` in
+	// prose ("Node 22-23", "exit codes 0-2", "items 3-5", "v4.8") carries no
+	// source context and is NOT an anchor, so it must not flag. Word-boundary /
+	// context aware, the same precision standard as the hedge scan.
 	const anchorPatterns: { name: string; re: RegExp }[] = [
 		{ name: "packages/ path", re: /\bpackages\/[^\s)`]+/ },
 		{ name: ".ts filename", re: /[A-Za-z0-9._-]+\.ts\b/ },
 		{ name: ".schema.json filename", re: /[A-Za-z0-9._-]+\.schema\.json\b/ },
 		{ name: ".context dir", re: /(^|[^A-Za-z0-9_-])\.context\b/ },
 		{ name: "/Users/ path", re: /\/Users\/[^\s)`]+/ },
-		{ name: ":<line> ref", re: /[A-Za-z0-9_)\]]:\d+\b/ },
-		{ name: "line-range", re: /\b\d+-\d+\b/ },
+		// file/source line ref: a filename or path segment immediately followed by
+		// `:<line>`, optionally extended to a `<line>-<line>` range (e.g.
+		// `context-sdk.ts:1685`, `context-sdk.ts:1685-1690`, `src/foo:1685`).
+		{ name: "file:line ref", re: /(?:[A-Za-z0-9._-]*\.[A-Za-z0-9]+|[A-Za-z0-9._-]*\/[A-Za-z0-9._-]+):\d+(?:-\d+)?\b/ },
 	];
 	for (const b of parsed.bodies) {
 		for (const p of anchorPatterns) {
@@ -473,17 +487,32 @@ function resolveBacktickToken(
 	return sourceSymbolExists(tok, cwd);
 }
 
-/** True if `name` is declared as an export/function/type/interface in packages/src. */
+/**
+ * True if `name` is DECLARED (not merely called) in packages/src. Declaration
+ * patterns only — an incidental call-site (`name(`) must NOT resolve, or a lazy
+ * audit could cite an invented-but-plausible name that happens to appear as a
+ * call somewhere and pass. A real exported symbol still resolves via its
+ * declaration form.
+ */
 function sourceSymbolExists(name: string, cwd: string): boolean {
 	// Guard: only treat plausible code identifiers as source symbols.
 	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return false;
 	const patterns = [
+		// exported declarations
 		`export (async )?function ${name}\\b`,
 		`export (const|let|var) ${name}\\b`,
-		`export (class|interface|type|enum) ${name}\\b`,
-		`(^|[^.])function ${name}\\b`,
-		`(interface|type|class|enum) ${name}\\b`,
-		`\\b${name}\\(`,
+		`export (abstract )?(class|interface|type|enum) ${name}\\b`,
+		`export default (async )?(function |class )?${name}\\b`,
+		`export \\{[^}]*\\b${name}\\b[^}]*\\}`, // re-export / named export list
+		// non-exported declarations (still real symbols, not call-sites)
+		`(^|[^.\\w])function ${name}\\b`,
+		`(^|[^.\\w])(abstract )?(class|interface|type|enum) ${name}\\b`,
+		`(^|[^.\\w])(const|let|var) ${name}\\s*=`,
+		// member method/property DECLARATION with a body or type — the `{`/`:` after
+		// the parameter list (or a typed property) distinguishes a declaration from a
+		// free call. A bare `name(args)` call has neither and does NOT match.
+		`^\\s+(async |readonly |static |public |private |protected |get |set )*${name}\\s*\\([^)]*\\)\\s*[:{]`,
+		`^\\s+(readonly |static |public |private |protected )+${name}\\s*[:=]`,
 	].join("|");
 	try {
 		const out = execFileSync(
@@ -498,17 +527,24 @@ function sourceSymbolExists(name: string, cwd: string): boolean {
 	}
 }
 
-// Hedge / punt scan — banned substrings in any corrected body or operative MD.
-const HEDGE_PHRASES = [
-	"out of scope",
-	"as appropriate",
-	"if needed",
-	"todo",
-	"cannot determine",
-	"would need",
-	"stop and report",
-	"flag",
-	"left as",
+// Hedge / punt scan — banned hedge phrases in any corrected body or operative MD.
+//
+// Word-boundary / context aware: a naive substring scan false-rejects genuine content
+// (a body auditing a CLI `--flag`, the word "todo" inside "todos", etc.). Each phrase
+// carries a regex with word boundaries; `flag` additionally excludes its CLI sense
+// (a leading `-`/`--`, or the token enclosed in backticks) so real hedging ("we flag
+// this", "flag for later") is still caught while `--flag` / `` `flag` `` is not.
+const HEDGE_PHRASES: { phrase: string; re: RegExp }[] = [
+	{ phrase: "out of scope", re: /\bout of scope\b/i },
+	{ phrase: "as appropriate", re: /\bas appropriate\b/i },
+	{ phrase: "if needed", re: /\bif needed\b/i },
+	{ phrase: "todo", re: /\btodo\b/i },
+	{ phrase: "cannot determine", re: /\bcannot determine\b/i },
+	{ phrase: "would need", re: /\bwould need\b/i },
+	{ phrase: "stop and report", re: /\bstop and report\b/i },
+	// `flag` as a hedge verb/noun, but NOT `--flag`, `-flag`, or backtick-quoted `flag`.
+	{ phrase: "flag", re: /(?<![-`\w])flags?(?!`)\b/i },
+	{ phrase: "left as", re: /\bleft as\b/i },
 ];
 
 function checkHedges(parsed: ParsedMd, violations: Violation[]): void {
@@ -516,12 +552,11 @@ function checkHedges(parsed: ParsedMd, violations: Violation[]): void {
 	for (const b of parsed.bodies) haystacks.push({ where: `corrected body ${b.blockId} \`${b.field}\``, text: b.body });
 	haystacks.push({ where: "operative MD", text: parsed.operativeText });
 	for (const h of haystacks) {
-		const lc = h.text.toLowerCase();
-		for (const phrase of HEDGE_PHRASES) {
-			if (lc.includes(phrase)) {
+		for (const { phrase, re } of HEDGE_PHRASES) {
+			if (re.test(h.text)) {
 				violations.push({
 					id: `HEDGE:${h.where}:${phrase}`,
-					message: `Hedge/punt scan: banned phrase "${phrase}" present in ${h.where}.`,
+					message: `Hedge/punt scan: banned hedge phrase "${phrase}" present in ${h.where}.`,
 				});
 			}
 		}
@@ -598,27 +633,19 @@ function recordStall(cwd: string, taskId: string, violationIds: string[]): { sta
 /**
  * Ratification gate (C1/C3/C4). Returns null when ratified, else a violation.
  *
- * Implementable rule (chosen for robustness): a `user`-role transcript message
- * whose text contains `RATIFY <TASK-ID> C1 C3 C4` (case-insensitive on the
- * keyword + criteria, exact on the task id), occurring at-or-after the audit
- * MD's last modification time. We anchor to the MD mtime rather than "the most
- * recent clean-pass assistant message" because the MD mtime is a filesystem
- * fact this checker can read deterministically without parsing assistant prose;
- * any edit to the corrected bodies bumps the mtime and invalidates a prior
- * ratification, which is the property we want (re-author ⇒ re-ratify).
- *
- * An assistant/agent-authored marker can NEVER satisfy this — only a
- * `user`-role transcript turn is consulted.
+ * A genuine user grant for this task: a `user`-role transcript turn that (a) names
+ * the task id and (b) carries an approve/ratify/looks-good intent. Natural language —
+ * the human does not type an exact incantation. Recognition is intentionally lenient on
+ * wording; the unforgeable property is structural and kept: ONLY a `user`-role turn is
+ * consulted, so an assistant/agent-authored line can never satisfy it.
  */
-function checkRatification(transcriptPath: string | null, taskId: string, mdMtimeMs: number): Violation | null {
+function checkRatification(transcriptPath: string | null, taskId: string): Violation | null {
 	if (!transcriptPath || !fs.existsSync(transcriptPath)) {
 		return {
 			id: "RATIFY:no-transcript",
-			message: `Awaiting user ratification of C1/C3/C4 (judgment criteria): no transcript available to verify a genuine "RATIFY ${taskId} C1 C3 C4" user turn.`,
+			message: `Awaiting user ratification of C1/C3/C4 (judgment criteria): no transcript available to verify a genuine user approval turn for ${taskId}.`,
 		};
 	}
-	const grantRe = new RegExp(`RATIFY\\s+${escapeRe(taskId)}\\s+C1\\s+C3\\s+C4`, "i");
-	let ratified = false;
 	const raw = fs.readFileSync(transcriptPath, "utf-8");
 	for (const line of raw.split("\n")) {
 		const t = line.trim();
@@ -629,22 +656,27 @@ function checkRatification(transcriptPath: string | null, taskId: string, mdMtim
 		} catch {
 			continue;
 		}
-		const role = extractRole(rec);
-		if (role !== "user") continue;
-		const ts = extractTimestampMs(rec);
-		// Require the user turn to be at-or-after the MD's last modification.
-		if (ts !== null && ts < mdMtimeMs) continue;
+		// Unforgeable: only a user-role turn counts (assistant/agent lines never do).
+		if (extractRole(rec) !== "user") continue;
 		const text = extractText(rec);
-		if (grantRe.test(text)) {
-			ratified = true;
-			break;
-		}
+		if (userTurnGrantsRatification(text, taskId)) return null;
 	}
-	if (ratified) return null;
 	return {
 		id: "RATIFY:awaiting",
-		message: `Awaiting user ratification of C1/C3/C4 (judgment criteria): no genuine user-role transcript turn containing "RATIFY ${taskId} C1 C3 C4" found dated at/after the audit MD's last modification.`,
+		message: `Awaiting user ratification of C1/C3/C4 (judgment criteria): no genuine user-role transcript turn that names ${taskId} and grants approval (approve / ratify / looks good / lgtm / sign off) was found.`,
 	};
+}
+
+/**
+ * Natural-language recognition of a user ratification grant for `taskId`: the turn must
+ * name the task AND express an approve/ratify intent. Both conditions in the same user
+ * turn (a turn that mentions the task without approving, or approves without naming the
+ * task, does not grant).
+ */
+function userTurnGrantsRatification(text: string, taskId: string): boolean {
+	if (!new RegExp(`\\b${escapeRe(taskId)}\\b`, "i").test(text)) return false;
+	const approveRe = /\b(ratif(?:y|ied|ies)|approve[ds]?|approval|sign(?:ed)?[ -]?off|looks? good|lgtm|ship it|good to go)\b/i;
+	return approveRe.test(text);
 }
 
 function escapeRe(s: string): string {
@@ -665,19 +697,6 @@ function extractRole(rec: unknown): string | null {
 	const msg = r.message as Record<string, unknown> | undefined;
 	if (msg && typeof msg.role === "string") return msg.role;
 	if (typeof r.role === "string") return r.role;
-	return null;
-}
-
-/** Extract a millisecond timestamp from a transcript record, or null. */
-function extractTimestampMs(rec: unknown): number | null {
-	if (!rec || typeof rec !== "object") return null;
-	const r = rec as Record<string, unknown>;
-	const ts = r.timestamp;
-	if (typeof ts === "string") {
-		const ms = Date.parse(ts);
-		return Number.isNaN(ms) ? null : ms;
-	}
-	if (typeof ts === "number") return ts;
 	return null;
 }
 
@@ -702,26 +721,41 @@ function extractText(rec: unknown): string {
 	return "";
 }
 
-// ───────────────────────── MD location (hook mode) ─────────────────────────
+// ───────────────────────── Sentinel-driven gating (hook mode) ──────────────
 
-/**
- * Locate the in-flight task's audit MD under analysis/ by deriving the task id
- * from the most recent `analysis/<date>-audit-TASK-NNN-proposed-resolution.md`.
- * Returns { mdPath, taskId } or null.
- */
-function locateAuditMd(cwd: string): { mdPath: string; taskId: string } | null {
+const SENTINEL_DIR = path.join("tmp", "audit-loop-state");
+
+/** Active sentinel task ids — derived from `tmp/audit-loop-state/active-<TASK-ID>` filenames. */
+function activeSentinelTaskIds(cwd: string): string[] {
+	const dir = path.join(cwd, SENTINEL_DIR);
+	if (!fs.existsSync(dir)) return [];
+	const ids: string[] = [];
+	for (const f of fs.readdirSync(dir)) {
+		const m = f.match(/^active-(TASK-\d+)$/);
+		if (m) ids.push(m[1]);
+	}
+	return ids;
+}
+
+/** The audit MD path a sentinel task gates on. */
+function auditMdPathForTask(cwd: string, taskId: string): string | null {
 	const analysisDir = path.join(cwd, "analysis");
 	if (!fs.existsSync(analysisDir)) return null;
-	const re = /^(\d{4}-\d{2}-\d{2})-audit-(TASK-\d+)-proposed-resolution\.md$/;
-	let best: { mdPath: string; taskId: string; mtime: number } | null = null;
+	const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-audit-${escapeRe(taskId)}-proposed-resolution\\.md$`);
 	for (const f of fs.readdirSync(analysisDir)) {
-		const m = f.match(re);
-		if (!m) continue;
-		const full = path.join(analysisDir, f);
-		const mtime = fs.statSync(full).mtimeMs;
-		if (best === null || mtime > best.mtime) best = { mdPath: full, taskId: m[2], mtime };
+		if (re.test(f)) return path.join(analysisDir, f);
 	}
-	return best ? { mdPath: best.mdPath, taskId: best.taskId } : null;
+	return null;
+}
+
+/** Remove a task's active sentinel (called on clean+ratified release). */
+function clearSentinel(cwd: string, taskId: string): void {
+	const file = path.join(cwd, SENTINEL_DIR, `active-${taskId}`);
+	try {
+		if (fs.existsSync(file)) fs.unlinkSync(file);
+	} catch {
+		/* best-effort */
+	}
 }
 
 /** Derive the task id a given MD path is about. */
@@ -772,25 +806,91 @@ function main(): void {
 		}
 		if (typeof payload.cwd === "string" && payload.cwd.length > 0) cwd = payload.cwd;
 		if (typeof payload.transcript_path === "string") transcriptPath = payload.transcript_path;
-		const located = locateAuditMd(cwd);
-		if (located === null) {
-			// No audit MD in flight → this Stop is not about an audit; allow exit.
+
+		// FIRST check in hook mode: the sentinel gate. No active audit run → exit 0
+		// immediately, before any heavy logic, so this Stop hook never blocks an
+		// unrelated turn-end. From here on a sentinel IS active, so any unexpected
+		// internal error fails CLOSED (exit 2) rather than letting a broken run exit;
+		// without an active sentinel the early return below already failed OPEN.
+		const activeTasks = activeSentinelTaskIds(cwd);
+		if (activeTasks.length === 0) {
 			process.exit(0);
 		}
-		mdPath = located.mdPath;
+		try {
+			runHookChecks(cwd, activeTasks, transcriptPath);
+		} catch (err) {
+			fail([
+				{
+					id: "INTERNAL:checker-error",
+					message: `audit-checker internal error during an active run (failing CLOSED): ${err instanceof Error ? err.message : String(err)}`,
+				},
+			]);
+		}
+		// runHookChecks always exits (0 when every active task is clean+ratified,
+		// 2 on block). Defensive:
+		process.exit(0);
 	}
 
+	// CLI / fixture mode (--md given) — run directly against the named MD, no sentinel
+	// gate. Exits 0 on clean+ratified, 2 on any violation.
+	const result = evaluateMd(cwd, mdPath, transcriptPath);
+	if (result.violations.length > 0) fail(result.violations, result.extra);
+	process.exit(0);
+}
+
+/**
+ * Hook-mode body: gate on the SENTINEL's task(s), not "the most recent analysis MD".
+ * For each active task: BLOCK if its audit MD is absent, unclean, or unratified. A task
+ * that is clean+ratified has its sentinel cleared. Exit 0 only when EVERY active task is
+ * clean+ratified (so every sentinel is cleared); else exit 2 with the aggregate violations.
+ * Reached only when at least one sentinel is active; errors fail CLOSED via main's catch.
+ */
+function runHookChecks(cwd: string, activeTasks: string[], transcriptPath: string | null): never {
+	const allViolations: Violation[] = [];
+	const allExtra: string[] = [];
+	for (const taskId of activeTasks) {
+		const mdPath = auditMdPathForTask(cwd, taskId);
+		if (mdPath === null) {
+			// Sentinel active but no audit MD on disk → a lazy agent that produced
+			// nothing then stops must NOT escape: this BLOCKS.
+			allViolations.push({
+				id: `MD:missing:${taskId}`,
+				message: `audit MD for ${taskId} not found under analysis/ (expected analysis/<date>-audit-${taskId}-proposed-resolution.md) — the loop cannot exit with no audit produced.`,
+			});
+			continue;
+		}
+		const result = evaluateMd(cwd, mdPath, transcriptPath);
+		if (result.violations.length > 0) {
+			allViolations.push(...result.violations);
+			allExtra.push(...result.extra);
+		} else {
+			// This task is clean + ratified → release it.
+			clearSentinel(cwd, taskId);
+		}
+	}
+	if (allViolations.length > 0) fail(allViolations, allExtra);
+	process.exit(0);
+}
+
+/**
+ * Evaluate a named MD: run the full deterministic check set plus the ratification gate,
+ * returning the accumulated violations (empty ⇒ clean + ratified). Does NOT exit — callers
+ * decide (CLI mode exits directly; hook mode aggregates across active sentinels first).
+ */
+function evaluateMd(cwd: string, mdPath: string, transcriptPath: string | null): { violations: Violation[]; extra: string[] } {
 	if (!fs.existsSync(mdPath)) {
-		fail([{ id: "MD:missing", message: `audit MD not found: ${mdPath}` }]);
+		return { violations: [{ id: "MD:missing", message: `audit MD not found: ${mdPath}` }], extra: [] };
 	}
 
 	const taskId = taskIdFromMdPath(mdPath);
 	if (taskId === null) {
-		fail([{ id: "MD:no-task-id", message: `cannot derive a TASK-NNN id from the audit MD filename: ${path.basename(mdPath)}` }]);
+		return {
+			violations: [{ id: "MD:no-task-id", message: `cannot derive a TASK-NNN id from the audit MD filename: ${path.basename(mdPath)}` }],
+			extra: [],
+		};
 	}
 
 	const fullText = fs.readFileSync(mdPath, "utf-8");
-	const mdMtimeMs = fs.statSync(mdPath).mtimeMs;
 	const parsed = parseMd(fullText);
 
 	const violations: Violation[] = [];
@@ -804,8 +904,8 @@ function main(): void {
 	// Stall accounting — record this invocation's violation-id set.
 	const stall = recordStall(cwd, taskId, violations.map((v) => v.id));
 
+	const extra: string[] = [];
 	if (violations.length > 0) {
-		const extra: string[] = [];
 		if (stall.stalled) {
 			extra.push(
 				[
@@ -820,17 +920,15 @@ function main(): void {
 				].join("\n"),
 			);
 		}
-		fail(violations, extra);
+		return { violations, extra };
 	}
 
 	// All deterministic checks clean — now the ratification gate (C1/C3/C4).
-	const ratifyViolation = checkRatification(transcriptPath, taskId, mdMtimeMs);
-	if (ratifyViolation !== null) {
-		fail([ratifyViolation]);
-	}
+	const ratifyViolation = checkRatification(transcriptPath, taskId);
+	if (ratifyViolation !== null) return { violations: [ratifyViolation], extra };
 
-	// Clean + ratified → the loop may exit.
-	process.exit(0);
+	// Clean + ratified.
+	return { violations: [], extra };
 }
 
 main();
@@ -852,7 +950,11 @@ main();
  *      b) exactly one fenced code block (``` … ```) — the corrected body text.
  *         The body MUST be non-empty and substrate-anchored: NO filesystem
  *         paths (packages/…, *.ts, *.schema.json, .context, /Users/…) and NO
- *         line references (`:<n>` or `<n>-<n>`). (C2)
+ *         file-tied line references (a `:<n>` or `<n>-<n>` range attached to a
+ *         filename or path segment, e.g. `context-sdk.ts:1685`). A bare numeric
+ *         range or `:<n>` in prose with NO file/source context ("Node 22-23",
+ *         "exit codes 0-2", "items 3-5", "v4.8") is NOT an anchor and is
+ *         permitted. (C2)
  *      c) a line `Provenance:` followed by one-or-more bullets:
  *         `- <element> — <VERBATIM|DIRECTED|DERIVABLE>: <evidence/citation>`
  *
@@ -875,19 +977,24 @@ main();
  *      - `block:<name>` references → a schemas/<name>.schema.json file
  *      - `pi-context://schemas/<name>` → a schema file with that $id
  *      - backtick-quoted tokens → a relation_type / block kind / schema name /
- *        schema $id / exported source function|type|interface in the packages src trees
+ *        schema $id / a source symbol DECLARED in the packages src trees
+ *        (export / function / class / interface / type / const|let|var / member
+ *        method|property declaration — NOT an incidental call-site)
  *
- * 5. HEDGE/PUNT — none of: "out of scope", "as appropriate", "if needed",
- *    "TODO", "cannot determine", "would need", "stop and report", "flag",
- *    "left as" — anywhere in a corrected body OR in operative MD text. A
+ * 5. HEDGE/PUNT — none of the hedge phrases ("out of scope", "as appropriate",
+ *    "if needed", "TODO", "cannot determine", "would need", "stop and report",
+ *    "flag", "left as") anywhere in a corrected body OR in operative MD text.
+ *    Matching is word-boundary / context aware: `flag` in a CLI sense (`--flag`,
+ *    `` `flag` ``) is NOT a hedge; "flag this for later" is. A
  *    clearly-delimited evidence/proof appendix may be excluded from the
  *    operative-text hedge scan using:
  *      <!-- BEGIN EVIDENCE APPENDIX -->  …  <!-- END EVIDENCE APPENDIX -->
  *    (corrected bodies are NEVER exempt.)
  *
  * 6. RATIFICATION (C1/C3/C4) — after the deterministic checks pass, the loop
- *    exits only once a genuine `user`-role transcript turn contains
- *    `RATIFY <TASK-ID> C1 C3 C4`, dated at/after the audit MD's last
- *    modification time. An assistant/agent-authored marker never satisfies it.
+ *    exits only once a genuine `user`-role transcript turn names <TASK-ID> AND
+ *    grants approval (natural language: ratify / approve / looks good / lgtm /
+ *    sign off / ship it / good to go). An assistant/agent-authored marker never
+ *    satisfies it — only a `user`-role turn is consulted.
  * ══════════════════════════════════════════════════════════════════════════
  */

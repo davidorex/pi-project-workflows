@@ -3,6 +3,8 @@ docs/
 node_modules/
 .claude/*
 !.claude/hooks/
+!.claude/settings.json
+!.claude/agents/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/audit-task-resolution/

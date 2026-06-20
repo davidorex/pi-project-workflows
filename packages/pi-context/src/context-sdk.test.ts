@@ -411,6 +411,7 @@ const STOCK_STATE_DERIVATION = {
 	in_flight: { kinds: ["tasks"], bucket: "in_progress" },
 	focus_fallback: { kind: "phase", bucket: "in_progress" },
 	next_ranked: [
+		{ kind: "tasks", label: "task", bucket: "todo", reason_template: "unblocked planned task" },
 		{
 			kind: "framework-gaps",
 			label: "framework-gap",
@@ -419,7 +420,6 @@ const STOCK_STATE_DERIVATION = {
 			rank_order: ["P0", "P1", "P2", "P3"],
 			reason_template: "open gap (priority {rank_value})",
 		},
-		{ kind: "tasks", label: "task", bucket: "todo", reason_template: "unblocked planned task" },
 	],
 	blocked_by: { relation_types: ["task_depends_on_task", "task_gated_by_item"] },
 	rollups: [
@@ -3119,12 +3119,12 @@ describe("currentState", () => {
 		// focus: in-flight wins over the in-progress-phase fallback.
 		assert.strictEqual(state.focus, "in-flight: TASK-A");
 		assert.deepStrictEqual(state.inFlight, [{ id: "TASK-A", block: "tasks", description: "active" }]);
-		// nextActions: gaps (P1 before P3) THEN ready tasks (topo over planned). TASK-D
+		// nextActions: ready tasks (topo over planned) THEN gaps (P1 before P3). TASK-D
 		// is blocked by planned TASK-P; only TASK-P is ready.
 		assert.deepStrictEqual(state.nextActions, [
+			{ id: "TASK-P", kind: "task", reason: "unblocked planned task" },
 			{ id: "FGAP-1", kind: "framework-gap", priority: "P1", reason: "open gap (priority P1)" },
 			{ id: "FGAP-3", kind: "framework-gap", priority: "P3", reason: "open gap (priority P3)" },
-			{ id: "TASK-P", kind: "task", reason: "unblocked planned task" },
 		]);
 		assert.deepStrictEqual(state.blocked, [{ id: "TASK-D", block: "tasks", blockedBy: ["TASK-P"] }]);
 		assert.deepStrictEqual(state.milestones, [{ id: "MILE-001", status: "planned", phaseCount: 1 }]);
@@ -3250,7 +3250,7 @@ describe("currentState", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
-		// head_size 2 over the stock next_ranked (gaps then tasks).
+		// head_size 2 over the stock next_ranked (tasks then gaps).
 		const sd2 = { ...STOCK_STATE_DERIVATION, head_size: 2 };
 		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, sd2);
 		fs.writeFileSync(
@@ -3267,21 +3267,22 @@ describe("currentState", () => {
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({ tasks: [{ id: "TASK-A", description: "ready", status: "planned" }] }),
 		);
-		// head_size 2 truncates the 3 gaps + 1 task to the first two gaps; the task is hidden.
+		// head_size 2 truncates the 1 task + 3 gaps to the task then the first gap; the
+		// two lower gaps are hidden.
 		let state = currentState(tmpDir);
 		assert.strictEqual(state.nextActions.length, 2);
 		assert.deepStrictEqual(
 			state.nextActions.map((a) => a.id),
-			["FGAP-1", "FGAP-2"],
+			["TASK-A", "FGAP-1"],
 		);
 
-		// With head_size 15 (stock) the same substrate surfaces all gaps AND the task —
-		// the lower-ranked tasks kind is NOT hidden when the head accommodates it.
+		// With head_size 15 (stock) the same substrate surfaces the task AND all gaps —
+		// the lower-ranked framework-gaps kind is NOT hidden when the head accommodates it.
 		writeConfig(projectDir, REL_TYPES, CANONICAL_INVARIANTS, undefined, STOCK_STATE_DERIVATION);
 		state = currentState(tmpDir);
 		assert.deepStrictEqual(
 			state.nextActions.map((a) => a.id),
-			["FGAP-1", "FGAP-2", "FGAP-3", "TASK-A"],
+			["TASK-A", "FGAP-1", "FGAP-2", "FGAP-3"],
 		);
 	});
 

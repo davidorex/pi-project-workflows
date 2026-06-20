@@ -465,17 +465,10 @@
     },
     "next_ranked": [
       {
-        "kind": "framework-gaps",
-        "label": "framework-gap",
+        "kind": "tasks",
+        "label": "task",
         "bucket": "todo",
-        "rank_field": "priority",
-        "rank_order": [
-          "P0",
-          "P1",
-          "P2",
-          "P3"
-        ],
-        "reason_template": "open gap (priority {rank_value})"
+        "reason_template": "unblocked planned task"
       },
       {
         "kind": "issues",
@@ -491,10 +484,17 @@
         "reason_template": "open issue (priority {rank_value})"
       },
       {
-        "kind": "tasks",
-        "label": "task",
+        "kind": "framework-gaps",
+        "label": "framework-gap",
         "bucket": "todo",
-        "reason_template": "unblocked planned task"
+        "rank_field": "priority",
+        "rank_order": [
+          "P0",
+          "P1",
+          "P2",
+          "P3"
+        ],
+        "reason_template": "open gap (priority {rank_value})"
       }
     ],
     "blocked_by": {

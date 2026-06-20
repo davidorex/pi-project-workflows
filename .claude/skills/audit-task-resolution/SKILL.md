@@ -4,11 +4,11 @@ description: Audits a pi-context open task's proposed resolution against the cod
 ---
 
 <objective>
-Audit one open task's proposed resolution — the task's own schema-declared fields plus the proposed_resolution of the gap, decision, or feature it addresses — for wrong, overly-complex, or non-best-practice assumptions, and emit corrected block bodies that pass every clause of the embedded register, filing-provenance, and derive-decisions-from-facts conventions and a fix-correctness proof. Every correction is emitted as operative output; nothing is left as a prose flag. One run per task. The agent audits and proposes; it never mutates the substrate. The orchestrator executes the filing manifest under the provenance-stop.
+Audit one open task's proposed resolution — the task's schema-declared fields plus the proposed_resolution of the gap, decision, or feature it addresses — for wrong, overly-complex, or non-best-practice assumptions, and emit corrected block bodies that satisfy every clause of the embedded conventions and a fix-correctness proof. Every correction is operative output; nothing is a prose flag. One run per task. The agent proposes; it never mutates the substrate. The orchestrator executes the filing manifest under the provenance-stop.
 </objective>
 
 <quick_start>
-Invoke as `/audit-task-resolution TASK-<NNN>`. One read-only agent per task: reads the inputs via the pi-context CLI, verifies every assumption against current source, authors corrected block bodies plus a filing manifest, runs the zero-tolerance loop until one full pass finds no violation of any requisite criterion, writes the audit MD, and returns a verdict.
+Invoke as `/audit-task-resolution TASK-<NNN>`. One agent, substrate-read-only, writes one analysis MD: reads the inputs via the pi-context CLI, verifies every assumption against source, authors corrected bodies plus a filing manifest, and runs the zero-tolerance loop until one full pass clears every criterion.
 </quick_start>
 
 <inputs>
@@ -16,11 +16,10 @@ Read via the pi-context CLI, one clean op per question, whole-node reads:
 - `read-schema --schemaName tasks` — the fields under audit. Audit exactly the fields the schema declares; never assume a field (e.g. acceptance_criteria may live on the feature, not the task).
 - `read-block-item --block tasks --id TASK-<NNN>` — the proposed resolution under audit.
 - `find-references --id TASK-<NNN>`, then `read-block-item` on each addressed framework-gap, decision, and feature — the upstream proposed_resolution.
-- `read-block --block conventions` — re-read live each run, then confirm against the `<conventions>` section below. The conventions are reproduced verbatim in `<conventions>`; that text, plus any further convention the item is bound by, is the authoritative standard. On any divergence between the embedded text and the live block, the live block governs and the divergence is reported as a skill-staleness defect to fix.
 </inputs>
 
 <conventions>
-Verbatim from the active substrate's `conventions` block — the standard every corrected body, the audit MD, and the return message are measured against, clause by clause. Re-read live each run; on divergence the live block governs.
+Verbatim from the active substrate's `conventions` block — the standard every corrected body, the audit MD, and the return message are measured against, clause by clause.
 
 rhetorical-register:
 Every block write follows this register; it also governs communications.
@@ -50,65 +49,47 @@ A design or routing choice determinable from the system's own facts is a decisio
 </conventions>
 
 <audit>
-Verify every assumption against the current source in `packages/*/src`. Anchor on function names; line numbers are evidence for the MD only. An unconfirmed claim is "no evidence found," not a finding.
+Verify every assumption against the current source in `packages/*/src`. Anchor on the entity name; line numbers are evidence for the MD only. An unconfirmed claim is "no evidence found," not a finding.
 
-Find, each with a code citation: wrong assumptions about the code or APIs; over-complexity versus an existing util or pattern the codebase ships (name it); non-best-practice, fragility, or scope-creep; stale anchors; conflict with another open task on the same surface.
+Find, each with a code citation: wrong assumptions about the code or APIs; over-complexity versus a util or pattern the codebase ships (name it); non-best-practice, fragility, or scope-creep; stale anchors; conflict with another open task on the same surface.
 
-Close the cascade exhaustively: for every defect, enumerate via the CLI every block that carries the same defective anchor, code-region, or assumption (the addressed gap/decision/feature and any sibling on the same surface). Each enumerated block is either a corrected body below or an explicit no-change with its reason. A cascade asserted without that enumeration is incomplete.
+Close the cascade: enumerate via the CLI every block that carries the same defective anchor, code-region, or assumption. Each is a corrected body below or an explicit no-change with its reason. A cascade asserted without that enumeration is incomplete.
 </audit>
 
 <corrected_bodies>
-Emit one operative body per affected block field — the task's schema fields, and each cascade block field, including structured fields (e.g. an `evidence[].lines` range gets a replacement value). Current-truth only:
-- declarative, terse, self-contained, exact;
-- anchor on canonical identifiers only — function, type, op, relation_type, block, error-code, or named substrate artifact (relations.json, objects/, config.json). Banned: line numbers, line ranges, and source-tree file paths (anything under packages/, including a .ts or .schema.json filename) — name the type/op, not its file.
-- no assert-then-refute, no prior-state phrasing;
-- rationale lives in the decision body, not the task; a task body is an imperative.
+Emit one operative body per affected field — the task's schema fields and each cascade-block field, including structured fields (an `evidence[].lines` range gets a replacement value). Nothing identified as needing change is left as a flag or parked out of scope; every correction is a body/field value here plus a filing-manifest entry. Each body:
+- declarative, terse, self-contained, exact; current-truth only; no assert-then-refute, no prior-state phrasing.
+- anchors on the logical entity's registered name — function, type, op, relation_type, schema `$id`/name, block, error-code. Banned: any filesystem path and any line number — name the entity, never its file.
+- a task body is an imperative; rationale lives in the decision body.
+- every element is user-VERBATIM, user-DIRECTED, or DERIVABLE with cited basis; a story-bound criterion is diffed against the story's verbatim text.
+- resolves every choice by derivation; a genuinely underdetermined choice escalates to a framework-gap via a `decision_escalates_underdetermined` edge — never a fork, hedge, or "confirm with the user."
+- proves its fix against the source: it achieves the gap's goal and reintroduces no bug or sibling. An asserted-but-unproven fix fails.
 
-Resolve every choice by derivation, not menu: determinable from registry, code, an existing surface, or a standing mandate → derive and state it with its basis; genuinely underdetermined → escalate to a framework-gap via a `decision_escalates_underdetermined` edge. Never a fork, a hedge, or "confirm with the user" in a body.
-
-Hold provenance: every element is user-VERBATIM, user-DIRECTED, or DERIVABLE from a cited fact, convention, or decision. A story-bound criterion is diffed against the story's verbatim text.
-
-Prove the fix: show against the source that it achieves the gap's goal and reintroduces no bug or sibling. An asserted-but-unproven fix is a failure.
-
-Split the artifacts: refutation, evidence, line numbers, and the proof go in the audit MD; the bodies carry only clean current-truth.
-
-Nothing identified as needing change is left as a flag or parked "out of scope." Every correction is an emitted body or field value here, plus an entry in the filing manifest. "Out of scope" lists only items that genuinely need no change.
+Refutation, evidence, line numbers, and the proof live in the audit MD; the bodies carry only clean current-truth.
 </corrected_bodies>
 
 <zero_tolerance_loop>
-Requisite criteria — the full set every artifact is measured against:
-- C1 Register: every body, the audit MD, and the return message satisfy EVERY numbered clause of the `<conventions>` text — rhetorical-register 1-6, filing-provenance 1-6, derive-decisions-from-facts 1-4. Measure clause by clause against the verbatim text, not a summary. The MD and return are a report and a communication: derive-decisions-from-facts and the communications register bind them in full; only the no-line-number / current-truth-only body rules are relaxed for the MD's evidence layer.
-- C2 Anchors: no body contains a banned anchor (line number, line range, source-tree file path); every reference is a canonical identifier.
-- C3 Provenance: every element of every body is user-VERBATIM, user-DIRECTED, or DERIVABLE with its basis cited.
-- C4 Proof: each body's fix is proved against the source to achieve the goal and reintroduce no bug or sibling.
-- C5 Operative: every identified correction is an emitted body/field value and a manifest entry; no prose flag, no correction parked out of scope.
-- C6 Cascade: every block carrying the defect is enumerated and accounted (corrected body or explicit no-change reason).
+The criteria enforce the rules above:
+- C1 every body, the audit MD, and the return satisfy every numbered clause of the `<conventions>` text — measured clause by clause, not by summary. The MD and return are a report + communication: derive-decisions-from-facts and register clauses 1-4,6 bind them; the body-only rules (clause 5 current-truth, the no-path/no-line-number anchor ban) are relaxed for the MD's evidence layer.
+- C2 every anchor is a registered entity name; no body contains a filesystem path or line number.
+- C3 every body element is provenance-classed with cited basis.
+- C4 each body's fix is proved against the source.
+- C5 every correction is an emitted body/field plus a manifest entry; no flag, nothing parked out of scope.
+- C6 the cascade is enumerated and every carrying block accounted.
 
-Loop: author the bodies, the MD, the manifest, and the return. Run a full pass over C1-C6 against every artifact. On ANY violation, re-author the offending artifact, then re-run the ENTIRE pass from C1. Repeat until one complete pass finds zero violations across all criteria. Only a fully clean pass exits the loop. Never return on a violation; never report a violation as a terminal state — a discovered violation is re-authored, not surfaced as failure. If a body cannot be both register-clean and a proved-correct fix under the proposed approach, the corrected body states the sound alternative approach and the loop continues on that — the resolution being unsound is a converged audit verdict, never a gate-stop.
+Author the bodies, the MD, the manifest, and the return; run a full pass over C1-C6; on any violation re-author the offending artifact and re-run the entire pass from C1; exit only on one complete pass with zero violations. Never return on a violation — re-author it. A proposed approach that cannot be both register-clean and proved-correct converges to the sound alternative stated in the body; an unsound resolution is a converged verdict, never a gate-stop.
 </zero_tolerance_loop>
 
 <output>
-Write `analysis/<YYYY-MM-DD>-audit-TASK-<NNN>-proposed-resolution.md`: the findings with citations, the cascade enumeration, the correctness proof per body, then a delimited corrected-block-bodies section — one fenced body per affected field plus a per-element provenance line — then a filing manifest: an ordered list of `block -> field -> operation -> guard` the orchestrator executes verbatim to file the corrections (enacted-decision changes routed through the provenance-stop).
+Write `analysis/<YYYY-MM-DD>-audit-TASK-<NNN>-proposed-resolution.md`: findings with citations, the cascade enumeration, the per-body correctness proof, a delimited corrected-block-bodies section (one fenced body per field plus a per-element provenance line), then a filing manifest — an ordered list of `block -> field -> operation -> guard` the orchestrator executes verbatim to file the corrections, enacted-decision changes routed through the provenance-stop.
 
-Return: the MD path, a one-line verdict (SOUND or CORRECTED), the headline findings, the proof verdict, and confirmation the zero-tolerance loop converged — one full pass, zero violations across C1-C6.
+Return: the MD path, the verdict (SOUND or CORRECTED), the headline findings, the proof verdict, and confirmation the loop converged — one full pass, zero violations across C1-C6.
 </output>
 
 <constraints>
 Drive the pi-context CLI directly, one op per question, whole-node reads. Forbidden (hook-enforced): cat, Read, grep, or jq on `.context`, `config.json`, or `schemas`; piping CLI output; `2>/dev/null`; echo-banner narration. Source and git are readable. No substrate mutation. Every claim is a pasted command result or a source citation; if blocked, stop and report.
 </constraints>
 
-<anti_patterns>
-- Grading bodies against a summarized checklist instead of clause-by-clause against the verbatim `<conventions>` — the checklist drifts narrower than the standard.
-- A flag, "out of scope" parking, or any non-operative note standing in for a correction that an emitted body/field + manifest entry should carry.
-- Narrating why the skill or the task exists — the output is current-truth instruction, not history.
-- A line number or source-tree file path in a block body — anchor on canonical identifiers; keep line numbers in the MD.
-- Surfacing a derivable choice as a fork or "confirm with the user."
-- Returning on a violation instead of re-authoring and re-running the loop to zero.
-</anti_patterns>
-
 <success_criteria>
-- The zero-tolerance loop converged: one full pass over C1-C6 with zero violations across every body, the MD, and the return.
-- Every body satisfies every clause of the embedded register, every anchor is canonical, every element is provenance-classed, every fix is proved.
-- Every identified correction is operative — an emitted body/field plus a manifest entry; nothing flagged, nothing parked.
-- The cascade is enumerated and closed; an enacted-decision change is routed through the provenance-stop in the manifest.
+The zero-tolerance loop converged: one full pass over C1-C6 with zero violations across every body, the audit MD, and the return.
 </success_criteria>

@@ -725,47 +725,89 @@ function extractText(rec: unknown): string {
 
 const SENTINEL_DIR = path.join("tmp", "audit-loop-state");
 
+/**
+ * Canonical task id: `TASK-` + the digit run zero-padded to a MINIMUM width of 3
+ * (4 -> TASK-004, 21 -> TASK-021, 100 -> TASK-100, 1000 -> TASK-1000). Accepts a
+ * `TASK-`/`task-`-prefixed or bare digit run; returns null when no digit run is found.
+ * Id derivation is case-insensitive and tolerant so a stray lowercase sentinel or MD
+ * still resolves to its canonical id rather than silently disengaging the gate.
+ */
+function canonicalTaskId(raw: string): string | null {
+	const m = raw.match(/(\d+)/);
+	if (!m) return null;
+	const n = Number.parseInt(m[1], 10);
+	if (!Number.isFinite(n)) return null;
+	return `TASK-${String(n).padStart(3, "0")}`;
+}
+
 /** Active sentinel task ids — derived from `tmp/audit-loop-state/active-<TASK-ID>` filenames. */
 function activeSentinelTaskIds(cwd: string): string[] {
 	const dir = path.join(cwd, SENTINEL_DIR);
 	if (!fs.existsSync(dir)) return [];
-	const ids: string[] = [];
+	const ids = new Set<string>();
 	for (const f of fs.readdirSync(dir)) {
-		const m = f.match(/^active-(TASK-\d+)$/);
-		if (m) ids.push(m[1]);
+		// Tolerant: `active-TASK-NNN` / `active-task-NNN` (any case), normalized to canonical.
+		const m = f.match(/^active-(?:task-)?0*(\d+)$/i);
+		if (m) {
+			const id = canonicalTaskId(m[1]);
+			if (id) ids.add(id);
+		}
 	}
-	return ids;
+	return [...ids];
 }
 
-/** The audit MD path a sentinel task gates on. */
+/**
+ * The audit MD path a sentinel task gates on. Match is case-insensitive and
+ * digit-tolerant: any `<date>-audit-task-<digits>-proposed-resolution.md` whose
+ * canonical id equals `taskId` qualifies, so a lowercase or differently-padded MD
+ * filename still satisfies a canonical sentinel.
+ */
 function auditMdPathForTask(cwd: string, taskId: string): string | null {
 	const analysisDir = path.join(cwd, "analysis");
 	if (!fs.existsSync(analysisDir)) return null;
-	const re = new RegExp(`^\\d{4}-\\d{2}-\\d{2}-audit-${escapeRe(taskId)}-proposed-resolution\\.md$`);
+	const canonical = canonicalTaskId(taskId);
+	const re = /^\d{4}-\d{2}-\d{2}-audit-task-0*(\d+)-proposed-resolution\.md$/i;
 	for (const f of fs.readdirSync(analysisDir)) {
-		if (re.test(f)) return path.join(analysisDir, f);
+		const m = f.match(re);
+		if (m && canonicalTaskId(m[1]) === canonical) return path.join(analysisDir, f);
 	}
 	return null;
 }
 
-/** Remove a task's active sentinel (called on clean+ratified release). */
+/**
+ * Remove a task's active sentinel (called on clean+ratified release). Tolerant of
+ * case/padding: any `active-<...>` file whose canonical id equals `taskId` is removed,
+ * so a lowercase or differently-padded sentinel is still cleared rather than orphaned
+ * (which would leave the gate engaged forever).
+ */
 function clearSentinel(cwd: string, taskId: string): void {
-	const file = path.join(cwd, SENTINEL_DIR, `active-${taskId}`);
+	const dir = path.join(cwd, SENTINEL_DIR);
+	const canonical = canonicalTaskId(taskId);
 	try {
-		if (fs.existsSync(file)) fs.unlinkSync(file);
+		if (!fs.existsSync(dir)) return;
+		for (const f of fs.readdirSync(dir)) {
+			const m = f.match(/^active-(?:task-)?0*(\d+)$/i);
+			if (!m) continue;
+			if (canonicalTaskId(m[1]) !== canonical) continue;
+			try {
+				fs.unlinkSync(path.join(dir, f));
+			} catch {
+				/* best-effort */
+			}
+		}
 	} catch {
 		/* best-effort */
 	}
 }
 
-/** Derive the task id a given MD path is about. */
+/** Derive the canonical task id a given MD path is about (case-insensitive, tolerant). */
 function taskIdFromMdPath(mdPath: string): string | null {
 	const base = path.basename(mdPath);
-	const m = base.match(/-(TASK-\d+)-proposed-resolution\.md$/);
-	if (m) return m[1];
-	// Fallback: any TASK-NNN in the filename.
-	const m2 = base.match(/(TASK-\d+)/);
-	return m2 ? m2[1] : null;
+	const m = base.match(/-task-0*(\d+)-proposed-resolution\.md$/i);
+	if (m) return canonicalTaskId(m[1]);
+	// Fallback: any TASK-NNN (any case) in the filename.
+	const m2 = base.match(/task-0*(\d+)/i);
+	return m2 ? canonicalTaskId(m2[1]) : null;
 }
 
 // ───────────────────────────── Main ────────────────────────────────────────

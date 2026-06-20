@@ -8,14 +8,16 @@ Audit one open task's proposed resolution — the task's schema-declared fields 
 </objective>
 
 <quick_start>
-Invoke as `/audit-task-resolution TASK-<NNN>`. The invocation itself engages the loop's gate: a `UserPromptSubmit` hook writes the run's active sentinel `tmp/audit-loop-state/active-TASK-<NNN>` before you run — you operate inside an already-engaged gate and never create or own the sentinel. Then: one agent, substrate-read-only, reads the inputs via the pi-context CLI, verifies every assumption against source, and authors one analysis MD containing the corrected bodies, filing manifest, and proofs in the machine format below. The Stop hook running the deterministic checker enforces the loop; after it is clean, dispatch the `audit-critic` subagent, surface its verdict, and await the user's ratification turn.
+Invoke as `/audit-task-resolution <task-number>`. The argument is accepted in any case and as a bare number — `4`, `004`, `task-4`, `TASK-004`, `Task004`, `task004` all mean TASK-004 — and is normalized to the canonical id `TASK-NNN` (`TASK-` + the digit run, zero-padded to a minimum width of 3). The invocation itself engages the loop's gate: a `UserPromptSubmit` hook normalizes the argument and writes the run's active sentinel `tmp/audit-loop-state/active-TASK-NNN` before you run — you operate inside an already-engaged gate and never create or own the sentinel. First normalize the invocation argument to the canonical `TASK-NNN` yourself, then use that canonical id for every pi-context read and the audit MD filename. Then: one agent, substrate-read-only, reads the inputs via the pi-context CLI, verifies every assumption against source, and authors one analysis MD containing the corrected bodies, filing manifest, and proofs in the machine format below. The Stop hook running the deterministic checker enforces the loop; after it is clean, dispatch the `audit-critic` subagent, surface its verdict, and await the user's ratification turn.
 </quick_start>
 
 <inputs>
+First normalize the invocation argument to the canonical `TASK-NNN` (`TASK-` + the digit run, zero-padded to a minimum width of 3 — `4`/`004`/`task-4`/`TASK-004`/`Task004` all become `TASK-004`). Use that canonical id for every read below.
+
 Read via the pi-context CLI, one clean op per question, whole-node reads:
 - `read-schema --schemaName tasks` — the fields under audit. Audit exactly the fields the schema declares; never assume a field (e.g. acceptance_criteria may live on the feature, not the task).
-- `read-block-item --block tasks --id TASK-<NNN>` — the proposed resolution under audit.
-- `find-references --itemId TASK-<NNN>`, then `read-block-item` on each addressed framework-gap, decision, and feature — the upstream proposed_resolution.
+- `read-block-item --block tasks --id TASK-NNN` — the proposed resolution under audit.
+- `find-references --itemId TASK-NNN`, then `read-block-item` on each addressed framework-gap, decision, and feature — the upstream proposed_resolution.
 </inputs>
 
 <conventions>
@@ -69,7 +71,7 @@ Refutation, evidence, line numbers, and the proof live in the audit MD's evidenc
 </corrected_bodies>
 
 <output>
-Write `analysis/<YYYY-MM-DD>-audit-TASK-<NNN>-proposed-resolution.md`. The deterministic checker parses this exact machine format; emit it field-for-field.
+Write `analysis/<YYYY-MM-DD>-audit-TASK-NNN-proposed-resolution.md`, using the canonical normalized `TASK-NNN` id (zero-padded to 3) in the filename. The deterministic checker parses this exact machine format; emit it field-for-field.
 
 Corrected bodies, between the exact markers:
 ```

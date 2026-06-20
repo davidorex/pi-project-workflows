@@ -12,7 +12,7 @@ Invoke as `/audit-task-resolution <task-number>`. Accept any case and a bare num
 
 Orchestrator steps:
 1. Normalize the argument to canonical `TASK-NNN`.
-2. Dispatch one foreground read-only subagent. Its brief is `<inputs>`, `<audit>`, `<corrected_bodies>`, `<output>`, and `<constraints>` below, with the canonical `TASK-NNN`.
+2. Dispatch one foreground subagent that reads the substrate read-only and writes only the audit MD (tools: Bash, Read, Grep, Write). Its brief is `<inputs>`, `<audit>`, `<corrected_bodies>`, `<output>`, and `<constraints>` below, with the canonical `TASK-NNN`.
 3. On the subagent's return, dispatch the `audit-critic` subagent. Surface its per-clause verdict to the user verbatim. Await the user's ratification turn.
 </quick_start>
 

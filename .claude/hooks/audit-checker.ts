@@ -48,6 +48,7 @@ import { loadConfig } from "@davidorex/pi-context/context";
 import { resolveContextDir } from "@davidorex/pi-context/context-dir";
 import { resolveItemsByIds } from "@davidorex/pi-context/context-sdk";
 import { findReferencesInRepo } from "@davidorex/pi-context/lens-view";
+import { ops } from "@davidorex/pi-context/ops";
 
 // ───────────────────────────── Types ──────────────────────────────────────
 
@@ -72,6 +73,7 @@ interface ParsedMd {
 	manifest: ManifestRow[];
 	manifestParsed: boolean;
 	noChangeIds: Set<string>; // ids declared via `no-change: <reason>` lines
+	proposedSymbols: Set<string>; // code-shaped tokens declared via `Proposed-symbols:` lines (greenfield exemptions)
 	operativeText: string; // whole MD minus the delimited evidence/proof appendix
 	fullText: string;
 }
@@ -218,6 +220,20 @@ function parseMd(fullText: string): ParsedMd {
 		noChangeIds.add(m[1].toUpperCase());
 	}
 
+	// Proposed-symbols declarations: `Proposed-symbols: <tok>, <tok>, ...` — the
+	// comma-separated code-shaped tokens the audit proposes to CREATE (greenfield),
+	// which correctly do not resolve yet. Each listed token is exempt from
+	// identifier resolution. Multiple lines accumulate.
+	const proposedSymbols = new Set<string>();
+	for (const line of fullText.split("\n")) {
+		const pm = line.match(/^\s*Proposed-symbols:\s*(.+)$/i);
+		if (!pm) continue;
+		for (const raw of pm[1].split(",")) {
+			const tok = raw.trim().replace(/^`|`$/g, ""); // tolerate stray backticks
+			if (tok !== "") proposedSymbols.add(tok);
+		}
+	}
+
 	// Operative text = the whole MD minus a clearly-delimited evidence/proof
 	// appendix (so cited offending substrings in the proof appendix do not
 	// trip the hedge scan). If no appendix delimiters exist, the whole MD is
@@ -235,6 +251,7 @@ function parseMd(fullText: string): ParsedMd {
 		manifest: manifestResult.rows,
 		manifestParsed: manifestResult.parsed,
 		noChangeIds,
+		proposedSymbols,
 		operativeText,
 		fullText,
 	};
@@ -372,23 +389,20 @@ function checkC6(cwd: string, taskId: string, parsed: ParsedMd, violations: Viol
 	}
 }
 
-// Identifier resolution: every cited identifier token must resolve.
-function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]): void {
-	// Gather cited tokens from provenance bullets AND proof lines (lines that
-	// begin with "Proof:" anywhere in the MD).
-	const citationLines: string[] = [];
-	for (const b of parsed.bodies) citationLines.push(...b.provenance);
-	for (const line of parsed.fullText.split("\n")) {
-		if (/^\s*Proof:/i.test(line)) citationLines.push(line);
-	}
+// Resolution context: every vocabulary the identifier checks resolve against,
+// loaded once per MD evaluation and threaded through the shared resolver so the
+// backtick path and the shape-based path agree token-for-token.
+interface ResolveCtx {
+	relationTypes: Set<string>;
+	blockKinds: Set<string>;
+	schemaNames: Set<string>;
+	schemaIds: Set<string>;
+	opNames: Set<string>; // ops-registry op `name`s (e.g. promote-item)
+	conventionSlugs: Set<string>; // conventions-block item ids/slugs (e.g. cli-command-form)
+	cwd: string;
+}
 
-	// Token classes.
-	const substrateIdRe = /\b((?:FGAP|DEC|TASK|FEAT|ISSUE|REQ|STORY|VER|RES|PHASE|MILE|REVIEW)-\d+)\b/g;
-	const schemaRefRe = /\bblock:([a-z][a-z0-9-]*)\b/g; // block:<schema> references
-	const schemaIdRe = /\bpi-context:\/\/schemas\/([a-z][a-z0-9-]*)\b/g;
-	// backtick-quoted identifiers: relation_type / block name / function / type / schema name
-	const backtickRe = /`([A-Za-z_][A-Za-z0-9_-]*)`/g;
-
+function buildResolveCtx(cwd: string): ResolveCtx {
 	const cfg = loadConfig(cwd);
 	const relationTypes = new Set((cfg?.relation_types ?? []).map((r) => r.canonical_id));
 	const blockKinds = new Set((cfg?.block_kinds ?? []).map((b) => b.canonical_id));
@@ -410,6 +424,56 @@ function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]
 		}
 	}
 
+	// Op names — the names registered in the pi-context ops registry. A token that
+	// equals a registered op `name` resolves (legitimate citation of an op surface).
+	const opNames = new Set(ops.map((o) => o.name));
+
+	// Convention slugs — the ids of items in the substrate `conventions` block
+	// (array_key `rules`, id field `id`; e.g. cli-command-form). Read through the
+	// SDK-resolved contextDir, not the pi-context CLI. Absent/unreadable block →
+	// empty set (a convention-slug citation then false-fails, surfacing the gap,
+	// rather than silently passing).
+	const conventionSlugs = new Set<string>();
+	const conventionsFile = path.join(substrateDir, "conventions.json");
+	if (fs.existsSync(conventionsFile)) {
+		try {
+			const j = JSON.parse(fs.readFileSync(conventionsFile, "utf-8")) as { rules?: { id?: string }[] };
+			for (const r of j.rules ?? []) {
+				if (typeof r.id === "string") conventionSlugs.add(r.id);
+			}
+		} catch {
+			/* unreadable conventions block — leave empty */
+		}
+	}
+
+	return { relationTypes, blockKinds, schemaNames, schemaIds, opNames, conventionSlugs, cwd };
+}
+
+// Identifier resolution: every cited identifier token must resolve.
+function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]): void {
+	// Gather cited tokens from provenance bullets AND proof lines (lines that
+	// begin with "Proof:" anywhere in the MD).
+	const citationLines: string[] = [];
+	for (const b of parsed.bodies) citationLines.push(...b.provenance);
+	for (const line of parsed.fullText.split("\n")) {
+		if (/^\s*Proof:/i.test(line)) citationLines.push(line);
+	}
+
+	// Token classes.
+	const substrateIdRe = /\b((?:FGAP|DEC|TASK|FEAT|ISSUE|REQ|STORY|VER|RES|PHASE|MILE|REVIEW)-\d+)\b/g;
+	const schemaRefRe = /\bblock:([a-z][a-z0-9-]*)\b/g; // block:<schema> references
+	const schemaIdRe = /\bpi-context:\/\/schemas\/([a-z][a-z0-9-]*)\b/g;
+	// backtick-quoted identifiers: relation_type / block name / function / type / schema name
+	const backtickRe = /`([A-Za-z_][A-Za-z0-9_-]*)`/g;
+	// Code-SHAPE tokens (detected with or without backticks) — these shapes are
+	// essentially never English prose:
+	//   camelCase: lower-run, then an uppercase, then more (e.g. cloneSubstrate).
+	//   snake_case: lower-run, an underscore, then more (e.g. substrate_id_unregistered).
+	const camelRe = /\b[a-z][a-z0-9]*[A-Z][A-Za-z0-9]*\b/g;
+	const snakeRe = /\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g;
+
+	const rc = buildResolveCtx(cwd);
+
 	// Collect substrate-id tokens (resolve in bulk).
 	const substrateIds = new Set<string>();
 	for (const line of citationLines) {
@@ -428,8 +492,20 @@ function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]
 		}
 	}
 
-	// Backtick-quoted identifiers — resolve against relation_types, block_kinds,
-	// schema names, schema $ids, or source export/function/type/interface names.
+	// Tokens already reported as unresolved (de-dup across the backtick path and the
+	// two shape paths, which can match the same token).
+	const reportedUnresolved = new Set<string>();
+	const flagUnresolved = (tok: string): void => {
+		if (parsed.proposedSymbols.has(tok)) return; // declared greenfield — exempt
+		if (resolveCitedToken(tok, rc)) return;
+		if (reportedUnresolved.has(tok)) return;
+		reportedUnresolved.add(tok);
+		violations.push({
+			id: `ID:token:${tok}`,
+			message: `Identifier resolution: cited identifier \`${tok}\` resolves to no relation_type, block kind, schema, op name, error-code literal, convention slug, or declared source symbol — and is not declared in a "Proposed-symbols:" line.`,
+		});
+	};
+
 	for (const line of citationLines) {
 		// schema $id literals
 		let sm: RegExpExecArray | null;
@@ -437,7 +513,7 @@ function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]
 		// biome-ignore lint/suspicious/noAssignInExpressions: canonical regex-exec loop
 		while ((sm = sidRe.exec(line)) !== null) {
 			const name = sm[1];
-			if (!schemaNames.has(name) && !schemaIds.has(`pi-context://schemas/${name}`)) {
+			if (!rc.schemaNames.has(name) && !rc.schemaIds.has(`pi-context://schemas/${name}`)) {
 				violations.push({
 					id: `ID:schema:${name}`,
 					message: `Identifier resolution: cited schema "pi-context://schemas/${name}" has no matching schema file $id.`,
@@ -450,48 +526,78 @@ function checkIdentifiers(cwd: string, parsed: ParsedMd, violations: Violation[]
 		// biome-ignore lint/suspicious/noAssignInExpressions: canonical regex-exec loop
 		while ((bm = brefRe.exec(line)) !== null) {
 			const name = bm[1];
-			if (!schemaNames.has(name)) {
+			if (!rc.schemaNames.has(name)) {
 				violations.push({
 					id: `ID:block-ref:${name}`,
 					message: `Identifier resolution: cited "block:${name}" has no matching schema file.`,
 				});
 			}
 		}
-		// generic backtick-quoted tokens
+		// generic backtick-quoted tokens — keeps single-word lowercase tokens (e.g.
+		// `consequences`) covered, which the code-shape rules below do not match.
 		let gm: RegExpExecArray | null;
 		const gRe = new RegExp(backtickRe.source, "g");
 		// biome-ignore lint/suspicious/noAssignInExpressions: canonical regex-exec loop
-		while ((gm = gRe.exec(line)) !== null) {
-			const tok = gm[1];
-			if (resolveBacktickToken(tok, relationTypes, blockKinds, schemaNames, schemaIds, substrateDir, cwd)) continue;
-			violations.push({
-				id: `ID:token:${tok}`,
-				message: `Identifier resolution: cited identifier \`${tok}\` resolves to no relation_type, block kind, schema, or exported source function/type.`,
-			});
-		}
+		while ((gm = gRe.exec(line)) !== null) flagUnresolved(gm[1]);
+		// code-SHAPE tokens — caught whether or not backticked, so stripping the
+		// backticks off a code identifier no longer hides it from resolution.
+		let cm: RegExpExecArray | null;
+		const cRe = new RegExp(camelRe.source, "g");
+		// biome-ignore lint/suspicious/noAssignInExpressions: canonical regex-exec loop
+		while ((cm = cRe.exec(line)) !== null) flagUnresolved(cm[0]);
+		let snm: RegExpExecArray | null;
+		const snRe = new RegExp(snakeRe.source, "g");
+		// biome-ignore lint/suspicious/noAssignInExpressions: canonical regex-exec loop
+		while ((snm = snRe.exec(line)) !== null) flagUnresolved(snm[0]);
 	}
 }
 
-/** Resolve a single backtick token; true if it resolves to anything legitimate. */
-function resolveBacktickToken(
-	tok: string,
-	relationTypes: Set<string>,
-	blockKinds: Set<string>,
-	schemaNames: Set<string>,
-	schemaIds: Set<string>,
-	_substrateDir: string,
-	cwd: string,
-): boolean {
-	if (relationTypes.has(tok)) return true;
-	if (blockKinds.has(tok)) return true;
-	if (schemaNames.has(tok)) return true;
-	if (schemaIds.has(`pi-context://schemas/${tok}`)) return true;
+/** Resolve a single cited token; true if it resolves to anything legitimate. */
+function resolveCitedToken(tok: string, rc: ResolveCtx): boolean {
+	if (rc.relationTypes.has(tok)) return true;
+	if (rc.blockKinds.has(tok)) return true;
+	if (rc.schemaNames.has(tok)) return true;
+	if (rc.schemaIds.has(`pi-context://schemas/${tok}`)) return true;
+	if (rc.opNames.has(tok)) return true;
+	if (rc.conventionSlugs.has(tok)) return true;
 	// substrate-id-shaped tokens are handled by the substrate-id resolver; if a
-	// backtick token is substrate-id-shaped, treat as already-handled.
+	// token is substrate-id-shaped, treat as already-handled.
 	if (/^(?:FGAP|DEC|TASK|FEAT|ISSUE|REQ|STORY|VER|RES|PHASE|MILE|REVIEW)-\d+$/.test(tok)) return true;
+	// error-code string literal — a snake_case code emitted as a quoted literal in
+	// source (e.g. "substrate_id_unregistered").
+	if (tok.includes("_") && quotedLiteralExists(tok, rc.cwd)) return true;
 	// source identifier — grep packages/*/src for an export/function/type/interface decl.
-	return sourceSymbolExists(tok, cwd);
+	return sourceSymbolExists(tok, rc.cwd);
 }
+
+/**
+ * True if `name` appears as a double-quoted string literal anywhere in packages/src
+ * (an error-code emission such as `return { code: "substrate_id_unregistered" }`).
+ * Quoted-literal occurrence only — a bare token is NOT enough; the quotes are the
+ * signal it is an emitted code, not an incidental word.
+ */
+function quotedLiteralExists(name: string, cwd: string): boolean {
+	if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) return false;
+	try {
+		const out = execFileSync(
+			"grep",
+			["-rlE", `"${name}"`, "--include=*.ts", path.join(cwd, "packages")],
+			{ encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] },
+		);
+		return out.trim().length > 0;
+	} catch {
+		// grep exits 1 (no match) → throw → not found.
+		return false;
+	}
+}
+
+/**
+ * True if `name` is DECLARED (not merely called) in packages/src. Declaration
+ * patterns only — an incidental call-site (`name(`) must NOT resolve, or a lazy
+ * audit could cite an invented-but-plausible name that happens to appear as a
+ * call somewhere and pass. A real exported symbol still resolves via its
+ * declaration form.
+ */
 
 /**
  * True if `name` is DECLARED (not merely called) in packages/src. Declaration
@@ -1036,14 +1142,36 @@ main();
  *    line `no-change: <ID> — <reason>` anywhere in the MD.
  *
  * 4. IDENTIFIER RESOLUTION — every identifier token cited in a Provenance
- *    bullet or a `Proof:` line must resolve:
- *      - substrate ids (TASK-/DEC-/FGAP-/FEAT-/…-NNN) via resolveItemsByIds
- *      - `block:<name>` references → a schemas/<name>.schema.json file
+ *    bullet or a `Proof:` line must resolve. Two detection paths run over each
+ *    citation line:
+ *      a) BACKTICK path — every `` `token` `` (covers single-word lowercase
+ *         tokens like `consequences` that the shape rules below do not catch).
+ *      b) CODE-SHAPE path — every token matching a code shape, WHETHER OR NOT
+ *         backticked (so stripping the backticks no longer hides it):
+ *           - camelCase: a lower-run then an uppercase then more (e.g. cloneSubstrate)
+ *           - snake_case: a lower-run then an underscore then more (e.g. substrate_id_unregistered)
+ *         These shapes are essentially never English prose.
+ *    A detected token resolves if it is ANY of:
+ *      - a substrate id (TASK-/DEC-/FGAP-/FEAT-/…-NNN) via resolveItemsByIds
+ *      - `block:<name>` → a schemas/<name>.schema.json file
  *      - `pi-context://schemas/<name>` → a schema file with that $id
- *      - backtick-quoted tokens → a relation_type / block kind / schema name /
- *        schema $id / a source symbol DECLARED in the packages src trees
- *        (export / function / class / interface / type / const|let|var / member
- *        method|property declaration — NOT an incidental call-site)
+ *      - a relation_type / block kind / schema name / schema $id
+ *      - a registered ops-registry op `name` (e.g. promote-item)
+ *      - an error-code string literal: a snake_case token that occurs as a
+ *        double-quoted "<token>" in packages/*.ts (e.g. substrate_id_unregistered)
+ *      - a conventions-block item id/slug (e.g. cli-command-form)
+ *      - a source symbol DECLARED in the packages src trees (export / function /
+ *        class / interface / type / const|let|var / member method|property
+ *        declaration — NOT an incidental call-site)
+ *      - DECLARED as greenfield in a `Proposed-symbols:` line (see 4a below).
+ *
+ * 4a. PROPOSED-SYMBOLS (greenfield exemption) — a code-shaped token the audit
+ *    proposes to CREATE (which correctly does not resolve yet) must be declared
+ *    on a single MD line:
+ *      Proposed-symbols: <tok>, <tok>, ...
+ *    (comma-separated; multiple lines accumulate; stray backticks tolerated).
+ *    Exactly the listed tokens are exempted from resolution. A code-shaped token
+ *    that neither resolves nor appears in a Proposed-symbols set is a violation.
  *
  * 5. HEDGE/PUNT — none of the hedge phrases ("out of scope", "as appropriate",
  *    "if needed", "TODO", "cannot determine", "would need", "stop and report",

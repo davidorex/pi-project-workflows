@@ -110,7 +110,13 @@ Proof: <BLOCK-ID> — <how the fix achieves the gap's goal against the cited ent
 <!-- END EVIDENCE APPENDIX -->
 ```
 
-Every identifier cited in a Provenance bullet or a `Proof:` line must resolve: substrate ids via the substrate index; `block:<name>` to a schema file; `pi-context://schemas/<name>` to that schema $id; a backtick-quoted token to a relation_type, block kind, schema name/$id, or an exported source function/type/interface.
+Every identifier cited in a Provenance bullet or a `Proof:` line must resolve. Two token classes are scanned, both must resolve: every backtick-quoted token, and every code-shaped token — camelCase or snake_case-with-underscore — whether or not backticked. A token resolves to any of: a substrate id; `block:<name>`; `pi-context://schemas/<name>`; a relation_type; a block kind; a schema name/$id; an ops-registry op name; an error-code string literal (a snake_case token occurring as `"<token>"` in `packages/*.ts`); a conventions-block slug; or a source symbol declared in `packages/*/src`.
+
+A code-shaped token the audit proposes to create — not yet existing — is declared on one line, comma-separated:
+```
+Proposed-symbols: <tok>, <tok>, ...
+```
+Listed tokens are exempt from resolution. A code-shaped token that neither resolves nor is listed is a violation.
 
 Return: the MD path, the verdict (SOUND or CORRECTED), the headline findings, and the proof verdict.
 </output>

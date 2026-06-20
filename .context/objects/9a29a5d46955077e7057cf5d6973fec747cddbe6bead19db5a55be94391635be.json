@@ -1,0 +1,13 @@
+{
+  "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A substrate whose config declares a block kind with no data file reports not-installed; the op materializes the block's data file; context-bootstrap-state then reports ready.",
+    "The op runs both standalone and on update for a catalog-added block kind; --dryRun previews without writing.",
+    "The materialized block is writable: append-block-item --autoId succeeds against it."
+  ],
+  "files": [
+    "packages/pi-context/src/index.ts"
+  ],
+  "notes": "Unblocks milestone activation."
+}

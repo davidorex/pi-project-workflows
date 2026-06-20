@@ -186,6 +186,26 @@
       "oid": "c684c0759facd27fc53946c6ea299e60",
       "content_hash": "0ea6d6761fff25486bf30dedfe845c1ff1e0cf207c0e4873a700817b7fa53257",
       "content_parent": "b0c209762ffd9bb16e9d03ba750889d8e2bfbcbf5492858024aed1ca3abb3cf9"
+    },
+    {
+      "title": "Substrate evolution safety + currency — catalog/config/schema evolution and substrate read/repair/materialize never brick or silently corrupt an installed substrate",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "Catalog, config, and schema evolution, and every read / repair / materialize of an already-installed substrate, preserve its loadability, the integrity of its install/validity signals, and its recoverability through sanctioned ops. Config carries a versioned envelope and migrates on load across a version gap; an invalid config is recoverable through a sanctioned repair that validates the result, not the pre-existing state; a non-additive config-schema diff is flagged at build time unless paired with a migration; block data carries schema_version so read-time validation and migration are active; a block kind declared after install is materialized into the existing substrate. Invariant: no evolution, read, repair, or materialize leaves the substrate bricked, silently corrupted, or unrecoverable through sanctioned ops.",
+      "acceptance_criteria": [
+        "A config whose schema_version lags the bundled config schema is migrated forward on load and loads valid: loadConfigForDir migrates-then-validates via the schema-name-keyed config migration chain.",
+        "An invalid config.json is restored to validity through a sanctioned CLI repair path that validates the corrected result rather than refusing on the pre-existing invalid state; recovery needs no forbidden direct edit.",
+        "A non-additive config-schema diff (a removed/renamed key or a new required field) is flagged at build time unless paired with a registered migration.",
+        "Block data carries schema_version; the read-time validation hook and the version-mismatch migration branch fire for blocks, so a version-bump migration applies to existing block data on read.",
+        "A block kind declared in config after a substrate was installed is materialized into that substrate by a sanctioned op; context-bootstrap-state then reports ready and the block is writable."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "FEAT-010",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-20T04:10:00.110Z",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "content_hash": "97689dacb5ccc9dc0a3124dd7c5c8e863b1a76d72656851ca07bd0de87c143b1"
     }
   ]
 }

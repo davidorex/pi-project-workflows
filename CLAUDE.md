@@ -29,8 +29,11 @@ npm test                   # all packages; must stay at 0 failures
 npm run check              # biome + tsc --noEmit (also runs as husky pre-commit + npm test)
 npm run format             # biome format
 npm run skills             # regen SKILL.md from built extensions (run after build)
+npm run promote:cli        # install/refresh the operator pi-context binary (see below)
 npm run release:patch|minor|major   # lockstep bump + commit + tag
 ```
+
+The operator `pi-context` CLI you dogfood with IS this working tree's code, installed by `npm run promote:cli` (`scripts/promote-cli.mjs`) as a publish-free packed COPY into the global npm prefix — NOT an `npm link` into the repo (which a `npm run build`'s `rm -rf dist` would clobber) and NOT the published registry release (stale). After editing/building pi-context, re-run `npm run promote:cli` to refresh the operator. Details: `packages/pi-context-cli/README.md`.
 
 Derive context state at any time. `contextState('.')` reads the currently-active substrate (whichever `.pi-context.json` points at). To inspect a different substrate, switch to it first (see switch command above), then run:
 ```bash

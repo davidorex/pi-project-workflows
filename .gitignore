@@ -3,6 +3,9 @@ docs/
 node_modules/
 .claude/*
 !.claude/hooks/
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/audit-task-resolution/
 .pi/
 .workflow/
 .workflows/

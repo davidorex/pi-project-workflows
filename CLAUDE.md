@@ -71,6 +71,7 @@ Anything that must persist beyond a session is filed in the substrate (gaps / ta
 - Lockstep versioning via `npm run release:*` invoking `scripts/bump-versions.js` (direct JSON read/write per package.json; never `npm version -ws` directly — fails 0.x minor/major bumps)
 - **Op surface**: the reflecting `pi-context-cli` (`pi-context <op> …`) is the Claude Code-side shell surface over the op-registry — a substrate op is a library fn + a Pi tool the CLI reflects. The hand-written `scripts/orchestrator/*.ts` are composers (`compile-*-context.ts`, `inject-context-items.ts`), runtime-demos, and launch-support — hand-authored briefs forbidden, use these. `build-html-views.ts` projects the active substrate's `*.json` (via canonical pi-context block-api) to a self-contained HTML view at `html-views/substrate-overview.html`.
 - Dispatch artifacts live under gitignored `compiled-contexts/` (orchestrator-composed agent input + agent-written reports). Project-root `tmp/` is also gitignored for ad-hoc scratch.
+- The PreToolUse enforcement hooks in `.claude/hooks/` (e.g. the provenance/register guard, the pi-context direct-drive guard) are LIVE and fire repo-wide; they are not scoped to the active substrate (`FGAP-089`, unsolved). Develop/test changes to a guard against a COPY, never the live guard.
 
 ## Canonical implementation pipeline (every code change, including in-loop fixes)
 

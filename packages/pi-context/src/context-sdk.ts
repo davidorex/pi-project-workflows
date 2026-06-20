@@ -342,7 +342,7 @@ export interface CurrentState {
 	focus: string;
 	/** tasks with status "in-progress" */
 	inFlight: { id: string; block: string; description: string }[];
-	/** atomic-next, ranked: open framework-gaps (by priority) then unblocked planned tasks (topo order) */
+	/** atomic-next, ranked: unblocked planned tasks (topo order) then open issues (by priority) then open framework-gaps (by priority) */
 	nextActions: { id: string; kind: string; priority?: string; reason: string }[];
 	/** planned tasks whose task_depends_on_task dependency parents are not ALL completed */
 	blocked: { id: string; block: string; blockedBy: string[] }[];
@@ -854,7 +854,8 @@ export function currentState(cwd: string): CurrentState {
 
 	// ── nextActions (atomic-next, ranked) ──────────────────────────────────────
 	// Iterate `sd.next_ranked` IN ARRAY ORDER — array order IS the cross-kind push
-	// order (stock: priority-ranked gaps, then topo-ordered tasks).
+	// order (stock: topo-ordered tasks, then priority-ranked issues, then
+	// priority-ranked gaps).
 	const nextActions: CurrentState["nextActions"] = [];
 	for (const entry of sd.next_ranked) {
 		if (entry.rank_field !== undefined) {

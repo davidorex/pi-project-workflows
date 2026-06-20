@@ -94,7 +94,7 @@
 				},
 				"next_ranked": {
 					"type": "array",
-					"description": "Ordered cross-kind push order for nextActions. Each entry selects items of `kind` at `bucket`, labels them `label`, and emits its `reason_template` (with `{rank_value}`/`{id}` tokens substituted) as each item's `reason`; optional `rank_field` + `rank_order` rank within the entry (absent → topo over the dep/gate graph). Stock: framework-gaps (priority-ranked) then tasks (topo).",
+					"description": "Ordered cross-kind push order for nextActions. Each entry selects items of `kind` at `bucket`, labels them `label`, and emits its `reason_template` (with `{rank_value}`/`{id}` tokens substituted) as each item's `reason`; optional `rank_field` + `rank_order` rank within the entry (absent → topo over the dep/gate graph). Stock: tasks (topo) then issues (priority-ranked) then framework-gaps (priority-ranked).",
 					"items": {
 						"type": "object",
 						"additionalProperties": false,

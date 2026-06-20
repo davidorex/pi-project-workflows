@@ -118,7 +118,8 @@ export interface StateDerivationConfig {
 	focus_fallback: { kind: string; bucket: string };
 	/**
 	 * Ordered cross-kind push order for `nextActions` (array order IS the emit
-	 * order). Stock: framework-gaps (priority-ranked) then tasks (topo-ordered).
+	 * order). Stock: tasks (topo-ordered) then issues (priority-ranked) then
+	 * framework-gaps (priority-ranked).
 	 */
 	next_ranked: NextRankedEntry[];
 	/**

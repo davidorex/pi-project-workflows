@@ -25,7 +25,7 @@ Replace `<target-substrate-dir>` with the substrate to activate, e.g. `.context`
 
 ```bash
 npm run build              # tsc compiles each package to dist/
-npm test                   # all 4 packages; must stay at 0 failures
+npm test                   # all packages; must stay at 0 failures
 npm run check              # biome + tsc --noEmit (also runs as husky pre-commit + npm test)
 npm run format             # biome format
 npm run skills             # regen SKILL.md from built extensions (run after build)
@@ -45,33 +45,16 @@ npx tsx scripts/orchestrator/build-html-views.ts --dry-run # validate substrate 
 
 Re-run after any active-substrate `*.json` change to refresh the rendered view.
 
-## TEMPORARY — active-arc ordering tracker (retire when obsolete)
+## Current status — derive it, never cache it
 
-**Active position:** branch `feat/task-069-operator-binary-copy` (60 commits ahead of `main`, 0 behind — NOT merged; its base `e324d2a` is already on `main`); active substrate `.context`; v0.31.0. While the ready/blocked deriver honors only task-level gating (`task_gated_by_item`, shipped via TASK-065; feature/story gates + config-declared all-kinds readiness remain `FGAP-061` FORWARD → FEAT-004) and there is no release vocabulary (`FGAP-011`), **current status + focus and the required-work ordering are NOT fully derivable from `/context status` — this note is the temporary record.**
+This file records NO project status. Position, focus, open work, counts, arc narrative, what-shipped, install state, and validation all go stale the moment they are written and are never stored here. Derive them from the active substrate every session:
 
-**Done — promote-cli arc (this branch; closes the binary-coupling incident).** The live operator `pi-context` is now a packed COPY, not an npm-link symlink into the repo: `/opt/homebrew/bin/pi-context` resolves under `/opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/` (a real installed dir), installed via `npm run promote:cli` (`scripts/promote-cli.mjs`: build → `npm pack` the workspace set → `npm i -g --force`). A repo `npm run build` (`rm -rf dist && tsc`) leaves the installed bin's inode + hash unchanged. **TASK-069 completed** (14 criteria, verified on the real global). **issue-004 resolved** (npm-link coupling, critical). Hardening residuals all resolved: **issue-006** (poisonable/unvalidated destructive target — closed by `cleanNpmEnv()` scrub + pre-destruction containment, NOT by refusing inherited prefixes; that refusal broke the documented path and was removed in `409a71d`), **issue-007** (validate-vs-act TOCTOU — `60613cc` materialize+resolve+re-validate), **issue-008** (glued `--prefix=` mis-route) + **issue-009** (guard path-representation divergence) (`8d4bdc7`). **VER-055 passed** (iterate-5, all 14 on the real global); VER-053/054 are `partial` iterate-2/3 records (their `skipped`/`failed` entries are accurate point-in-time history, superseded by VER-055 — not drift).
+- **Install state** (a fresh checkout can be `not-installed`, with declared blocks/schemas missing): `pi-context context-bootstrap-state`.
+- **Position / focus / ready / blocked / open work**: `pi-context context-status` (or `context-current-state`).
+- **Integrity**: `pi-context context-validate` and `pi-context context-validate-relations`.
+- **History / branch / what shipped**: `git log`, `git status`.
 
-**In-flight (derived `currentState`):** **TASK-020** (config-driven state-derivation registry + `currentState` rewire; closes FGAP-017 P2, advances FEAT-004; TASK-021 blocked on it) and **TASK-068** (make `issues` a gap-sibling first-class open-work kind; addresses FGAP-098; prerequisite for ever task-addressing an issue-004-class issue; interacts with FGAP-094/TASK-066/TASK-067).
-
-**New gaps filed this branch:** **FGAP-099** (P1, `identified`) block data carries no `schema_version` → read-time AJV validation + version-mismatch migration inert for ALL blocks (top of `nextActions`). **FGAP-098** (`identified`) issues not a gap-sibling kind → TASK-068. **FGAP-100** (`identified`, class-level) a nested-array sub-element of an item (e.g. an `acceptance_criteria` entry, a `criteria_results` row) has no stable identity; resolution TBD (decision to be filed). **FGAP-095/096/097** (`identified`) config-schema evolution has no load-time migration (095) / config un-repairable once stored-invalid, validate-before-mutate deadlock (096) / no additive expand-contract discipline + no breaking-diff gate (097) — the config-side siblings of the binary-coupling incident.
-
-**Prior-stretch closures (still accurate):** **FGAP-090 CLOSED** — relation_type registry coverage + write-time edge enforcement (`decision_raises_gap`/`decision_gated_by_item`/`gap_relates_to_gap` added, edge validator hoisted to `appendRelationByRef`/`appendRelationsByRef`, edge corrections; TASK-061/062/063, VER-047/048/049); DEC-0013/0014/0015/0018 all enacted. **FGAP-091 filed** (`identified`, no forcing-function for warranted non-invariant closure edges) + **TASK-064** backfilled the 7 warranted task→decision/gap edges; the forcing-function invariant is its open residual. **FGAP-093 filed** (`identified`, write-time edge guard lacks full write↔validate parity — dangling/unregistered-endpoint + cycle accepted at write).
-
-**FGAP-061 NOW slice done:** **TASK-065** folds `task_gated_by_item` gates into `currentState` task readiness (gated-by-non-complete → blocked, gate id in `blockedBy`, held out of `nextActions`; gate satisfaction reuses `bucket(target)==="complete"`; dangling gate = satisfied; decision/feature/story gates inert); VER-051. **FGAP-061 stays `identified`** — FORWARD (feature/story readiness + config-declared blocked-by set) is FEAT-004, edged `gap_addressed_by_feature → FEAT-004`.
-
-**FGAP-094 (catalog↔config relation_type drift, P2, `identified`):** packaged catalog relation_types is a strict subset of live `.context/config.json`; 6 live-only incl. `task_gated_by_item` — a fresh `accept-all` substrate lacks them and the write-time validator rejects their edges. NOW slice = **TASK-066** (back-port `task_gated_by_item` + `phase_depends_on` to catalog, `planned`); FORWARD = **TASK-067** (build-time catalog⊇consumed-vocabulary parity gate, `planned`, blocked on TASK-066). Investigation `analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md`.
-
-**Open issues (3, none implicated by the promote-cli arc):** issue-002 (layer-plans nested id-bearing arrays, low), issue-003 (operator-substrate refused-conventions resync, medium, not reproducible against this repo's `.context`), issue-005 (same-version resync verbatim-overwrites without re-validating items, high).
-
-**Required-work ordering to make focus/status derivable + releases pinnable:**
-1. **FGAP-061 NOW slice DONE** (TASK-065); **FEAT-004** (config-declared all-kinds readiness incl. feature/story gates; TASK-020 advances it) is the remaining FORWARD residual → then focus/status/blocked fully derivable + **this note retires**.
-2. **FGAP-091** forcing-function invariant + arc-binding (`gap-arc-coherence`) → gaps covered by tasks under features.
-3. **FGAP-011** (`accepted`) release/version block kind → features pin releases.
-4. **FGAP-093** (write↔validate edge-guard parity); **FGAP-089** (P3, hook-scoping to active substrate, unsolved — develop against copies, never the live guards; see `analysis/2026-06-13-install-surface-and-guard-scope-gaps.md` + R-0014).
-
-**Standing research / leverage direction (not yet acted on):** **R-0015** (`analysis/2026-06-15-pi-context-leverage-audit.md`) — the project under-uses pi-context's organizational/derivational surfaces; its focus/status/release underivability is **dogfooding-discipline + the tracked gaps above, not a missing tool capability**. **R-0016** (`analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md`) — the **context-contracts leverage direction** (author CTX contracts + `gather-execution-context` to DERIVE subagent dispatch context instead of hand-composing it): core thesis sound, blocked on 3 corrections before acting — `work_order_dispatches_task` is unregistered (must add), `decision-shows-derivation` is severity **warning** not error (TASK-041's raise-to-error pending — do not assume decisions are gated), the bundle→agent-`contextBlocks` injection is **unimplemented** (net-new work).
-
-**Releases HELD** (no `release:*` without explicit per-release authorization); v0.31.0 last; npm publish + git push are the user's downstream steps (OTP). This branch is unmerged to `main`. Delete this note when `FEAT-004` lands (config-declared all-kinds gate-aware derivation); `FGAP-061`'s NOW slice already shipped via TASK-065.
+Anything that must persist beyond a session is filed in the substrate (gaps / tasks / decisions / verifications / research) and read there — not cached in this file. Releases are HELD: no `release:*` and no push/publish without explicit per-release authorization.
 
 ## Conventions
 

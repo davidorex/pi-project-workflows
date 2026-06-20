@@ -6665,5 +6665,18 @@
       "refname": "TASK-069"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bcb4669f397914c903e0b7a3b295a3fe",
+      "refname": "VER-056"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "refname": "TASK-020"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

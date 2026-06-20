@@ -1805,6 +1805,48 @@
       "oid": "c644b34a128f7fbbc0305f9d26171768",
       "content_hash": "49cb079041d27bfe850512587b7b428fd5856012bc59061c2d1053e52b7fe1d4",
       "content_parent": "6043174e344bea99e0b0f59d82990f80752f31784fb0406bbbe77ef31d04c7f2"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "TASK-020 true position established by running the current working-tree deriver (contextState via tsx-eval, the in-progress source) against both real substrates plus pi-context context-current-state. Implementation lives on feat/task-020-config-derivation (commit chain through 9125385, reachable from HEAD); context-jit-spec-v2 holds only the plan-mode-step-1 filing 9ee8f0a. 4 of 6 criteria met by observed output (149 context-sdk tests pass); criterion 3's real-substrate outcome is NOT met and criterion 6 (verification/closure) is not done — so TASK-020 is genuinely in-progress, not complete.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+          "status": "passed",
+          "evidence": "contextState('.context-jit-spec-v2') (via pointer flip, restored after) returned focus 'state-derivation not configured' with empty arrays; that substrate has no state_derivation registry (read-config --registry state_derivation -> not found). Truthful not-configured signal, not silent empty."
+        },
+        {
+          "criterion": "Stock .context behavior byte-preserved",
+          "status": "passed",
+          "evidence": "contextState('.context') derives a real position (focus 'in-flight: TASK-020, TASK-068', 15 ranked nextActions, real blocked set, milestones []); the 149 context-sdk tests including the stock byte-equivalence assertion pass."
+        },
+        {
+          "criterion": "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+          "status": "failed",
+          "evidence": "Mechanism met (head_size:15 is config-declared; no NEXT_ACTIONS_CAP literal in source). Outcome NOT met: context-current-state against live .context (44 open gaps) returns a 15-entry head that is ALL framework-gaps (FGAP-099/017/033/034/035/036/038/040/042/043/044/045/061/071/074), zero ready tasks — the exact truncation the criterion requires eliminated. Remaining work: the stock registry ordering/head must surface ready tasks above/within the gap-dominated head."
+        },
+        {
+          "criterion": "All derivation couplings are config-driven, not just the original set: the blocked-by relation SET (task_depends_on_task + task_gated_by_item gate) and the milestone phase-rollup (block milestone + relation phase_positioned_in_milestone + the reached/planned status) are declared in the registry; no hardcoded relation/kind/status literal survives in the rewired currentState (verified by grep of the deriver)",
+          "status": "passed",
+          "evidence": "Grep of the currentState body (context-sdk.ts) shows only a doc comment and three uses of 'task_gated_by_item' as an endpoint direction-discriminator for a relation already drawn from sd.blocked_by.relation_types config; relation/kind/status/rank/head set membership all read sd.* . Commit 9125385 moved the last kind-coupled reason/focus literals to config (reason_template / focus_fallback.kind)."
+        },
+        {
+          "criterion": "A truthful not-configured signal is returned when no state-derivation registry is declared, distinguishable from a configured-but-empty substrate",
+          "status": "passed",
+          "evidence": "jit-spec-v2 (no registry) -> focus 'state-derivation not configured'; a configured-but-empty substrate derives normally to focus 'no active focus.' with empty arrays. Distinct signals, distinguishable."
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)",
+          "status": "failed",
+          "evidence": "Not done: TASK-020 status in-progress, FGAP-017 status identified (not closed), no verification_verifies_item edge prior to this VER, no recorded cross-substrate runtime demo + fresh adversarial audit. The closure step has not occurred."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-056",
+      "oid": "bcb4669f397914c903e0b7a3b295a3fe",
+      "content_hash": "e6be843def0b76d9785a95866a4fa0f42d2f354860ca00bc2799d42c01f9f9dd"
     }
   ]
 }

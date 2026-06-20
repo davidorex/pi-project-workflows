@@ -16,20 +16,26 @@
  *   1. Fixture / CLI mode —
  *        npx tsx .claude/hooks/audit-checker.ts --md <path> [--transcript <path>]
  *      Checks the named MD (ungated).
- *   2. Hook mode (no --md) — reads a Stop-hook stdin JSON payload
- *      ({ transcript_path, cwd, ... }). Gates on the ACTIVE SENTINEL's task(s):
- *      for each `tmp/audit-loop-state/active-<TASK-ID>`, that task's audit MD
- *      (analysis/<date>-audit-<TASK-ID>-proposed-resolution.md) must be present,
- *      clean, and ratified. A missing/unclean/unratified MD BLOCKS (a lazy agent
- *      that produced nothing cannot escape). On clean+ratified the sentinel is
- *      cleared; exit 0 only when EVERY active task is cleared. The sentinel is
- *      established at INVOCATION by the UserPromptSubmit hook (audit-sentinel-engage.sh),
- *      before the authoring agent runs — the agent never creates or owns it.
+ *   2. Hook mode (no --md) — reads a SubagentStop-hook stdin JSON payload
+ *      ({ transcript_path, cwd, ... }). The audit runs as a dispatched SUBAGENT;
+ *      this hook fires when a subagent ends and gates on the ACTIVE SENTINEL's
+ *      task(s): for each `tmp/audit-loop-state/active-<TASK-ID>`, that task's audit
+ *      MD (analysis/<date>-audit-<TASK-ID>-proposed-resolution.md) must be present
+ *      and machine-clean (C2/C5/C6/identifier/hedge/structural). A missing or
+ *      unclean MD BLOCKS (a lazy subagent that produced nothing cannot escape). On
+ *      machine-clean the sentinel is cleared so the subagent can exit; exit 0 only
+ *      when EVERY active task is cleared. The hook does NOT gate on ratification —
+ *      C1/C3/C4 are the human's grant in the MAIN conversation, surfaced by the
+ *      audit-critic after a clean run; the subagent's own transcript can never carry
+ *      it, so coupling it here would trap the subagent. The sentinel is established at
+ *      INVOCATION by the UserPromptSubmit hook (audit-sentinel-engage.sh), before the
+ *      authoring subagent runs — the agent never creates or owns it.
  *
- * Exit semantics (Stop-hook convention): exit 2 BLOCKS the agent from ending
- * its turn and feeds stderr back to it; exit 0 lets the turn end. The script
- * is idempotent — it recomputes every invocation and owns its own stall logic
- * (there is no framework block-cap and no stop_hook_active dependency).
+ * Exit semantics (SubagentStop-hook convention): exit 2 BLOCKS the subagent from
+ * ending and feeds stderr back to it; exit 0 lets it end. NO Stop hook is wired, so
+ * the orchestrator's own turns are never gated and the project pays no per-turn tax.
+ * The script is idempotent — it recomputes every invocation and owns its own stall
+ * logic (there is no framework block-cap and no stop_hook_active dependency).
  *
  * Drives `@davidorex/pi-context` the way scripts/orchestrator/*.ts do:
  *   resolveContextDir (context-dir), resolveItemsByIds (context-sdk),
@@ -874,8 +880,9 @@ function main(): void {
 	}
 
 	// CLI / fixture mode (--md given) — run directly against the named MD, no sentinel
-	// gate. Exits 0 on clean+ratified, 2 on any violation.
-	const result = evaluateMd(cwd, mdPath, transcriptPath);
+	// gate. Exercises the ratification gate too (requireRatification=true) so fixtures
+	// can prove it. Exits 0 on clean (+ratified), 2 on any violation.
+	const result = evaluateMd(cwd, mdPath, transcriptPath, true);
 	if (result.violations.length > 0) fail(result.violations, result.extra);
 	process.exit(0);
 }
@@ -901,12 +908,14 @@ function runHookChecks(cwd: string, activeTasks: string[], transcriptPath: strin
 			});
 			continue;
 		}
-		const result = evaluateMd(cwd, mdPath, transcriptPath);
+		const result = evaluateMd(cwd, mdPath, transcriptPath, false);
 		if (result.violations.length > 0) {
 			allViolations.push(...result.violations);
 			allExtra.push(...result.extra);
 		} else {
-			// This task is clean + ratified → release it.
+			// This task's MD is machine-clean → the authoring subagent has produced a
+			// conformant audit; release the sentinel so it can exit. Human ratification
+			// of C1/C3/C4 is the orchestrator-routed step in the main conversation.
 			clearSentinel(cwd, taskId);
 		}
 	}
@@ -919,7 +928,12 @@ function runHookChecks(cwd: string, activeTasks: string[], transcriptPath: strin
  * returning the accumulated violations (empty ⇒ clean + ratified). Does NOT exit — callers
  * decide (CLI mode exits directly; hook mode aggregates across active sentinels first).
  */
-function evaluateMd(cwd: string, mdPath: string, transcriptPath: string | null): { violations: Violation[]; extra: string[] } {
+function evaluateMd(
+	cwd: string,
+	mdPath: string,
+	transcriptPath: string | null,
+	requireRatification: boolean,
+): { violations: Violation[]; extra: string[] } {
 	if (!fs.existsSync(mdPath)) {
 		return { violations: [{ id: "MD:missing", message: `audit MD not found: ${mdPath}` }], extra: [] };
 	}
@@ -965,11 +979,19 @@ function evaluateMd(cwd: string, mdPath: string, transcriptPath: string | null):
 		return { violations, extra };
 	}
 
-	// All deterministic checks clean — now the ratification gate (C1/C3/C4).
-	const ratifyViolation = checkRatification(transcriptPath, taskId);
-	if (ratifyViolation !== null) return { violations: [ratifyViolation], extra };
+	// Deterministic checks clean. Ratification (C1/C3/C4) is the human's grant and
+	// lives in the MAIN conversation transcript, not the audit subagent's — so the
+	// SubagentStop hook path does NOT gate on it (requireRatification=false): coupling
+	// it there would trap the subagent forever, since its own transcript can never
+	// carry the user's grant. The audit subagent exits once its MD is machine-clean;
+	// the orchestrator then routes the audit-critic verdict to the user for ratification.
+	// --md / fixture mode keeps the ratification gate to exercise it under test.
+	if (requireRatification) {
+		const ratifyViolation = checkRatification(transcriptPath, taskId);
+		if (ratifyViolation !== null) return { violations: [ratifyViolation], extra };
+	}
 
-	// Clean + ratified.
+	// Clean (and ratified when required).
 	return { violations: [], extra };
 }
 

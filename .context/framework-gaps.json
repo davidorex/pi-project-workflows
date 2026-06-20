@@ -2023,29 +2023,50 @@
       "content_parent": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
     },
     {
-      "title": "pi-context update merges a new block_kind config declaration but does not materialize its schema/starter — a dangling declaration until install",
+      "title": "No op materializes a newly-declared block's data file into an already-installed substrate — neither update nor the install-ceremony write that declared it (a dangling block_kind declaration)",
       "status": "identified",
-      "priority": "P3",
+      "priority": "P2",
       "package": "pi-context",
-      "description": "TASK-038's config-registry propagation additively merges a catalog-new block_kind entry into config.block_kinds. But a genuinely-new block_kind's schema file + starter block materialize ONLY from the installed_schemas / installed_blocks lists (string-array registries, not in TASK-038's four-registry scope), which updateContext does not propagate. So an additively-merged new block_kind is a dangling declaration: config declares the kind, but its schema is not copied and no starter block exists, until a subsequent install (which iterates installed_schemas/installed_blocks). relation_types / invariants / lenses have no such concern — they are fully functional as config declarations; only block_kinds couple to schema/block materialization.",
+      "description": "A block_kind added to the catalog after a substrate was installed leaves that substrate with a dangling declaration: config declares the kind and its schema may be present, but its data file is never created, and no op materializes it. updateContext propagates schemas + config-registries only and contains zero block-data-file operations (index.ts:1818-2151; mergeCatalogRegistries scope is the four keyed-array registries relation_types/invariants/block_kinds/lenses, while installed_schemas/installed_blocks are out of scope). installContext materializes block data files only for the install-time installed_blocks set (index.ts:1299-1357). No materialize/ensure/repair-blocks op exists. context-bootstrap-state defines installed as every installed_blocks entry having its data file on disk (context-sdk.ts:397-413; findUnmaterializedAssets context.ts:612-620), so a declared-but-unmaterialized block forces state not-installed. Live triggering instance: the milestone block_kind is in config.block_kinds + installed_blocks and .context/schemas/milestone.schema.json is present, but .context/milestone.json was never created (the install-ceremony closure commit 038c2dc wrote config + schema + object-store only), so context-bootstrap-state reports not-installed with missing.blocks:[milestone] and the milestone kind is unusable (append-block-item --autoId throws on the absent data file). General class: catalog evolution (a new block_kind / schema / vocabulary) has no propagation path to bring an already-installed substrate current — sibling of FGAP-094 (relation_type drift) and FGAP-095/096/097/099 (config/block schema-evolution: load-time migration, repair path, expand-contract discipline, schema_version envelope).",
       "evidence": [
         {
-          "file": "packages/pi-context/src/index.ts",
-          "reference": "updateContext's TASK-038 registry-merge step merges block_kinds config entries; installContext materializes schemas/blocks only from config.installed_schemas / installed_blocks, not from block_kinds"
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "397-413",
+          "reference": "deriveBootstrapState: state not-installed iff missing.blocks non-empty"
         },
         {
           "file": "packages/pi-context/src/context.ts",
-          "reference": "mergeCatalogRegistries scope = the four keyed-array registries (relation_types/invariants/block_kinds/lenses); installed_schemas/installed_blocks (string-array) are out of scope, so a newly-declared block_kind's schema_path/data_path point at uncopied catalog files"
+          "lines": "612-620",
+          "reference": "findUnmaterializedAssets: a block is missing iff <root>/<name>.json absent (installedBlockDestPath 599-602)"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1299-1357",
+          "reference": "installContext materializes block data files only over the install-time installed_blocks set"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1818-2151",
+          "reference": "updateContext: schemas + config-registries only (mergeCatalogRegistries 2118-2148); zero block-data-file operations"
+        },
+        {
+          "file": ".context (git 038c2dc)",
+          "reference": "the install-ceremony closure wrote .context/config.json + schemas/milestone.schema.json + object store; NOT .context/milestone.json — the live not-installed origin"
+        },
+        {
+          "file": "analysis/2026-06-20-active-substrate-not-installed-rootcause.md",
+          "reference": "full investigation: detector trace, install/update source, live repro, prior-art + class"
         }
       ],
-      "impact": "A catalog release that adds a new block_kind reaches an existing substrate (via update) as a config declaration without its schema/starter — the kind is declared but unusable (no schema to validate items against, no starter block) until a subsequent install. No data loss; the relation_types/invariants governance propagation (TASK-038's immediate driver) is unaffected.",
-      "canonical_vocabulary": "block_kind materialization on update (schema + starter, not just declaration)",
-      "proposed_resolution": "On update, for a block_kind additively merged into config, also propagate its installed_schemas / installed_blocks entries and materialize the schema + starter block via the install path, so a new block kind arrives complete (declaration + schema + starter); surfaced + previewed by --dryRun. Tracked as the materialization half of config-registry propagation (TASK-038 did the declaration half).",
+      "impact": "Any catalog-added block kind silently bricks the bootstrap signal of every pre-existing substrate: context-bootstrap-state reports not-installed though the substrate is fully usable for its existing blocks, and the new block kind cannot be filed to (its data file does not exist). The canonical 'is this substrate installed' signal lies to every consumer — operator, CI gate, fresh-checkout bootstrap check, readiness-verifying agent. Live on .context since 2026-06-16 (the milestone declaration).",
+      "canonical_vocabulary": "block_kind data-file materialization into an already-installed substrate (declaration + schema + starter, on any post-install currency op, not only update)",
+      "proposed_resolution": "Provide a sanctioned op that materializes any declared-but-absent block data file into an existing substrate (the missing.blocks[] set from findUnmaterializedAssets), copying the catalog starter via the install path — invoked by update for catalog-added block kinds AND available standalone as a repair/materialize op; surfaced + previewed by --dryRun. Scope is broader than update: the milestone live state was produced by the install-ceremony declaration write, not by update, so the fix is to materialize missing block files on any post-install currency op, not only on update. Verification: a substrate whose config declares a block kind with no data file reports not-installed, the op materializes <kind>.json, and context-bootstrap-state then reports ready.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-065",
       "oid": "6c909103e3127305ce4e68a7cbbfd727",
-      "content_hash": "af27c0c700fc6e2688437a660c96e37cc37ffaa24a8b015db70c921eefa8ffcb"
+      "content_hash": "85f724cb1528c9dfff45ede1755abf3220cacf34dc9b53dd643331b06c1ce04f",
+      "content_parent": "96c16d1cd614adbb87c5e433910ac42333d9d3f09e06663f6a27bc8766787c5e"
     },
     {
       "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",

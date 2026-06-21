@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/milestone",
+  "version": "1.0.0",
+  "title": "Milestones",
+  "description": "Array-block of project milestones. A milestone is a pure phase-rollup checkpoint with no work of its own: its `status` (planned | reached) is DERIVED, never authored — a milestone is `reached` iff at least one phase is positioned in it (a phase_positioned_in_milestone edge) and the parent phase of every such edge buckets to complete, else `planned`. Phase membership lives in relations.json phase_positioned_in_milestone edges (phase -> milestone), not inline. `release` is an optional grouping string pending the normalized release entity.",
+  "type": "object",
+  "required": [
+    "milestones"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "milestones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^MILE-\\d{3,}$",
+            "description": "Stable canonical id; MILE-NNN (3+ digits), mirroring the STORY-/TASK-NNN convention."
+          },
+          "name": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "reached"
+            ],
+            "description": "DERIVED phase-rollup, not authored: `reached` iff >=1 phase_positioned_in_milestone edge (in which the phase is the parent and the milestone the child) and the parent phase of every such edge buckets to complete; else `planned`. A milestone carries no work of its own; authored status is rejected by canon (substrate-derived-state)."
+          },
+          "release": {
+            "type": "string",
+            "description": "Optional release grouping label. Interim flat string pending the normalized release entity, which will subsume / edge this field."
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_by": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    }
+  }
+}

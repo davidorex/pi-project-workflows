@@ -1,0 +1,11 @@
+{
+  "output": "ORCHESTRATOR-STATE.pending-actions.json",
+  "source": "ORCHESTRATOR-STATE.md",
+  "section": "## Pending orchestrator actions",
+  "itemLinePattern": "^\\d+\\.\\s+",
+  "rawStrip": "^",
+  "ignoreLinePattern": "^\\*\\*Immediate next|^Remaining:$",
+  "foldsRaw": true,
+  "fields": ["seq", "group", "num", "text", "done", "children", "raw", "kind", "notes"],
+  "required": []
+}

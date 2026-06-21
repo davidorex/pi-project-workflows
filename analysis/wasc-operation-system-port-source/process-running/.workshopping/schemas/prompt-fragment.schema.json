@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/prompt-fragment",
+  "version": "1.0.0",
+  "title": "prompt-fragment",
+  "type": "object",
+  "required": [
+    "fragments"
+  ],
+  "properties": {
+    "fragments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "body"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FRAG-[a-z0-9-]+$"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "preamble",
+              "grounding-block",
+              "output-contract-header",
+              "spec-intro",
+              "spec-contract"
+            ]
+          },
+          "section": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        }
+      }
+    }
+  }
+}

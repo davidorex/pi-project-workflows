@@ -1,0 +1,22 @@
+{
+  "title": "prompt-workshop/dispatch is outside the standing gate + carries pre-existing ruff/mypy debt",
+  "status": "identified",
+  "package": "prompt-workshop",
+  "description": "prompt-workshop/dispatch/ (the workshop bridge: _workshop.py, apply.py, apply_from_substrate.py, render.py, render_from_substrate.py, sequence.py, decompose.py, verify-render-parity.py) sits at repo-root, OUTSIDE the school-improvement-plans/ rootdir where the standing gate is configured (pyproject [tool.ruff]/[tool.mypy]/[tool.pytest], Makefile lint/typecheck/test, CI test.yml). So `uv run ruff check` / `uv run mypy .` / `uv run pytest` never cover the dispatch dir; FEAT-002 gated it only via a one-shot manual verify-render-parity.py. Pointing the gate at the dir (verified by running): `ruff check ../prompt-workshop/dispatch` -> 4 errors (decompose.py:190 E501; :267/:348/:349 E741 ambiguous `l`); `mypy ../prompt-workshop/dispatch` -> real errors incl. apply.py:294 Unexpected keyword argument school/grounding [call-arg] + unused-ignore across siblings, and the dir is a PEP-420 namespace pkg mypy can't resolve without mypy_path. B1 (FGAP-005) brings ONLY _workshop.py into the standing gate (via mypy_path + a sibling-scoped ignore override + a ruff line); this FGAP is the dir-wide closure.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/decompose.py",
+      "reference": ":190 E501; :267/:348/:349 E741 (ruff)"
+    },
+    {
+      "file": "prompt-workshop/dispatch/apply.py",
+      "reference": ":294 call-arg Unexpected keyword argument school/grounding (mypy)"
+    },
+    {
+      "file": "school-improvement-plans/pyproject.toml",
+      "reference": "[tool.ruff]/[tool.mypy]/[tool.pytest] rootdir = school-improvement-plans; dispatch dir uncovered"
+    }
+  ],
+  "impact": "Workshop dispatch code (the workshop<->production bridge per DEC-41) can regress lint/type without the standing gate catching it -- a skippable-manual-check fragility (automate-don't-human-remind). B2 (FGAP-006) + future workshop work edit these siblings; they need standing-gate coverage.",
+  "proposed_resolution": "Bring the whole prompt-workshop/dispatch dir into the standing gate: fix decompose.py's 4 ruff errors; fix or correctly-ignore apply.py's real type errors + sibling unused-ignores; settle the mypy namespace-resolution (mypy_path + per-module config) so the whole dir type-checks; add `ruff check ../prompt-workshop/dispatch` + dir-wide mypy to Makefile lint/typecheck + CI. Run through the canonical pipeline."
+}

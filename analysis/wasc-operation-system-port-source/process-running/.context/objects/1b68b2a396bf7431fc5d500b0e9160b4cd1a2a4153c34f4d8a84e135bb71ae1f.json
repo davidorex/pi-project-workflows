@@ -1,0 +1,29 @@
+{
+  "title": "Canonical render-shape drift (v4 vs web/canonical.html) — basis for a single render template",
+  "status": "complete",
+  "layer": "L3",
+  "type": "audit",
+  "question": "How has the shape of the v4 distillation render drifted from the canonical reference (esp. the left-column sections), to ground a single template all final shapes render into?",
+  "method": "structural-diff agent (read-only) over web/canonical.html vs web/chiway-slo-plan-distilled-v4-enriched.html + the data file; orchestrator verified the path + left-column premise. Full report in the findings_document.",
+  "findings_summary": "Full report: docs/canonical-shape-drift-2026-06-08.md. CLARIFICATIONS: 'mocks/web/canonical.html' = the SERVED URL of the file web/canonical.html (devmocks mounts web/ under /mocks/; no mocks/ dir) -- that file is the true reference. 'Left-column sections' = the meta-table's LABEL column (table.plan td.label), NOT a page sidebar (neither file is two-column). DRIFT (left-column = the meta-table label rows): canonical table.plan has ~20 label rows (Theme, Framing focus, Priority, Student impact, Areas-for-Improvement, Subject kind, Policies est/rev, Target Cycle, Provenance, Predecessor, Rationale, WASC standards, SLOs targeted, Mission area, STAKEHOLDER IMPACT, DEPARTMENTS ENGAGED, Success criteria, How measured, Communication); v4 collapsed to 8 ACS-renamed rows (Rationale/Critical Need, Supporting Data, Growth Targets, SLOs Addressed, Impact on Student Learning, SLO Standards Addressed, Monitor Progress Tools, Report Progress) -- DROPPED ~12 (incl. Stakeholder Impact + Departments engaged), relabeled survivors to ACS terms, plain 2-col vs colspan=5. OTHER drift: v4 dropped the top toolbar (lens tag/plan-selector/lens-links/Print) + the conditional recipe-section + the footer markup; ADDED an h2 section system + Goal callout + separate Milestones + Review&Revision; REORDERED+relabeled the 6-col action table (Timeline 3rd->5th; ACS labels; PD+Resources+Funding merged; uppercase header); widened .doc 9.5in->10in; chip-class vocabulary diverged. MECHANISM: canonical is DATA-DRIVEN (renderPlan(plan) from DATA+PlanHelpers, web/data/plan-data.js) -- it ALREADY is a render-from-data template; the distillations hand-wrote static HTML. AUTHORITATIVE SHAPE to standardize: single centered .doc + toolbar; data-model render; section order h1->subtitle->full meta table->conditional recipe-section->6-col action grid->footer; no h2. TENSION: the drift is partly v4 deliberately adopting the AUTHORITATIVE ACS-WASC structure (R-0008) + heuristics (R-0009) -- so the template = a SYNTHESIS (canonical's data-driven single-column shell + full row inventory + render mechanism, in the ACS-WASC vocabulary/structure of R-0008, carrying the R-0009 dimensions), NOT a revert. NEXT (gated by the human on this establishment): build that template.",
+  "findings_document": "docs/canonical-shape-drift-2026-06-08.md",
+  "citations": [
+    {
+      "label": "canonical reference (data-driven; ~20-row meta table; 6-col action grid)",
+      "path": "web/canonical.html:31-56,263-535 + web/data/plan-data.js"
+    },
+    {
+      "label": "v4 drifted render (8-row meta; h2 system; reordered action cols; static)",
+      "path": "web/chiway-slo-plan-distilled-v4-enriched.html:35-42,199-334,337-351"
+    },
+    {
+      "label": "authoritative ACS-WASC structure (the v4 labels/columns come from here)",
+      "path": "R-0008 / docs/wasc-authoritative-sources-research-2026-06-07.md"
+    },
+    {
+      "label": "heuristic dimensions the template must carry",
+      "path": "R-0009 / docs/plan-generation-heuristics.md"
+    }
+  ],
+  "grounded_at": "2026-06-08"
+}

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-010 + FGAP-013. New workflow YAML .workflows/workshop-run-plan-sequence.workflow.yaml: 42 steps (14 specs in dependency order, each render->call->apply), draft threaded apply_N->render_(N+1) (apply_N reads the same path render_N read), agent input the object {prompt: ...}, output:format:json on every command, | shell only on --raw-json, no loop-wrapped command steps; mirrors do-gap syntax. FGAP-013 fixed: _workshop.py load_draft returns a fresh empty_draft_shell() for an empty path (Path('')==Path('.')) so spec-1's empty-draft start no longer crashes (IsADirectoryError); 5 regression tests (test_workshop_load_draft.py). Runner discovers (list shows it [project]) + steps it: render_narrative_draft completed + threaded into the agent step, which fails only with 'Agent workshop-json-responder not found' (that agent + the live 14-spec run are TASK-011, per WF-12). Separate-agent adversarial audit Total findings: 2 (both run-hygiene): F1 .workflows/runs/ not ignored -> FIXED (gitignore); F2 a run writes draft-after-*.json to the repo root (apply out-dir falls back to draft_path.parent; spec-1 draft_path='' -> '.') -> CONTAINED (gitignore /draft-after-*.json); the proper per-run out-dir is set at run-invocation (cwd/--out-dir), TASK-011 run-setup (the interpolation scope is input/steps only, no run-dir var). Full gate GREEN: ruff check + ruff format --check (project + 3 dispatch files), mypy . 318/0, pytest 2008, make test-js 48/0, verify-render-parity 14/14.",
+  "timestamp": "2026-06-07T02:00:00Z",
+  "criteria_results": [
+    {
+      "criterion": "The workflow drives all 14 specs in dependency order — each rendered, sent to the agent, and its response applied — in sequence.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each spec builds on the draft as merged by every prior spec; the first spec starts from the empty (seed) draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each agent response is applied through the same validation production uses.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A response that fails validation halts the run with the last good draft intact; a clean or soft-flagged response continues.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The runner loads and steps the workflow with no engine-constraint failure, and a spec's render and apply run against the threaded draft (the full live 14-spec run is the run task's).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

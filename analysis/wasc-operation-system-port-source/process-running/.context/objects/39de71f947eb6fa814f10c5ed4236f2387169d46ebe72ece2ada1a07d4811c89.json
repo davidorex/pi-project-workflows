@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-14T01:00:00Z",
+  "evidence": "TASK-049 (FGAP-034 apply_from_substrate self-check gate) IMPL via the canonical pipeline IN PLAN MODE (EnterPlanMode -> fresh Explore -> corroborate vs source -> plan -> ExitPlanMode approval -> IMPL -> separate adversarial audit -> cascade). Code commit 73a9e90. Workshop-only (dispatch + tests; no production code). The substrate-driven apply path (apply_from_substrate.py) now enforces the SAME per-spec in-execution structural self-check as the orchestrator path (apply.py): the 3-carrier lift (measurement_views/bilingual_views/decision_requests) was extracted to a shared `_apply_carrier_fields(draft, parsed)` in apply.py called by BOTH paths (anti-drift, the FGAP-036 lesson); the substrate path loads frontmatter via load_snippet, lifts carriers, runs run_self_check(frontmatter, draft, prefill, grounding) after merge + before write, and on structural fail prints to stderr + return 3 (no draft-after file). SEPARATE adversarial audit: Total findings: 0 -- both paths call the SAME _apply_carrier_fields + run_self_check with equivalent inputs (frontmatter/merged-draft/prefill/parse-time-grounding); the apply.py extraction is behavior-preserving (same 3 lifts, same order, same call point; apply.py self-check tests green); substrate grounding reaches the call; gate placed after merge/before write. Empirical: test_substrate_structural_fail_exits_3_and_no_write (exit 3, no draft-after, no stdout JSON) + test_substrate_structural_pass_exits_0_and_writes (exit 0, written, status merged). Gate green: ruff clean, mypy . 325 Success, pytest 3210, make test-js 48/48, verify-render-parity 14/14. Files: apply.py + apply_from_substrate.py + test_workshop_apply_flags.py only (no specs.py/assist.py/snippet/schema). PyRight not-accessed = intentional discards / uniform-signature false positives.",
+  "criteria_results": [
+    {
+      "criterion": "The substrate-driven apply path runs the same in-execution structural self-check as the orchestrator-driven apply path: a structural failure causes a nonzero exit and the output is not written; demonstrated on an input that fails a structural check.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A structurally-passing input is written by the substrate path; demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Both apply attach points enforce the same structural checks; confirmed.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the project gate is green, and the existing apply tests stay passing.",
+      "status": "passed"
+    }
+  ]
+}

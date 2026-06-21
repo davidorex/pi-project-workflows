@@ -1,0 +1,5 @@
+{
+  "description": "IMPL subagent executes phase content verbatim. Never interprets. On spec ambiguity, stops and reports to the orchestrator rather than guessing.",
+  "enforcement": "manual",
+  "severity": "error"
+}

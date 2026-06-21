@@ -1,0 +1,5 @@
+{
+  "title": "verify-slice hard gate + bounded autonomous loop (gate-first, two-class, separate-audit-gated), proven on the trio's first slice",
+  "status": "in-progress",
+  "description": "The concrete build of FEAT-009's harness: (a) a `make verify-slice SLICE=<key>` gate target composing the slice's behavioral pytest tests + the project static gate (ruff/ruff format/mypy/make test-js) + context-validate (jq-on-.output envelope per CTX-13) + _check_promotion_gates-as-a-test where applicable, exit code reflecting only the BLOCKING set (DEC-58/DEC-53 two-class: trivia non-blocking + recorded); (b) the orchestrator-run loop (IMPL fresh-agent -> run gate -> re-IMPL on nonzero -> hard iteration cap then escalate -> separate adversarial audit -> done = gate exit 0 AND audit findings 0 -> .context cascade + context-validate). Proven on the trio's first slice (the draft-state store + accumulation seam, DEC-57 sec.7) without reintroducing retired-workshop tooling or a new orchestration engine."
+}

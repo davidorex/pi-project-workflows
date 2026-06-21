@@ -1,0 +1,1004 @@
+{
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "status": "completed",
+      "description": "Implement the file:// engine loader (executeWorkflow / parseWorkflowSpec / findIncompleteRun / createAgentLoader from dist/, per SURFACE §1).",
+      "oid": "9fa4dd1e4093a842dea2c31d209b1d80",
+      "content_hash": "36ee8712561047c770ef13a124a346b2da837b2b0fd7c68dcd68ab37487c9503"
+    },
+    {
+      "id": "TASK-002",
+      "status": "completed",
+      "description": "Implement run (findWorkflow -> parse -> executeWorkflow + auto-resume).",
+      "oid": "89590e7bf40f075039654373ea497a18",
+      "content_hash": "2874ad4a5abbd5145d9e50842a5b2e2152b4826c520297c55bd5910216dbc028"
+    },
+    {
+      "id": "TASK-003",
+      "status": "completed",
+      "description": "Implement resume (explicit runId, fail-loud).",
+      "oid": "b57952f579d6a7d5c67e152780e16f70",
+      "content_hash": "d9dd035c815be944bc5e7e3935a3bf252ef2bba654536b241a7e16a149fa9b49"
+    },
+    {
+      "id": "TASK-004",
+      "status": "completed",
+      "description": "Implement status + list.",
+      "oid": "07a29ddc60194d417ae829fb5c0f8aaa",
+      "content_hash": "964771d010678fcc085881e5f6ed66b0a3bef437a18fc76047975cf18bdc3540"
+    },
+    {
+      "id": "TASK-005",
+      "status": "completed",
+      "description": "Implement the flag envelope (--cwd/--json/--yes/--writer) + bin exit-code shim + auth gate.",
+      "oid": "e5b9c7ee78be49dfd4f46d269d45754a",
+      "content_hash": "1c893593cbf6e13368b38540d3d084ca1c6a92c773d46414186d14d30f9558fc"
+    },
+    {
+      "id": "TASK-006",
+      "status": "completed",
+      "description": "Build the headless ctx + no-op pi literals (SURFACE §3).",
+      "oid": "4f861f6162a67f1454456918a4e78369",
+      "content_hash": "149ace53b04f2f7e94ed52e6362120b45761bac7e69dcde09de90b9cc0b8ce05"
+    },
+    {
+      "id": "TASK-007",
+      "status": "completed",
+      "description": "[CONDITIONAL on the agent-step-scope decision (DEC-0003)] agent-step pre-flight: pi-on-PATH + model-backend check + clear precondition error.",
+      "oid": "761e1c14457c52447e946d58b4274a8c",
+      "content_hash": "52e5808c9c6b3adb9be0ed238a0f6e3e167ec4b414f482829dfeaf4024ee6b26"
+    },
+    {
+      "id": "TASK-008",
+      "status": "completed",
+      "description": "Implement render_from_substrate.py (read .workshopping, resolve fragment_refs, build_grounding + PromptSanitizer + Django Template, emit JSON; per SPEC §5).",
+      "oid": "80b8f779b54dcda8b2e047c2e330b3ad",
+      "content_hash": "e40a62407749861cd9f3f0f735b9feaea2935802b6d101e7320bdc8d85aaa0fe"
+    },
+    {
+      "id": "TASK-009",
+      "status": "completed",
+      "description": "Implement apply_from_substrate.py (rebuild grounding, run production parser, write a NEW versioned draft file, emit JSON; per SPEC §5 + §5a).",
+      "oid": "fd15050bab77afad6bb4eff96e4765e1",
+      "content_hash": "a2eb6c165f3da75e0b088385a90f8bcde2680cec8463ce1e8be2cf8863396066"
+    },
+    {
+      "id": "TASK-010",
+      "status": "completed",
+      "description": "Write the workflow YAML: per-spec render->call->apply, object agent input {prompt:…}, output:{format:json} on commands, | shell for JSON args, draft_path threading (SPEC §4).",
+      "acceptance_criteria": [
+        "The workflow drives all 14 specs in dependency order — each rendered, sent to the agent, and its response applied — in sequence.",
+        "Each spec builds on the draft as merged by every prior spec; the first spec starts from the empty (seed) draft.",
+        "Each agent response is applied through the same validation production uses.",
+        "A response that fails validation halts the run with the last good draft intact; a clean or soft-flagged response continues.",
+        "The runner loads and steps the workflow with no engine-constraint failure, and a spec's render and apply run correctly against the threaded draft (the full live 14-spec run is the run task's).",
+        "The full project gate stays green."
+      ],
+      "oid": "db99df44c901f2f4c423de1da02fd1c4",
+      "content_hash": "c2db5e92b151ca3204ce8dcf5c68145ebebd5f7f967cdf9d4fe98c7c3d397321"
+    },
+    {
+      "id": "TASK-011",
+      "status": "completed",
+      "description": "Run the 14-spec sequence headless against the Chiway dev-DB (preconditions: green 14/14 verify-render-parity, Postgres+DATABASE_URL, pi+backend if agent steps); capture the run dir.",
+      "acceptance_criteria": [
+        "The 14-spec sequence runs to completion headless against the Chiway dev-DB, its preconditions met.",
+        "Each spec's response is applied and merged, accumulating into a whole-plan draft.",
+        "A hard rejection halts at that spec with the prior draft intact; a soft-flagged response is recorded and the run continues.",
+        "The run is captured at an inspectable location holding each spec's draft and a completion or failure record.",
+        "Re-running a partially-completed run resumes from the last good draft without redoing completed specs.",
+        "The full project gate stays green."
+      ],
+      "oid": "9c02c9ed64cf70e135502bed28eebfbc",
+      "content_hash": "287078e195f8d3004fa719b873b091de0c20334bf704fc05dc5f4188121f1931"
+    },
+    {
+      "id": "TASK-012",
+      "status": "cancelled",
+      "description": "Per-spec quality evaluation toward a promotion-ready whole-plan draft (the substantive DISC-26 work). [CANCELLED 2026-06-21 per DEC-57: the byzantine prompt-workshop runner is retired; this goal (DISC-26 -- a promotion-ready whole-plan draft that passes the production promotion gate, is catalogue-clean, carries no unresolved must-fix flags) now flows through the production orchestration trio (FEAT-010 / US-LLM-25 gate-closure), not a workshop run. 7 of the 8 gaps it addressed were closed by the workshop iterations and remain closed. FGAP-024 -- a PRODUCTION PromptTemplate.render injection-sanitizer evasion gap (NOT a workshop-quality gap; the trio render path is equally exposed) -- is NOT closed by this cancellation: it remains identified/open as standalone production-security debt awaiting its own canonical-pipeline pass (FGAP-024 identified status is the source of truth; its legacy task_addresses_gap edge to this cancelled task is a stale refname-as-oid edge that remove-relation cannot target -- logged as a pi-context friction).]",
+      "acceptance_criteria": [
+        "The assembled whole-plan draft would pass the production promotion gate.",
+        "The draft is catalogue-clean — it contains no fabricated values.",
+        "No unresolved must-fix flags remain on the draft.",
+        "The full project gate stays green."
+      ],
+      "oid": "e27df41ad4de74cc6f80318dff573748",
+      "content_hash": "4775fc0517ffd958ecbc072ae48f935677c4a8f1d5ccc4fd9e843920da7b5c7b",
+      "content_parent": "4cd57f6cf93d2fa77898a22b4f5491875ba6a7c7252821b29baa6e437dfdb3de"
+    },
+    {
+      "status": "completed",
+      "description": "Global catalogue-gate fix so no DB-enumerated entity is rejected (planner/_freetext_audit.py only; no grounding.py change, no migration). Three closures: (1) COMPLETENESS - pull framing_vocabularies + priority_tiers into the union (CatalogueUnion fields + _string_set key=label + union-merge src tuple + return + PhraseMatcher sources); (2) VARIANT TOLERANCE + (3) SCHOOL SHORT FORM via one precomputed union_collapsed set: a _collapse_normalize helper (article/possessive strip + collapse hyphen/underscore/whitespace runs + casefold), union_collapsed = collapse of every union entry UNION collapse of every >=2-token contiguous prefix of each self.school entry; admits gains a single union_collapsed membership check before return False. Preserve fabrication rejection. Regression/tolerance/short-form/completeness/fabrication tests in test_freetext_audit.py. Fixes FGAP-001. DEC-45 stands (no MissionArea, no sub-token).",
+      "id": "TASK-013",
+      "oid": "086cd5c6c8e4136a4aa064ebc4e2b9fc",
+      "content_hash": "4a364071696370ee2bf351ef62ad63fd15da830293a9c5222845cca7d22342d6"
+    },
+    {
+      "status": "completed",
+      "description": "WORKSHOP FLAGGING W1 - draft flags channel (combines gap FGAP-005 / B1). Add a top-level flags channel to the workshop draft: _EMPTY_DRAFT (prompt-workshop/dispatch/_workshop.py:215-243); the 14 MERGE_RULES (apply.py:51-215) PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (a setdefault(flags,[]) guard at the apply entry or per-rule preservation); flatten_draft_for_grounding (_workshop.py:466-584) SKIPS flags from the production draft_state projection exactly as it skips meta (:577-582). Independently buildable + unit-testable now (no parser A-layer dependency). Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+      "id": "TASK-014",
+      "acceptance_criteria": [
+        "_EMPTY_DRAFT (prompt-workshop/dispatch/_workshop.py:215-243) carries a top-level `flags` channel defaulting to an empty list.",
+        "Flags accumulated in the draft are PRESERVED across the immutable draft-after-<spec>.json chain by the existing load->mutate->save mechanism (apply_from_substrate.py:133-141) -- NO per-rule guard; proven by a test.",
+        "flatten_draft_for_grounding (_workshop.py:466-584) EXCLUDES `flags` from the production projection, exactly as it excludes `meta` (:577-582) -- the allowlist omits it; documented skip-comment + the test are the guard.",
+        "Unit tests assert: empty_draft_shell()['flags'] == []; a draft carrying flags survives a real MERGE_RULE + a save_draft->load_draft round-trip; flatten_draft_for_grounding(<draft with flags>) has no `flags` key. The test is genuinely type-checked (no blanket # mypy: ignore-errors).",
+        "Standing gate green: uv run pytest (incl. the new test), uv run mypy ., uv run ruff check, make test-js; + verify-render-parity.py 14/14; + a separate-agent adversarial audit at zero.",
+        "_workshop.py (the code B1 edits) is genuinely in the standing gate: mypy . type-checks it transitively via the test import (siblings suppressed via mypy_path=../prompt-workshop + per-module override; dispatch._workshop NOT suppressed; its 2 unused-ignores at :299/:339 removed -> clean) AND an added Makefile/CI `ruff check ../prompt-workshop/dispatch/_workshop.py` lints it. The whole-dispatch-dir gate + pre-existing sibling debt (decompose.py 4 ruff; apply.py real type errors) is a SEPARATE FGAP, not B1."
+      ],
+      "oid": "3a13003c6d0437ad7c2bd0deefad0afd",
+      "content_hash": "d6f10726a279c647511e92d2fb80e7a33efc0c499316f2fb5b9d66844174f48f"
+    },
+    {
+      "status": "completed",
+      "description": "WORKSHOP FLAGGING W2 - soft-flag apply path (combines gap FGAP-006 / B2). apply.py (:295-361) + apply_from_substrate.py (:113-152): on a soft-flag parser return (prefill + flags, no hard raise), merge the prefill, record the flags into the draft flags channel (TASK-014), set the capture/result-envelope validation status to flagged, emit flags in the JSON, and EXIT 0 (not 1) so the 14-spec sequence runs to completion accumulating flags (run_workflow.mjs:478 treats exit 0 as continue) - the iteration accelerator; hard rejects still exit 1. Depends on TASK-014 (draft channel) and on the parser A-layer (FGAP-002/003/004: AssistResult.flags + audit_prefill returns flags) to PRODUCE the soft-flag return: end-to-end verification needs the A-layer; unit-testable now via a mocked parser-returns-flags. Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+      "id": "TASK-015",
+      "acceptance_criteria": [
+        "A soft-flagged parse (a usable result carrying flags, not a fatal rejection) keeps its proposed values: they are applied to the draft, not discarded.",
+        "The flags from a soft-flagged parse are preserved in the running draft and remain retrievable after the run.",
+        "A soft-flagged outcome is recorded as flagged, distinct from both a clean pass and a rejection.",
+        "The emitted result for a soft-flagged parse includes its flags.",
+        "A soft-flagged item does not halt a multi-spec run; the run continues and accumulates flags across every spec.",
+        "A fatal rejection (an unusable parse) halts the run.",
+        "Clean parses behave exactly as before, and the full project gate stays green."
+      ],
+      "oid": "aa94cc5b17ded2cbf26e24a5530d0bf9",
+      "content_hash": "e2461a6309c298521156fd049d5e7f290ef008c8298ece61e1954aedb489128e"
+    },
+    {
+      "status": "completed",
+      "description": "WORKSHOP FLAGGING A1 - surface DEC-44 verdicts (combines gap FGAP-002). planner/_llm_fabrication_validator.py validate_candidates (:83) returns the 3-way verdict per span (fabricated | catalogue-variant | ordinary-prose) instead of filtering to fabricated only (:144), so callers route catalogue-variant->FLAG, ordinary-prose->admit, fabricated->reject-or-flag. Base of the parser flag-classification chain; a dependency of the workshop soft-flag apply (TASK-015). Three-valued flagging model, parser layer. Build via the canonical pipeline.",
+      "id": "TASK-016",
+      "oid": "0fb2a0849cb8d6ee3c3f3cb385b90adb",
+      "content_hash": "90de9a1dbfa1c2eda26e581c47c964c08085dacf8ae64074ef5b6f4baf2ef887"
+    },
+    {
+      "status": "completed",
+      "description": "WORKSHOP FLAGGING A2 - audit_prefill returns flags + the hard/soft partition (combines gap FGAP-003). planner/_freetext_audit.py audit_prefill (:1320-1338) returns a flags list (path, span, verdict from A1, reason) for free-text catalogue-survivors instead of raising; ONLY free-text proper-name survivors become flags - every structural/FK/invariant/index failure STAYS a hard reject. FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes the 12 flag-eligible specs/fields. Depends on TASK-016 (A1 verdict). Parser layer; dependency of the workshop soft-flag apply. Build via the canonical pipeline.",
+      "id": "TASK-017",
+      "oid": "c1727522ab0110d2c6c13f317fad66e6",
+      "content_hash": "55308fe27cdc12ddc91a03ea7e2cb817f062bbcc65a4650a1d217019defb4ebe"
+    },
+    {
+      "status": "completed",
+      "description": "WORKSHOP FLAGGING A3 - AssistResult.flags + the 12 parsers populate it (combines gap FGAP-004). planner/assist.py AssistResult (:33-57) gains an optional flags field; the 12 free-text parsers in specs.py collect the audit_prefill flags (A2) and attach them to the returned AssistResult while still raising on the hard-reject classes; the bare-return narrative parser gets the same carrier. Produces the soft-flag return the workshop apply (TASK-015) records. Depends on TASK-017 (A2). Parser layer; the load-bearing dependency of the workshop soft-flag apply. Build via the canonical pipeline.",
+      "id": "TASK-018",
+      "oid": "b439226a1162ed75549dcc9d72a3460a",
+      "content_hash": "1610e1ab1e645ec56365968a8a72f53a9b5d42fafb25ed9866284f280d7a89bb"
+    },
+    {
+      "status": "completed",
+      "description": "PRODUCTION FLAGGING C1 - Flag model on Plan (combines gap FGAP-007 / C1). Net-new Flag model in plans/models/ FK to Plan (CASCADE): element_path (formset-row addressing, cf. collectDraftState/_formset.html), severity (must_fix|should_review|informational), message, verdict (from A1), is_resolved (default False), created_by_spec, created_at. Requires a DB migration. The production-side persistence the workshop draft flags channel (B1/TASK-014) maps onto when the orchestration trio (US-LLM-23/24/25, unbuilt) lands. Prerequisite for C2/C3. Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+      "id": "TASK-019",
+      "acceptance_criteria": [
+        "A plan can carry any number of persisted flags, and they remain retrievable after a reload.",
+        "Each flag records the element it addresses, a message, the spec that produced it, its creation time, its verdict, and whether it is resolved (unresolved by default).",
+        "A flag's severity is exactly one of must-fix, should-review, or informational; any other value is rejected.",
+        "Deleting a plan deletes its flags; no flag outlives its plan.",
+        "The full project gate stays green."
+      ],
+      "oid": "564340b568e13c30f0f2759979478d2b",
+      "content_hash": "864ae19907b6374b121c305e5fe3c97aa1eee671fdcb538add63b27cb4907491"
+    },
+    {
+      "status": "completed",
+      "description": "PRODUCTION FLAGGING C2 - assist response surfaces flags + client UX (combines gap FGAP-008 / C2). (1) views.py result frame (AssistStreamView ~:506) includes the parser flags (A3) alongside prefill/note; (2) ai-assist.js routes a flags payload to per-element annotations on .planner-fs-row rows (_formset.html data-row index) - badge/highlight; (3) a per-flag resolution affordance: accept / replace (catalogued value) / request-catalogue-addition. DISC-30/DISC-31 UX-layer closure (admin sees an actionable signal, not event:error). Depends on A3 (TASK-018, AssistResult.flags) + C1 (TASK-019, if resolution persists to the Flag model). Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+      "id": "TASK-020",
+      "acceptance_criteria": [
+        "When an assist response carries flags, those flags are delivered to the client (not dropped from the response).",
+        "Each flagged element is marked in the UI on the specific element it concerns, so the user sees which element is flagged.",
+        "For each flag, the user can accept it, replace the flagged value with a catalogued one, or request that the value be added to the catalogue.",
+        "A flagged element presents an actionable signal to the admin, not a generic error.",
+        "The full project gate stays green."
+      ],
+      "oid": "efd70f09d48da922990a3c963c514e2a",
+      "content_hash": "aa35fd88b7f3795cfd4ed48567021fbf7405d6716db42f82403bc0d9fa8952f1"
+    },
+    {
+      "status": "completed",
+      "description": "PRODUCTION FLAGGING C3 - promotion-gate predicate (combines gap FGAP-009 / C3). _check_promotion_gates (plans/services.py:98-203, invoked by advance_plan_status on proposed->active) gains a predicate: any Plan Flag with severity=must_fix and is_resolved=False appends a failure (block promotion until resolved/accepted). The contract shift: enforcement moves from generation-time hard-reject to promotion-time flag-resolution (DEC-29 promotion-ready becomes zero-unresolved-must-fix-flags). Depends on C1 (TASK-019, Flag model). Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+      "id": "TASK-021",
+      "acceptance_criteria": [
+        "A plan with an unresolved must-fix flag cannot be promoted from proposed to active.",
+        "Once every must-fix flag on the plan is resolved, the plan can be promoted.",
+        "A flag whose severity is not must-fix never blocks promotion, and a resolved must-fix flag never blocks promotion.",
+        "The block applies only at the proposed-to-active promotion, not at other lifecycle transitions.",
+        "The full project gate stays green."
+      ],
+      "oid": "0a41097685f57e81c35c82bc949e5545",
+      "content_hash": "bbaa242eea2d812c5842d28438bc77e061fef52b2077c9504111817fc2ddde1c"
+    },
+    {
+      "status": "completed",
+      "description": "Fix the un-suppressed apply.py mypy debt (addresses FGAP-011). Root cause: get_parse_function (prompt-workshop/dispatch) returns a Callable whose type omits the school/grounding keyword params, so apply.py:294 parse_fn(response_text, school=school, grounding=grounding) raises 2 mypy call-arg errors though the concrete parsers accept *, school=None, grounding=None (typing imprecision, runtime-correct); plus an unused # type: ignore at apply.py:268. Widen get_parse_function's return type (a Protocol or precise Callable declaring __call__(self, text: str, *, school=..., grounding=...)); remove the :268 ignore; keep the dispatch.apply mypy override REMOVED (no re-suppression); add ruff check of apply.py + apply_from_substrate.py to the Makefile lint + CI so they are genuinely gated. Typing/gate-config only, no runtime behavior change. Build via the canonical pipeline.",
+      "acceptance_criteria": [
+        "uv run mypy . is GREEN (0 errors) and apply.py is genuinely type-checked under it -- the debt is resolved, not hidden by any re-suppression.",
+        "No runtime behavior change -- the fix is typing/config only; the full pytest suite is green with unchanged behavior.",
+        "No regression to dependents -- importing dispatch._workshop does not trigger Django setup, and the full pytest suite stays green.",
+        "Every dispatch file the fix touches (apply.py, apply_from_substrate.py, _workshop.py) is clean under BOTH ruff check AND ruff format --check, and the standing gate (Makefile lint + CI) enforces BOTH checks on them so a future lint OR format regression is caught.",
+        "Full gate green: ruff check + ruff format --check + mypy . + pytest + make test-js, plus verify-render-parity 14/14."
+      ],
+      "id": "TASK-022",
+      "oid": "b3732a8e8fa327647627cf88ea2e1040",
+      "content_hash": "e478adc19292e674cded840bb0a687ec58ccd97b47d4ebb8ea07c04013b5cc5d"
+    },
+    {
+      "status": "completed",
+      "description": "Build the reusable responsibility-atom seed importer (a Django management command, import_staff_roster precedent) consuming data/chiway-responsibility-atoms-template.csv, and seed the Chiway tenant -- creating is_new owners (IT division + Director of IT) and attaching every responsibility atom, materializing the default scopes (all / leader-positions / positions-under:<division>) onto each matching owner as a stored atom (DEC-35 / docs/hod-default-responsibilities.md: stored, FK-linkable per DEC-32, not runtime cascade). Closes FGAP-016 (unseeded atom layer) + FGAP-017 (no IT division/Director). Then re-run the workflow to continue workshopping.",
+      "acceptance_criteria": [
+        "After the seed, every division and every position for the tenant has at least one responsibility atom.",
+        "The agreed atom set is present at the correct owners (global + WASC-cycle on all owners; teaching atoms on teaching seats only; HOD set on the Head-of seats; SAO pastoral on the SAO division and its positions; the dorm-specific atom on Dormitory Teacher; the College Counseling phased set; Curriculum/PD, Principal's Office, AAO atoms; the leader default on every LEADER seat; the IT division + Director of IT created).",
+        "The importer is idempotent (a second run creates zero rows) and supports a dry-run that writes nothing.",
+        "The full project gate stays green.",
+        "Re-running the workflow advances past the propose-responsibilities spec (no empty-catalogue reject)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "TASK-023",
+      "oid": "cd83a3d98e61fc53ec86763087332ca4",
+      "content_hash": "8ba16311d4c771c6e12532941c8db1c4396ed9196ea7ef0584eeff7c975acd4a"
+    },
+    {
+      "status": "completed",
+      "description": "Realize DEC-48 in the tenant data (FGAP-025): make HRT, YGL, Dormitory Teacher pure SAO out-of-lesson roles. Extend import_responsibility_atoms to bind a Position to a YearGroup via a new year_group_code CSV column; in data/chiway-responsibility-atoms-template.csv remove the misplaced in-lesson atom from the Homeroom Teacher seat and add four year_group-bound YGL seats (IG1/IG2/AS/A2 Year Leader, kind=LEADER) under SAO; re-import to the dev DB + re-ground. Mode-B data+code change via the canonical pipeline.",
+      "acceptance_criteria": [
+        "After the seed, four Year Group Leader seats exist for the tenant - one bound to each year group (IG1, IG2, AS, A2) - each a leadership seat, each carrying the SAO out-of-lesson responsibility set.",
+        "The Homeroom Teacher seat carries no in-lesson responsibility - only out-of-lesson (SAO) responsibilities.",
+        "Dormitory Teacher continues to carry its out-of-lesson responsibility.",
+        "No subject-teacher in-lesson responsibility is attached to any HRT, YGL, or Dorm seat.",
+        "The seed is idempotent (a second run changes nothing) and a dry-run writes nothing.",
+        "The full project gate stays green, including a test that a year-group-bound leadership seat is created with its year group set.",
+        "The four roles surface in the tenant grounding with their out-of-lesson atoms (so a plan can target them)."
+      ],
+      "id": "TASK-024",
+      "oid": "70625da401c9f658558120f55f571267",
+      "content_hash": "cace6fa7fcaf042146dcf8bb78b76ae9402474f539ffcc9a85cdce89db57fc11"
+    },
+    {
+      "status": "completed",
+      "description": "FEAT-005 Slice A (prompt-only): bake the plan-quality register + content heuristics into the generation prompts (snippets + shared preamble, snippet<->substrate lockstep). Carry the R-0009/R-0007 heuristics into snippets 01/05/06/13 + the preamble: distributed ownership + diversity + HOW-mechanism per step (05/06), bilingual dual-purpose (05/06), standards as key+name (13), no cert-risk meta + Theme=title (preamble/01). The other FEAT-005 slices (B in/out-of-class grounding, C grounding-leanness, D measurement-binding gate) and the relocated criterion 7 (FEAT-007) are separate.",
+      "acceptance_criteria": [
+        "Generated action steps distribute ownership across the divisions/positions whose responsibilities justify them; no single division/role owns a disproportionate share.",
+        "Each action step states its mechanism (HOW it is carried out).",
+        "Action steps span diverse focus areas (multiple improvement types/areas), not one concentrated focus.",
+        "Relevant actions carry bilingual (Chinese-English) dual-purpose framing where the school's bilingual SLO supports it.",
+        "A WASC standard is referenced as key + name ('C1: School Culture'); descriptions never meta-invoke WASC certification/accreditation risk; Theme reads as a title, not success-criteria narrative.",
+        "Snippet<->substrate render parity stays 14/14; verbatim catalogue-label fidelity preserved; the full project gate stays green.",
+        "A re-render (or re-run) of the affected specs against the Chiway grounding shows these qualities present in the generated output."
+      ],
+      "id": "TASK-025",
+      "oid": "fbfd173d4271f892e306533fcdec6e7b",
+      "content_hash": "24c83ce0c0f1d4852a435630f022fd087c9e532b5c4b4c42a0b7b458754f91b2"
+    },
+    {
+      "status": "completed",
+      "description": "DEC-50 / FGAP-028: make action generation RESPONSIBILITY-MAP-driven so the plan produces a school-wide spread of DISTINCT actions per division purview, not the single-method-process concentration. (A) Add a LEAN grounding section `division_responsibility_summary` (division-grain responsibilities only, ~9.6KB vs the 60KB full atom inventory) in ai/services/grounding.py + register + test; add it to spec 05's grounding_sections (NOT the full atom inventory -- honor FGAP-022). (B) Rewrite spec 05 (snippet + fragment lockstep + content_hash re-stamp): the method becomes a process discipline (still required + type-valid + advisory), steps are generated FROM the division responsibility map (distinct action per relevant division, in/out-of-class incl. SAO/HRT/YGL/Dorm), dropping the one-step-per-template mandate (not parser-enforced). Parser/model/full-atom-inventory/production-templates untouched.",
+      "acceptance_criteria": [
+        "The generated action set is a school-wide spread of DISTINCT actions: ownership (assignments) distributes across multiple divisions per their purview -- no single division owns a disproportionate majority of steps.",
+        "Each action is grounded in the responsible division's actual responsibilities (the responsibility map drives which division does what), not in one process method's template slots.",
+        "The plan completes the full 14-spec run (downstream specs 06-10 + the promotion gate work on the re-shaped step set) and stays within the stdout cap (no FGAP-022 regression -- spec 05's prompt does not re-balloon).",
+        "The existing qualities hold: in/out-of-class coverage (incl. SAO/HRT/YGL/Dorm), HOW-per-step, bilingual dual-purpose, standards key+name, verbatim labels; parser/catalogue-gate pass with no new fabrication flags.",
+        "Snippet<->substrate parity stays 14/14; the full project gate stays green."
+      ],
+      "id": "TASK-026",
+      "oid": "b28e41a53ec586ba1b1708e1c63555cb",
+      "content_hash": "dfedf010c160c7c89f435ccb689664cda2335dd2d1db58d4ec3524194383116d",
+      "content_parent": "c5014e941f98f26c6a12663d5945e88c9462686450c96690fe0aeffdf0ac6f41"
+    },
+    {
+      "id": "TASK-027",
+      "status": "completed",
+      "description": "Story A (shared preamble). R1 -- no-framework-terms render rule. Extend prompt-workshop/shared/preamble.md (plan-register rules) so generated output uses only the school's plain vocabulary and none of the coined framework/process method-terms. Mirror to .workshopping (re-stamp content_hash) + re-pass verify-render-parity.py.",
+      "acceptance_criteria": [
+        "A freshly generated plan, scanned against the enumerated process-method-term list, yields zero occurrences.",
+        "Compared against the pre-rule draft, the same plan retains its substantive content (all sections present and non-empty; nothing shortened or hollowed to dodge the terms) -- an adversarial reviewer confirms zero substance loss.",
+        "Plain descriptive English is still present where apt and is not flagged by the scan (e.g. 'talking at students' passes).",
+        "The dispatched output parses clean with no new fabrication flags, and the snippet-substrate parity check passes."
+      ],
+      "oid": "458852a0cf9ed84c6bf45911dab0798f",
+      "content_hash": "8c6e168eb8416196b1d867c1ec5c71c0550d53a8d276c1ecc11ea37ca208fe70",
+      "content_parent": "e6be1bad04afa69b502ae755da6d4b3dd2273fe4ae5167db9599845ded94699a"
+    },
+    {
+      "id": "TASK-028",
+      "status": "completed",
+      "description": "Story A (shared preamble). R2 cross-cutting -- define that action steps are learning-designed interventions, embodied in the step's plain description (recall -> real task -> check -> reflect), never transmission, never labelled. Add to the preamble success-criteria block. Mirror + re-stamp + parity.",
+      "acceptance_criteria": [
+        "In a freshly generated plan, every action step shows four observable elements -- a reference to prior learning/context, a task participants actively do, a check of understanding, and a closing next-step/reflection -- an adversarial reviewer marks all four per step with zero steps failing.",
+        "The scan for step-scaffolding labels yields zero occurrences.",
+        "Zero action steps are attend/listen/read-only (transmission) -- an adversarial reviewer confirms none.",
+        "The dispatched output parses clean with no new fabrication flags."
+      ],
+      "oid": "3db37d4185bdddb493d3d9feb0063141",
+      "content_hash": "99db5f631ec6279b1b9619ada65280a9cf40427116dd8b883789607a9948130e",
+      "content_parent": "198915e885c61c3084074eee170221a020e858f25301638d083e60a4fc88aafd"
+    },
+    {
+      "id": "TASK-029",
+      "status": "completed",
+      "description": "Story A (shared preamble). R4 -- front-load + three measurement views + durability, as preamble success criteria. Mirror + re-stamp + parity.",
+      "acceptance_criteria": [
+        "A freshly generated plan states a baseline positioned before its actions -- an adversarial reviewer confirms presence and ordering.",
+        "Its measurement names all three points of view (student outcomes, staff/adult practice, parent/stakeholder) -- each present.",
+        "At least one measurement is a later/delayed re-check distinct from a one-time occurrence -- an adversarial reviewer confirms at least one.",
+        "The measurement content scans to zero process-method terms; the dispatched output parses clean."
+      ],
+      "oid": "bc7f4705ae725fdc3bbf246d84b6c860",
+      "content_hash": "c3ebf3f7b2d2287411c4ec58d3110009f33f39f8d5cf04c06b7e6491a0a1b8ca",
+      "content_parent": "d5c221a551b19f8e0a639e2678ae59e4182452509fe2fc9dd246b50b274ea844"
+    },
+    {
+      "id": "TASK-030",
+      "status": "completed",
+      "description": "Story A (shared preamble). R5 cross-cutting half -- growth-mindset planning register. Add to the preamble plan-register rules. Mirror + re-stamp + parity.",
+      "acceptance_criteria": [
+        "Wherever a generated plan describes revising/adjusting, an adversarial reviewer finds it framed as evidence-driven course-correction, with zero instances framed as failure or deficit.",
+        "The framing scans to zero process-method terms; the dispatched output parses clean."
+      ],
+      "oid": "63551cbdba45cbf46bbbec93a0327188",
+      "content_hash": "a9fdd5ef1579334d496f07b98a46daa43dab6955b1937cd82c5bbb52fb7b2d18",
+      "content_parent": "d81d72b96e93d1f1b940b8a06da559c1abbb16c36febb21889ba7ea7bdb9abfd"
+    },
+    {
+      "id": "TASK-031",
+      "status": "completed",
+      "description": "Story B. R5 spec-specific half -- quarterly review loop + spiral focus in snippet 14-propose-review-loop. Add the four-quarter cadence (first checkpoint before December; measure->diagnose->adjust; Q4 re-measure->report->seed) and the monthly-focus-retaining-priors. Mirror + re-stamp + parity.",
+      "acceptance_criteria": [
+        "A generated review loop has at least four evaluate-and-adjust checkpoints and the earliest checkpoint date falls before 1 December -- both machine-checked over the review events.",
+        "An adversarial reviewer confirms each checkpoint carries a measure-then-diagnose-then-adjust shape and that earlier focuses are re-checked rather than dropped, with zero checkpoints failing.",
+        "Revision language is framed as course-correction not failure -- zero failure-framed instances.",
+        "The output parses clean, names only catalogued divisions/stakeholders/frequencies (zero fabrication flags), and the parity check passes."
+      ],
+      "oid": "3f8bb2653c0a79f49cf851b8a8a8fc89",
+      "content_hash": "6d9eda6255a7f35059b501ed2faf65c8e142389b0f371a9bf0dd31e233ad9908",
+      "content_parent": "c06e9451da467ea044afafcfcb21b0fe9dcf29c1caac10a7521d39cf5d8118bc"
+    },
+    {
+      "id": "TASK-032",
+      "status": "completed",
+      "description": "Story B. R3 -- ideation coheres with mission/vision/SLOs. Add guiding_statements to grounding_sections + a body render block + an ideate-from-and-cohere directive in snippets 03-propose-milestones, 04-draft-success-criteria, 05-decompose-action-steps; add the grounding-block fragment + fragment_refs in .workshopping; re-stamp + parity. Emitter already exists; no grounding.py / parser change.",
+      "acceptance_criteria": [
+        "Each of the three ideation outputs cites at least one guiding statement and at least one learner outcome by catalogued identity (machine-checked present), and an adversarial reviewer confirms the citation is substantive (the output advances them) for all three.",
+        "The scan finds zero bare strand-prefix references and zero long verbatim guiding-statement quotes.",
+        "All three outputs parse clean with no new fabrication flags.",
+        "The parity check passes after the grounding section is added to these specs."
+      ],
+      "oid": "20b507945c76f4310af1c0902c02498a",
+      "content_hash": "9bbb54ad7de3f46127b0efb5a11f95b608055776e432c2f6170933d88e47f4b4",
+      "content_parent": "8cb60e6d09837c7c8bbd8e003a1534e015b59ce64ceadecf1b816d6f3dbeb62e"
+    },
+    {
+      "id": "TASK-033",
+      "status": "completed",
+      "description": "Story C. R6 VERIFY (no edit) -- confirm distributed ownership is wired + rendered (snippet 05 division_responsibility_summary) and actually distributes on a dispatched output; file a defect if it does not hold.",
+      "acceptance_criteria": [
+        "Over a freshly generated action-step set, more than one division owns steps and no single division owns a majority (>50%) -- machine-checked.",
+        "Every division whose responsibilities bear on the goal either owns at least one step or is named in a surfaced gap -- an adversarial reviewer confirms zero relevant divisions silently omitted.",
+        "Confirmed with no edit to the corpus; if the distribution thresholds fail, a defect is filed."
+      ],
+      "oid": "9b46debcf681452199fb95960cfce8be",
+      "content_hash": "892494dad2d1beeaa2756d932abe24fb7a5bffb9c9b27c7f25daca380cd8cf1c",
+      "content_parent": "c0c6bc972fc7eb077e566d3179862a69b573a5de2246292a24b1382be9e3d489"
+    },
+    {
+      "id": "TASK-034",
+      "status": "completed",
+      "description": "Story C. R7 WHOLE-DRAFT EVAL -- run the full 14-spec sequence + render-whole-draft; judge coverage across the assembled draft.",
+      "acceptance_criteria": [
+        "Scanning the assembled whole-plan draft, every schoolwide learner outcome appears at least once or is listed in an explicit gap section -- machine-checked, zero unaccounted outcomes.",
+        "Every improvement area appears at least once or is listed in the gap section -- machine-checked, zero unaccounted areas.",
+        "The coverage check runs over the assembled draft (all specs combined), not a single spec in isolation."
+      ],
+      "oid": "a0eb4efb5f9edbad2248787a52569852",
+      "content_hash": "361ad07b5f4d6cea83ede522c9b1d8a1c2efecc7b3505cbc2ff7d859097adfda",
+      "content_parent": "ccae40c5bba7abb8c6000746575f177f9f11f8be796cd72c2f6141707a959b96"
+    },
+    {
+      "id": "TASK-035",
+      "status": "completed",
+      "description": "Story C. R8 DECISION (no corpus edit) -- record that the options posture lives at the orchestration / create-plan-UX layer, not per-spec snippets (per-spec stays decide-one, honoring the preamble's no-options-instead-of-decisions rule).",
+      "acceptance_criteria": [
+        "A decision record exists in the project decision log capturing the options-posture / human-decision-surface placement, confirmed by reading the decision block.",
+        "The record places genuine human-set value-forks (options-posture) at the orchestration / create-plan-UX layer, giving the reason that per-spec generation stays decide-one (preserving the no-options-instead-of-decisions rule).",
+        "The record places unowned-precursor decision-requests as authored content within the plan draft itself -- the same account-for-every-item-or-flag-it class as coverage -- not as an orchestration-layer overlay.",
+        "The record justifies both placements by derivation from the app's stated purpose (the AI renders a complete deliverable draft; the human fine-tunes it through the create-plan UX), rather than as an open selection among alternatives.",
+        "A diff of the corpus shows zero changes to any snippet or preamble attributable to this record -- machine-checked."
+      ],
+      "oid": "618c481db133734b4971674f4f2c49d5",
+      "content_hash": "00243643f4719452319bc02462f9d93bd70390f5f77631597c5b2868270d6aa0",
+      "content_parent": "19409b29ae7f2cb92b742c9cedca43ff4f5a7a73c8b9fb34a70ba8b3fdb86763"
+    },
+    {
+      "id": "TASK-036",
+      "status": "completed",
+      "description": "Story C (verification harness). Build a deterministic checker over a generated/assembled plan draft that makes the other tasks' criteria runnable: it scans for enumerated process-method terms + step-scaffolding labels (with offending spans), counts action-step owner distribution (distinct owners + largest single-owner share), checks learner-outcome + improvement-area coverage (each present or listed as a gap), and checks review-checkpoint count + earliest-checkpoint date. Lives in the workshop dispatch tooling; version-controls the term/label lists; unit-tested on fixture drafts (clean + deliberately-violating). No parser/grounding change. Prerequisite for the runnable criteria of TASK-027/031/032/033/034.",
+      "acceptance_criteria": [
+        "Given a generated plan draft, the check produces a structured pass/fail report covering: any enumerated process-method term present (with the offending spans); any step-scaffolding label present; the distinct action-step-owner count and the largest single-owner percentage; each learner outcome and improvement area present-or-listed-as-gap; and the review-checkpoint count plus the earliest checkpoint date.",
+        "The enumerated process-method-term list and the scaffolding-label list are version-controlled and reviewed, and cover the method terms surfaced in sim-land.",
+        "The check exits nonzero on any banned-term or scaffolding-label hit, passes a unit test over both a clean fixture draft and a deliberately-violating fixture draft, and runs unchanged on a real dispatched draft.",
+        "The check adds no parser or grounding-model change (workshop dispatch tooling only)."
+      ],
+      "oid": "79e52d8f39d2d00e1a0ecb95ae450bc9",
+      "content_hash": "c7b857529a1ed155978127951fab60000f6d58228fa31e041445b5e6bc10c3fa",
+      "content_parent": "eebe2453cb2371f4cdcfe658e0f9be1f5d0be60681ee555274bdb4fb10a9f995"
+    },
+    {
+      "id": "TASK-037",
+      "status": "planned",
+      "description": "FGAP-031 -- build the draft->docx REVIEW EXPORTER, folded into the current focus. Load the assembled whole-plan draft (prompt-workshop/outputs/current-draft.json) and emit a genuine OOXML .docx structured like data/'Sample - Schoolwide Action Plan 2.docx' (label/value header table + bordered 6-column action-step grid with a shaded header). Lives in prompt-workshop/dispatch/ (sibling of render/apply/sequence). Declare python-docx (+ any HTML-parse dep) in school-improvement-plans/pyproject.toml + uv.lock. Exports ANY assembled draft (review surface): warn per missing section, do not block. NOTE: this is a delivery/review surface, distinct in scope from FEAT-008's prompt-corpus tasks (it adds an export script + a dependency).",
+      "acceptance_criteria": [
+        "Running the exporter on the assembled whole-plan draft produces a file that `file` reports as Microsoft OOXML (a real .docx, not HTML-as-.doc) and whose `unzip -l` lists word/document.xml.",
+        "The exported document carries the draft's content as real Word tables -- a label/value header table and a bordered multi-column action-step grid -- structured like the exemplar; an adversarial reviewer confirms every populated draft section is present and none is dropped.",
+        "Exporting a partially-populated draft succeeds and emits a warning per missing section rather than failing.",
+        "python-docx (and any HTML-parse dependency) is declared in the project dependency files; a fresh resolve/install plus the exporter's unit test pass, with no reliance on an undeclared environment package.",
+        "The full project gate stays green (ruff + ruff format --check + mypy . + pytest)."
+      ],
+      "oid": "cc973e8004b3173d366b6a247e9f26b7",
+      "content_hash": "613d26bdb4d0c58c9e49913df90214b6add6b2881949bed2dbfd6a34996f2c20"
+    },
+    {
+      "id": "TASK-038",
+      "status": "completed",
+      "description": "T1 -- Settle and record the in-execution-evaluation decision: where per-spec self-verification lives in the linear render->apply pipeline, the single behaviour a step takes on a failed self-check, and the standing rule that every transposed discipline is enforced as a generation-time contract AND a per-step in-run check (not a post-hoc check only). Foundation for T2-T5 (FGAP-033).",
+      "acceptance_criteria": [
+        "A decision record exists in the project decision log stating that each generation step verifies its own success and process criteria during the run, at or before its output is applied to the draft.",
+        "The decision record specifies the single behaviour a step takes when its self-check does not pass.",
+        "The decision record states the standing rule that every transposed planning discipline is enforced as both a generation-time instruction and a per-step in-run check, and that a post-hoc check alone does not satisfy it.",
+        "The decision record names the tasks it governs."
+      ],
+      "oid": "e428bf0e8b201ae59a068bfbcd94e349",
+      "content_hash": "3d909fbc4d25cacec05c434ca8ccbf37df5e7436f10b1dd7f2d53db019725f35",
+      "content_parent": "cf78de3610d5b9f2a73df6b31b642c30401cf6e7b2a9d97e85b21ca884829a73"
+    },
+    {
+      "id": "TASK-039",
+      "status": "completed",
+      "description": "T2 -- Build the per-spec in-execution self-check mechanism (shared infrastructure the discipline tasks plug into): a generation step evaluates its own success + process criteria during the run, before its output is applied, and acts on the result per the T1 decision (FGAP-033).",
+      "acceptance_criteria": [
+        "On a run, a spec's output is checked against that spec's stated success and process criteria before it is committed to the draft, and the check's pass/fail result is present in the run record -- demonstrated on at least one spec end-to-end.",
+        "On an input that meets the criteria the run proceeds and records a pass; on a deliberately under-delivering input the step takes the decided on-failure behaviour and records a fail -- both demonstrated.",
+        "A second spec uses the same mechanism without per-spec bespoke wiring.",
+        "A full sequence run completes; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green."
+      ],
+      "oid": "1a89005d0e6ae9f3a1662d4f4ff61439",
+      "content_hash": "cdf5c5bb4753cf0ce64ee4ab383ae4b4570429651eb68133e41dc8accd42c65e",
+      "content_parent": "5cdc3011f5f0dfe0ace9ac0ad37893971bc16d7190b3fdf6fb5a9ea20e4cfb36"
+    },
+    {
+      "id": "TASK-040",
+      "status": "completed",
+      "description": "T3 -- Coverage as an authored property: every improvement area in the school's universe is either targeted or recorded as an explicit not-this-cycle gap, via a generation-time mandate + a per-spec in-execution self-check, with a discrete draft representation for acknowledged gaps (FGAP-033, the coverage regression).",
+      "acceptance_criteria": [
+        "During generation of the alignment/narrative step(s), the step's self-check fails when any improvement area in the school's universe is neither targeted nor recorded as an explicit gap, and passes when each is one or the other -- demonstrated on an input that would otherwise drop an area.",
+        "An acknowledged not-this-cycle gap is stored in the draft as a discrete recorded element (not only incidental prose), and the self-check reads that element -- demonstrated.",
+        "Over a full assembled draft, every improvement area in the school's universe is either targeted or recorded as an explicit gap (zero silently absent), confirmed by the whole-draft coverage check run over all specs combined.",
+        "Over the same draft, every learner outcome in the school's universe is targeted or recorded as an explicit gap.",
+        "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the distribution and review-cadence checks do not move from pass to fail."
+      ],
+      "oid": "b98880f24336b711a2aaf59995248fae",
+      "content_hash": "8dbb6ab438cc177ba943574904bf0a9046fca94a89b53e93a61df69392be0f3b",
+      "content_parent": "5684a8cd2048545971c5d0db8045e984d412a22ef908943c166c4bc000bef1e6"
+    },
+    {
+      "id": "TASK-041",
+      "status": "completed",
+      "description": "T4 -- Root-cause why the full pipeline concentrates ownership more than the isolated propose-assignments run (assembled 3 owners/50% vs isolated 5/33%, VER-031) and bring assembled-draft distribution back to a healthy spread, with the distribution discipline self-checked during the run. EXPLORE-FIRST: the assembled-vs-isolated cause is unverified (FGAP-033 secondary regression).",
+      "acceptance_criteria": [
+        "The cause of the assembled-run ownership concentration, versus the isolated run, is recorded with the evidence that distinguishes the two execution contexts.",
+        "During generation of the assignment-bearing step, the step's self-check fails when one division owns more than 50% of steps or fewer than two divisions own any, and passes otherwise -- demonstrated on the previously-concentrated context.",
+        "Over a full assembled draft, more than one division owns steps and no single division owns more than 50% of them, confirmed by the whole-draft distribution check.",
+        "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the coverage and review-cadence checks stay passing."
+      ],
+      "oid": "965c9b4d431befc6ec18037be3c6ed0b",
+      "content_hash": "86913881b4417cb9b347c6411f509b525228acf6be730a0edd31cf9bc2edc4c8",
+      "content_parent": "39b864e27c296cbfe0dd25308139797f4d885965d7bb67d92a5898e37b34bd9d"
+    },
+    {
+      "id": "TASK-042",
+      "status": "completed",
+      "description": "T5 -- Complete the transposition audit: independently verify across the assembled draft whether three-view measurement and the learning-designed action-step shape hold or degraded; produce the full map of every sim-land finding -> {generation contract / in-execution check / post-hoc check / absent}; dispose of every check-only or absent finding (fix or file). EXPLORE-FIRST: the two suspicions are unverified-from-source (FGAP-033 open items).",
+      "acceptance_criteria": [
+        "A recorded determination states, with evidence from the assembled draft, whether three-view measurement (student outcomes, staff practice, parent/stakeholder) is present across the draft.",
+        "A recorded determination states, with evidence from the assembled draft, whether every action step embodies the recall-then-task-then-check-then-reflect shape and none is transmission-only.",
+        "A map exists listing every validated sim-land finding against whether it is enforced as a generation contract, an in-execution check, a post-hoc check, or is absent.",
+        "Every finding the map marks check-only or absent is either resolved (made a generation contract plus an in-execution check) or filed as a discrete .context gap with its evidence -- none left without a disposition."
+      ],
+      "oid": "945c6e0ea0d42bd84491147d712795e5",
+      "content_hash": "4500b31661febd603604aa5ef815e3a8d1bad2e9db619a0e995d47589c96e806",
+      "content_parent": "e57df8729846702ffebf6cd96899c577ad5435bf96721727e39300318307bb55"
+    },
+    {
+      "id": "TASK-043",
+      "status": "completed",
+      "description": "T6 -- Re-verify and close: a fresh full 14-spec run produces an assembled draft that passes whole-draft coverage by construction (closing TASK-034), and re-assess TASK-026's distribution premise against the corrected pipeline (FGAP-033 closure). RUN PROCEDURE: prompt-workshop/RUNBOOK-T6-14spec-run.md -- source-verified command (node prompt-workshop/dispatch/run_workflow.mjs run workshop-run-plan-sequence --fresh --yes) + env (DATABASE_URL dev DSN + venv python on PATH + pi/backend) + preconditions (verify-render-parity 14/14) + the result evaluation (check_draft.py --strict on draft-after-propose-review-loop.json = the structural gate). CONFIRM-ON-FIRST-RUN flags: pi-workflows live 0.31.0 vs 0.29.0-contract; exact venv-launch wrapper not previously recorded.",
+      "acceptance_criteria": [
+        "A fresh full sequence run produces an assembled draft on which the whole-draft coverage check passes (every learner outcome and improvement area targeted or recorded as an explicit gap).",
+        "The same run's assembled distribution check passes (more than one owner, no owner more than 50%), and TASK-026's status is updated to record whether its distribution premise is superseded, with the run's evidence.",
+        "The run completes end-to-end; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green; and no structural check (coverage, distribution, cadence, three-view student/staff/parent, bilingual staff-English/student-bilingual) is failing."
+      ],
+      "oid": "c592b5d69f73adb2ecd875e0b6a16438",
+      "content_hash": "8030b64509be221aabe1ffcd72a40d546e8a013d5a5653d0eae30a4db4f103ad",
+      "content_parent": "2fe82ba6adc8485b4431cd9734c7454ab7c86d2563cce2c126521ae468a47e1c"
+    },
+    {
+      "id": "TASK-044",
+      "status": "completed",
+      "description": "FGAP-037: enforce three-view measurement (student outcomes, staff/adult practice, parent/stakeholder) as a generation contract + a per-spec in-execution self-check on the measurement-bearing step, mirroring the T3/T4 pattern; produce the currently-absent parent/stakeholder track and gate its omission.",
+      "acceptance_criteria": [
+        "During generation of the measurement-bearing step, the step's self-check fails when any of the three measurement views -- student outcomes, staff/adult practice, parent/stakeholder -- is neither produced nor recorded as an explicit not-this-cycle gap, and passes when each is one or the other; demonstrated on an input that would otherwise omit the parent/stakeholder view.",
+        "Over a full assembled draft, each of the three measurement views is present or recorded as an explicit gap, confirmed by a whole-draft check.",
+        "A generated plan produces a parent/stakeholder measurement track (a parent feedback channel, a parent-facing measure, or an explicit gap), not parents only as a communication audience; confirmed by reading the draft.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+      ],
+      "oid": "1c89f21e6ec648a83dfff1fd8ee96553",
+      "content_hash": "d2a44e73a264a51968e9561c30a1f362d53503b136ca9520237cf258b1c53dd7",
+      "content_parent": "1d5b319fa8a3f30030766cb0c714eec3b48ff9f269687b38f3fdc691116b780a"
+    },
+    {
+      "id": "TASK-045",
+      "status": "completed",
+      "description": "FGAP-038: add a per-spec in-execution self-check for the quarterly review-cadence discipline at the review-loop step, reusing the existing cadence logic, mirroring T3/T4; the discipline already has a generation contract + a post-hoc check but no in-execution gate.",
+      "acceptance_criteria": [
+        "During generation of the review-loop step, the step's self-check fails when the review loop has fewer than four evaluate-and-adjust checkpoints or its earliest checkpoint is not before 1 December, and passes otherwise; demonstrated on a deficient input.",
+        "Over a full assembled draft, the review loop has at least four checkpoints with the earliest before 1 December, confirmed by a whole-draft check.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+      ],
+      "oid": "8ff8ca5f89f8603e4deb5a02efc024bd",
+      "content_hash": "4fc512e68fae96346456e10e4a82f2ba7a92e4be600c01779afe05a76d9d7bc8",
+      "content_parent": "b74e96261280c0bc634e92fb3a347e43435dde53533f99e448fc41bf9d09d17f"
+    },
+    {
+      "id": "TASK-046",
+      "status": "completed",
+      "description": "FGAP-039: add the bilingual-language-improvement measurement strand (a staff English-usage measure and a student bilingual-progress measure) as a generation contract + a per-spec in-execution self-check on the measurement-bearing step; distinct from the Bilingual-Communicators-SLO coverage entry.",
+      "acceptance_criteria": [
+        "During generation of the measurement-bearing step, the step's self-check fails when the bilingual measurement strand -- a staff English-usage measure and a student bilingual-progress measure -- is neither produced nor recorded as an explicit not-this-cycle gap, and passes when it is one or the other; demonstrated on an input that would otherwise omit it.",
+        "Over a full assembled draft, the bilingual measurement strand (staff and student) is present or recorded as an explicit gap, distinct from the Bilingual-Communicators-SLO coverage entry, confirmed by a whole-draft check.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+      ],
+      "oid": "f66f5e549cdc1a246c82a768a38313ad",
+      "content_hash": "b3419cf51f510e571a10d8b2ded2c9543114a4cdb14cf660f230516ca246e298",
+      "content_parent": "dcdd45b664b619512f7d1116845967ba38e457c41d0e9ea90c84069c23edb1aa"
+    },
+    {
+      "id": "TASK-047",
+      "status": "completed",
+      "description": "FGAP-041: add precursor/dependency identification (step 3 of the mandatory front-load sequence) to the front-load generation contract -- each goal/action surfaces what must be in place first (data, tools, training, coordination, upstream output, policy), or affirmatively states none -- and make it verifiable.",
+      "acceptance_criteria": [
+        "The front-load generation contract requires every goal/action to surface its precursor requirements or dependencies before action, or to state affirmatively that none exist.",
+        "An adversarial read of a generated draft finds every action step states its precursors or explicitly states none; zero action steps leave precursors unstated.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+      ],
+      "oid": "71d8ebbb2f50ae81d0413cfceea846e0",
+      "content_hash": "3763066cdbfb5836155f2c1e2d69c661f711a1cad4e979ae2280255750243fe8",
+      "content_parent": "80622e67e95a0d2551ce6e4b6192a8ed957e6c1a1ce09c550f8df03671568453"
+    },
+    {
+      "id": "TASK-048",
+      "status": "completed",
+      "description": "FGAP-040 (placement per DEC-0005: in-draft coverage-class): every identified action-step precursor that no division owns is recorded as an explicit in-draft decision-request (what decision, from whom, why, what it blocks/unblocks), via a generation contract + a parser-recognized element + a per-spec in-execution self-check. Depends on FGAP-041 precursor identification.",
+      "acceptance_criteria": [
+        "The generation contract requires every identified action-step precursor that no division owns to be recorded as an explicit in-draft decision-request carrying what decision is needed, from whom, why, and what it blocks or unblocks.",
+        "A generated/assembled draft stores each such decision-request as a discrete structured element (not only incidental prose), and a check reads that element; demonstrated.",
+        "During generation of the bearing step, the step's self-check fails when an identified precursor is neither owned nor recorded as a decision-request, and passes when each is one or the other; demonstrated.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+      ],
+      "oid": "c40b3b876643931c4c32247a00140b7e",
+      "content_hash": "ed35c7e0bc94abfc73759ce0a48ecc4c70126db7704a0895d5982d455be3f933",
+      "content_parent": "da416e93e7f00a788f54f267020b1f1de24d277176eb9bdc583be8aee927f6a3"
+    },
+    {
+      "id": "TASK-049",
+      "status": "completed",
+      "description": "FGAP-034: the substrate-driven apply path runs the same in-execution structural self-check as the orchestrator-driven apply path, so the structural gates (coverage, distribution, and future checks) are enforced uniformly across both apply attach points.",
+      "acceptance_criteria": [
+        "The substrate-driven apply path runs the same in-execution structural self-check as the orchestrator-driven apply path: a structural failure causes a nonzero exit and the output is not written; demonstrated on an input that fails a structural check.",
+        "A structurally-passing input is written by the substrate path; demonstrated.",
+        "Both apply attach points enforce the same structural checks; confirmed.",
+        "No previously-passing check moves from passing to failing: outputs parse, the project gate is green, and the existing apply tests stay passing."
+      ],
+      "oid": "e5afce4a72ff3b070f2ed88b52e05dd5",
+      "content_hash": "c843671f57012ffb17c45572509751bac280a04c52f51efb1652f5621a9c2598",
+      "content_parent": "378ba76124dec3400b758ebd7037e406f39825a93c37c0d9b48e24d9ec55cf21"
+    },
+    {
+      "id": "TASK-050",
+      "status": "completed",
+      "description": "FGAP-035: the free-text/catalogue audit scans the deferred-gap reason field (domain_alignment *_not_addressed[].reason) the same way it scans targeted-row rationale, closing the enforcement asymmetry.",
+      "acceptance_criteria": [
+        "The free-text/catalogue audit scans the deferred-gap reason field the same way it scans targeted-row rationale: a fabricated or off-register reason on a deferred-gap entry is detected; demonstrated.",
+        "A legitimate deferred-gap reason passes the audit; demonstrated.",
+        "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection on existing inputs, and the project gate is green."
+      ],
+      "oid": "c9e607174d6debb6ba981041d9bf0f2a",
+      "content_hash": "a4248b55ba59cce5403bed37d28be68b1cf47890cddad7cabe859b2199f6dc06",
+      "content_parent": "244069bcf411ea99fae426f22107eb6b4083258fe81ea42a149ee7314f03197b"
+    },
+    {
+      "id": "TASK-051",
+      "status": "completed",
+      "description": "FGAP-036: _GB_TABLE drifted from live snippet grounding_sections via 3 lockstep misses across 3 commits, STOPing the decompose reconstruction gate. Re-sync the table to the live snippet sets so the gate reconstructs a clean bijection. Live dispatch + render parity unaffected (reconstruction-tool only).",
+      "acceptance_criteria": [
+        "python prompt-workshop/dispatch/decompose.py exits 0 with GATE 14/14: every computed grounding-block group over the current snippet corpus matches exactly one table row and every table row is hit by exactly one computed group (zero computed-without-row, zero row-without-computed).",
+        "No previously-passing check regresses: the render-parity gate passes 14/14 and the full project gate is green."
+      ],
+      "oid": "d34346451b3a6e52d99cab53acb32e63",
+      "content_hash": "15290282c570189ad60c1bf0d352b3c6a0ebb51079d044ca9ce1c28d5683284c",
+      "content_parent": "88a35357d10f4c11319624d1dcc01c969cefbd86673661f3860fa6b1044f7bd1"
+    },
+    {
+      "id": "TASK-052",
+      "status": "completed",
+      "description": "FGAP-042: extend the whole-draft prose scanner (check_draft._iter_prose_fields) to walk domain_alignment -- the targeted-row rationale AND the deferred-gap reason -- so domain_alignment prose enters the whole-draft language-WARN scan, completing the scanner's stated 'every prose string in the draft' contract. Workshop-only (check_draft.py).",
+      "acceptance_criteria": [
+        "The whole-draft prose scanner yields domain_alignment prose -- both the targeted-row rationale and the deferred-gap reason -- so they enter the whole-draft language-WARN scan; demonstrated.",
+        "A banned process-method term or scaffolding label placed in a domain_alignment rationale or reason is surfaced by the whole-draft scan; demonstrated.",
+        "No previously-passing check moves from passing to failing: the parity gate passes 14/14, the project gate is green, and the existing whole-draft checks stay passing."
+      ],
+      "oid": "5561f620d9c1b7066e017aa47707be7e",
+      "content_hash": "db7b1fed79ed682bfa92294395554b6fa0cdcb986f7363301889a0fad3172f5f",
+      "content_parent": "28c7a9db169cc6de0275456cc54ea3b7cbda9a47edcf66aa80b62734cde1b1ab"
+    },
+    {
+      "id": "TASK-053",
+      "status": "completed",
+      "description": "Adopt the R-0012-verified context-contracts: declare CTX-001..004 (unit_kinds task / verification / feature / framework-gap) into .context/context-contracts.json so gather-execution-context resolves a per-unit-kind execution bundle, replacing manual edge-walking (the drift root cause this session cleaned). All bundle directions corroborated against the live relations.json edges via find-references; max_depth is recorded-only in this build; zero-edge relation_types (feature_governed_by_decision, gap_addressed_by_feature) excluded as scaffolding until edges exist. Source: R-0012 / the pi-context Usage Audit MD section IV.B.",
+      "acceptance_criteria": [
+        "gather-execution-context returns a correct single-hop bundle for a representative unit of each declared kind (task, verification, feature, framework-gap): each declared relation_type/direction resolves exactly the neighbors the live edges hold for that unit, with no inverted or empty bucket for a relation_type that has edges on that unit.",
+        "A representative task unit's bundle reaches its containing story, its phase, the gap/feature/decision it addresses, its verifications, and its prerequisite chain; a representative framework-gap unit's bundle reaches its addressing tasks, decisions, and verifications — demonstrating directions are correct rather than reversed.",
+        "After the four contracts are declared, context-validate reports 0 errors and introduces no warning beyond the pre-existing set (no invariant or lens reads context-contracts; the declaration is additive).",
+        "context-contracts.json contains exactly the four contracts with no zero-edge relation_type listed, and each carries id, unit_kind, bundle_relation_types, created_by, created_at."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-16",
+      "oid": "10d666be902fce4fe14f5168a4d252c8",
+      "content_hash": "d6263ca823cb27f73e7c447f9dd22b8c231bfc746b81d15f35c3cf1cd1e842bd",
+      "content_parent": "b7ea314c050e1dc1d44926c527f214c56c027b99fede9b278367b670071fcc03"
+    },
+    {
+      "id": "TASK-054",
+      "status": "completed",
+      "description": "Tighten the four gated workshop snippets so the model satisfies each per-spec structural gate by construction, removing snippet-06's distribution generation/enforcement contradiction. Prompt bodies only — the validator/gate-logic/output-schemas are NOT touched (the distribution gate is a structural process-blocker; relaxing it is rejected). Canonical lockstep edit: snippet MD body + the matching .workshopping per-spec-unique FRAG-intro fragment, edited to identical text + re-stamped, verify-render-parity 14/14. Gated specs/fragments: 02 FRAG-intro-propose-domain-alignment-8 (coverage), 06 FRAG-intro-propose-assignments-5 (distribution contradiction + decision_requests), 11 FRAG-intro-suggest-feedback-channels-5 (three-view + bilingual), 14 FRAG-intro-propose-review-loop-9 (cadence). On branch tighten-gated-snippets; merge to main only on user authority.",
+      "acceptance_criteria": [
+        "Snippet 06 contains no instruction permitting a single division to own a majority of steps; it requires distributed ownership and directs the model, before output, to verify that more than one division owns steps and that no division owns more than half.",
+        "Snippet 06 still directs a single best-fit division per step and does not instruct assigning a step to an ill-fitting division merely to spread; where best-fit assignment would concentrate more than half under one division, it directs re-examining each step's fit rather than silent concentration.",
+        "Each of the four gated snippets directs the model, at the point of output, to self-verify the structural property its gate enforces: 02 = every catalogue learner-outcome and improvement-area appears exactly once across the targeted and not_addressed arrays; 06 = more than one owner and none over half, and each decision_request carries its four non-empty fields; 11 = the fixed three measurement_views keys and two bilingual_views keys, each an index or a gap, with a channel present for every view and bilingual side not explicitly deferred; 14 = at least four review checkpoints with the earliest scheduled before 1 December of the cycle's first year.",
+        "The four edited snippet bodies and their .workshopping fragments render byte-identical: verify-render-parity reports GATE 14/14 with both cross-checks passing.",
+        "Each edited .workshopping fragment's content_hash differs from its pre-edit value (re-stamped) and the substrate validates clean.",
+        "The validator, gate logic, and output schemas are unchanged from before the task, and no output-contract key is added or removed by the edits.",
+        "The working tree on the branch is clean with the changes committed."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-17",
+      "oid": "7a4ec16b106e529c5f38bf5659899ed2",
+      "content_hash": "3ddbc1bf37dd7d8477cdbcba6a369a4fed4f5d1714e16bd1b920254c7faa8ed4",
+      "content_parent": "7a38ef740e730eb73cada33fdb3f6fce29b82881474c7d603ac3011ab33094e6"
+    },
+    {
+      "id": "TASK-056",
+      "status": "in-progress",
+      "description": "Materialize hod-doc's head-accountability PositionResponsibility atom on every DIVISION-HEAD leader Position -- kind=leader with year_group unset (the HOD seats of 0048 + the Director seats of 0050; the year-group leaders of 0049, which carry a year_group FK, are excluded as they lead a year group, not a division) -- so a division-head leader Position carries its division's responsibilities and the US-LLM-27 spec-07 abort is closed. A seed migration mirroring the 0048/0050 pattern (idempotent, reversible); statement = hod-doc's wording generalized to the division: 'Be accountable for delivering the division's responsibilities.' No model/grounding/parser/spec change (the position-atom path already emits + admits). Addresses FGAP-046; enacts DEC-55.",
+      "acceptance_criteria": [
+        "Every division-head leader Position (kind=leader with year_group unset) carries a stored position-grain PositionResponsibility atom expressing that the seat is accountable for delivering its division's responsibilities -- a real materialized row, not a string computed at grounding time; the year-group leader seats (kind=leader with a year_group) do not receive it.",
+        "The atom appears in the grounding responsibility inventory under its position, and the propose-responsibilities parser admits a position-grain citation of it without rejection.",
+        "A full workshop generation that attributes a division-head leader-position's accountability for its division's responsibilities to that position completes without the spec-07 catalogue-gate abort.",
+        "The seed is idempotent (re-running it changes nothing) and reversible (the unseed removes exactly the rows it added); pre-existing position atoms are unchanged.",
+        "The project gate stays green (manage.py check, ruff, mypy, pytest, make test-js) and existing seeds, positions, and atoms are unaffected."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "593ab1f5a5c9357adc932324cb243e64",
+      "content_hash": "d71107481a877a44c1ed6ae1cab996a32e690c2fe0a195136003058a99760a95",
+      "content_parent": "becbe5e559f475d6817aa38df73db2e56e4bdfad165ecfe549b0415a6d606f8a"
+    },
+    {
+      "id": "TASK-057",
+      "status": "cancelled",
+      "description": "Enact DEC-56: correct spec 07's render so only responsibility statements are copy-targets (scope_summary/kind non-citable), and add a deterministic guard that enforces the rendered-citable == parser-admissible invariant across all 14 specs. No change to planner/specs.py parse/resolve, the apply hard-abort, or the DEC-40/DEC-53 gate posture. Addresses FGAP-047.",
+      "acceptance_criteria": [
+        "Spec 07's responsibility inventory presents only parser-admissible values as copy-targets: division/position scope_summary and kind no longer appear as copyable items (omitted from the citable list or rendered as unambiguous context the instruction states is never copied).",
+        "A deterministic guard verifies, for every one of the 14 specs, that each value the rendered prompt presents as a copy-target is in that spec's parser-admissible catalogue; it passes for all 14 after the spec-07 fix and fails when a non-admissible value is injected into a spec's citable inventory.",
+        "A full workshop generation no longer aborts at spec 07 on a context-value (scope_summary / kind) mis-citation.",
+        "The DEC-40 catalogue/fabrication gate, the resolve hooks' raise-on-miss, and the apply hard-abort are unchanged; genuine fabrication and structural failure stay fatal; the workshop and production share the identical parser/resolve.",
+        "The edited snippet body and its .workshopping fragment render byte-identical (verify-render-parity 14/14, both cross-checks pass) and the edited fragment's content hash is re-stamped.",
+        "The project and workshop gate stays green (manage.py check, ruff, mypy, pytest, make test-js, verify-render-parity, the new guard) and spec 07's JSON output contract is unchanged (no added or removed keys)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "3fa7126a948537e46afeb6c8e157f103",
+      "content_hash": "77052a0ec44ef90a9dbe63b125e74a880f3b82526f2436fd60c3053890441e41",
+      "content_parent": "365447667b1422cfc36b1dd2c2d23e8c210e85e13e7c9211979c76b0462c34fb"
+    },
+    {
+      "id": "TASK-058",
+      "status": "completed",
+      "description": "Build the per-slice hard gate: a single runnable command (`make verify-slice SLICE=<key>`, or an equivalent `bin/verify-slice`) that composes a slice's behavioral pytest selection + the project static gate (ruff, ruff format --check, mypy ., make test-js) + context-validate (jq-on-.output envelope, CTX-13) into ONE exit code, partitioned two-class per DEC-58/DEC-53: only the BLOCKING set (the slice's behavioral tests + this-slice-introduced soundness) determines the exit code; cosmetic/style, language-register WARNs, and pre-existing/unrelated/flaky failures are NON-BLOCKING and reported as structured warnings, never changing a passing exit code. Reuses the gate-before-commit.sh composition; does not weaken it. Addresses FEAT-009 / STORY-012. The autonomous loop driver + the first-slice proof are follow-on tasks that consume this gate.",
+      "acceptance_criteria": [
+        "Running the slice gate command for a given slice exits 0 if and only if every BLOCKING check passes: the slice's behavioral tests, and the soundness (types, project test suite) that the slice's own code is responsible for.",
+        "A purely cosmetic failure (style/formatting), a language-register warning, or a failure demonstrably pre-existing, unrelated to the slice, or flaky does NOT change a passing exit code, and each such item is emitted as a structured warning rather than silently dropped.",
+        "A failure of a behavioral acceptance test, or a type/soundness error introduced by the slice's own code, makes the command exit non-zero.",
+        "The command's exit code is the sole pass/fail verdict — no consumer needs to read prose to decide pass or fail.",
+        "The pre-existing whole-project gate (the `test` target and the commit hook's checks) remains green and is not weakened by adding this gate."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "6a5410488f367e7f417cb7446ffa9ec5",
+      "content_hash": "625e5ba5a5531a37eecead3652a13cecbb0eae3a4ed38be51ced9c9aff410bc3",
+      "content_parent": "fe6904d735eeb71daaf3aa235067d8177140939051bcc80a62c0edf3a2ea2135"
+    },
+    {
+      "id": "TASK-059",
+      "status": "completed",
+      "description": "Build the persisted, versioned draft_state store for the trio (slice 1): a new append-versioned model (plans/models/draft.py, e.g. PlanDraftState) keyed by a UUID draft_id + school + created_by, holding the flat draft_state JSON verbatim, NOT FK'd to Plan (pre-Plan accumulation), with a thin school-scoped persistence API (save a new version, load latest, walk versions) + migration + __init__ registration. The accumulation seam (fold prefill->draft_state) is the next slice. Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=draftstate).",
+      "acceptance_criteria": [
+        "Saving a draft_state persists a row scoped to the author and school and identified by a draft id; saving the same draft again APPENDS a new version (the prior version remains, history is walkable-back) rather than overwriting.",
+        "Loading the latest version of a draft returns the exact flat draft_state dict that was saved — every key and value preserved (round-trip equal).",
+        "The stored flat draft_state, passed to build_grounding(school, draft_state=<loaded>, include=['draft_state']), is consumable unchanged: the spec helpers that read draft_state (row counts, milestone improvement-type codes) return the same values they would from the originally-saved dict.",
+        "The store holds a draft that has no saved Plan (the pre-Plan accumulation case), and is school-scoped — a draft created under one school is not loadable under another.",
+        "The whole-project gate stays green and the context cascade validates; nothing pre-existing is broken by adding the store."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "196beb4bd8cbbca8003b49e502dc0160",
+      "content_hash": "bf2017039d2c81dd61c6470fa19ad02e925852c5983fe9d91e49740e67967ea1",
+      "content_parent": "ec5086d1f59ce2b4cef10af37459d1f405a09f33e0f595eba2d72462425e5d22"
+    },
+    {
+      "id": "TASK-060",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 1 (form-step fold): a pure server-side function (in a new planner/services.py) that folds a parsed form-step AssistResult.prefill -- a flat {field: value} dict over bare field names, e.g. A1 narrative-draft's 5 fields on the `basics` step -- into the flat draft_state by setting draft_state[field]=value (bare keys, the collectDraftState grammar). Reads/writes the PlanDraftState store. No retired-workshop import (apply.py MERGE_RULES is dev-only reference). Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=fold_form).",
+      "acceptance_criteria": [
+        "Folding a parsed form-step prefill (a {field: value} dict over bare field names, e.g. the five narrative fields) into a draft_state sets each bare field key to its value.",
+        "Folding updates the given fields without clobbering unrelated pre-existing draft_state keys.",
+        "The folded draft_state round-trips through the PlanDraftState store (save then load returns it equal) and, passed to build_grounding(include=['draft_state']), is read back with the folded form fields present and unchanged.",
+        "The fold is a pure server-side transform that imports no retired-workshop code.",
+        "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "d651ace905e2e2b19c82d902a14f77b1",
+      "content_hash": "cc890a5c65fe2b7f0e242cb0141db579e0b4d7448dc43c2e2d74847c7d8400fe",
+      "content_parent": "8381d8f28badf93d3f03fd9fbfd467a1fbc3c91cb8badd920774f3051cdf4697"
+    },
+    {
+      "id": "TASK-061",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 2 (simple-formset fold): a pure server-side function (planner/services.py, sibling to fold_form_step_prefill) folding a parsed formset-step AssistResult.prefill -- a list[dict] of per-row field values -- into the flat draft_state as {prefix}-{i}-{field} keys, where prefix == the spec's target_step (B1 criteria / D1 milestones / F1 steps / C1 feedback / A2 standards). REPLACE semantics (re-running a spec replaces its section, mirroring applyFormsetPrefill): clears the prior direct-row keys for that prefix before writing, WITHOUT clobbering management-form keys ({prefix}-TOTAL_FORMS etc.) or nested-child keys (e.g. criteria-{i}-measurement-...). Management-form counts are deferred (build_grounding reads by regex via _draft_state_row_count, not TOTAL_FORMS). Guards a non-list prefill with a clear error. Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=fold_formset).",
+      "acceptance_criteria": [
+        "Folding a list[dict] formset prefill with a given prefix sets draft_state['{prefix}-{i}-{field}'] = value for each row i and each field in that row.",
+        "REPLACE: folding a new prefill for a prefix clears the prior direct-row keys for that prefix (including stale higher-index rows from a larger prior prefill), and an empty-list prefill leaves no direct rows for that prefix.",
+        "REPLACE does NOT delete or alter management-form keys ({prefix}-TOTAL_FORMS / -INITIAL_FORMS etc.) nor nested-child keys that share the prefix (e.g. criteria-{i}-measurement-...); those are preserved untouched.",
+        "The folded draft_state is consumable: _draft_state_row_count(grounding, prefix) returns len(prefill), and for milestones _draft_state_milestone_improvement_types reads the folded improvement_type codes in row order; it round-trips through the PlanDraftState store.",
+        "The fold is pure, imports no retired-workshop code, and raises a clear domain error on a non-list prefill (mirroring the form-fold's dict guard).",
+        "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "bfdd35d36398a9bd7a1ef4bd5d019911",
+      "content_hash": "8229e2237f4ceca527127dc0944c377b5bebec1eb19fca7f20cf98f2490d93ad",
+      "content_parent": "d5a8938d1923fd5fe97857d429f585936d2c3ebeb20d09ea888002b0b1fe3f26"
+    },
+    {
+      "id": "TASK-062",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 3a (A3 multi-section fold): a server-side function in planner/services.py that folds the A3 propose-domain-alignment prefill -- one object with 5 relation sections (learner_outcomes_targeted, areas_for_improvement, stakeholder_impact, policies_established, policies_revised), each a list[dict] of {pk-or-label-resolved-field, rationale} -- into the flat draft_state by routing each present section to the existing fold_formset_prefill with prefix == the relation field name. The not-addressed acknowledgment keys (learner_outcomes_not_addressed, areas_for_improvement_not_addressed) are NOT form selections and are skipped (not folded). Composes the existing formset fold (REPLACE per section); no new deletion logic. Addresses FEAT-010 / STORY-013; harness SLICE=fold_multisection_a3.",
+      "acceptance_criteria": [
+        "Folding the A3 prefill object sets, for each of the 5 relation sections present, the {section}-{i}-{field} keys via the existing per-section formset fold (one section's rows do not affect another's).",
+        "The non-formset acknowledgment keys (learner_outcomes_not_addressed / areas_for_improvement_not_addressed) are NOT written as draft_state form keys; they are skipped without error.",
+        "REPLACE holds per section (re-folding a section clears its prior direct rows incl. stale higher-index) and management-form keys for each section survive untouched; sections absent from the prefill are left unchanged.",
+        "The folded draft_state round-trips through PlanDraftState and is consumable: _draft_state_row_count(grounding, '<section>') returns that section's row count.",
+        "The fold is pure, imports no retired-workshop code, and raises a clear domain error on a malformed prefill (not a dict-of-lists).",
+        "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "oid": "4bd11ef71b1a9a36db1579b0ff2a5e57",
+      "content_hash": "21905d7fdd89423428319b7fa3017f73e57b323b01ed5471944ef28e9e7916a8",
+      "content_parent": "af37ea6411b9eb5026e55fa879dda9106b216dcbb3f788c5537716c040133282"
+    },
+    {
+      "id": "TASK-063",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 3b (G1 review-loop fold): a G1-specific router in planner/services.py folding the propose-review-loop prefill (one object: communications, review_events with nested inputs, revision_rules) into draft_state. Routes the 3 flat sections through fold_formset_prefill with the correct prefixes -- communications->'review' (NAME MAPPING; prefill key 'communications' != prefix 'review'), review_events->'review_events' (scalars only, with the 'inputs' list stripped), revision_rules->'revision_rules'. NEW logic for the nested inputs: per review_event i, write review_events-{i}-input-{j}-channel_index (prefill key 'inputs' PLURAL -> flat token 'input' SINGULAR), REPLACE-scoped ^review_events-\\d+-input-\\d+-[^-]+$ (does not touch event scalars or nested management forms). Index refs (channel_index/trigger_index/milestone_index) stored as integers, resolved at save. Carries forward the A3 round-2 lessons: ATOMIC on guard failure (validate all sections + nested shapes before mutating) + raise on unexpected prefill keys. Addresses FEAT-010 / STORY-013; harness SLICE=fold_g1.",
+      "acceptance_criteria": [
+        "Folding the G1 prefill sets communications as review-{i}-{field}, review_events scalars as review_events-{i}-{field} (the 'inputs' list NOT written as a scalar field), revision_rules as revision_rules-{i}-{field}, and each review_event's nested inputs as review_events-{i}-input-{j}-channel_index.",
+        "The prefill key 'communications' maps to the 'review' prefix; the nested prefill key 'inputs' (plural) maps to the flat token 'input' (singular); index references (channel_index, trigger_index, milestone_index) are stored as integers unchanged (not resolved at fold time).",
+        "REPLACE holds per section (re-folding clears that section's prior direct rows incl. stale higher-index) and the nested-input REPLACE clears review_events-{i}-input-{j}-* for rewritten events without clobbering the event's scalar fields or nested management-form keys; the 'review' (communications) REPLACE does not touch review_events/revision_rules keys.",
+        "The fold is ATOMIC on guard failure: a malformed section or nested-input shape leaves draft_state entirely untouched; an unexpected top-level prefill key raises a clear domain error.",
+        "The folded draft_state round-trips through PlanDraftState and is consumable: _draft_state_row_count returns 'review'/'review_events'/'revision_rules' counts and the nested review_events-{i}-input-{j}-channel_index keys read back with their integer values.",
+        "Pure, imports no retired-workshop code; the whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "eefbdf26a38e557d91e399da409f6761",
+      "content_hash": "e44559010adf57a3e0a7cde5a54eba22980bb5e3f2f19bf122c18b19117fdf7f",
+      "content_parent": "d8d704034264ad688bceb6b64a4cdfe347bcb38e09a1b02889e19c8d2be8cc25"
+    },
+    {
+      "id": "TASK-064",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 4 (per-step-children fold): a generic server-side function fold_per_step_child_prefill in planner/services.py folding the per-step-child prefills (F2 assignment, F3 timeline, F4 resource+substep, F5 evidence, US-LLM-27 responsibility+position_responsibility) -- each list[{step_index, ...}] -- into draft_state under steps-{step_index}-{segment}-{k}-{field}. Handles single-row segments (F2/F3 -> row 0 from the row's direct fields) and multi-row segments (F4/F5/US-LLM-27 -> {k} rows from a named nested list field); a spec with two segments (F4 resource+substep, US-LLM-27 responsibility+position_responsibility) calls it once per segment. step_index + any index/pk refs stored as integers/strings as-is (resolved at save). REPLACE scoped per (step_index, segment): ^steps-{i}-{segment}-\\d+-[^-]+$ (collision-safe incl. responsibility vs position_responsibility). Atomic pre-validation + unexpected-key guard per the A3/G1 lessons. Reuses the review_loop nested-fold precedent. Addresses FEAT-010 / STORY-013; harness SLICE=fold_stepchild.",
+      "acceptance_criteria": [
+        "For each prefill row, the fold writes that row's step_index's child-segment keys: a single-row segment -> steps-{step_index}-{segment}-0-{field} from the row's direct fields; a multi-row segment -> steps-{step_index}-{segment}-{k}-{field} from the named nested list (one {k} per list element).",
+        "step_index and any pk/index reference fields are stored as integers/strings unchanged (not resolved at fold time).",
+        "REPLACE per (step_index, segment): re-folding a step's segment clears its prior steps-{step_index}-{segment}-{k}-* rows (incl. stale higher-index) without clobbering the step's own scalar fields, OTHER segments under the same step, the segment's nested management-form keys, or other steps.",
+        "Folding segment 'responsibility' does not touch 'position_responsibility' keys and vice versa (the prefix-overlap is collision-safe).",
+        "The fold is atomic on guard failure (a malformed row/nested list leaves draft_state entirely untouched) and raises a clear domain error on a malformed prefill (non-list, non-dict row, or a non-list nested segment value).",
+        "The folded draft_state round-trips through PlanDraftState and the steps-{i}-{segment}-{k}-{field} keys read back with their values; the whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "7dee26a71df20a85ccfee11e01f426fb",
+      "content_hash": "c91d822f20536e34ab91278d44c36aff402b880dcb9e3774f5a759a304816eeb",
+      "content_parent": "0e92e2eb635a68f4f5380837587ab1c43dc43336382c8062db9361e377e28554"
+    },
+    {
+      "id": "TASK-065",
+      "status": "completed",
+      "description": "Accumulation seam sub-slice 5 (B2 nested-bindings fold, the LAST seam fold): a server-side function in planner/services.py folding the B2 bind-measurement-channels prefill -- list[{criterion_index: int, channel_indices: [int, ...]}] -- into the flat draft_state under the TWO-LEVEL nested key criteria-{criterion_index}-measurement-0-channel-{k}-channel_index (measurement row always 0 -- the blank extra grouping channel bindings per criterion; channel sub-row {k}; field channel_index). Writes only the channel-binding rows (management-form reconstruction for save is the save slice, consistent with the prior folds deferring management forms). criterion_index + channel_index stored as integers as-is (resolved at save). Per-criterion REPLACE scope ^criteria-{i}-measurement-\\d+-channel-\\d+-[^-]+$ (collision-safe vs the criteria simple-formset fold's ^criteria-\\d+-[^-]+$). Carries forward the atomic pre-validation + duplicate-index-guard + unexpected-shape-guard lessons. Addresses FEAT-010 / STORY-013; harness SLICE=fold_b2.",
+      "acceptance_criteria": [
+        "Folding the B2 prefill writes, for each row, criteria-{criterion_index}-measurement-0-channel-{k}-channel_index = channel_indices[k] for each k (the two-level nested key, measurement index 0).",
+        "criterion_index and channel_index values are stored as integers unchanged (not resolved at fold time).",
+        "REPLACE per criterion: re-folding a criterion's bindings clears its prior criteria-{i}-measurement-{j}-channel-{k}-* rows (incl. stale higher-index) without clobbering the criterion's scalar fields, the measurement row's own fields, the channel/measurement management-form keys, or OTHER criteria's keys.",
+        "Folding B2 does not disturb the criteria simple-formset scalars (no collision: the criteria fold's ^criteria-\\d+-[^-]+$ scope does not match the deeper measurement/channel keys, and B2's scope does not match criteria scalars).",
+        "The fold is atomic on guard failure (a malformed row/nested list leaves draft_state untouched) and raises a clear domain error on a malformed prefill (non-list, non-dict row, non-list channel_indices) or a duplicate criterion_index within the call.",
+        "The folded draft_state round-trips through PlanDraftState and the two-level channel-binding keys read back with their integer values; the whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "70cac9870e73c37eca8382a087c58952",
+      "content_hash": "e4451c68d80263114710302d13d0bea9b06017d32b44c58761c3394a2a53cfe3",
+      "content_parent": "3296ca8c03a27b7d99849c26bb09b248aa677b8323a041d9a246fdbbc1d88e7f"
+    },
+    {
+      "id": "TASK-066",
+      "status": "completed",
+      "description": "Trio per-spec server-side loop (FEAT-010 slice 3, HAPPY-PATH only): a function run_trio_pass(school, author, draft_id, seed) in planner/services.py (or planner/orchestration.py) that loops the 14 specs in a fixed dependency order, threading the flat draft_state through the PlanDraftState store. Per spec: load latest draft_state -> build_grounding(school, draft_state, spec.grounding_include) -> fetch+render the PromptTemplate (slug=spec.template_slug; render(**grounding, seed)) -> LLM call via get_llm_logged(author).complete() (full text, logged to LLMCall) -> spec.parse(text, school, grounding) -> spec.resolve (if any) -> route the parsed/resolved prefill to the correct seam fold (the SPEC_FOLD_ROUTING table) -> save_version (append). The order is CONSTRAINED by parse-time draft_state reads: D1 before F1 (F1 reads milestone types specs.py:840); B1+C1 before B2 (B2 reads criteria+feedback counts :1765-66); F1 before F2/F3/F4/F5/US-LLM-27 (read steps count :1941..2652); D1+C1 before G1 (:3805-06). HAPPY-PATH: no retry/degrade (slice #7), no gate-closure (slice #8), no save_nested/promote (slice #9). Reuses AssistStreamView's single-spec sequence (views.py:513-614) non-HTTP + all 6 seam folds. Addresses FEAT-010; harness SLICE=trio_pass.",
+      "acceptance_criteria": [
+        "run_trio_pass runs all 14 specs in a fixed dependency order; for each it builds grounding from the loaded draft_state, renders the spec's template, calls the LLM, parses, resolves, routes the result to the correct seam fold, and appends a new draft_state version.",
+        "The spec order satisfies every parse-time draft_state read so no spec's range-check spuriously fails: D1 before F1; B1+C1 before B2; F1 before F2/F3/F4/F5/US-LLM-27; D1+C1 before G1.",
+        "Each spec's parsed+resolved prefill is routed to its correct seam fold (form / formset[prefix] / multisection[A3] / review-loop[G1] / per-step-child[segment(s)] / b2-bindings); the final accumulated draft_state contains the folded keys of all 14 specs (spot-checked across the shape classes).",
+        "The PlanDraftState versions append per spec (walkable history); the final version holds the full 14-spec accumulation; build_grounding for spec N sees specs 1..N-1's folded output.",
+        "LLM calls go through the logged provider (get_llm_logged); tests drive all 14 specs with canned per-spec outputs via FakeLLMProvider (no real API call).",
+        "Happy-path scope only: the loop does not retry/degrade on failure, does not run the promotion gate, and does not save a Plan or promote (those are slices 7/8/9); the whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "51889aa45f6b3aa74276f37aec6939c4",
+      "content_hash": "b4bd0d54b255509cd8a781936e9586d3f44fc0d463525692f7a80c16bbcec57e",
+      "content_parent": "d8132bf19b8aa95aaf31a2125c4c560642b89ae140b64d9e6208420a3e6f714d"
+    },
+    {
+      "id": "TASK-067",
+      "status": "completed",
+      "description": "Trio resilience layer (FEAT-010 slice 4): wrap the per-spec body in run_trio_pass (planner/orchestration.py, the TRIO_SEQUENCE loop calling _run_one_spec + save_version) so a per-spec failure does NOT abort the 14-spec run. Bounded retry with machine-readable feedback, then degrade-to-recorded-entry + continue. Retryable: transient LLM errors (LLMTimeoutError/LLMRateLimitError, retry unchanged) + parse/catalogue ValueError (re-render with the rejection message appended as steering, up to cap R, default 2). Non-retryable (immediate degrade, no retry): LLMAuthenticationError + fold shape errors (TypeError/ValueError from the seam folds -- a parser-bug signal). On exhaustion/non-retryable: record a DegradedSpec (spec_key, attempts, reason, severity=MUST_FIX), skip that spec's fold/save (contributes nothing), continue. run_trio_pass gains a 4th return value: the list of DegradedSpec. Cascade-tolerant (later specs see 0 prior rows gracefully, already true). DegradedSpec is a RETURNED structure (Flag-MODEL-row persistence is slice #9; the gate-closure re-invoke is #8). Realizes DEC-57 dec-4 + DEC-58 + the user's no-aborts requirement. Addresses FEAT-010; harness SLICE=resilience.",
+      "acceptance_criteria": [
+        "A per-spec failure (LLM error, parse/catalogue rejection, or fold error) does NOT abort run_trio_pass; the run completes and returns, with the failing spec recorded rather than raising.",
+        "Retryable failures retry up to a bounded cap (default 2): a parse/catalogue ValueError re-renders the spec's prompt with the rejection message appended as steering before the next attempt; a transient LLM error (timeout/rate-limit) retries the same prompt. A spec that succeeds on a retry folds normally and is NOT recorded as degraded.",
+        "Non-retryable failures (LLM authentication error; a fold shape error TypeError/ValueError) degrade immediately with no retry.",
+        "After exhausting retries (or immediately for non-retryable), the spec degrades to a recorded entry (spec_key, attempt count, reason, severity) and the loop continues; the degraded spec contributes nothing to draft_state.",
+        "run_trio_pass returns the list of degraded specs alongside the accumulated draft_state; a degraded prior spec does not crash a later spec (cascade-tolerant -- the later spec sees the missing contribution gracefully).",
+        "The LLM calls remain logged; the whole-project gate stays green and the context cascade validates. (Flag-model-row persistence and the promotion-gate-closure re-invoke are slices #9/#8, out of scope here.)"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "5f730ed5ef92a39a898863a28b06e2b6",
+      "content_hash": "c788702adf178af305bc4bacf170101dd4a9db8bef704b2f8dd6e29fdce26484",
+      "content_parent": "7ccea4d08a2d9272bfe43c70a431cd8c1a11a28b9d4a2236cbe32866aa57b2ea"
+    },
+    {
+      "id": "TASK-068",
+      "status": "completed",
+      "description": "Trio save layer (FEAT-010 slice 8a-ii, DEC-59): persist the accumulated flat draft_state from run_trio_pass (planner/orchestration.py) into a saved Plan(lifecycle=PROPOSED) owned by school+author, with the full child graph. DEPENDS ON TASK-069 (A1 must emit `title` first). The save (1) derives the required Plan.cycle via ai.services.grounding._active_cycle(school) and injects it as the bare `cycle` key (surfacing a precondition failure if the school has no active cycle, never fabricating); (2) synthesizes the formset management forms (TOTAL_FORMS/INITIAL_FORMS at every level: top-level step + extra formsets, and nested criteria-{i}-measurement, criteria-{i}-measurement-{j}-channel, steps-{i}-{seg}, steps-{i}-evidence, review_events-{i}-input) which the folds never write, counting rows by the {prefix}-(d+)- regex; (3) builds a QueryDict (single value per key — collectDraftState/the planner formset M2M model is single-valued) and reuses the PlanCreateView bind->validate->_save_plan(PROPOSED)+save_nested+_save_flag_requests path so the saved graph is identical to the browser one-shot create (parity), atomic all-or-nothing. Out of scope: promotion-gate check, gate-closure re-invoke (8b), admin-promote + Flag persistence (9). Addresses FEAT-010; harness SLICE=save_draft.",
+      "acceptance_criteria": [
+        "The accumulated flat draft_state from run_trio_pass is saved as a Plan in lifecycle=proposed, owned by the originating school and author, with the full graph populated: plan scalars, every formset row, every nested child, and every cross-row binding the draft_state carried.",
+        "The save round-trips: re-reading the saved Plan reproduces the draft_state's content (scalar values, formset row counts, nested children, and bindings) with nothing dropped, duplicated, or reordered into a different binding.",
+        "For a given draft_state, the saved Plan graph is identical to what the existing browser one-shot create flow persists from the same posted data (parity), and the save is atomic all-or-nothing: a draft_state whose forms/formsets fail validation persists no Plan and surfaces the validation failure rather than a partial or invalid Plan.",
+        "The whole-project gate stays green and the context cascade validates. The promotion-gate check, the gate-closure re-invoke loop, admin-promote, and Flag-row persistence are out of scope (slices 8b/9)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "44552f0f1e763d3251b9f199863b9968",
+      "content_hash": "ecb40838cf39a630ceabc66b44cf7b363d62a14a3672733762acf6854e95c63c",
+      "content_parent": "12c47a6c6999f46ce19dbcfb81b9520ffd57cefad292fa435ecc2b03afde59cd"
+    },
+    {
+      "id": "TASK-069",
+      "status": "completed",
+      "description": "Trio save prerequisite (FEAT-010 slice 8a-i, DEC-59): extend the A1 narrative-draft spec to emit a concise plan `title`, so the accumulated trio draft_state carries the Plan.title the save (TASK-068) requires. Mechanism: add `title` to NARRATIVE_FIELDS (planner/specs.py:403) so parse_narrative keeps it; edit the DB PromptTemplate(slug='plan-narrative-draft') body to instruct the model to also produce a concise `title` key, landed via an ai/00NN data migration using the guarded byte-match pattern (ai/0016) so it applies only to the known prior template body. The existing form-step fold already passes bare narrative keys through, so `title` flows to the unprefixed PlanForm.title with no fold change. Title is system-PROPOSED per NORTH-STAR (admin writes only current+desired); a mechanical/placeholder title is a fabrication and is rejected. Out of scope: cycle (TASK-068 derives it via _active_cycle), the save itself (TASK-068). Addresses FEAT-010.",
+      "acceptance_criteria": [
+        "A trio run's accumulated draft_state carries a non-empty `title` (within the Plan.title 200-char limit) that binds to PlanForm.title, produced by A1's reasoning from its grounding rather than a fixed or placeholder string.",
+        "A1's existing four narrative scalars (current_state, desired_state, rationale, student_impact_framing) still parse and fold unchanged; an A1 response lacking a title degrades gracefully to a partial prefill exactly as a missing scalar does today.",
+        "The production prompt-template change applies only to the expected prior template body (a guarded change, not a blind overwrite) and is reversible.",
+        "The whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "ba119a094af81b641cdce66038a1135a",
+      "content_hash": "a215d16f5811a617ff683405f82b4cbdf8d6e61647398dd0010e3a244bf2fedf",
+      "content_parent": "4fb8af5c0836f96d0ab836e9815df2110a1bc224a87c50d8f267cf816c0e04ae"
+    },
+    {
+      "id": "TASK-070",
+      "status": "completed",
+      "description": "Trio gate-closure loop (FEAT-010 slice 8b, US-LLM-25). Build run_gate_closure_loop in planner/orchestration.py: given the trio's accumulated draft_state (school, author), iterate to a draft that PASSES plans/services.py _check_promotion_gates. Each round: probe = save the draft_state to a Plan via save_draft_state_as_plan inside a savepoint/atomic that ROLLS BACK (save is create-only, so probing-then-rollback avoids orphan Plans), run _check_promotion_gates(plan), collect the unmet predicate messages; map each unmet predicate -> the producing spec and re-invoke it (single-spec _run_one_spec against the CURRENT draft_state, then re-fold -- folds are REPLACE-scoped so a re-invoke replaces that spec's rows); re-probe. Bounded by a hard max-rounds cap. On convergence: one real (committed) save -> the gate-passing Plan(lifecycle=PROPOSED). On cap-exhaustion: return the residual unmet predicates (no abort, no raise). Continue/stop is the DETERMINISTIC gate (DEC-58 permits the bounded autonomous loop). Gate-failure->spec mapping (derivable from TRIO_SEQUENCE + the gate predicates, verified vs source): plan scalars title/current_state/desired_state/rationale/student_impact_framing -> A1; learner_outcomes/areas_for_improvement/stakeholder_impact -> A3; accreditation_standards -> A2; success criteria -> B1; criterion measurement-channel binding -> B2 (needs C1 feedback channels); action steps -> F1; step responsible/timeline/resource/evidence -> F2/F3/F4/F5; milestone planning_method -> D1; communications + review_events + inputs + revision_rules -> G1 (G1 produces ALL of these). RESIDUAL predicates no spec closes: cycle (the save derives it via _active_cycle; absent active cycle = a precondition failure, surfaced not retried); the Phase-14 plan.clean() priority_rationale-on-deviation rule + unresolved MUST_FIX flags (not produced/triggered by normal trio output) -> surfaced as residual. SCOPE: does NOT flip lifecycle (admin-only, advance_plan_status) and does NOT persist Flag rows -- those are slice #9. Addresses FEAT-010; harness SLICE=gate_closure.",
+      "acceptance_criteria": [
+        "A draft_state that initially fails one or more spec-closable promotion-gate predicates is brought, by the loop, to a saved Plan(lifecycle=PROPOSED) that PASSES _check_promotion_gates (the unmet predicates' producing specs are re-invoked and their output re-folded until the gate holds).",
+        "The loop terminates deterministically: it is bounded by a hard max-rounds cap, and on cap-exhaustion with the gate still failing it returns the residual unmet predicate messages without aborting, raising, or looping unbounded.",
+        "An unmet predicate that no trio spec can close (e.g. no active cycle, or a Phase-14 clean()/flag condition) is reported as a residual rather than retried; a spec-closable predicate is not misreported as residual.",
+        "The iteration leaves no orphan or partial Plan rows (probe rounds persist nothing); the loop does NOT change plan.lifecycle and does NOT write any Flag rows (slice #9 scope).",
+        "The whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "1e219576d554dd025035c6669f11148c",
+      "content_hash": "0de3be436914fd11e2bac26b99f81f1e6ad80674ad715c87da685b532d3e3781",
+      "content_parent": "7d7855e24677c2e6496b70dc26433ce08758f9e074823f647ee25bb66f8833f6"
+    },
+    {
+      "id": "TASK-071",
+      "status": "completed",
+      "description": "Trio final-save + degraded-spec Flag persistence + promote verification (FEAT-010 slice #9). Compose the production trio into one orchestration entry in planner/orchestration.py: run_trio_pass -> run_gate_closure_loop -> persist the still-degraded specs as MUST_FIX Flag rows on the saved Plan -> return (Plan, residual_failures). Each DegradedSpec (orchestration.py; spec_key/attempts/reason/severity=FlagSeverity.MUST_FIX) that REMAINS unproduced after the closure loop (its section absent from the final draft_state -- a degraded spec the closure loop did NOT subsequently produce) becomes one plans.models.flag.Flag(plan, element_path=spec:<key>, message=reason, created_by_spec=<key>, verdict=None, severity=MUST_FIX, is_resolved=False); a spec that succeeded initially OR was recovered by a closure re-invoke gets NO flag. The composition ALWAYS yields a saved Plan(lifecycle=PROPOSED): the closure loop's gate-passing Plan when it converges, else the best-effort draft saved anyway (so the admin always gets an editable proposed draft), carrying its MUST_FIX flags; residual gate failures returned to the caller. ADMIN-PROMOTE NEEDS NO NEW WIRING (verified): plans/admin/actions.py:advance_plan_status_action (registered on PlanAdmin) drives plans/services.advance_plan_status, which re-runs _check_promotion_gates on the draft->active transition, and the gate already blocks on plan.flags.filter(severity=MUST_FIX, is_resolved=False) (services.py:203-204). The AI NEVER flips lifecycle -- the admin alone promotes. SCOPE: persist degraded-spec Flags + the composition + verify the promote gate enforces them; does NOT add a user-facing trigger to START a trio run (no view/button/command -- that is a separate entry-point slice) and does NOT modify advance_plan_status/_check_promotion_gates/run_gate_closure_loop. Addresses FEAT-010; harness SLICE=trio_finalize.",
+      "acceptance_criteria": [
+        "After a trio run, each spec that remains degraded -- its section unproduced in the final post-closure draft_state -- is persisted as exactly one MUST_FIX Flag on the saved Plan (carrying the failing spec key and its reason); a spec whose section is present, whether produced in the initial sweep or recovered by a closure-loop re-invocation, produces NO flag.",
+        "A clean trio run (no spec remains degraded) persists ZERO must-fix flags on the saved Plan.",
+        "The composition always yields a saved Plan(lifecycle=PROPOSED): when the closure loop converges, that gate-passing Plan; when it cannot, the best-effort draft is still saved as a proposed Plan carrying its must-fix flags, and the residual gate failures are returned to the caller -- the run never dead-ends without an editable draft and never aborts.",
+        "An unresolved must-fix flag on the saved Plan blocks promotion through the existing admin path (advance_plan_status into ACTIVE raises on the gate); resolving that flag on an otherwise gate-passing Plan lets promotion proceed; nothing in the trio path flips lifecycle itself.",
+        "Re-running the composition does not double-persist flags for the same degradation; the whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "594914f31add87a8559dcb0d7eb59424",
+      "content_hash": "b60708147c4f76f067aca24a2ceee37fef45bbec1d4af5cadb41f2d971e78d56",
+      "content_parent": "9441e130ca7d11eb67c67b316d45e619452661fd5cee9f13e14e92c3390fa84b"
+    },
+    {
+      "id": "TASK-072",
+      "status": "completed",
+      "description": "Minimal trigger for the production trio (FEAT-010): a Django management command planner/management/commands/run_trio.py that invokes the existing planner.orchestration.run_trio_to_proposed_plan(school, author, draft_id, seed, max_rounds) -> (Plan, residual) and reports the result. Mirrors the house command pattern (school/management/commands/import_responsibility_atoms.py): add_arguments (--school-slug default chiway-repton-xiamen resolving School.objects.get(slug=...); --author-email resolving the User to stamp plan.author, falling back to a superuser; --seed; --max-rounds; --dry-run) + handle (resolve school+author with CommandError on failure; mint draft_id=uuid4; run inside transaction.atomic with set_rollback on dry-run; catch the no-active-cycle ValidationError -> CommandError; report via self.stdout/self.style the Plan pk/title/lifecycle, the residual gate-failure messages, and the MUST_FIX plan.flags). Create the planner/management + commands package __init__.py (planner has no management dir). THIN trigger only -- no new orchestration/gate/promote/Flag logic, no lifecycle flip (admin alone promotes via the existing advance_plan_status_action), no view/admin action (the streaming planner view is a separate later slice). Realizes the trio's user-invocability; unblocks the post-Phase-15 end-to-end walkthrough + the US-LLM-23/24/25 vivified flips. Addresses FEAT-010; harness SLICE=trio_command.",
+      "acceptance_criteria": [
+        "Invoking the command for a school that has an active cycle, with an author, runs the trio end-to-end and persists a Plan(lifecycle=PROPOSED) owned by that school and author; the command reports the saved Plan's identity (pk/title/lifecycle), the residual gate-failure messages, and the persisted MUST_FIX flags.",
+        "A precondition failure -- a missing/unknown school, an unresolvable author, or a school with no active cycle -- exits with a clear CommandError and persists NO Plan (never a raw traceback, never a partial Plan).",
+        "--dry-run runs the trio but persists no Plan (the work is rolled back); the command still reports what it would have produced.",
+        "The command is a thin trigger: it adds no orchestration/gate/promote/Flag logic of its own (it invokes the existing run_trio_to_proposed_plan and reads back the returned Plan/residual), does not flip plan.lifecycle, adds no view/admin action, and modifies none of the trio internals.",
+        "The whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "e7d0271d0afaa2628e98e728d87932bc",
+      "content_hash": "25323a38df9837f5d8eae7fbbf6ddcaec372ac426ac4d8015512d78fe5cccb01",
+      "content_parent": "eb2f1798751feb4bb55a41f5d7a95fe93c5628244d8c93cef873d08a87dfc488"
+    },
+    {
+      "id": "TASK-073",
+      "status": "completed",
+      "description": "Fix FGAP-050: thread the run's user through the parse->free-text-audit->fabrication-validator chain so the DEC-44 validator (planner/_llm_fabrication_validator.py:validate_candidates) resolves the LLM via get_llm(user=user) -- the SAME django-configured provider the trio's spec calls use (get_llm_logged(author)) -- instead of get_llm() with no user falling through to an unconfigured default and silently no-opping. Add an optional user=None through: validate_candidates (get_llm(user=user)); _freetext_audit.py audit_freetext_flags(849)/audit_freetext(838)/audit_prefill_flags(1368) (forward to the validate_candidates call at 1014); the 12 specs.py parsers that call audit_prefill_flags (+ user=None on the remaining parsers for spec.parse signature compat); the two entry points spec.parse(...) at orchestration.py:270 (user=author) and views.py:619 (user=request.user). Make the cannot-run case FAIL LOUD: in validate_candidates distinguish NoProviderConfiguredError (re-raise -- the backstop genuinely cannot run) from transient/parse errors (keep WARNING + return [] graceful). user defaults None (backward-compatible). No change to get_llm semantics, the resilience loop, or the deterministic free-text audit. Addresses FEAT-010 + FGAP-050; harness SLICE=fabrication_validator.",
+      "acceptance_criteria": [
+        "The DEC-44 fabrication validator resolves its LLM via the run's user, so under the normal user-scoped provider config it runs against the SAME provider the trio's spec calls use -- no fall-through to an unconfigured default, no silent no-op.",
+        "A genuine no-provider / cannot-run failure SURFACES (is not swallowed as an empty 'no fabrications found' result); a transient provider error (timeout/rate-limit/network) or a malformed-response parse failure still degrades gracefully (returns no fabricated spans) exactly as today.",
+        "Both entry paths thread their user -- the trio run (_run_one_spec's author) and the browser AssistStreamView (request.user); a caller that omits the user keeps today's behavior (backward-compatible, user=None default).",
+        "The whole-project gate stays green and the context cascade validates."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "b19c5a7baa14a0c3ba4d5336375d937d",
+      "content_hash": "fde6f4f8fab7a439c8d41ea1aa9286f05d27776c5395841ce46a9012771b73d2",
+      "content_parent": "65228811d463d7f983a2b91e09db6f783a1c61e7112e4dadc041f1eb2f731420"
+    },
+    {
+      "id": "TASK-074",
+      "status": "planned",
+      "description": "FGAP-051 step 1 (user-directed, empirical-first): stop an over-long LLM label/name/title from ABORTING the trio run, via the PROMPT + the existing bounded retry -- NO truncation, model field caps kept (not sacred; relaxing is the contingent step-2 fallback only if the dry-run shows the LLM still overflows). (a) PROMPT: a guarded ai/00NN migration adds to the ~5 capped-field-producing spec templates (A1 narrative-draft title; C1 suggest-feedback-channels label+instrument; D1 propose-milestones label; F5 propose-evidence label; G1 propose-review-loop review-event label + communication channel) a concise, communicative directive naming the REASON -- the value is stored in a 200-char (instrument 500) database column and will fail to save if longer, so keep it concise + communicative, well under the limit. (b) RETRY: the capped-field parsers (planner/specs.py) validate length after the non-empty check -> raise ValueError on overflow (message names the field, its length, and the cap) -> the EXISTING resilience loop (_run_spec_with_resilience, DEFAULT_RETRY_ATTEMPTS=2 = 1 initial + 1 retry) re-renders with the rejection as steering. Bounded, not wasteful. On retry-exhaustion the existing per-spec degrade applies (the over-long value never reaches the terminal save), so the run COMPLETES rather than aborting -- a strict improvement over the current whole-run abort; NO truncation. Then DRY-RUN run_trio and observe whether the prompt+retry makes the LLM comply (FGAP-051 stays open until the real dry-run confirms no abort). Addresses FEAT-010 + FGAP-051; harness SLICE=label_length.",
+      "acceptance_criteria": [
+        "The capped-field-producing specs' prompts instruct the LLM, with the reason (the value is stored in a fixed-length DB column and will break on save if longer), to produce a concise, communicative value within the column limit.",
+        "An over-long value from a capped-field spec triggers ONE bounded retry-with-feedback (the rejection naming the field, its length, and the cap) via the existing resilience mechanism -- not wasteful, and with NO truncation of the value.",
+        "An over-long value no longer ABORTS the run: the length validation + retry keep the over-long value out of the terminal save, so the run completes and yields a saved proposed Plan (worst case, on retry-exhaustion, the offending spec degrades per the existing resilience -- the run still completes; the value is never truncated and the model field caps are unchanged).",
+        "The whole-project gate stays green and the context cascade validates; the prompt-template migration applies forward and reverses cleanly (guarded byte-match)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "5009c7a0b82dab758fdb65895aed2f81",
+      "content_hash": "94c283d8f785cac425db2985649b48a82d3d34edf77c4952cf466e7950e4912f"
+    }
+  ]
+}

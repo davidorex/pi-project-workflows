@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY one key:\n- \"milestones\": a JSON array of 2 to 4 elements. Each element is an object describing one milestone:\n  - \"label\": the checkpoint as a concise statement (required, non-empty).\n  - \"target_date\": a \"YYYY-MM-DD\" date string within the cycle window, or null.\n  - \"improvement_type\": exactly one of the improvement-type CODES provided above (required).\n  - \"planning_method\": one of the planning-method NAMES provided above, included ONLY when the chosen improvement type requires one (otherwise omit it or set it to null).\n\nChoose only from the provided codes and names. No extra keys, no nested objects beyond this shape, no markdown.\n"
+}

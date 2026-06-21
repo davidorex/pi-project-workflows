@@ -1,0 +1,10 @@
+{
+  "output": "US-STATUS.json",
+  "source": "phases/US-STATUS.md",
+  "section": "## Table",
+  "itemLinePattern": "^\\| (?!US \\|)(?![\\s\\-:|]+\\|$)",
+  "rawStrip": "^(?!)",
+  "ignoreLinePattern": "^\\| US \\| Description|^\\|[\\s\\-:|]+\\|$",
+  "fields": ["id", "description", "enabling_phase", "vivifying_commit", "status", "raw"],
+  "required": ["id", "status", "raw"]
+}

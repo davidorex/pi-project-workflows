@@ -1,0 +1,22 @@
+{
+  "title": "Bilingual-language-improvement measurement strand not produced or enforced (distinct from the Bilingual Communicators SLO coverage)",
+  "status": "closed",
+  "package": "prompt-workshop generation (measurement-bearing specs) + self_check.py + check_draft.py",
+  "description": "sim-revised-frame.md establishes always-bilingual language improvement as a distinct MEASURED structural strand (a staff English-usage measure + a student bilingual-progress measure on the spiral cadence; R-0009: 'account for always-bilingual language improvement' + 'bilingual dual-purpose framing'). This is DISTINCT from R7 coverage (which only ensures the 'Bilingual Communicators' SLO is targeted-or-gapped). The T5 audit found the bilingual MEASUREMENT strand absent from the assembled draft (no staff English-usage survey, no bilingual student-progress measure, no bilingual feedback channel -- only incidental mission-quote mentions) AND absent from all enforcement (no generation-contract self-check, no check_draft scan). Same class as the three-view parent-track gap (FGAP-037): a stated measurement strand produced for only some tracks, ungated.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/sim-revised-frame.md",
+      "reference": "the bilingual 9th-measured-strand + always-bilingual discipline (staff English-usage + student progress on the spiral cadence)"
+    },
+    {
+      "file": "docs/plan-generation-heuristics.md",
+      "reference": "R-0009: always-bilingual language improvement + bilingual dual-purpose framing"
+    },
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "no bilingual measurement (no staff English-usage survey / bilingual progress measure / bilingual feedback channel); grep bilingual/chinese/english over check_draft.py + self_check.py returns nothing"
+    }
+  ],
+  "impact": "Generated plans can omit the bilingual-language-improvement measurement strand while appearing complete; a validated sim-land discipline is unenforced. For a bilingual school this is a material coverage hole.",
+  "proposed_resolution": "CLOSED by TASK-046 / VER-041 / commit 2e3712b: the bilingual measurement strand is now a generation contract (snippet 11 directive + the agent bilingual_views map: {staff_english_usage, student_bilingual_progress} -> channel index OR {gap}) + a per-spec in-execution self-check (self_check.py _eval_bilingual_views; structural fail -> apply exit 3) + a whole-draft check (check_draft.check_bilingual_views, Check 7). Carried on a NEW optional AssistResult.bilingual_views field (TASK-044 pattern; prefill stays a list; absent key tolerated -> None, no raise). Distinct from the three-view measurement_views gate and from the Bilingual-Communicators SLO coverage. Production parser change; the prompt-template migration is the later ai/00NN bridge. [Original plan: add a bilingual-measurement generation contract + per-spec in-execution self-check (staff English-usage + student bilingual-progress, present-or-gap), mirroring the T3/three-view pattern.]"
+}

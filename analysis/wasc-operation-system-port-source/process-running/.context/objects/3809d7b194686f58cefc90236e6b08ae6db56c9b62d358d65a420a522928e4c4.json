@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-13T23:30:00Z",
+  "evidence": "TASK-048 (FGAP-040 decision-requests) IMPL via the canonical pipeline IN PLAN MODE (EnterPlanMode -> fresh Explore -> corroborate vs source + DEC-0005/FGAP-040 + assignment/precursor reality -> plan -> ExitPlanMode APPROVAL -> IMPL -> separate adversarial audit -> cascade). Code commit 49d7770. Decision-requests = the upward escalation for an action-step precursor NO division can own, as an in-draft STRUCTURED element {what_decision, from_whom, why, blocks_unblocks}, authored at propose-assignments (spec 06). Carrier = NEW optional AssistResult.decision_requests field (TASK-044/046 pattern); prefill stays the assignments LIST (production ai-assist.js Array.isArray / resolve_* / test_f2_assignments unbroken). apply.py main lifts draft['decision_requests'] before the self-check; _eval_decision_requests (self_check.py) + check_decision_requests (check_draft Check 8) gate WELL-FORMEDNESS. DESIGN RATIONALE (determined from the objective, not chosen): decision-requests are emergent, NOT a catalogue universe -> well-formedness is deterministic but COMPLETENESS is generation-contract + adversarial-read (no machine universe of precursors; same as TASK-047). Criterion 3 was corrected from an impossible deterministic-completeness gate to the determinable well-formedness(deterministic)+completeness(adversarial) split. Production tolerance: absent key -> None, no raise. DUAL well-formedness gate (audit-confirmed): a malformed F2 response is rejected by the PARSER (exit 1, raise) before the self-check; the self-check exit-3 is the defense-in-depth net reachable via a non-validating caller (the test path) -- either way malformed is NOT saved and the field is named. SEPARATE adversarial audit: Total findings: 0. Criterion 1: render.py propose-assignments carries the decision_requests directive + 4-field OUTPUT CONTRACT. Criterion 2: well-formed -> saved; malformed -> not saved (field named); empty list -> saved. Criterion 3 (authoritative adversarial completeness): a fresh propose-assignments generation under the new contract escalates the unowned precursor; the contract forbids silent drops + names the empty-list condition -> no force-drop path. Criterion 4: full gate green (ruff clean, mypy . 325 Success, pytest 3208 [3174+34], make test-js 48/48), parity 14/14 + both cross-checks; files touched = the 14 explicit paths, no migration; prefill stays list; distinct from measurement_views/bilingual_views + the distribution gate (snippet 06 keeps distribution). PyRight not-accessed warnings = uniform-signature false positives.",
+  "criteria_results": [
+    {
+      "criterion": "The generation contract requires every identified action-step precursor that no division owns to be recorded as an explicit in-draft decision-request carrying what decision is needed, from whom, why, and what it blocks or unblocks.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A generated/assembled draft stores each decision-request as a discrete structured element (not only incidental prose), and a deterministic check reads each element and fails on a malformed/empty one (any of the four fields missing), passing on a well-formed one -- demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "An adversarial read of a generated draft finds every action-step precursor that no division owns is recorded as a decision-request; zero unowned precursors are left unescalated (completeness is adversarial -- decision-requests are emergent, not a catalogue universe; mirrors TASK-047 precursor completeness).",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing.",
+      "status": "passed"
+    }
+  ]
+}

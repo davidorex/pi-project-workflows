@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T11:00:00Z",
+  "evidence": "TASK-039 (T2 -- per-spec in-execution self-check mechanism, DEC-54) via the full canonical pipeline. Explore + orchestrator corroboration (apply.py attach point: in-memory merge 404 before save 406; parse_frontmatter list-of-strings; parity unaffected by a non-grounding frontmatter field; the _drive_apply test harness). Plan ~/.claude/plans/sentinel-weaving-apply.md. IMPL 4769c29: self_check.py (EVALUATORS registry + generic min_list_size + run_self_check runner), apply.py integration (self-check on the in-memory merged draft between merge and save; STRUCTURAL fail -> no save + exit 3 + capture.self_check record; ADVISORY -> flag-and-continue per DEC-53), _workshop.py (success_criteria added to _FRONTMATTER_LIST_KEYS), demo on snippet 03 (milestones>=2) + 05 (action_steps>=1) -- same evaluator, no bespoke wiring. ITERATE-TO-ZERO across a separate adversarial audit each round: round 1 found 1 blocker (recognized-evaluator-bad-params crash + unknown-structural-id silent pass) -> fix fc9183f (unevaluable STRUCTURAL -> fail-loud; ADVISORY -> note; never crash); round 2 found 2 blockers (non-list success_criteria traceback; kind-less genuine failure silently advisory) -> fix 72cebff (top-level shape validation; centralized _normalize_kind gating missing/ambiguous kind on BOTH the unevaluable and genuine-failure paths); round 3 returned 0 blockers + 1 advisory (non-dict frontmatter raise path outside the guard) -> fix e9bf669 (isinstance(frontmatter,dict) gate -> structural failure, honoring run_self_check's never-raises invariant for any input). FINAL: 20 self-check tests, 996 planner suite (no regression), ruff + ruff format --check + mypy --explicit-package-bases clean on the dispatch files, parity 14/14. Criteria 1-3 demonstrated end-to-end through apply.main() on BOTH demo specs (clean -> exit 0, saved + merged, capture self_check pass; under-delivering -> exit 3, NOT saved, capture records the failure); criterion 3 = the same min_list_size evaluator on two specs via frontmatter only; criterion 4 = parity 14/14 + project gate green + no new catalogue-gate rejection. SURFACED for TASK-042 (T5): apply_from_substrate.py (the FEAT-002 substrate-driven apply) is a SECOND attach point that does NOT call run_self_check -- ungated; sequence.py routes through the gated apply.py so the in-scope T2 path is covered; T5's finding->enforcement map should formally map + dispose this second attach point. Scope: self_check.py, apply.py, _workshop.py, snippets 03/05, test_workshop_self_check.py (+ a coupled _PREFILL=2-milestones adjustment in test_workshop_apply_flags.py so existing flags tests clear the new live propose-milestones criterion; no assertion weakened).",
+  "criteria_results": [
+    {
+      "criterion": "On a run, a spec's output is checked against that spec's stated success and process criteria before it is committed to the draft, and the check's pass/fail result is present in the run record -- demonstrated on at least one spec end-to-end.",
+      "status": "passed"
+    },
+    {
+      "criterion": "On an input that meets the criteria the run proceeds and records a pass; on a deliberately under-delivering input the step takes the decided on-failure behaviour and records a fail -- both demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A second spec uses the same mechanism without per-spec bespoke wiring.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A full sequence run completes; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green.",
+      "status": "passed"
+    }
+  ]
+}

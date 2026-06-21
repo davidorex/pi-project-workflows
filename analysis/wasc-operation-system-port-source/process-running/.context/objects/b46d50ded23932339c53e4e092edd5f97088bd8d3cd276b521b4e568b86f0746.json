@@ -1,0 +1,50 @@
+{
+  "title": "The originating theme (the `seed`) enters every spec only as a one-line optional steer, not as a structural driver of the plan's organizing dimensions",
+  "status": "identified",
+  "priority": "P2",
+  "package": "prompt-workshop generation — the ideation specs 03/04/05 + the seed grounding mechanism; DEC-52 theme-coherence",
+  "description": "The author `seed` (the originating theme, e.g. 'Improve SLO usage across the school') enters as a required workflow input and is threaded --seed into ALL 14 render steps, resolved per render and injected into the template context. But in every spec it appears ONLY as a one-line nudge: spec 01 inline; specs 02-14 as the {% if seed %} 'Author refinement (an optional steer for the <task>)' fragment. Corroborated against source: in the IDEATION specs the seed line sits in the grounding preamble and the TASK BODY derives the plan's substance from the CATALOGUES + accumulated draft_state, NOT from the theme — propose-milestones (03) chooses improvement_type CODES from the catalogue + reads draft_state, with no directive to derive the plan's organizing dimensions FROM the seed/theme. The seed is also NOT carried in draft_state (re-injected each render; production-parity). So the theme steers every step but does not structurally organize the plan. DISTINCT from FGAP-030 (the guiding_statements/mission-vision grounding-REACH vector); FGAP-043 is the seed/theme vector. The intended behavior (sim run-006): the framework is theme-agnostic and the organizing axis should be DERIVED FROM the theme.",
+  "evidence": [
+    {
+      "file": ".workflows/workshop-run-plan-sequence.workflow.yaml",
+      "lines": "5-11, 24-440",
+      "reference": "seed = required input ('threaded into every spec's render'); --seed passed to all 14 render steps"
+    },
+    {
+      "file": "prompt-workshop/dispatch/render_from_substrate.py",
+      "lines": "89, 109",
+      "reference": "seed resolved per render and injected into the Django template context"
+    },
+    {
+      "file": "prompt-workshop/snippets/03-propose-milestones.md",
+      "lines": "28, 51-55",
+      "reference": "seed appears ONLY as the '{% if seed %}Author refinement (an optional steer for the milestones)' line; the task body derives milestones from the improvement_types catalogue + draft_state, NOT from the theme"
+    },
+    {
+      "file": "prompt-workshop/snippets/01-narrative-draft.md",
+      "lines": "32",
+      "reference": "spec 01 inline seed: 'Author seed (a one-line intent for this plan): {{ seed }}'"
+    },
+    {
+      "file": "prompt-workshop/WORKSHOPPING-SUBSTRATE-SPEC.md",
+      "lines": "98-110",
+      "reference": "the FRAG-gb-seed-* 'optional steer' fragments, one per spec 02-14"
+    },
+    {
+      "file": "prompt-workshop/dispatch/_workshop.py",
+      "lines": "511-513",
+      "reference": "seed NOT carried in draft_state; re-injected each render (production-parity via PromptTemplate.render(seed=))"
+    },
+    {
+      "file": "prompt-workshop/sim-runs/run-006.md",
+      "lines": "41-45, 52",
+      "reference": "authoritative intended behavior: framework is THEME-AGNOSTIC; 'the organizing axis is derived FROM the theme … add derive this plan's organizing dimensions from the theme'; this finding is UNFILED (grep-confirmed across framework-gaps/seed-round-plan/discoveries)"
+    }
+  ],
+  "impact": "A plan authored with a strong thematic seed is not structurally organized by it: the milestones/criteria/action-steps' organizing dimensions come from the LLM's free inference over the catalogues + draft_state, with the theme only a one-line advisory. The plan may cohere if the LLM infers it, but it is not driven by the theme — violating the sim run-006 intent (organizing axis derived FROM the theme) and the DEC-52 theme-coherence requirement at the ideation layer. Sibling-class to FGAP-030; together they are the 'ideation should be DRIVEN by the input vectors (theme + mission/vision/SLO), not just steered by them' gap.",
+  "proposed_resolution": "Per sim run-006: make the theme a STRUCTURAL input to the ideation specs (03/04/05), not a per-spec optional steer — add a directive that derives the plan's organizing dimensions FROM the theme (the seed + the mission/vision/SLO triad), e.g. a front-load 'derive this plan's organizing dimensions from the theme' step, so a different seed yields a different organizing axis by construction. Bound by grounding-leanness / the stdout cap. Co-resolve with FGAP-030 (guiding_statements into 03/04/05) and DEC-51/DEC-52 (per-actor SLO operationalization + vision/mission as ideation vectors) — the same theme-into-ideation initiative. Investigate the exact directive wording + whether the seed should persist into draft_state for downstream specs, before IMPL.",
+  "related_decisions": [
+    "DEC-51",
+    "DEC-52"
+  ]
+}

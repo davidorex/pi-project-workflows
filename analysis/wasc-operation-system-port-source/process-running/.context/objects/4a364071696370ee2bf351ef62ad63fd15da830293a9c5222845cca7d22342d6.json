@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Global catalogue-gate fix so no DB-enumerated entity is rejected (planner/_freetext_audit.py only; no grounding.py change, no migration). Three closures: (1) COMPLETENESS - pull framing_vocabularies + priority_tiers into the union (CatalogueUnion fields + _string_set key=label + union-merge src tuple + return + PhraseMatcher sources); (2) VARIANT TOLERANCE + (3) SCHOOL SHORT FORM via one precomputed union_collapsed set: a _collapse_normalize helper (article/possessive strip + collapse hyphen/underscore/whitespace runs + casefold), union_collapsed = collapse of every union entry UNION collapse of every >=2-token contiguous prefix of each self.school entry; admits gains a single union_collapsed membership check before return False. Preserve fabrication rejection. Regression/tolerance/short-form/completeness/fabrication tests in test_freetext_audit.py. Fixes FGAP-001. DEC-45 stands (no MissionArea, no sub-token)."
+}

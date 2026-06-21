@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "description": "FGAP-035: the free-text/catalogue audit scans the deferred-gap reason field (domain_alignment *_not_addressed[].reason) the same way it scans targeted-row rationale, closing the enforcement asymmetry.",
+  "acceptance_criteria": [
+    "The free-text/catalogue audit scans the deferred-gap reason field the same way it scans targeted-row rationale: a fabricated or off-register reason on a deferred-gap entry is detected; demonstrated.",
+    "A legitimate deferred-gap reason passes the audit; demonstrated.",
+    "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection on existing inputs, and the project gate is green."
+  ]
+}

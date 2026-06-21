@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL C3: promotion-gate predicate - zero unresolved must-fix flags",
+  "status": "closed",
+  "package": "plans",
+  "description": "_check_promotion_gates (plans/services.py:98-203) aggregates all promotion predicates into a failures list and is invoked by advance_plan_status (:206) only on the transition to Lifecycle.ACTIVE (proposed->active). It currently checks no flags (no Flag model exists). Add a predicate: if the Plan has any Flag with severity=must_fix and is_resolved=False, append a failure (block promotion until resolved/accepted). This is the contract shift the three-valued model implies: enforcement moves from generation-time hard-reject to promotion-time flag-resolution, so the DEC-29 promotion-ready predicate becomes zero-unresolved-must-fix-flags. Depends on C1 (Flag model). Atomic gap.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/plans/services.py",
+      "reference": "school-improvement-plans/plans/services.py:98-225"
+    }
+  ],
+  "impact": "The promotion gate cannot block on unresolved flags, so a draft with unreviewed must-fix flags could be promoted.",
+  "proposed_resolution": "_check_promotion_gates gains a predicate: any Plan Flag with severity=must_fix and is_resolved=False blocks promotion to ACTIVE."
+}

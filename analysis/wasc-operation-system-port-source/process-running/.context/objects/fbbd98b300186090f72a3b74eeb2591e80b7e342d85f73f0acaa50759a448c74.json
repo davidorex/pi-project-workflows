@@ -1,0 +1,26 @@
+{
+  "title": "No review-ready .docx export of the assembled whole-plan draft",
+  "status": "identified",
+  "package": "prompt-workshop/dispatch (new export script) + school-improvement-plans/pyproject.toml (deps)",
+  "description": "The workshop assembles a whole-plan draft (prompt-workshop/outputs/current-draft.json) but can only render it as Markdown (sequence.py --render-whole-draft) and as ad-hoc static HTML; there is no export to a real Microsoft Word .docx for human review in the form reviewers actually use -- the canonical schoolwide-action-plan format exemplified by data/'Sample - Schoolwide Action Plan 2.docx' (a label/value header table + a 6-column action-step grid). python-docx is present in the .venv but is NOT declared in school-improvement-plans/pyproject.toml or uv.lock, so any exporter would depend on an undeclared package. No production-side draft->document export exists either. This is a delivery/review surface (orthogonal to the prompt-corpus work of FEAT-008) but is folded into the current focus per direction.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "the assembled whole-plan draft (shape defined in prompt-workshop/dispatch/_workshop.py:214-243); 13 top-level keys (plan, milestones, action_steps, success_criteria, feedback_channels, review_events, communications, revision_rules, accreditation_standards, domain_alignment, responsibilities, guiding_clauses, flags)"
+    },
+    {
+      "file": "prompt-workshop/dispatch/sequence.py",
+      "reference": "--render-whole-draft emits Markdown only (_render_whole_draft); no .docx path"
+    },
+    {
+      "file": "school-improvement-plans/pyproject.toml",
+      "reference": "python-docx / beautifulsoup4 not declared (present in .venv only)"
+    },
+    {
+      "file": "data/Sample - Schoolwide Action Plan 2.docx",
+      "reference": "the target Word format: label/value header table + 6-column action grid"
+    }
+  ],
+  "impact": "Reviewers cannot get the generated draft in the Word form they review and sign in; the canonical action-plan .docx cannot be produced from a generated draft; this blocks human review/sign-off of workshop drafts and the eventual promotion sign-off surface for the orchestration trio (DEC-29).",
+  "proposed_resolution": "Add a draft->docx exporter (prompt-workshop/dispatch/export_to_docx.py) that loads current-draft.json and emits a genuine OOXML .docx structured like the exemplar (header label/value table + bordered 6-col action grid), exporting any assembled draft (review surface; warn on missing sections, do not block); declare python-docx (and any HTML-parse dep) in the project dependency files. Folds into the current focus; eventually mirrored as a production export for the trio's review/sign-off."
+}

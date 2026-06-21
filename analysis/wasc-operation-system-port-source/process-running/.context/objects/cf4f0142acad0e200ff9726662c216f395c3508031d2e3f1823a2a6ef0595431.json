@@ -1,0 +1,18 @@
+{
+  "title": "Decision-requests (upward DECISION REQUEST surface) discipline not transposed into the corpus",
+  "status": "identified",
+  "package": "prompt-workshop corpus (no spec produces decision-requests) -- relates to TASK-035/R8 options-posture",
+  "description": "sim-revised-frame.md defines DECISION REQUEST as a first-class structural plan surface -- the upward complement to the options posture: what decision is needed, from whom, why, what it blocks/unblocks. The T5 audit found this discipline absent from the workshopping corpus: no spec produces a decision-requests output, no generation contract, no check. It is the upward-decision sibling of options-posture (R8), which TASK-035 is dispositioning as an orchestration/create-plan-UX-layer placement (not per-spec). Decision-requests plausibly belongs at the same orchestration/UX layer, but it is currently undispositioned -- neither transposed nor decided.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/sim-revised-frame.md",
+      "reference": "DECISION REQUEST defined as a first-class upward surface (what/from-whom/why/blocks-unblocks)"
+    },
+    {
+      "file": "prompt-workshop/snippets/",
+      "reference": "no spec_key produces a decision-requests output; absent from the 14-spec corpus + from self_check/check_draft"
+    }
+  ],
+  "impact": "A validated sim-land discipline (surfacing the upward decisions a plan needs) is not yet produced anywhere in the corpus. Placement is now SETTLED (DEC-0005: in-draft authored content, coverage-class); the generation contract + in-execution gate build remains open.",
+  "proposed_resolution": "Placement settled by DEC-0005 (C3): decision-requests are AUTHORED IN-DRAFT plan content of the coverage-accountability class (FGAP-037/041 pattern -- every action-step precursor is either owned, or recorded as an explicit unowned decision-request carrying what/from-whom/why/blocks-unblocks) -- NOT the orchestration/UX layer (that placement is for R8 value-forks only). Build (future task, human-scoped): a snippet generation contract on the precursor/assignment-bearing spec + a parser-recognized decision_request element + a per-spec in-execution self-check, mirroring T3/T4. Distinct from FGAP-041 (front-load precursor IDENTIFICATION -- naming what must be in place first); FGAP-040 is the upward REQUEST raised when an identified precursor has no owner."
+}

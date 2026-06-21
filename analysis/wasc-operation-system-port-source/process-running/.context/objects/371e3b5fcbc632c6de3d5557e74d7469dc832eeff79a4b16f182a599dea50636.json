@@ -1,0 +1,9 @@
+{
+  "status": "planned",
+  "description": "FGAP-041: add precursor/dependency identification (step 3 of the mandatory front-load sequence) to the front-load generation contract -- each goal/action surfaces what must be in place first (data, tools, training, coordination, upstream output, policy), or affirmatively states none -- and make it verifiable.",
+  "acceptance_criteria": [
+    "The front-load generation contract requires every goal/action to surface its precursor requirements or dependencies before action, or to state affirmatively that none exist.",
+    "An adversarial read of a generated draft finds every action step states its precursors or explicitly states none; zero action steps leave precursors unstated.",
+    "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+  ]
+}

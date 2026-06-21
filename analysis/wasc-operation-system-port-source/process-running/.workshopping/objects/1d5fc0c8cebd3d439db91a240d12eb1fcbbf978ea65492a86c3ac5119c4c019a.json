@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if school %}School: {{ school.name }}.{% endif %}",
+  "section": "school"
+}

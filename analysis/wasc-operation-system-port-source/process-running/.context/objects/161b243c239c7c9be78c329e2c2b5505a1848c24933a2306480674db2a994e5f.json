@@ -1,0 +1,29 @@
+{
+  "title": "Authoritative WASC schoolwide action-plan sources + expectations (web-researched)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "curation",
+  "question": "What authoritative sources define WASC schoolwide action-plan structure + expectations, and how do they corroborate/extend our model?",
+  "method": "web research; ACS WASC official domain (acswasc.org) sources + real accredited-school exemplars; authority prioritized over recency for institutional standards; full verbatim report persisted to the findings_document.",
+  "findings_summary": "Full report: docs/wasc-authoritative-sources-research-2026-06-07.md. CONFIRMS our 6-column grid is the OFFICIAL ACS WASC structure (Sample action plan PDF, verbatim columns: TASKS | RESPONSIBLE PERSON(S) INVOLVED | PROFESSIONAL DEVELOPMENT/RESOURCES/FUNDING | MEANS TO ASSESS IMPROVEMENT | TIMELINE | REPORTING) -- maps cleanly to our Action Steps|Person(s) Responsible|Resources|Assessing|Timeline|Communication. CONFIRMS theme-framed SINGLE plan is MANDATED (WASC: separate per-group plans unnecessary; one integrated 3-5 year plan of themed Goals), measurement tools central (Monitor Progress Tools block + MEANS TO ASSESS column), HOW+frequency. ADDS beyond our model a mandatory per-GOAL HEADER layer: (1) measurable multi-year GROWTH TARGETS [reconcile w/ KPI exclusion], (2) Rationale/Critical-Need + supporting self-study DATA, (3) explicit SLO + critical-learner-need linkage, (4) academic-standards + 9-standard ACS-WASC-criteria alignment (A1-6/B1-3/C1-3), (5) Professional Development as a step dimension, (6) MONITOR vs REPORT as two distinct expectations, (7) achievement-GAP-closure strategies per subgroup, (8) annual review/modification + follow-up cycle (living plan), (9) 3-5 year multi-goal horizon + visiting-committee critical-areas integration, (10) budget specificity. Sources: ACS WASC Sample action plan, the standards page, the FOL manuals (incl. International 2017 ed), a WASC Coordinator article, 5 real school self-studies. NO hard contradiction; the grid is the inner table wrapped by the Goal-header schema. MODEL GAPS to weigh (scope = human, mandate-007): first-class multi-year growth targets, per-goal data citation, gap-closure strategies, the 3-5yr multi-goal horizon (our draft is single-theme single-cycle), PD as explicit dimension.",
+  "findings_document": "docs/wasc-authoritative-sources-research-2026-06-07.md",
+  "citations": [
+    {
+      "label": "ACS WASC official Sample action plan (6-col grid + Goal header)",
+      "path": "https://www.acswasc.org/wp-content/uploads/2015/05/5-ACS-WASC-Sample-action-plan.pdf"
+    },
+    {
+      "label": "ACS WASC current standards (A/B/C, 9 standards)",
+      "path": "https://acswasc.org/about/acs-wasc-standards/"
+    },
+    {
+      "label": "ACS WASC FOL manuals (action-plan components; International 2017 ed)",
+      "path": "https://www.acswasc.org/wp-content/uploads/2019/11/ACS-WASC-International-FOL-2017-Edition-FINAL-UPDATED-2.pdf"
+    },
+    {
+      "label": "authoritative reviewer feedback (companion)",
+      "path": "R-0007 / docs/authoritative-plan-quality-feedback-2026-06-07.md"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

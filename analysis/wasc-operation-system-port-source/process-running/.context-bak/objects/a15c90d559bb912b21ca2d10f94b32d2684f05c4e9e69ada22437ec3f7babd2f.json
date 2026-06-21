@@ -1,0 +1,5 @@
+{
+  "description": "Never `--no-verify` or `--no-gpg-sign` unless the user explicitly requests it. Hook failures are signals; investigate and fix the underlying issue rather than bypassing.",
+  "enforcement": "manual",
+  "severity": "error"
+}

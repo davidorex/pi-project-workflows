@@ -1,0 +1,26 @@
+{
+  "title": "Transposition regression: whole-draft invariants landed as post-hoc checks only, with no generation-time contract or in-execution evaluation",
+  "status": "closed",
+  "package": "prompt-workshop (sim->workshopping transposition): shared/preamble.md + snippets/01,02 + check_draft.py + the 14-spec run method",
+  "description": "PROCESS ROOT (root-caused by an independent audit): the sim-land -> workshopping transposition moved each sim discipline into the corpus WITHOUT a verification step that it survived as BOTH (a) a generation-time contract AND (b) an in-execution (per-spec, during-run) evaluation. Per-cell/per-step disciplines (R1-R6: register, learning-designed actions, three-view measurement, growth-mindset, quarterly cadence, distribution) landed as generation contracts in the preamble/snippets and are checkable. The WHOLE-DRAFT invariants -- improvement-area coverage above all -- landed as POST-HOC CHECKS ONLY (check_draft Check 4, lines 490-546), with NO generation-time instruction in any spec and NO per-spec self-check; the linear render->apply pipeline has no feedback loop, so an under-covering spec is never re-prompted. RESULT REGRESSION (the trigger): a full 14-spec assembled draft (current-draft.json) covers learner outcomes 7/7 but improvement areas only 3/7 -- 4 silently dropped (Bilingual Environment, Community Involvement, Resources and Tools, Student Data and Well-being), neither targeted in domain_alignment nor mentioned in prose. Mechanism: snippets/02-propose-domain-alignment.md line 57 mandates >=1 area_for_improvement, never all-relevant-or-surface-the-rest-as-gaps; snippets/01-narrative-draft.md lists the areas in grounding but never mandates addressing/acknowledging each; check_draft catches the silent gap only after assembly. SECONDARY regression: in the same assembled run, owner distribution degraded to 3 owners / 50% max (Curriculum and Teaching 3/6) -- passing the gate only at the boundary -- vs the isolated propose-assignments run (VER-031: 5 owners / 33%); the full pipeline concentrates ownership more than the isolated check showed. OPEN (audit could not confirm from source, needs verification): whether the three-view (student/staff/parent) measurement and the learning-designed contact-type action-step shape hold across the assembled draft, or also degraded -- neither has an in-execution or post-hoc gate.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "check_draft --strict: Check 4 coverage FAIL (improvement areas 3/7, 4 SILENT GAPs); Check 3 distribution 3 owners/50% max"
+    },
+    {
+      "file": "prompt-workshop/snippets/02-propose-domain-alignment.md",
+      "reference": "line 57: areas_for_improvement requires >=1, no all-or-surface-gap mandate"
+    },
+    {
+      "file": "prompt-workshop/snippets/01-narrative-draft.md",
+      "reference": "lines ~40-42 list areas in grounding; no mandate to address/acknowledge each"
+    },
+    {
+      "file": "prompt-workshop/dispatch/check_draft.py",
+      "reference": "lines 490-546 coverage is post-hoc only; no generation-time signal, no feedback loop to spec 02"
+    }
+  ],
+  "impact": "Generated whole-plan drafts can silently omit improvement areas (and potentially other whole-draft qualities) -- the plan looks complete but under-covers the school's own improvement agenda; regressions are discoverable only at final assembly, not during execution, defeating early correction. This is the class of failure any future tenant's run will hit. Establishes the need to (1) make whole-draft invariants generation-time contracts with per-spec in-execution evaluation, and (2) add a transposition-verification discipline ensuring every sim finding survives as contract + in-execution eval, not check-only.",
+  "proposed_resolution": "(1) Coverage as a generation contract: snippet 02 (and/or 01) must account for EVERY improvement area the goal bears on -- target it, or explicitly surface it as a not-this-cycle gap recorded in the draft -- and a per-spec self-check evaluates this during the run, not only at output. (2) Build in-execution evaluation: each spec carries exact success + process criteria the generation step self-verifies before apply (DEC for the principle). (3) Confirm + address the secondary distribution degradation and the open three-view/learning-design questions across the assembled draft. (4) Audit the full transposition map (each sim finding -> generation contract + in-execution eval), filing any other check-only/absent discipline. Execute via the canonical pipeline once scoped."
+}

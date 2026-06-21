@@ -1,0 +1,67 @@
+{
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Engine reachability + runner home (file:// loader)",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:23.985Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.355Z"
+    },
+    {
+      "id": "STORY-002",
+      "title": "CLI surface: run / resume / status / list",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:30.262Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.476Z"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Headless ctx/pi + agent-step pre-flight",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:37.310Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.598Z"
+    },
+    {
+      "id": "STORY-004",
+      "title": "render_from_substrate.py",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:44.305Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T21:50:35.711Z"
+    },
+    {
+      "id": "STORY-005",
+      "title": "apply_from_substrate.py",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:52.445Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T21:50:43.604Z"
+    },
+    {
+      "id": "STORY-006",
+      "title": "Author the 14-spec workflow YAML",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:59.084Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T13:16:59.084Z"
+    },
+    {
+      "id": "STORY-007",
+      "title": "Run the sequence + per-spec quality evaluation",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:17:05.806Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T13:17:05.806Z"
+    }
+  ]
+}

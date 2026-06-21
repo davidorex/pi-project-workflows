@@ -1,0 +1,5 @@
+{
+  "description": "Never declare a phase complete. Only the human does. Orchestrator may compute GO-RECOMMENDED from gate state, not COMPLETE.",
+  "enforcement": "manual",
+  "severity": "error"
+}

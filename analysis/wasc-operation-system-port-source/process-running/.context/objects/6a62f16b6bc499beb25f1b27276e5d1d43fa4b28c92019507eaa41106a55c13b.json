@@ -1,0 +1,5 @@
+{
+  "description": "If a subagent returns an issue, STOP. Report to user. User decides next action.",
+  "enforcement": "manual",
+  "severity": "error"
+}

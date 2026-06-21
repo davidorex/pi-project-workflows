@@ -1,0 +1,36 @@
+{
+  "title": "hod-doc's head-accountability PositionResponsibility atom is designed but unbuilt; no leader Position carries its division's responsibilities",
+  "status": "identified",
+  "priority": "P2",
+  "package": "school seed (leader Position responsibility atoms) + the US-LLM-27 propose-responsibilities path; design source docs/hod-default-responsibilities.md; surfaced by the prompt-workshop run",
+  "description": "docs/hod-default-responsibilities.md designs, as a position-grain default of the head seat, 'Be accountable for delivering the department's responsibility atoms' (line 56), and its materialization constraint (lines 20-27) requires this to live as a stored PositionResponsibility atom, not a string computed at grounding time. That materialization was never built: school/migrations/0050_seed_director_positions.py seeds the four Director leader positions (incl. IHS Principal, kind=leader) and states it seeds no responsibility-atom rows. So no leader Position carries an atom expressing accountability for its division's responsibilities. When the US-LLM-27 model tried to express the IHS Principal's accountability for the Principal's Office division's responsibilities, it had no position-grain atom to cite and attributed a division-grain atom to the position; the parser's position-grain check (which admits only the position's own atoms) rejected it, aborting the run.",
+  "evidence": [
+    {
+      "file": "docs/hod-default-responsibilities.md",
+      "lines": "20-27, 49-59",
+      "reference": "the materialization constraint (responsibilities must be STORED atoms, not computed) + the position-grain head-accountability default 'Be accountable for delivering the department's responsibility atoms'"
+    },
+    {
+      "file": "school/migrations/0050_seed_director_positions.py",
+      "lines": "28-30, 47-78",
+      "reference": "seeds the four Director leader positions (kind=leader, incl. IHS Principal under Principal's Office (PO)) and explicitly seeds no responsibility-atom rows"
+    },
+    {
+      "file": "planner/specs.py",
+      "lines": "575-606, 2755-2770",
+      "reference": "parse_propose_responsibilities position-grain check admits only the position's own atoms (_responsibility_statements_under_position); no fallback to the division's atoms"
+    },
+    {
+      "file": "ai/services/grounding.py",
+      "lines": "222-259",
+      "reference": "_division_responsibility_atoms emits each position's responsibilities separately from the division's; a materialized position atom would surface here"
+    }
+  ],
+  "impact": "A workshop full run aborts at spec 07 (US-LLM-27) whenever the model expresses a leader-position's accountability for its division's responsibilities, because no position-grain atom exists to cite. The hard catalogue-gate rejection halts the whole 42-step generation. It also blocks TASK-055's confirming run, which cannot reach an assembled draft while the run aborts at spec 07.",
+  "proposed_resolution": "Per DEC-55: materialize hod-doc's head-accountability default as a stored position-grain PositionResponsibility atom on every kind=leader Position (a seed migration mirroring 0048/0050; idempotent, reversible). No model/grounding/parser/spec change. TASK-056 addresses this gap.",
+  "related_decisions": [
+    "DEC-55",
+    "DEC-35",
+    "DEC-36"
+  ]
+}

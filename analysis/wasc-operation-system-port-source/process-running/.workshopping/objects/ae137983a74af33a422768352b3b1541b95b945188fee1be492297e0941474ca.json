@@ -1,0 +1,42 @@
+{
+  "spec_key": "propose-evidence",
+  "order": 10,
+  "target_step": "steps",
+  "preview_mode": "evidence",
+  "grounding_sections": [
+    "school",
+    "divisions",
+    "guiding_statements",
+    "policies",
+    "accreditation_standards",
+    "draft_state"
+  ],
+  "deps": [
+    "decompose-action-steps",
+    "propose-assignments"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-evidence-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-evidence-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-evidence-2",
+    "FRAG-gb-seed-evidence",
+    "FRAG-intro-propose-evidence-3",
+    "FRAG-gb-divisions-owner",
+    "FRAG-intro-propose-evidence-4",
+    "FRAG-gb-guiding-statements",
+    "FRAG-intro-propose-evidence-5",
+    "FRAG-gb-policies",
+    "FRAG-intro-propose-evidence-6",
+    "FRAG-gb-accreditation-standards-cite",
+    "FRAG-intro-propose-evidence-7",
+    "FRAG-gb-draft-state-steps",
+    "FRAG-intro-propose-evidence-8",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-evidence"
+  ],
+  "parser": "parse_propose_evidence",
+  "source_migration": "ai/migrations/0012_seed_propose_evidence_template.py",
+  "output_schema": "shared/schemas/propose-evidence.schema.json"
+}

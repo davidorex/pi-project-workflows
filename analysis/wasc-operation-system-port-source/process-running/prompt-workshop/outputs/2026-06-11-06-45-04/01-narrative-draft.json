@@ -1,0 +1,699 @@
+{
+  "spec_key": "narrative-draft",
+  "target_step": "basics",
+  "preview_mode": "fields",
+  "rendered_prompt": "\nYou are the LLM assist for a school authoring a WASC schoolwide improvement plan. Your role across all prompts:\n\n**You are a solution-architect.** Given your general training + the framing data this prompt provides (the school's seeded vocabularies, divisions, positions, responsibilities, accreditation standards, learner outcomes, mission/vision/values, areas-for-improvement, stakeholder groups, planning methods, prior plans, the draft so far), you MAP A SOLUTION PATH from the plan's current state to its desired state. Every element you produce — narrative, milestone, criterion, channel, action step, assignment, evidence, responsibility, standard alignment, review event, revision rule — is a contribution to that current→desired trajectory. You are not generating valid-shape responses in isolation; you are constructing a coherent path the school will follow.\n\n**The grounding IS the universe — zero opportunity for fabrication.** The vocabularies enumerated in this prompt (divisions, positions, responsibility atoms, stakeholder groups, learner outcomes, mission/vision/values, areas for improvement, improvement types, planning methods, accreditation standards, policies, frequencies, prior plans, the draft so far — whichever sections this particular prompt carries) ARE the complete universe of school-specific names, roles, units, and structures you may draw on. Every actor, unit, role, body, committee, office, position-title, or organizational structure you name in your output MUST be a verbatim match to a name that appears in the grounding above. If you find yourself reaching for a name from your general training of how international schools are typically organized (e.g. \"Vice Principal for Academics\", \"Head of Early Years\", \"PLC chairs\", \"the gradebook configurator\", \"the bilingual programme\") — STOP. That is fabrication. The school's actual roster of divisions and positions is enumerated in this prompt; if a role you would have invoked is not enumerated, the school does not have that role, and you must reason with the roles that ARE enumerated. The same rule applies to every other vocabulary: do not invent improvement types, planning methods, stakeholder groups, accreditation standards, learner outcomes, or any other named member that is not in the enumerated list. The grounding is exhaustive by design — if you need to name something the grounding does not enumerate, the answer is to compose from what IS enumerated, never to fill the gap from training. A specific-sounding fabricated name is worse than the absence of a name, because it gives a false impression of school-specific grounding while substituting a generic template for the school's actual organizational reality.\n\n**Success criteria for your output:**\n1. A WASC reviewer reading your output would find it substantive — concrete, school-specific, grounded in the school's organizational reality.\n2. An admin reviewing your output would accept it without rewriting — your content is a real starting point, not filler to be replaced.\n3. Your output names real Chiway actors and units from the grounding data — never generic placeholders like \"the department\" or \"the team\" when a specific division or position applies.\n4. Your output articulates accreditation evidence — for every linkage (plan↔standard, step↔responsibility, etc.), the rationale prose makes the WASC evidence audit-ready.\n5. Your output honors the school's operational policy: **school-wide means school-wide — every division has a role to play in any schoolwide improvement plan, and your output maps each division's specific contribution.** A schoolwide improvement plan is not the work of one or two divisions; it is the orchestrated work of all of them, each bringing their particular purview to bear on the current→desired trajectory over time, with evidence and continuous improvement. When you assign work, designate channels, attribute responsibilities, or name evidence ownership, your output covers every division — with a well-reasoned mapping of HOW each division best contributes given its purview, the WASC accreditation criteria, and the school's broader context. Two failure modes are equally disqualifying: (a) **collapsing to a subset** — if you find yourself excluding a division, you have under-reasoned the school-wide framing; reason again until you have named a meaningful role for every division; (b) **proliferating for proliferation's sake** — each division's contribution must be substantive, not token. A division named without a real role is worse than a division named with a small but real one.\n6. **Action steps are learning-designed interventions, not transmission.** Each action step a participant meets is a real learning event. In its plain description it: opens by recalling prior learning or context; sets a task the participants actively DO (solve, build, critique, discuss, produce — never \"attend a workshop on X\", \"listen to\", \"read about\"); surfaces a check of understanding; and closes with reflection and a next step. These four are embodied in the step's plain prose — not written as labels (no OPEN/CORE/EVIDENCE/CLOSE) and not with a \"why this task\" methodology aside. A transmission-only step (\"Staff attend a workshop on assessment\") fails; a designed step (\"Teachers bring last term's assessment data, regrade three samples against the new rubric, compare scores with a partner, and pick one change to trial next week\") meets the bar.\n7. **Measurement is front-loaded and seen from three sides.** Establish a baseline — where the school actually starts on this improvement — BEFORE proposing the actions; the baseline precedes the action steps it will be measured against. Where the improvement warrants, measure progress from three points of view: student outcomes (what changes for learners), staff/adult practice (the behaviour change in the adults doing the work), and parent/stakeholder awareness. At least one measure is a delayed check that the change stuck — re-checked weeks or months later — distinct from a one-time occurrence (\"we held the session\", \"staff attended\"); attendance at an event is not evidence the practice took hold.\n\n**What you do NOT do — zero room for these LLM antipatterns:**\n- No hedging. No \"consider X\" when concrete X is required.\n- No punting. No \"this should be reviewed by an expert\" or \"consulting a specialist is advised.\"\n- No AI-mandates-style caveats. No \"as an AI language model I cannot,\" no \"I am not qualified to,\" no \"you may want to verify.\"\n- No half-fills. No \"TBD,\" \"to be determined,\" \"to be filled in later,\" \"[insert X here].\"\n- No options-instead-of-decisions. No \"Option A or Option B\" when one decision is asked for.\n- No vague placeholders. No \"the relevant party,\" \"an appropriate cadence,\" \"a suitable artifact\" — name the specific party, cadence, artifact from the grounding.\n- No partial outputs marked as \"draft for review.\" Your output IS the draft for review; mark nothing as incomplete that you can complete from the grounding.\n- No meta-commentary about what you did or are doing. Produce the output; nothing else.\n- No canonical LLM voice. Write **dry, factual, report-style** prose — short declarative sentences, named facts, school-specific nouns. A reader should not be able to tell this was LLM-authored from the voice. Reads like a school report, not like model-generated prose. CONCRETE VOICE ANTIPATTERNS (observed in prior runs; do not produce): (a) long compound sentences strung together with em-dashes (\"The plan addresses reading — across grades, divisions, and stakeholders — through a coordinated effort that bridges curriculum, instruction, and assessment\"); (b) rhetorical tetrads / triplets (\"schoolwide, division-wide, classroom-wide, and student-wide\", \"teachers, students, parents, and community\"); (c) \"across all four X\" cumulative-emphasis phrasing (\"across all four areas of focus\", \"across all five learner outcomes\"); (d) rhythm-for-rhythm's-sake flourishes (\"not just X, but Y, and indeed Z\"); (e) abstract-noun stacks (\"the comprehensive implementation of strategic instructional improvement initiatives\"); (f) hedged transitions (\"It is worth noting that...\", \"Importantly, ...\", \"Notably, ...\"); (g) summative meta-claims (\"This plan represents a holistic approach to...\"). POSITIVE EXEMPLAR (the register to match): \"The Mathematics Department piloted small-group reading instruction with Year 4 in Term 1. Test scores rose from 62 to 71. The Head of Department reviewed results monthly with classroom teachers. The same approach will extend to Year 5 in Term 2.\" Plain. Named actors. Numbers in target rows only. No abstract stacks. No tetrads. No em-dash chains.\n\n**Use catalogue labels VERBATIM as enumerated.** Do not paraphrase, expand, or contract admin-curated labels. If the catalogue stores `\"Math\"` as a Division label, write `Math` in prose — not \"Mathematics\", not \"Mathematics Department\", not \"the Math Division\". If the catalogue stores `\"AAO - Academic Affairs Office\"` with its hyphenated prefix and full form, use that exact string when naming the Division — do not contract to \"AAO\" alone or expand to \"Academic Affairs Office of the school\". The admin-curated string IS the name; any variant is a fabrication of a label that doesn't exist. This rule extends the no-fabrication invariant from \"don't invent\" to \"don't paraphrase\". Parser-layer rejection (DEC-40) catches paraphrases as fabrications because they don't byte-match catalogue entries. Catalogue choices are presented as `\"<value>\" (context)` — emit ONLY the exact quoted value, never the parenthetical or trailing context.\n\n**Plan-register rules (hold in every cell you write):**\n- **No accreditation-risk meta in descriptions.** State the substantive improvement need and scope. Do not argue that something \"carries an accreditation/certification risk\" or \"weakens standards\" as justification — the plan already declares its WASC frame via Standards Targeted, so re-invoking certification risk in prose is redundant and off-register. State the educational substance, not the accreditation threat.\n- **A WASC standard is always given as key + name** — e.g. `C1: School Culture`, `A1: Vision and Mission`, `B2: Teaching and Learning`. Not the key alone, not the name alone. Wherever you reference a standard, give its letter-number key with its name.\n- **Theme is a title, not a narrative.** A plan's Theme is a concise theme statement naming what the plan is about; it is not success-criteria narrative. Concrete criteria live in Success criteria, never in the Theme.\n- **Revising is the plan working, not the plan failing.** Wherever the plan describes revising, adjusting, or course-correcting — a review point that changes the plan, a target that gets reset, a strategy that gets dropped or replaced — frame it as evidence-driven course-correction: what the school learned, and the adjustment it makes in response. Adjusting on evidence is the expected, healthy behaviour of a living plan, not a failure, deficit, shortfall, or fault. Use plain words for it — \"adjust\", \"revise\", \"course-correct\", \"what we learned\" — never a coined label.\n- **No generation-side method-terms in the plan.** Write the plan in the school's own plain language and its admin-curated catalogue labels. NONE of the framework/process method-terms used to author the plan appear in the plan itself — they name the design discipline, never the content. The method's EFFECTS show (active well-designed steps, clear measurement, distributed responsibility); the method's NAME does not. Banned coinages, representative not exhaustive: \"contact-type structure\", \"self-refutation guard\", \"options posture\", \"evaluate-and-revise cadence\", \"growth-mindset loop\", \"durability-not-occurrence\", \"behaviour/behavior-change-primary\", \"refraction weave\", \"fractal/holographic principle\", \"cross-track\", and the step-scaffolding labels OPEN / CORE / EVIDENCE / CLOSE. Ordinary plain descriptive English is fine — \"talking at students\" is acceptable, as are words like \"weave\", \"refraction\", or \"front-load\" in their ordinary sense; only the coined (mostly multi-word) method-terms are excluded.\n\n**Reference learner outcomes and guiding clauses by their identity, not their gloss.** When you reference a learner outcome in prose, use its short label only (the description shown after it is context for you, not text to quote). When you reference a mission or vision clause in prose, convey its substance (you may name its label); never write the bare `GROUNDED:`/`ROUNDED:`/`UNBOUNDED:` prefix as the reference.\n\n**What success looks like in concrete terms:** if a school admin reads your output and can promote it to active with at most light editing, you have done your job. If they need to rewrite it, you have not.\n\nYou help a school author draft the narrative sections of a WASC schoolwide improvement plan. Write plain, concrete prose for an accreditation audience. Ground only in the facts provided below; do not invent school specifics that are not present.\n\nSchool: Chiway Repton School Xiamen.\nAccreditation cycle: 2025-2026 (2025-08-01 to 2026-07-31).\n\nAuthor seed (a one-line intent for this plan): Embed the schoolwide learner outcomes into every lesson and into every HRT / Year-Group-Leader workshop and meeting, and verify the embedding holds.\n\nAvailable framing vocabularies:\n- Parent-focused\n- Schoolwide-focused\n- Student-focused\n- Teaching-focused\n\nPriority tiers:\n- High\n- Medium\n- Low\n\nAreas for improvement:\n- Bilingual Environment\n- Community Involvement\n- Curriculum and Learning\n- Faculty PD and PLC\n- Resources and Tools\n- School Culture\n- Student Data and Well-being\n\nSchoolwide learner outcomes:\n- \"Bilingual Communicators\"\n- \"Compassionate\"\n- \"Confident\" — Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- \"Engaged\"\n- \"Innovative\"\n- \"Reflective\"\n- \"Responsible\"\n\nStakeholder groups:\n- Administration / Leadership\n- Admissions Applicants\n- Parent Committee\n- Parents\n- Staff / Faculty\n- Students\n\nWASC accreditation standards:\n- A1 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families.\n- A2 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture.\n- A3 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes.\n- A4 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness.\n- A5 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students.\n- A6 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community.\n- B1 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success.\n- B2 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success.\n- B3 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments.\n- C1 (School Culture, Systems of Support, and Student Success and Community Partnerships): School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being.\n- C2 (School Culture, Systems of Support, and Student Success and Community Partnerships): Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students.\n- C3 (School Culture, Systems of Support, and Student Success and Community Partnerships): Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness.\n\n\nYear groups (the school's enumerated year/grade bands; name year groups only from this list):\n- ig1: IG1\n- ig2: IG2\n- as: AS\n- a2: A2\n\nGuiding statements (the school's vision/mission clauses; name guiding clauses only from this list):\n- mission:\n  0. GROUNDED — Self-motivated, critical thinkers who are emotionally resilient, healthy, and happy.\n  1. ROUNDED — Culturally attuned, socially conscious global citizens who are both environmentally aware and technologically adept.\n  2. UNBOUNDED — Courageous, confident, and intellectually curious leaders who seek opportunity and find achievement.\n- vision:\n  0. be engaged and realize their academic potential\n  1. become life-long learners fully capable of leveraging the science of how learning happens\n  2. cultivate an abiding ethic of personal responsibility\n  3. build a healthy foundation of self-esteem\n  4. effectively communicate their ideas in Chinese and English\n  5. develop deep compassion and concern for the well-being of others\n\nPolicies (the school's enumerated policies; name policies only from this list):\n- Admissions English Assessment criteria — Criteria and instrument for assessing English proficiency of applicants.\n- Class schedule framework — Daily/weekly schedule structure (block scheduling, period length, etc.).\n- Orientation Week design — Schedule, materials, and personnel assignments for student/parent and teacher orientation weeks.\n\nDivisions (with positions — the school's complete organizational roster; name actors only from this list):\n- AAO - Academic Affairs Office — Academic affairs: examinations, class scheduling, academic administration.\n  Positions:\n    - Academic Affairs Officer (staff)\n    - AP Coordinator (staff)\n    - CIE Exam Officer (staff)\n    - Class Schedule Officer (staff)\n    - Director of AAO (leader)\n    - Edexcel Exam Officer (staff)\n    - Exam Officer (staff)\n\n- Art Department\n  Positions:\n    - Art Teacher (staff)\n    - Head of Art Department (leader)\n\n- Business and Economics\n  Positions:\n    - Business Teacher (staff)\n    - Economics and Business Teacher (staff)\n    - Economics Teacher (staff)\n    - Head of Business and Economics (leader)\n\n- College Counseling Department — College and university counseling for students.\n  Positions:\n    - College Counseling Department Coordinator (leader)\n    - College Counselor (staff)\n\n- Curriculum and Teaching — Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.\n  Positions:\n    - Director of Teaching and Curriculum Center (leader)\n    - PD Leader (staff)\n    - Senior Teaching Coordinator (staff)\n\n- English\n  Positions:\n    - Drama Teacher (staff)\n    - English Teacher (staff)\n    - Head of English (leader)\n\n- Future Scholar Innovation Center — Future Scholar Innovation Center programs and initiatives.\n  Positions:\n    - Director of Future Scholar Innovation Center (leader)\n\n- Humanities\n  Positions:\n    - Chinese Teacher (staff)\n    - Geography Teacher (staff)\n    - Head of Humanities (leader)\n    - History Teacher (staff)\n    - Psychology Teacher (staff)\n\n- IT — Information technology: the systems, infrastructure, and digital tools that support teaching, learning, and school operations.\n  Positions:\n    - Director of IT (leader) — Leads the school's IT function - systems, infrastructure, digital tools, and IT support.\n\n- Library — Library services, resources, and information literacy support.\n  Positions:\n    - Librarian (staff)\n\n- Math\n  Positions:\n    - Head of Math (leader)\n    - Math Teacher (staff)\n\n- Music and Sports Department\n  Positions:\n    - Music Teacher (staff)\n    - PE Teacher (staff)\n\n- Principal's Office (PO) — School leadership; the principal's office.\n  Positions:\n    - IHS Assistant (staff)\n    - IHS Principal (leader)\n\n- Recruitment and Admissions — Recruitment and admissions; applicant assessment and enrollment.\n\n- SAO - Student Affairs Office (Pastoral and Well-Being) — Student well-being, behavior, pastoral care, student support outside lessons.\n  Positions:\n    - A2 Year Leader (leader)\n    - Assistant to Student Affairs (staff)\n    - AS Year Leader (leader)\n    - Director of Student Affairs Office (leader)\n    - Dormitory Teacher (staff)\n    - Homeroom Teacher (staff)\n    - IG1 Year Leader (leader)\n    - IG2 Year Leader (leader)\n\n- Sciences\n  Positions:\n    - Biology Teacher (staff)\n    - Chemistry Teacher (staff)\n    - Head of Sciences (leader)\n    - Physics Teacher (staff)\n\n\n\n\nEvery name in the five output keys (a division, a position, a policy, a year-group, a guiding clause, an accreditation standard, a learner outcome, an area for improvement, a stakeholder group, a prior plan) MUST be drawn verbatim from the enumerated catalogues above; do not name an entity not present.\n\nOUTPUT CONTRACT (follow exactly):\nReturn ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON. Write all values in English only.\n\nThe object MUST have EXACTLY these five string-valued keys:\n- \"current_state\": where the school is today on this focus, in concrete terms.\n- \"desired_state\": the specific improved state the plan aims to reach.\n- \"rationale\": why this improvement matters now, grounded in the facts above.\n- \"student_impact_framing\": how this improvement is expected to affect students.\n- \"provenance\": what evidence, data, or prior work this plan draws on.\n\nEach value is a single plain-prose string (no nested objects, no lists, no markdown). Include all five keys.\n",
+  "grounding_dict_used": {
+    "school": {
+      "name": "Chiway Repton School Xiamen",
+      "slug": "chiway-repton-xiamen"
+    },
+    "cycle": {
+      "code": "2025-2026",
+      "label": "2025-2026",
+      "starts_on": "2025-08-01",
+      "ends_on": "2026-07-31"
+    },
+    "framing_vocabularies": [
+      {
+        "code": "parent-focused",
+        "label": "Parent-focused",
+        "description": ""
+      },
+      {
+        "code": "schoolwide-focused",
+        "label": "Schoolwide-focused",
+        "description": ""
+      },
+      {
+        "code": "student-focused",
+        "label": "Student-focused",
+        "description": ""
+      },
+      {
+        "code": "teaching-focused",
+        "label": "Teaching-focused",
+        "description": ""
+      }
+    ],
+    "priority_tiers": [
+      {
+        "code": "high",
+        "label": "High",
+        "order": 1
+      },
+      {
+        "code": "medium",
+        "label": "Medium",
+        "order": 2
+      },
+      {
+        "code": "low",
+        "label": "Low",
+        "order": 3
+      }
+    ],
+    "year_groups": [
+      {
+        "code": "ig1",
+        "label": "IG1",
+        "order": 1
+      },
+      {
+        "code": "ig2",
+        "label": "IG2",
+        "order": 2
+      },
+      {
+        "code": "as",
+        "label": "AS",
+        "order": 3
+      },
+      {
+        "code": "a2",
+        "label": "A2",
+        "order": 4
+      }
+    ],
+    "areas_for_improvement": [
+      {
+        "code": "afi-bilingual",
+        "label": "Bilingual Environment",
+        "description": ""
+      },
+      {
+        "code": "afi-community",
+        "label": "Community Involvement",
+        "description": ""
+      },
+      {
+        "code": "afi-curriculum",
+        "label": "Curriculum and Learning",
+        "description": ""
+      },
+      {
+        "code": "afi-pd",
+        "label": "Faculty PD and PLC",
+        "description": ""
+      },
+      {
+        "code": "afi-resources",
+        "label": "Resources and Tools",
+        "description": ""
+      },
+      {
+        "code": "afi-school-culture",
+        "label": "School Culture",
+        "description": ""
+      },
+      {
+        "code": "afi-data",
+        "label": "Student Data and Well-being",
+        "description": ""
+      }
+    ],
+    "learner_outcomes": [
+      {
+        "code": "bilingual-communicators",
+        "label": "Bilingual Communicators",
+        "description": ""
+      },
+      {
+        "code": "compassionate",
+        "label": "Compassionate",
+        "description": ""
+      },
+      {
+        "code": "confident",
+        "label": "Confident",
+        "description": "Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas."
+      },
+      {
+        "code": "engaged",
+        "label": "Engaged",
+        "description": ""
+      },
+      {
+        "code": "innovative",
+        "label": "Innovative",
+        "description": ""
+      },
+      {
+        "code": "reflective",
+        "label": "Reflective",
+        "description": ""
+      },
+      {
+        "code": "responsible",
+        "label": "Responsible",
+        "description": ""
+      }
+    ],
+    "stakeholder_groups": [
+      {
+        "label": "Administration / Leadership"
+      },
+      {
+        "label": "Admissions Applicants"
+      },
+      {
+        "label": "Parent Committee"
+      },
+      {
+        "label": "Parents"
+      },
+      {
+        "label": "Staff / Faculty"
+      },
+      {
+        "label": "Students"
+      }
+    ],
+    "divisions": [
+      {
+        "label": "AAO - Academic Affairs Office",
+        "scope_summary": "Academic affairs: examinations, class scheduling, academic administration.",
+        "positions": [
+          {
+            "label": "Academic Affairs Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "AP Coordinator",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "CIE Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Class Schedule Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Director of AAO",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Edexcel Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Art Department",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Art Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Art Department",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Business and Economics",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Business Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Economics and Business Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Economics Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Business and Economics",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "College Counseling Department",
+        "scope_summary": "College and university counseling for students.",
+        "positions": [
+          {
+            "label": "College Counseling Department Coordinator",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "College Counselor",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Curriculum and Teaching",
+        "scope_summary": "Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.",
+        "positions": [
+          {
+            "label": "Director of Teaching and Curriculum Center",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "PD Leader",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Senior Teaching Coordinator",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "English",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Drama Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "English Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of English",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Future Scholar Innovation Center",
+        "scope_summary": "Future Scholar Innovation Center programs and initiatives.",
+        "positions": [
+          {
+            "label": "Director of Future Scholar Innovation Center",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Humanities",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Chinese Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Geography Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Humanities",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "History Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Psychology Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "IT",
+        "scope_summary": "Information technology: the systems, infrastructure, and digital tools that support teaching, learning, and school operations.",
+        "positions": [
+          {
+            "label": "Director of IT",
+            "scope_summary": "Leads the school's IT function - systems, infrastructure, digital tools, and IT support.",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Library",
+        "scope_summary": "Library services, resources, and information literacy support.",
+        "positions": [
+          {
+            "label": "Librarian",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Math",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Head of Math",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Math Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Music and Sports Department",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Music Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "PE Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Principal's Office (PO)",
+        "scope_summary": "School leadership; the principal's office.",
+        "positions": [
+          {
+            "label": "IHS Assistant",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "IHS Principal",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Recruitment and Admissions",
+        "scope_summary": "Recruitment and admissions; applicant assessment and enrollment.",
+        "positions": []
+      },
+      {
+        "label": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+        "scope_summary": "Student well-being, behavior, pastoral care, student support outside lessons.",
+        "positions": [
+          {
+            "label": "A2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Assistant to Student Affairs",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "AS Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Director of Student Affairs Office",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Dormitory Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Homeroom Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "IG1 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "IG2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Sciences",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Biology Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Chemistry Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Sciences",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Physics Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      }
+    ],
+    "guiding_statements": {
+      "mission": [
+        {
+          "label": "GROUNDED",
+          "text": "Self-motivated, critical thinkers who are emotionally resilient, healthy, and happy.",
+          "order": 0
+        },
+        {
+          "label": "ROUNDED",
+          "text": "Culturally attuned, socially conscious global citizens who are both environmentally aware and technologically adept.",
+          "order": 1
+        },
+        {
+          "label": "UNBOUNDED",
+          "text": "Courageous, confident, and intellectually curious leaders who seek opportunity and find achievement.",
+          "order": 2
+        }
+      ],
+      "vision": [
+        {
+          "label": "",
+          "text": "be engaged and realize their academic potential",
+          "order": 0
+        },
+        {
+          "label": "",
+          "text": "become life-long learners fully capable of leveraging the science of how learning happens",
+          "order": 1
+        },
+        {
+          "label": "",
+          "text": "cultivate an abiding ethic of personal responsibility",
+          "order": 2
+        },
+        {
+          "label": "",
+          "text": "build a healthy foundation of self-esteem",
+          "order": 3
+        },
+        {
+          "label": "",
+          "text": "effectively communicate their ideas in Chinese and English",
+          "order": 4
+        },
+        {
+          "label": "",
+          "text": "develop deep compassion and concern for the well-being of others",
+          "order": 5
+        }
+      ]
+    },
+    "policies": [
+      {
+        "label": "Admissions English Assessment criteria",
+        "notes": "Criteria and instrument for assessing English proficiency of applicants."
+      },
+      {
+        "label": "Class schedule framework",
+        "notes": "Daily/weekly schedule structure (block scheduling, period length, etc.)."
+      },
+      {
+        "label": "Orientation Week design",
+        "notes": "Schedule, materials, and personnel assignments for student/parent and teacher orientation weeks."
+      }
+    ],
+    "accreditation_standards": [
+      {
+        "code": "A1",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families.",
+        "name": "Vision and Mission"
+      },
+      {
+        "code": "A2",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture.",
+        "name": "Leadership and Governance"
+      },
+      {
+        "code": "A3",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes.",
+        "name": "Faculty and Staff"
+      },
+      {
+        "code": "A4",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness.",
+        "name": "Continuous Improvement"
+      },
+      {
+        "code": "A5",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students.",
+        "name": "Resources"
+      },
+      {
+        "code": "A6",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community.",
+        "name": "Accountability and Compliance"
+      },
+      {
+        "code": "B1",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success.",
+        "name": "Curriculum"
+      },
+      {
+        "code": "B2",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success.",
+        "name": "Teaching and Learning"
+      },
+      {
+        "code": "B3",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments.",
+        "name": "Assessment and Data Analysis"
+      },
+      {
+        "code": "C1",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being.",
+        "name": "School Culture"
+      },
+      {
+        "code": "C2",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students.",
+        "name": "Systems of Support"
+      },
+      {
+        "code": "C3",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness.",
+        "name": "Student Success and Community Partnerships"
+      }
+    ],
+    "prior_plans": [],
+    "draft_state": {}
+  },
+  "agent_response_raw": "{\n  \"current_state\": \"Chiway Repton School Xiamen has adopted seven schoolwide learner outcomes: Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible. The outcomes are published, but their use in daily teaching is uneven. Some teachers in English, Math, Sciences, Humanities, Art, Business and Economics, and Music and Sports name a learner outcome in their lesson plans; many do not, and few make the outcome visible to students during the lesson. In the SAO - Student Affairs Office, the IG1, IG2, AS, and A2 Year Leaders and Homeroom Teachers run weekly meetings and workshops, but these sessions rarely reference the learner outcomes as a working frame. Curriculum and Teaching has no agreed record of how often a lesson is built around a stated outcome. The school cannot currently say, with evidence, what share of lessons and pastoral sessions across IG1, IG2, AS, and A2 put a named learner outcome to work.\",\n  \"desired_state\": \"Every lesson across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences names one schoolwide learner outcome and puts it to work in a task students do, with the outcome visible to students. Every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it. Curriculum and Teaching holds a standing record, reviewed each term, of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that embed a named outcome and use it in a student task. The embedding is checked again later in the year to confirm it held, not just that it started.\",\n  \"rationale\": \"The school's vision is that students be engaged and realize their academic potential, become life-long learners capable of leveraging the science of how learning happens, cultivate an ethic of personal responsibility, build self-esteem, communicate ideas in Chinese and English, and develop compassion. The seven learner outcomes are how that vision reaches a single lesson. When an outcome is named only on a wall and not in the task a student does, the link between the school's stated purpose and the student's daily work is broken. Faculty PD and PLC and School Culture are named areas for improvement; embedding the outcomes in both lessons and pastoral sessions works directly on both. Doing this in the 2025-2026 cycle gives Curriculum and Teaching and the SAO - Student Affairs Office a shared, observable frame before the next accreditation review.\",\n  \"student_impact_framing\": \"Students meet a named learner outcome inside the task they are doing, not as a poster. A student in an AS Sciences lesson regrading a partner's experiment write-up against a Reflective prompt sees what Reflective asks of them in that moment. A Homeroom session that opens from Responsible and closes with a student-chosen next step makes Responsible a thing the student practices, not a word. Confident is shown when self-assurance grows through taking risks and expressing ideas, and that growth shows in tasks where students try, check, and adjust. Over the year, students across IG1, IG2, AS, and A2 should be able to name the outcome a lesson worked on and what they did with it.\",\n  \"provenance\": \"This plan draws on the school's published seven learner outcomes and the mission and vision guiding statements. It draws on the lesson-planning and teaching-evaluation work held by Curriculum and Teaching, and on the weekly workshop and meeting cadence run by the Year Leaders and Homeroom Teachers in the SAO - Student Affairs Office. It uses the school's enumerated year groups IG1, IG2, AS, and A2 as the bands across which embedding is observed. No prior schoolwide plan on this focus is on record, so the baseline is the current uneven state of outcome use that Curriculum and Teaching will establish at the start of the cycle.\"\n}\n",
+  "agent_response_parsed": {
+    "current_state": "Chiway Repton School Xiamen has adopted seven schoolwide learner outcomes: Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible. The outcomes are published, but their use in daily teaching is uneven. Some teachers in English, Math, Sciences, Humanities, Art, Business and Economics, and Music and Sports name a learner outcome in their lesson plans; many do not, and few make the outcome visible to students during the lesson. In the SAO - Student Affairs Office, the IG1, IG2, AS, and A2 Year Leaders and Homeroom Teachers run weekly meetings and workshops, but these sessions rarely reference the learner outcomes as a working frame. Curriculum and Teaching has no agreed record of how often a lesson is built around a stated outcome. The school cannot currently say, with evidence, what share of lessons and pastoral sessions across IG1, IG2, AS, and A2 put a named learner outcome to work.",
+    "desired_state": "Every lesson across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences names one schoolwide learner outcome and puts it to work in a task students do, with the outcome visible to students. Every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it. Curriculum and Teaching holds a standing record, reviewed each term, of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that embed a named outcome and use it in a student task. The embedding is checked again later in the year to confirm it held, not just that it started.",
+    "rationale": "The school's vision is that students be engaged and realize their academic potential, become life-long learners capable of leveraging the science of how learning happens, cultivate an ethic of personal responsibility, build self-esteem, communicate ideas in Chinese and English, and develop compassion. The seven learner outcomes are how that vision reaches a single lesson. When an outcome is named only on a wall and not in the task a student does, the link between the school's stated purpose and the student's daily work is broken. Faculty PD and PLC and School Culture are named areas for improvement; embedding the outcomes in both lessons and pastoral sessions works directly on both. Doing this in the 2025-2026 cycle gives Curriculum and Teaching and the SAO - Student Affairs Office a shared, observable frame before the next accreditation review.",
+    "student_impact_framing": "Students meet a named learner outcome inside the task they are doing, not as a poster. A student in an AS Sciences lesson regrading a partner's experiment write-up against a Reflective prompt sees what Reflective asks of them in that moment. A Homeroom session that opens from Responsible and closes with a student-chosen next step makes Responsible a thing the student practices, not a word. Confident is shown when self-assurance grows through taking risks and expressing ideas, and that growth shows in tasks where students try, check, and adjust. Over the year, students across IG1, IG2, AS, and A2 should be able to name the outcome a lesson worked on and what they did with it.",
+    "provenance": "This plan draws on the school's published seven learner outcomes and the mission and vision guiding statements. It draws on the lesson-planning and teaching-evaluation work held by Curriculum and Teaching, and on the weekly workshop and meeting cadence run by the Year Leaders and Homeroom Teachers in the SAO - Student Affairs Office. It uses the school's enumerated year groups IG1, IG2, AS, and A2 as the bands across which embedding is observed. No prior schoolwide plan on this focus is on record, so the baseline is the current uneven state of outcome use that Curriculum and Teaching will establish at the start of the cycle."
+  },
+  "parse_note": null,
+  "schema_validation": "flagged",
+  "flags": [
+    {
+      "spec_key": "narrative-draft",
+      "field": "A1.current_state",
+      "span": "SAO - Student Affairs Office",
+      "verdict": null,
+      "source": "ner",
+      "reason": "proper-name span not in the school's enumerated catalogue"
+    },
+    {
+      "spec_key": "narrative-draft",
+      "field": "A1.desired_state",
+      "span": "SAO - Student Affairs Office",
+      "verdict": null,
+      "source": "ner",
+      "reason": "proper-name span not in the school's enumerated catalogue"
+    },
+    {
+      "spec_key": "narrative-draft",
+      "field": "A1.rationale",
+      "span": "SAO - Student Affairs Office",
+      "verdict": null,
+      "source": "ner",
+      "reason": "proper-name span not in the school's enumerated catalogue"
+    },
+    {
+      "spec_key": "narrative-draft",
+      "field": "A1.student_impact_framing",
+      "span": "Homeroom",
+      "verdict": null,
+      "source": "ner",
+      "reason": "proper-name span not in the school's enumerated catalogue"
+    },
+    {
+      "spec_key": "narrative-draft",
+      "field": "A1.provenance",
+      "span": "SAO - Student Affairs Office",
+      "verdict": null,
+      "source": "ner",
+      "reason": "proper-name span not in the school's enumerated catalogue"
+    }
+  ],
+  "draft_changed": true
+}

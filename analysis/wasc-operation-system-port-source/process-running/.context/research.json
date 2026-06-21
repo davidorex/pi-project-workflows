@@ -1,0 +1,562 @@
+{
+  "research": [
+    {
+      "title": "14-spec output shapes inferred from the parsers (required agent-response JSON per spec)",
+      "status": "complete",
+      "layer": "L2",
+      "type": "investigative",
+      "question": "What is the required output JSON shape for each of the 14 workshop specs, as inferred from the known workshop/production code (rather than from spec prose)?",
+      "method": "code-inspection of the parse_* functions in school-improvement-plans/planner/specs.py, the MERGE_RULES in prompt-workshop/dispatch/apply.py, FREETEXT_SELECTORS_BY_SPEC in planner/_freetext_audit.py, AssistResult in planner/assist.py, and a real run output (outputs/call_narrative_draft.json).",
+      "scope": [
+        "school-improvement-plans/planner/specs.py",
+        "prompt-workshop/dispatch/apply.py",
+        "planner/_freetext_audit.py",
+        "planner/assist.py"
+      ],
+      "findings_summary": "Each spec's required AGENT OUTPUT is a top-level JSON OBJECT — every parser does `if not isinstance(loaded, dict): raise`, then reads an envelope key (e.g. loaded.get('milestones')). NOT a bare list. 3 specs are flat objects: narrative-draft {current_state?, desired_state?, rationale?, student_impact_framing?, provenance?} (>=1 non-empty); propose-domain-alignment {learner_outcomes, stakeholder_impact, areas_for_improvement (each >=1), policies_established?, policies_revised?} each -> [{label, rationale?}]; propose-review-loop {communications, review_events, revision_rules} (each >=1). The other 11 wrap rows under one envelope key: propose-milestones {milestones:[{label, improvement_type, target_date?, planning_method?}]}; draft-success-criteria {criteria:[{text, verification_kind, target_* iff target}]}; decompose-action-steps {method, steps:[{description, assessment?}]}; propose-assignments {assignments:[{step_index, responsible_division}]}; propose-responsibilities {steps:[{step_index, division_responsibilities?, position_responsibilities?}]}; propose-timelines {timelines:[{step_index, kind, date|from_date+to_date, note?}]}; propose-step-resources {steps:[{step_index, resources:[{kind,note}]>=1, substeps?}]}; propose-evidence {steps:[{step_index, evidence:[{label, owner_division, location?}]>=1}]}; suggest-feedback-channels {channels:[{label, stakeholder, owner_division, timing_kind, frequency|milestone_index, instrument}]}; bind-measurement-channels {bindings:[{criterion_index, channel_indices:[int]>=1}]}; propose-accreditation-standards {standards:[{standard (global code), rationale?}]}. The parser strips a json fence, json.loads, requires dict, reads the envelope, validates, returns AssistResult(prefill, note, flags). Catalogue FKs school-scoped except accreditation standards (global); *_index range-checked; 12/14 carry audited free-text. The 14 .workflows/schemas/*.schema.json files are now the authoritative machine encoding (declared as each call step's output.schema; AJV strict:false -> permissive: top-level type + required envelope/keys + stable enums only; cross-field invariants + catalogue + index left to the parser). CORRECTION (2026-06-07): the original recorded a bare LIST for 11 specs + some post-parse key names (e.g. learner_outcomes_targeted) — that was the parser's PREFILL return, not the agent output; corrected after verifying the parsers + a live run (agent output passed schema validation through spec 2). Full table + schemas: prompt-workshop/SPEC-OUTPUT-SHAPES.md + .workflows/schemas/.",
+      "findings_document": "prompt-workshop/SPEC-OUTPUT-SHAPES.md",
+      "citations": [
+        {
+          "label": "parse_* functions (the per-spec validators)",
+          "path": "school-improvement-plans/planner/specs.py"
+        },
+        {
+          "label": "MERGE_RULES (per-spec draft merge)",
+          "path": "prompt-workshop/dispatch/apply.py",
+          "lines": "194-216"
+        },
+        {
+          "label": "FREETEXT_SELECTORS_BY_SPEC (free-text-eligible fields, 12/14)",
+          "path": "school-improvement-plans/planner/_freetext_audit.py"
+        },
+        {
+          "label": "AssistResult(prefill, note, flags)",
+          "path": "school-improvement-plans/planner/assist.py"
+        },
+        {
+          "label": "engine disk-read path for output.schema (WF-13 bypass)",
+          "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-agent.ts",
+          "lines": "205-227"
+        }
+      ],
+      "stale_conditions": [
+        "A parse_* function's required keys, types, or invariants change",
+        "apply.py MERGE_RULES change a spec's consumed shape",
+        "a spec is added to or removed from the 14"
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0001",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-06T22:23:02.033Z",
+      "oid": "7ac42349ee7dc68f9e4b3e0229e82a21",
+      "content_hash": "c190a7b1fe8118a92ae082247b0fd00a0f5b1abd5b9a8185d7585e98a60f2ee3"
+    },
+    {
+      "title": "Per-action-step parallel decomposition of the step-iterating specs (functionality + build delta)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "investigative",
+      "question": "Can the per-action-step specs (propose-responsibilities et al.) be decomposed into PARALLEL per-step agent calls, and what exact pi-workflows / bridge / parser functionality supports it versus must be built?",
+      "method": "code-inspection of the pi-workflows engine (src + dist), the wasc bridges (render_from_substrate.py, apply_from_substrate.py, run_workflow.mjs, apply.py), and the parsers (planner/specs.py); corroborated against the live 14-spec run (propose-responsibilities was the long pole: ~78KB rendered prompt now carrying the 444-atom inventory).",
+      "scope": [
+        "workflowsPiExtension/packages/pi-workflows/src",
+        "prompt-workshop/dispatch",
+        "school-improvement-plans/planner/specs.py"
+      ],
+      "findings_summary": "DECOMPOSABLE axis = per action step. The 5 step-iterating specs -- propose-responsibilities, propose-assignments, propose-timelines, propose-step-resources, propose-evidence -- apply via per-step OVERLAY (_set_indexed_field_on_steps, apply.py:83-150: each spec's MERGE_RULE overlays its fields onto action_steps[idx], not list-replace), so per-step PARTIAL results merge cleanly by step_index; each step's mapping is independent. NOT decomposable: bind-measurement-channels (criterion_index<->channel_indices cross-refs the drafted criteria/channels) and propose-review-loop (trigger_index references G1's OWN emitted review_events) -- intra-spec coherence requires one call. The remaining specs are single-output (not step-iterating). ENGINE: forEach (step-foreach.ts) runs SEQUENTIALLY (a for-loop collecting outputs[]; MAX_FOREACH_ITERATIONS=500), so it does NOT itself parallelize; BUT the engine HAS parallel execution -- executeParallelLayer + executeParallelStep (step-parallel.ts:44,84,107,141 via Promise.allSettled + a shared AbortController cancelling siblings on failure). So fan-out is achievable via explicit parallel steps/layers, or by refactoring executeForEach to Promise.all. BRIDGE GAP: render_from_substrate.py renders the WHOLE spec prompt (argv --spec-key/--seed/--draft-path, no step scoping; :43-64,:109) -- per-step needs a --step-index + template scoping. The per-step APPLY merge already supports partials (reuse). COHERENCE: the shared preamble's all-divisions mandate (every division must have a role) is a WHOLE-PLAN constraint no single per-step call sees -> a post-merge coverage/synthesis pass is required. CACHING: dispatch.ts sets up none (cacheRead/Write are populated from pi output, no --cache-key); each parallel call re-sends the full preamble + inventory. BUILD DELTA: (a) per-step render variant (--step-index + snippet section scoping); (b) a fan-out+merge workflow shape (explicit parallel steps or a parallelForEach refactor); (c) a coverage/synthesis pass for the all-divisions constraint; (d) optional prompt caching. EXISTS to reuse: engine parallel-step execution, the per-step overlay merges, state/resume. Most valuable for the production orchestration trio (DEC-29 north-star); a wall-clock optimization for the workshop (not blocking -- the full sequential run completed).",
+      "citations": [
+        {
+          "label": "forEach sequential (for-loop, outputs[], MAX 500)",
+          "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-foreach.ts",
+          "lines": "12,44,113-154"
+        },
+        {
+          "label": "engine parallel execution (Promise.allSettled + AbortController)",
+          "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-parallel.ts",
+          "lines": "44,84,107,141"
+        },
+        {
+          "label": "per-step overlay merge used by the 5 step-iterating specs",
+          "path": "prompt-workshop/dispatch/apply.py",
+          "lines": "83-150"
+        },
+        {
+          "label": "whole-spec render (no step scoping)",
+          "path": "prompt-workshop/dispatch/render_from_substrate.py",
+          "lines": "43-64,109"
+        },
+        {
+          "label": "non-decomposable cross-refs (B2 criterion/channel; G1 trigger_index)",
+          "path": "school-improvement-plans/planner/specs.py",
+          "lines": "1534-1621 (B2); 3338-3371 (G1 revision_rule trigger_index)"
+        },
+        {
+          "label": "all-divisions whole-plan constraint",
+          "path": "prompt-workshop/shared/preamble.md"
+        }
+      ],
+      "stale_conditions": [
+        "pi-workflows changes forEach to parallel, or changes the parallel-step primitives",
+        "apply.py MERGE_RULES stop using per-step overlay for the step-iterating specs",
+        "a step-iterating spec's parser gains intra-spec cross-references",
+        "render_from_substrate gains native step scoping"
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0002",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T01:43:58.458Z",
+      "oid": "065ea65c5c2a8e34436add6214466997",
+      "content_hash": "b60784cb34459a83b72f4d8872956116a251dc24b3539fef64c907fdfd2aac7f"
+    },
+    {
+      "title": "Workshop / pipeline refinements — evidence-grounded roadmap",
+      "status": "complete",
+      "layer": "L3",
+      "type": "landscape",
+      "question": "Given the evidence from the workshop runs to date (the first complete draft, the FGAP-018/019/022 fixes, the WF-13/15/16 failures), what refinements are warranted — independent of any single run?",
+      "method": "synthesis of the evaluated draft (run ...092307) + the fix/finding record; not a code probe.",
+      "findings_summary": "A prioritized menu of refinement OPPORTUNITIES (not committed work; each becomes a task/FGAP when prioritized). Full body: docs/workshop-refinements-2026-06-07.md. (A) Draft content: A1 action-scope concentration -- the produced plan was governance-centric (6 steps = one policy-drafting cycle, 5/6 Principal's-Office-owned); prompt decompose-action-steps for a MIX of governance + distributed instructional actions (clearest content weakness). A2 criteria measurability -- 5/6 criteria were judgment; steer toward inspection/target with metrics. A3 soft-flags as a standing tuning signal -- recurring flags (e.g. 'HOD' abbreviation) -> prompt-reinforcement loop (DEC-40: prompt-side, never gate-loosening). (B) Pipeline: B4 generalize the grounding-leanness audit -- FGAP-022 scoped the atom inventory (sent to 13/14 specs that don't use it); audit ALL grounding sections + the whole-draft_state threading per spec (candidates: accreditation_standards, policies, prior_plans). B5 per-step parallel decomposition (R-0002) -- fan out the 5 step-iterating specs per action-step: speed + lighter calls (cap relief) + the production-trio realization. B6 upstream stdout-cap durability (WF-16) -- raise/remove the 10MB cap / quieter pi mode / disk-read independent of the tail. (C) Evaluation: C7 automated draft quality rubric -- score the DISC-26 11 axes + the FGAP-009 gate for a deterministic promotion verdict + regression catch. LEVERAGE RANK: 1) B4 grounding-leanness (cheap, broad, compounds), 2) A1 action-scope concreteness, 3) B5 per-step decomposition; then A2, A3, B6, C7.",
+      "findings_document": "docs/workshop-refinements-2026-06-07.md",
+      "citations": [
+        {
+          "label": "governance-centric action steps",
+          "path": "run ...092307 draft action_steps (evaluated)"
+        },
+        {
+          "label": "atom over-send (13/14 specs)",
+          "path": "FGAP-022"
+        },
+        {
+          "label": "per-step decomposition",
+          "path": "R-0002"
+        },
+        {
+          "label": "stdout cap",
+          "path": "prompt-workshop/PI-WORKFLOWS-FINDINGS.md WF-13/15/16"
+        },
+        {
+          "label": "11 quality gaps",
+          "path": "docs/wizard-v2-coverage-and-prompt-quality-audit-2026-05-28.md (DISC-26)"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0003",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T05:33:51.120Z",
+      "oid": "a55a2a680e5f92a3e9633ebcaf6fe930",
+      "content_hash": "9abbe7d75722573d75d4fb542a55d064095b3a87506ea8d39b80094e0d4312c4"
+    },
+    {
+      "title": "Concision tuning ('temperature for verbosity') — design + canonical comparison",
+      "status": "complete",
+      "layer": "L3",
+      "type": "comparative",
+      "question": "How does the generated draft compare to the canonical exemplar (web/canonical.html) in concision, and how do we build a single tunable knob — like an LLM temperature — to dial output concision toward the canonical?",
+      "method": "agent comparison of /tmp/final-complete-draft.json vs web/canonical.html + web/data/plan-data.js (quantified per field); design grounded in the prompt-corpus assembly (FRAG-preamble single-reach, render_from_substrate Context, .workshopping config).",
+      "findings_summary": "Full body: docs/concision-tuning-design-2026-06-07.md. GAP: canonical ~5x tighter in prose, ~12-15x in action-step descriptions (current_state 350c vs 1934c; step desc 40-75c vs ~848c). DEEPEST INSIGHT: concision is STRUCTURAL not stylistic -- canonical states each fact ONCE in its home structured field and DERIVES actor summaries (assignments[] -> 'leads 4 / participates 2'), never reciting the roster in prose; ours roll-calls all 16 divisions inline in current_state+desired_state+provenance (3x) because the every-division coverage mandate (preamble criterion 5) over-fires into prose. 6 verbosity drivers: exhaustive division enumeration; cross-field roster/WASC-code restatement; action-step descriptions carrying the whole sub-procedure; per-linkage rationale essays; coverage-mandate over-firing into prose; long chained compound sentences. MECHANISM (the temperature analog): a single concision level (terse|standard|expansive) in .workshopping/config.json, injected via the shared preamble (FRAG-preamble -- the one fragment reaching all 14 specs, same lever as FGAP-019) as a templated conditional on the render Context; controls enforceable rules (represent actors representatively not exhaustively + redirect coverage to structured fields; state-once-in-home-field; imperative step descriptions; rationale caps; clause ceiling); bands differ only in numeric ceilings; MEASURABLE via a distance-to-canonical scorer (chars/field, named-actors/prose-field, roster-repetition count) with canonical's vector as target -- which is also R-0003's C7 quality rubric + the measurable closure of DISC-26. Guardrail: never override verbatim-label fidelity (FGAP-014/019/DEC-40). Reuses the preamble single-reach lever + the render Context + aligns with FGAP-022 grounding-scoping; parity (preamble.md + FRAG-preamble lockstep) constrains edits. NOT implemented -- design only.",
+      "findings_document": "docs/concision-tuning-design-2026-06-07.md",
+      "citations": [
+        {
+          "label": "canonical exemplar + data",
+          "path": "web/canonical.html + web/data/plan-data.js"
+        },
+        {
+          "label": "generated draft",
+          "path": "/tmp/final-complete-draft.json (run 42/42)"
+        },
+        {
+          "label": "single-reach preamble lever",
+          "path": "prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble; render_from_substrate.py:109"
+        },
+        {
+          "label": "refinements roadmap (A1, C7)",
+          "path": "R-0003 / docs/workshop-refinements-2026-06-07.md"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0004",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T09:21:06.418Z",
+      "oid": "28f16fa23f5d2cc2c3fb6a3e02e10789",
+      "content_hash": "53c7180042c5874492858edd9ad577f54d7774954b76a1d7da6f65963009723d"
+    },
+    {
+      "title": "Maximalist -> target distillation transform (complements R-0004 generation-temperature)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "feasibility",
+      "question": "Given a maximalist generated draft and two high-target-signal exemplars (canonical.html + a real WASC .docx), what PROCESS transforms the maximalist draft toward the target signal, safely?",
+      "method": "agent extraction + analysis of data/Sample - Schoolwide Action Plan.docx (-> data/Sample-Schoolwide-Action-Plan.extracted.md) vs web/canonical.html + /tmp/final-complete-draft.json; design grounded in the pipeline + the promotion gate; keystone (gate is existence-based) verified at plans/services.py:_check_promotion_gates by the orchestrator.",
+      "findings_summary": "FRAMING (corrected 2026-06-19): R-0005 is the DESIGN of a FUTURE automated distiller (distill.py) — design-only, NOT implemented, and an identified future-automation route (the orchestration-trio's pre-promotion pass, DEC-41). It is NOT a record of how the existing distilled renders were made: the four POC renders (web/chiway-slo-plan-distilled-{POC,v3-wasc,v4-enriched,v5}.html) were produced by a DIFFERENT, EXECUTED method — one-off dispatched-agent manual transforms, recorded in R-0013 — and v4's extrapolation (R-0009 license) restructured arrays beyond this design's conservative arrays-byte-identical base. The label 'R-0005' was not live in those production directives (they cited R-0008/R-0009). The distill.py design below stands as the future-automation route. ── Full body: docs/distillation-transform-design-2026-06-07.md. The .docx is a SAMPLE WASC schoolwide action plan (labeled 'Sample' -- a curated exemplar/template, NOT an enacted real plan) -- a 6-column tabular grid (Action Steps | Person(s) Responsible | Timeline | Resources | Assessing of Progress | Communication of Progress) + 15-standard reference; extreme concision (~1159 words whole plan; step descriptions 6-11 words; assignments = bare role labels; fragment lists). It does NOT compete with canonical.html -- two facets of ONE target: .docx = authoring-grid/export shape; canonical = normalized-store/derived-view; both terse; target = a BAND [canonical .. docx]. TRANSFORM DESIGN: generate maximalist (complete coverage) -> DISTILL AFTER via a new whole-draft stage (distill.py, run once after the 14-spec sequence -- needs the complete draft to collapse cross-field repetition). The distiller rewrites ONLY prose fields (allow-list: narrative, step descriptions, linkage rationales, criterion text) and passes ALL structured arrays through byte-identical. KEYSTONE (verified): _check_promotion_gates (plans/services.py:86-207) is entirely EXISTENCE-based (.strip() non-empty, .exists(), not steps/criteria, improvement_type_id is not None) -- NO length cap -- so prose compression can never fail the gate; maximalist-first is the correct safe base (compress present data, never recover absent). Composes with R-0004: generate at standard, distill to terse/docx band; maximalist = internal record, distilled = export; production = the orchestration trio's final pre-promotion pass (DEC-41). ROUND-TRIP SAFETY: distilled draft must re-parse (planner/specs.py parse_*), re-pass the catalogue-gate (_freetext_audit.py; no contracted labels -- DEC-40/FGAP-014/019), re-satisfy _check_promotion_gates; iterate-to-zero else. MEASURABLE: distance-to-target-BAND (canonical + .docx as 2 anchors) = the DISC-26 / R-0003-C7 rubric on an authority-format exemplar. NOT implemented -- design only. OPEN/TBD (human-flagged): a separate decision-policy layer governs USE of the mechanism -- operating heuristics + decision-making policies (when to distill and to which band per audience/consumer; generate-temperature vs distill per situation; round-trip rules when the band conflicts with the gate floor -> keep coverage over length; encode as a policy object the orchestration trio applies deterministically). To design; own pass + .context items when prioritized. See docs/distillation-transform-design-2026-06-07.md section 6. POC-SURFACED COVERAGE FLOORS (doc section 5b): the POC distillation (data/chiway-slo-plan-distilled-POC.md) compressed away coverage the SOURCE had -- SAO (70x in source, 5/6 steps + a criterion -> kept only as a role-label) and the stakeholder dimension (6 groups -> ~2-4 thin, Parent Committee/Admissions Applicants dropped). The existence-gate is NECESSARY BUT NOT SUFFICIENT (it requires >=1 stakeholder/communication, never SAO specifically), so distillation can PASS the gate while collapsing breadth. REQUIRED: coverage FLOORS above the gate -- owner-coverage floor (every division/position with SUBSTANTIVE source involvement stays visibly present, not merely derivable), stakeholder-coverage floor (the stakeholder dimension + audiences not silently subset), dimension floor (a source section may be compressed, never zeroed). Mechanics: the scorer gains coverage metrics measured against the SOURCE (the coverage floor) distinct from the exemplar (the concision target); a distillation below a floor is rejected + re-run. Makes the section-6 never-drop-coverage rule checkable.",
+      "findings_document": "docs/distillation-transform-design-2026-06-07.md",
+      "citations": [
+        {
+          "label": ".docx target (extracted)",
+          "path": "data/Sample-Schoolwide-Action-Plan.extracted.md (from data/Sample - Schoolwide Action Plan.docx)"
+        },
+        {
+          "label": "normalized target",
+          "path": "web/canonical.html + web/data/plan-data.js"
+        },
+        {
+          "label": "generation-temperature complement",
+          "path": "R-0004 / docs/concision-tuning-design-2026-06-07.md"
+        },
+        {
+          "label": "gate floor (existence-based, verified)",
+          "path": "school-improvement-plans/plans/services.py:_check_promotion_gates"
+        },
+        {
+          "label": "round-trip validation surface",
+          "path": "planner/specs.py parse_* + planner/_freetext_audit.py (DEC-41 parser=schema)"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0005",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-18T21:52:11.962Z",
+      "oid": "e26b744385a528903a5cb9da315c031d",
+      "content_hash": "0ae2be40f9b4a1b82df79fb301a062babd0fcf95bd9b33fd6732d8d8f70462db",
+      "content_parent": "af64436bc38cd6c19f3157abfc4b483def722c07d0a98a5a2f02a6cf9a55af96"
+    },
+    {
+      "title": "Transform option space + 2026 AI drafting/revising heuristics (web-researched)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "landscape",
+      "question": "What is the full procedural+coding option space for transforming the maximalist draft toward the concise exemplars, and what do CURRENT (2026) AI content-drafting/revising heuristics recommend?",
+      "method": "general-purpose agent: codebase grounding (the two design docs + pipeline + gate) + WEB search constrained to 2026-only (June-2026 targeted; 2025-and-earlier discarded, incl. '2026'-titled-but-2025-dated sources). Full verbatim report persisted to the findings_document.",
+      "findings_summary": "Full verbatim report: docs/transform-options-and-2026-heuristics-research-2026-06-07.md. PART 1 (option space, pipeline-grounded): procedural 1-7 (generation-bias / whole-draft distill / per-field / reflexion / view-derivation / iterate-to-band / tiered) + ADDED 8 derive-then-distill, 9 budget-planner, 10 evaluator-optimizer-w/-separate-judge, 11 anchored-span freeze-list; coding A-H + ADDED I freeze-list-builder (reuse build_catalogue_union+PhraseMatcher), J structured-array byte-equality assertion (reuse apply.py:403-405 before/after), K per-field budget planner (keyed off FREETEXT_SELECTORS_BY_SPEC). Re-verified: the gate is existence-based (services.py:98-207, no length predicate) -> prose compression round-trip-safe; FREETEXT_SELECTORS_BY_SPEC (_freetext_audit.py:1343-1359) IS the prose-field allow-list. PART 2 (2026-only web, date-verified): #1 promptbuilder.cc Jan-26-2026 (output-contract + success-criteria-first; STRUCTURE BEATS LENGTH; per-section length constraints; examples-over-adjectives); #2 Zylos May-12-2026 (GROUNDED self-correction works, INTRINSIC does not -> needs an external grounded signal + a SEPARATE judge model); #3 arXiv 2512.14244 Jan-6-2026 (discourse-unit/EDU faithful structure-preserving compression); #4 SurePrompts (selective compression WRONG for verbatim fidelity -> keep fidelity-critical spans verbatim; date flagged); #5 LEDGER/LEDGE 2026 (agentic in-place editing preserving cross-refs; numbers flagged); #6 LACONIC arXiv 2602.14468 Feb-2026 (length need not cost capability, training-time). NO 2026 source for few-shot style-transfer, content-distillation, or inference-time length-revision -> our R-0005 framing is AHEAD of indexed 2026 literature. PART 3 (mapping): 2026 practice VALIDATES our parser-as-schema-contract + the existence-gate as the grounded external evaluator that makes the distill->re-gate->re-distill loop the RELIABLE (not intrinsic) kind, and endorses DEC-40 verbatim-labels. REFINE: express R-0004's concision temperature as explicit per-field length CONSTRAINTS (not adjectives); use a SEPARATE judge model. MISSING techniques to adopt: discourse-unit-aware compression, structured-array byte-equality as a checked invariant, judge/generator separation. RECOMMENDED COMPOSITION: derive-then-discourse-distill, gate-anchored, judge-separated, budget-contracted (generate standard -> deterministic derivation evacuates enumerable data -> freeze-list + budget contract -> LLM distill residual prose only -> validate via existing parse+audit+byte-equality+gate harness -> iterate-to-band with separate judge -> tier per consumer).",
+      "findings_document": "docs/transform-options-and-2026-heuristics-research-2026-06-07.md",
+      "citations": [
+        {
+          "label": "existence-based gate (round-trip floor)",
+          "path": "school-improvement-plans/plans/services.py:98-207"
+        },
+        {
+          "label": "prose-field allow-list + catalogue gate + freeze-list source",
+          "path": "school-improvement-plans/planner/_freetext_audit.py:1343-1359, :744-783, :587"
+        },
+        {
+          "label": "parser-as-schema + before/after diff pattern",
+          "path": "prompt-workshop/dispatch/apply.py:386, :403-405"
+        },
+        {
+          "label": "2026 output-contract/structure-beats-length",
+          "path": "https://promptbuilder.cc/blog/prompt-engineering-best-practices-2026 (Jan 26 2026)"
+        },
+        {
+          "label": "2026 grounded-vs-intrinsic self-correction + separate judge",
+          "path": "https://zylos.ai/research/2026-05-12-agent-self-correction-reflexion-to-prm (May 12 2026)"
+        },
+        {
+          "label": "2026 discourse-unit faithful compression",
+          "path": "https://arxiv.org/pdf/2512.14244 (Jan 6 2026)"
+        },
+        {
+          "label": "R-0004 + R-0005 companions",
+          "path": "docs/concision-tuning-design-2026-06-07.md + docs/distillation-transform-design-2026-06-07.md"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0006",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T11:27:51.919Z",
+      "oid": "1e45dc46946c69f6e5226999284d3f2a",
+      "content_hash": "bbe973aed279a7c8932cf1756023ac5f8c701b01ff6382a5b9e688e38e48de32"
+    },
+    {
+      "title": "Authoritative external plan-quality feedback (theme-framed single plan; HOW+frequency per step; diverse focus areas)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "curation",
+      "question": "What does an authoritative external reviewer state a WASC schoolwide action plan should look like, and how does it map to our findings?",
+      "method": "verbatim capture of authoritative external feedback (human-designated) + extraction + mapping to existing research; persisted to the findings_document.",
+      "findings_summary": "Full verbatim + mapping: docs/authoritative-plan-quality-feedback-2026-06-07.md. REQUIREMENTS (authoritative): (1) theme-framed SINGLE plan -- one theme (e.g. 'Implementation of SLOs into the Curriculum'), the actions are STEPS WITHIN it, not separate plans; (2) concrete operational/instructional steps (exemplars: introduce SLOs at faculty meetings; audit lessons across subjects; dept chairs embed SLOs in syllabi; gather student feedback by survey); (3) HOW per step (mechanism: surveys/meetings/lectures); (4) FREQUENCY per step (weekly/per semester/per academic year); (5) DIVERSITY of focus areas (school-wide -> not concentrated); (6) maximum step detail. MAPPING: strongly VALIDATES R-0003 A1 (our first draft's 6 steps were one governance cycle, 5/6 PO-owned -- req 5+2 are exactly A1's corrective, now from an authority). Refines decompose-action-steps (req 3/4/6 = per-step mechanism + cadence + concreteness generation requirements). Tension-to-hold with concision (R-0004/R-0005): 'as detailed as possible' lives in the structured cells (HOW->method/Resources, FREQUENCY->Timeline, action->tight imperative) -- so the distiller coverage floors (R-0005 5b) gain a per-step 'HOW + frequency retained' floor. Theme-framing = the plan title/area-for-improvement (our one-Plan-many-steps model matches). IMPLICATIONS (not actioned): decompose-action-steps prompt requires action+HOW+frequency per step + focus-area diversity across the set; coverage floors gain mechanism+frequency-retained; the quality rubric gains steps-with-HOW / steps-with-frequency / focus-area-diversity axes. MEASUREMENT TOOLS = KEY (human 2026-06-07): the measurement-tools dimension is designated key -- the criterion-side twin of the authority HOW+frequency. Already modeled (feedback_channels.instrument + stakeholder/owner/timing/frequency; success_criteria.verification_kind judgment/inspection/target; bind-measurement-channels B2). KPI BOUNDARY (load-bearing): measurement tools = instruments/methods, NOT KPIs (explicit project exclusion); numbers live ONLY inside a target criterion row, encoded at specs.py:33-34. Consequences: elevates R-0003 A2 to a headline (every criterion binds to a concrete instrument+cadence); adds a distiller coverage floor (R-0005 5b: measurement-tools dimension never zeroed, instrument+cadence survives distillation); adds rubric axes criteria-bound-to-instrument + instrument-has-named-frequency.",
+      "findings_document": "docs/authoritative-plan-quality-feedback-2026-06-07.md",
+      "citations": [
+        {
+          "label": "R-0003 A1 action-scope concentration (validated)",
+          "path": "docs/workshop-refinements-2026-06-07.md"
+        },
+        {
+          "label": "distiller coverage floors",
+          "path": "docs/distillation-transform-design-2026-06-07.md section 5b"
+        },
+        {
+          "label": "decompose-action-steps spec",
+          "path": "prompt-workshop/snippets/05-decompose-action-steps.md"
+        },
+        {
+          "label": "concise exemplar",
+          "path": "data/Sample-Schoolwide-Action-Plan.extracted.md"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0007",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T11:52:42.906Z",
+      "oid": "9fd7a15c0af16b9ab42375b1dd458bc5",
+      "content_hash": "5d2fd0fe25798c289a15835d0e6cd106171b0219a9d61885c618f30167ac6143"
+    },
+    {
+      "title": "Authoritative WASC schoolwide action-plan sources + expectations (web-researched)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "curation",
+      "question": "What authoritative sources define WASC schoolwide action-plan structure + expectations, and how do they corroborate/extend our model?",
+      "method": "web research; ACS WASC official domain (acswasc.org) sources + real accredited-school exemplars; authority prioritized over recency for institutional standards; full verbatim report persisted to the findings_document.",
+      "findings_summary": "Full report: docs/wasc-authoritative-sources-research-2026-06-07.md. CONFIRMS our 6-column grid is the OFFICIAL ACS WASC structure (Sample action plan PDF, verbatim columns: TASKS | RESPONSIBLE PERSON(S) INVOLVED | PROFESSIONAL DEVELOPMENT/RESOURCES/FUNDING | MEANS TO ASSESS IMPROVEMENT | TIMELINE | REPORTING) -- maps cleanly to our Action Steps|Person(s) Responsible|Resources|Assessing|Timeline|Communication. CONFIRMS theme-framed SINGLE plan is MANDATED (WASC: separate per-group plans unnecessary; one integrated 3-5 year plan of themed Goals), measurement tools central (Monitor Progress Tools block + MEANS TO ASSESS column), HOW+frequency. ADDS beyond our model a mandatory per-GOAL HEADER layer: (1) measurable multi-year GROWTH TARGETS [reconcile w/ KPI exclusion], (2) Rationale/Critical-Need + supporting self-study DATA, (3) explicit SLO + critical-learner-need linkage, (4) academic-standards + 9-standard ACS-WASC-criteria alignment (A1-6/B1-3/C1-3), (5) Professional Development as a step dimension, (6) MONITOR vs REPORT as two distinct expectations, (7) achievement-GAP-closure strategies per subgroup, (8) annual review/modification + follow-up cycle (living plan), (9) 3-5 year multi-goal horizon + visiting-committee critical-areas integration, (10) budget specificity. Sources: ACS WASC Sample action plan, the standards page, the FOL manuals (incl. International 2017 ed), a WASC Coordinator article, 5 real school self-studies. NO hard contradiction; the grid is the inner table wrapped by the Goal-header schema. MODEL GAPS to weigh (scope = human, mandate-007): first-class multi-year growth targets, per-goal data citation, gap-closure strategies, the 3-5yr multi-goal horizon (our draft is single-theme single-cycle), PD as explicit dimension.",
+      "findings_document": "docs/wasc-authoritative-sources-research-2026-06-07.md",
+      "citations": [
+        {
+          "label": "ACS WASC official Sample action plan (6-col grid + Goal header)",
+          "path": "https://www.acswasc.org/wp-content/uploads/2015/05/5-ACS-WASC-Sample-action-plan.pdf"
+        },
+        {
+          "label": "ACS WASC current standards (A/B/C, 9 standards)",
+          "path": "https://acswasc.org/about/acs-wasc-standards/"
+        },
+        {
+          "label": "ACS WASC FOL manuals (action-plan components; International 2017 ed)",
+          "path": "https://www.acswasc.org/wp-content/uploads/2019/11/ACS-WASC-International-FOL-2017-Edition-FINAL-UPDATED-2.pdf"
+        },
+        {
+          "label": "authoritative reviewer feedback (companion)",
+          "path": "R-0007 / docs/authoritative-plan-quality-feedback-2026-06-07.md"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0008",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T12:04:25.584Z",
+      "oid": "1f725fe237f64d78fd53f589bb2829df",
+      "content_hash": "161b243c239c7c9be78c329e2c2b5505a1848c24933a2306480674db2a994e5f"
+    },
+    {
+      "title": "Plan-generation heuristics — LIVING list (account-for: in/out of class; always-bilingual; feedback channels; measure->data->revise actions+policies)",
+      "status": "in-progress",
+      "layer": "L3",
+      "type": "curation",
+      "question": "What general heuristics must the generated/distilled plan account for? (a growing, append-to list)",
+      "method": "human-seeded living list (2026-06-07); to be added to as heuristics surface. Body in the findings_document.",
+      "findings_summary": "Living list: docs/plan-generation-heuristics.md (status in-progress = open/growing). Seeded heuristics (verbatim, human): (1) account for IN CLASS and OUTSIDE OF CLASS; (2) account for ALWAYS-BILINGUAL language improvement; (3) account for FEEDBACK CHANNELS; (4) account for MEASURING PROGRESS and DATA DRIVING REVISION of actions AND policies. Where they land: (1) instructional + non-lesson coverage (SAO/pastoral) -> SAO coverage-floor (R-0005 5b) + action-scope diversity (R-0003 A1/R-0007); (2) bilingual Chinese-English development as a standing dimension (modeltranslation + FGAP-024 CJK-safety); (3) stakeholder feedback_channels + the stakeholder coverage-floor; (4) measurement-tools-KEY (R-0007) driving review_events->revision_rules over actions AND policies (WASC annual-review/continuous-improvement R-0008, Standard A4). Joins already-established heuristics (theme-framed single plan; HOW+frequency; diverse focus; per-Goal header growth-targets/data/gap-closure/3-5yr/annual-review; coverage floors; verbatim labels; concision temperature). ADD TO THIS as new heuristics surface. ADDED (2026-06-07, v3-review): out-of-class involvement EXPLICIT (SAO owns a pastoral/dorm/activities step, not just a contributor -- grounded: SAO contributes in 5/6 steps, never owns); bilingual DUAL-PURPOSE framing (actions serve BOTH SLO + Chinese-English language improvement); DISTRIBUTE ownership / anti-concentration (the draft owns all 6 steps via only PO + Curriculum, Director of Teaching+Curriculum leads 4/6 -- spread to divisions that already hold responsibility atoms). EXTRAPOLATION LICENSE: the transform may EXTRAPOLATE/ELABORATE from grounded material to satisfy heuristics (not compress-only), bounded to catalogued entities + real responsibilities/SLOs + no fabricated metrics + re-gating; this RELAXES R-0005 byte-identical passthrough (see R-0005 5c) -> two modes: conservative distillation vs enriching transform. Heuristics are generation-side requirements AND enriching-transform targets.",
+      "findings_document": "docs/plan-generation-heuristics.md",
+      "citations": [
+        {
+          "label": "coverage floors (SAO/stakeholders/measurement)",
+          "path": "docs/distillation-transform-design-2026-06-07.md section 5b"
+        },
+        {
+          "label": "measurement-tools KEY + authoritative feedback",
+          "path": "R-0007 / docs/authoritative-plan-quality-feedback-2026-06-07.md"
+        },
+        {
+          "label": "WASC authoritative expectations",
+          "path": "R-0008 / docs/wasc-authoritative-sources-research-2026-06-07.md"
+        }
+      ],
+      "grounded_at": "2026-06-07",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "R-0009",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T12:05:22.825Z",
+      "oid": "4f9997faa3a2a7d3c267df0aad563612",
+      "content_hash": "51b10209a31a66de3f29e4049f627dde2b5cfc40a7aaf669727f64254ab19ae9"
+    },
+    {
+      "title": "Canonical render-shape drift (v4 vs web/canonical.html) — basis for a single render template",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "How has the shape of the v4 distillation render drifted from the canonical reference (esp. the left-column sections), to ground a single template all final shapes render into?",
+      "method": "structural-diff agent (read-only) over web/canonical.html vs web/chiway-slo-plan-distilled-v4-enriched.html + the data file; orchestrator verified the path + left-column premise. Full report in the findings_document.",
+      "findings_summary": "Full report: docs/canonical-shape-drift-2026-06-08.md. CLARIFICATIONS: 'mocks/web/canonical.html' = the SERVED URL of the file web/canonical.html (devmocks mounts web/ under /mocks/; no mocks/ dir) -- that file is the true reference. 'Left-column sections' = the meta-table's LABEL column (table.plan td.label), NOT a page sidebar (neither file is two-column). DRIFT (left-column = the meta-table label rows): canonical table.plan has ~20 label rows (Theme, Framing focus, Priority, Student impact, Areas-for-Improvement, Subject kind, Policies est/rev, Target Cycle, Provenance, Predecessor, Rationale, WASC standards, SLOs targeted, Mission area, STAKEHOLDER IMPACT, DEPARTMENTS ENGAGED, Success criteria, How measured, Communication); v4 collapsed to 8 ACS-renamed rows (Rationale/Critical Need, Supporting Data, Growth Targets, SLOs Addressed, Impact on Student Learning, SLO Standards Addressed, Monitor Progress Tools, Report Progress) -- DROPPED ~12 (incl. Stakeholder Impact + Departments engaged), relabeled survivors to ACS terms, plain 2-col vs colspan=5. OTHER drift: v4 dropped the top toolbar (lens tag/plan-selector/lens-links/Print) + the conditional recipe-section + the footer markup; ADDED an h2 section system + Goal callout + separate Milestones + Review&Revision; REORDERED+relabeled the 6-col action table (Timeline 3rd->5th; ACS labels; PD+Resources+Funding merged; uppercase header); widened .doc 9.5in->10in; chip-class vocabulary diverged. MECHANISM: canonical is DATA-DRIVEN (renderPlan(plan) from DATA+PlanHelpers, web/data/plan-data.js) -- it ALREADY is a render-from-data template; the distillations hand-wrote static HTML. AUTHORITATIVE SHAPE to standardize: single centered .doc + toolbar; data-model render; section order h1->subtitle->full meta table->conditional recipe-section->6-col action grid->footer; no h2. TENSION: the drift is partly v4 deliberately adopting the AUTHORITATIVE ACS-WASC structure (R-0008) + heuristics (R-0009) -- so the template = a SYNTHESIS (canonical's data-driven single-column shell + full row inventory + render mechanism, in the ACS-WASC vocabulary/structure of R-0008, carrying the R-0009 dimensions), NOT a revert. NEXT (gated by the human on this establishment): build that template.",
+      "findings_document": "docs/canonical-shape-drift-2026-06-08.md",
+      "citations": [
+        {
+          "label": "canonical reference (data-driven; ~20-row meta table; 6-col action grid)",
+          "path": "web/canonical.html:31-56,263-535 + web/data/plan-data.js"
+        },
+        {
+          "label": "v4 drifted render (8-row meta; h2 system; reordered action cols; static)",
+          "path": "web/chiway-slo-plan-distilled-v4-enriched.html:35-42,199-334,337-351"
+        },
+        {
+          "label": "authoritative ACS-WASC structure (the v4 labels/columns come from here)",
+          "path": "R-0008 / docs/wasc-authoritative-sources-research-2026-06-07.md"
+        },
+        {
+          "label": "heuristic dimensions the template must carry",
+          "path": "R-0009 / docs/plan-generation-heuristics.md"
+        }
+      ],
+      "grounded_at": "2026-06-08",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "R-0010",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-07T20:15:08.916Z",
+      "oid": "579aa6d2bb23c797cdb8f0262b5765e3",
+      "content_hash": "1b68b2a396bf7431fc5d500b0e9160b4cd1a2a4153c34f4d8a84e135bb71ae1f"
+    },
+    {
+      "title": "Prompt & workflow refinement — governing option space",
+      "status": "complete",
+      "layer": "L3",
+      "type": "landscape",
+      "question": "What are the available options for refining the plan-generation prompts and workflow, given the research + heuristics, and how do they GOVERN the specifics?",
+      "method": "synthesis of R-0002..R-0010 + R-0009 heuristics + R-0007/R-0008 authoritative + DEC-48; structured into governing build-tracks. Full body: the findings_document.",
+      "findings_summary": "Governing option space (the prompt/workflow specifics conform to it): PROMPT-level (FEAT-005) = bake the heuristics + authoritative structure into generation (distributed ownership; in+out-of-class incl. SAO/HRT/YGL/Dorm; bilingual dual-purpose; HOW+frequency; diverse focus; measurement-tools-key; ACS-WASC per-Goal header + 6-col labels; no cert-risk meta + standards-key+name + Theme=title; verbatim labels; grounding-leanness). WORKFLOW-level (FEAT-006) = a post-generation transform/distiller (target-band distillation; coverage floors; grounded extrapolation; re-validation harness; distance-to-band scorer; iterate-to-band w/ separate judge; optional per-step decomposition). Three mechanism axes (generation-bias vs post-gen transform vs view-layer; LLM vs deterministic vs hybrid; one vs tiered artifacts). Recommended composition: generate-standard -> deterministic derivation -> freeze-list+budget -> LLM prose-distill -> re-validate+coverage-floors -> iterate-to-band w/ separate judge -> tier. Governed by DEC-49; carried as FEAT-005/FEAT-006 acceptance criteria.",
+      "findings_document": "docs/prompt-workflow-refinement-governing-options-2026-06-08.md",
+      "citations": [
+        {
+          "label": "build-tracks (governing criteria)",
+          "path": ".context FEAT-005 (prompt) + FEAT-006 (workflow)"
+        },
+        {
+          "label": "binding heuristics",
+          "path": "R-0009 / docs/plan-generation-heuristics.md"
+        },
+        {
+          "label": "authoritative structure",
+          "path": "R-0007 + R-0008"
+        },
+        {
+          "label": "option matrix + 2026 heuristics",
+          "path": "R-0006"
+        }
+      ],
+      "grounded_at": "2026-06-08",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "R-0011",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-08T08:24:59.644Z",
+      "oid": "6550ebbfe62e7d55447549d0cf7189ac",
+      "content_hash": "9ab166f26823d34ca7cb67621069931258c3309616a9c70d671876173efe8ea1"
+    },
+    {
+      "id": "R-0012",
+      "title": "Context Contracts leverage plan — forensic verification + corrected contracts",
+      "status": "complete",
+      "layer": "L3",
+      "type": "audit",
+      "question": "Are the load-bearing claims of the Context Contracts leverage plan (the context-contracts schema + gather-execution-context behavior, the named relation_types + their directions, the specific item edges, the quantitative + lens/invariant claims) accurate against the real pi-context op source and the live .context substrate — and what is the corrected, source-verified form of each proposed contract.",
+      "method": "Code-inspection of the gather-execution-context implementation (pi-context/src/execution-context.ts + context.ts walk primitives) and substrate query (config.json relation_types/invariants, relations.json edges, the context-contracts schema) via the pi-context CLI; each direction verified against the stored parent->child edge convention.",
+      "findings_summary": "The Context Contracts machinery is present and installed: the context-contracts schema, the gather-execution-context op, and every relation_type the leverage plan names. Verifying the plan's claims against the op source and the live substrate established several corrections. gather-execution-context performs an independent single-hop walk per declared relation_type from the work unit; it does not chain, so a task contract reaches the task's direct edges (its story, its phase, its dependency chain, and any direct gap/decision/feature/verification edges) but not its feature-via-story. max_depth is recorded, not enforced, in the current build. The direction value is one of in|out|both; for a task, story_contains_task and verification_verifies_item resolve as in, task_depends_on_task as in (a task's prerequisites are its ancestors), and task_addresses_gap / task_addresses_feature / task_governed_by_decision as out. The graph holds 261 edges across 14 of 30 registered relation_types. A decision contract reaches only the substrate DEC-0001..0005 (the seed-round DECs are not substrate items); eight relation_types the plan names have no edges. The corrected task, verification, feature, and framework-gap contracts are viable; the decision contract is deferred. The corrected, schema-valid contracts and the full claim-by-claim verification are in the findings_document (section IV.B).",
+      "findings_document": "docs/2026 06 15 Project pi-context Usage Audit & Optimization Report.md",
+      "citations": [
+        {
+          "label": "gather-execution-context impl (lookup by unit_kind / closure walk / direction / Math.min maxDepth / empty buckets / 3 error-returns)",
+          "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/execution-context.ts:150-222"
+        },
+        {
+          "label": "walkAncestors/walkDescendants direction semantics + NOT depth-bounded (recorded-only)",
+          "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/context.ts:1400-1452, 31-36"
+        },
+        {
+          "label": "context-contracts schema (direction enum in|out|both; required created_by/created_at; id ^CTX-\\d{3,}$; arrayKey contracts)",
+          "path": ".context/schemas/context-contracts.schema.json"
+        },
+        {
+          "label": "real edges (261 total; 14 of 30 registered relation_types in use; per-type counts)",
+          "path": ".context/relations.json + .context/config.json"
+        },
+        {
+          "label": "TASK-043 graph (12 inbound task_depends_on_task prereqs; STORY-010; PHASE-PROMPTWORKSHOP-RUNNER; no gap/decision/feature/verification edges)",
+          "path": ".context/relations.json"
+        },
+        {
+          "label": "decision split (substrate DEC-0001..0005 vs product DEC-44.. in seed-round-plan)",
+          "path": ".context/decisions.json + context-migration/decomposed/seed-round-plan.json"
+        }
+      ],
+      "conducted_by": "general-purpose forensic agent (add4bd00) + orchestrator corroboration",
+      "conducted_at": "2026-06-15",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-15",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-15T02:18:33.279Z",
+      "oid": "d9bfd3b3b6661b1dad3a612316760a56",
+      "content_hash": "f1a53c45697ae3030fa925e82f9648b5f064718723c9bea31aac0ace6cf32e79",
+      "grounding": {
+        "dependencies": [
+          "pi-context engine @ /Users/david/Projects/workflowsPiExtension/packages/pi-context (execution-context.ts + context.ts walk primitives); catalog @davidorex/pi-context@0.30.0"
+        ],
+        "revisions": [
+          "wasc .context/relations.json at 261 edges, 2026-06-15"
+        ]
+      },
+      "stale_conditions": [
+        "gather-execution-context gains real depth-bounding (max_depth becomes enforced)",
+        "the context-contracts schema direction enum changes from in|out|both",
+        "the registered relation_type set or the stored parent->child edge convention changes",
+        "the relation edge counts shift materially from the 2026-06-15 snapshot (261 edges)"
+      ],
+      "content_parent": "bcf1089604ae678f9c1a224a21ed7ee18277335a163f78efb8e3def86bb5347b"
+    },
+    {
+      "id": "R-0013",
+      "title": "Distillation production recipe — how the POC distilled renders were actually executed (dispatched-agent one-off transform)",
+      "status": "complete",
+      "layer": "L3",
+      "type": "historical",
+      "question": "How were the four distilled POC renders (web/chiway-slo-plan-distilled-{POC,v3-wasc,v4-enriched,v5}.html) actually produced, and what is the replicable recipe to distill a new maximalist draft the same way?",
+      "method": "Forensic reconstruction via claude-history (session d7310007, 2026-06-07) of the sidechain file-writes + their orchestrator directives that produced the four renders; corroborated against the on-disk renders + reference docs.",
+      "findings_summary": "EXECUTED METHOD (not distill.py, not a script, not orchestrator-hand-authored): one DISPATCHED sub-agent per render, each a one-off manual transform from a self-contained directive (session d7310007, 2026-06-07; sidechain writes POC 11:38, v3 12:16, v4 12:29, v5 21:12). INPUT (all four): /tmp/final-complete-draft.json = a copy of the maximalist draft-after-propose-review-loop.json (the 14-spec generation output). ITERATION: POC = compress to the Sample-doc shape (6-15-word steps; verbatim labels; no invention). v3-wasc = reshape to the authoritative ACS WASC structure (per-Goal HEADER block + 6-col grid) per R-0008/R-0009. v4-enriched = +EXTRAPOLATION LICENSE (R-0009): elaborate/restructure WITHIN catalogued entities (NOT fabrication) to fix 3 reproduced gaps — SAO owns an explicit out-of-class step, bilingual dual-purpose framing, ownership redistributed off PO+Curriculum. v5 = re-targeted to web/plan-template-blank.html (canonical-derived, after v4 drifted) in Sample-2's 1-2-sentence register; distributed ownership a hard constraint. REFERENCE ARTIFACTS the directives leaned on: web/plan-template-blank.html (target template), data/Sample-Schoolwide-Action-Plan{,-2}.extracted.md, R-0008 (docs/wasc-authoritative-sources-research-2026-06-07.md), R-0009 (docs/plan-generation-heuristics.md, the extrapolation license). FIDELITY RULES: verbatim catalogue labels (never contract/rename, DEC-40); no fabrication; numbers only where a `target` success-criterion exists. COVERAGE FLOORS were POC-SURFACED (not a pre-spec): the POC compressed away SAO + stakeholder breadth the source carried, so floors were added as a verify clause — SAO owns >=1 explicit out-of-class step; >=1 bilingual dual-purpose action; >2 distinct owners with none overloaded; in-class + out-of-class both visible; measure->data->revise present. REPLICABLE RECIPE (any new draft, incl. the T6 draft): copy the draft JSON to a stable path -> dispatch ONE sub-agent with a self-contained directive carrying {the JSON path + key map; target template web/plan-template-blank.html, filled as-is; the Sample-2 1-2-sentence register; the fidelity rules; the bounded extrapolation license; the coverage floors as a verify clause} -> agent writes ONE new static file://-openable HTML, house style web/canonical.html, plain plan title (no process/AI/meta language) -> agent runs the verify clause (HTML parses; owner-distribution / SAO-out-of-class / bilingual counts). RELATION TO R-0005: R-0005 is the DESIGN of a FUTURE automated distiller (distill.py; prose-only, structured-arrays-byte-identical base + the section-5c extrapolation relaxation) — design-only, NOT implemented, and an identified future-automation route (the orchestration-trio's pre-promotion pass, DEC-41). THIS recipe is the EXECUTED method that produced the renders; v4's extrapolation restructured arrays, going beyond R-0005's conservative arrays-byte-identical base. The label 'R-0005' was NOT live in the production directives — they cited R-0008/R-0009.",
+      "findings_document": "",
+      "citations": [
+        {
+          "label": "the production session (claude-history)",
+          "path": "session d7310007-aef3-4e05-a651-d218d1cfd12f, 2026-06-07"
+        },
+        {
+          "label": "the four executed renders",
+          "path": "web/chiway-slo-plan-distilled-{POC,v3-wasc,v4-enriched,v5}.html"
+        },
+        {
+          "label": "target template + concision exemplar",
+          "path": "web/plan-template-blank.html + data/Sample-Schoolwide-Action-Plan-2.extracted.md"
+        },
+        {
+          "label": "authoritative WASC sources + heuristics/extrapolation-license",
+          "path": "docs/wasc-authoritative-sources-research-2026-06-07.md (R-0008) + docs/plan-generation-heuristics.md (R-0009)"
+        },
+        {
+          "label": "the future-automation design this recipe is distinct from",
+          "path": "R-0005 / docs/distillation-transform-design-2026-06-07.md"
+        }
+      ],
+      "grounded_at": "2026-06-19",
+      "stale_conditions": [
+        "an automated distiller (distill.py per R-0005) is built and becomes the production distillation route, demoting this manual dispatched-agent recipe to a fallback",
+        "the target template web/plan-template-blank.html or the Sample-2 register changes",
+        "the coverage floors or the extrapolation license (R-0009) are revised"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-19",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-18T21:51:05.883Z",
+      "oid": "2185d35d48a447d377f10dc4296e50d5",
+      "content_hash": "63e8ad2f387c22f9d4a0adeb79eef3d30664da3bae200fd584145f3d2cf50af4"
+    }
+  ]
+}

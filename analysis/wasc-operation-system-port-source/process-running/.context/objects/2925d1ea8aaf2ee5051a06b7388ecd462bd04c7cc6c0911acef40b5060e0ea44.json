@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T18:30:00Z",
+  "evidence": "FGAP-025/DEC-48 realized: HRT/YGL/Dorm are pure SAO out-of-lesson roles. import_responsibility_atoms extended to bind a Position to a YearGroup via a new optional year_group_code CSV column (resolve by school+code, set on create + backfill existing, fail-loud on unknown). CSV: added the column (blank on all prior rows, 7-field-consistent), removed all 3 Homeroom Teacher teacher-base owner rows, added 4 is_new YGL seats (IG1/IG2/AS/A2 Year Leader, codes ig1/ig2/as/a2) under SAO with out-of-lesson atoms. Orchestrator deleted the 3 stale teacher-base atoms left on the dev-DB HRT seat (additive importer). Adversarial audit: 1 finding (ruff format on the test file) FIXED; re-audit clean. Dev DB verified: 4 YGL seats each year_group-bound + kind=leader; HRT 7 atoms with NO in-lesson atom; Dorm retains residential; all three carry the SAO out-of-lesson defaults; idempotent re-run (0 created, does NOT re-add removed HRT atoms); no collateral (Math Teacher keeps its teacher-base set; no seat emptied). Full gate green: ruff check + ruff format --check (both trees), mypy . 323/0, pytest 3034, make test-js 48/0.",
+  "criteria_results": [
+    {
+      "criterion": "After the seed, four Year Group Leader seats exist - one bound to each year group (IG1/IG2/AS/A2) - each a leadership seat, each carrying the SAO out-of-lesson set.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The Homeroom Teacher seat carries no in-lesson responsibility - only out-of-lesson (SAO).",
+      "status": "passed"
+    },
+    {
+      "criterion": "Dormitory Teacher continues to carry its out-of-lesson responsibility.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No subject-teacher in-lesson responsibility is attached to any HRT/YGL/Dorm seat.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The seed is idempotent (second run changes nothing) and dry-run writes nothing.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green, incl. a test that a year-group-bound leadership seat is created with its year group set.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The four roles surface in the tenant grounding with their out-of-lesson atoms (so a plan can target them).",
+      "status": "passed"
+    }
+  ]
+}

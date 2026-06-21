@@ -1,0 +1,18 @@
+{
+  "title": "Responsibility-atom importer is additive-only: removing an atom/row from the CSV does NOT un-seed it from an already-imported DB",
+  "status": "identified",
+  "package": "school-improvement-plans/school/management/commands/import_responsibility_atoms.py",
+  "description": "The importer is additive + idempotent BY DESIGN (re-runnable materialized-defaults seeder; get_or_create on (owner, statement)). It never deletes. So editing data/chiway-responsibility-atoms-template.csv to REMOVE an atom (or a position's owner row) stops RE-creating it but leaves any previously-imported copy in the DB. Surfaced in FGAP-025/DEC-48: removing the HRT teacher-base atoms from the CSV did not remove them from the already-seeded dev DB; the orchestrator had to delete the 3 stale PositionResponsibility rows directly (a one-time manual correction) to realize the target. The CSV is the source of truth and is now correct, but the importer cannot reconcile the DB to a SHRUNK CSV.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/school/management/commands/import_responsibility_atoms.py",
+      "reference": "_attach_position_atom get_or_create on (position, statement_en) — create-or-dedup only; no prune of atoms absent from the CSV"
+    },
+    {
+      "file": "FGAP-025 / DEC-48",
+      "reference": "removing the HRT in-lesson atoms from the CSV left them in the dev DB; required a direct orchestrator delete of 3 stale rows"
+    }
+  ],
+  "impact": "Any future tenant-data correction that REMOVES an atom/seat via the CSV silently fails to un-seed an already-imported DB — a footgun: the CSV looks authoritative but the DB drifts. Low blast radius today (dev DB, manual correction works), but it makes the CSV non-declarative for removals.",
+  "proposed_resolution": "Decide (human scope) whether the importer should gain a RECONCILE mode (delete, per seat, the materialized atoms no longer present in the CSV for that seat) so the CSV becomes fully declarative — bounded carefully (a partial CSV must not delete legit atoms; likely scoped per-owner-touched, or a separate --prune flag). Alternatively keep it additive and document that removals require a manual DB correction (or a fresh re-seed). Distinct from FGAP-025 (which is closed by the data correction + the year_group extension)."
+}

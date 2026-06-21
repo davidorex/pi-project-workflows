@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 2 (simple-formset fold, TASK-061): planner/services.fold_formset_prefill + planner/tests/test_slice_fold_formset.py (9 tests), branch trio-seam-formset-fold @ 4c9c81a. Verified through the verify-gated loop: IMPL (a6342802) built fold_formset_prefill (list[dict] -> {prefix}-{i}-{field}, REPLACE-mode, prefix==target_step); its own gate-first hazard test caught the REPLACE-scoping bug (criteria-0-measurement-TOTAL_FORMS wrongly deleted by a -\\d+- nested marker) and drove the fix to the no-hyphen field-token rule (^{prefix}-\\d+-[^-]+$). Orchestrator independently ran make verify-slice SLICE=fold_formset exit 0. SEPARATE adversarial audit (a4b80c71): verified the deletion-scope pattern against the REAL field-name space of all 5 simple-formset ModelForms (zero hyphenated field names, no MultiWidget -> every field renders single-segment), confirmed REPLACE clears stale higher rows + empty-list clears + management/nested keys survive, guards reject before mutation, tests non-vacuous (criterion-4 parses real parse_propose_milestones, DB round-trips via PlanDraftState, asserts _draft_state_row_count + _draft_state_milestone_improvement_types) -> Total findings: 0. Done = gate exit 0 AND audit 0 (DEC-58), orchestrator-observed. Full gate: ruff clean; mypy 331; pytest 3239 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Folding a list[dict] formset prefill with a given prefix sets {prefix}-{i}-{field} for each row/field.",
+      "status": "passed",
+      "evidence": "9 slice_fold_formset tests; keys match collectDraftState grammar, consumable by _draft_state_row_count."
+    },
+    {
+      "criterion": "REPLACE clears prior direct rows (incl. stale higher-index) for the prefix; empty-list clears all direct rows.",
+      "status": "passed",
+      "evidence": "3-row then 2-row REPLACE test (row 2 cleared); empty-list test; audit re-ran."
+    },
+    {
+      "criterion": "REPLACE does NOT delete management-form keys ({prefix}-TOTAL_FORMS...) nor nested-child keys (criteria-{i}-measurement-...); preserved untouched.",
+      "status": "passed",
+      "evidence": "Hazard test: criteria-TOTAL_FORMS + criteria-0-measurement-0-channel survive a criteria REPLACE; deletion scope ^{prefix}-\\d+-[^-]+$ verified against the real field space (no hyphenated fields)."
+    },
+    {
+      "criterion": "Folded draft_state is consumable: _draft_state_row_count==len(prefill), milestone improvement_types read in order; round-trips through PlanDraftState.",
+      "status": "passed",
+      "evidence": "criterion-4 test: real D1 prefill -> save_version/load_latest -> build_grounding -> _draft_state_row_count==2, _draft_state_milestone_improvement_types==['ACAD','POLICY']. Non-vacuous (DB round-trip)."
+    },
+    {
+      "criterion": "Pure, no retired-workshop import, raises a clear domain error on a non-list prefill (and non-dict row).",
+      "status": "passed",
+      "evidence": "services.py:127 non-list raise, :135 non-dict-row raise, both before mutation; non-list test asserts draft_state untouched."
+    },
+    {
+      "criterion": "Whole-project gate green; context cascade validates; nothing pre-existing breaks.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=fold_formset exit 0; ruff/mypy 331/pytest 3239/test-js 48/context-validate 0 errors; git diff scoped to the 2 files + .context; gate unweakened."
+    }
+  ]
+}

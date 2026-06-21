@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Slice #9 (FEAT-010, TASK-071): trio final-save + degraded-spec Flag persistence + promote verification. Branch trio-finalize @ 6f0a6d6 (IMPL 60153be + audit-fix 6f0a6d6). Added planner/orchestration.py:run_trio_to_proposed_plan(school, author, draft_id, seed, max_rounds) -> (Plan, residual): run_trio_pass -> run_gate_closure_loop; uses the loop's gate-passing Plan on convergence, else save_draft_state_as_plan on the cap-exhausted path (so a Plan(lifecycle=PROPOSED) ALWAYS exists for the admin); then persists each STILL-degraded spec (its section absent from the FINAL post-closure draft_state, computed via _still_degraded_specs/_spec_section_present/_SPEC_FOOTPRINT keyed off TRIO_SEQUENCE routing) as one MUST_FIX Flag(element_path=spec:<key>, created_by_spec, reason) in a follow-on transaction.atomic. Admin-promote is UNCHANGED+verified: the existing plans/admin/actions.advance_plan_status_action -> advance_plan_status re-runs _check_promotion_gates, which blocks on unresolved MUST_FIX flags (services.py:203-204); the AI never flips lifecycle. Verified through the verify-gated loop: Explore (corroborated: Flag model, the existing promote action, DegradedSpec) -> IMPL 60153be (run_trio_to_proposed_plan + footprint detector + 5 gate-first tests) -> orch-independent gate pass -> adversarial audit (ac9810e) Total findings 2 (a footprint regex collision with nested-child keys; a docstring overclaim of a shared save+flag atomic) -> re-IMPL 6f0a6d6 closed both (tightened the formset footprints to the exclusive direct-row grammar ^{prefix}-\\d+-[^-]+$ for criteria/steps/review_events + a RED->GREEN regression test; corrected the docstring to the true two-transaction structure) -> SEPARATE re-audit (ab67278) Total findings 0 (collision gone AND no over-tightening false-absent, both directions probed; docstring matches code; scope clean; no regression). Done = gate blocking-pass AND audit 0 (DEC-58).",
+  "criteria_results": [
+    {
+      "criterion": "Each spec that remains degraded (section unproduced in the final post-closure draft_state) -> exactly one MUST_FIX Flag (spec key + reason); a spec present (initial or closure-recovered) -> no flag.",
+      "status": "passed",
+      "evidence": "_still_degraded_specs filters the initial degraded list against the final draft_state via the footprint registry; tests gate_required_unrecovered_spec_flags + closure_recovered_spec_produces_no_flag; audit proved non-vacuous (replacing the filter with the raw list makes the recovered-spec test fail) + re-audit verified the tightened footprints reject nested-child keys yet still detect real direct rows."
+    },
+    {
+      "criterion": "A clean trio run (no spec remains degraded) persists ZERO must-fix flags.",
+      "status": "passed",
+      "evidence": "test clean_run_..._no_flags_promotable: Plan(PROPOSED), zero must-fix flags, promotable."
+    },
+    {
+      "criterion": "The composition always yields a saved Plan(PROPOSED): convergence -> the loop's Plan; cap-exhaustion -> the best-effort draft saved anyway carrying flags + residual returned; never dead-ends/aborts.",
+      "status": "passed",
+      "evidence": "audit count probe: convergence +1 Plan (loop's, no duplicate); cap-exhaustion +1 Plan (save_draft_state_as_plan) + residual returned, no raise."
+    },
+    {
+      "criterion": "An unresolved must-fix flag blocks promotion via the existing admin path; resolving it on an otherwise gate-passing Plan lets promotion proceed; the trio path never flips lifecycle.",
+      "status": "passed",
+      "evidence": "blocking half (gate-required spec) + allowing half (US-LLM-27 non-gate-required, flag proven SOLE blocker -> resolve -> promote succeeds); advance_plan_status/_check_promotion_gates unmodified; no plan.lifecycle= in the trio path."
+    },
+    {
+      "criterion": "Re-running does not double-flag a degradation; whole-project gate green + context cascade validates.",
+      "status": "passed",
+      "evidence": "one flag per still-degraded spec (de-duped by spec_key); each run creates a fresh Plan with its own flags; orch-independent make verify-slice SLICE=trio_finalize all blocking checks passed (ruff/mypy/full pytest/test-js); context-validate 0 error-severity."
+    }
+  ]
+}

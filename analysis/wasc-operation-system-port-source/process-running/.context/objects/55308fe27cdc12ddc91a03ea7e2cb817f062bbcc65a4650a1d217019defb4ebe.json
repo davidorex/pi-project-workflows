@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "WORKSHOP FLAGGING A2 - audit_prefill returns flags + the hard/soft partition (combines gap FGAP-003). planner/_freetext_audit.py audit_prefill (:1320-1338) returns a flags list (path, span, verdict from A1, reason) for free-text catalogue-survivors instead of raising; ONLY free-text proper-name survivors become flags - every structural/FK/invariant/index failure STAYS a hard reject. FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes the 12 flag-eligible specs/fields. Depends on TASK-016 (A1 verdict). Parser layer; dependency of the workshop soft-flag apply. Build via the canonical pipeline."
+}

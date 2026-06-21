@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T11:30:00Z",
+  "evidence": "TASK-032 (B2 / R3 -- ideation coheres with mission/vision/SLOs) via the canonical pipeline with full iterate-to-zero. GROUNDED first: the _guiding_statements emitter is live (grounding.py:305-330; SECTION_KEYS:79; build_grounding:439-440), FRAG-gb-guiding-statements pre-exists (.workshopping/prompt-fragment.json:342), and 4 specs (narrative-draft, propose-responsibilities, propose-evidence, propose-accreditation-standards) already wire it end-to-end (proven parity-clean precedent). IMPL 0f13aae: wired guiding_statements into snippets 03/04/05 -- frontmatter grounding_sections + body render block (FRAG-gb-guiding-statements body verbatim) + prompt-spec.json grounding_sections + fragment_refs + 3 spec content_hash re-stamps -- reusing the existing fragment (prompt-fragment.json untouched); placement mirrors the snippet-07 precedent (after learner-outcomes); parity 14/14 + cross-check (a) snippet==spec + cross-check (b) gb-section subset both PASS. EMPIRICAL: 3 fresh opus generations under the new wiring (4 milestones / 6 success-criteria / 6 action-steps). A SEPARATE adversarial audit confirmed: C1 each of the 3 outputs cites >=1 guiding statement (mission clause labels GROUNDED/ROUNDED/UNBOUNDED + vision clauses) AND >=1 learner outcome by catalogued identity, SUBSTANTIVELY (the output advances them, not a name-drop); C2 zero long verbatim guiding-statement quote-dumps (references are by-identity; strand-prefix label citation is the FGAP-032-accepted form, WARN not blocker, per DEC-53); C3 all three PARSE clean against parse_propose_milestones / parse_draft_success_criteria / parse_decompose_action_steps with live Chiway grounding -- no exception, no catalogue-gate raise, no hard fabrication (only benign source=ner/verdict=None soft flags; the DEC-44 LLM-fabrication arm did not execute in the audit env for lack of ANTHROPIC_API_KEY -- environmental, not a defect); C4 parity 14/14. Audit Total findings: 0 BLOCKERS. Advisory (non-blocking): SPEC-propose-responsibilities carries a pre-existing stale content_hash (recomputes differently; byte-identical at HEAD~1, unrelated to this commit; FGAP-027 content_hash-staleness class -- recorded in LOG for a future sweep); benign soft-NER flags; DEC-44 LLM validator unavailable in audit env. Scope: 3 snippets + .workshopping/prompt-spec.json only; grounding.py / parsers / prompt-fragment.json / preamble / .context untouched.",
+  "criteria_results": [
+    {
+      "criterion": "Each of the three ideation outputs cites at least one guiding statement and at least one learner outcome by catalogued identity (machine-checked present), and an adversarial reviewer confirms the citation is substantive (the output advances them) for all three.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The scan finds zero bare strand-prefix references and zero long verbatim guiding-statement quotes.",
+      "status": "passed"
+    },
+    {
+      "criterion": "All three outputs parse clean with no new fabrication flags.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The parity check passes after the grounding section is added to these specs.",
+      "status": "passed"
+    }
+  ]
+}

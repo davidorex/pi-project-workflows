@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if division_responsibility_atoms %}The school's responsibility inventory (choose each atom by copying its owner and its EXACT statement from this list):\n{% for d in division_responsibility_atoms %}- Division \"{{ d.label }}\"{% if d.scope_summary %} ({{ d.scope_summary }}){% endif %}\n{% if d.responsibilities %}  Division responsibilities:\n{% for r in d.responsibilities %}  - {{ r.statement }}\n{% endfor %}{% endif %}{% if d.positions %}  Positions under this division:\n{% for p in d.positions %}  - Position \"{{ p.label }}\"{% if p.responsibilities %}, responsibilities:\n{% for r in p.responsibilities %}    - {{ r.statement }}\n{% endfor %}{% endif %}\n{% endfor %}{% endif %}{% endfor %}{% endif %}",
+  "section": "division_responsibility_atoms"
+}

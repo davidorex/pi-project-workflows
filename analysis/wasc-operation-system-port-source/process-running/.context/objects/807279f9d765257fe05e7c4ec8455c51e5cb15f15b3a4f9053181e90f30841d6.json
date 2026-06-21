@@ -1,0 +1,11 @@
+{
+  "title": "Runner ctx.cwd value: project root vs substrate root",
+  "status": "enacted",
+  "context": "Runner ctx.cwd value: the project root vs the substrate root — fix per where the run blocks/paths resolve.",
+  "decision": "ctx.cwd is the wasc project root. The workflow .workflows discovery and run-dirs/artifacts belong in the project, not a substrate dir; the workflow uses no native block steps; command steps handle their own Django cd, uv, and DATABASE_URL.",
+  "consequences": [
+    "Determines path/block resolution semantics for every workflow step."
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-06-04T22:30:00Z"
+}

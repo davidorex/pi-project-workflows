@@ -1,0 +1,26 @@
+{
+  "title": "Tenant responsibility-atom data does not realize the DEC-48 SAO out-of-lesson roles: YGL absent, HRT carries a misplaced in-lesson atom",
+  "status": "closed",
+  "package": "data/chiway-responsibility-atoms-template.csv + school/management/commands/import_responsibility_atoms.py + grounding",
+  "description": "DEC-48 settles that HRT, YGL, and Dormitory Teacher are PURE SAO roles for planning (targeted only in-role, never as the individual subject teachers who fill them; the in-lesson responsibility belongs to the subject-teacher seat). The tenant data does not realize this: (1) YGL (Year Group Leader) is ABSENT from the responsibility-atom seed entirely, though the Position model supports it (year_group FK explicitly for 'AS/A2/IG1/IG2 Year Leader' + kind=LEADER; YearGroups seeded by migration 0046: IG1/IG2/AS/A2). (2) The Homeroom Teacher seat carries a MISPLACED atom 'Take primary responsibility for developing the school-wide learner outcomes... in every lesson - 100% in-class time' (CSV line ~60) — that is the subject-teacher seat's in-lesson responsibility, not the HRT seat's; per DEC-48 it must be removed so the HRT seat carries only SAO out-of-lesson atoms. (3) Dormitory Teacher is present under SAO with its residential out-of-lesson atom (correct). CONSEQUENCE: the generated plan draft cannot target these out-of-lesson pastoral roles correctly — the distiller-input audit found the draft dropped HRT/Dorm and lacks YGL, so out-of-lesson SLO ownership is unrepresentable. All three must sit under the SAO division carrying the SAO out-of-lesson responsibility set; YGL is per year group.",
+  "evidence": [
+    {
+      "file": "data/chiway-responsibility-atoms-template.csv",
+      "reference": ":60-62 Homeroom Teacher atoms incl. the misplaced in-lesson one; :105 Dormitory Teacher; NO YGL/Year Group Leader rows (grep: 0)"
+    },
+    {
+      "file": "school-improvement-plans/school/models/person.py",
+      "reference": "Position.year_group FK + kind=LEADER explicitly for 'AS/A2/IG1/IG2 Year Leader' — YGL is model-supported"
+    },
+    {
+      "file": "school-improvement-plans/school/migrations/0046_seed_year_groups.py",
+      "reference": "YearGroups seeded: IG1/IG2/AS/A2"
+    },
+    {
+      "file": "/tmp/final-complete-draft.json",
+      "reference": "distiller-input audit: HRT 0 in position layer, YGL 0, Dorm 0 — out-of-lesson roles absent from the generated draft"
+    }
+  ],
+  "impact": "Out-of-lesson pastoral SLO ownership (the direct out-of-lesson student-interaction party per DEC-48) is not representable in generated plans. Blocks the school-wide-coverage + in/out-of-class heuristics (R-0009) and a faithful plan; the SAO out-of-lesson dimension is structurally thin.",
+  "proposed_resolution": "Mode-B data change via the canonical pipeline: in data/chiway-responsibility-atoms-template.csv, (a) remove the misplaced in-lesson atom from the Homeroom Teacher seat, leaving only SAO out-of-lesson atoms; (b) add YGL (Year Group Leader) — per year group IG1/IG2/AS/A2 (year_group-bound, kind=LEADER) under SAO, with SAO out-of-lesson year-group pastoral/SLO atoms; (c) confirm HRT + Dorm + YGL all carry the SAO out-of-lesson set under the SAO division. Then re-run import_responsibility_atoms against the dev DB + re-ground; verify the three roles appear with their out-of-lesson atoms and no in-lesson atom on the HRT/YGL/Dorm seats. Whether YGL needs a YearGroup-bound Position (vs a single seat) + the importer's handling of year_group-bound positions is a load-bearing fact to verify in the plan's explore step."
+}

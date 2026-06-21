@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 4 (per-step-children fold, TASK-064): planner/services.fold_per_step_child_prefill + planner/tests/test_slice_fold_stepchild.py (24 tests), branch trio-seam-stepchild-fold (ada93c3 build, 1dc75d3 round-2). Verified through the verify-gated loop: IMPL (a83d50c5) built the generic per-step-child fold (single-row F2/F3 + multi-row F4 resource+substep/F5 evidence/US-LLM-27 responsibility+position_responsibility -> steps-{step_index}-{segment}-{k}-{field}; substep strings -> SubStepForm description; per-(step,segment) REPLACE; atomic). Orchestrator ran make verify-slice SLICE=fold_stepchild exit 0. SEPARATE adversarial audit (ac9255d1) Total findings: 2 (F1 docstring/code divergence: empty substep string folded despite a non-empty docstring claim; F2 intra-call duplicate step_index silently last-wins-clobbered earlier rows). IMPL round-2 (a031002e, 1dc75d3): F1 -> non-empty/non-whitespace guard in the str branch; F2 -> seen_step_indices dedup in the atomic pre-validation raising on a duplicate step_index before mutation; both RED-proven on round-1. Orchestrator re-ran the gate exit 0. Re-audit (a51f8ffb) Total findings: 0 (both resolved non-vacuously, atomic, per-call-not-cross-call dedup, no false positives, no over-correction). Done = gate exit 0 AND audit 0 (DEC-58). Full gate: ruff clean; mypy 334; pytest 3289 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Single-row -> steps-{step_index}-{segment}-0-{field}; multi-row -> steps-{step_index}-{segment}-{k}-{field} from the named nested list.",
+      "status": "passed",
+      "evidence": "24 slice tests; single-row F2/F3 + multi-row F4/F5/US-LLM-27 verified; substep strings -> description."
+    },
+    {
+      "criterion": "step_index + pk/index refs stored unchanged (not resolved at fold).",
+      "status": "passed",
+      "evidence": "step_index keyed as the index not row position; pk/rationale as-is; non-contiguous step_index probed."
+    },
+    {
+      "criterion": "REPLACE per (step_index, segment) without clobbering step scalars, other segments, management forms, or other steps.",
+      "status": "passed",
+      "evidence": "REPLACE + isolation tests; scope ^steps-{i}-{segment}-\\d+-[^-]+$."
+    },
+    {
+      "criterion": "responsibility vs position_responsibility collision-safe.",
+      "status": "passed",
+      "evidence": "two-grain collision test both directions; regex probe confirms no cross-match."
+    },
+    {
+      "criterion": "Atomic on guard failure; clear domain error on malformed prefill incl. empty substep string + duplicate step_index.",
+      "status": "passed",
+      "evidence": "all guards pre-mutation; draft_state untouched on failure; F1+F2 guards added round-2, RED-proven."
+    },
+    {
+      "criterion": "Round-trips through PlanDraftState; gate green; context cascade validates.",
+      "status": "passed",
+      "evidence": "round-trip test; make verify-slice SLICE=fold_stepchild exit 0; ruff/mypy 334/pytest 3289/test-js 48/context-validate 0 errors; diff scoped; gate unweakened."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "title": "SLO descriptions are 6/7 EMPTY in the tenant data — the grounding emits a description field with no substance to apply",
+  "status": "identified",
+  "package": "tenant SLO (LearnerOutcome) data + the seed/import that populates it",
+  "description": "LearnerOutcome.description is blank for 6 of the 7 Chiway SLOs (only 'Confident' is populated; Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, Responsible are empty). grounding.py _learner_outcomes emits {code,label,description} to the specs, but with 6/7 descriptions empty the LLM has no substantive meaning to apply -- it can name the SLO but cannot reason about what (e.g.) 'Responsible' or 'Compassionate' requires of an actor. This is a primary cause (with DEC-51's model + spec layers) of the plan staying meta ('map work to SLOs') instead of operationalizing each SLO per actor. A data gap, fixable like the HRT/YGL responsibility seeding.",
+  "evidence": [
+    {
+      "file": "dev DB probe",
+      "reference": "LearnerOutcome.objects.filter(school=chiway): 7 SLOs, 1 with non-empty description; Confident='Shows self-assurance in learning and communicating...'; the other 6 blank"
+    },
+    {
+      "file": "school-improvement-plans/ai/services/grounding.py",
+      "reference": "_learner_outcomes emits {code,label,description} -- description carried but mostly empty"
+    }
+  ],
+  "impact": "Even with a good seed + the model links (DEC-51) + spec rewrites, the LLM cannot apply SLOs it has no description for. The plan's SLO content stays generic because 6/7 SLOs have no machine-readable meaning. Blocks DEC-51's per-actor SLO operationalization at the data layer.",
+  "proposed_resolution": "Populate LearnerOutcome.description for all 7 SLOs (the substantive meaning of each, in the school's voice) via the SLO seed/import (the same data-seeding path as the responsibility atoms); set the base (en) field, leave zh-hans per the EN-only convention. Then re-ground. Verify all 7 carry a non-empty description. Likely human-authored content (the school's real SLO definitions)."
+}

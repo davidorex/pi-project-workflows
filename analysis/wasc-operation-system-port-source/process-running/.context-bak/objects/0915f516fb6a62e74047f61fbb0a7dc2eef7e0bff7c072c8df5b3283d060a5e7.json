@@ -1,0 +1,5 @@
+{
+  "description": "Do not favor deferring discovered issues to an unknown future. If a new issue or bug is found whose neglect creates architectural debt, do NOT claim it is out of scope. User decides scope.",
+  "enforcement": "manual",
+  "severity": "error"
+}

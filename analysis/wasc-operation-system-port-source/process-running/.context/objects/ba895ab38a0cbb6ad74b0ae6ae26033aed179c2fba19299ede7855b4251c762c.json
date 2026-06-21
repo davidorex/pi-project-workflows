@@ -1,0 +1,22 @@
+{
+  "title": "Generation leaks ALL-CAPS SLO-group names (GROUNDED/ROUNDED/UNBOUNDED) into plan prose",
+  "status": "wontfix",
+  "package": "prompt-workshop/shared/preamble.md (strand-name register rule) + generation",
+  "description": "A fresh guarded generation of narrative-draft (under the TASK-027 preamble) AND the committed prompt-workshop/outputs/current-draft.json both write the SLO group names in ALL-CAPS (GROUNDED, ROUNDED, UNBOUNDED) in plan.rationale / plan.provenance; check_draft Check 2 flags 6 strand-prefix hits. The existing preamble rule (the 'Reference learner outcomes and guiding clauses by their identity' paragraph: 'never write the bare GROUNDED:/ROUNDED:/UNBOUNDED: prefix as the reference') targets the COLON form and is a soft clause; the all-caps no-colon listing slips through. The school's groups are named Grounded/Rounded/Unbounded -- legitimate in normal case ('the Grounded outcomes'), a register leak in all-caps. This is NOT a process-method term (TASK-027 / R1 Check 1 = 0); it is a register leak under the pre-existing strand-prefix rule, surfaced by the harness.",
+  "evidence": [
+    {
+      "file": "/tmp/fresh-narrative.json (fresh narrative-draft generation under the TASK-027 preamble)",
+      "reference": "check_draft Check 2 = 6 hits: plan.rationale + plan.provenance each carry GROUNDED/ROUNDED/UNBOUNDED all-caps"
+    },
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "same leak in plan.provenance (predates TASK-027)"
+    },
+    {
+      "file": "prompt-workshop/shared/preamble.md",
+      "reference": "the guiding-clause-identity paragraph bans the bare 'GROUNDED:' colon prefix but not the all-caps no-colon listing"
+    }
+  ],
+  "impact": "Generated plans carry raw all-caps catalogue prefixes instead of natural prose ('the Grounded outcomes'); off-register; the harness hard-fails Check 2 on it. Adjacent to the FEAT-008 register work (R2 / the preamble register rules).",
+  "proposed_resolution": "Strengthen the strand-name register rule: instruct writing SLO group names in normal case ('the Grounded outcomes'), never all-caps and never the bare prefix; cover the no-colon all-caps form, not only 'GROUNDED:'. Verify via a fresh generation scanning check_draft Check 2 = 0. Folds into the FEAT-008 register pass (adjacent to TASK-028/R2; a small preamble-rule strengthening)."
+}

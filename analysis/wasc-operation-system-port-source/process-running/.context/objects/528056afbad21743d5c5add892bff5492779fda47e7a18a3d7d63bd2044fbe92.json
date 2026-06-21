@@ -1,0 +1,12 @@
+{
+  "title": "Structural: ACS-WASC per-Goal HEADER layer (model + parser + grounding + spec)",
+  "status": "proposed",
+  "layer": "L3",
+  "description": "Relocated from FEAT-005 criterion 7 (it is NOT a prompt bake): the authoritative ACS-WASC per-Goal header fields do not exist in the model/parser today (verified: plans/models/plan.py has current/desired/rationale/theme/priority but NO supporting_data / measurable_growth_targets / gap_closure_strategies / monitor / report). Net-new structural feature: extend the Plan model (or a GoalHeader model) + parser contract + grounding emitter + a draft spec to carry the per-Goal header layer, per R-0008 + R-0010. Larger, multi-day; reconcile measurable_growth_targets with the KPI exclusion (DEC-40/specs.py:33-34). Sequenced after FEAT-005's prompt slices.",
+  "acceptance_criteria": [
+    "The plan model + parser carry the ACS-WASC per-Goal header fields: rationale + supporting data, measurable growth targets, SLO/critical-need linkage, gap-closure strategies, monitor, report.",
+    "A generation spec drafts the per-Goal header from grounding; the parser validates it; the canonical render displays it.",
+    "measurable growth targets reconcile with the KPI exclusion (quantified outcomes vs standalone KPIs).",
+    "The full project gate stays green; the per-Goal header appears in a generated + rendered draft."
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "spec_key": "propose-domain-alignment",
+  "order": 2,
+  "target_step": "basics",
+  "preview_mode": "alignment-formsets",
+  "grounding_sections": [
+    "school",
+    "learner_outcomes",
+    "areas_for_improvement",
+    "stakeholder_groups",
+    "policies",
+    "draft_state"
+  ],
+  "deps": [
+    "narrative-draft"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-domain-alignment-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-domain-alignment-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-domain-alignment-2",
+    "FRAG-gb-seed-select",
+    "FRAG-intro-propose-domain-alignment-3",
+    "FRAG-gb-learner-outcomes-choose",
+    "FRAG-intro-propose-domain-alignment-4",
+    "FRAG-gb-areas-for-improvement-choose",
+    "FRAG-intro-propose-domain-alignment-5",
+    "FRAG-gb-stakeholder-groups-choose",
+    "FRAG-intro-propose-domain-alignment-6",
+    "FRAG-gb-policies-choose",
+    "FRAG-intro-propose-domain-alignment-7",
+    "FRAG-gb-draft-state-prose",
+    "FRAG-intro-propose-domain-alignment-8",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-domain-alignment"
+  ],
+  "parser": "parse_propose_domain_alignment",
+  "source_migration": "ai/migrations/0016_update_propose_domain_alignment_rationale.py",
+  "output_schema": "shared/schemas/propose-domain-alignment.schema.json"
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Workshop apply.py MERGE_RULES silently drop assignments/timelines/evidence (field names mismatch the parser prefill)",
+  "status": "closed",
+  "package": "prompt-workshop/dispatch/apply.py",
+  "description": "apply.py's per-step MERGE_RULES overlay field names that do not match the parser prefill keys for 3 of the 5 step-iterating specs, so the overlay copies nothing (silent no-op) and the workshop draft loses that per-step data. Confirmed against run ...092307: _merge_assignments fields=('assignments',) but parse_propose_assignments prefill row = {step_index, responsible_division} -> draft-after-propose-assignments step0 assignments=[]. _merge_timelines fields=('timeline','start_date','end_date') but prefill = {step_index, kind, date|from_date|to_date} -> empty. _merge_evidence fields=('evidence_artifacts',) but prefill = {step_index, evidence:[...]} -> empty. _merge_step_resources (resources, substeps) + _merge_responsibilities (division_responsibilities, position_responsibilities) MATCH -> work. The agents generated and the parser parsed full content for all three (apply_*.json status=merged, parsed array[6] with responsible_division / kind+dates / evidence labels), but _set_indexed_field_on_steps (apply.py:83, copies row[f] for f in fields) found none of the named fields. apply reports 'merged' despite copying zero -> silent.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/apply.py",
+      "reference": ":113-140 _merge_assignments/_merge_timelines/_merge_evidence fields vs :83 _set_indexed_field_on_steps copies row[f]"
+    },
+    {
+      "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-092307-0c56/outputs/apply_propose_assignments.json",
+      "reference": "parsed[0] keys [step_index, responsible_division]; timelines [step_index,kind,date]; evidence [step_index,evidence] -- none match the merge fields"
+    },
+    {
+      "file": "(out_dir)/draft-after-propose-assignments.json",
+      "reference": "step0 assignments=[] at the assignments step itself (merge no-op proven); final draft steps have no assignments/timeline/evidence_artifacts"
+    }
+  ],
+  "impact": "The first complete whole-plan draft (run ...092307) has every action step missing its assignment (responsible division), timeline (dates), and evidence artifacts -- a third of the per-step detail -- though all were generated + parsed. Any draft-quality/promotion-readiness evaluation on workshop output is reading an incomplete draft. Production merges via the AssistStreamView form-prefill (a different code path, likely unaffected), but apply.py is the DISC-26 evaluation surface and is meant to mirror production (DEC-41).",
+  "proposed_resolution": "Align each MERGE_RULE's fields with the parser prefill keys + the draft's canonical step-field names: assignments -> map responsible_division onto the step's assignment field; timelines -> copy kind + date/from_date/to_date; evidence -> map evidence onto evidence_artifacts. Add a guard so a MERGE_RULE that copies zero fields from a non-empty prefill row raises (not a silent no-op) -- this class hid because status stayed 'merged'. Re-run to confirm the steps carry assignments/timelines/evidence."
+}

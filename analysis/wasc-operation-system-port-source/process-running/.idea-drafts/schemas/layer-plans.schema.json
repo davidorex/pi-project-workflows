@@ -1,0 +1,252 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/layer-plans",
+  "version": "1.0.1",
+  "title": "Layer Restructure Plans",
+  "description": "Plans for restructuring the .project/ directory from flat-block storage into a layered artifact-ownership model. Each plan names its conceptual source (e.g. Muni five-layer), describes each layer's purpose and its current-vs-target block mapping, and sequences the enactment into phases with exit criteria. Layer plans are themselves L2 specification-layer artifacts — they are spec-level decisions about how the framework organizes project state.",
+  "type": "object",
+  "required": [
+    "plans"
+  ],
+  "properties": {
+    "plans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "status",
+          "model",
+          "layers",
+          "migration_phases",
+          "created_by",
+          "created_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^PLAN-\\d{3}$"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "proposed",
+              "decided",
+              "in-progress",
+              "complete",
+              "abandoned"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "description": "Conceptual source — e.g. 'Muni five-layer'"
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "layers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "name",
+                "purpose",
+                "current_blocks",
+                "target_blocks"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "purpose": {
+                  "type": "string",
+                  "x-prompt-budget": {
+                    "tokens": 1000,
+                    "words": 800
+                  }
+                },
+                "canonical_vocabulary": {
+                  "type": "string"
+                },
+                "lifetime": {
+                  "type": "string",
+                  "description": "Cadence at which this layer changes — project-lifetime, per-design-cycle, per-iteration, per-session, ever-accumulating"
+                },
+                "ownership_principle": {
+                  "type": "string",
+                  "x-prompt-budget": {
+                    "tokens": 1000,
+                    "words": 800
+                  }
+                },
+                "current_blocks": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "target_blocks": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "name",
+                      "shape"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "shape": {
+                        "type": "string",
+                        "description": "flat | nested | materialized-view"
+                      },
+                      "notes": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "migration_phases": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "name",
+                "description",
+                "depends_on",
+                "exit_criteria"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string",
+                  "x-prompt-budget": {
+                    "tokens": 1000,
+                    "words": 800
+                  }
+                },
+                "depends_on": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "exit_criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "x-prompt-budget": {
+                      "tokens": 1000,
+                      "words": 800
+                    }
+                  }
+                },
+                "produces": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "in-progress",
+                    "complete",
+                    "blocked"
+                  ]
+                }
+              }
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    }
+  },
+  "x-lifecycle": {
+    "field": "status",
+    "states": [
+      "draft",
+      "proposed",
+      "decided",
+      "in-progress",
+      "complete",
+      "abandoned"
+    ],
+    "transitions": [
+      {
+        "from": "draft",
+        "to": "proposed",
+        "required_authority": "any"
+      },
+      {
+        "from": "proposed",
+        "to": "decided",
+        "required_authority": "user"
+      },
+      {
+        "from": "decided",
+        "to": "in-progress",
+        "required_authority": "any"
+      },
+      {
+        "from": "in-progress",
+        "to": "complete",
+        "required_authority": "any"
+      },
+      {
+        "from": "draft",
+        "to": "abandoned",
+        "required_authority": "user"
+      }
+    ]
+  }
+}

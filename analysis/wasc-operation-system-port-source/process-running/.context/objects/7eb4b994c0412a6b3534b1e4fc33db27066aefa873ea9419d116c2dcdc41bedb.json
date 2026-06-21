@@ -1,0 +1,5 @@
+{
+  "description": "A gap the user records is a work item to be addressed. Never append 'scope decision for the user / not an autopilot change / surfaced per mandate-007' hedging. State the resolution directly.",
+  "enforcement": "manual",
+  "severity": "error"
+}

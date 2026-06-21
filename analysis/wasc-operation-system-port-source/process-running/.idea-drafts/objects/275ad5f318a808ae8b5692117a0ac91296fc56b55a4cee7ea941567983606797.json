@@ -1,0 +1,16 @@
+{
+  "title": "AI-orchestrated WASC plan generation on pi-context (substrate-native, no Django)",
+  "status": "proposed",
+  "layer": "L4",
+  "description": "Generate a WASC schoolwide-improvement plan as pi-context substrate, with the canonical-shape doc as the deliverable, and no Django in the loop. The flow: the user states end-state + current condition in pi; that is composed with the school's catalogue atoms (the grounding) and the generation prompt; the model generates the plan as substrate block items + edges, schema-validated on write; the promotion-ready plan renders to the canonical .doc as the output artifact. The substrate is the system of record (no Django Plan materialization); the canonical doc is render(substrate); a leaner render of the same substrate is the grounding composed into the generation prompt; a prior promotion-ready plan's canonical render can serve as the few-shot exemplar for the next generation. The three pi extensions map onto the stack: pi-context = the plan model + catalogues + promotion-gate-as-invariants + content-addressed versioned saves; pi-workflows = the dependency-ordered generation DAG (agent steps, block writes, output.schema + error-injecting retry as the parser-gate-and-self-correct, monitor steps as the semantic fabrication check, loop/gate to the promotion gate, checkpoint/resume); pi-agent-dispatch = the deterministic real-checks (no LLM self-report) + the bounded human-OK-retry work-order loop + attested commits.",
+  "motivation": "Realizes the DEC-29 north-star (an AI-orchestrated, promotion-ready complete draft) natively: it is the Mode-C workshop / orchestration-trio loop run on the substrate in pi rather than as a Django service. The Django parsers become block JSON Schemas + workflow retry; the structured anti-fabrication becomes referential integrity on catalogue edges; the promotion gate becomes requires-edge invariants; the orchestration trio becomes a pi-workflow + the work-order loop.",
+  "acceptance_criteria": [
+    "The user's stated situation plus the school's catalogue atoms compose the generation input; no Django involved.",
+    "Generation produces the plan as substrate block items + edges, schema-validated on each write.",
+    "Anti-fabrication is structural: targeting edges must resolve to catalogue items (referential integrity), with a monitor step for the semantic (prose-smuggled) fabrication case.",
+    "The promotion gate is the conjunction of requires-edge invariants holding (context-validate clean).",
+    "The deliverable is a canonical-shape doc rendered from the plan substrate via per-item macros (a workflow artifact).",
+    "Versioned, walkable-back saves are content_parent chains; fine-tuning is an agent-mediated substrate-edit loop (render → human directs → schema-validated edit → re-render).",
+    "Per-school catalogues are reference blocks (a per-tenant substrate), referenced by foreign edge — the tenant-onboarding direction."
+  ]
+}

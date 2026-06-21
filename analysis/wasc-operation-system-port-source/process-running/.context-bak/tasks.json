@@ -1,0 +1,94 @@
+{
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "status": "completed",
+      "description": "Implement the file:// engine loader (executeWorkflow / parseWorkflowSpec / findIncompleteRun / createAgentLoader from dist/, per SURFACE §1)."
+    },
+    {
+      "id": "TASK-002",
+      "status": "completed",
+      "description": "Implement run (findWorkflow -> parse -> executeWorkflow + auto-resume)."
+    },
+    {
+      "id": "TASK-003",
+      "status": "completed",
+      "description": "Implement resume (explicit runId, fail-loud)."
+    },
+    {
+      "id": "TASK-004",
+      "status": "completed",
+      "description": "Implement status + list."
+    },
+    {
+      "id": "TASK-005",
+      "status": "completed",
+      "description": "Implement the flag envelope (--cwd/--json/--yes/--writer) + bin exit-code shim + auth gate."
+    },
+    {
+      "id": "TASK-006",
+      "status": "completed",
+      "description": "Build the headless ctx + no-op pi literals (SURFACE §3)."
+    },
+    {
+      "id": "TASK-007",
+      "status": "completed",
+      "description": "[CONDITIONAL on the agent-step-scope decision (DEC-0003)] agent-step pre-flight: pi-on-PATH + model-backend check + clear precondition error."
+    },
+    {
+      "id": "TASK-008",
+      "status": "completed",
+      "description": "Implement render_from_substrate.py (read .workshopping, resolve fragment_refs, build_grounding + PromptSanitizer + Django Template, emit JSON; per SPEC §5)."
+    },
+    {
+      "id": "TASK-009",
+      "status": "completed",
+      "description": "Implement apply_from_substrate.py (rebuild grounding, run production parser, write a NEW versioned draft file, emit JSON; per SPEC §5 + §5a)."
+    },
+    {
+      "id": "TASK-010",
+      "status": "planned",
+      "description": "Write the workflow YAML: per-spec render->call->apply, object agent input {prompt:…}, output:{format:json} on commands, | shell for JSON args, draft_path threading (SPEC §4)."
+    },
+    {
+      "id": "TASK-011",
+      "status": "planned",
+      "description": "Run the 14-spec sequence headless against the Chiway dev-DB (preconditions: green 14/14 verify-render-parity, Postgres+DATABASE_URL, pi+backend if agent steps); capture the run dir."
+    },
+    {
+      "id": "TASK-012",
+      "status": "planned",
+      "description": "Per-spec quality evaluation toward a promotion-ready whole-plan draft (the substantive DISC-26 work)."
+    },
+    {
+      "status": "completed",
+      "description": "Global catalogue-gate fix so no DB-enumerated entity is rejected (planner/_freetext_audit.py only; no grounding.py change, no migration). Three closures: (1) COMPLETENESS - pull framing_vocabularies + priority_tiers into the union (CatalogueUnion fields + _string_set key=label + union-merge src tuple + return + PhraseMatcher sources); (2) VARIANT TOLERANCE + (3) SCHOOL SHORT FORM via one precomputed union_collapsed set: a _collapse_normalize helper (article/possessive strip + collapse hyphen/underscore/whitespace runs + casefold), union_collapsed = collapse of every union entry UNION collapse of every >=2-token contiguous prefix of each self.school entry; admits gains a single union_collapsed membership check before return False. Preserve fabrication rejection. Regression/tolerance/short-form/completeness/fabrication tests in test_freetext_audit.py. Fixes issue-001. DEC-45 stands (no MissionArea, no sub-token).",
+      "id": "TASK-013"
+    },
+    {
+      "status": "planned",
+      "description": "WORKSHOP FLAGGING W1 - draft flags channel (combines gap issue-005 / B1). Add a top-level flags channel to the workshop draft: _EMPTY_DRAFT (prompt-workshop/dispatch/_workshop.py:215-243); the 14 MERGE_RULES (apply.py:51-215) PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (a setdefault(flags,[]) guard at the apply entry or per-rule preservation); flatten_draft_for_grounding (_workshop.py:466-584) SKIPS flags from the production draft_state projection exactly as it skips meta (:577-582). Independently buildable + unit-testable now (no parser A-layer dependency). Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+      "id": "TASK-014"
+    },
+    {
+      "status": "planned",
+      "description": "WORKSHOP FLAGGING W2 - soft-flag apply path (combines gap issue-006 / B2). apply.py (:295-361) + apply_from_substrate.py (:113-152): on a soft-flag parser return (prefill + flags, no hard raise), merge the prefill, record the flags into the draft flags channel (TASK-014), set the capture/result-envelope validation status to flagged, emit flags in the JSON, and EXIT 0 (not 1) so the 14-spec sequence runs to completion accumulating flags (run_workflow.mjs:478 treats exit 0 as continue) - the iteration accelerator; hard rejects still exit 1. Depends on TASK-014 (draft channel) and on the parser A-layer (issue-002/003/004: AssistResult.flags + audit_prefill returns flags) to PRODUCE the soft-flag return: end-to-end verification needs the A-layer; unit-testable now via a mocked parser-returns-flags. Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+      "id": "TASK-015"
+    },
+    {
+      "status": "planned",
+      "description": "WORKSHOP FLAGGING A1 - surface DEC-44 verdicts (combines gap issue-002). planner/_llm_fabrication_validator.py validate_candidates (:83) returns the 3-way verdict per span (fabricated | catalogue-variant | ordinary-prose) instead of filtering to fabricated only (:144), so callers route catalogue-variant->FLAG, ordinary-prose->admit, fabricated->reject-or-flag. Base of the parser flag-classification chain; a dependency of the workshop soft-flag apply (TASK-015). Three-valued flagging model, parser layer. Build via the canonical pipeline.",
+      "id": "TASK-016"
+    },
+    {
+      "status": "planned",
+      "description": "WORKSHOP FLAGGING A2 - audit_prefill returns flags + the hard/soft partition (combines gap issue-003). planner/_freetext_audit.py audit_prefill (:1320-1338) returns a flags list (path, span, verdict from A1, reason) for free-text catalogue-survivors instead of raising; ONLY free-text proper-name survivors become flags - every structural/FK/invariant/index failure STAYS a hard reject. FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes the 12 flag-eligible specs/fields. Depends on TASK-016 (A1 verdict). Parser layer; dependency of the workshop soft-flag apply. Build via the canonical pipeline.",
+      "id": "TASK-017"
+    },
+    {
+      "status": "planned",
+      "description": "WORKSHOP FLAGGING A3 - AssistResult.flags + the 12 parsers populate it (combines gap issue-004). planner/assist.py AssistResult (:33-57) gains an optional flags field; the 12 free-text parsers in specs.py collect the audit_prefill flags (A2) and attach them to the returned AssistResult while still raising on the hard-reject classes; the bare-return narrative parser gets the same carrier. Produces the soft-flag return the workshop apply (TASK-015) records. Depends on TASK-017 (A2). Parser layer; the load-bearing dependency of the workshop soft-flag apply. Build via the canonical pipeline.",
+      "id": "TASK-018"
+    }
+  ]
+}

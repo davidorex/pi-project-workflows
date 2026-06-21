@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY one key:\n- \"steps\": a JSON array. Each element is an object giving one step its resources and sub-steps:\n  - \"step_index\": a 0-based integer index of an action step listed above (required).\n  - \"resources\": a NON-EMPTY JSON array of resource objects (required — every step needs at least one). Each object is:\n    - \"kind\": one of \"time\", \"financial\", \"human\", \"external\", \"platform\" (required).\n    - \"note\": a free-text string describing the ask (any amount/quantity goes here).\n  - \"substeps\": an OPTIONAL JSON array of non-empty description strings (the sub-step order is the array order). Use an empty array or omit the key when there is no breakdown.\n\nEvery step needs at least one resource. Sub-steps are optional. Use only step indices that exist above. No extra keys, no nested objects beyond this shape, no markdown.\n"
+}

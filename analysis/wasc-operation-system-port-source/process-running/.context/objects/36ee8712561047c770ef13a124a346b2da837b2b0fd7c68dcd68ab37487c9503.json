@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Implement the file:// engine loader (executeWorkflow / parseWorkflowSpec / findIncompleteRun / createAgentLoader from dist/, per SURFACE §1)."
+}

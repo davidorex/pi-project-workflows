@@ -1,0 +1,11 @@
+{
+  "status": "in-progress",
+  "description": "T3 -- Coverage as an authored property: every improvement area in the school's universe is either targeted or recorded as an explicit not-this-cycle gap, via a generation-time mandate + a per-spec in-execution self-check, with a discrete draft representation for acknowledged gaps (FGAP-033, the coverage regression).",
+  "acceptance_criteria": [
+    "During generation of the alignment/narrative step(s), the step's self-check fails when any improvement area in the school's universe is neither targeted nor recorded as an explicit gap, and passes when each is one or the other -- demonstrated on an input that would otherwise drop an area.",
+    "An acknowledged not-this-cycle gap is stored in the draft as a discrete recorded element (not only incidental prose), and the self-check reads that element -- demonstrated.",
+    "Over a full assembled draft, every improvement area in the school's universe is either targeted or recorded as an explicit gap (zero silently absent), confirmed by the whole-draft coverage check run over all specs combined.",
+    "Over the same draft, every learner outcome in the school's universe is targeted or recorded as an explicit gap.",
+    "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the distribution and review-cadence checks do not move from pass to fail."
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nYou help a school author assign a responsible division to each action step of a WASC schoolwide improvement plan. You are given the plan's draft so far: a list of action steps the author has already drafted. Your job is to decide, for EACH action step, which ONE division is responsible for carrying it out — the unit accountable for the work. Choose the single most-fitting division from the list of divisions provided below. Ground only in the facts provided; do not invent steps or divisions that are not present, and refer to a division only by a label from the provided list.\n"
+}

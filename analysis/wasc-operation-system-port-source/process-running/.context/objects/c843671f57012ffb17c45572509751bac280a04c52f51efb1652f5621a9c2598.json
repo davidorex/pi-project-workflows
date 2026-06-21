@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "FGAP-034: the substrate-driven apply path runs the same in-execution structural self-check as the orchestrator-driven apply path, so the structural gates (coverage, distribution, and future checks) are enforced uniformly across both apply attach points.",
+  "acceptance_criteria": [
+    "The substrate-driven apply path runs the same in-execution structural self-check as the orchestrator-driven apply path: a structural failure causes a nonzero exit and the output is not written; demonstrated on an input that fails a structural check.",
+    "A structurally-passing input is written by the substrate path; demonstrated.",
+    "Both apply attach points enforce the same structural checks; confirmed.",
+    "No previously-passing check moves from passing to failing: outputs parse, the project gate is green, and the existing apply tests stay passing."
+  ]
+}

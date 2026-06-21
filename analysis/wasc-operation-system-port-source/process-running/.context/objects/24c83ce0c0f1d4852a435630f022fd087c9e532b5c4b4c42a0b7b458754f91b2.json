@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "description": "FEAT-005 Slice A (prompt-only): bake the plan-quality register + content heuristics into the generation prompts (snippets + shared preamble, snippet<->substrate lockstep). Carry the R-0009/R-0007 heuristics into snippets 01/05/06/13 + the preamble: distributed ownership + diversity + HOW-mechanism per step (05/06), bilingual dual-purpose (05/06), standards as key+name (13), no cert-risk meta + Theme=title (preamble/01). The other FEAT-005 slices (B in/out-of-class grounding, C grounding-leanness, D measurement-binding gate) and the relocated criterion 7 (FEAT-007) are separate.",
+  "acceptance_criteria": [
+    "Generated action steps distribute ownership across the divisions/positions whose responsibilities justify them; no single division/role owns a disproportionate share.",
+    "Each action step states its mechanism (HOW it is carried out).",
+    "Action steps span diverse focus areas (multiple improvement types/areas), not one concentrated focus.",
+    "Relevant actions carry bilingual (Chinese-English) dual-purpose framing where the school's bilingual SLO supports it.",
+    "A WASC standard is referenced as key + name ('C1: School Culture'); descriptions never meta-invoke WASC certification/accreditation risk; Theme reads as a title, not success-criteria narrative.",
+    "Snippet<->substrate render parity stays 14/14; verbatim catalogue-label fidelity preserved; the full project gate stays green.",
+    "A re-render (or re-run) of the affected specs against the Chiway grounding shows these qualities present in the generated output."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-12T11:00:00Z",
+  "evidence": "TASK-042 (T5 -- complete the transposition audit + the sim-finding->enforcement map) via the canonical pipeline. A no-prejudice audit Explore produced the initial map + the two determinations; ITERATE-TO-ZERO across 4 adversarial-audit rounds completed it (r1 surfaced bilingual measurement strand + decision-requests + out-of-class ownership; r2 surfaced stakeholder-communications + fractal/refraction + 2 run-002 measurement-quality disciplines; r3 surfaced the front-load step-3 precursor/dependency-identification discipline; r4 = a section-by-section sweep of sim-revised-frame + R-0009 returning 0 blockers). DETERMINATION 1 (three-view measurement, criterion 1): PARTIAL -- student outcomes + staff/adult practice present in the assembled current-draft.json; parent/stakeholder ABSENT (feedback_channels = Students/Staff/Leadership only; parents only a one-off communication audience) -> filed FGAP-037. DETERMINATION 2 (learning-designed action steps, criterion 2): MET -- all 6 action_steps embody recall->active-task->check->reflect, none transmission-only, no scaffolding labels (per-step evidence). THE MAP (criterion 3): docs/transposition-enforcement-map-2026-06-12.md rows every validated sim-land discipline (R1-R8 + no-framework-terms / learning-designed-contact-type / three-view / coverage / distribution / cadence / register / coherence / out-of-class / stakeholder-comms / fractal-refraction / measurement-quality / bilingual-strand / decision-requests / front-load-precursor / options-posture + DEC-54 infra) against {generation contract / in-execution check / post-hoc check / absent}. DISPOSITION (criterion 4): 8 gaps filed -- FGAP-034 (apply_from_substrate ungated 2nd attach point), 035 (authored-gap reason not free-text-scanned), 036 (decompose dedup table stale post-B2), 037 (three-view parent track), 038 (review-cadence lacks per-spec in-execution gate), 039 (bilingual measurement strand not produced/gated), 040 (decision-requests not transposed; couple TASK-035), 041 (front-load precursor/dependency-identification not transposed); plus accept-with-reason (R1/R2/option-design/contact-type -> language WARN per DEC-53; R3 coherence + R5 register + fractal + measurement-quality -> qualitative/adversarial-judged; R8 options-posture -> TASK-035; out-of-class -> satisfied; stakeholder-comms -> produced + FGAP-037 for the material hole) + dual-enforced (R6 distribution, R7 coverage). Final audit Total findings: 0 BLOCKERS (one cosmetic doc-typo fixed). Read-only/audit task: no corpus/parser change. The remaining in-execution-gate gaps (FGAP-037 three-view, FGAP-038 cadence, FGAP-039 bilingual) are the FGAP-033-family follow-on fixes (T3/T4 pattern); the infra/metadata gaps (034/035/036) + the decision-surfaces (040/041) are independent.",
+  "criteria_results": [
+    {
+      "criterion": "A recorded determination states, with evidence from the assembled draft, whether three-view measurement (student outcomes, staff practice, parent/stakeholder) is present across the draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A recorded determination states, with evidence from the assembled draft, whether every action step embodies the recall-then-task-then-check-then-reflect shape and none is transmission-only.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A map exists listing every validated sim-land finding against whether it is enforced as a generation contract, an in-execution check, a post-hoc check, or is absent.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Every finding the map marks check-only or absent is either resolved (made a generation contract plus an in-execution check) or filed as a discrete .context gap with its evidence -- none left without a disposition.",
+      "status": "passed"
+    }
+  ]
+}

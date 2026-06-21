@@ -1,0 +1,10 @@
+{
+  "title": "First run + per-spec quality iteration -> promotion-ready draft (DISC-26 closure)",
+  "status": "in-progress",
+  "layer": "L3",
+  "description": "Execute the sequence end-to-end and iterate per-spec quality to a promotion-ready whole-plan draft, closing DISC-26.",
+  "acceptance_criteria": [
+    "14-spec sequence runs headless against the Chiway dev-DB; run dir captured",
+    "per-spec quality evaluation yields a promotion-ready whole-plan draft"
+  ]
+}

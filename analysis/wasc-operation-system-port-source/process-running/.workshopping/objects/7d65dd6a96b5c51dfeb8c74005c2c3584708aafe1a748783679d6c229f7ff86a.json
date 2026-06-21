@@ -1,0 +1,48 @@
+{
+  "spec_key": "decompose-action-steps",
+  "order": 5,
+  "target_step": "steps",
+  "preview_mode": "fields",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "improvement_types",
+    "planning_methods",
+    "areas_for_improvement",
+    "learner_outcomes",
+    "stakeholder_groups",
+    "divisions",
+    "policies",
+    "draft_state"
+  ],
+  "deps": [
+    "propose-milestones"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-decompose-action-steps-0",
+    "FRAG-preamble",
+    "FRAG-intro-decompose-action-steps-1",
+    "FRAG-gb-school",
+    "FRAG-gb-cycle",
+    "FRAG-intro-decompose-action-steps-2",
+    "FRAG-gb-seed-steps",
+    "FRAG-intro-decompose-action-steps-3",
+    "FRAG-gb-draft-state-method",
+    "FRAG-intro-decompose-action-steps-4",
+    "FRAG-gb-improvement-types-inplay",
+    "FRAG-gb-areas-for-improvement",
+    "FRAG-gb-learner-outcomes",
+    "FRAG-intro-decompose-action-steps-5",
+    "FRAG-gb-planning-methods-recipes",
+    "FRAG-intro-decompose-action-steps-6",
+    "FRAG-gb-stakeholder-groups-enumerated",
+    "FRAG-gb-divisions-full",
+    "FRAG-gb-policies",
+    "FRAG-intro-decompose-action-steps-7",
+    "FRAG-output-contract-header-en",
+    "FRAG-contract-decompose-action-steps"
+  ],
+  "parser": "parse_decompose_action_steps",
+  "source_migration": "ai/migrations/0004_seed_decompose_action_steps_template.py",
+  "output_schema": "shared/schemas/decompose-action-steps.schema.json"
+}

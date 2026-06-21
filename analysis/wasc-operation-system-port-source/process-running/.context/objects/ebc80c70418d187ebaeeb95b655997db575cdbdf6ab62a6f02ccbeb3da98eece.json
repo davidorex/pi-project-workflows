@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Slice 8b (FEAT-010, TASK-070, US-LLM-25): the gate-closure loop. Branch trio-gate-closure @ 4c567a8. Added planner/orchestration.py:run_gate_closure_loop(draft_state, *, school, author, seed, max_rounds=DEFAULT_GATE_CLOSURE_MAX_ROUNDS=4) + _probe_gate (transaction.atomic + _ProbeRollbackError so each probe save+gate persists NOTHING) + _GATE_FAILURE_SPEC_RULES (substring->spec mapping) + _map_failures_to_specs (partitions the gate's ValidationError messages into spec_keys + residual). Per round: probe-save+gate+rollback -> unmet messages -> map -> re-invoke each producing spec via _run_one_spec against the current draft_state + re-fold (REPLACE-scoped) in TRIO_SEQUENCE order (C1 before B2) -> re-probe; on a passing probe, ONE real committed save -> the gate-passing Plan(lifecycle=PROPOSED); on cap-exhaustion / all-residual -> (None, draft_state, residual) with NO raise/abort/unbounded loop. Continue/stop is the DETERMINISTIC gate (DEC-58). Verified through the verify-gated loop: Explore (gate-closure area) -- which I CORRECTED: it wrongly claimed no spec produces communications; corroborated vs source that G1 propose-review-loop produces communications+review_events+inputs+revision_rules (specs.py:3760-3781), so every gate predicate is spec-closable except cycle (save-derived) + the Phase-14 clean()/flag conditionals (residual). IMPL (4c567a8) gate-first (5 tests) -> orchestrator-independent gate 'all blocking checks passed' -> SEPARATE adversarial audit (aa12fa0) Total findings 0: cross-checked ALL 24 gate messages -> correct producer mapping/no collisions; orphan probe Plan.count 0->0 cap-exhausted & +1 converged (rollback sound, sentinel doesn't leak); cap-exhaustion F1 re-invoked exactly 4==cap then residual no-raise; non-vacuity (forced-empty B1 re-invoke -> no convergence); clean()/_post_clean violation -> raises in the probe -> caught + returned residual, no crash/orphan; re-invoke-that-raises folds nothing + advances; scope = orchestration.py + the test only, no lifecycle flip / no Flag writes / no edits to _check_promotion_gates|advance_plan_status|save internals. Done = gate blocking-pass AND audit 0 (DEC-58).",
+  "criteria_results": [
+    {
+      "criterion": "A draft_state failing one or more spec-closable promotion-gate predicates is brought by the loop to a saved Plan(lifecycle=PROPOSED) that PASSES _check_promotion_gates.",
+      "status": "passed",
+      "evidence": "slice test drops criteria -> loop re-invokes B1+C1+B2 -> saved Plan passes the gate, SuccessCriterion.count()==1, lifecycle==PROPOSED; audit proved non-vacuous (forced-empty B1 re-invoke -> plan None + residual)."
+    },
+    {
+      "criterion": "The loop terminates deterministically: bounded by a hard max-rounds cap; on cap-exhaustion with the gate still failing returns residual messages without aborting, raising, or unbounded looping.",
+      "status": "passed",
+      "evidence": "DEFAULT_GATE_CLOSURE_MAX_ROUNDS=4; audit's F1-never-satisfiable probe re-invoked exactly 4 times then returned (None, state, residual), no raise."
+    },
+    {
+      "criterion": "A predicate no trio spec can close (no active cycle; Phase-14 clean()/flag) is reported residual, not retried; a spec-closable predicate is not misreported residual.",
+      "status": "passed",
+      "evidence": "audit cross-checked all 24 gate messages: every spec-closable -> correct producer (binding -> C1+B2; review-loop -> G1); the 3 non-closable (cycle / clean() 'Required when priority deviates...' / must-fix-flag) -> residual; no-cycle + clean() tests confirm zero LLM calls."
+    },
+    {
+      "criterion": "The iteration leaves no orphan/partial Plan rows; does NOT change plan.lifecycle; does NOT write Flag rows.",
+      "status": "passed",
+      "evidence": "audit DB counts: Plan.count unchanged after a 4-round cap-exhausted run, +1 after a converging run; _ProbeRollbackError rollback sound + doesn't leak; scope grep: no advance_plan_status / plan.lifecycle= / Flag( in the added code."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates.",
+      "status": "passed",
+      "evidence": "orchestrator-independent make verify-slice SLICE=gate_closure -> all blocking checks passed (ruff/mypy/full pytest/test-js); pi-context context-validate 0 error-severity."
+    }
+  ]
+}

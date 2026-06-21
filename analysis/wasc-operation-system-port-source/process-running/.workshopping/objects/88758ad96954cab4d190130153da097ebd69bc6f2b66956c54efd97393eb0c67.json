@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if cycle %}The active improvement cycle runs from {{ cycle.starts_on }} to {{ cycle.ends_on }}. Propose dates within this window where sensible.{% endif %}",
+  "section": "cycle"
+}

@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nFor EACH success criterion, decide which feedback channel(s) measure it:\n- Use the criterion's 0-based create-order index as \"criterion_index\".\n- List the 0-based create-order index/es of the measuring channel(s) as \"channel_indices\".\n- Bind a criterion to MORE THAN ONE channel when several channels together provide its evidence.\n- OMIT a criterion entirely (do not emit a binding for it) when no drafted channel fits — never invent a channel.\n- Use ONLY indices that exist in the draft above. Do not refer to a criterion or channel index that is not listed.\n\nOUTPUT CONTRACT (follow exactly):"
+}

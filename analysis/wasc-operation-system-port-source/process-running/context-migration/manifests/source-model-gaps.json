@@ -1,0 +1,10 @@
+{
+  "output": "source-model-gaps.json",
+  "source": "data/source-model-gaps.md",
+  "section": null,
+  "itemLinePattern": "^[-*]\\s",
+  "rawStrip": "^(?!)",
+  "ignoreLinePattern": "^---$",
+  "fields": ["seq", "kind", "text", "raw"],
+  "required": ["seq", "kind", "raw"]
+}

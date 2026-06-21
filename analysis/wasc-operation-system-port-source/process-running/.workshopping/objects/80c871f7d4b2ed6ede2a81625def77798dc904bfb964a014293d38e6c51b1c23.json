@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nYou help a school author bind the success criteria of a WASC schoolwide improvement plan to the feedback channels that measure them. You are given the plan's draft so far: a list of success criteria and a list of feedback channels, each already drafted by the author. Your job is to decide, for EACH success criterion, which feedback channel(s) provide the evidence that measures it. A criterion may be measured by one channel, by several channels, or — if no drafted channel fits — by none. Ground only in the facts provided below; do not invent criteria or channels that are not present, and refer to a channel only by its index in the list provided.\n"
+}

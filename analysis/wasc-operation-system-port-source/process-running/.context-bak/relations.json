@@ -1,0 +1,795 @@
+[
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8940a44f24c3464d13f59305554b97ab",
+      "refname": "SESSION-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4bd9c4b2cc8c49de47989eaf1b5af24c",
+      "refname": "SESSION-001"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "DEC-0001",
+      "refname": "DEC-0001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "DEC-0002",
+      "refname": "DEC-0002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "DEC-0003",
+      "refname": "DEC-0003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "DEC-0001",
+      "refname": "DEC-0001"
+    },
+    "relation_type": "feature_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "DEC-0002",
+      "refname": "DEC-0002"
+    },
+    "relation_type": "feature_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "DEC-0003",
+      "refname": "DEC-0003"
+    },
+    "relation_type": "feature_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-003",
+      "refname": "FEAT-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-003",
+      "refname": "FEAT-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-002",
+      "refname": "FEAT-002"
+    },
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-004",
+      "refname": "FEAT-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "FEAT-003",
+      "refname": "FEAT-003"
+    },
+    "relation_type": "feature_depends_on_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-001",
+      "refname": "STORY-001"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-002",
+      "refname": "STORY-002"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-001",
+      "refname": "FEAT-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-003",
+      "refname": "STORY-003"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-002",
+      "refname": "FEAT-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-004",
+      "refname": "STORY-004"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-002",
+      "refname": "FEAT-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-005",
+      "refname": "STORY-005"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-003",
+      "refname": "FEAT-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-006",
+      "refname": "STORY-006"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "FEAT-004",
+      "refname": "FEAT-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "STORY-007",
+      "refname": "STORY-007"
+    },
+    "relation_type": "feature_contains_story"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-001",
+      "refname": "STORY-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-001",
+      "refname": "TASK-001"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-002",
+      "refname": "STORY-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-002",
+      "refname": "TASK-002"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-002",
+      "refname": "STORY-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-003",
+      "refname": "TASK-003"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-002",
+      "refname": "STORY-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-004",
+      "refname": "TASK-004"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-002",
+      "refname": "STORY-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-005",
+      "refname": "TASK-005"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-003",
+      "refname": "STORY-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-006",
+      "refname": "TASK-006"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-003",
+      "refname": "STORY-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-007",
+      "refname": "TASK-007"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-004",
+      "refname": "STORY-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-008",
+      "refname": "TASK-008"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-005",
+      "refname": "STORY-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-009",
+      "refname": "TASK-009"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-006",
+      "refname": "STORY-006"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-010",
+      "refname": "TASK-010"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-007",
+      "refname": "STORY-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "STORY-007",
+      "refname": "STORY-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-012",
+      "refname": "TASK-012"
+    },
+    "relation_type": "story_contains_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-010",
+      "refname": "TASK-010"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-008",
+      "refname": "TASK-008"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-009",
+      "refname": "TASK-009"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-002",
+      "refname": "TASK-002"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-012",
+      "refname": "TASK-012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-001",
+      "refname": "TASK-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-002",
+      "refname": "TASK-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-003",
+      "refname": "TASK-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-004",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-005",
+      "refname": "TASK-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-006",
+      "refname": "TASK-006"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-007",
+      "refname": "TASK-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-008",
+      "refname": "TASK-008"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-009",
+      "refname": "TASK-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-010",
+      "refname": "TASK-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-011",
+      "refname": "TASK-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-012",
+      "refname": "TASK-012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "PHASE-PROMPTWORKSHOP-RUNNER",
+      "refname": "PHASE-PROMPTWORKSHOP-RUNNER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-007",
+      "refname": "TASK-007"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "DEC-0003",
+      "refname": "DEC-0003"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-001",
+      "refname": "TASK-001"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-002",
+      "refname": "TASK-002"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-003",
+      "refname": "TASK-003"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-004",
+      "refname": "TASK-004"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-005",
+      "refname": "TASK-005"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-006",
+      "refname": "TASK-006"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-001",
+      "refname": "VER-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-007",
+      "refname": "TASK-007"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-002",
+      "refname": "VER-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-008",
+      "refname": "TASK-008"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-002",
+      "refname": "VER-002"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-009",
+      "refname": "TASK-009"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "VER-003",
+      "refname": "VER-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-013",
+      "refname": "TASK-013"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-015",
+      "refname": "TASK-015"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-014",
+      "refname": "TASK-014"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-017",
+      "refname": "TASK-017"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-016",
+      "refname": "TASK-016"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-018",
+      "refname": "TASK-018"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-017",
+      "refname": "TASK-017"
+    },
+    "relation_type": "task_depends_on_task"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "TASK-015",
+      "refname": "TASK-015"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "TASK-018",
+      "refname": "TASK-018"
+    },
+    "relation_type": "task_depends_on_task"
+  }
+]

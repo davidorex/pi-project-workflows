@@ -1,0 +1,11 @@
+{
+  "unit_kind": "verification",
+  "description": "Execution bundle for a verification: the items it verifies (out). verification_verifies_item stores parent=verification -> child=item, so the verified items resolve as descendants.",
+  "bundle_relation_types": [
+    {
+      "relation_type": "verification_verifies_item",
+      "direction": "out",
+      "max_depth": 1
+    }
+  ]
+}

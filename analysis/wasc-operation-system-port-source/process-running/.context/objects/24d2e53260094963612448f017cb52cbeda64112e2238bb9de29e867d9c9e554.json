@@ -1,0 +1,11 @@
+{
+  "title": "Runner v1 agent-step scope: agent steps in v1 vs command/transform/gate-only first",
+  "status": "enacted",
+  "context": "Runner v1 agent-step scope: support agent steps in v1 (requires the pi-on-PATH + model-backend pre-flight) vs ship command/transform/gate-only first and add agent support later.",
+  "decision": "Agent steps in v1. The workflow call leg is an agent step (14 across the sequence); a command/transform/gate-only runner cannot run the workshop. TASK-007 (pi-on-PATH plus model-backend pre-flight) is in scope. Agent dispatch is runtime-verified (A6).",
+  "consequences": [
+    "Gates whether the agent-step pre-flight task is in v1 scope (the conditional task)."
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-06-04T22:30:00Z"
+}

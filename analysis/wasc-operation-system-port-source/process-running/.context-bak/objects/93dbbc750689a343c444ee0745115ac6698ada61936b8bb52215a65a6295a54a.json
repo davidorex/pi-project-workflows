@@ -1,0 +1,5 @@
+{
+  "description": "Never present manual implementation as an option. Manual implementation bypasses workflow tooling. Only happens at explicit user direction, never as LLM-suggested alternative.",
+  "enforcement": "manual",
+  "severity": "error"
+}

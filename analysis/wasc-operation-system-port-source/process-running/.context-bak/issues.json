@@ -1,0 +1,104 @@
+{
+  "issues": [
+    {
+      "title": "Catalogue-gate false-rejects DB-enumerated entities (completeness + variant tolerance + school short form)",
+      "body": "The free-text catalogue-gate (planner/_freetext_audit.py CatalogueUnion/build_catalogue_union/admits) false-rejects values that ARE enumerated in the school DB; it must reject only genuine fabrications. Three modes (Explore live-probe, current-source-verified): (a) COMPLETENESS - framing_vocabularies and priority_tiers are emitted by build_grounding (SECTION_KEYS, builders grounding.py:111/:118) but absent from the union src tuple (_freetext_audit.py:653-668), so their labels (e.g. Student-focused, High) are false-rejected; both models live (school/models/framing.py:26, priority_tier.py:23, no delete migration). (b) VARIANT - admits is exact union_casefold membership (+ -es/-s plural strip) with no hyphen/space/underscore/case collapse, so any formatting variant of any enumerated entity is false-rejected. (c) SHORT FORM - the school brand stem (Chiway-Repton, a token-prefix of Chiway Repton School Xiamen) is false-rejected. Fix (global, pure code, no migration, planner/_freetext_audit.py only): pull the two sections into the union; add a _collapse_normalize helper + a precomputed union_collapsed set (every entry collapse + every >=2-token contiguous prefix of the school name/slug); admits gains one union_collapsed membership check. Preserve fabrication rejection (a name whose collapse matches no entry/prefix still rejects). DEC-45 stands: MissionArea deleted, Caring not enumerated and correctly rejected; no sub-token matching. Surfaced in FEAT-002 apply-smoke; user directive: think globally, no enumerated-from-DB entity is rejected.",
+      "location": "school-improvement-plans/planner/_freetext_audit.py:529-551 (admits); :653-668 (union src tuple); :486-488 (_normalize_for_catalogue)",
+      "status": "resolved",
+      "category": "issue",
+      "priority": "high",
+      "package": "planner",
+      "source": "workflow",
+      "id": "issue-001",
+      "resolved_by": "Global fix in planner/_freetext_audit.py (TASK-013/VER-003): framing_vocabularies+priority_tiers pulled into the union+PhraseMatcher; _collapse_normalize helper + precomputed union_collapsed (collapse of every entry + every >=2-token contiguous prefix of school name/slug); admits gains one union_collapsed membership check. No DB-enumerated entity is rejected; fabrications still reject. Committed on main."
+    },
+    {
+      "title": "FLAG-MODEL A1: surface DEC-44 verdicts (catalogue-variant/ordinary-prose), not just fabricated",
+      "body": "The DEC-44 LLM fabrication validator (planner/_llm_fabrication_validator.py:83 validate_candidates) already classifies each candidate proper-name span into fabricated | catalogue-variant | ordinary-prose (the system prompt defines all three at :68 and :198), but :144 filters the return to verdict==fabricated only, discarding catalogue-variant and ordinary-prose. The three-valued validation model needs the verdict propagated: catalogue-variant -> FLAG (admit-with-annotation, not reject), ordinary-prose -> admit, fabricated -> reject-or-flag. Change validate_candidates to return (span, verdict) pairs so callers can route by verdict. Verified live + wired (called from _freetext_audit.py:972). Atomic gap in the three-valued (accept/flag/hard-reject) flagging model.",
+      "location": "school-improvement-plans/planner/_llm_fabrication_validator.py:83-145",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "planner",
+      "source": "workflow",
+      "id": "issue-002"
+    },
+    {
+      "title": "FLAG-MODEL A2: audit_prefill returns flags for catalogue-survivors instead of raising; structural/FK/invariant stay hard-reject",
+      "body": "audit_prefill (planner/_freetext_audit.py:1320-1338) currently raises ValueError on the first non-empty free-text survivors list, which the parsers propagate as a hard reject (apply exits non-zero, workflow halts). The three-valued model needs this single class - free-text proper-name survivors from the catalogue gate - to become a FLAG (admit-with-annotation) rather than a hard reject. audit_prefill should return a flags list (path, span, verdict from A1, reason) instead of raising. This is the load-bearing HARD/SOFT PARTITION: ONLY free-text catalogue-survivors become flags; every structural failure (unparseable JSON, missing/extra keys, wrong types, gates), coded-FK failure (improvement_type/planning_method/division/position/standard/frequency/timing/kind/enum), index/range check, and cross-field invariant (type-method, per-kind date rules, target-iff-kind, verbatim statement match) STAYS a hard reject (data unmergeable). FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes which 12 of 14 specs/fields are free-text (flag-eligible); B2/F2 have none. Atomic gap; depends on A1.",
+      "location": "school-improvement-plans/planner/_freetext_audit.py:1301-1338",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "planner",
+      "source": "workflow",
+      "id": "issue-003"
+    },
+    {
+      "title": "FLAG-MODEL A3: AssistResult gains a flags field; the 12 free-text parsers populate it",
+      "body": "AssistResult (planner/assist.py:33-57) carries only prefill + optional note. Add an optional flags field (list of {path, span, verdict, severity, message}). The 12 free-text parsers in planner/specs.py (all except B2 bind-measurement-channels and F2 propose-assignments, per FREETEXT_SELECTORS_BY_SPEC) currently call audit_prefill expecting it to raise; they must instead collect the flags it returns (A2) and attach them to the returned AssistResult, while still raising on the hard-reject classes. parse_narrative (A1) returns a bare dict today, so the narrative parser also needs the AssistResult(+flags) shape or an equivalent carrier. Bare-return parsers normalize through views.py / apply, so a flags channel must thread there too (see C2/B2). Atomic gap; depends on A2.",
+      "location": "school-improvement-plans/planner/assist.py:33-57; planner/specs.py (12 audit_prefill call sites)",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "planner",
+      "source": "workflow",
+      "id": "issue-004"
+    },
+    {
+      "title": "FLAG-MODEL B1: workshop draft gains a flags channel (preserved across the chain, skipped by flatten)",
+      "body": "The workshop draft (_EMPTY_DRAFT, prompt-workshop/dispatch/_workshop.py:215-243) has 15 top-level keys (meta/plan/milestones/.../responsibilities) and NO annotation channel. Add a top-level flags channel. Two threading requirements: (1) the 14 MERGE_RULES (apply.py:51-215) each mutate one draft section and none touch flags - they must PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (e.g. a setdefault(flags,[]) guard at the apply entry, or per-rule preservation); (2) flatten_draft_for_grounding (_workshop.py:466-584) must SKIP flags from the production draft_state projection exactly as it already skips meta (:577-582) - flags are workshop/review annotation, not a form field collectDraftState emits. Atomic gap; pairs with B2.",
+      "location": "school-improvement-plans/prompt-workshop/dispatch/_workshop.py:215-243,466-584; apply.py:51-215",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "prompt-workshop",
+      "source": "workflow",
+      "id": "issue-005"
+    },
+    {
+      "title": "FLAG-MODEL B2: apply records flags + exits 0 (not 1) on soft-flag; capture/result envelope carry flags",
+      "body": "Both apply paths hard-halt on the parser today: apply.py:295-300 and apply_from_substrate.py:113-121 catch any parse exception and return 1 (workflow halts at that step; run_workflow.mjs:478 treats exit 1 as halt, exit 0 as continue). For a soft-flag outcome (A2/A3 - the parser returned prefill + flags, no hard raise), apply must: merge the prefill, record the flags into the draft flags channel (B1), set the capture/envelope validation status to flagged (apply.py capture :346-361 hardcodes schema_validation:passed; apply_from_substrate result envelope :143-152 has status:merged), include the flags in the emitted JSON, and EXIT 0 so the 14-spec sequence runs to completion accumulating flags. Hard rejects still exit 1 (halt). THIS IS THE ACCELERATION: the sequence completes in one pass producing a whole draft + a flag batch, instead of halting at the first catalogue-survivor. Atomic gap; depends on A3, B1.",
+      "location": "school-improvement-plans/prompt-workshop/dispatch/apply.py:295-361; apply_from_substrate.py:113-152; run_workflow.mjs:478",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "prompt-workshop",
+      "source": "workflow",
+      "id": "issue-006"
+    },
+    {
+      "title": "FLAG-MODEL C1: a Flag model on Plan (net-new) to persist human-review annotations",
+      "body": "There is NO flag/annotation model in production (verified: no class Flag in plans/models/; ReviewEvent/ReviewEventInput/RevisionRule are the plans built-in review loop, and ActionStepImpediment is orthogonal per services.py - none are draft-element validation annotations). Net-new: a Flag model FK to Plan (CASCADE), carrying element_path (e.g. criteria-1-measurement-0, matching the formset-row addressing collectDraftState/_formset.html use), severity (must_fix | should_review | informational), message, verdict (from A1), is_resolved (default False), created_by_spec, created_at. This is the production-side persistence the workshop draft flags channel (B1) maps onto when the orchestration trio (US-LLM-23/24/25, currently UNBUILT) lands. Requires a DB migration. Atomic gap; prerequisite for C2/C3.",
+      "location": "school-improvement-plans/plans/models/ (net-new Flag model + migration)",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "plans",
+      "source": "workflow",
+      "id": "issue-007"
+    },
+    {
+      "title": "FLAG-MODEL C2: assist response carries flags; client renders inline badges + resolution UX",
+      "body": "AssistStreamView (planner/views.py:404) streams SSE; the result frame (:506) normalizes AssistResult to {prefill, note}; the error frame (:508) carries {error}. The client (planner/static/wizard/js/ai-assist.js) applies prefill DIRECTLY on the result frame (no approval gate) and shows event:error in the status line. For the three-valued model: (1) views.py must include the parser flags (A3) in the result-frame payload alongside prefill/note; (2) ai-assist.js must route a flags payload to attach per-element annotations to the affected .planner-fs-row rows (_formset.html:15/30/45 carry data-row index) - a badge/highlight; (3) a flag-resolution affordance per flagged element: accept (keep + acknowledge), replace (pick a catalogued value), or request-catalogue-addition (admin task). This is the DISC-30/DISC-31 UX-layer closure (admin sees an actionable signal, not event:error). All net-new. Atomic gap; depends on A3 (+ C1 if resolution persists to the Flag model).",
+      "location": "school-improvement-plans/planner/views.py:404-513; planner/static/wizard/js/ai-assist.js; planner/templates/planner/_formset.html",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "planner",
+      "source": "workflow",
+      "id": "issue-008"
+    },
+    {
+      "title": "FLAG-MODEL C3: promotion-gate predicate - zero unresolved must-fix flags",
+      "body": "_check_promotion_gates (plans/services.py:98-203) aggregates all promotion predicates into a failures list and is invoked by advance_plan_status (:206) only on the transition to Lifecycle.ACTIVE (proposed->active). It currently checks no flags (no Flag model exists). Add a predicate: if the Plan has any Flag with severity=must_fix and is_resolved=False, append a failure (block promotion until resolved/accepted). This is the contract shift the three-valued model implies: enforcement moves from generation-time hard-reject to promotion-time flag-resolution, so the DEC-29 promotion-ready predicate becomes zero-unresolved-must-fix-flags. Depends on C1 (Flag model). Atomic gap.",
+      "location": "school-improvement-plans/plans/services.py:98-225",
+      "status": "open",
+      "category": "capability",
+      "priority": "medium",
+      "package": "plans",
+      "source": "workflow",
+      "id": "issue-009"
+    }
+  ]
+}

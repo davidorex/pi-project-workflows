@@ -1,0 +1,150 @@
+{
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Engine reachability + runner home (file:// loader)",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:23.985Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.355Z",
+      "oid": "4ea94cb9ac24f2797afaf70196bc3f93",
+      "content_hash": "22802b330731a61dbe69a1e6a42330054d561069e00280d21fecfab0512d7ae1"
+    },
+    {
+      "id": "STORY-002",
+      "title": "CLI surface: run / resume / status / list",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:30.262Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.476Z",
+      "oid": "141a00016fe4067f0dcb75255057778e",
+      "content_hash": "bfb5fa496e063756409242e3ea48f3847668c849644e289aa3a158a310dc5327"
+    },
+    {
+      "id": "STORY-003",
+      "title": "Headless ctx/pi + agent-step pre-flight",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:37.310Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.598Z",
+      "oid": "d39b7fb3b656fb140ff9c6ada493cdee",
+      "content_hash": "600bdc76fe1e7ac53c0c32a14bc2d8500caa14f04b1408a839ea505717274b4e"
+    },
+    {
+      "id": "STORY-004",
+      "title": "render_from_substrate.py",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:44.305Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T21:50:35.711Z",
+      "oid": "65d96ad8cbf5d469404a2db932b9743d",
+      "content_hash": "79c751d2b8a2675bdc3fbb66cf4cea3c046f9690f83e7c3af561f2293cb40264"
+    },
+    {
+      "id": "STORY-005",
+      "title": "apply_from_substrate.py",
+      "status": "complete",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:52.445Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T21:50:43.604Z",
+      "oid": "58f6f0199c26bd472d376004349b07ec",
+      "content_hash": "9025ef293789816f6d792fdc46a35ce209ef3275f88cb711f132fb6da474a00f"
+    },
+    {
+      "id": "STORY-006",
+      "title": "Author the 14-spec workflow YAML",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:16:59.084Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T13:16:59.084Z",
+      "oid": "f6c0c900dd64bef1e760eb619ca20ce7",
+      "content_hash": "3e04b56e9482b5af4ca9d08ea35819b5bb02fb42c5a9ec075ac746ff6fb62222"
+    },
+    {
+      "id": "STORY-007",
+      "title": "Run the sequence + per-spec quality evaluation",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T13:17:05.806Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T13:17:05.806Z",
+      "oid": "bee977241b08fc90d8d869c8628586ac",
+      "content_hash": "fbf5099f66efe8506c1b000e00dcfdbaaa72a95f4d7760cbc5473b4aa4d38a6c"
+    },
+    {
+      "id": "STORY-008",
+      "title": "A -- Cross-cutting render & output rules (the shared preamble)",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T07:32:53.274Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-09T07:32:53.274Z",
+      "oid": "421bdf4b4b62842973948de6a227a40d",
+      "content_hash": "f19b807cf90b68960de631d337e4c99fc91ce6d4f33ca58bf653579968f08c5d"
+    },
+    {
+      "id": "STORY-009",
+      "title": "B -- Spec-specific finding incorporations (specs 03/04/05/14)",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T07:32:53.399Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-09T07:32:53.399Z",
+      "oid": "7442c685621c22a8017278c4e9f3c4ea",
+      "content_hash": "e0b340efd8781ef79cd7cd15f8133e762c1c0803173fa1aa768031ec2621efe7"
+    },
+    {
+      "id": "STORY-010",
+      "title": "C -- Whole-draft validation & standing-decision records",
+      "status": "proposed",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T07:32:53.520Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-09T07:32:53.520Z",
+      "oid": "beb14438d9b8f2f631dec82cbd9b8d72",
+      "content_hash": "2acb9ecb4ad5f3b3fad26869561344ccd8c7006737d37e736d7ad3a05e06e018"
+    },
+    {
+      "id": "STORY-011",
+      "title": "T5-surfaced gap closure -> T6 capstone",
+      "status": "proposed",
+      "description": "Close the eight gaps the T5 transposition audit surfaced (FGAP-034..041), each as a task with binary criteria, BEFORE the T6 capstone run (TASK-043) so T6 is one clean full-sequence run. Three FGAP-033-family in-execution gates: three-view measurement (FGAP-037), review-cadence (FGAP-038), bilingual strand (FGAP-039). Two transposition-completion generation builds: front-load precursor identification (FGAP-041), decision-requests (FGAP-040, in-draft coverage-class per DEC-0005). Three infra/enforcement-uniformity fixes: apply_from_substrate gate (FGAP-034), gap-reason scan (FGAP-035), decompose dedup table (FGAP-036). Each task addresses_gap its FGAP; TASK-043 (T6) depends on all eight.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-13T13:00:00Z",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-13T02:16:01.186Z",
+      "oid": "3b66492b7f65b03ffd663a67a4cde633",
+      "content_hash": "4c1e853bf5825344a86f6470d5ad3a3adabcace564609916a441a6bbee2624e7"
+    },
+    {
+      "id": "STORY-012",
+      "title": "verify-slice hard gate + bounded autonomous loop (gate-first, two-class, separate-audit-gated), proven on the trio's first slice",
+      "status": "in-progress",
+      "description": "The concrete build of FEAT-009's harness: (a) a `make verify-slice SLICE=<key>` gate target composing the slice's behavioral pytest tests + the project static gate (ruff/ruff format/mypy/make test-js) + context-validate (jq-on-.output envelope per CTX-13) + _check_promotion_gates-as-a-test where applicable, exit code reflecting only the BLOCKING set (DEC-58/DEC-53 two-class: trivia non-blocking + recorded); (b) the orchestrator-run loop (IMPL fresh-agent -> run gate -> re-IMPL on nonzero -> hard iteration cap then escalate -> separate adversarial audit -> done = gate exit 0 AND audit findings 0 -> .context cascade + context-validate). Proven on the trio's first slice (the draft-state store + accumulation seam, DEC-57 sec.7) without reintroducing retired-workshop tooling or a new orchestration engine.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-20T06:43:51.354Z",
+      "oid": "d4511eb36e45ca7a7d08e76ecebd1876",
+      "content_hash": "669056269894ce658cb3c877a844ce44f954cbbe67e2cd08d154a22b32315b26"
+    },
+    {
+      "id": "STORY-013",
+      "title": "The draft-accumulation substrate: a persisted versioned flat draft_state store + the server-side fold seam",
+      "status": "in-progress",
+      "description": "The server-side home + mechanics for the trio's in-progress draft (DEC-57 §3/§7): (a) a persisted, append-versioned, school+author-scoped store for the flat draft_state (the shape collectDraftState produces and build_grounding consumes), holding the pre-Plan in-progress draft so it survives DEC-33 staged review and is walkable-back (US-DRAFT-2/3) [TASK-059, this slice]; (b) the accumulation seam folding a parsed AssistResult.prefill into that flat draft_state — the server-side inverse of applyFormsetPrefill — decomposed by prefill-shape class (form-dict; simple-formset-list; multi-section A3/G1; per-step children F2-F5/US-LLM-27; nested B2) [next slice]. Stores the flat dict verbatim so the consumability contract with build_grounding + the specs.py _draft_state_* helpers holds by construction.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-20T08:20:57.619Z",
+      "oid": "143cdb2efab127a9de2c3062797c804f",
+      "content_hash": "2bb4c986eaaa94e2c27922675bfff1ce444a3d94ff029e3000f97899d476640c"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "[CONDITIONAL on the agent-step-scope decision (DEC-0003)] agent-step pre-flight: pi-on-PATH + model-backend check + clear precondition error."
+}

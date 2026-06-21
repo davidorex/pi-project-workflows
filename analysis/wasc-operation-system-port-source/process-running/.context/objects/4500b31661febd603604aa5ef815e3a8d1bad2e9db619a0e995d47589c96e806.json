@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "T5 -- Complete the transposition audit: independently verify across the assembled draft whether three-view measurement and the learning-designed action-step shape hold or degraded; produce the full map of every sim-land finding -> {generation contract / in-execution check / post-hoc check / absent}; dispose of every check-only or absent finding (fix or file). EXPLORE-FIRST: the two suspicions are unverified-from-source (FGAP-033 open items).",
+  "acceptance_criteria": [
+    "A recorded determination states, with evidence from the assembled draft, whether three-view measurement (student outcomes, staff practice, parent/stakeholder) is present across the draft.",
+    "A recorded determination states, with evidence from the assembled draft, whether every action step embodies the recall-then-task-then-check-then-reflect shape and none is transmission-only.",
+    "A map exists listing every validated sim-land finding against whether it is enforced as a generation contract, an in-execution check, a post-hoc check, or is absent.",
+    "Every finding the map marks check-only or absent is either resolved (made a generation contract plus an in-execution check) or filed as a discrete .context gap with its evidence -- none left without a disposition."
+  ]
+}

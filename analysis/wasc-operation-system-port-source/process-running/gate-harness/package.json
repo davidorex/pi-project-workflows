@@ -1,0 +1,12 @@
+{
+  "name": "school-improvement-plans-jstests",
+  "private": true,
+  "type": "module",
+  "description": "Dev/test-only npm footprint for the wizard JS behavioral suite (jstests/). The browser runtime stays native <script type=\"module\"> with no bundler/transpile; jsdom never ships to the client. The \"type\":\"module\" flag lets Node import the native-ESM wizard modules by relative path; placed at the project root, the dev-tooling home.",
+  "scripts": {
+    "test:js": "node --test 'jstests/**/*.test.mjs'"
+  },
+  "devDependencies": {
+    "jsdom": "27.0.1"
+  }
+}

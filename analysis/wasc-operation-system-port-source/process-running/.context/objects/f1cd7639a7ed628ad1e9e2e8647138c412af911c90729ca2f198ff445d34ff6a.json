@@ -1,0 +1,5 @@
+{
+  "description": "Plan-mode plan required structure (.context-managed work). Every plan-mode plan must, in order: (1) PRE-IMPL file the work as .context task items (+ story/feature/phase membership + depends_on/gated_by edges) before launching any IMPL agent; (2) launch IMPL agent(s) (self-contained directive; STOP on ambiguity); (3) a SEPARATE agent adversarially audits the IMPL output; (4) POST-IMPL status cascade — set the task status, add the verification_verifies_item edge, run context-validate so task->story->feature->phase is machine-verified. Authoritative operative copy in CLAUDE.md 'Active-phase management'; .context is this phase's focused status surface while the decomposed-JSON session-start pointer still holds.",
+  "enforcement": "manual; context-validate machine-verifies the task->story->feature->phase chain in step 4",
+  "severity": "high"
+}

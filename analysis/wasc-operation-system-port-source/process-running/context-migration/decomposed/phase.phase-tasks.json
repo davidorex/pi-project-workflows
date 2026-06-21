@@ -1,0 +1,930 @@
+[
+  {
+    "seq": 1,
+    "phase": "phase-00-foundation.md",
+    "num": 1,
+    "section": "Core dev steps",
+    "text": "Create the Django project from scratch:\n   - `mkdir -p school-improvement-plans && cd school-improvement-plans`\n   - `uv init --bare` to scaffold the uv project (creates `pyproject.toml` with no main entry point).\n   - `uv add 'django>=6.0,<7.0' django-modeltranslation 'psycopg[binary]' gunicorn` (runtime deps: Django, modeltranslation, postgres driver for the `DATABASE_URL` parser in step 13, gunicorn for the entrypoint in step 19).\n   - `uv run django-admin startproject config .` to scaffold `manage.py` and `config/` (`__init__.py`, `settings.py`, `urls.py`, `wsgi.py`, `asgi.py`). The trailing `.` keeps the project at the current directory rather than nesting an extra level.\n\n   No `core/` package and no LLM scaffolding. All subsequent files in this phase are authored from scratch.",
+    "raw": "1. Create the Django project from scratch:\n   - `mkdir -p school-improvement-plans && cd school-improvement-plans`\n   - `uv init --bare` to scaffold the uv project (creates `pyproject.toml` with no main entry point).\n   - `uv add 'django>=6.0,<7.0' django-modeltranslation 'psycopg[binary]' gunicorn` (runtime deps: Django, modeltranslation, postgres driver for the `DATABASE_URL` parser in step 13, gunicorn for the entrypoint in step 19).\n   - `uv run django-admin startproject config .` to scaffold `manage.py` and `config/` (`__init__.py`, `settings.py`, `urls.py`, `wsgi.py`, `asgi.py`). The trailing `.` keeps the project at the current directory rather than nesting an extra level.\n\n   No `core/` package and no LLM scaffolding. All subsequent files in this phase are authored from scratch."
+  },
+  {
+    "seq": 2,
+    "phase": "phase-00-foundation.md",
+    "num": 2,
+    "section": "Core dev steps",
+    "text": "Add the dev `[dependency-groups]` to `pyproject.toml` per PEP 735 (the toolchain group lands in step 8 below). Run `uv sync`. Commit `uv.lock`.",
+    "raw": "2. Add the dev `[dependency-groups]` to `pyproject.toml` per PEP 735 (the toolchain group lands in step 8 below). Run `uv sync`. Commit `uv.lock`."
+  },
+  {
+    "seq": 3,
+    "phase": "phase-00-foundation.md",
+    "num": 3,
+    "section": "Core dev steps",
+    "text": "Replace single-file `config/settings.py` with `config/settings/{__init__,base,local,prod}.py`. `base.py` per the i18n spec, inlined:\n\n   ```python\n   from django.utils.translation import gettext_lazy as _\n   LANGUAGE_CODE = \"en\"\n   LANGUAGES = [(\"en\", _(\"English\")), (\"zh-hans\", _(\"Simplified Chinese\"))]\n   TIME_ZONE = \"Asia/Shanghai\"\n   USE_I18N = True\n   USE_TZ = True\n   LOCALE_PATHS = [BASE_DIR / \"locale\"]\n   ```\n\n   `INSTALLED_APPS` ordering: `modeltranslation` **first**, then `django.contrib.admin`, then the rest. `MIDDLEWARE` ordering: `SessionMiddleware` → `LocaleMiddleware` → `CommonMiddleware` → rest.",
+    "raw": "3. Replace single-file `config/settings.py` with `config/settings/{__init__,base,local,prod}.py`. `base.py` per the i18n spec, inlined:\n\n   ```python\n   from django.utils.translation import gettext_lazy as _\n   LANGUAGE_CODE = \"en\"\n   LANGUAGES = [(\"en\", _(\"English\")), (\"zh-hans\", _(\"Simplified Chinese\"))]\n   TIME_ZONE = \"Asia/Shanghai\"\n   USE_I18N = True\n   USE_TZ = True\n   LOCALE_PATHS = [BASE_DIR / \"locale\"]\n   ```\n\n   `INSTALLED_APPS` ordering: `modeltranslation` **first**, then `django.contrib.admin`, then the rest. `MIDDLEWARE` ordering: `SessionMiddleware` → `LocaleMiddleware` → `CommonMiddleware` → rest."
+  },
+  {
+    "seq": 4,
+    "phase": "phase-00-foundation.md",
+    "num": 4,
+    "section": "Core dev steps",
+    "text": "`manage.py` defaults `DJANGO_SETTINGS_MODULE` to `config.settings.local`. `wsgi.py` and `asgi.py` default to `config.settings.prod`.",
+    "raw": "4. `manage.py` defaults `DJANGO_SETTINGS_MODULE` to `config.settings.local`. `wsgi.py` and `asgi.py` default to `config.settings.prod`."
+  },
+  {
+    "seq": 5,
+    "phase": "phase-00-foundation.md",
+    "num": 5,
+    "section": "Core dev steps",
+    "text": "`config/urls.py`: wrap user-facing routes in `i18n_patterns(...)`; include `path('i18n/', include('django.conf.urls.i18n'))`; register `/health/` returning HTTP 200 for the container HEALTHCHECK target.",
+    "raw": "5. `config/urls.py`: wrap user-facing routes in `i18n_patterns(...)`; include `path('i18n/', include('django.conf.urls.i18n'))`; register `/health/` returning HTTP 200 for the container HEALTHCHECK target."
+  },
+  {
+    "seq": 6,
+    "phase": "phase-00-foundation.md",
+    "num": 6,
+    "section": "Core dev steps",
+    "text": "Create top-level `locale/` directory at `BASE_DIR/locale/`.",
+    "raw": "6. Create top-level `locale/` directory at `BASE_DIR/locale/`."
+  },
+  {
+    "seq": 7,
+    "phase": "phase-00-foundation.md",
+    "num": 7,
+    "section": "Core dev steps",
+    "text": "`.gitignore` entries: `*.pyc`, `__pycache__/`, `.env`, `db.sqlite3`, `*.mo`, `.venv/`, `staticfiles/`. Track `uv.lock`. Add `.env.example` listing every env var the app reads (no values).",
+    "raw": "7. `.gitignore` entries: `*.pyc`, `__pycache__/`, `.env`, `db.sqlite3`, `*.mo`, `.venv/`, `staticfiles/`. Track `uv.lock`. Add `.env.example` listing every env var the app reads (no values)."
+  },
+  {
+    "seq": 8,
+    "phase": "phase-00-foundation.md",
+    "num": 8,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "Toolchain (`pyproject.toml` dev group): add `ruff`, `mypy`, `pytest`, `pytest-django`, `pytest-cov`, `pip-audit`. Configure `[tool.ruff]` (line-length, select, target-version) and `[tool.mypy]` (no `django-stubs` plugin — mypy runs against pure-Python code and treats Django bits as `Any`).",
+    "raw": "8. Toolchain (`pyproject.toml` dev group): add `ruff`, `mypy`, `pytest`, `pytest-django`, `pytest-cov`, `pip-audit`. Configure `[tool.ruff]` (line-length, select, target-version) and `[tool.mypy]` (no `django-stubs` plugin — mypy runs against pure-Python code and treats Django bits as `Any`)."
+  },
+  {
+    "seq": 9,
+    "phase": "phase-00-foundation.md",
+    "num": 9,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "`.pre-commit-config.yaml`: ruff (lint + format), mypy, `detect-secrets`, `django-upgrade`, missing-migrations check, end-of-file fixer, trailing-whitespace, check-yaml, check-toml.",
+    "raw": "9. `.pre-commit-config.yaml`: ruff (lint + format), mypy, `detect-secrets`, `django-upgrade`, missing-migrations check, end-of-file fixer, trailing-whitespace, check-yaml, check-toml."
+  },
+  {
+    "seq": 10,
+    "phase": "phase-00-foundation.md",
+    "num": 10,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "`.github/workflows/test.yml`: on push and PR, run `uv sync`, `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest`, `uv run pip-audit`. Add `.github/dependabot.yml`.",
+    "raw": "10. `.github/workflows/test.yml`: on push and PR, run `uv sync`, `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, `uv run pytest`, `uv run pip-audit`. Add `.github/dependabot.yml`."
+  },
+  {
+    "seq": 11,
+    "phase": "phase-00-foundation.md",
+    "num": 11,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "`.dockerignore` excludes: `.git/`, `.venv/`, `*.sqlite3`, `__pycache__/`, `*.pyc`, `.env`, `logs/`, `staticfiles/`, `media/`, `node_modules/`, `dev-planning-knowledge-source/`, `web/`.",
+    "raw": "11. `.dockerignore` excludes: `.git/`, `.venv/`, `*.sqlite3`, `__pycache__/`, `*.pyc`, `.env`, `logs/`, `staticfiles/`, `media/`, `node_modules/`, `dev-planning-knowledge-source/`, `web/`."
+  },
+  {
+    "seq": 12,
+    "phase": "phase-00-foundation.md",
+    "num": 12,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "Security packages: add `django-csp`, `django-axes`, `django-guardian` to runtime deps. Wire into `INSTALLED_APPS`, `MIDDLEWARE`, `AUTHENTICATION_BACKENDS` per each project's docs. `django-axes`: 5 failed attempts, 1-hour cooldown, lockout by (username, IP). CSP starter for dev: `CSP_DEFAULT_SRC=(\"'self'\",)` permissive. Admin is the stock `django.contrib.admin` site — no MFA gate at this phase. (2FA/MFA was previously wired via `django-two-factor-auth` + `django-otp`; removed because the local-dev enrollment loop produced confusing developer experience without delivering Phase 0 verification value. A multi-factor admin gate can be reintroduced via a different mechanism in a later phase if required.)",
+    "raw": "12. Security packages: add `django-csp`, `django-axes`, `django-guardian` to runtime deps. Wire into `INSTALLED_APPS`, `MIDDLEWARE`, `AUTHENTICATION_BACKENDS` per each project's docs. `django-axes`: 5 failed attempts, 1-hour cooldown, lockout by (username, IP). CSP starter for dev: `CSP_DEFAULT_SRC=(\"'self'\",)` permissive. Admin is the stock `django.contrib.admin` site — no MFA gate at this phase. (2FA/MFA was previously wired via `django-two-factor-auth` + `django-otp`; removed because the local-dev enrollment loop produced confusing developer experience without delivering Phase 0 verification value. A multi-factor admin gate can be reintroduced via a different mechanism in a later phase if required.)"
+  },
+  {
+    "seq": 13,
+    "phase": "phase-00-foundation.md",
+    "num": 13,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "`base.py` hardening:\n    - `LOGGING` dict with stdout/stderr handlers only (no file handler); request-log filter scrubs `password`, `csrfmiddlewaretoken`, `authorization`.\n    - `DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440` (2.5 MB), `FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440`, `DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000`.\n    - `CONN_MAX_AGE = 60`.\n    - Database `OPTIONS = {\"connect_timeout\": 5}`.\n    - `if not DATABASE_URL: raise ImproperlyConfigured(...)` (no `DB_USER='postgres'` fallback).\n    - Parse `DATABASE_URL` inline using `urllib.parse` (no `dj-database-url` dependency). Accept `postgres://` and `postgresql://` URLs of the form `<scheme>://<user>:<password>@<host>:<port>/<dbname>`. Schemes other than postgres raise `ImproperlyConfigured` — local dev runs against postgres per step 14, and prod is postgres.",
+    "raw": "13. `base.py` hardening:\n    - `LOGGING` dict with stdout/stderr handlers only (no file handler); request-log filter scrubs `password`, `csrfmiddlewaretoken`, `authorization`.\n    - `DATA_UPLOAD_MAX_MEMORY_SIZE = 2_621_440` (2.5 MB), `FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440`, `DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000`.\n    - `CONN_MAX_AGE = 60`.\n    - Database `OPTIONS = {\"connect_timeout\": 5}`.\n    - `if not DATABASE_URL: raise ImproperlyConfigured(...)` (no `DB_USER='postgres'` fallback).\n    - Parse `DATABASE_URL` inline using `urllib.parse` (no `dj-database-url` dependency). Accept `postgres://` and `postgresql://` URLs of the form `<scheme>://<user>:<password>@<host>:<port>/<dbname>`. Schemes other than postgres raise `ImproperlyConfigured` — local dev runs against postgres per step 14, and prod is postgres."
+  },
+  {
+    "seq": 14,
+    "phase": "phase-00-foundation.md",
+    "num": 14,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "Local postgres role separation: `docker-compose.yml` creates a `socrates` app role with limited grants; `postgres` superuser used only for migrations. Local dev runs against postgres (not sqlite) to match prod schema semantics. Database name: `school_improvement_plans`. Bind postgres to host port **5433** and redis to host port **6380** (compose-internal addresses unchanged at `postgres:5432` / `redis:6379`) to avoid collision with host-native postgres common on Mac dev laptops.",
+    "raw": "14. Local postgres role separation: `docker-compose.yml` creates a `socrates` app role with limited grants; `postgres` superuser used only for migrations. Local dev runs against postgres (not sqlite) to match prod schema semantics. Database name: `school_improvement_plans`. Bind postgres to host port **5433** and redis to host port **6380** (compose-internal addresses unchanged at `postgres:5432` / `redis:6379`) to avoid collision with host-native postgres common on Mac dev laptops."
+  },
+  {
+    "seq": 15,
+    "phase": "phase-00-foundation.md",
+    "num": 15,
+    "section": "Layer A — local-dev hardening (Phase 0 portion)",
+    "text": "Repo docs at repo root: `SECURITY.md`, `THREAT-MODEL.md` (light), `CONTRIBUTING.md`.",
+    "raw": "15. Repo docs at repo root: `SECURITY.md`, `THREAT-MODEL.md` (light), `CONTRIBUTING.md`."
+  },
+  {
+    "seq": 16,
+    "phase": "phase-00-foundation.md",
+    "num": 16,
+    "section": "Layer B — prod-deploy shape declared, values at deploy time",
+    "text": "`prod.py` declares every env-driven hardening setting:\n\n    ```python\n    SECURE_PROXY_SSL_HEADER = (\"HTTP_X_FORWARDED_PROTO\", \"https\")\n    SECURE_HSTS_SECONDS = int(os.environ.get(\"HSTS_SECONDS\", 0))\n    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(\"HSTS_INCLUDE_SUBDOMAINS\", \"false\").lower() == \"true\"\n    SECURE_HSTS_PRELOAD = os.environ.get(\"HSTS_PRELOAD\", \"false\").lower() == \"true\"\n    SESSION_COOKIE_SECURE = True\n    CSRF_COOKIE_SECURE = True\n    SECURE_BROWSER_XSS_FILTER = True\n    SECURE_CONTENT_TYPE_NOSNIFF = True\n    X_FRAME_OPTIONS = \"DENY\"\n    SECURE_REFERRER_POLICY = \"strict-origin-when-cross-origin\"\n    CSRF_TRUSTED_ORIGINS = os.environ.get(\"CSRF_TRUSTED_ORIGINS\", \"\").split(\",\")\n    ADMINS = [(email, email) for email in os.environ.get(\"ADMIN_EMAILS\", \"\").split(\",\") if email]\n    MANAGERS = ADMINS\n    ```\n\n    Strict CSP redeclared in `prod.py` (tightening logic deferred to deploy phase via env).",
+    "raw": "16. `prod.py` declares every env-driven hardening setting:\n\n    ```python\n    SECURE_PROXY_SSL_HEADER = (\"HTTP_X_FORWARDED_PROTO\", \"https\")\n    SECURE_HSTS_SECONDS = int(os.environ.get(\"HSTS_SECONDS\", 0))\n    SECURE_HSTS_INCLUDE_SUBDOMAINS = os.environ.get(\"HSTS_INCLUDE_SUBDOMAINS\", \"false\").lower() == \"true\"\n    SECURE_HSTS_PRELOAD = os.environ.get(\"HSTS_PRELOAD\", \"false\").lower() == \"true\"\n    SESSION_COOKIE_SECURE = True\n    CSRF_COOKIE_SECURE = True\n    SECURE_BROWSER_XSS_FILTER = True\n    SECURE_CONTENT_TYPE_NOSNIFF = True\n    X_FRAME_OPTIONS = \"DENY\"\n    SECURE_REFERRER_POLICY = \"strict-origin-when-cross-origin\"\n    CSRF_TRUSTED_ORIGINS = os.environ.get(\"CSRF_TRUSTED_ORIGINS\", \"\").split(\",\")\n    ADMINS = [(email, email) for email in os.environ.get(\"ADMIN_EMAILS\", \"\").split(\",\") if email]\n    MANAGERS = ADMINS\n    ```\n\n    Strict CSP redeclared in `prod.py` (tightening logic deferred to deploy phase via env)."
+  },
+  {
+    "seq": 17,
+    "phase": "phase-00-foundation.md",
+    "num": 17,
+    "section": "Layer B — prod-deploy shape declared, values at deploy time",
+    "text": "`BACKUPS.md` documents: `pg_dump` schedule (daily incremental + weekly full); media rsync to off-host destination; retention aligning to `Evidence.retention_until`; quarterly restore-test cadence. No execution; document only.",
+    "raw": "17. `BACKUPS.md` documents: `pg_dump` schedule (daily incremental + weekly full); media rsync to off-host destination; retention aligning to `Evidence.retention_until`; quarterly restore-test cadence. No execution; document only."
+  },
+  {
+    "seq": 18,
+    "phase": "phase-00-foundation.md",
+    "num": 18,
+    "section": "Layer B — prod-deploy shape declared, values at deploy time",
+    "text": "Object-permission helper: install `django-guardian` and add `guardian.backends.ObjectPermissionBackend` to `AUTHENTICATION_BACKENDS`. No policy applied yet; hook exists for first policy that needs it.",
+    "raw": "18. Object-permission helper: install `django-guardian` and add `guardian.backends.ObjectPermissionBackend` to `AUTHENTICATION_BACKENDS`. No policy applied yet; hook exists for first policy that needs it."
+  },
+  {
+    "seq": 19,
+    "phase": "phase-00-foundation.md",
+    "num": 19,
+    "section": "Layer C — container skeleton in shape now",
+    "text": "Multi-stage `Dockerfile`:\n    - **builder** stage: pinned uv; `uv sync --no-dev` into `/opt/venv`.\n    - **runtime** stage: copies the venv and source; `RUN useradd -m -u 10001 app && chown -R app:app /app; USER app`; `HEALTHCHECK CMD curl -fsS http://localhost:8000/health/ || exit 1`; `EXPOSE 8000`; `ENTRYPOINT [\"./entrypoint.sh\"]`.",
+    "raw": "19. Multi-stage `Dockerfile`:\n    - **builder** stage: pinned uv; `uv sync --no-dev` into `/opt/venv`.\n    - **runtime** stage: copies the venv and source; `RUN useradd -m -u 10001 app && chown -R app:app /app; USER app`; `HEALTHCHECK CMD curl -fsS http://localhost:8000/health/ || exit 1`; `EXPOSE 8000`; `ENTRYPOINT [\"./entrypoint.sh\"]`."
+  },
+  {
+    "seq": 20,
+    "phase": "phase-00-foundation.md",
+    "num": 20,
+    "section": "Layer C — container skeleton in shape now",
+    "text": "`entrypoint.sh`:\n    - `pg_isready` poll against `${DB_HOST}:${DB_PORT}` (30s ceiling).\n    - `python manage.py migrate --noinput`.\n    - `python manage.py collectstatic --noinput`.\n    - `exec gunicorn --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$((2*$(nproc)+1))} --worker-tmp-dir /dev/shm --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 config.wsgi:application`.",
+    "raw": "20. `entrypoint.sh`:\n    - `pg_isready` poll against `${DB_HOST}:${DB_PORT}` (30s ceiling).\n    - `python manage.py migrate --noinput`.\n    - `python manage.py collectstatic --noinput`.\n    - `exec gunicorn --bind 0.0.0.0:8000 --workers ${WEB_CONCURRENCY:-$((2*$(nproc)+1))} --worker-tmp-dir /dev/shm --graceful-timeout 30 --max-requests 1000 --max-requests-jitter 100 config.wsgi:application`."
+  },
+  {
+    "seq": 21,
+    "phase": "phase-00-foundation.md",
+    "num": 21,
+    "section": "Layer C — container skeleton in shape now",
+    "text": "`docker-compose.yml` and `docker-compose.prod.yml` pin `postgres:18.0` and `redis:7.4-alpine`.",
+    "raw": "21. `docker-compose.yml` and `docker-compose.prod.yml` pin `postgres:18.0` and `redis:7.4-alpine`."
+  },
+  {
+    "seq": 22,
+    "phase": "phase-01-custom-user.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py startapp users`. Replace `users/models.py` with a `users/models/` package; replace `users/admin.py` with a `users/admin/` package. Create the full app scaffold per the file-decomposition pattern:\n\n   ```\n   users/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   └── user.py\n   ├── admin/\n   │   ├── __init__.py\n   │   └── user.py\n   ├── tests/\n   │   ├── __init__.py\n   │   └── test_user.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Empty stubs acceptable for every adjacent file EXCEPT `managers.py` (step 3 below) and `tests/test_user.py` (must exercise the User model — creation via UserManager.create_user / create_superuser, email-as-username uniqueness, USERNAME_FIELD wiring). `apps.py::UsersConfig.verbose_name = _(\"Users\")`. Signals (if any) registered in `apps.py::ready()`.",
+    "raw": "1. `uv run python manage.py startapp users`. Replace `users/models.py` with a `users/models/` package; replace `users/admin.py` with a `users/admin/` package. Create the full app scaffold per the file-decomposition pattern:\n\n   ```\n   users/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   └── user.py\n   ├── admin/\n   │   ├── __init__.py\n   │   └── user.py\n   ├── tests/\n   │   ├── __init__.py\n   │   └── test_user.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Empty stubs acceptable for every adjacent file EXCEPT `managers.py` (step 3 below) and `tests/test_user.py` (must exercise the User model — creation via UserManager.create_user / create_superuser, email-as-username uniqueness, USERNAME_FIELD wiring). `apps.py::UsersConfig.verbose_name = _(\"Users\")`. Signals (if any) registered in `apps.py::ready()`."
+  },
+  {
+    "seq": 23,
+    "phase": "phase-01-custom-user.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`users/models/user.py`:\n\n   ```python\n   from django.contrib.auth.models import AbstractUser\n   from django.db import models\n   from django.utils.translation import gettext_lazy as _\n\n   class User(AbstractUser):\n       email = models.EmailField(_(\"email address\"), unique=True)\n       USERNAME_FIELD = \"email\"\n       REQUIRED_FIELDS = []\n       # User.school FK added in Phase 2 after School model exists\n   ```",
+    "raw": "2. `users/models/user.py`:\n\n   ```python\n   from django.contrib.auth.models import AbstractUser\n   from django.db import models\n   from django.utils.translation import gettext_lazy as _\n\n   class User(AbstractUser):\n       email = models.EmailField(_(\"email address\"), unique=True)\n       USERNAME_FIELD = \"email\"\n       REQUIRED_FIELDS = []\n       # User.school FK added in Phase 2 after School model exists\n   ```"
+  },
+  {
+    "seq": 24,
+    "phase": "phase-01-custom-user.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "`users/managers.py` carries a real `UserManager(BaseUserManager)`, not a stub. `create_user(email, password=None, **extra_fields)` and `create_superuser(email, password=None, **extra_fields)` take email instead of username. Set `is_staff=True`, `is_superuser=True` on the superuser flow. Wire the manager onto `User.objects` in `users/models/user.py`.",
+    "raw": "3. `users/managers.py` carries a real `UserManager(BaseUserManager)`, not a stub. `create_user(email, password=None, **extra_fields)` and `create_superuser(email, password=None, **extra_fields)` take email instead of username. Set `is_staff=True`, `is_superuser=True` on the superuser flow. Wire the manager onto `User.objects` in `users/models/user.py`."
+  },
+  {
+    "seq": 25,
+    "phase": "phase-01-custom-user.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`users/admin/user.py`: `UserAdmin` subclass registered via `@admin.register(User)`. Best-of-breed defaults per the admin-package pattern (preamble): `list_display`, `list_filter`, `search_fields`, `readonly_fields` (for `last_login`, `date_joined`).",
+    "raw": "4. `users/admin/user.py`: `UserAdmin` subclass registered via `@admin.register(User)`. Best-of-breed defaults per the admin-package pattern (preamble): `list_display`, `list_filter`, `search_fields`, `readonly_fields` (for `last_login`, `date_joined`)."
+  },
+  {
+    "seq": 26,
+    "phase": "phase-01-custom-user.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`users/translation.py`: stub (no translated user fields named in the i18n preamble pattern).",
+    "raw": "5. `users/translation.py`: stub (no translated user fields named in the i18n preamble pattern)."
+  },
+  {
+    "seq": 27,
+    "phase": "phase-01-custom-user.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "`config/settings/base.py`: set `AUTH_USER_MODEL = \"users.User\"`. Add `users` to `INSTALLED_APPS` (first project app, ordered after `modeltranslation` and `django.contrib.admin` per the i18n preamble pattern).",
+    "raw": "6. `config/settings/base.py`: set `AUTH_USER_MODEL = \"users.User\"`. Add `users` to `INSTALLED_APPS` (first project app, ordered after `modeltranslation` and `django.contrib.admin` per the i18n preamble pattern)."
+  },
+  {
+    "seq": 28,
+    "phase": "phase-01-custom-user.md",
+    "num": 7,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations users` then `uv run python manage.py migrate`. With the orchestrator-side DB reset in place (see pre-flight above), this runs all migrations from scratch with `users.User` already registered, so Django's contrib + axes + guardian migrations point at `users.User` from the start. No `auth_user` table is created.",
+    "raw": "7. `uv run python manage.py makemigrations users` then `uv run python manage.py migrate`. With the orchestrator-side DB reset in place (see pre-flight above), this runs all migrations from scratch with `users.User` already registered, so Django's contrib + axes + guardian migrations point at `users.User` from the start. No `auth_user` table is created."
+  },
+  {
+    "seq": 29,
+    "phase": "phase-01-custom-user.md",
+    "num": 8,
+    "section": "Dev steps",
+    "text": "**Human-interactive** (IMPL skips this step; orchestrator surfaces to human): `uv run python manage.py createsuperuser` — the human enters email + password at the prompts.",
+    "raw": "8. **Human-interactive** (IMPL skips this step; orchestrator surfaces to human): `uv run python manage.py createsuperuser` — the human enters email + password at the prompts."
+  },
+  {
+    "seq": 30,
+    "phase": "phase-01-custom-user.md",
+    "num": 9,
+    "section": "Layer A additions",
+    "text": "Verify `django-axes` lockout: deliberately fail login 5 times; confirm lockout response.",
+    "raw": "9. Verify `django-axes` lockout: deliberately fail login 5 times; confirm lockout response."
+  },
+  {
+    "seq": 31,
+    "phase": "phase-02-school-app.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py startapp school`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   school/\n   ├── apps.py\n   ├── choices.py               # PolicyStatus, OrgKind if needed; Frequency may live here\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   ├── school.py            # School (tenant root)\n   │   ├── cycle.py             # Cycle\n   │   ├── org.py               # Department, Role\n   │   ├── stakeholder.py       # StakeholderGroup\n   │   ├── outcomes.py          # LearnerOutcome, MissionArea, AreaForImprovement\n   │   ├── frequency.py         # Frequency (curator-managed cadence vocabulary)\n   │   └── policy.py            # Policy (evaluation_frequency FK to Frequency,\n   │                            #         evaluation_responsible polymorphic Owner)\n   ├── admin/\n   │   ├── __init__.py\n   │   ├── school.py\n   │   ├── cycle.py\n   │   ├── org.py               # DepartmentAdmin, RoleAdmin\n   │   ├── stakeholder.py\n   │   ├── outcomes.py          # LearnerOutcomeAdmin, MissionAreaAdmin, AreaForImprovementAdmin\n   │   ├── frequency.py\n   │   ├── policy.py\n   │   ├── filters.py\n   │   └── actions.py\n   ├── tests/\n   │   ├── __init__.py\n   │   ├── test_school.py\n   │   ├── test_cycle.py\n   │   ├── test_department.py\n   │   ├── test_role.py\n   │   ├── test_stakeholdergroup.py\n   │   ├── test_learneroutcome.py\n   │   ├── test_missionarea.py\n   │   ├── test_areaforimprovement.py\n   │   ├── test_frequency.py\n   │   └── test_policy.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Each `tests/test_<model>.py` exercises its model: creation, declared field constraints (`Cycle.code` and `Frequency.code` per-school uniqueness), polymorphic predicates (`Policy.evaluation_responsible` CheckConstraint rejects both-null and both-set), modeltranslation-generated columns where applicable.\n\n   `apps.py::SchoolConfig.verbose_name = _(\"School\")`. Add `school` to `INSTALLED_APPS`. Signals registered in `apps.py::ready()`.",
+    "raw": "1. `uv run python manage.py startapp school`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   school/\n   ├── apps.py\n   ├── choices.py               # PolicyStatus, OrgKind if needed; Frequency may live here\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   ├── school.py            # School (tenant root)\n   │   ├── cycle.py             # Cycle\n   │   ├── org.py               # Department, Role\n   │   ├── stakeholder.py       # StakeholderGroup\n   │   ├── outcomes.py          # LearnerOutcome, MissionArea, AreaForImprovement\n   │   ├── frequency.py         # Frequency (curator-managed cadence vocabulary)\n   │   └── policy.py            # Policy (evaluation_frequency FK to Frequency,\n   │                            #         evaluation_responsible polymorphic Owner)\n   ├── admin/\n   │   ├── __init__.py\n   │   ├── school.py\n   │   ├── cycle.py\n   │   ├── org.py               # DepartmentAdmin, RoleAdmin\n   │   ├── stakeholder.py\n   │   ├── outcomes.py          # LearnerOutcomeAdmin, MissionAreaAdmin, AreaForImprovementAdmin\n   │   ├── frequency.py\n   │   ├── policy.py\n   │   ├── filters.py\n   │   └── actions.py\n   ├── tests/\n   │   ├── __init__.py\n   │   ├── test_school.py\n   │   ├── test_cycle.py\n   │   ├── test_department.py\n   │   ├── test_role.py\n   │   ├── test_stakeholdergroup.py\n   │   ├── test_learneroutcome.py\n   │   ├── test_missionarea.py\n   │   ├── test_areaforimprovement.py\n   │   ├── test_frequency.py\n   │   └── test_policy.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Each `tests/test_<model>.py` exercises its model: creation, declared field constraints (`Cycle.code` and `Frequency.code` per-school uniqueness), polymorphic predicates (`Policy.evaluation_responsible` CheckConstraint rejects both-null and both-set), modeltranslation-generated columns where applicable.\n\n   `apps.py::SchoolConfig.verbose_name = _(\"School\")`. Add `school` to `INSTALLED_APPS`. Signals registered in `apps.py::ready()`."
+  },
+  {
+    "seq": 32,
+    "phase": "phase-02-school-app.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "Per-file model contents. Every model in this app except `School` itself carries `school = ForeignKey(School, on_delete=PROTECT, related_name=\"<lowercase_plural>\")` per the preamble. All field types, max_lengths, `on_delete`, `__str__`, `Meta.ordering` follow the preamble's Implementation conventions; only fields whose declaration deviates from those conventions are spelled out.\n\n    - `school/models/school.py` → `School` (tenant root). Fields: `name` (translated), `slug` (unique).\n    - `school/models/cycle.py` → `Cycle`. Fields: `code` (untranslated per i18n spec), `label` (translated), `starts_on`, `ends_on`. `Meta.constraints`: `UniqueConstraint(fields=[\"school\", \"code\"])`.\n    - `school/models/org.py` → `Department`, `Role`. Translated: `Department.label`, `Department.scope_summary`, `Role.label`. `Role.department` FK.\n    - `school/models/stakeholder.py` → `StakeholderGroup`. Translated: `label`.\n    - `school/models/outcomes.py` → `LearnerOutcome`, `MissionArea`, `AreaForImprovement`. Each: `code`, `label` (translated), `description` (translated).\n    - `school/models/frequency.py` → `Frequency` (curator-managed cadence vocabulary). Fields: `code` (CharField unique-per-school), `label` (translated). Introduced here because `Policy.evaluation_frequency` needs it.\n    - `school/models/policy.py` → `Policy`. Fields: `label` (translated), `notes` (translated), `evaluation_frequency` (`ForeignKey(school.Frequency, on_delete=PROTECT)`), `evaluation_responsible` (polymorphic Owner: two nullable FKs to `Department` or `Role` + exactly-one `CheckConstraint` per preamble pattern).\n\n   `school/models/__init__.py` re-exports each.",
+    "raw": "2. Per-file model contents. Every model in this app except `School` itself carries `school = ForeignKey(School, on_delete=PROTECT, related_name=\"<lowercase_plural>\")` per the preamble. All field types, max_lengths, `on_delete`, `__str__`, `Meta.ordering` follow the preamble's Implementation conventions; only fields whose declaration deviates from those conventions are spelled out.\n\n    - `school/models/school.py` → `School` (tenant root). Fields: `name` (translated), `slug` (unique).\n    - `school/models/cycle.py` → `Cycle`. Fields: `code` (untranslated per i18n spec), `label` (translated), `starts_on`, `ends_on`. `Meta.constraints`: `UniqueConstraint(fields=[\"school\", \"code\"])`.\n    - `school/models/org.py` → `Department`, `Role`. Translated: `Department.label`, `Department.scope_summary`, `Role.label`. `Role.department` FK.\n    - `school/models/stakeholder.py` → `StakeholderGroup`. Translated: `label`.\n    - `school/models/outcomes.py` → `LearnerOutcome`, `MissionArea`, `AreaForImprovement`. Each: `code`, `label` (translated), `description` (translated).\n    - `school/models/frequency.py` → `Frequency` (curator-managed cadence vocabulary). Fields: `code` (CharField unique-per-school), `label` (translated). Introduced here because `Policy.evaluation_frequency` needs it.\n    - `school/models/policy.py` → `Policy`. Fields: `label` (translated), `notes` (translated), `evaluation_frequency` (`ForeignKey(school.Frequency, on_delete=PROTECT)`), `evaluation_responsible` (polymorphic Owner: two nullable FKs to `Department` or `Role` + exactly-one `CheckConstraint` per preamble pattern).\n\n   `school/models/__init__.py` re-exports each."
+  },
+  {
+    "seq": 33,
+    "phase": "phase-02-school-app.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "`school/translation.py`:\n\n   ```python\n   from modeltranslation.translator import register, TranslationOptions\n   from .models import (\n       LearnerOutcome, MissionArea, AreaForImprovement,\n       Policy, Department, StakeholderGroup,\n   )\n\n   @register(LearnerOutcome)\n   class LearnerOutcomeT(TranslationOptions): fields = (\"label\",)\n\n   @register(MissionArea)\n   class MissionAreaT(TranslationOptions): fields = (\"label\",)\n\n   @register(AreaForImprovement)\n   class AreaForImprovementT(TranslationOptions): fields = (\"label\",)\n\n   @register(Policy)\n   class PolicyT(TranslationOptions): fields = (\"label\", \"notes\")\n\n   @register(Department)\n   class DepartmentT(TranslationOptions): fields = (\"label\", \"scope_summary\")\n\n   @register(StakeholderGroup)\n   class StakeholderGroupT(TranslationOptions): fields = (\"label\",)\n\n   @register(Frequency)\n   class FrequencyT(TranslationOptions): fields = (\"label\",)\n   ```",
+    "raw": "3. `school/translation.py`:\n\n   ```python\n   from modeltranslation.translator import register, TranslationOptions\n   from .models import (\n       LearnerOutcome, MissionArea, AreaForImprovement,\n       Policy, Department, StakeholderGroup,\n   )\n\n   @register(LearnerOutcome)\n   class LearnerOutcomeT(TranslationOptions): fields = (\"label\",)\n\n   @register(MissionArea)\n   class MissionAreaT(TranslationOptions): fields = (\"label\",)\n\n   @register(AreaForImprovement)\n   class AreaForImprovementT(TranslationOptions): fields = (\"label\",)\n\n   @register(Policy)\n   class PolicyT(TranslationOptions): fields = (\"label\", \"notes\")\n\n   @register(Department)\n   class DepartmentT(TranslationOptions): fields = (\"label\", \"scope_summary\")\n\n   @register(StakeholderGroup)\n   class StakeholderGroupT(TranslationOptions): fields = (\"label\",)\n\n   @register(Frequency)\n   class FrequencyT(TranslationOptions): fields = (\"label\",)\n   ```"
+  },
+  {
+    "seq": 34,
+    "phase": "phase-02-school-app.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "Per-model admin files under `school/admin/` with `@admin.register(...)` decorators. `admin/__init__.py` imports each so registration fires. Admin defaults per the admin-package spec: `list_display`, `list_filter`, `search_fields`, `autocomplete_fields` for Department/Role FKs, `fieldsets` for any model >6 fields, fieldset headers wrapped in `_()`. Filter titles and action descriptions `_()`-wrapped.",
+    "raw": "4. Per-model admin files under `school/admin/` with `@admin.register(...)` decorators. `admin/__init__.py` imports each so registration fires. Admin defaults per the admin-package spec: `list_display`, `list_filter`, `search_fields`, `autocomplete_fields` for Department/Role FKs, `fieldsets` for any model >6 fields, fieldset headers wrapped in `_()`. Filter titles and action descriptions `_()`-wrapped."
+  },
+  {
+    "seq": 35,
+    "phase": "phase-02-school-app.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations school` and `migrate`.",
+    "raw": "5. `uv run python manage.py makemigrations school` and `migrate`."
+  },
+  {
+    "seq": 36,
+    "phase": "phase-02-school-app.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "Add the deferred `User.school` FK declared in Phase 1's preamble note (preamble § Implementation conventions, migration ordering). Edit `users/models/user.py` to add:\n\n   ```python\n   school = models.ForeignKey(\n       \"school.School\",\n       null=True,\n       blank=True,\n       on_delete=models.PROTECT,\n       related_name=\"users\",\n   )\n   ```\n\n   Run `uv run python manage.py makemigrations users` then `uv run python manage.py migrate`. The new `users.0002_user_school` migration adds the `school_id` column to `users_user` as nullable; the existing superuser row gets `school = NULL` (will be backfilled if/when a School row exists that it should belong to).",
+    "raw": "6. Add the deferred `User.school` FK declared in Phase 1's preamble note (preamble § Implementation conventions, migration ordering). Edit `users/models/user.py` to add:\n\n   ```python\n   school = models.ForeignKey(\n       \"school.School\",\n       null=True,\n       blank=True,\n       on_delete=models.PROTECT,\n       related_name=\"users\",\n   )\n   ```\n\n   Run `uv run python manage.py makemigrations users` then `uv run python manage.py migrate`. The new `users.0002_user_school` migration adds the `school_id` column to `users_user` as nullable; the existing superuser row gets `school = NULL` (will be backfilled if/when a School row exists that it should belong to)."
+  },
+  {
+    "seq": 37,
+    "phase": "phase-02-school-app.md",
+    "num": 7,
+    "section": "Layer A — permission groups seed",
+    "text": "Data migration `school/migrations/000X_seed_permission_groups.py` creating Groups via `django.contrib.auth.models.Group`:\n    - `school_curator`\n    - `plan_author`\n    - `read_only`\n\n   The migration enumerates codenames by iterating installed-app models **at migration run time** — at Phase 2 time this means contrib + axes + guardian + users + school perms only. The intended final grant set (per the original design) is:\n\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `school.*` and `accreditation.*`; `view_*` on every model in `plans.*`.\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `plans.*`; `view_*` on every model in `school.*` and `accreditation.*`.\n    - `read_only` — `view_*` on every model.\n\n   Phase 2's migration grants only the school-scoped portion (and `view_*` for users/contrib/axes/guardian where applicable per role intent). Subsequent app-introducing phases (3 for accreditation, 5+ for plans) append app-specific perms to these groups via their own data migrations. Phase 15 (final validation) carries a backstop group-finalization migration if any phase's contribution was missed.",
+    "raw": "7. Data migration `school/migrations/000X_seed_permission_groups.py` creating Groups via `django.contrib.auth.models.Group`:\n    - `school_curator`\n    - `plan_author`\n    - `read_only`\n\n   The migration enumerates codenames by iterating installed-app models **at migration run time** — at Phase 2 time this means contrib + axes + guardian + users + school perms only. The intended final grant set (per the original design) is:\n\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `school.*` and `accreditation.*`; `view_*` on every model in `plans.*`.\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `plans.*`; `view_*` on every model in `school.*` and `accreditation.*`.\n    - `read_only` — `view_*` on every model.\n\n   Phase 2's migration grants only the school-scoped portion (and `view_*` for users/contrib/axes/guardian where applicable per role intent). Subsequent app-introducing phases (3 for accreditation, 5+ for plans) append app-specific perms to these groups via their own data migrations. Phase 15 (final validation) carries a backstop group-finalization migration if any phase's contribution was missed."
+  },
+  {
+    "seq": 38,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py startapp accreditation`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   accreditation/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   └── standard.py          # AccreditationCategory, AccreditationStandard\n   ├── admin/\n   │   ├── __init__.py\n   │   └── standard.py\n   ├── tests/\n   │   ├── __init__.py\n   │   ├── test_accreditationcategory.py\n   │   └── test_accreditationstandard.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Each `tests/test_<model>.py` exercises its model: creation, declared fields, FK to `AccreditationCategory`.\n\n   `apps.py::AccreditationConfig.verbose_name = _(\"Accreditation\")`. Add `accreditation` to `INSTALLED_APPS`. Signals registered in `apps.py::ready()`.",
+    "raw": "1. `uv run python manage.py startapp accreditation`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   accreditation/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py\n   ├── querysets.py\n   ├── managers.py\n   ├── signals.py\n   ├── services.py\n   ├── selectors.py\n   ├── validators.py\n   ├── translation.py\n   ├── models/\n   │   ├── __init__.py\n   │   └── standard.py          # AccreditationCategory, AccreditationStandard\n   ├── admin/\n   │   ├── __init__.py\n   │   └── standard.py\n   ├── tests/\n   │   ├── __init__.py\n   │   ├── test_accreditationcategory.py\n   │   └── test_accreditationstandard.py\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   Each `tests/test_<model>.py` exercises its model: creation, declared fields, FK to `AccreditationCategory`.\n\n   `apps.py::AccreditationConfig.verbose_name = _(\"Accreditation\")`. Add `accreditation` to `INSTALLED_APPS`. Signals registered in `apps.py::ready()`."
+  },
+  {
+    "seq": 39,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`accreditation/models/standard.py` → `AccreditationCategory` (`code`, `label`, `order`) and `AccreditationStandard` (`code`, `category` FK to `AccreditationCategory`, `text`, `rubric`). Global reference data — no `school` FK. `AccreditationStandard.text` is untranslated per i18n spec (authoritative English). `accreditation/models/__init__.py` re-exports both.",
+    "raw": "2. `accreditation/models/standard.py` → `AccreditationCategory` (`code`, `label`, `order`) and `AccreditationStandard` (`code`, `category` FK to `AccreditationCategory`, `text`, `rubric`). Global reference data — no `school` FK. `AccreditationStandard.text` is untranslated per i18n spec (authoritative English). `accreditation/models/__init__.py` re-exports both."
+  },
+  {
+    "seq": 40,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "`accreditation/translation.py`: stub (per i18n spec, no translated fields on this app's models).",
+    "raw": "3. `accreditation/translation.py`: stub (per i18n spec, no translated fields on this app's models)."
+  },
+  {
+    "seq": 41,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`accreditation/admin/standard.py` with `@admin.register(...)` for both models; defaults per the admin-package spec.",
+    "raw": "4. `accreditation/admin/standard.py` with `@admin.register(...)` for both models; defaults per the admin-package spec."
+  },
+  {
+    "seq": 42,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations accreditation`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "5. `uv run python manage.py makemigrations accreditation`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 43,
+    "phase": "phase-03-accreditation-app.md",
+    "num": 6,
+    "section": "Layer A — extend permission groups with accreditation perms",
+    "text": "Data migration `accreditation/migrations/000X_extend_permission_groups.py` extends the three groups seeded by Phase 2's Layer A:\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `accreditation.*`.\n    - `plan_author` — `view_*` on every model in `accreditation.*`.\n    - `read_only` — `view_*` on every model in `accreditation.*`.\n\n   The migration enumerates `accreditation.*` ContentTypes at run time and grants accordingly. Idempotent + reversible.",
+    "raw": "6. Data migration `accreditation/migrations/000X_extend_permission_groups.py` extends the three groups seeded by Phase 2's Layer A:\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on every model in `accreditation.*`.\n    - `plan_author` — `view_*` on every model in `accreditation.*`.\n    - `read_only` — `view_*` on every model in `accreditation.*`.\n\n   The migration enumerates `accreditation.*` ContentTypes at run time and grants accordingly. Idempotent + reversible."
+  },
+  {
+    "seq": 44,
+    "phase": "phase-04-planning-method.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`school/models/priority_tier.py` → `PriorityTier`. Fields: `code` (CharField unique-per-school), `label` (translated), `order` (IntegerField). `Meta.ordering = [\"order\"]`.",
+    "raw": "1. `school/models/priority_tier.py` → `PriorityTier`. Fields: `code` (CharField unique-per-school), `label` (translated), `order` (IntegerField). `Meta.ordering = [\"order\"]`."
+  },
+  {
+    "seq": 45,
+    "phase": "phase-04-planning-method.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`school/models/subject_kind.py` → `SubjectKind`. Fields: `code` (CharField unique-per-school), `label` (translated), `requires_planning_method` (BooleanField, default False). When a `Plan.subject_kind` row has this flag set, the promotion gate requires `Plan.planning_method` to be set.",
+    "raw": "2. `school/models/subject_kind.py` → `SubjectKind`. Fields: `code` (CharField unique-per-school), `label` (translated), `requires_planning_method` (BooleanField, default False). When a `Plan.subject_kind` row has this flag set, the promotion gate requires `Plan.planning_method` to be set."
+  },
+  {
+    "seq": 46,
+    "phase": "phase-04-planning-method.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "`school/models/framing.py` → `FramingVocabulary`. Fields: `code` (CharField unique-per-school), `label` (translated), `description` (translated), `default_priority_tier` (FK to `PriorityTier`, null=True, blank=True). When a `Plan.framing_focus` row has a `default_priority_tier` and the author picks a different `Plan.priority_tier`, `Plan.clean()` requires `priority_rationale`.",
+    "raw": "3. `school/models/framing.py` → `FramingVocabulary`. Fields: `code` (CharField unique-per-school), `label` (translated), `description` (translated), `default_priority_tier` (FK to `PriorityTier`, null=True, blank=True). When a `Plan.framing_focus` row has a `default_priority_tier` and the author picks a different `Plan.priority_tier`, `Plan.clean()` requires `priority_rationale`."
+  },
+  {
+    "seq": 47,
+    "phase": "phase-04-planning-method.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`school/models/planning_method.py` → `PlanningMethod`, `PlanningStep`.\n    - `PlanningMethod`: `name` (translated), `rationale` (translated), `applicable_subject_kinds` (M2M to `SubjectKind`).\n    - `PlanningStep`: `planning_method` FK, `order` (IntegerField), `template` (translated). `Meta.ordering = [\"order\"]`.",
+    "raw": "4. `school/models/planning_method.py` → `PlanningMethod`, `PlanningStep`.\n    - `PlanningMethod`: `name` (translated), `rationale` (translated), `applicable_subject_kinds` (M2M to `SubjectKind`).\n    - `PlanningStep`: `planning_method` FK, `order` (IntegerField), `template` (translated). `Meta.ordering = [\"order\"]`."
+  },
+  {
+    "seq": 48,
+    "phase": "phase-04-planning-method.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "Update `school/models/__init__.py` to re-export `PriorityTier`, `SubjectKind`, `FramingVocabulary`, `PlanningMethod`, `PlanningStep`.",
+    "raw": "5. Update `school/models/__init__.py` to re-export `PriorityTier`, `SubjectKind`, `FramingVocabulary`, `PlanningMethod`, `PlanningStep`."
+  },
+  {
+    "seq": 49,
+    "phase": "phase-04-planning-method.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "Extend `school/translation.py`:\n\n   ```python\n   @register(PriorityTier)\n   class PriorityTierT(TranslationOptions): fields = (\"label\",)\n\n   @register(SubjectKind)\n   class SubjectKindT(TranslationOptions): fields = (\"label\",)\n\n   @register(FramingVocabulary)\n   class FramingVocabularyT(TranslationOptions): fields = (\"label\", \"description\")\n\n   @register(PlanningMethod)\n   class PlanningMethodT(TranslationOptions): fields = (\"name\", \"rationale\")\n\n   @register(PlanningStep)\n   class PlanningStepT(TranslationOptions): fields = (\"template\",)\n   ```",
+    "raw": "6. Extend `school/translation.py`:\n\n   ```python\n   @register(PriorityTier)\n   class PriorityTierT(TranslationOptions): fields = (\"label\",)\n\n   @register(SubjectKind)\n   class SubjectKindT(TranslationOptions): fields = (\"label\",)\n\n   @register(FramingVocabulary)\n   class FramingVocabularyT(TranslationOptions): fields = (\"label\", \"description\")\n\n   @register(PlanningMethod)\n   class PlanningMethodT(TranslationOptions): fields = (\"name\", \"rationale\")\n\n   @register(PlanningStep)\n   class PlanningStepT(TranslationOptions): fields = (\"template\",)\n   ```"
+  },
+  {
+    "seq": 50,
+    "phase": "phase-04-planning-method.md",
+    "num": 7,
+    "section": "Dev steps",
+    "text": "Per-model admin files under `school/admin/` (one per vocabulary) with `@admin.register(...)`. `PlanningMethodAdmin` carries `PlanningStepInline` (TabularInline). `FramingVocabularyAdmin` exposes `default_priority_tier` as autocomplete. `SubjectKindAdmin` exposes `requires_planning_method` in list_display and list_filter. Admin defaults per the admin-package spec.",
+    "raw": "7. Per-model admin files under `school/admin/` (one per vocabulary) with `@admin.register(...)`. `PlanningMethodAdmin` carries `PlanningStepInline` (TabularInline). `FramingVocabularyAdmin` exposes `default_priority_tier` as autocomplete. `SubjectKindAdmin` exposes `requires_planning_method` in list_display and list_filter. Admin defaults per the admin-package spec."
+  },
+  {
+    "seq": 51,
+    "phase": "phase-04-planning-method.md",
+    "num": 8,
+    "section": "Dev steps",
+    "text": "Extend `school/tests/` (existing package from Phase 2) with one `test_<model>.py` per new model: `test_prioritytier.py`, `test_subjectkind.py`, `test_framingvocabulary.py`, `test_planningmethod.py`, `test_planningstep.py`. Each exercises creation, per-school uniqueness on `code` where applicable, FK targets, and the `requires_planning_method` / `default_priority_tier` flags' wiring.",
+    "raw": "8. Extend `school/tests/` (existing package from Phase 2) with one `test_<model>.py` per new model: `test_prioritytier.py`, `test_subjectkind.py`, `test_framingvocabulary.py`, `test_planningmethod.py`, `test_planningstep.py`. Each exercises creation, per-school uniqueness on `code` where applicable, FK targets, and the `requires_planning_method` / `default_priority_tier` flags' wiring."
+  },
+  {
+    "seq": 52,
+    "phase": "phase-04-planning-method.md",
+    "num": 9,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations school`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "9. `uv run python manage.py makemigrations school`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 53,
+    "phase": "phase-04-planning-method.md",
+    "num": 10,
+    "section": "Layer A — extend permission groups with the new vocabulary perms",
+    "text": "Data migration `school/migrations/000X_extend_permission_groups_phase_4.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 5 new models introduced in this phase. Use the `_ensure_all_permissions(schema_editor)` + content-type iteration pattern established by school/0002 (per DISC-03-0519-A fix in commit `5be0231`) and accreditation/0002 — call `create_permissions(app_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms.\n\n    Grant set per group (mirrors school/0002's per-app intent):\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on `PriorityTier`, `SubjectKind`, `FramingVocabulary`, `PlanningMethod`, `PlanningStep`.\n    - `plan_author` — `view_*` on the same five.\n    - `read_only` — `view_*` on the same five.\n\n    Migration is idempotent + reversible.",
+    "raw": "10. Data migration `school/migrations/000X_extend_permission_groups_phase_4.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 5 new models introduced in this phase. Use the `_ensure_all_permissions(schema_editor)` + content-type iteration pattern established by school/0002 (per DISC-03-0519-A fix in commit `5be0231`) and accreditation/0002 — call `create_permissions(app_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms.\n\n    Grant set per group (mirrors school/0002's per-app intent):\n    - `school_curator` — `add_*`/`change_*`/`delete_*`/`view_*` on `PriorityTier`, `SubjectKind`, `FramingVocabulary`, `PlanningMethod`, `PlanningStep`.\n    - `plan_author` — `view_*` on the same five.\n    - `read_only` — `view_*` on the same five.\n\n    Migration is idempotent + reversible."
+  },
+  {
+    "seq": 54,
+    "phase": "phase-05-plans-scaffold.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py startapp plans`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   plans/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py           # reusable Q-expressions\n   ├── querysets.py             # PlanQuerySet, ActionStepQuerySet\n   ├── managers.py              # custom managers\n   ├── signals.py               # plan lifecycle hooks; registered in apps.py::ready()\n   ├── services.py              # create_plan, promote_proposal, advance_status (stubs)\n   ├── selectors.py             # plans_for_department, plan_evidence_summary (stubs)\n   ├── validators.py            # cross-field validators\n   ├── translation.py           # modeltranslation declarations (extended in later phases)\n   ├── models/\n   │   └── __init__.py          # empty re-export list at this phase\n   ├── admin/\n   │   ├── __init__.py\n   │   ├── inlines.py\n   │   ├── filters.py\n   │   ├── actions.py\n   │   ├── forms.py\n   │   └── widgets.py\n   ├── tests/\n   │   ├── __init__.py\n   │   └── test_choices.py       # exercises the TextChoices declarations\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   `tests/test_choices.py` exercises each `TextChoices` class in `choices.py`: enumerate values, confirm labels resolve under `gettext_lazy`, confirm membership of declared values.\n\n   `apps.py::PlansConfig.verbose_name = _(\"Plans\")`. Add `plans` to `INSTALLED_APPS`. Register signals in `apps.py::ready()`.",
+    "raw": "1. `uv run python manage.py startapp plans`. Replace `models.py`/`admin.py` with packages. Create the full app scaffold:\n\n   ```\n   plans/\n   ├── apps.py\n   ├── choices.py\n   ├── constraints.py           # reusable Q-expressions\n   ├── querysets.py             # PlanQuerySet, ActionStepQuerySet\n   ├── managers.py              # custom managers\n   ├── signals.py               # plan lifecycle hooks; registered in apps.py::ready()\n   ├── services.py              # create_plan, promote_proposal, advance_status (stubs)\n   ├── selectors.py             # plans_for_department, plan_evidence_summary (stubs)\n   ├── validators.py            # cross-field validators\n   ├── translation.py           # modeltranslation declarations (extended in later phases)\n   ├── models/\n   │   └── __init__.py          # empty re-export list at this phase\n   ├── admin/\n   │   ├── __init__.py\n   │   ├── inlines.py\n   │   ├── filters.py\n   │   ├── actions.py\n   │   ├── forms.py\n   │   └── widgets.py\n   ├── tests/\n   │   ├── __init__.py\n   │   └── test_choices.py       # exercises the TextChoices declarations\n   ├── locale/\n   │   ├── en/LC_MESSAGES/.gitkeep\n   │   └── zh_Hans/LC_MESSAGES/.gitkeep\n   └── migrations/\n   ```\n\n   `tests/test_choices.py` exercises each `TextChoices` class in `choices.py`: enumerate values, confirm labels resolve under `gettext_lazy`, confirm membership of declared values.\n\n   `apps.py::PlansConfig.verbose_name = _(\"Plans\")`. Add `plans` to `INSTALLED_APPS`. Register signals in `apps.py::ready()`."
+  },
+  {
+    "seq": 55,
+    "phase": "phase-05-plans-scaffold.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "Populate `plans/choices.py` with `TextChoices` (labels wrapped in `gettext_lazy`):\n\n   ```python\n   from django.db import models\n   from django.utils.translation import gettext_lazy as _\n\n   class Lifecycle(models.TextChoices):\n       PROPOSED = \"proposed\", _(\"Proposed\")\n       ACTIVE = \"active\", _(\"Active\")\n       UNDER_REVISION = \"under-revision\", _(\"Under revision\")\n       CLOSED = \"closed\", _(\"Closed\")\n\n   class EvidenceStatus(models.TextChoices):\n       PLANNED = \"planned\", _(\"Planned\")\n       IN_PROGRESS = \"in-progress\", _(\"In progress\")\n       PRODUCED = \"produced\", _(\"Produced\")\n       VERIFIED = \"verified\", _(\"Verified\")\n       ARCHIVED = \"archived\", _(\"Archived\")\n\n   class AssignmentKind(models.TextChoices):\n       RESPONSIBLE = \"responsible\", _(\"Responsible\")\n       PARTICIPANT = \"participant\", _(\"Participant\")\n\n   class TimelineKind(models.TextChoices):\n       SINGLE = \"single\", _(\"Single date\")\n       RANGE = \"range\", _(\"Date range\")\n       RECURRENCE = \"recurrence\", _(\"Recurrence\")\n       INDEFINITE = \"indefinite\", _(\"Indefinite\")\n\n   class ResourceKind(models.TextChoices):\n       TIME = \"time\", _(\"Time\")\n       FINANCIAL = \"financial\", _(\"Financial\")\n       HUMAN = \"human\", _(\"Human\")\n       EXTERNAL = \"external\", _(\"External\")\n       PLATFORM = \"platform\", _(\"Platform\")\n\n   class VerificationKind(models.TextChoices):\n       INSPECTION = \"inspection\", _(\"Inspection\")\n       JUDGMENT = \"judgment\", _(\"Judgment\")\n       TARGET = \"target\", _(\"Target\")\n   ```\n\n   `Frequency` is a curator-managed table in `school/` (Phase 4), not a `TextChoices` here. `DependencyKind` is dropped — the user story does not differentiate dependency kinds; `ActionStepDependency` carries no `kind` field.",
+    "raw": "2. Populate `plans/choices.py` with `TextChoices` (labels wrapped in `gettext_lazy`):\n\n   ```python\n   from django.db import models\n   from django.utils.translation import gettext_lazy as _\n\n   class Lifecycle(models.TextChoices):\n       PROPOSED = \"proposed\", _(\"Proposed\")\n       ACTIVE = \"active\", _(\"Active\")\n       UNDER_REVISION = \"under-revision\", _(\"Under revision\")\n       CLOSED = \"closed\", _(\"Closed\")\n\n   class EvidenceStatus(models.TextChoices):\n       PLANNED = \"planned\", _(\"Planned\")\n       IN_PROGRESS = \"in-progress\", _(\"In progress\")\n       PRODUCED = \"produced\", _(\"Produced\")\n       VERIFIED = \"verified\", _(\"Verified\")\n       ARCHIVED = \"archived\", _(\"Archived\")\n\n   class AssignmentKind(models.TextChoices):\n       RESPONSIBLE = \"responsible\", _(\"Responsible\")\n       PARTICIPANT = \"participant\", _(\"Participant\")\n\n   class TimelineKind(models.TextChoices):\n       SINGLE = \"single\", _(\"Single date\")\n       RANGE = \"range\", _(\"Date range\")\n       RECURRENCE = \"recurrence\", _(\"Recurrence\")\n       INDEFINITE = \"indefinite\", _(\"Indefinite\")\n\n   class ResourceKind(models.TextChoices):\n       TIME = \"time\", _(\"Time\")\n       FINANCIAL = \"financial\", _(\"Financial\")\n       HUMAN = \"human\", _(\"Human\")\n       EXTERNAL = \"external\", _(\"External\")\n       PLATFORM = \"platform\", _(\"Platform\")\n\n   class VerificationKind(models.TextChoices):\n       INSPECTION = \"inspection\", _(\"Inspection\")\n       JUDGMENT = \"judgment\", _(\"Judgment\")\n       TARGET = \"target\", _(\"Target\")\n   ```\n\n   `Frequency` is a curator-managed table in `school/` (Phase 4), not a `TextChoices` here. `DependencyKind` is dropped — the user story does not differentiate dependency kinds; `ActionStepDependency` carries no `kind` field."
+  },
+  {
+    "seq": 56,
+    "phase": "phase-05-plans-scaffold.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Stubs for `plans/constraints.py`, `plans/querysets.py`, `plans/managers.py`, `plans/signals.py`, `plans/services.py`, `plans/selectors.py`, `plans/validators.py`, `plans/translation.py` (translation declarations extended in Phases 6–14).",
+    "raw": "3. Stubs for `plans/constraints.py`, `plans/querysets.py`, `plans/managers.py`, `plans/signals.py`, `plans/services.py`, `plans/selectors.py`, `plans/validators.py`, `plans/translation.py` (translation declarations extended in Phases 6–14)."
+  },
+  {
+    "seq": 57,
+    "phase": "phase-06-plan-core.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/models/plan.py` → `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (through-model with rationale).\n\n   `Plan` scalar fields (per dev plan + noun list):\n    - `id` (default Django PK).\n    - `school` — `ForeignKey(school.School, on_delete=PROTECT)`.\n    - `title` (translated).\n    - `lifecycle` — `CharField` with `choices=Lifecycle.choices` from `plans/choices.py`; default `Lifecycle.PROPOSED`.\n    - `cycle` — `ForeignKey(school.Cycle, on_delete=PROTECT)`.\n    - `author` — `ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT)`. The author is a person; `Role` is a position. The user story step 1 (\"Author opens the system and starts a new plan\") fixes this reading.\n    - `current_state` (translated, TextField).\n    - `desired_state` (translated, TextField).\n    - `rationale` (translated, TextField).\n    - `slos_targeted_all` — `BooleanField(default=False)`. When true, all `LearnerOutcome` rows are targeted; supersedes the per-row M2M.\n    - `mission_areas_targeted_all` — `BooleanField(default=False)`. Same pattern for `MissionArea`.\n\n   `Plan` M2Ms (per dev plan):\n    - `areas_for_improvement` → `school.AreaForImprovement`.\n    - `accreditation_standards` → `accreditation.AccreditationStandard` through `PlanAccreditationStandard` (carries per-standard rationale).\n    - `learner_outcomes_targeted` → `school.LearnerOutcome`.\n    - `mission_areas_targeted` → `school.MissionArea`.\n    - `stakeholder_impact` → `school.StakeholderGroup`.\n    - `policies_established` → `school.Policy` with `related_name=\"established_by_plans\"`.\n    - `policies_revised` → `school.Policy` with `related_name=\"revised_by_plans\"`.\n    - `predecessors` → self, `symmetrical=False`, through `PlanPredecessor`.\n\n   `PlanPredecessor` fields: `plan` → `Plan`, `predecessor` → `Plan`. `CheckConstraint(check=~Q(plan=F(\"predecessor\")), name=\"planpredecessor_no_self_loop\")`.\n\n   `PlanAccreditationStandard` fields: `plan` → `Plan`, `accreditation_standard` → `accreditation.AccreditationStandard`, `rationale` (translated TextField).\n\n   Update `plans/models/__init__.py`:\n\n   ```python\n   from .plan import Plan, PlanPredecessor, PlanAccreditationStandard\n   ```",
+    "raw": "1. `plans/models/plan.py` → `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (through-model with rationale).\n\n   `Plan` scalar fields (per dev plan + noun list):\n    - `id` (default Django PK).\n    - `school` — `ForeignKey(school.School, on_delete=PROTECT)`.\n    - `title` (translated).\n    - `lifecycle` — `CharField` with `choices=Lifecycle.choices` from `plans/choices.py`; default `Lifecycle.PROPOSED`.\n    - `cycle` — `ForeignKey(school.Cycle, on_delete=PROTECT)`.\n    - `author` — `ForeignKey(settings.AUTH_USER_MODEL, on_delete=PROTECT)`. The author is a person; `Role` is a position. The user story step 1 (\"Author opens the system and starts a new plan\") fixes this reading.\n    - `current_state` (translated, TextField).\n    - `desired_state` (translated, TextField).\n    - `rationale` (translated, TextField).\n    - `slos_targeted_all` — `BooleanField(default=False)`. When true, all `LearnerOutcome` rows are targeted; supersedes the per-row M2M.\n    - `mission_areas_targeted_all` — `BooleanField(default=False)`. Same pattern for `MissionArea`.\n\n   `Plan` M2Ms (per dev plan):\n    - `areas_for_improvement` → `school.AreaForImprovement`.\n    - `accreditation_standards` → `accreditation.AccreditationStandard` through `PlanAccreditationStandard` (carries per-standard rationale).\n    - `learner_outcomes_targeted` → `school.LearnerOutcome`.\n    - `mission_areas_targeted` → `school.MissionArea`.\n    - `stakeholder_impact` → `school.StakeholderGroup`.\n    - `policies_established` → `school.Policy` with `related_name=\"established_by_plans\"`.\n    - `policies_revised` → `school.Policy` with `related_name=\"revised_by_plans\"`.\n    - `predecessors` → self, `symmetrical=False`, through `PlanPredecessor`.\n\n   `PlanPredecessor` fields: `plan` → `Plan`, `predecessor` → `Plan`. `CheckConstraint(check=~Q(plan=F(\"predecessor\")), name=\"planpredecessor_no_self_loop\")`.\n\n   `PlanAccreditationStandard` fields: `plan` → `Plan`, `accreditation_standard` → `accreditation.AccreditationStandard`, `rationale` (translated TextField).\n\n   Update `plans/models/__init__.py`:\n\n   ```python\n   from .plan import Plan, PlanPredecessor, PlanAccreditationStandard\n   ```"
+  },
+  {
+    "seq": 58,
+    "phase": "phase-06-plan-core.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`plans/translation.py` adds:\n\n   ```python\n   from modeltranslation.translator import register, TranslationOptions\n   from .models import Plan, PlanAccreditationStandard\n\n   @register(Plan)\n   class PlanT(TranslationOptions):\n       fields = (\"title\", \"current_state\", \"desired_state\", \"rationale\")\n\n   @register(PlanAccreditationStandard)\n   class PlanAccreditationStandardT(TranslationOptions):\n       fields = (\"rationale\",)\n   ```",
+    "raw": "2. `plans/translation.py` adds:\n\n   ```python\n   from modeltranslation.translator import register, TranslationOptions\n   from .models import Plan, PlanAccreditationStandard\n\n   @register(Plan)\n   class PlanT(TranslationOptions):\n       fields = (\"title\", \"current_state\", \"desired_state\", \"rationale\")\n\n   @register(PlanAccreditationStandard)\n   class PlanAccreditationStandardT(TranslationOptions):\n       fields = (\"rationale\",)\n   ```"
+  },
+  {
+    "seq": 59,
+    "phase": "phase-06-plan-core.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "`plans/admin/plan.py` with fieldsets covering identity + domain alignment (per i18n spec example):\n\n   ```python\n   @admin.register(Plan)\n   class PlanAdmin(admin.ModelAdmin):\n       list_display = (\"title\", \"cycle\", \"lifecycle\")\n       list_filter = (\"lifecycle\",)  # CycleFilter added when defined in admin/filters.py\n       search_fields = (\"title\", \"rationale\")\n       autocomplete_fields = (\"cycle\", \"author\")\n       filter_horizontal = (\n           \"areas_for_improvement\", \"learner_outcomes_targeted\",\n           \"mission_areas_targeted\", \"stakeholder_impact\",\n           \"policies_established\", \"policies_revised\",\n       )\n       save_as = True\n       fieldsets = (\n           (_(\"Identity\"), {\"fields\": (\"title\", \"author\", \"cycle\")}),\n           (_(\"Problem statement\"), {\"fields\": (\"current_state\", \"desired_state\", \"rationale\")}),\n           (_(\"Lifecycle\"), {\"fields\": (\"lifecycle\",)}),\n           (_(\"Domain alignment\"), {\"fields\": (\n               \"areas_for_improvement\", \"learner_outcomes_targeted\",\n               \"mission_areas_targeted\", \"stakeholder_impact\",\n               \"policies_established\", \"policies_revised\",\n           )}),\n       )\n   ```\n\n   `PlanAccreditationStandard` registered as `TabularInline` on `PlanAdmin` (through-model with rationale). `PlanPredecessor` registered as `TabularInline`.",
+    "raw": "3. `plans/admin/plan.py` with fieldsets covering identity + domain alignment (per i18n spec example):\n\n   ```python\n   @admin.register(Plan)\n   class PlanAdmin(admin.ModelAdmin):\n       list_display = (\"title\", \"cycle\", \"lifecycle\")\n       list_filter = (\"lifecycle\",)  # CycleFilter added when defined in admin/filters.py\n       search_fields = (\"title\", \"rationale\")\n       autocomplete_fields = (\"cycle\", \"author\")\n       filter_horizontal = (\n           \"areas_for_improvement\", \"learner_outcomes_targeted\",\n           \"mission_areas_targeted\", \"stakeholder_impact\",\n           \"policies_established\", \"policies_revised\",\n       )\n       save_as = True\n       fieldsets = (\n           (_(\"Identity\"), {\"fields\": (\"title\", \"author\", \"cycle\")}),\n           (_(\"Problem statement\"), {\"fields\": (\"current_state\", \"desired_state\", \"rationale\")}),\n           (_(\"Lifecycle\"), {\"fields\": (\"lifecycle\",)}),\n           (_(\"Domain alignment\"), {\"fields\": (\n               \"areas_for_improvement\", \"learner_outcomes_targeted\",\n               \"mission_areas_targeted\", \"stakeholder_impact\",\n               \"policies_established\", \"policies_revised\",\n           )}),\n       )\n   ```\n\n   `PlanAccreditationStandard` registered as `TabularInline` on `PlanAdmin` (through-model with rationale). `PlanPredecessor` registered as `TabularInline`."
+  },
+  {
+    "seq": 60,
+    "phase": "phase-06-plan-core.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "4. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 61,
+    "phase": "phase-06-plan-core.md",
+    "num": 5,
+    "section": "Layer A — extend permission groups with plans perms",
+    "text": "Data migration `plans/migrations/0002_extend_permission_groups_phase_6.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 3 new models introduced in this phase (`Plan`, `PlanPredecessor`, `PlanAccreditationStandard`). Use the `_ensure_all_permissions(schema_editor)` + content-type iteration pattern from `school/0002` (post-DISC-03-0519-A fix in commit `5be0231`) and `accreditation/0002` — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms.\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (curators see plans but author them as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (full CRUD; this is the role's primary responsibility per Phase 2's Layer A design intent).\n    - `read_only` — `view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard`.\n\n    Migration is idempotent + reversible.\n\n`PlanAccreditationStandard.rationale` is translated (school-authored prose), registered in `plans/translation.py` alongside `Plan` translations per step 2 above.",
+    "raw": "5. Data migration `plans/migrations/0002_extend_permission_groups_phase_6.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 3 new models introduced in this phase (`Plan`, `PlanPredecessor`, `PlanAccreditationStandard`). Use the `_ensure_all_permissions(schema_editor)` + content-type iteration pattern from `school/0002` (post-DISC-03-0519-A fix in commit `5be0231`) and `accreditation/0002` — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms.\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (curators see plans but author them as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard` (full CRUD; this is the role's primary responsibility per Phase 2's Layer A design intent).\n    - `read_only` — `view_*` on `Plan`, `PlanPredecessor`, `PlanAccreditationStandard`.\n\n    Migration is idempotent + reversible.\n\n`PlanAccreditationStandard.rationale` is translated (school-authored prose), registered in `plans/translation.py` alongside `Plan` translations per step 2 above."
+  },
+  {
+    "seq": 62,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/models/feedback.py` → `FeedbackChannel`.\n\n   `FeedbackChannel` named fields (per dev plan):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)` (plan-owned per noun list).\n    - `label` (translated, CharField).\n    - `stakeholder` — `ForeignKey(school.StakeholderGroup)` (semantics: the source of feedback).\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `frequency` — `ForeignKey(school.Frequency, on_delete=PROTECT)`.\n    - `instrument` (translated, CharField).",
+    "raw": "1. `plans/models/feedback.py` → `FeedbackChannel`.\n\n   `FeedbackChannel` named fields (per dev plan):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)` (plan-owned per noun list).\n    - `label` (translated, CharField).\n    - `stakeholder` — `ForeignKey(school.StakeholderGroup)` (semantics: the source of feedback).\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `frequency` — `ForeignKey(school.Frequency, on_delete=PROTECT)`.\n    - `instrument` (translated, CharField)."
+  },
+  {
+    "seq": 63,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`plans/models/verification.py` → `SuccessCriterion`, `Measurement`, `MeasurementChannel`.\n\n   `SuccessCriterion` named fields (per dev plan + noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `text` (translated, TextField — the criterion statement).\n    - `verification_kind` — `CharField(choices=VerificationKind.choices)` with values `inspection` / `judgment` / `target` (per dev plan).\n    - `target_value` — `DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)`.\n    - `target_unit` — `CharField(null=True, blank=True)`.\n    - `baseline` — `DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)`.\n\n   `Measurement` — through-model binding one `SuccessCriterion` to one or more `FeedbackChannel`s. Named fields (per noun list):\n    - `success_criterion` — `ForeignKey(SuccessCriterion, on_delete=CASCADE)`.\n    - `feedback_channels` — `ManyToManyField(FeedbackChannel, through=\"MeasurementChannel\")`.\n\n   `MeasurementChannel` — through-model for the `Measurement` ↔ `FeedbackChannel` M2M.\n    - `measurement` — `ForeignKey(Measurement, on_delete=CASCADE)`.\n    - `feedback_channel` — `ForeignKey(FeedbackChannel, on_delete=CASCADE)`.",
+    "raw": "2. `plans/models/verification.py` → `SuccessCriterion`, `Measurement`, `MeasurementChannel`.\n\n   `SuccessCriterion` named fields (per dev plan + noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `text` (translated, TextField — the criterion statement).\n    - `verification_kind` — `CharField(choices=VerificationKind.choices)` with values `inspection` / `judgment` / `target` (per dev plan).\n    - `target_value` — `DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)`.\n    - `target_unit` — `CharField(null=True, blank=True)`.\n    - `baseline` — `DecimalField(max_digits=18, decimal_places=6, null=True, blank=True)`.\n\n   `Measurement` — through-model binding one `SuccessCriterion` to one or more `FeedbackChannel`s. Named fields (per noun list):\n    - `success_criterion` — `ForeignKey(SuccessCriterion, on_delete=CASCADE)`.\n    - `feedback_channels` — `ManyToManyField(FeedbackChannel, through=\"MeasurementChannel\")`.\n\n   `MeasurementChannel` — through-model for the `Measurement` ↔ `FeedbackChannel` M2M.\n    - `measurement` — `ForeignKey(Measurement, on_delete=CASCADE)`.\n    - `feedback_channel` — `ForeignKey(FeedbackChannel, on_delete=CASCADE)`."
+  },
+  {
+    "seq": 64,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Update `plans/models/__init__.py`:\n\n   ```python\n   from .feedback import FeedbackChannel\n   from .verification import SuccessCriterion, Measurement, MeasurementChannel\n   ```",
+    "raw": "3. Update `plans/models/__init__.py`:\n\n   ```python\n   from .feedback import FeedbackChannel\n   from .verification import SuccessCriterion, Measurement, MeasurementChannel\n   ```"
+  },
+  {
+    "seq": 65,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "Extend `plans/translation.py`:\n\n   ```python\n   @register(SuccessCriterion)\n   class SuccessCriterionT(TranslationOptions):\n       fields = (\"text\",)\n\n   @register(FeedbackChannel)\n   class FeedbackChannelT(TranslationOptions):\n       fields = (\"label\", \"instrument\")\n   ```",
+    "raw": "4. Extend `plans/translation.py`:\n\n   ```python\n   @register(SuccessCriterion)\n   class SuccessCriterionT(TranslationOptions):\n       fields = (\"text\",)\n\n   @register(FeedbackChannel)\n   class FeedbackChannelT(TranslationOptions):\n       fields = (\"label\", \"instrument\")\n   ```"
+  },
+  {
+    "seq": 66,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`plans/admin/feedback.py` (`FeedbackChannelAdmin`) and `plans/admin/verification.py` (`SuccessCriterionAdmin`, `MeasurementAdmin`). `Measurement` registered as `TabularInline` on `SuccessCriterionAdmin` so authors bind criteria to channels in one screen. `MeasurementChannel` registered as inline on `MeasurementAdmin` if separately visible, else inlined indirectly. Admin defaults per the admin-package spec.",
+    "raw": "5. `plans/admin/feedback.py` (`FeedbackChannelAdmin`) and `plans/admin/verification.py` (`SuccessCriterionAdmin`, `MeasurementAdmin`). `Measurement` registered as `TabularInline` on `SuccessCriterionAdmin` so authors bind criteria to channels in one screen. `MeasurementChannel` registered as inline on `MeasurementAdmin` if separately visible, else inlined indirectly. Admin defaults per the admin-package spec."
+  },
+  {
+    "seq": 67,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "6. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 68,
+    "phase": "phase-07-success-criterion-measurement.md",
+    "num": 7,
+    "section": "Layer A — extend permission groups with Phase-7 plans perms",
+    "text": "Data migration `plans/migrations/0004_extend_permission_groups_phase_7.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 4 new models introduced in this phase (`FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0002_extend_permission_groups_phase_6.py` (commit `35a2653`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel` (full CRUD).\n    - `read_only` — `view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-7 model-introducing migration (`plans/0003_*`) and on `school/0002_seed_permission_groups`.\n\n`SuccessCriterion.Meta.constraints` includes a `CheckConstraint` enforcing the target-fields-when-applicable rule: `target_value`, `target_unit`, `baseline` are non-null iff `verification_kind == 'target'`. Declarative, in the model, not in `clean()`.",
+    "raw": "7. Data migration `plans/migrations/0004_extend_permission_groups_phase_7.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 4 new models introduced in this phase (`FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0002_extend_permission_groups_phase_6.py` (commit `35a2653`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel` (full CRUD).\n    - `read_only` — `view_*` on `FeedbackChannel`, `SuccessCriterion`, `Measurement`, `MeasurementChannel`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-7 model-introducing migration (`plans/0003_*`) and on `school/0002_seed_permission_groups`.\n\n`SuccessCriterion.Meta.constraints` includes a `CheckConstraint` enforcing the target-fields-when-applicable rule: `target_value`, `target_unit`, `baseline` are non-null iff `verification_kind == 'target'`. Declarative, in the model, not in `clean()`."
+  },
+  {
+    "seq": 69,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/models/phase.py` → `Phase`.\n\n   `Phase` fields:\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` (translated, CharField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`.",
+    "raw": "1. `plans/models/phase.py` → `Phase`.\n\n   `Phase` fields:\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` (translated, CharField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`."
+  },
+  {
+    "seq": 70,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`plans/models/action.py` — at this phase, **only** `ActionStep` (child models deferred to Phase 9).\n\n   `ActionStep` fields:\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `phase` — `ForeignKey(Phase, null=True, blank=True, on_delete=SET_NULL)` — an action step may exist without being grouped into a phase per US-17 (\"optionally groups\").\n    - `description` (translated, TextField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`.",
+    "raw": "2. `plans/models/action.py` — at this phase, **only** `ActionStep` (child models deferred to Phase 9).\n\n   `ActionStep` fields:\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `phase` — `ForeignKey(Phase, null=True, blank=True, on_delete=SET_NULL)` — an action step may exist without being grouped into a phase per US-17 (\"optionally groups\").\n    - `description` (translated, TextField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`."
+  },
+  {
+    "seq": 71,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Update `plans/models/__init__.py`:\n\n   ```python\n   from .phase import Phase\n   from .action import ActionStep\n   ```",
+    "raw": "3. Update `plans/models/__init__.py`:\n\n   ```python\n   from .phase import Phase\n   from .action import ActionStep\n   ```"
+  },
+  {
+    "seq": 72,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "Extend `plans/translation.py`:\n\n   ```python\n   @register(Phase)\n   class PhaseT(TranslationOptions):\n       fields = (\"label\",)\n\n   @register(ActionStep)\n   class ActionStepT(TranslationOptions):\n       fields = (\"description\",)\n   ```",
+    "raw": "4. Extend `plans/translation.py`:\n\n   ```python\n   @register(Phase)\n   class PhaseT(TranslationOptions):\n       fields = (\"label\",)\n\n   @register(ActionStep)\n   class ActionStepT(TranslationOptions):\n       fields = (\"description\",)\n   ```"
+  },
+  {
+    "seq": 73,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`plans/admin/phase.py` → `PhaseAdmin`. `plans/admin/action.py` → `ActionStepAdmin` (skeleton; no inlines until Phase 9). Both use `@admin.register(...)`. Admin defaults per the admin-package spec. `raw_id_fields = (\"plan\",)` (high-cardinality).",
+    "raw": "5. `plans/admin/phase.py` → `PhaseAdmin`. `plans/admin/action.py` → `ActionStepAdmin` (skeleton; no inlines until Phase 9). Both use `@admin.register(...)`. Admin defaults per the admin-package spec. `raw_id_fields = (\"plan\",)` (high-cardinality)."
+  },
+  {
+    "seq": 74,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "6. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 75,
+    "phase": "phase-08-phase-and-action-step-skeleton.md",
+    "num": 7,
+    "section": "Layer A — extend permission groups with Phase-8 plans perms",
+    "text": "Data migration `plans/migrations/0006_extend_permission_groups_phase_8.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 2 new models introduced in this phase (`Phase`, `ActionStep`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0004_extend_permission_groups_phase_7.py` (commit `56b2b38`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Phase`, `ActionStep` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Phase`, `ActionStep` (full CRUD).\n    - `read_only` — `view_*` on `Phase`, `ActionStep`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-8 model-introducing migration (`plans/0005_*`) and on `school/0002_seed_permission_groups`.",
+    "raw": "7. Data migration `plans/migrations/0006_extend_permission_groups_phase_8.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 2 new models introduced in this phase (`Phase`, `ActionStep`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0004_extend_permission_groups_phase_7.py` (commit `56b2b38`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Phase`, `ActionStep` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Phase`, `ActionStep` (full CRUD).\n    - `read_only` — `view_*` on `Phase`, `ActionStep`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-8 model-introducing migration (`plans/0005_*`) and on `school/0002_seed_permission_groups`."
+  },
+  {
+    "seq": 76,
+    "phase": "phase-09-action-step-children.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "Extend `plans/models/action.py` with `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`.\n\n   **`SubStep`** (per dev plan + i18n):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `description` (translated, TextField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`.\n\n   **`Assignment`** (per noun list):\n    - `step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=AssignmentKind.choices)` with values `responsible` / `participant`.\n    - `department` — `ForeignKey(school.Department, null=True, blank=True, on_delete=PROTECT)`.\n    - `role` — `ForeignKey(school.Role, null=True, blank=True, on_delete=PROTECT)`.\n    - `stakeholder_group` — `ForeignKey(school.StakeholderGroup, null=True, blank=True, on_delete=PROTECT)`.\n    - `Meta.constraints`: exactly-one `CheckConstraint` over (`department`, `role`, `stakeholder_group`) per preamble pattern.\n\n   **`Timeline`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=TimelineKind.choices)` with values `single` / `range` / `recurrence` / `indefinite`.\n    - `date` — `DateField(null=True, blank=True)`.\n    - `from_date` — `DateField(null=True, blank=True)`.\n    - `to_date` — `DateField(null=True, blank=True)`.\n    - `note` — `TextField(blank=True)`.\n    - `Meta.constraints` includes a `CheckConstraint` enforcing field-presence per `kind`:\n      - `single`: `date` required; `from_date`/`to_date` null.\n      - `range`: `from_date` and `to_date` required; `date` null.\n      - `recurrence`: `note` carries the recurrence as free text (e.g., \"every Friday during Q2\"); all date fields null.\n      - `indefinite`: all date fields null.\n\n      `Q()` predicate per preamble pattern over (`date`, `from_date`, `to_date`) presence by `kind`.\n\n   **`RequiredResource`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=ResourceKind.choices)` with values `time` / `financial` / `human` / `external` / `platform`.\n    - `note` — `TextField(blank=True)`.\n\n   **`ActionStepDependency`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, related_name=\"dependencies\", on_delete=CASCADE)` (the dependent step).\n    - `depends_on` — `ForeignKey(ActionStep, null=True, blank=True, related_name=\"dependents\", on_delete=PROTECT)` (within-plan target).\n    - `cross_plan_ref` — `CharField(max_length=64, null=True, blank=True, validators=[RegexValidator(r\"^\\d+:\\d+$\")])` carrying `\"<plan_id>:<step_id>\"` (cross-plan target).\n    - `Meta.constraints`:\n      - Exactly-one-of-target: `Q(depends_on__isnull=False, cross_plan_ref__isnull=True) | Q(depends_on__isnull=True, cross_plan_ref__isnull=False)`.\n      - No-self-loop: `~Q(depends_on=F(\"action_step\"))`.\n\n   No `kind` field. The user story does not differentiate dependency kinds.",
+    "raw": "1. Extend `plans/models/action.py` with `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`.\n\n   **`SubStep`** (per dev plan + i18n):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `description` (translated, TextField).\n    - `order` — `IntegerField`. `Meta.ordering = [\"order\"]`.\n\n   **`Assignment`** (per noun list):\n    - `step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=AssignmentKind.choices)` with values `responsible` / `participant`.\n    - `department` — `ForeignKey(school.Department, null=True, blank=True, on_delete=PROTECT)`.\n    - `role` — `ForeignKey(school.Role, null=True, blank=True, on_delete=PROTECT)`.\n    - `stakeholder_group` — `ForeignKey(school.StakeholderGroup, null=True, blank=True, on_delete=PROTECT)`.\n    - `Meta.constraints`: exactly-one `CheckConstraint` over (`department`, `role`, `stakeholder_group`) per preamble pattern.\n\n   **`Timeline`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=TimelineKind.choices)` with values `single` / `range` / `recurrence` / `indefinite`.\n    - `date` — `DateField(null=True, blank=True)`.\n    - `from_date` — `DateField(null=True, blank=True)`.\n    - `to_date` — `DateField(null=True, blank=True)`.\n    - `note` — `TextField(blank=True)`.\n    - `Meta.constraints` includes a `CheckConstraint` enforcing field-presence per `kind`:\n      - `single`: `date` required; `from_date`/`to_date` null.\n      - `range`: `from_date` and `to_date` required; `date` null.\n      - `recurrence`: `note` carries the recurrence as free text (e.g., \"every Friday during Q2\"); all date fields null.\n      - `indefinite`: all date fields null.\n\n      `Q()` predicate per preamble pattern over (`date`, `from_date`, `to_date`) presence by `kind`.\n\n   **`RequiredResource`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, on_delete=CASCADE)`.\n    - `kind` — `CharField(choices=ResourceKind.choices)` with values `time` / `financial` / `human` / `external` / `platform`.\n    - `note` — `TextField(blank=True)`.\n\n   **`ActionStepDependency`** (per noun list):\n    - `action_step` — `ForeignKey(ActionStep, related_name=\"dependencies\", on_delete=CASCADE)` (the dependent step).\n    - `depends_on` — `ForeignKey(ActionStep, null=True, blank=True, related_name=\"dependents\", on_delete=PROTECT)` (within-plan target).\n    - `cross_plan_ref` — `CharField(max_length=64, null=True, blank=True, validators=[RegexValidator(r\"^\\d+:\\d+$\")])` carrying `\"<plan_id>:<step_id>\"` (cross-plan target).\n    - `Meta.constraints`:\n      - Exactly-one-of-target: `Q(depends_on__isnull=False, cross_plan_ref__isnull=True) | Q(depends_on__isnull=True, cross_plan_ref__isnull=False)`.\n      - No-self-loop: `~Q(depends_on=F(\"action_step\"))`.\n\n   No `kind` field. The user story does not differentiate dependency kinds."
+  },
+  {
+    "seq": 77,
+    "phase": "phase-09-action-step-children.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "Update `plans/models/__init__.py`:\n\n   ```python\n   from .action import (\n       ActionStep, SubStep, Assignment, Timeline,\n       RequiredResource, ActionStepDependency,\n   )\n   ```",
+    "raw": "2. Update `plans/models/__init__.py`:\n\n   ```python\n   from .action import (\n       ActionStep, SubStep, Assignment, Timeline,\n       RequiredResource, ActionStepDependency,\n   )\n   ```"
+  },
+  {
+    "seq": 78,
+    "phase": "phase-09-action-step-children.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Extend `plans/translation.py`:\n\n   ```python\n   @register(SubStep)\n   class SubStepT(TranslationOptions):\n       fields = (\"description\",)\n   ```",
+    "raw": "3. Extend `plans/translation.py`:\n\n   ```python\n   @register(SubStep)\n   class SubStepT(TranslationOptions):\n       fields = (\"description\",)\n   ```"
+  },
+  {
+    "seq": 79,
+    "phase": "phase-09-action-step-children.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "Extend `plans/admin/action.py`. Register `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` as inlines on `ActionStepAdmin` (`TabularInline` or `StackedInline` per content density). Shared inlines that recur across multiple admins live in `plans/admin/inlines.py`; single-use inlines stay alongside `ActionStepAdmin` in `action.py` per the admin-package spec.",
+    "raw": "4. Extend `plans/admin/action.py`. Register `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` as inlines on `ActionStepAdmin` (`TabularInline` or `StackedInline` per content density). Shared inlines that recur across multiple admins live in `plans/admin/inlines.py`; single-use inlines stay alongside `ActionStepAdmin` in `action.py` per the admin-package spec."
+  },
+  {
+    "seq": 80,
+    "phase": "phase-09-action-step-children.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "5. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 81,
+    "phase": "phase-09-action-step-children.md",
+    "num": 6,
+    "section": "Layer A — extend permission groups with Phase-9 plans perms",
+    "text": "Data migration `plans/migrations/0008_extend_permission_groups_phase_9.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 5 new models introduced in this phase (`SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0006_extend_permission_groups_phase_8.py` (commit `cfeba91`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` (full CRUD).\n    - `read_only` — `view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-9 model-introducing migration (`plans/0007_*`) and on `school/0002_seed_permission_groups`.",
+    "raw": "6. Data migration `plans/migrations/0008_extend_permission_groups_phase_9.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 5 new models introduced in this phase (`SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0006_extend_permission_groups_phase_8.py` (commit `cfeba91`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency` (full CRUD).\n    - `read_only` — `view_*` on `SubStep`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-9 model-introducing migration (`plans/0007_*`) and on `school/0002_seed_permission_groups`."
+  },
+  {
+    "seq": 82,
+    "phase": "phase-10-outputs.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/models/output.py` → `Communication`, `Evidence`.\n\n   **`Communication`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `audience` — `ForeignKey(school.StakeholderGroup, on_delete=PROTECT)`.\n    - `channel` (translated, CharField).\n    - `frequency` — `ForeignKey(school.Frequency, on_delete=PROTECT)`.\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n\n   **`Evidence`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` (translated, CharField).\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `status` — `CharField(choices=EvidenceStatus.choices)` with values `planned` / `in-progress` / `produced` / `verified` / `archived`; default `planned`. Transitions are free (no `clean()` enforcement); authors manage the lifecycle.\n    - `retention_until` — `DateField(null=True, blank=True)`. Referenced by `BACKUPS.md` retention policy.\n\n   `Evidence` linked from `ActionStep` via M2M added in `action.py`: `ActionStep.evidence_artifacts = ManyToManyField(\"plans.Evidence\", related_name=\"action_steps\", blank=True)`. Exposed via `filter_horizontal` on `ActionStepAdmin`. No through-model.",
+    "raw": "1. `plans/models/output.py` → `Communication`, `Evidence`.\n\n   **`Communication`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `audience` — `ForeignKey(school.StakeholderGroup, on_delete=PROTECT)`.\n    - `channel` (translated, CharField).\n    - `frequency` — `ForeignKey(school.Frequency, on_delete=PROTECT)`.\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n\n   **`Evidence`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` (translated, CharField).\n    - `owner` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `status` — `CharField(choices=EvidenceStatus.choices)` with values `planned` / `in-progress` / `produced` / `verified` / `archived`; default `planned`. Transitions are free (no `clean()` enforcement); authors manage the lifecycle.\n    - `retention_until` — `DateField(null=True, blank=True)`. Referenced by `BACKUPS.md` retention policy.\n\n   `Evidence` linked from `ActionStep` via M2M added in `action.py`: `ActionStep.evidence_artifacts = ManyToManyField(\"plans.Evidence\", related_name=\"action_steps\", blank=True)`. Exposed via `filter_horizontal` on `ActionStepAdmin`. No through-model."
+  },
+  {
+    "seq": 83,
+    "phase": "phase-10-outputs.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "Update `plans/models/__init__.py`:\n\n   ```python\n   from .output import Communication, Evidence\n   ```",
+    "raw": "2. Update `plans/models/__init__.py`:\n\n   ```python\n   from .output import Communication, Evidence\n   ```"
+  },
+  {
+    "seq": 84,
+    "phase": "phase-10-outputs.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Extend `plans/translation.py`:\n\n   ```python\n   @register(Communication)\n   class CommunicationT(TranslationOptions):\n       fields = (\"channel\",)\n\n   @register(Evidence)\n   class EvidenceT(TranslationOptions):\n       fields = (\"label\",)\n   ```",
+    "raw": "3. Extend `plans/translation.py`:\n\n   ```python\n   @register(Communication)\n   class CommunicationT(TranslationOptions):\n       fields = (\"channel\",)\n\n   @register(Evidence)\n   class EvidenceT(TranslationOptions):\n       fields = (\"label\",)\n   ```"
+  },
+  {
+    "seq": 85,
+    "phase": "phase-10-outputs.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`plans/admin/output.py` → `CommunicationAdmin`, `EvidenceAdmin`. Admin defaults per the admin-package spec. `EvidenceAdmin` `list_filter` includes `status`. Admin permits free transitions between any `EvidenceStatus` values; the lifecycle is descriptive, not gated.",
+    "raw": "4. `plans/admin/output.py` → `CommunicationAdmin`, `EvidenceAdmin`. Admin defaults per the admin-package spec. `EvidenceAdmin` `list_filter` includes `status`. Admin permits free transitions between any `EvidenceStatus` values; the lifecycle is descriptive, not gated."
+  },
+  {
+    "seq": 86,
+    "phase": "phase-10-outputs.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "Extend `plans/admin/action.py` to expose the `Evidence` M2M on `ActionStepAdmin`: `filter_horizontal = (\"evidence_artifacts\",)` (or an inline if a through-model is added).",
+    "raw": "5. Extend `plans/admin/action.py` to expose the `Evidence` M2M on `ActionStepAdmin`: `filter_horizontal = (\"evidence_artifacts\",)` (or an inline if a through-model is added)."
+  },
+  {
+    "seq": 87,
+    "phase": "phase-10-outputs.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "6. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 88,
+    "phase": "phase-10-outputs.md",
+    "num": 7,
+    "section": "Layer A — extend permission groups with Phase-10 plans perms",
+    "text": "Data migration `plans/migrations/0011_extend_permission_groups_phase_10.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 2 new models introduced in this phase (`Communication`, `Evidence`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0008_extend_permission_groups_phase_9.py` (commit `f5a02ce`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Communication`, `Evidence` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Communication`, `Evidence` (full CRUD).\n    - `read_only` — `view_*` on `Communication`, `Evidence`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-10 model-introducing migration (`plans/0010_*`) and on `school/0002_seed_permission_groups`.",
+    "raw": "7. Data migration `plans/migrations/0011_extend_permission_groups_phase_10.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 2 new models introduced in this phase (`Communication`, `Evidence`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0008_extend_permission_groups_phase_9.py` (commit `f5a02ce`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `Communication`, `Evidence` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `Communication`, `Evidence` (full CRUD).\n    - `read_only` — `view_*` on `Communication`, `Evidence`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-10 model-introducing migration (`plans/0010_*`) and on `school/0002_seed_permission_groups`."
+  },
+  {
+    "seq": 89,
+    "phase": "phase-11-review-loop.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/models/review.py` → `ReviewEvent`, `ReviewEventInput`, `RevisionRule`.\n\n   **`ReviewEvent`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` — translated CharField.\n    - `scheduled_date` — `DateField`.\n    - `scheduled_note` — translated TextField, blank=True.\n    - `responsible` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `inputs` — `ManyToManyField(FeedbackChannel, through=\"ReviewEventInput\")`.\n\n   **`ReviewEventInput`** — through-model for `ReviewEvent.inputs`:\n    - `review_event` — `ForeignKey(ReviewEvent, on_delete=CASCADE)`.\n    - `feedback_channel` — `ForeignKey(FeedbackChannel, on_delete=CASCADE)`.\n\n   **`RevisionRule`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `trigger` — `ForeignKey(ReviewEvent, on_delete=PROTECT)`.\n    - `condition` — translated TextField (free prose; human-read at review time).\n    - `action` — translated TextField (free prose).",
+    "raw": "1. `plans/models/review.py` → `ReviewEvent`, `ReviewEventInput`, `RevisionRule`.\n\n   **`ReviewEvent`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `label` — translated CharField.\n    - `scheduled_date` — `DateField`.\n    - `scheduled_note` — translated TextField, blank=True.\n    - `responsible` — polymorphic two-nullable-FK to `school.Department` or `school.Role` + exactly-one `CheckConstraint` per preamble pattern.\n    - `inputs` — `ManyToManyField(FeedbackChannel, through=\"ReviewEventInput\")`.\n\n   **`ReviewEventInput`** — through-model for `ReviewEvent.inputs`:\n    - `review_event` — `ForeignKey(ReviewEvent, on_delete=CASCADE)`.\n    - `feedback_channel` — `ForeignKey(FeedbackChannel, on_delete=CASCADE)`.\n\n   **`RevisionRule`** (per noun list):\n    - `plan` — `ForeignKey(Plan, on_delete=CASCADE)`.\n    - `trigger` — `ForeignKey(ReviewEvent, on_delete=PROTECT)`.\n    - `condition` — translated TextField (free prose; human-read at review time).\n    - `action` — translated TextField (free prose)."
+  },
+  {
+    "seq": 90,
+    "phase": "phase-11-review-loop.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "Update `plans/models/__init__.py`:\n\n   ```python\n   from .review import ReviewEvent, ReviewEventInput, RevisionRule\n   ```",
+    "raw": "2. Update `plans/models/__init__.py`:\n\n   ```python\n   from .review import ReviewEvent, ReviewEventInput, RevisionRule\n   ```"
+  },
+  {
+    "seq": 91,
+    "phase": "phase-11-review-loop.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Extend `plans/translation.py`:\n\n   ```python\n   @register(ReviewEvent)\n   class ReviewEventT(TranslationOptions):\n       fields = (\"label\", \"scheduled_note\")\n\n   @register(RevisionRule)\n   class RevisionRuleT(TranslationOptions):\n       fields = (\"condition\", \"action\")\n   ```",
+    "raw": "3. Extend `plans/translation.py`:\n\n   ```python\n   @register(ReviewEvent)\n   class ReviewEventT(TranslationOptions):\n       fields = (\"label\", \"scheduled_note\")\n\n   @register(RevisionRule)\n   class RevisionRuleT(TranslationOptions):\n       fields = (\"condition\", \"action\")\n   ```"
+  },
+  {
+    "seq": 92,
+    "phase": "phase-11-review-loop.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`plans/admin/review.py` → `ReviewEventAdmin` (with `ReviewEventInput` as inline if exposed, else managed via M2M widget) and `RevisionRuleInline` inlined under `ReviewEventAdmin`. `@admin.register(ReviewEvent)`. Admin defaults per the admin-package spec.",
+    "raw": "4. `plans/admin/review.py` → `ReviewEventAdmin` (with `ReviewEventInput` as inline if exposed, else managed via M2M widget) and `RevisionRuleInline` inlined under `ReviewEventAdmin`. `@admin.register(ReviewEvent)`. Admin defaults per the admin-package spec."
+  },
+  {
+    "seq": 93,
+    "phase": "phase-11-review-loop.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "5. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 94,
+    "phase": "phase-11-review-loop.md",
+    "num": 6,
+    "section": "Layer A — extend permission groups with Phase-11 plans perms",
+    "text": "Data migration `plans/migrations/0013_extend_permission_groups_phase_11.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 3 new models introduced in this phase (`ReviewEvent`, `ReviewEventInput`, `RevisionRule`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0011_extend_permission_groups_phase_10.py` (commit `b07218f`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule` (full CRUD).\n    - `read_only` — `view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-11 model-introducing migration (`plans/0012_*`) and on `school/0002_seed_permission_groups`.",
+    "raw": "6. Data migration `plans/migrations/0013_extend_permission_groups_phase_11.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 3 new models introduced in this phase (`ReviewEvent`, `ReviewEventInput`, `RevisionRule`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0011_extend_permission_groups_phase_10.py` (commit `b07218f`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group:\n    - `school_curator` — `view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule` (curators see but author as `plan_author`).\n    - `plan_author` — `add_*`/`change_*`/`delete_*`/`view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule` (full CRUD).\n    - `read_only` — `view_*` on `ReviewEvent`, `ReviewEventInput`, `RevisionRule`.\n\n    Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-11 model-introducing migration (`plans/0012_*`) and on `school/0002_seed_permission_groups`."
+  },
+  {
+    "seq": 95,
+    "phase": "phase-12-promotion-service.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "`plans/services.py::advance_plan_status(plan, target_status, by_user)`:\n\n   ```python\n   from django.core.exceptions import ValidationError\n   from .models import PlanStatusTransition\n\n   def advance_plan_status(plan, target_status, by_user):\n       _check_transition_allowed(plan.lifecycle, target_status)\n       if target_status == Lifecycle.ACTIVE:\n           _check_promotion_gates(plan)\n       PlanStatusTransition.objects.create(\n           plan=plan, from_status=plan.lifecycle,\n           to_status=target_status, by_user=by_user,\n       )\n       plan.lifecycle = target_status\n       plan.save(update_fields=[\"lifecycle\"])\n   ```",
+    "raw": "1. `plans/services.py::advance_plan_status(plan, target_status, by_user)`:\n\n   ```python\n   from django.core.exceptions import ValidationError\n   from .models import PlanStatusTransition\n\n   def advance_plan_status(plan, target_status, by_user):\n       _check_transition_allowed(plan.lifecycle, target_status)\n       if target_status == Lifecycle.ACTIVE:\n           _check_promotion_gates(plan)\n       PlanStatusTransition.objects.create(\n           plan=plan, from_status=plan.lifecycle,\n           to_status=target_status, by_user=by_user,\n       )\n       plan.lifecycle = target_status\n       plan.save(update_fields=[\"lifecycle\"])\n   ```"
+  },
+  {
+    "seq": 96,
+    "phase": "phase-12-promotion-service.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "State-transition matrix (the only paths `_check_transition_allowed` permits):\n\n   | From | To | Gated |\n   |---|---|---|\n   | `proposed` | `active` | yes — full promotion gates |\n   | `proposed` | `closed` | no — abandonment |\n   | `active` | `under-revision` | no |\n   | `active` | `closed` | no — cycle ends |\n   | `under-revision` | `active` | yes — full promotion gates re-run |\n   | `under-revision` | `closed` | no |\n\n   Any other transition raises `ValidationError`. `closed` is terminal — no transitions out. Reopening a `closed` plan = create a new `Plan` row with `predecessors=[closed_plan]`.",
+    "raw": "2. State-transition matrix (the only paths `_check_transition_allowed` permits):\n\n   | From | To | Gated |\n   |---|---|---|\n   | `proposed` | `active` | yes — full promotion gates |\n   | `proposed` | `closed` | no — abandonment |\n   | `active` | `under-revision` | no |\n   | `active` | `closed` | no — cycle ends |\n   | `under-revision` | `active` | yes — full promotion gates re-run |\n   | `under-revision` | `closed` | no |\n\n   Any other transition raises `ValidationError`. `closed` is terminal — no transitions out. Reopening a `closed` plan = create a new `Plan` row with `predecessors=[closed_plan]`."
+  },
+  {
+    "seq": 97,
+    "phase": "phase-12-promotion-service.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Promotion gates (`_check_promotion_gates`) — derived from the user story chain. The gate evaluates each predicate; on failure, raises `ValidationError` listing all failures (not just the first).\n\n   **Plan-level fields:**\n    - `Plan.title`, `Plan.cycle`, `Plan.current_state`, `Plan.desired_state`, `Plan.rationale` non-empty.\n\n   **Domain alignment (every alignment named in the user story is required; only policies may be empty):**\n    - `learner_outcomes_targeted.exists()` (the `slos_targeted_all` flag satisfies this).\n    - `mission_areas_targeted.exists()` (the `mission_areas_targeted_all` flag satisfies this).\n    - `stakeholder_impact.exists()`.\n    - `areas_for_improvement.exists()`.\n    - `accreditation_standards.exists()`.\n\n   **Success criteria + verification (the user story pairs them):**\n    - `successcriterion_set.exists()`.\n    - Every `SuccessCriterion` has at least one `Measurement` bound via `MeasurementChannel` to at least one `FeedbackChannel`.\n\n   **Action steps (each step's required sub-structure per the user story; sub-steps and dependencies are explicitly \"optionally\"):**\n    - `actionstep_set.exists()`.\n    - Every `ActionStep` has ≥1 `Assignment` with `kind=responsible`.\n    - Every `ActionStep` has ≥1 `Timeline` row.\n    - Every `ActionStep` has ≥1 `RequiredResource` row.\n    - Every `ActionStep` has ≥1 `Evidence` linked via the M2M.\n\n   **Communications, reviews, revisions:**\n    - `communication_set.exists()`.\n    - `reviewevent_set.exists()`. Every `ReviewEvent` has ≥1 `ReviewEventInput`.\n    - `revisionrule_set.exists()`.\n\n   **Deferred to Phase 14 (do NOT implement in Phase 12 — the fields do not exist on `Plan` until Phase 14):**\n\n   The following three gate predicates reference `Plan` fields introduced in Phase 14 (`student_impact_framing`, `subject_kind` + `planning_method`, `framing_focus` + `priority_tier` + `priority_rationale`). They are appended to `_check_promotion_gates` by Phase 14, not Phase 12. Phase 12's `_check_promotion_gates` implements only the predicates above, whose fields exist as of Phase 12.\n\n    - `Plan.student_impact_framing` non-empty.\n    - If `Plan.subject_kind.requires_planning_method` is true, `Plan.planning_method` is set.\n    - `Plan.clean()` (run during admin save and by the gate) enforces: if `Plan.framing_focus.default_priority_tier` is set and differs from `Plan.priority_tier`, then `Plan.priority_rationale` is non-empty.",
+    "raw": "3. Promotion gates (`_check_promotion_gates`) — derived from the user story chain. The gate evaluates each predicate; on failure, raises `ValidationError` listing all failures (not just the first).\n\n   **Plan-level fields:**\n    - `Plan.title`, `Plan.cycle`, `Plan.current_state`, `Plan.desired_state`, `Plan.rationale` non-empty.\n\n   **Domain alignment (every alignment named in the user story is required; only policies may be empty):**\n    - `learner_outcomes_targeted.exists()` (the `slos_targeted_all` flag satisfies this).\n    - `mission_areas_targeted.exists()` (the `mission_areas_targeted_all` flag satisfies this).\n    - `stakeholder_impact.exists()`.\n    - `areas_for_improvement.exists()`.\n    - `accreditation_standards.exists()`.\n\n   **Success criteria + verification (the user story pairs them):**\n    - `successcriterion_set.exists()`.\n    - Every `SuccessCriterion` has at least one `Measurement` bound via `MeasurementChannel` to at least one `FeedbackChannel`.\n\n   **Action steps (each step's required sub-structure per the user story; sub-steps and dependencies are explicitly \"optionally\"):**\n    - `actionstep_set.exists()`.\n    - Every `ActionStep` has ≥1 `Assignment` with `kind=responsible`.\n    - Every `ActionStep` has ≥1 `Timeline` row.\n    - Every `ActionStep` has ≥1 `RequiredResource` row.\n    - Every `ActionStep` has ≥1 `Evidence` linked via the M2M.\n\n   **Communications, reviews, revisions:**\n    - `communication_set.exists()`.\n    - `reviewevent_set.exists()`. Every `ReviewEvent` has ≥1 `ReviewEventInput`.\n    - `revisionrule_set.exists()`.\n\n   **Deferred to Phase 14 (do NOT implement in Phase 12 — the fields do not exist on `Plan` until Phase 14):**\n\n   The following three gate predicates reference `Plan` fields introduced in Phase 14 (`student_impact_framing`, `subject_kind` + `planning_method`, `framing_focus` + `priority_tier` + `priority_rationale`). They are appended to `_check_promotion_gates` by Phase 14, not Phase 12. Phase 12's `_check_promotion_gates` implements only the predicates above, whose fields exist as of Phase 12.\n\n    - `Plan.student_impact_framing` non-empty.\n    - If `Plan.subject_kind.requires_planning_method` is true, `Plan.planning_method` is set.\n    - `Plan.clean()` (run during admin save and by the gate) enforces: if `Plan.framing_focus.default_priority_tier` is set and differs from `Plan.priority_tier`, then `Plan.priority_rationale` is non-empty."
+  },
+  {
+    "seq": 98,
+    "phase": "phase-12-promotion-service.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`plans/models/plan.py` add `PlanStatusTransition`:\n\n   ```python\n   class PlanStatusTransition(models.Model):\n       plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name=\"status_transitions\")\n       from_status = models.CharField(max_length=32, choices=Lifecycle.choices)\n       to_status = models.CharField(max_length=32, choices=Lifecycle.choices)\n       by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)\n       at = models.DateTimeField(auto_now_add=True)\n   ```\n\n   Update `plans/models/__init__.py` to re-export.",
+    "raw": "4. `plans/models/plan.py` add `PlanStatusTransition`:\n\n   ```python\n   class PlanStatusTransition(models.Model):\n       plan = models.ForeignKey(Plan, on_delete=models.CASCADE, related_name=\"status_transitions\")\n       from_status = models.CharField(max_length=32, choices=Lifecycle.choices)\n       to_status = models.CharField(max_length=32, choices=Lifecycle.choices)\n       by_user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)\n       at = models.DateTimeField(auto_now_add=True)\n   ```\n\n   Update `plans/models/__init__.py` to re-export."
+  },
+  {
+    "seq": 99,
+    "phase": "phase-12-promotion-service.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "Stub `plans/services.py::promote_proposal_to_plan` — proposal flow is out of the create-plan user story; declare signature, raise `NotImplementedError`.",
+    "raw": "5. Stub `plans/services.py::promote_proposal_to_plan` — proposal flow is out of the create-plan user story; declare signature, raise `NotImplementedError`."
+  },
+  {
+    "seq": 100,
+    "phase": "phase-12-promotion-service.md",
+    "num": 6,
+    "section": "Dev steps",
+    "text": "`plans/admin/actions.py`:\n\n   ```python\n   @admin.action(description=_(\"Advance plan status\"))\n   def advance_plan_status_action(modeladmin, request, queryset):\n       for plan in queryset:\n           # target_status comes from a form field on the action; single-row action\n           advance_plan_status(plan, target_status, request.user)\n   ```\n\n   Wired into `PlanAdmin.actions`.",
+    "raw": "6. `plans/admin/actions.py`:\n\n   ```python\n   @admin.action(description=_(\"Advance plan status\"))\n   def advance_plan_status_action(modeladmin, request, queryset):\n       for plan in queryset:\n           # target_status comes from a form field on the action; single-row action\n           advance_plan_status(plan, target_status, request.user)\n   ```\n\n   Wired into `PlanAdmin.actions`."
+  },
+  {
+    "seq": 101,
+    "phase": "phase-12-promotion-service.md",
+    "num": 7,
+    "section": "Dev steps",
+    "text": "`plans/selectors.py` stubs (file-decomposition spec listed examples; not consumed in the create-plan user story — raise `NotImplementedError`):\n\n   ```python\n   def plans_for_department(department_id, cycle_id): raise NotImplementedError\n   def action_steps_for_department(department_id, cycle_id): raise NotImplementedError\n   def evidence_for_cycle(cycle_id): raise NotImplementedError\n   ```",
+    "raw": "7. `plans/selectors.py` stubs (file-decomposition spec listed examples; not consumed in the create-plan user story — raise `NotImplementedError`):\n\n   ```python\n   def plans_for_department(department_id, cycle_id): raise NotImplementedError\n   def action_steps_for_department(department_id, cycle_id): raise NotImplementedError\n   def evidence_for_cycle(cycle_id): raise NotImplementedError\n   ```"
+  },
+  {
+    "seq": 102,
+    "phase": "phase-12-promotion-service.md",
+    "num": 8,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans` (for the new `PlanStatusTransition` model), then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "8. `uv run python manage.py makemigrations plans` (for the new `PlanStatusTransition` model), then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 103,
+    "phase": "phase-12-promotion-service.md",
+    "num": 9,
+    "section": "Layer A — extend permission groups with Phase-12 plans perms",
+    "text": "Data migration `plans/migrations/00NN_extend_permission_groups_phase_12.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 1 new model introduced in this phase (`PlanStatusTransition`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0013_extend_permission_groups_phase_11.py` (commit `c7649e8`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group — `view_*` only for all three groups:\n    - `school_curator` — `view_planstatustransition`.\n    - `plan_author` — `view_planstatustransition`.\n    - `read_only` — `view_planstatustransition`.\n\n    `PlanStatusTransition` is an append-only audit record written server-side by `advance_plan_status`, not hand-authored in admin. View-only across all three groups preserves the audit history (no `add`/`change`/`delete` grants that would let an author rewrite lifecycle history). This is a deliberate, audit-semantics-justified deviation from the uniform \"plan_author full CRUD\" Layer-A grant used for author-editable models. Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-12 model-introducing migration (`plans/00NN_*`) and on `school/0002_seed_permission_groups`.",
+    "raw": "9. Data migration `plans/migrations/00NN_extend_permission_groups_phase_12.py` extends the three existing groups (`school_curator`, `plan_author`, `read_only`) with perms for the 1 new model introduced in this phase (`PlanStatusTransition`). Use the `_ensure_plans_permissions` + content-type iteration pattern from `plans/migrations/0013_extend_permission_groups_phase_11.py` (commit `c7649e8`) — call `create_permissions(plans_config, using=alias, verbosity=0, interactive=False)` at the top of the forward function BEFORE reading any `Permission` row. Without that call, single-shot `migrate` on a fresh DB will silently grant 0 perms (per DISC-03-0519-A, commit `5be0231`).\n\n    Grant set per group — `view_*` only for all three groups:\n    - `school_curator` — `view_planstatustransition`.\n    - `plan_author` — `view_planstatustransition`.\n    - `read_only` — `view_planstatustransition`.\n\n    `PlanStatusTransition` is an append-only audit record written server-side by `advance_plan_status`, not hand-authored in admin. View-only across all three groups preserves the audit history (no `add`/`change`/`delete` grants that would let an author rewrite lifecycle history). This is a deliberate, audit-semantics-justified deviation from the uniform \"plan_author full CRUD\" Layer-A grant used for author-editable models. Migration is idempotent + reversible. Declares dependencies on the auto-generated Phase-12 model-introducing migration (`plans/00NN_*`) and on `school/0002_seed_permission_groups`."
+  },
+  {
+    "seq": 104,
+    "phase": "phase-13-i18n-initialization.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "**Wire the admin to render translated fields as grouped per-language fields (delivers this phase's verification clause).**\n\n   For every model that has a `TranslationOptions` registration, change its admin representation's base class to modeltranslation's (non-tabbed, no-JavaScript) grouped bases. **Derive the set of models from the actual `school/translation.py` and `plans/translation.py` files — read them as the source of truth** (the inventory above predates the DISC-02-0519-B registrations and is not authoritative for this step). `accreditation` and `users` register no translated fields; their admins are unchanged.\n\n   - Each `ModelAdmin` registered for a translated-field model → base class `modeltranslation.admin.TranslationAdmin` (replacing `admin.ModelAdmin`). Do NOT use `TabbedTranslationAdmin` or `TabbedExternalJqueryTranslationAdmin` — those carry a `Media` that loads jQuery UI from `//ajax.googleapis.com` (unreachable per DISC-01-0519-A; blocked in China). `TranslationAdmin` has no `Media` and pulls in no jQuery UI.\n   - Each `TabularInline` whose model has translated fields (e.g. `PlanAccreditationStandard`, `RevisionRule` under `ReviewEventAdmin`) → `modeltranslation.admin.TranslationTabularInline`.\n   - Each `StackedInline` whose model has translated fields (e.g. `SubStep`) → `modeltranslation.admin.TranslationStackedInline`.\n   - Inlines whose models have NO translated fields (`Measurement`, `MeasurementChannel`, `PlanPredecessor`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`, `ReviewEventInput`) stay on the stock admin inline bases.\n\n   Leave existing `fieldsets`, `list_display`, `list_filter`, `autocomplete_fields`, `filter_horizontal`, etc. intact in content; modeltranslation patches fieldset entries that reference a translated field name into their per-language variants automatically. Under the project's mypy config, subclassing a `modeltranslation.admin` base resolves Django's real `list_display`/`list_filter`/`fieldsets: list[Any]` annotations, so any of these declared as a **tuple** will trip `[assignment]`; declare them as **list literals** on every converted admin (preferred over `# type: ignore`). No settings change is required — there is no jQuery UI URL to configure, no `STATICFILES_DIRS`, and no vendored asset.",
+    "raw": "1. **Wire the admin to render translated fields as grouped per-language fields (delivers this phase's verification clause).**\n\n   For every model that has a `TranslationOptions` registration, change its admin representation's base class to modeltranslation's (non-tabbed, no-JavaScript) grouped bases. **Derive the set of models from the actual `school/translation.py` and `plans/translation.py` files — read them as the source of truth** (the inventory above predates the DISC-02-0519-B registrations and is not authoritative for this step). `accreditation` and `users` register no translated fields; their admins are unchanged.\n\n   - Each `ModelAdmin` registered for a translated-field model → base class `modeltranslation.admin.TranslationAdmin` (replacing `admin.ModelAdmin`). Do NOT use `TabbedTranslationAdmin` or `TabbedExternalJqueryTranslationAdmin` — those carry a `Media` that loads jQuery UI from `//ajax.googleapis.com` (unreachable per DISC-01-0519-A; blocked in China). `TranslationAdmin` has no `Media` and pulls in no jQuery UI.\n   - Each `TabularInline` whose model has translated fields (e.g. `PlanAccreditationStandard`, `RevisionRule` under `ReviewEventAdmin`) → `modeltranslation.admin.TranslationTabularInline`.\n   - Each `StackedInline` whose model has translated fields (e.g. `SubStep`) → `modeltranslation.admin.TranslationStackedInline`.\n   - Inlines whose models have NO translated fields (`Measurement`, `MeasurementChannel`, `PlanPredecessor`, `Assignment`, `Timeline`, `RequiredResource`, `ActionStepDependency`, `ReviewEventInput`) stay on the stock admin inline bases.\n\n   Leave existing `fieldsets`, `list_display`, `list_filter`, `autocomplete_fields`, `filter_horizontal`, etc. intact in content; modeltranslation patches fieldset entries that reference a translated field name into their per-language variants automatically. Under the project's mypy config, subclassing a `modeltranslation.admin` base resolves Django's real `list_display`/`list_filter`/`fieldsets: list[Any]` annotations, so any of these declared as a **tuple** will trip `[assignment]`; declare them as **list literals** on every converted admin (preferred over `# type: ignore`). No settings change is required — there is no jQuery UI URL to configure, no `STATICFILES_DIRS`, and no vendored asset."
+  },
+  {
+    "seq": 105,
+    "phase": "phase-13-i18n-initialization.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "From each app directory (`users/`, `school/`, `accreditation/`, `plans/`), run:\n\n   ```\n   uv run python manage.py makemessages -l en -l zh_Hans\n   ```\n\n   This walks each app's source for `_()` and `{% trans %}` calls and produces `.po` files under each app's `locale/{en,zh_Hans}/LC_MESSAGES/django.po`.",
+    "raw": "2. From each app directory (`users/`, `school/`, `accreditation/`, `plans/`), run:\n\n   ```\n   uv run python manage.py makemessages -l en -l zh_Hans\n   ```\n\n   This walks each app's source for `_()` and `{% trans %}` calls and produces `.po` files under each app's `locale/{en,zh_Hans}/LC_MESSAGES/django.po`."
+  },
+  {
+    "seq": 106,
+    "phase": "phase-13-i18n-initialization.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Spot-check the generated `.po` files cover:\n    - Model field verbose names (every `_(\"...\")` in a model field declaration).\n    - Choice labels (every `_(\"...\")` in a `TextChoices` member).\n    - `Meta.verbose_name` and `verbose_name_plural`.\n    - Admin headings: `fieldsets` titles, filter titles, action descriptions.\n    - App `verbose_name` set in each `apps.py`.",
+    "raw": "3. Spot-check the generated `.po` files cover:\n    - Model field verbose names (every `_(\"...\")` in a model field declaration).\n    - Choice labels (every `_(\"...\")` in a `TextChoices` member).\n    - `Meta.verbose_name` and `verbose_name_plural`.\n    - Admin headings: `fieldsets` titles, filter titles, action descriptions.\n    - App `verbose_name` set in each `apps.py`."
+  },
+  {
+    "seq": 107,
+    "phase": "phase-13-i18n-initialization.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py compilemessages` — produces `.mo` files. `.mo` files are git-ignored per Phase 0 step 7; `compilemessages` runs in pre-commit and at container start per the i18n preamble pattern. A clean `compilemessages` exit is the \"`.po` files compile\" verification gate.",
+    "raw": "4. `uv run python manage.py compilemessages` — produces `.mo` files. `.mo` files are git-ignored per Phase 0 step 7; `compilemessages` runs in pre-commit and at container start per the i18n preamble pattern. A clean `compilemessages` exit is the \"`.po` files compile\" verification gate."
+  },
+  {
+    "seq": 108,
+    "phase": "phase-14-extension-fields.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "Add fields to `Plan` in `plans/models/plan.py`:\n\n    - `theme` (translated, `CharField(blank=True, default=\"\")`).\n    - `framing_focus` — `ForeignKey(school.FramingVocabulary, null=True, blank=True, on_delete=PROTECT, related_name=\"plans_primary\")`.\n    - `secondary_framings` — `ManyToManyField(school.FramingVocabulary, blank=True, related_name=\"plans_secondary\")`.\n    - `priority_tier` — `ForeignKey(school.PriorityTier, null=True, blank=True, on_delete=PROTECT)`.\n    - `priority_rationale` (translated, `TextField(blank=True, default=\"\")`). Required by `Plan.clean()` when the priority deviates from the framing default.\n    - `student_impact_framing` (translated, `TextField(blank=True, default=\"\")`). Required by the promotion gate (non-empty checked at promotion, not at every save — so a draft Plan saves with it empty, matching `current_state`/`desired_state`/`rationale`).\n    - `subject_kind` — `ForeignKey(school.SubjectKind, null=True, blank=True, on_delete=PROTECT)`.\n    - `provenance` (translated, `TextField(blank=True, default=\"\")`).\n    - `planning_method` — `ForeignKey(school.PlanningMethod, null=True, blank=True, on_delete=PROTECT)`. Required by the promotion gate when `subject_kind.requires_planning_method`.\n\n   The four new translated text fields (`theme`, `priority_rationale`, `student_impact_framing`, `provenance`) carry `blank=True, default=\"\"`. The `default=\"\"` is required for migration safety: Phase 14 is the first phase to ADD fields to the already-existing `plans_plan` table, and a NOT-NULL text field without a default makes `makemigrations` prompt interactively for a one-off default (`blank=True` does not suppress that prompt) — which would break the non-interactive IMPL shell. `default=\"\"` makes `makemigrations` non-interactive and matches the gate-enforced-prose semantics (DB-permissive, non-empty enforced only at the promotion gate).\n\n   Extend `plans/translation.py`:\n\n   ```python\n   @register(Plan)\n   class PlanT(TranslationOptions):\n       fields = (\"title\", \"current_state\", \"desired_state\", \"rationale\",\n                 \"theme\", \"priority_rationale\", \"student_impact_framing\", \"provenance\")\n   ```",
+    "raw": "1. Add fields to `Plan` in `plans/models/plan.py`:\n\n    - `theme` (translated, `CharField(blank=True, default=\"\")`).\n    - `framing_focus` — `ForeignKey(school.FramingVocabulary, null=True, blank=True, on_delete=PROTECT, related_name=\"plans_primary\")`.\n    - `secondary_framings` — `ManyToManyField(school.FramingVocabulary, blank=True, related_name=\"plans_secondary\")`.\n    - `priority_tier` — `ForeignKey(school.PriorityTier, null=True, blank=True, on_delete=PROTECT)`.\n    - `priority_rationale` (translated, `TextField(blank=True, default=\"\")`). Required by `Plan.clean()` when the priority deviates from the framing default.\n    - `student_impact_framing` (translated, `TextField(blank=True, default=\"\")`). Required by the promotion gate (non-empty checked at promotion, not at every save — so a draft Plan saves with it empty, matching `current_state`/`desired_state`/`rationale`).\n    - `subject_kind` — `ForeignKey(school.SubjectKind, null=True, blank=True, on_delete=PROTECT)`.\n    - `provenance` (translated, `TextField(blank=True, default=\"\")`).\n    - `planning_method` — `ForeignKey(school.PlanningMethod, null=True, blank=True, on_delete=PROTECT)`. Required by the promotion gate when `subject_kind.requires_planning_method`.\n\n   The four new translated text fields (`theme`, `priority_rationale`, `student_impact_framing`, `provenance`) carry `blank=True, default=\"\"`. The `default=\"\"` is required for migration safety: Phase 14 is the first phase to ADD fields to the already-existing `plans_plan` table, and a NOT-NULL text field without a default makes `makemigrations` prompt interactively for a one-off default (`blank=True` does not suppress that prompt) — which would break the non-interactive IMPL shell. `default=\"\"` makes `makemigrations` non-interactive and matches the gate-enforced-prose semantics (DB-permissive, non-empty enforced only at the promotion gate).\n\n   Extend `plans/translation.py`:\n\n   ```python\n   @register(Plan)\n   class PlanT(TranslationOptions):\n       fields = (\"title\", \"current_state\", \"desired_state\", \"rationale\",\n                 \"theme\", \"priority_rationale\", \"student_impact_framing\", \"provenance\")\n   ```"
+  },
+  {
+    "seq": 109,
+    "phase": "phase-14-extension-fields.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "`Plan.clean()`:\n\n   ```python\n   def clean(self):\n       super().clean()\n       if self.framing_focus and self.framing_focus.default_priority_tier_id \\\n          and self.priority_tier_id \\\n          and self.priority_tier_id != self.framing_focus.default_priority_tier_id \\\n          and not self.priority_rationale:\n           raise ValidationError({\n               \"priority_rationale\": _(\"Required when priority deviates from framing default.\"),\n           })\n   ```\n\n   The mapping is data, not code: `FramingVocabulary.default_priority_tier` is a column the curator sets per framing row. When the curator wants no default for a framing, that row's `default_priority_tier` is null and the rationale gate does not fire for any deviation from that framing.",
+    "raw": "2. `Plan.clean()`:\n\n   ```python\n   def clean(self):\n       super().clean()\n       if self.framing_focus and self.framing_focus.default_priority_tier_id \\\n          and self.priority_tier_id \\\n          and self.priority_tier_id != self.framing_focus.default_priority_tier_id \\\n          and not self.priority_rationale:\n           raise ValidationError({\n               \"priority_rationale\": _(\"Required when priority deviates from framing default.\"),\n           })\n   ```\n\n   The mapping is data, not code: `FramingVocabulary.default_priority_tier` is a column the curator sets per framing row. When the curator wants no default for a framing, that row's `default_priority_tier` is null and the rationale gate does not fire for any deviation from that framing."
+  },
+  {
+    "seq": 110,
+    "phase": "phase-14-extension-fields.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Promotion-gate additions: append the three deferred conditional predicates to `_check_promotion_gates` in `plans/services.py`, now that the Phase 14 fields exist on `Plan`. (Phase 12 implemented the gate for only the predicates whose fields existed at Phase 12 and explicitly deferred these three — see Phase 12 step 3 \"Deferred to Phase 14\".) The three predicates to add:\n\n    - `Plan.student_impact_framing` non-empty.\n    - If `Plan.subject_kind.requires_planning_method` is true, `Plan.planning_method` is set.\n    - The priority-rationale-on-deviation rule, enforced via `Plan.clean()` (defined in step 2): if `Plan.framing_focus.default_priority_tier` is set and differs from `Plan.priority_tier`, then `Plan.priority_rationale` is non-empty. The gate calls `plan.clean()` and surfaces its `ValidationError` into the aggregated gate-failure list.\n\n   These additions preserve the Phase 12 gate's aggregate-all-failures behavior (do not short-circuit on first failure).",
+    "raw": "3. Promotion-gate additions: append the three deferred conditional predicates to `_check_promotion_gates` in `plans/services.py`, now that the Phase 14 fields exist on `Plan`. (Phase 12 implemented the gate for only the predicates whose fields existed at Phase 12 and explicitly deferred these three — see Phase 12 step 3 \"Deferred to Phase 14\".) The three predicates to add:\n\n    - `Plan.student_impact_framing` non-empty.\n    - If `Plan.subject_kind.requires_planning_method` is true, `Plan.planning_method` is set.\n    - The priority-rationale-on-deviation rule, enforced via `Plan.clean()` (defined in step 2): if `Plan.framing_focus.default_priority_tier` is set and differs from `Plan.priority_tier`, then `Plan.priority_rationale` is non-empty. The gate calls `plan.clean()` and surfaces its `ValidationError` into the aggregated gate-failure list.\n\n   These additions preserve the Phase 12 gate's aggregate-all-failures behavior (do not short-circuit on first failure)."
+  },
+  {
+    "seq": 111,
+    "phase": "phase-14-extension-fields.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "Extend `plans/admin/plan.py` fieldsets:\n\n   ```python\n   fieldsets = (\n       (_(\"Identity\"), {\"fields\": (\"title\", \"author\", \"cycle\")}),\n       (_(\"Problem statement\"), {\"fields\": (\"current_state\", \"desired_state\", \"rationale\", \"provenance\")}),\n       (_(\"Framing\"), {\"fields\": (\"theme\", \"framing_focus\", \"secondary_framings\",\n                                   \"student_impact_framing\", \"subject_kind\", \"planning_method\")}),\n       (_(\"Priority\"), {\"fields\": (\"priority_tier\", \"priority_rationale\")}),\n       (_(\"Lifecycle\"), {\"fields\": (\"lifecycle\",)}),\n       (_(\"Domain alignment\"), {\"fields\": (\n           \"areas_for_improvement\", \"learner_outcomes_targeted\",\n           \"mission_areas_targeted\", \"stakeholder_impact\",\n           \"policies_established\", \"policies_revised\",\n       )}),\n   )\n   ```\n\n   `autocomplete_fields` adds `framing_focus`, `subject_kind`, `priority_tier`, `planning_method`. `filter_horizontal` adds `secondary_framings`.\n\n   Declare `fieldsets`, `autocomplete_fields`, and `filter_horizontal` as **list literals** (not tuples). `PlanAdmin` is `modeltranslation.admin.TranslationAdmin` as of Phase 13; under the project's mypy config a tuple-valued `list_display`/`list_filter`/`fieldsets`/etc. trips `[assignment]` against Django's `list[Any]` annotation resolved through the modeltranslation base. The existing `PlanAdmin` attributes are already list literals; extend them in the same form.",
+    "raw": "4. Extend `plans/admin/plan.py` fieldsets:\n\n   ```python\n   fieldsets = (\n       (_(\"Identity\"), {\"fields\": (\"title\", \"author\", \"cycle\")}),\n       (_(\"Problem statement\"), {\"fields\": (\"current_state\", \"desired_state\", \"rationale\", \"provenance\")}),\n       (_(\"Framing\"), {\"fields\": (\"theme\", \"framing_focus\", \"secondary_framings\",\n                                   \"student_impact_framing\", \"subject_kind\", \"planning_method\")}),\n       (_(\"Priority\"), {\"fields\": (\"priority_tier\", \"priority_rationale\")}),\n       (_(\"Lifecycle\"), {\"fields\": (\"lifecycle\",)}),\n       (_(\"Domain alignment\"), {\"fields\": (\n           \"areas_for_improvement\", \"learner_outcomes_targeted\",\n           \"mission_areas_targeted\", \"stakeholder_impact\",\n           \"policies_established\", \"policies_revised\",\n       )}),\n   )\n   ```\n\n   `autocomplete_fields` adds `framing_focus`, `subject_kind`, `priority_tier`, `planning_method`. `filter_horizontal` adds `secondary_framings`.\n\n   Declare `fieldsets`, `autocomplete_fields`, and `filter_horizontal` as **list literals** (not tuples). `PlanAdmin` is `modeltranslation.admin.TranslationAdmin` as of Phase 13; under the project's mypy config a tuple-valued `list_display`/`list_filter`/`fieldsets`/etc. trips `[assignment]` against Django's `list[Any]` annotation resolved through the modeltranslation base. The existing `PlanAdmin` attributes are already list literals; extend them in the same form."
+  },
+  {
+    "seq": 112,
+    "phase": "phase-14-extension-fields.md",
+    "num": 5,
+    "section": "Dev steps",
+    "text": "`uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```",
+    "raw": "5. `uv run python manage.py makemigrations plans`, then run migrate via the postgres superuser DSN (the `socrates` app role has DML grants only — no CREATE/ALTER on schema per `deploy/postgres-init/01-roles.sql`):\n\n   ```bash\n   DATABASE_URL=\"postgres://postgres:postgres@localhost:5433/school_improvement_plans\" \\\n   uv run python manage.py migrate\n   ```"
+  },
+  {
+    "seq": 113,
+    "phase": "phase-15-final-validation.md",
+    "num": 1,
+    "section": "Dev steps",
+    "text": "Static checks from `school-improvement-plans/`:\n\n   ```\n   uv run python manage.py check\n   uv run python manage.py check --deploy\n   uv run python manage.py makemigrations --dry-run --check\n   uv run ruff check\n   uv run ruff format --check\n   uv run mypy\n   uv run pytest\n   uv run pip-audit\n   ```\n\n   `check --deploy` deploy-only warnings are informational at this stage (deployment is out of current scope per CLAUDE.md and `00-preamble.md` Layer C framing). `makemigrations --dry-run --check` confirms no pending migrations beyond those committed.",
+    "raw": "1. Static checks from `school-improvement-plans/`:\n\n   ```\n   uv run python manage.py check\n   uv run python manage.py check --deploy\n   uv run python manage.py makemigrations --dry-run --check\n   uv run ruff check\n   uv run ruff format --check\n   uv run mypy\n   uv run pytest\n   uv run pip-audit\n   ```\n\n   `check --deploy` deploy-only warnings are informational at this stage (deployment is out of current scope per CLAUDE.md and `00-preamble.md` Layer C framing). `makemigrations --dry-run --check` confirms no pending migrations beyond those committed."
+  },
+  {
+    "seq": 114,
+    "phase": "phase-15-final-validation.md",
+    "num": 2,
+    "section": "Dev steps",
+    "text": "End-to-end user-story walkthrough via `/admin/`. The author performs every step from `00-preamble.md` US-1…US-22 plus US-ext, creating one complete `Plan` and advancing it from `proposed` to `active`. Concretely:\n\n    - **US-1** Log into `/admin/` (Phase 1 verified).\n    - **US-2** Create a new `Plan` row; set `title`. Lifecycle defaults to `proposed`.\n    - **US-3** Set `cycle` FK to a `school.Cycle` row.\n    - **US-4** Set `current_state`.\n    - **US-5** Set `desired_state`.\n    - **US-6** Set `rationale`.\n    - **US-7** Add `learner_outcomes_targeted` (M2M).\n    - **US-8** Add `mission_areas_targeted` (M2M).\n    - **US-9** Add `stakeholder_impact` (M2M).\n    - **US-10** Add `policies_established` and/or `policies_revised` (M2Ms).\n    - **US-11** Add `areas_for_improvement` (M2M).\n    - **US-12** Add `accreditation_standards` rows via the `PlanAccreditationStandard` through inline (per-row rationale).\n    - **US-13** Add `SuccessCriterion` rows under the Plan.\n    - **US-14** For each criterion, set `verification_kind`; for `target` kind, set `target_value`/`target_unit`/`baseline`; bind to `FeedbackChannel`s via the `Measurement` inline.\n    - **US-15** Add `ActionStep` rows under the Plan.\n    - **US-16a–h** For each action step: set `description`; add `Assignment` rows (`responsible`, `participant`); add `Timeline` row of appropriate kind; add `RequiredResource` rows; link `Evidence` artifacts; add `SubStep` rows; add `ActionStepDependency` rows.\n    - **US-17** Group action steps into `Phase` rows (set `ActionStep.phase`).\n    - **US-18** Add `Communication` rows (audience/channel/frequency/owner).\n    - **US-19** Add `FeedbackChannel` rows (already exercised in US-14 binding).\n    - **US-20** Add `ReviewEvent` rows with `scheduled`, `responsible`, `inputs`.\n    - **US-21** Add `RevisionRule` rows linked to a `ReviewEvent`.\n    - **US-ext** Set `theme`, `framing_focus`, `secondary_framings`, `priority_tier`, `priority_rationale` (if priority deviates from framing default), `student_impact_framing`, `subject_kind`, `provenance`, `planning_method`.\n    - **US-22** Run the `Advance plan status` admin action; observe lifecycle transition `proposed → active` and that all gate validators pass.",
+    "raw": "2. End-to-end user-story walkthrough via `/admin/`. The author performs every step from `00-preamble.md` US-1…US-22 plus US-ext, creating one complete `Plan` and advancing it from `proposed` to `active`. Concretely:\n\n    - **US-1** Log into `/admin/` (Phase 1 verified).\n    - **US-2** Create a new `Plan` row; set `title`. Lifecycle defaults to `proposed`.\n    - **US-3** Set `cycle` FK to a `school.Cycle` row.\n    - **US-4** Set `current_state`.\n    - **US-5** Set `desired_state`.\n    - **US-6** Set `rationale`.\n    - **US-7** Add `learner_outcomes_targeted` (M2M).\n    - **US-8** Add `mission_areas_targeted` (M2M).\n    - **US-9** Add `stakeholder_impact` (M2M).\n    - **US-10** Add `policies_established` and/or `policies_revised` (M2Ms).\n    - **US-11** Add `areas_for_improvement` (M2M).\n    - **US-12** Add `accreditation_standards` rows via the `PlanAccreditationStandard` through inline (per-row rationale).\n    - **US-13** Add `SuccessCriterion` rows under the Plan.\n    - **US-14** For each criterion, set `verification_kind`; for `target` kind, set `target_value`/`target_unit`/`baseline`; bind to `FeedbackChannel`s via the `Measurement` inline.\n    - **US-15** Add `ActionStep` rows under the Plan.\n    - **US-16a–h** For each action step: set `description`; add `Assignment` rows (`responsible`, `participant`); add `Timeline` row of appropriate kind; add `RequiredResource` rows; link `Evidence` artifacts; add `SubStep` rows; add `ActionStepDependency` rows.\n    - **US-17** Group action steps into `Phase` rows (set `ActionStep.phase`).\n    - **US-18** Add `Communication` rows (audience/channel/frequency/owner).\n    - **US-19** Add `FeedbackChannel` rows (already exercised in US-14 binding).\n    - **US-20** Add `ReviewEvent` rows with `scheduled`, `responsible`, `inputs`.\n    - **US-21** Add `RevisionRule` rows linked to a `ReviewEvent`.\n    - **US-ext** Set `theme`, `framing_focus`, `secondary_framings`, `priority_tier`, `priority_rationale` (if priority deviates from framing default), `student_impact_framing`, `subject_kind`, `provenance`, `planning_method`.\n    - **US-22** Run the `Advance plan status` admin action; observe lifecycle transition `proposed → active` and that all gate validators pass."
+  },
+  {
+    "seq": 115,
+    "phase": "phase-15-final-validation.md",
+    "num": 3,
+    "section": "Dev steps",
+    "text": "Language switch verification: switch the admin language picker between English and Simplified Chinese; observe translated fields render in their per-language tab; observe choice labels and `Meta.verbose_name` strings change.",
+    "raw": "3. Language switch verification: switch the admin language picker between English and Simplified Chinese; observe translated fields render in their per-language tab; observe choice labels and `Meta.verbose_name` strings change."
+  },
+  {
+    "seq": 116,
+    "phase": "phase-15-final-validation.md",
+    "num": 4,
+    "section": "Dev steps",
+    "text": "The user performs steps 1–3 manually and gives feedback. No automated end-to-end tests (Playwright, Selenium, etc.). Service-layer unit tests on `advance_plan_status` gate predicates and on model constraints (`Assignment` exactly-one, `Timeline` per-kind, `ActionStepDependency` exactly-one + no-self-loop, `SuccessCriterion` target-fields-when-applicable, `Plan.clean()` priority-rationale-on-override) are the test surface. The user-story walkthrough is human-performed.",
+    "raw": "4. The user performs steps 1–3 manually and gives feedback. No automated end-to-end tests (Playwright, Selenium, etc.). Service-layer unit tests on `advance_plan_status` gate predicates and on model constraints (`Assignment` exactly-one, `Timeline` per-kind, `ActionStepDependency` exactly-one + no-self-loop, `SuccessCriterion` target-fields-when-applicable, `Plan.clean()` priority-rationale-on-override) are the test surface. The user-story walkthrough is human-performed."
+  }
+]

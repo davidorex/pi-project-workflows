@@ -1,0 +1,44 @@
+{
+  "spec_key": "propose-responsibilities",
+  "order": 7,
+  "target_step": "steps",
+  "preview_mode": "responsibilities",
+  "grounding_sections": [
+    "school",
+    "learner_outcomes",
+    "guiding_statements",
+    "areas_for_improvement",
+    "divisions",
+    "accreditation_standards",
+    "draft_state"
+  ],
+  "deps": [
+    "propose-assignments"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-responsibilities-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-responsibilities-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-responsibilities-2",
+    "FRAG-gb-seed-mapping",
+    "FRAG-intro-propose-responsibilities-3",
+    "FRAG-gb-divisions-inventory",
+    "FRAG-intro-propose-responsibilities-4",
+    "FRAG-gb-learner-outcomes-slo",
+    "FRAG-intro-propose-responsibilities-5",
+    "FRAG-gb-guiding-statements",
+    "FRAG-intro-propose-responsibilities-6",
+    "FRAG-gb-areas-for-improvement-afi",
+    "FRAG-intro-propose-responsibilities-7",
+    "FRAG-gb-accreditation-standards-cite",
+    "FRAG-intro-propose-responsibilities-8",
+    "FRAG-gb-draft-state-steps",
+    "FRAG-intro-propose-responsibilities-9",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-responsibilities"
+  ],
+  "parser": "parse_propose_responsibilities",
+  "source_migration": "ai/migrations/0017_seed_propose_responsibilities_template.py",
+  "output_schema": "shared/schemas/propose-responsibilities.schema.json"
+}

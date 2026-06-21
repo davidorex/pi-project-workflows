@@ -1,0 +1,18 @@
+{
+  "title": "Authored-gap reason prose (domain_alignment *_not_addressed[].reason) is not free-text-scanned",
+  "status": "identified",
+  "package": "prompt-workshop/dispatch/check_draft.py + school-improvement-plans/planner/_freetext_audit.py",
+  "description": "TASK-040 added authored deferred-gap entries {label, reason} to domain_alignment.*_not_addressed. The label is catalogue-validated, but the reason prose is not run through the free-text audit (the catalogue-survivor / fabrication scan) the way the targeted rows' rationale is, and _iter_prose_fields in check_draft does not include the reason field. A reason could name a fabricated entity or off-register text without detection. Low-impact (reason is a brief structured field), but a real asymmetry vs the targeted rationale path.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/check_draft.py",
+      "reference": "_iter_prose_fields (~:506) collects action_steps/success_criteria/milestones/review prose but NOT domain_alignment[*_not_addressed][].reason"
+    },
+    {
+      "file": "school-improvement-plans/planner/_freetext_audit.py",
+      "reference": "FREETEXT_SELECTORS_BY_SPEC scans targeted rationale prose; the not_addressed reason field is not a selector"
+    }
+  ],
+  "impact": "A fabricated/off-register reason on a deferred-gap entry escapes the free-text/catalogue audit. Low blast radius (brief structured field) but an enforcement asymmetry.",
+  "proposed_resolution": "Add the *_not_addressed[].reason field to the free-text audit selectors (and/or _iter_prose_fields) so deferred-gap reasons are scanned like targeted rationales."
+}

@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL B2: apply records flags + exits 0 (not 1) on soft-flag; capture/result envelope carry flags",
+  "status": "closed",
+  "package": "prompt-workshop",
+  "description": "Both apply paths hard-halt on the parser today: apply.py:295-300 and apply_from_substrate.py:113-121 catch any parse exception and return 1 (workflow halts at that step; run_workflow.mjs:478 treats exit 1 as halt, exit 0 as continue). For a soft-flag outcome (A2/A3 - the parser returned prefill + flags, no hard raise), apply must: merge the prefill, record the flags into the draft flags channel (B1), set the capture/envelope validation status to flagged (apply.py capture :346-361 hardcodes schema_validation:passed; apply_from_substrate result envelope :143-152 has status:merged), include the flags in the emitted JSON, and EXIT 0 so the 14-spec sequence runs to completion accumulating flags. Hard rejects still exit 1 (halt). THIS IS THE ACCELERATION: the sequence completes in one pass producing a whole draft + a flag batch, instead of halting at the first catalogue-survivor. Atomic gap; depends on A3, B1.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/prompt-workshop/dispatch/apply.py",
+      "reference": "school-improvement-plans/prompt-workshop/dispatch/apply.py:295-361; apply_from_substrate.py:113-152; run_workflow.mjs:478"
+    }
+  ],
+  "impact": "Both apply paths exit non-zero on any parser raise, halting the sequence at the first catalogue-survivor — preventing a complete draft from one pass.",
+  "proposed_resolution": "On a soft-flag return (prefill + flags), merge, record flags into the draft channel, mark the capture/envelope flagged, emit flags, and exit 0 (hard rejects still exit 1) so the sequence completes accumulating flags."
+}

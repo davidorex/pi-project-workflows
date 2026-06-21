@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "Build the reusable responsibility-atom seed importer (a Django management command, import_staff_roster precedent) consuming data/chiway-responsibility-atoms-template.csv, and seed the Chiway tenant -- creating is_new owners (IT division + Director of IT) and attaching every responsibility atom, materializing the default scopes (all / leader-positions / positions-under:<division>) onto each matching owner as a stored atom (DEC-35 / docs/hod-default-responsibilities.md: stored, FK-linkable per DEC-32, not runtime cascade). Closes FGAP-016 (unseeded atom layer) + FGAP-017 (no IT division/Director). Then re-run the workflow to continue workshopping.",
+  "acceptance_criteria": [
+    "After the seed, every division and every position for the tenant has at least one responsibility atom.",
+    "The agreed atom set is present at the correct owners (global + WASC-cycle on all owners; teaching atoms on teaching seats only; HOD set on the Head-of seats; SAO pastoral on the SAO division and its positions; the dorm-specific atom on Dormitory Teacher; the College Counseling phased set; Curriculum/PD, Principal's Office, AAO atoms; the leader default on every LEADER seat; the IT division + Director of IT created).",
+    "The importer is idempotent (a second run creates zero rows) and supports a dry-run that writes nothing.",
+    "The full project gate stays green.",
+    "Re-running the workflow advances past the propose-responsibilities spec (no empty-catalogue reject)."
+  ]
+}

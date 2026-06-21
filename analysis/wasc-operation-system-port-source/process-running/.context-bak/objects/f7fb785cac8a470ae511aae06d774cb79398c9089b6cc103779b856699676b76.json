@@ -1,0 +1,5 @@
+{
+  "description": "When the user names a scope ('code', 'this file', 'the spec', 'the doc'), act only within that scope-noun. Do not extrapolate to adjacent scopes; user shouldn't have to repeat.",
+  "enforcement": "manual",
+  "severity": "error"
+}

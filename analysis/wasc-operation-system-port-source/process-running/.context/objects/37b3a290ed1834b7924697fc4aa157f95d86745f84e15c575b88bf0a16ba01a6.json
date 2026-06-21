@@ -1,0 +1,10 @@
+{
+  "status": "planned",
+  "description": "Story A (shared preamble). R4 -- front-load + three measurement views + durability, as preamble success criteria. Mirror + re-stamp + parity.",
+  "acceptance_criteria": [
+    "A freshly generated plan states a baseline positioned before its actions -- an adversarial reviewer confirms presence and ordering.",
+    "Its measurement names all three points of view (student outcomes, staff/adult practice, parent/stakeholder) -- each present.",
+    "At least one measurement is a later/delayed re-check distinct from a one-time occurrence -- an adversarial reviewer confirms at least one.",
+    "The measurement content scans to zero process-method terms; the dispatched output parses clean."
+  ]
+}

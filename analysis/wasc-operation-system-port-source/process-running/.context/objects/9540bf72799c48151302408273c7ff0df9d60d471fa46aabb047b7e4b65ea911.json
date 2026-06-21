@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-13T12:30:00Z",
+  "evidence": "TASK-035 (C3) recorded as the derived posture via the canonical pipeline (decision-record task). DEC-0005 (enacted, .context decisions) records two derived placements: (1) options-posture / leader-set value-forks -> orchestration/create-plan-UX layer (US-LLM-23/24/25 trio), per-spec stays decide-one; (2) unowned-precursor decision-requests (FGAP-040) -> authored in-draft plan content, coverage-accountability class (FGAP-037/041 pattern) -- each DERIVED from the app's stated purpose (DEC-29 render-complete-draft + US-DRAFT human-fine-tunes-via-UX + DEC-41 trio-is-production-realization / UX-surfaces-decide-points), not selected among alternatives. Load-bearing citations corroborated against source pre-filing (DEC-29, DEC-41) and re-verified by a separate adversarial audit (citations support the claims; no misquote/overreach). FGAP-040 updated: placement settled (in-draft), build open + human-scoped. Separate adversarial audit Total findings: 0 -- all 5 acceptance criteria hold; corpus diff = zero (git status/diff: only .context JSON changed; zero changes to snippets / preamble / specs.py); R8-vs-FGAP-040 boundary coherent; FGAP-040 distinct from FGAP-041. Decision-only: no corpus/parser body change.",
+  "criteria_results": [
+    {
+      "criterion": "A decision record exists in the project decision log capturing the options-posture / human-decision-surface placement, confirmed by reading the decision block.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The record places genuine human-set value-forks (options-posture) at the orchestration / create-plan-UX layer, giving the reason that per-spec generation stays decide-one (preserving the no-options-instead-of-decisions rule).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The record places unowned-precursor decision-requests as authored content within the plan draft itself -- the same account-for-every-item-or-flag-it class as coverage -- not as an orchestration-layer overlay.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The record justifies both placements by derivation from the app's stated purpose (the AI renders a complete deliverable draft; the human fine-tunes it through the create-plan UX), rather than as an open selection among alternatives.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A diff of the corpus shows zero changes to any snippet or preamble attributable to this record -- machine-checked.",
+      "status": "passed"
+    }
+  ]
+}

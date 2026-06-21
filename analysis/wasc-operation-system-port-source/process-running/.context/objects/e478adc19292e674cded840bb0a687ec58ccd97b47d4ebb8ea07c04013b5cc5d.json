@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "Fix the un-suppressed apply.py mypy debt (addresses FGAP-011). Root cause: get_parse_function (prompt-workshop/dispatch) returns a Callable whose type omits the school/grounding keyword params, so apply.py:294 parse_fn(response_text, school=school, grounding=grounding) raises 2 mypy call-arg errors though the concrete parsers accept *, school=None, grounding=None (typing imprecision, runtime-correct); plus an unused # type: ignore at apply.py:268. Widen get_parse_function's return type (a Protocol or precise Callable declaring __call__(self, text: str, *, school=..., grounding=...)); remove the :268 ignore; keep the dispatch.apply mypy override REMOVED (no re-suppression); add ruff check of apply.py + apply_from_substrate.py to the Makefile lint + CI so they are genuinely gated. Typing/gate-config only, no runtime behavior change. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "uv run mypy . is GREEN (0 errors) and apply.py is genuinely type-checked under it -- the debt is resolved, not hidden by any re-suppression.",
+    "No runtime behavior change -- the fix is typing/config only; the full pytest suite is green with unchanged behavior.",
+    "No regression to dependents -- importing dispatch._workshop does not trigger Django setup, and the full pytest suite stays green.",
+    "Every dispatch file the fix touches (apply.py, apply_from_substrate.py, _workshop.py) is clean under BOTH ruff check AND ruff format --check, and the standing gate (Makefile lint + CI) enforces BOTH checks on them so a future lint OR format regression is caught.",
+    "Full gate green: ruff check + ruff format --check + mypy . + pytest + make test-js, plus verify-render-parity 14/14."
+  ]
+}

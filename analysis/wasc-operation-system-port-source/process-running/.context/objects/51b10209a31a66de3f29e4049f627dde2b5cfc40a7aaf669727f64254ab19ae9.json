@@ -1,0 +1,25 @@
+{
+  "title": "Plan-generation heuristics — LIVING list (account-for: in/out of class; always-bilingual; feedback channels; measure->data->revise actions+policies)",
+  "status": "in-progress",
+  "layer": "L3",
+  "type": "curation",
+  "question": "What general heuristics must the generated/distilled plan account for? (a growing, append-to list)",
+  "method": "human-seeded living list (2026-06-07); to be added to as heuristics surface. Body in the findings_document.",
+  "findings_summary": "Living list: docs/plan-generation-heuristics.md (status in-progress = open/growing). Seeded heuristics (verbatim, human): (1) account for IN CLASS and OUTSIDE OF CLASS; (2) account for ALWAYS-BILINGUAL language improvement; (3) account for FEEDBACK CHANNELS; (4) account for MEASURING PROGRESS and DATA DRIVING REVISION of actions AND policies. Where they land: (1) instructional + non-lesson coverage (SAO/pastoral) -> SAO coverage-floor (R-0005 5b) + action-scope diversity (R-0003 A1/R-0007); (2) bilingual Chinese-English development as a standing dimension (modeltranslation + FGAP-024 CJK-safety); (3) stakeholder feedback_channels + the stakeholder coverage-floor; (4) measurement-tools-KEY (R-0007) driving review_events->revision_rules over actions AND policies (WASC annual-review/continuous-improvement R-0008, Standard A4). Joins already-established heuristics (theme-framed single plan; HOW+frequency; diverse focus; per-Goal header growth-targets/data/gap-closure/3-5yr/annual-review; coverage floors; verbatim labels; concision temperature). ADD TO THIS as new heuristics surface. ADDED (2026-06-07, v3-review): out-of-class involvement EXPLICIT (SAO owns a pastoral/dorm/activities step, not just a contributor -- grounded: SAO contributes in 5/6 steps, never owns); bilingual DUAL-PURPOSE framing (actions serve BOTH SLO + Chinese-English language improvement); DISTRIBUTE ownership / anti-concentration (the draft owns all 6 steps via only PO + Curriculum, Director of Teaching+Curriculum leads 4/6 -- spread to divisions that already hold responsibility atoms). EXTRAPOLATION LICENSE: the transform may EXTRAPOLATE/ELABORATE from grounded material to satisfy heuristics (not compress-only), bounded to catalogued entities + real responsibilities/SLOs + no fabricated metrics + re-gating; this RELAXES R-0005 byte-identical passthrough (see R-0005 5c) -> two modes: conservative distillation vs enriching transform. Heuristics are generation-side requirements AND enriching-transform targets.",
+  "findings_document": "docs/plan-generation-heuristics.md",
+  "citations": [
+    {
+      "label": "coverage floors (SAO/stakeholders/measurement)",
+      "path": "docs/distillation-transform-design-2026-06-07.md section 5b"
+    },
+    {
+      "label": "measurement-tools KEY + authoritative feedback",
+      "path": "R-0007 / docs/authoritative-plan-quality-feedback-2026-06-07.md"
+    },
+    {
+      "label": "WASC authoritative expectations",
+      "path": "R-0008 / docs/wasc-authoritative-sources-research-2026-06-07.md"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

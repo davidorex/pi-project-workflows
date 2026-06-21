@@ -1,0 +1,17 @@
+{
+  "version": "1.0.0",
+  "substrates": {
+    "sub-ba24c9ccf291c69f": {
+      "dir": ".context",
+      "aliases": []
+    },
+    "sub-3864ddf3fe0faf50": {
+      "dir": ".idea-drafts",
+      "aliases": []
+    },
+    "sub-b24deff9b03169d7": {
+      "dir": ".workshopping",
+      "aliases": []
+    }
+  }
+}

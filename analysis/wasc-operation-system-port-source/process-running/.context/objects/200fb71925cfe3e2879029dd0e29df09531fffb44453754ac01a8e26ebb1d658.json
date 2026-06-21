@@ -1,0 +1,18 @@
+{
+  "title": "apply_from_substrate.py is a second apply attach point that bypasses the in-execution self-check (ungated)",
+  "status": "identified",
+  "package": "prompt-workshop/dispatch/apply_from_substrate.py",
+  "description": "DEC-54's per-spec in-execution self-check (run_self_check, structural hard-fail) is wired into apply.py (the orchestrator-driven render->dispatch->apply path; apply.py:478). But apply_from_substrate.py (the FEAT-002 substrate-driven apply that writes immutable versioned outputs) parses + merges + writes WITHOUT calling run_self_check -- confirmed absent. A draft assembled via the substrate path therefore skips the structural gates (coverage, distribution, and any future self-checks). The in-scope T2 path (sequence.py -> apply.py) is gated; this sibling is not.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+      "reference": "main() parses via get_parse_function, merges via MERGE_RULES, writes -- no run_self_check call anywhere (grep confirms absent)"
+    },
+    {
+      "file": "prompt-workshop/dispatch/apply.py",
+      "reference": ":478 run_self_check call gating the orchestrator path"
+    }
+  ],
+  "impact": "Substrate-fed assembled drafts can persist structural shortfalls (silent coverage/distribution failures) the apply.py path would catch. The in-execution enforcement (DEC-54) is not uniform across both apply attach points.",
+  "proposed_resolution": "Add the run_self_check gate to apply_from_substrate.py (same attach point: after merge, before write; structural fail -> nonzero), OR route the substrate path through a shared gated apply core. Verify both attach points enforce identically."
+}

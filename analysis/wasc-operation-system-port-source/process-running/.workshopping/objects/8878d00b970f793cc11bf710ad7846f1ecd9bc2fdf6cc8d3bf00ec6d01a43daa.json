@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if frequencies %}Frequencies (choose a periodic cadence by EXACT code):\n{% for f in frequencies %}- {{ f.code }} ({{ f.label }})\n{% endfor %}{% endif %}",
+  "section": "frequencies"
+}

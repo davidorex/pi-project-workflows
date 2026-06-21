@@ -1,0 +1,710 @@
+{
+  "schema_version": "1.0.0",
+  "block_kinds": [
+    {
+      "canonical_id": "decisions",
+      "display_name": "Decisions",
+      "prefix": "DEC-",
+      "schema_path": "schemas/decisions.schema.json",
+      "array_key": "decisions",
+      "data_path": "decisions.json"
+    },
+    {
+      "canonical_id": "framework-gaps",
+      "display_name": "Framework Gaps",
+      "prefix": "FGAP-",
+      "schema_path": "schemas/framework-gaps.schema.json",
+      "array_key": "gaps",
+      "data_path": "framework-gaps.json"
+    },
+    {
+      "canonical_id": "tasks",
+      "display_name": "Tasks",
+      "prefix": "TASK-",
+      "schema_path": "schemas/tasks.schema.json",
+      "array_key": "tasks",
+      "data_path": "tasks.json"
+    },
+    {
+      "canonical_id": "verification",
+      "display_name": "Verification",
+      "prefix": "VER-",
+      "schema_path": "schemas/verification.schema.json",
+      "array_key": "verifications",
+      "data_path": "verification.json"
+    },
+    {
+      "canonical_id": "issues",
+      "display_name": "Issues",
+      "prefix": "issue-",
+      "schema_path": "schemas/issues.schema.json",
+      "array_key": "issues",
+      "data_path": "issues.json"
+    },
+    {
+      "canonical_id": "features",
+      "display_name": "Features",
+      "prefix": "FEAT-",
+      "schema_path": "schemas/features.schema.json",
+      "array_key": "features",
+      "data_path": "features.json"
+    },
+    {
+      "canonical_id": "research",
+      "display_name": "Research",
+      "prefix": "R-",
+      "schema_path": "schemas/research.schema.json",
+      "array_key": "research",
+      "data_path": "research.json"
+    },
+    {
+      "canonical_id": "rationale",
+      "display_name": "Design Rationale",
+      "prefix": "RAT-",
+      "schema_path": "schemas/rationale.schema.json",
+      "array_key": "rationales",
+      "data_path": "rationale.json"
+    },
+    {
+      "canonical_id": "spec-reviews",
+      "display_name": "Spec Reviews",
+      "prefix": "REVIEW-",
+      "schema_path": "schemas/spec-reviews.schema.json",
+      "array_key": "reviews",
+      "data_path": "spec-reviews.json"
+    },
+    {
+      "canonical_id": "layer-plans",
+      "display_name": "Layer Restructure Plans",
+      "prefix": "PLAN-",
+      "schema_path": "schemas/layer-plans.schema.json",
+      "array_key": "plans",
+      "data_path": "layer-plans.json"
+    },
+    {
+      "canonical_id": "requirements",
+      "display_name": "Requirements",
+      "prefix": "REQ-",
+      "schema_path": "schemas/requirements.schema.json",
+      "array_key": "requirements",
+      "data_path": "requirements.json"
+    },
+    {
+      "canonical_id": "conventions",
+      "display_name": "Conventions",
+      "prefix": "",
+      "schema_path": "schemas/conventions.schema.json",
+      "array_key": "rules",
+      "data_path": "conventions.json"
+    },
+    {
+      "canonical_id": "context-contracts",
+      "display_name": "Context Contracts",
+      "prefix": "CTX-",
+      "schema_path": "schemas/context-contracts.schema.json",
+      "array_key": "contracts",
+      "data_path": "context-contracts.json"
+    },
+    {
+      "canonical_id": "phase",
+      "display_name": "Phases",
+      "prefix": "PHASE-",
+      "schema_path": "schemas/phase.schema.json",
+      "array_key": "phases",
+      "data_path": "phase.json"
+    },
+    {
+      "canonical_id": "story",
+      "display_name": "Stories",
+      "prefix": "STORY-",
+      "schema_path": "schemas/story.schema.json",
+      "array_key": "stories",
+      "data_path": "story.json"
+    },
+    {
+      "canonical_id": "work-orders",
+      "display_name": "Work Orders",
+      "prefix": "WO-",
+      "schema_path": "schemas/work-orders.schema.json",
+      "array_key": "work_orders",
+      "data_path": "work-orders.json"
+    },
+    {
+      "canonical_id": "session-notes",
+      "display_name": "Session Notes",
+      "prefix": "SESSION-",
+      "array_key": "sessions",
+      "data_path": "session-notes.json",
+      "schema_path": "schemas/session-notes.schema.json"
+    }
+  ],
+  "relation_types": [
+    {
+      "canonical_id": "decision_supersedes_decision",
+      "display_name": "supersedes",
+      "category": "ordering",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "decision_relates_to_decision",
+      "display_name": "relates to decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_issue",
+      "display_name": "addresses issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "gap_addressed_by_decision",
+      "display_name": "addressed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "gap_addressed_by_feature",
+      "display_name": "addressed by feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "gap_relates_to_issue",
+      "display_name": "relates to issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "feature_depends_on_item",
+      "display_name": "depends on item",
+      "category": "ordering",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "feature_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "feature_resolves_issue",
+      "display_name": "resolves issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "feature_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "story_depends_on_story",
+      "display_name": "story depends on story",
+      "category": "ordering",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "story"
+      ]
+    },
+    {
+      "canonical_id": "story_gated_by_item",
+      "display_name": "story gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "task_depends_on_task",
+      "display_name": "depends on task",
+      "category": "ordering",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "tasks"
+      ]
+    },
+    {
+      "canonical_id": "requirement_depends_on_requirement",
+      "display_name": "depends on requirement",
+      "category": "ordering",
+      "source_kinds": [
+        "requirements"
+      ],
+      "target_kinds": [
+        "requirements"
+      ]
+    },
+    {
+      "canonical_id": "research_supersedes_research",
+      "display_name": "research supersedes research",
+      "category": "ordering",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "research"
+      ]
+    },
+    {
+      "canonical_id": "research_informs_item",
+      "display_name": "informs item",
+      "category": "data_flow",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "research_relates_to_research",
+      "display_name": "relates to research",
+      "category": "data_flow",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "research"
+      ]
+    },
+    {
+      "canonical_id": "review_targets_item",
+      "display_name": "review targets",
+      "category": "membership",
+      "source_kinds": [
+        "spec-reviews"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "verification_verifies_item",
+      "display_name": "verifies",
+      "category": "data_flow",
+      "source_kinds": [
+        "verification"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "task_positioned_in_phase",
+      "display_name": "positioned in phase",
+      "category": "membership",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "phase"
+      ]
+    },
+    {
+      "canonical_id": "feature_contains_story",
+      "display_name": "contains story",
+      "category": "membership",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "story"
+      ]
+    },
+    {
+      "canonical_id": "story_contains_task",
+      "display_name": "contains task",
+      "category": "membership",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "tasks"
+      ]
+    },
+    {
+      "canonical_id": "rationale_supports_decision",
+      "display_name": "supports decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "rationale"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "task_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "task_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "task_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "session_touches_item",
+      "display_name": "touches item",
+      "category": "membership",
+      "source_kinds": [
+        "session-notes"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "item_derived_from_item",
+      "display_name": "derived from",
+      "category": "data_flow",
+      "source_kinds": [
+        "*"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    }
+  ],
+  "lenses": [
+    {
+      "id": "tasks-by-status",
+      "kind": "target",
+      "target": "tasks",
+      "derived_from_field": "status",
+      "bins": [
+        "planned",
+        "in-progress",
+        "completed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    {
+      "id": "gaps-by-status",
+      "kind": "target",
+      "target": "framework-gaps",
+      "derived_from_field": "status",
+      "bins": [
+        "identified",
+        "accepted",
+        "in-progress",
+        "closed",
+        "wontfix"
+      ]
+    },
+    {
+      "id": "session-notes-by-via",
+      "kind": "target",
+      "target": "session-notes",
+      "derived_from_field": "via",
+      "bins": [
+        "pi",
+        "claude-code"
+      ]
+    }
+  ],
+  "layers": [],
+  "status_buckets": {},
+  "installed_schemas": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts",
+    "phase",
+    "story",
+    "work-orders",
+    "session-notes"
+  ],
+  "installed_blocks": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts",
+    "phase",
+    "story",
+    "work-orders",
+    "session-notes"
+  ],
+  "invariants": [
+    {
+      "id": "completed-task-has-verification",
+      "class": "requires-edge",
+      "block": "tasks",
+      "where": {
+        "status": "completed"
+      },
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_child",
+      "severity": "error",
+      "message": "Completed task '{id}' has no verification edge (verification_verifies_item)"
+    },
+    {
+      "id": "decision-cites-forcing-artifact",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "decision_addresses_issue",
+        "decision_addresses_feature",
+        "decision_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Decision '{id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)"
+    },
+    {
+      "id": "task-completed-gap-closed",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a gap that is not closed"
+    },
+    {
+      "id": "task-completed-feature-complete",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_feature"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a feature that is not complete"
+    },
+    {
+      "id": "verification-passed-task-complete",
+      "class": "status-consistency",
+      "block": "verification",
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "error",
+      "message": "Passed verification '{id}' verifies a task that is not completed"
+    },
+    {
+      "id": "task-not-on-superseded-decision",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_governed_by_decision"
+      ],
+      "direction": "as_parent",
+      "forbid_target_bucket": "unknown",
+      "severity": "warning",
+      "message": "Task '{id}' is governed by a superseded or cancelled decision"
+    }
+  ],
+  "tool_operations": [],
+  "tool_operations_forbidden": [],
+  "root": ".context",
+  "substrate_id": "sub-ba24c9ccf291c69f",
+  "installed_from": {
+    "catalog": "@davidorex/pi-context@0.30.0",
+    "catalog_version": "1.0.0",
+    "at": "2026-06-09T11:49:32.142Z",
+    "assets": {
+      "decisions": {
+        "content_hash": "f13db02aa4831b06b913405b7b21f2290c6f62ebc46c9ad1068cbbf62469c2d4",
+        "version": "1.0.1"
+      },
+      "framework-gaps": {
+        "content_hash": "e31fd9ee2cf25d22113082a46439ef2db237be6ea8df48b93eb63d63d89e431c",
+        "version": "1.1.1"
+      },
+      "tasks": {
+        "content_hash": "356672360541a4ab5d136514a35060a970b92f9cb40202ae133b5e81778bb809",
+        "version": "1.0.1"
+      },
+      "verification": {
+        "content_hash": "c61cb09a2a2f7eb55fc3abc43313a70560507db4883e1562dd19e01ac558fd89",
+        "version": "1.0.1"
+      },
+      "issues": {
+        "content_hash": "72e5f253393b32723905408facdf3a95340db1ec785c1fa09c79e41a93225db8",
+        "version": "1.0.1"
+      },
+      "features": {
+        "content_hash": "e42a8d91a27a9d57c003596add1efc985369f0fcf9aa6f03460c5375d7fdfb87",
+        "version": "1.0.1"
+      },
+      "research": {
+        "content_hash": "938354e06f60f756df238edc6512cc927dc11df7642afa02bc2dce0ee4d5f4d8",
+        "version": "1.0.1"
+      },
+      "rationale": {
+        "content_hash": "b1d0af8916f25e9481d6076d90b7b612687b334b1d1d27149f1c0c7d96617ed4",
+        "version": "1.0.1"
+      },
+      "spec-reviews": {
+        "content_hash": "d0172db540175847f93e070f35a9f656e9315147d832085006b8fedbada1636a",
+        "version": "1.0.1"
+      },
+      "layer-plans": {
+        "content_hash": "a1d26098b0280ce5fb63f0f6531c1fbc31f98940dac9535e1c5dfc938031e2cd",
+        "version": "1.0.1"
+      },
+      "requirements": {
+        "content_hash": "cf5f899797499c5ab9d4ba5a8eaabafc17b0d4e8da196245c1d4fd1fef734403",
+        "version": "1.0.1"
+      },
+      "conventions": {
+        "content_hash": "60ffa15d1c0b2188ec3a35d1252b5ae4931a424ad78b704145db42d4f48d982b",
+        "version": "1.0.0"
+      },
+      "context-contracts": {
+        "content_hash": "71fef26b0523bc4fa91f6fcc94047919fdbb0274a96f19f4508eabd14c6d8432",
+        "version": "1.0.1"
+      },
+      "phase": {
+        "content_hash": "b41a48cc8acb81090874cfd4e435eee97e30fe774943a23c30999c5e07a7fe4e",
+        "version": "2.0.1"
+      },
+      "story": {
+        "content_hash": "9a4187fe15225ed0be26b7e64bc43ef6881a9706e7ff4c591923126e2ad71737",
+        "version": "1.0.1"
+      },
+      "work-orders": {
+        "content_hash": "200a6757d824b8d9e1c7cd3300d13b9cecee0184813f1a824a691504aa348b9d",
+        "version": "1.0.1"
+      },
+      "session-notes": {
+        "content_hash": "88c6a22f6ab72a13caf4eba25de39259da47af3867fffb6f4c9060207ea079fa",
+        "version": "1.0.0"
+      }
+    }
+  }
+}

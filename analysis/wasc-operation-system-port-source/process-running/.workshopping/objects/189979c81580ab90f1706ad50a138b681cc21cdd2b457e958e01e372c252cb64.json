@@ -1,0 +1,45 @@
+{
+  "spec_key": "propose-review-loop",
+  "order": 14,
+  "target_step": "review",
+  "preview_mode": "review-loop",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "divisions",
+    "stakeholder_groups",
+    "frequencies",
+    "accreditation_standards",
+    "draft_state"
+  ],
+  "deps": [
+    "propose-milestones",
+    "suggest-feedback-channels"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-review-loop-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-review-loop-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-review-loop-2",
+    "FRAG-gb-seed-review",
+    "FRAG-intro-propose-review-loop-3",
+    "FRAG-gb-stakeholder-groups-audience",
+    "FRAG-intro-propose-review-loop-4",
+    "FRAG-gb-divisions-unit",
+    "FRAG-intro-propose-review-loop-5",
+    "FRAG-gb-frequencies-code",
+    "FRAG-intro-propose-review-loop-6",
+    "FRAG-gb-cycle",
+    "FRAG-intro-propose-review-loop-7",
+    "FRAG-gb-accreditation-standards-cite",
+    "FRAG-intro-propose-review-loop-8",
+    "FRAG-gb-draft-state-review",
+    "FRAG-intro-propose-review-loop-9",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-review-loop"
+  ],
+  "parser": "parse_propose_review_loop",
+  "source_migration": "ai/migrations/0015_seed_propose_review_loop_template.py",
+  "output_schema": "shared/schemas/propose-review-loop.schema.json"
+}

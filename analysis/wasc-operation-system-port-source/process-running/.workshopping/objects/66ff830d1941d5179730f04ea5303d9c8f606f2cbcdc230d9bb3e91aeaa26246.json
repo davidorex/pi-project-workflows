@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if draft_state %}The plan draft so far (the engaged stakeholders to source feedback from, and the milestones a milestone-anchored channel may reference):\n{% for key, value in draft_state.items %}{% if value %}- {{ key }}: {{ value }}\n{% endif %}{% endfor %}{% endif %}",
+  "section": "draft_state"
+}

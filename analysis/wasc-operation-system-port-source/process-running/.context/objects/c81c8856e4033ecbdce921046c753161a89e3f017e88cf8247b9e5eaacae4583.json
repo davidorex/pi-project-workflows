@@ -1,0 +1,22 @@
+{
+  "title": "decompose.py _GB_TABLE drifted from live snippet grounding_sections -- 4 edits across 3 commits; reconstruction gate red",
+  "status": "closed",
+  "package": "prompt-workshop/dispatch/decompose.py",
+  "description": "_GB_TABLE (decompose.py:109-171) diverged from the live snippet grounding_sections via 3 separate lockstep misses; _assign_gb_ids (:287-321) STOPs on the first, so a single run surfaces only one. Full set (computed-group vs table-key, both directions): (1) guiding_statements (:145) {1,7,10,13} -> {1,3,4,5,7,10,13} [0f13aae / B2 / TASK-032]; (2) divisions {7} row 'FRAG-gb-divisions-inventory' (:150) orphaned -- no computed group matches -- delete [fa25965]; (3) division_responsibility_atoms {7} has no row -- add [fa25965, which swapped snippet-07's divisions block for division_responsibility_atoms, causing both (2) and (3)]; (4) division_responsibility_summary {5} has no row -- add [b2e4d61 / TASK-026]. Reconstruction-tool only; live dispatch + render parity unaffected.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/decompose.py",
+      "reference": ":145 guiding_statements {1,7,10,13} (live {1,3,4,5,7,10,13}); :150 divisions {7} 'FRAG-gb-divisions-inventory' orphaned; no row for division_responsibility_atoms {7} or division_responsibility_summary {5}"
+    },
+    {
+      "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+      "reference": "grounding_sections carries division_responsibility_atoms (not divisions) since fa25965"
+    },
+    {
+      "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+      "reference": "grounding_sections carries division_responsibility_summary (b2e4d61) + guiding_statements (0f13aae)"
+    }
+  ],
+  "impact": "decompose reconstruction gate STOPs (red). A guiding_statements-only fix re-STOPs on division_responsibility_atoms then division_responsibility_summary. Table-vs-live: 1 stale frozenset + 1 dead row + 2 missing rows.",
+  "proposed_resolution": "Re-sync _GB_TABLE to the live snippet sets (4 edits): (1) widen :145 guiding_statements -> {1,3,4,5,7,10,13}; (2) delete the orphaned :150 divisions {7} row; (3) add (division_responsibility_atoms, frozenset({7})); (4) add (division_responsibility_summary, frozenset({5})); the two new rows take FRAG-gb-* ids per the neighbour convention. DONE = python prompt-workshop/dispatch/decompose.py exits 0 / GATE 14/14 (clean bijection: zero computed-without-row, zero row-without-computed). Retain the lockstep-checklist note so future grounding-block additions update the table."
+}

@@ -1,0 +1,39 @@
+{
+  "spec_key": "suggest-feedback-channels",
+  "order": 11,
+  "target_step": "feedback",
+  "preview_mode": "fields",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "stakeholder_groups",
+    "divisions",
+    "frequencies",
+    "draft_state"
+  ],
+  "deps": [
+    "narrative-draft",
+    "propose-milestones"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-suggest-feedback-channels-0",
+    "FRAG-preamble",
+    "FRAG-intro-suggest-feedback-channels-1",
+    "FRAG-gb-school",
+    "FRAG-gb-cycle",
+    "FRAG-intro-suggest-feedback-channels-2",
+    "FRAG-gb-seed-channels",
+    "FRAG-intro-suggest-feedback-channels-3",
+    "FRAG-gb-draft-state-channels-source",
+    "FRAG-intro-suggest-feedback-channels-4",
+    "FRAG-gb-stakeholder-groups-label",
+    "FRAG-gb-divisions-channel-owner",
+    "FRAG-gb-frequencies-choose",
+    "FRAG-intro-suggest-feedback-channels-5",
+    "FRAG-output-contract-header-en",
+    "FRAG-contract-suggest-feedback-channels"
+  ],
+  "parser": "parse_suggest_feedback_channels",
+  "source_migration": "ai/migrations/0007_seed_suggest_feedback_channels_template.py",
+  "output_schema": "shared/schemas/suggest-feedback-channels.schema.json"
+}

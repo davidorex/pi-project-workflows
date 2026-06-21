@@ -1,0 +1,11 @@
+{
+  "status": "in-progress",
+  "description": "DEC-50 / FGAP-028: make action generation RESPONSIBILITY-MAP-driven so the plan produces a school-wide spread of DISTINCT actions per division purview, not the single-method-process concentration. (A) Add a LEAN grounding section `division_responsibility_summary` (division-grain responsibilities only, ~9.6KB vs the 60KB full atom inventory) in ai/services/grounding.py + register + test; add it to spec 05's grounding_sections (NOT the full atom inventory -- honor FGAP-022). (B) Rewrite spec 05 (snippet + fragment lockstep + content_hash re-stamp): the method becomes a process discipline (still required + type-valid + advisory), steps are generated FROM the division responsibility map (distinct action per relevant division, in/out-of-class incl. SAO/HRT/YGL/Dorm), dropping the one-step-per-template mandate (not parser-enforced). Parser/model/full-atom-inventory/production-templates untouched.",
+  "acceptance_criteria": [
+    "The generated action set is a school-wide spread of DISTINCT actions: ownership (assignments) distributes across multiple divisions per their purview -- no single division owns a disproportionate majority of steps.",
+    "Each action is grounded in the responsible division's actual responsibilities (the responsibility map drives which division does what), not in one process method's template slots.",
+    "The plan completes the full 14-spec run (downstream specs 06-10 + the promotion gate work on the re-shaped step set) and stays within the stdout cap (no FGAP-022 regression -- spec 05's prompt does not re-balloon).",
+    "The existing qualities hold: in/out-of-class coverage (incl. SAO/HRT/YGL/Dorm), HOW-per-step, bilingual dual-purpose, standards key+name, verbatim labels; parser/catalogue-gate pass with no new fabrication flags.",
+    "Snippet<->substrate parity stays 14/14; the full project gate stays green."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "title": "Snippet catalogue renders concatenate the emit-value with human context; the agent copies the whole token -> exact-match parser hard-rejects",
+  "status": "closed",
+  "package": "prompt-workshop/snippets (+ production PromptTemplate rows per DEC-41)",
+  "description": "The per-spec snippets render each catalogue choice as '<emit-value><sep><human-context>'. The agent, told 'choose by EXACT label/code', copies the entire rendered token as the emitted value; the parser catalogue check (_check_in_catalogue, planner/specs.py:499 `if value in members`) is exact string equality against the bare code/label, so the concatenated value hard-rejects (apply halts). Confirmed renders: 02:26 learner_outcomes `{{o.label}}{% if o.description %}: {{o.description}}`, 02:30 areas_for_improvement (same), 02:38 policies `{{p.label}}{% if p.notes %}: {{p.notes}}`; 03:32 improvement_types `{{it.code}}: {{it.label}}`; 06:23 / 10:26 / 13:45 divisions `{{d.label}}{% if d.scope_summary %} — {{d.scope_summary}}`; 11:37 frequencies `{{f.code}}: {{f.label}}`; 13:28 accreditation_standards `{{s.code}} ({{s.category}}): {{s.text}}`; 14:31 divisions `{{d.label}}{% if d.scope_summary %}: {{d.scope_summary}}`. Clean only where the emit-value is quoted/isolated: 03:35 planning_method `\"{{m.name}}\"`, 07:27 division `Division \"{{d.label}}\"`, 02:34 stakeholder `{{s.label}}` bare.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/snippets/02-propose-domain-alignment.md",
+      "reference": ":26,:30,:38 label/code rendered with trailing :description/:notes"
+    },
+    {
+      "file": "prompt-workshop/snippets/03-propose-milestones.md",
+      "reference": ":32 improvement_types `code: label` (emit field is code)"
+    },
+    {
+      "file": "prompt-workshop/snippets/11-suggest-feedback-channels.md",
+      "reference": ":37 frequencies `code: label` (emit field is code)"
+    },
+    {
+      "file": "prompt-workshop/snippets/13-propose-accreditation-standards.md",
+      "reference": ":28 standards `code (category): text` (emit field is code)"
+    },
+    {
+      "file": "school-improvement-plans/planner/specs.py",
+      "reference": ":499 _check_in_catalogue exact match `if value in members`"
+    },
+    {
+      "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-061244-e5bc/outputs/call_propose_domain_alignment.json",
+      "reference": "agent emitted learner_outcomes label 'Confident: Shows self-assurance...' vs catalogue 'Confident' -> A3 hard reject, apply halt"
+    }
+  ],
+  "impact": "Blocks the 14-spec run wherever an emitted catalogue field is rendered with trailing context; spec 2 (propose-domain-alignment) is the first halt, specs 03/10/11/13/14 would follow. DISC-26's promotion-ready whole-plan draft is unreachable until catalogue values are emitted in the bare form the parser accepts.",
+  "proposed_resolution": "Corpus-wide render convention: present the EXACT emit-value unambiguously (quote/delimit the bare code/label the agent must emit) with the human context clearly separated, and reinforce in the OUTPUT CONTRACT to emit only that exact value. Generalize the existing quoted pattern (03:35, 07:27). REJECT parser-loosening / variant-tolerant catalogue matching (DEC-40: a coded-FK fuzzy match would admit fabricated values). Per DEC-41 the snippet fix is the dev-time form; the validated convention mirrors to production PromptTemplate rows via an ai/00NN migration. Then re-run the workflow to confirm the specs apply."
+}

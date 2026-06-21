@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "FGAP-014 catalogue-render anti-pattern fixed. The corpus convention `\"<emit-value>\" (context)` (quote the bare label/code the agent emits; context after) was generalized across every emitted catalogue render, in BOTH the snippet bodies and the matching .workshopping substrate grounding-block fragments (lockstep, parity-preserving): 02 learner_outcomes/areas/policies (label), 03 improvement_types (code), 06/10/14 divisions (label), 11 + 14 frequencies (code), 13 accreditation_standards (code); preamble + FRAG-preamble gained the convention sentence. Parser untouched (DEC-40). Adversarial audit returned 1 finding (14:35 frequencies emit-code left unquoted) -> fixed (quoted + its FRAG-gb-frequencies-code mirror); parity + gate re-verified green. verify-render-parity GATE 14/14 + both cross-checks PASS (snippet==substrate). Live re-run advanced spec 2 -> spec 6: narrative-draft, propose-domain-alignment (previously halted), propose-milestones, draft-success-criteria, decompose-action-steps all merged with 0 flags -> the render-ambiguity halt class is gone. Run then halts at spec 6 (propose-assignments) on a DISTINCT class (HTML-autoescape of an apostrophe in a catalogue value -> FGAP-015, next iteration). Full gate GREEN: ruff + ruff format --check, mypy . 318/0, pytest 2008, make test-js 48/0. Production PromptTemplate mirror deferred to a later ai/00NN migration (DEC-41).",
+  "timestamp": "2026-06-07T07:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "Every catalogue choice an agent must emit is presented so its exact emittable value is unambiguous and distinct from descriptive context.",
+      "status": "passed"
+    },
+    {
+      "criterion": "On a fresh run, no spec halts because an emitted catalogue value carried concatenated descriptive context; the run advances past the specs that previously hit it.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing spec regresses, and the catalogue gate still rejects fabricated values (parser unchanged).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The workshop snippet pipeline and the substrate render remain byte-identical (parity 14/14).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

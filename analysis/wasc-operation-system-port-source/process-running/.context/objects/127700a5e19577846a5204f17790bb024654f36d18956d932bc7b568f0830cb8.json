@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-05-30T23:00:11+08:00",
+  "via": "claude-code",
+  "focus": "DEC-44 (Option H LLM-validator) IMPL landed and A1 workshop dispatch passed live end-to-end; DEC-45 (collapse MissionArea + GuidingStatement into SchoolMissionVisionValues) established, but its IMPL failed and all three IMPL commits were excised via rebase.",
+  "discoveries": [
+    "DEC-44 LLM-validator third stage works in live dispatch: A1 passed through all 4 fabrication-closure layers with 4 OpenRouter validator calls. Required a system-default LLMProviderConfig (user=NULL) and the validator model id in OpenRouter routing format (anthropic/claude-haiku-4.5).",
+    "The A1 live dispatch surfaced and closed 4 catalogue/denylist completeness gaps in planner/_freetext_audit.py: plural-form admission, lowercase-content-word bridge for NER super-spans, guiding_statements pulled into the catalogue union, Stakeholder class-noun added to the denylist.",
+    "MVV field survey (18 international K-12 schools + WASC/CIS/NEASC/IB) established that 'mission areas' is empirically absent (0/20) and the Mission/Vision/Values trio is the field convention.",
+    "DEC-45 IMPL was dispatched as a single agent over a 36-file mechanical rename; it ran ~50 minutes, never converged on test-file cleanup, and was killed; a follow-on agent committed with 9 failing tests still present. Single-agent dispatch is the wrong tool for a large mechanical rename."
+  ],
+  "decisions_made": [
+    "DEC-45 established: SchoolMissionVisionValues(school, kind, statement) + StatementClause(label, text, code, order); kinds mission/vision/values; >=1 clause per kind; plans target at both whole-statement and per-clause granularity; MissionArea deleted (mockup-fantasy); LearnerOutcome untouched.",
+    "DEC-45 IMPL rejected as defective and excised via git rebase --onto, replaying the user's later commits and dropping the three IMPL commits."
+  ],
+  "current_status": "Full pytest suite 1948 passed (pre-DEC-45-IMPL baseline restored). DEC-44 intact (establishment + IMPL + tracking); the 4 _freetext_audit.py completeness fixes intact (predate the rebase base). DEC-45 is ESTABLISHED but UNIMPLEMENTED — its IMPL was excised and must be re-planned.",
+  "next_steps": [
+    "Re-plan DEC-45 IMPL with smaller commit boundaries and the mechanical rename done deterministically (sed/grep over the ~36 files), reserving agent dispatch for the judgment-bearing parts (model design, migration shape, test logic).",
+    "Carry the pi-context schema-widen prerequisite (DEC ids ^DEC-\\d{4}$ -> ^DEC-\\d{1,4}$) so DEC-44/DEC-45 can land in .context/decisions.json."
+  ]
+}

@@ -1,0 +1,3460 @@
+[
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9d2524a1758142d9b7805860dea24526",
+      "refname": "FRAG-intro-narrative-draft-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "320d51b3e247c06d8fcc78138664292c",
+      "refname": "FRAG-intro-narrative-draft-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "205ce0b79e06bbfa18d4d0efd741b79d",
+      "refname": "FRAG-gb-cycle"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8c699b47b9cd5b7b0ce04f62e3753763",
+      "refname": "FRAG-intro-narrative-draft-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b062ed7c6bf3baae513c0647251271ea",
+      "refname": "FRAG-gb-framing-vocabularies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d9526ba63489aade478d53d3733d9ade",
+      "refname": "FRAG-gb-priority-tiers"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f535982e70bb578105a6ffe7e85c547a",
+      "refname": "FRAG-gb-areas-for-improvement"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a26a3e7ded344089ab0c9a508c68a7d6",
+      "refname": "FRAG-gb-learner-outcomes"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c2daaa64cd4e806f01a3a38daf1905f9",
+      "refname": "FRAG-gb-stakeholder-groups"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45ceb6b014ca22c7005d399d5ccf117a",
+      "refname": "FRAG-gb-accreditation-standards"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "31a84cad46f735f4bcad238e57c76554",
+      "refname": "FRAG-gb-prior-plans"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f6df07dd85c4ad295de55494e7e27f5a",
+      "refname": "FRAG-gb-year-groups"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "20b21e5f13d1d70feed7bbdf68984a13",
+      "refname": "FRAG-gb-guiding-statements"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fb05f1c2eabbace086b695236af8ec2",
+      "refname": "FRAG-gb-policies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e240cf5e9bc9af61b241c777495f1633",
+      "refname": "FRAG-gb-divisions-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e1fde0da7ec41a6bfa16cfdcb118c1f",
+      "refname": "FRAG-gb-draft-state-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "96a6b5d8ea390757186c2884c6ed958b",
+      "refname": "FRAG-intro-narrative-draft-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7ce4ead352dcd7c970ecfffbd1933795",
+      "refname": "FRAG-output-contract-header-en"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f5180210cdd4f9a794f2cfce1159ff1b",
+      "refname": "FRAG-contract-narrative-draft"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b7a57e375499e172aa6321ebdd9beb79",
+      "refname": "FRAG-intro-propose-domain-alignment-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e6f45ace62aaea2d54c46290df81bb0b",
+      "refname": "FRAG-intro-propose-domain-alignment-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "59571a88315a43522f2ecb1eabc11df3",
+      "refname": "FRAG-intro-propose-domain-alignment-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9ad5f53f73bdafecc5d068ecf82a7bfe",
+      "refname": "FRAG-gb-seed-select"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "add5fbc144bf1b42723fe12406226294",
+      "refname": "FRAG-intro-propose-domain-alignment-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "db1ef98b761b70cba69b514e07286bb6",
+      "refname": "FRAG-gb-learner-outcomes-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8e3ad88477283718e9e73172cca574a8",
+      "refname": "FRAG-intro-propose-domain-alignment-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b9a2386f7062dda13e6fff9521c242f3",
+      "refname": "FRAG-gb-areas-for-improvement-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ae8eb547f666cb4247759d54408c51f6",
+      "refname": "FRAG-intro-propose-domain-alignment-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "243a7b34d2909b1298ccd0b01e66440a",
+      "refname": "FRAG-gb-stakeholder-groups-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ffa4ba27854079aeaa1cf7f27812162f",
+      "refname": "FRAG-intro-propose-domain-alignment-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "eafdd277ae36a68d8944e38882fc012a",
+      "refname": "FRAG-gb-policies-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "49ea9cc1b648b71aa279e3b028a26496",
+      "refname": "FRAG-intro-propose-domain-alignment-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "721b823c4c93100aa088a6e3ca086b29",
+      "refname": "FRAG-gb-draft-state-prose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "63cc6112b634b3a6fd1aaf6d3078d406",
+      "refname": "FRAG-intro-propose-domain-alignment-8"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e03a8f3cbe70e4f72c1fb3289808a1b7",
+      "refname": "FRAG-contract-propose-domain-alignment"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8e49c691477b604ff2bd9535d0b84770",
+      "refname": "SPEC-propose-domain-alignment"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b82e759755b6e54126f50124d866bc77",
+      "refname": "FRAG-intro-propose-milestones-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "73a777f0afa1d3cc96378df1db866c6e",
+      "refname": "FRAG-intro-propose-milestones-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "639f4b9f247d4f247bd09b234ca2aa8b",
+      "refname": "FRAG-gb-cycle-milestone"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4ce3f297b487f5ced1d78ae2c1def385",
+      "refname": "FRAG-intro-propose-milestones-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d33570544c126752f7f3e431e3df1963",
+      "refname": "FRAG-gb-seed-milestones"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "47c66828778f5cbb4776eea547455b0f",
+      "refname": "FRAG-intro-propose-milestones-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4bae7db73f9e506d8359572a498422be",
+      "refname": "FRAG-gb-draft-state-milestones-target"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d00a3570feade943fdae693ebd57debd",
+      "refname": "FRAG-intro-propose-milestones-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3038683e5e61478e39d797a2fa761f59",
+      "refname": "FRAG-gb-improvement-types"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c7dd3af0f78d0642005f7d68d5c5ef06",
+      "refname": "FRAG-gb-planning-methods"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a26a3e7ded344089ab0c9a508c68a7d6",
+      "refname": "FRAG-gb-learner-outcomes"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f535982e70bb578105a6ffe7e85c547a",
+      "refname": "FRAG-gb-areas-for-improvement"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4795e1e10200fc79156d7d8ec3b4ee23",
+      "refname": "FRAG-intro-propose-milestones-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7ce4ead352dcd7c970ecfffbd1933795",
+      "refname": "FRAG-output-contract-header-en"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3d9d7672a1d5b9e15f3a26f6a0090fe7",
+      "refname": "FRAG-contract-propose-milestones"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ea05ec4b877daf20bc8d2406db26901f",
+      "refname": "FRAG-intro-draft-success-criteria-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1b88aa2e9975ff0116a1d3eadddc58e6",
+      "refname": "FRAG-intro-draft-success-criteria-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "205ce0b79e06bbfa18d4d0efd741b79d",
+      "refname": "FRAG-gb-cycle"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ff44f515e7aabeac0486fab2ceebe10",
+      "refname": "FRAG-intro-draft-success-criteria-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d92622dc16e89f90108a4091f2c67eba",
+      "refname": "FRAG-gb-seed-criteria"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d36476d7f3cbfe7d5fd2ee79ed8b2a38",
+      "refname": "FRAG-intro-draft-success-criteria-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ecd30f5117d35f4f442fc0895de60b8c",
+      "refname": "FRAG-gb-draft-state-criteria-source"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a33a4928b8f4ff1f2d50870d03b0250b",
+      "refname": "FRAG-intro-draft-success-criteria-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a26a3e7ded344089ab0c9a508c68a7d6",
+      "refname": "FRAG-gb-learner-outcomes"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f535982e70bb578105a6ffe7e85c547a",
+      "refname": "FRAG-gb-areas-for-improvement"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e240cf5e9bc9af61b241c777495f1633",
+      "refname": "FRAG-gb-divisions-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fb05f1c2eabbace086b695236af8ec2",
+      "refname": "FRAG-gb-policies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "18484b04ee0dc12fe5463ad0c399f54b",
+      "refname": "FRAG-intro-draft-success-criteria-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7ce4ead352dcd7c970ecfffbd1933795",
+      "refname": "FRAG-output-contract-header-en"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "353f741bed987e028cd436b4719cdf83",
+      "refname": "FRAG-contract-draft-success-criteria"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1de1a93b35cbbea24789b4e8ff255e24",
+      "refname": "FRAG-intro-decompose-action-steps-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f5afe0b13a08c16e28e30bdfa5795edf",
+      "refname": "FRAG-intro-decompose-action-steps-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "205ce0b79e06bbfa18d4d0efd741b79d",
+      "refname": "FRAG-gb-cycle"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7f1d3a7dd7442ac6ae004d6a3a643998",
+      "refname": "FRAG-intro-decompose-action-steps-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fcce5029b83693d675cf3a0a899d8168",
+      "refname": "FRAG-gb-seed-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "acdd320623fc359c2771162438aeb104",
+      "refname": "FRAG-intro-decompose-action-steps-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4c3ce7849acbb1e06e89a9d13476cd37",
+      "refname": "FRAG-gb-draft-state-method"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ee5a87d43c80d7b4b8f3cfa5a735a2a5",
+      "refname": "FRAG-intro-decompose-action-steps-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0da4edb35b86dd8c89eab016e8454f66",
+      "refname": "FRAG-gb-improvement-types-inplay"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f535982e70bb578105a6ffe7e85c547a",
+      "refname": "FRAG-gb-areas-for-improvement"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a26a3e7ded344089ab0c9a508c68a7d6",
+      "refname": "FRAG-gb-learner-outcomes"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "919c194f8b4ce732cc0b16dacafba039",
+      "refname": "FRAG-intro-decompose-action-steps-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d49c3a8a59e1b8a2eb4b7eae8a5bb410",
+      "refname": "FRAG-gb-planning-methods-recipes"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9cdcc791e46f884c39f1e8424e0b3e7c",
+      "refname": "FRAG-intro-decompose-action-steps-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "eb9a0ee889379a54a075806c0242dca2",
+      "refname": "FRAG-gb-stakeholder-groups-enumerated"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e240cf5e9bc9af61b241c777495f1633",
+      "refname": "FRAG-gb-divisions-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fb05f1c2eabbace086b695236af8ec2",
+      "refname": "FRAG-gb-policies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4f53dd81bb1cf52294eebedf654f3f13",
+      "refname": "FRAG-intro-decompose-action-steps-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7ce4ead352dcd7c970ecfffbd1933795",
+      "refname": "FRAG-output-contract-header-en"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a75f405ff57620ec90d3487e16472483",
+      "refname": "FRAG-contract-decompose-action-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9924c467f55489b113cbf8585fdb9e2f",
+      "refname": "FRAG-intro-propose-assignments-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e6e2d0bf453155632a408ce7bbec00a6",
+      "refname": "FRAG-intro-propose-assignments-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c8819e0d4291c6b1fed69e210eeb615b",
+      "refname": "FRAG-intro-propose-assignments-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "209ceb47d420e185620ce61f7552e59f",
+      "refname": "FRAG-gb-seed-assignments"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de20d5da322117409a27bc6587c7d820",
+      "refname": "FRAG-intro-propose-assignments-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cb9bd98010a8b9cb39b9f9ef5e9b60e5",
+      "refname": "FRAG-gb-divisions-labels-only"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e25d86e6c3ddc5c4826ed9eb1c11d3ba",
+      "refname": "FRAG-intro-propose-assignments-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "137bfc32d9cf17eb9a827dc84c732c79",
+      "refname": "FRAG-gb-draft-state-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "60ae0ec12fcd5967fc80bdf49ae87b65",
+      "refname": "FRAG-intro-propose-assignments-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fc4c31ecaa43b5d3d4f89c0a3156ebd",
+      "refname": "FRAG-contract-propose-assignments"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "80db16ee8adc4b308274435d015f5a84",
+      "refname": "FRAG-intro-propose-responsibilities-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "976e392139bbb7749fc3fafddd44d6a1",
+      "refname": "FRAG-intro-propose-responsibilities-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2740295480d920cb48cc151e16bc8c25",
+      "refname": "FRAG-intro-propose-responsibilities-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c544aa5e41706dde1653672745032820",
+      "refname": "FRAG-gb-seed-mapping"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3af592ccff54e51b4db2e6ffc82740b2",
+      "refname": "FRAG-intro-propose-responsibilities-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "14602c61765babd5de828a795f1bea25",
+      "refname": "FRAG-gb-divisions-inventory"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0d4b1ff96701eda4ab788a55e6fdf021",
+      "refname": "FRAG-intro-propose-responsibilities-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a2e9641c62caf6048b3f0f0f69f555f0",
+      "refname": "FRAG-gb-learner-outcomes-slo"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "764f609e9256861b91fee34f7f58031c",
+      "refname": "FRAG-intro-propose-responsibilities-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "20b21e5f13d1d70feed7bbdf68984a13",
+      "refname": "FRAG-gb-guiding-statements"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "12f15fe94a7b367fca6934f6258a6f2b",
+      "refname": "FRAG-intro-propose-responsibilities-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "dd5e109d975563ba0ef282403e0378e4",
+      "refname": "FRAG-gb-areas-for-improvement-afi"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "092883cf45446ba0bb61c191401e02cf",
+      "refname": "FRAG-intro-propose-responsibilities-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2a170962cb7f3fea9b695e1fa6b74198",
+      "refname": "FRAG-gb-accreditation-standards-cite"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8aefd9d8bf7df8c5969d6690658e496b",
+      "refname": "FRAG-intro-propose-responsibilities-8"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "137bfc32d9cf17eb9a827dc84c732c79",
+      "refname": "FRAG-gb-draft-state-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "83f84f2c5de71daf3102188f1c10f66d",
+      "refname": "FRAG-intro-propose-responsibilities-9"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "13e6f840f38ff13f2ed903c0d998e447",
+      "refname": "FRAG-contract-propose-responsibilities"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe0ab68cde5564a1b379a3c5ff4016b6",
+      "refname": "SPEC-propose-responsibilities"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca10415d2b03be0533950805d72056f7",
+      "refname": "FRAG-intro-propose-timelines-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "73480d299f26bfbadf7b5e0afae64c5c",
+      "refname": "FRAG-intro-propose-timelines-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "da1074efecc0bfc50952386b65d4553d",
+      "refname": "FRAG-intro-propose-timelines-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "42a4b4874539219611ffe34b6fabb96a",
+      "refname": "FRAG-gb-cycle-window"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "74e594595865ec1c4ebcd52b91b6d887",
+      "refname": "FRAG-intro-propose-timelines-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "943e2302ba61f820e3285b7676186a66",
+      "refname": "FRAG-gb-seed-timelines"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a68e4f0d7526a19f88d8b3d38e00ee1f",
+      "refname": "FRAG-intro-propose-timelines-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "38b88f5572ecc6938c508d72fda5315f",
+      "refname": "FRAG-gb-draft-state-steps-milestones"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d07589ac2231611ac91261d8f7480988",
+      "refname": "FRAG-intro-propose-timelines-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "50ae4f52f84563f4710b39d97e6a0e2c",
+      "refname": "FRAG-gb-frequencies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "191fe6356b34414b37fe2880da654cd3",
+      "refname": "FRAG-intro-propose-timelines-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b08695dcbec7b0d240472f7610f18638",
+      "refname": "FRAG-contract-propose-timelines"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a8400a30842f8e3e75de355ff6caf20a",
+      "refname": "SPEC-propose-timelines"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "eaabf9a35d15ac412dcdbf23376fffa4",
+      "refname": "FRAG-intro-propose-step-resources-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e93baaff4c587c5cc7bac28005356822",
+      "refname": "FRAG-intro-propose-step-resources-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3d3d033374c3e30120e2abd2988e3d3a",
+      "refname": "FRAG-intro-propose-step-resources-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "32bd25d398ec05e99507678f551f7856",
+      "refname": "FRAG-gb-seed-resources"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4414ab78b4e1b3c16e680129ad482ec6",
+      "refname": "FRAG-intro-propose-step-resources-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "137bfc32d9cf17eb9a827dc84c732c79",
+      "refname": "FRAG-gb-draft-state-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "24735e76a07e7272e0df29487e59e78e",
+      "refname": "FRAG-intro-propose-step-resources-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e240cf5e9bc9af61b241c777495f1633",
+      "refname": "FRAG-gb-divisions-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6095519a35b5b30159d4a2f026194728",
+      "refname": "FRAG-intro-propose-step-resources-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a872732abf14856ce53928b92f732861",
+      "refname": "FRAG-contract-propose-step-resources"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "485bf24024f5402a1f69dcc56e0e36e8",
+      "refname": "SPEC-propose-step-resources"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "38053840c10b047a09e338cde52ca09f",
+      "refname": "FRAG-intro-propose-evidence-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9aac72d711892809b0eedc4a11cfe659",
+      "refname": "FRAG-intro-propose-evidence-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "513ca9d40a260182489ac54851cac010",
+      "refname": "FRAG-intro-propose-evidence-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac9831873143be94cb14240b4157b31a",
+      "refname": "FRAG-gb-seed-evidence"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1d652f744dbd5d42e2f7cb308324f0d1",
+      "refname": "FRAG-intro-propose-evidence-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "16d1d42614e13bcb09e67ed893f644ee",
+      "refname": "FRAG-gb-divisions-owner"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b7618b24d1d54a0752beee847db82427",
+      "refname": "FRAG-intro-propose-evidence-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "20b21e5f13d1d70feed7bbdf68984a13",
+      "refname": "FRAG-gb-guiding-statements"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "731818049240628f18a08bae41b79cba",
+      "refname": "FRAG-intro-propose-evidence-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fb05f1c2eabbace086b695236af8ec2",
+      "refname": "FRAG-gb-policies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8cf0b3e10e0a612c50a8397002f2aac0",
+      "refname": "FRAG-intro-propose-evidence-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2a170962cb7f3fea9b695e1fa6b74198",
+      "refname": "FRAG-gb-accreditation-standards-cite"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bb74ab47e3fe4afdabf006819bcefb2b",
+      "refname": "FRAG-intro-propose-evidence-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "137bfc32d9cf17eb9a827dc84c732c79",
+      "refname": "FRAG-gb-draft-state-steps"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8c58bb917d5d5fa38c85687716f39be7",
+      "refname": "FRAG-intro-propose-evidence-8"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "dd75b034429912094a3b91ed7c132f04",
+      "refname": "FRAG-contract-propose-evidence"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac97be46394ea21a8f905e3116a79262",
+      "refname": "SPEC-decompose-action-steps"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c9974c061b468542df7c39016789030e",
+      "refname": "SPEC-propose-evidence"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "01e5a95fd419b3e7e06e04176d34bf8d",
+      "refname": "SPEC-propose-assignments"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "497a2b805339b2bf996d12400b74b943",
+      "refname": "FRAG-intro-suggest-feedback-channels-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ba0f473c6eb15cd0b385dac37b904683",
+      "refname": "FRAG-intro-suggest-feedback-channels-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "205ce0b79e06bbfa18d4d0efd741b79d",
+      "refname": "FRAG-gb-cycle"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6c7dbaff2a2bd775e6e02a29167bbe46",
+      "refname": "FRAG-intro-suggest-feedback-channels-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1c03077749ae826f709f433021e11b6d",
+      "refname": "FRAG-gb-seed-channels"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fc2743b6fbf695e147a92663f2e640cf",
+      "refname": "FRAG-intro-suggest-feedback-channels-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca4e43765ff49769fd244e6fdd6970d4",
+      "refname": "FRAG-gb-draft-state-channels-source"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "49a81285ea94cd06677ece829e67e2f0",
+      "refname": "FRAG-intro-suggest-feedback-channels-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1cc2cceace26da55d5d4d55d72ea4564",
+      "refname": "FRAG-gb-stakeholder-groups-label"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b727f52d8b3e901dbfad8c461a61d13f",
+      "refname": "FRAG-gb-divisions-channel-owner"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bdd7309b4c13b62adb1e0ca4ded1b86b",
+      "refname": "FRAG-gb-frequencies-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0f464aeffb5bc962aa2a557edd660bce",
+      "refname": "FRAG-intro-suggest-feedback-channels-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7ce4ead352dcd7c970ecfffbd1933795",
+      "refname": "FRAG-output-contract-header-en"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2bf4de5e70e76f41c9ed2d2d6218883b",
+      "refname": "FRAG-contract-suggest-feedback-channels"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "00946827a387d55611d690db14e3d586",
+      "refname": "FRAG-intro-bind-measurement-channels-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1d7583bda7cc85679baef93c415cadc4",
+      "refname": "FRAG-intro-bind-measurement-channels-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b602704a5938e4c1a545048156a54c14",
+      "refname": "FRAG-intro-bind-measurement-channels-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ce159506a21e97f18a563f2629c6c6ee",
+      "refname": "FRAG-gb-seed-bindings"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "38d992eb56d6ac818dcccb0743e3a321",
+      "refname": "FRAG-intro-bind-measurement-channels-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a800c2ed64686fd16278a634bb0236c9",
+      "refname": "FRAG-gb-draft-state-criteria-channels"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "05ced453a401cc2ab2d303c67e387d63",
+      "refname": "FRAG-intro-bind-measurement-channels-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a22548d34648dd1ec36c71cf4961b3e6",
+      "refname": "FRAG-contract-bind-measurement-channels"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c97c53e892d22dd944619afd750a1dc1",
+      "refname": "SPEC-draft-success-criteria"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c134a5d497b84f239a8c8ead61628bd3",
+      "refname": "SPEC-bind-measurement-channels"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ae9421965eb389ec7fdd422a447cd9d7",
+      "refname": "FRAG-intro-propose-accreditation-standards-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f3660699190400a59267689b62375cba",
+      "refname": "FRAG-intro-propose-accreditation-standards-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "28abb5070c12eb913e07bf6c49278c21",
+      "refname": "FRAG-intro-propose-accreditation-standards-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5442f485ac77eb67bef2bd975471ccdc",
+      "refname": "FRAG-gb-seed-standards"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "dcb0e95a7056b36d7de658f579ec1895",
+      "refname": "FRAG-intro-propose-accreditation-standards-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "36da146d9fd7cdb15a075340988dd11e",
+      "refname": "FRAG-gb-accreditation-standards-choose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7e3f584f14263175dbdf6eda8afaf609",
+      "refname": "FRAG-intro-propose-accreditation-standards-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a2e9641c62caf6048b3f0f0f69f555f0",
+      "refname": "FRAG-gb-learner-outcomes-slo"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "09282045b491d07377d4969470eec20d",
+      "refname": "FRAG-intro-propose-accreditation-standards-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "20b21e5f13d1d70feed7bbdf68984a13",
+      "refname": "FRAG-gb-guiding-statements"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a960861c0ce073606a1d9fd84334981a",
+      "refname": "FRAG-intro-propose-accreditation-standards-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "dd5e109d975563ba0ef282403e0378e4",
+      "refname": "FRAG-gb-areas-for-improvement-afi"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "08de36f13aa87870c6ff18349daca4ef",
+      "refname": "FRAG-intro-propose-accreditation-standards-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e240cf5e9bc9af61b241c777495f1633",
+      "refname": "FRAG-gb-divisions-full"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "57bc2b77fd38d1cddcda781f4e4be2de",
+      "refname": "FRAG-intro-propose-accreditation-standards-8"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fb05f1c2eabbace086b695236af8ec2",
+      "refname": "FRAG-gb-policies"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "69480ee92ff91bac8a05f7cdb4907dad",
+      "refname": "FRAG-intro-propose-accreditation-standards-9"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "721b823c4c93100aa088a6e3ca086b29",
+      "refname": "FRAG-gb-draft-state-prose"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b1eec03c865296180ac408b91a333674",
+      "refname": "FRAG-intro-propose-accreditation-standards-10"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4f4ec3c0a515aa0d25a2a4b000e2695a",
+      "refname": "FRAG-contract-propose-accreditation-standards"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b5177ecd1679b17e741687330f2b0f8a",
+      "refname": "SPEC-propose-accreditation-standards"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0de4f037b5479c6cdca6b5d0963be0c7",
+      "refname": "SPEC-narrative-draft"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0a966f942e17dab7c8c76270937e103c",
+      "refname": "FRAG-intro-propose-review-loop-0"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5d104e23a59691fdffdc86dc2c671a2b",
+      "refname": "FRAG-preamble"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "be0f4dfc9073fbc1e36f8d90e187b733",
+      "refname": "FRAG-intro-propose-review-loop-1"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de8bad1d78a01860a3e551bd198be1b9",
+      "refname": "FRAG-gb-school"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c7b0b34ddbb6fa26b87125d03349fa37",
+      "refname": "FRAG-intro-propose-review-loop-2"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "78d36593e9957e9c84cf47989c73b06c",
+      "refname": "FRAG-gb-seed-review"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ee77c7639fdb923f506f524a779fabd",
+      "refname": "FRAG-intro-propose-review-loop-3"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a8003dd89af79195f95abaa4bf6b12a5",
+      "refname": "FRAG-gb-stakeholder-groups-audience"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9044c53b9779c9562a03ca1c3cee96a4",
+      "refname": "FRAG-intro-propose-review-loop-4"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a1ca4717c1a0d79d85b4024b57d471c2",
+      "refname": "FRAG-gb-divisions-unit"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "54882d365d288e8fdfac3c8dda6ead9e",
+      "refname": "FRAG-intro-propose-review-loop-5"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2ad71e40cc1a08ca5e1e1c319afb02c6",
+      "refname": "FRAG-gb-frequencies-code"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "19fa9321e85b7d954ac1661472758f3f",
+      "refname": "FRAG-intro-propose-review-loop-6"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "205ce0b79e06bbfa18d4d0efd741b79d",
+      "refname": "FRAG-gb-cycle"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2dbde05875426abd00abc9e4ee7c346b",
+      "refname": "FRAG-intro-propose-review-loop-7"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2a170962cb7f3fea9b695e1fa6b74198",
+      "refname": "FRAG-gb-accreditation-standards-cite"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ba214ca8afe8830fdc81333e4253ae31",
+      "refname": "FRAG-intro-propose-review-loop-8"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2ca3a053aed8c3b14add879151706f00",
+      "refname": "FRAG-gb-draft-state-review"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5b09244a0922fdbeed196b060ad83c5b",
+      "refname": "FRAG-intro-propose-review-loop-9"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "895aaa420bb9f56fe12658ebea19b4b3",
+      "refname": "FRAG-output-contract-header"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0c1a61ccd90ded8dae4b9ea4bf5813a3",
+      "refname": "FRAG-contract-propose-review-loop"
+    },
+    "relation_type": "spec_composes_fragment"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ea599c177d646b0ba469b3a98c327de5",
+      "refname": "SPEC-propose-milestones"
+    },
+    "relation_type": "spec_depends_on_spec"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "cf800a9ba2a854341eecd03a84e655d4",
+      "refname": "SPEC-propose-review-loop"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "70ecad0e166457c1ebc0f871aaa855c6",
+      "refname": "SPEC-suggest-feedback-channels"
+    },
+    "relation_type": "spec_depends_on_spec"
+  }
+]

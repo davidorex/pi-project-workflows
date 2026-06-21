@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-05-31T13:00:00+08:00",
+  "via": "claude-code",
+  "focus": "Made the decomposed JSON the authoritative state surface (MD spine retired to archive), built the read/write/search tooling and write-policies, then produced an agent-verified DEC-45 implementation frame.",
+  "discoveries": [
+    "The MD-derived pending-actions snapshot was stale — it listed the Department→Division (DEC-13) and SubjectKind→ImprovementType (DEC-14) renames as not-done; both are done, verified via LOG seq 64-68, migrations school/0029-0034, and live classes Division/ImprovementType with no Department/SubjectKind outside migrations.",
+    "DEC-45 content state: the DB holds two user-authorized statement rows under school_schoolmissionvisionvalues — mission (3 clauses GROUNDED/ROUNDED/UNBOUNDED) and vision (6 clauses) — both to be preserved; values is a settled third kind awaiting content. (Committed school/0039 seeds vision only; mission is authored content in the DB. The earlier 'no seeded mission / don't preserve mission rows' framing was wrong — it conflated the deleted old MissionArea model's 3-item mockup seed with the mission statement kind.)",
+    "DEC-45 promotion-gate: the mission-area predicate is one of five required domain-alignment gates; the analogous rationale-bearing surface (guiding_clauses) is ungated, so the settled default is to remove the mission-area gate, not replace it.",
+    "DEC-45 child-clause invariant (>=1 StatementClause per row): no DB cross-row-cardinality CheckConstraint exists or is possible; the established idiom is service/admin .exists() checks + a test.",
+    "DISC-36 logged: planner/_llm_fabrication_validator.py enumerates 13 of 14 CatalogueUnion sub-fields (guiding_clauses omitted) — pre-existing bug, fixed during the DEC-45 rename slice.",
+    "Verified migration numbers: school at 0057, plans at 0041 (new migrations are school/0058+, plans/0042+); PlanMissionArea (plans) must be deleted before MissionArea (school) — cross-app FK ordering."
+  ],
+  "decisions_made": [
+    "JSON authoritative, MD spine archive: state lives in context-migration/decomposed/*.json, interacted with via state.mjs (read/filter/tail/append/upsert) and search.mjs; append/upsert show write-policies.json (9 reflective pre-write policies) before writing. CLAUDE.md operational references repointed; current-focus is a runnable query (state.mjs filter pending-actions status eq open; priority:next marks the focus). The decompose-*/verify gate retired as completed one-time migration tooling.",
+    "DEC-45 re-IMPL is the current focus, framed by docs/2026-05-31-dec-45-validated-impl-frame.md (built from 5 parallel read-only Explore agents; every claim file:line-verified, no hedges). No plan written, no code touched."
+  ],
+  "current_status": "JSON-authoritative transition committed; pending-actions.json reflects current reality (7 open / 4 done, each with evidence). DEC-45 remains established-but-unimplemented with a validated frame ready for plan-writing. Suite at 1948. .workflows/monitors/ gitignored.",
+  "next_steps": [
+    "Write the sliced DEC-45 plan from docs/2026-05-31-dec-45-validated-impl-frame.md (slices 0-5: inventory; school model rename + values kind + clause label/code; plan linkage rename + mvv_statements add + mission-area delete; MissionArea deletion; grounding/catalogue/planner/prompt alignment + DISC-36 fix; docs/tracking refresh), then implement in small commit-bounded slices.",
+    "Carry the other open pending-actions: D7 accounts, post-Phase-15 walkthrough + US-STATUS vivification, the 4 standing DISCs, the Mode-C workshop cascade.",
+    "Monitors need reconfiguration work (separate from the gitignore that stopped them dirtying the tree)."
+  ]
+}

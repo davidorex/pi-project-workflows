@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nFor EACH action step, propose exactly ONE timeline:\n- Use the step's 0-based create-order index as \"step_index\".\n- Choose a \"kind\" — one of: \"single\" (a single calendar date), \"range\" (a start-to-end date span), \"recurrence\" (a repeating cadence, e.g. \"every Friday\"), \"indefinite\" (ongoing, no fixed dates).\n- Supply ONLY the date field(s) that kind needs (see the contract). Put any recurrence cadence or ongoing detail in \"note\".\n- Propose exactly ONE timeline per step. Use ONLY step indices that exist in the draft above; do not refer to a step that is not listed.\n- Format every date as YYYY-MM-DD, within the cycle window above where sensible.\n\nIf `note` names a recurrence cadence, use the label from the frequencies catalogue above; do not invent cadence vocabulary.\n\nOUTPUT CONTRACT (follow exactly):"
+}

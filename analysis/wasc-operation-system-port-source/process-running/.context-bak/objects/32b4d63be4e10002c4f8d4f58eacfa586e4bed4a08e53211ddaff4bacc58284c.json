@@ -1,0 +1,5 @@
+{
+  "description": "ORCHESTRATOR-LOG.md is the append-only event spine. Never rewrite or delete prior lines. One immutable line per state-changing event (commit, user direction, decision, established definition, recorded gap, correction) in chronological order.",
+  "enforcement": "manual",
+  "severity": "error"
+}

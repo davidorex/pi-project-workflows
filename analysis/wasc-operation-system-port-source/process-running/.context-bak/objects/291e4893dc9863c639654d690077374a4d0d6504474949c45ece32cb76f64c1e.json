@@ -1,0 +1,5 @@
+{
+  "description": "Never use 'out of scope' framing in commit messages, plans, or agent communications. Per mandate-007: if a new issue or bug surfaces whose neglect would create architectural debt, surface it explicitly. User decides scope; orchestrator does not declare scope-foreclosure.",
+  "enforcement": "review",
+  "severity": "error"
+}

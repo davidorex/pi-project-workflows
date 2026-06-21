@@ -1,0 +1,14 @@
+{
+  "title": "Tenant catalogue lacks an IT division and a Director of IT position",
+  "status": "closed",
+  "package": "tenant data (Chiway divisions/positions catalogue); DISC-30 class",
+  "description": "The Chiway division/position catalogue (15 divisions) has no IT division and no Director of IT position. The school has an IT function; the grounding catalogue is the complete universe the LLM may draw on (no fabrication), so without an IT division + Director of IT, no plan can assign IT-owned work, evidence, channels, or responsibilities for this tenant. Needs an IT division and a Director of IT position curated into the tenant data.",
+  "evidence": [
+    {
+      "file": "(grounding query, build_grounding on the Chiway tenant)",
+      "reference": "15 divisions, none IT: AAO, Art Department, Business and Economics, College Counseling Department, Curriculum and Teaching, English, Future Scholar Innovation Center, Humanities, Library, Math, Music and Sports Department, Principal's Office (PO), Recruitment and Admissions, SAO, Sciences"
+    }
+  ],
+  "impact": "IT-related schoolwide-improvement work cannot be assigned or owned in any plan for the Chiway tenant until an IT division + Director of IT are curated into the catalogue.",
+  "proposed_resolution": "The IT division + Director of IT are created by the responsibility-atom importer (data/tenant-seed-importer-plan.md) from the two is_new=yes rows in data/chiway-responsibility-atoms-template.csv (fill their scope_summary + atoms). Same import that closes FGAP-016."
+}

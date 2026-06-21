@@ -1,0 +1,5 @@
+{
+  "title": "The draft-accumulation substrate: a persisted versioned flat draft_state store + the server-side fold seam",
+  "status": "in-progress",
+  "description": "The server-side home + mechanics for the trio's in-progress draft (DEC-57 §3/§7): (a) a persisted, append-versioned, school+author-scoped store for the flat draft_state (the shape collectDraftState produces and build_grounding consumes), holding the pre-Plan in-progress draft so it survives DEC-33 staged review and is walkable-back (US-DRAFT-2/3) [TASK-059, this slice]; (b) the accumulation seam folding a parsed AssistResult.prefill into that flat draft_state — the server-side inverse of applyFormsetPrefill — decomposed by prefill-shape class (form-dict; simple-formset-list; multi-section A3/G1; per-step children F2-F5/US-LLM-27; nested B2) [next slice]. Stores the flat dict verbatim so the consumability contract with build_grounding + the specs.py _draft_state_* helpers holds by construction."
+}

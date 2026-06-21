@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-05-31T09:30:00+08:00",
+  "via": "claude-code",
+  "focus": "De-trackered CLAUDE.md's reference-docs index, then began the context-migration decomposition phase: first three decompose scripts written and run.",
+  "discoveries": [
+    "CLAUDE.md reference-docs entries must be pointers, not trackers: state what a file is and that it is authoritative; never embed counts, watermarks, or authority the file itself defers elsewhere.",
+    "Decomposition output is one array per source, not file-per-item: the consumption script wants a single JSON.parse-able array to map and bulk-write, since .context (not the staging dir) is the addressable store. Dir is decomposed/; filenames are the source MD basename, .kind infix for two-kind sources.",
+    "Decomposition's bar is faithful, lossless, internally-consistent re-encoding (every element carries raw), NOT matching a not-yet-existing schema; mapping is the consumption phase's job.",
+    "ORCHESTRATOR-STATE.md 'Pending orchestrator actions' is grouped numbered sub-lists with nested children and inline-DONE, not the plan's predicted flat struck-through list. Plan prose corrected to match observed reality.",
+    "seed-round-plan DEC bodies are single prose blobs, not the decisions schema's discrete context/decision/consequences fields; splitting at decomposition would be fabrication.",
+    "Source-vs-schema gaps live in a 'Consumption-phase mapping notes' section in the migration plan doc (one entry per source), so a future consumption LLM reads them before writing a block."
+  ],
+  "current_status": "decompose-log/-state/-decs written, run, committed. Outputs in context-migration/decomposed/: ORCHESTRATOR-LOG.json (253), ORCHESTRATOR-STATE.{subagent-invocations,pending-actions}.json, seed-round-plan.json (45). Plan doc is the live spec (out/->decomposed/, source-basename naming, mapping-notes section all landed).",
+  "next_steps": [
+    "Continue the cascade in plan order: decompose-stories (US-STATUS.md) next, then discs / preamble / source-gaps / checklist / mandates / phases.",
+    "Expect each prose-heavy source to surface its own structural divergence and consumption-phase mapping note; record each in the plan.",
+    "Consumption phase (later): land tracked schema-widens, then write scripts that parse each array, reconcile per mapping notes, bulk-write to .context blocks.",
+    "The 7 docs/ files in Out-of-Claude-md-items.md plus CLAUDE.md are not covered by the decompose plan; decide migration path.",
+    "DEC-45 IMPL still established-but-unimplemented; re-plan with smaller commits and deterministic rename."
+  ]
+}

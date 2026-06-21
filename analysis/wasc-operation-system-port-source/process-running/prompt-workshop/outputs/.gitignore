@@ -1,0 +1,7 @@
+# Workshop running-state files — transient; ignored.
+# Per-experiment capture directories under outputs/<YYYY-MM-DD-HH-MM-SS>/
+# are TRACKED (the persisted experiment results — per-experiment-per-commit
+# per "persist experiment results 1 by 1" convention).
+
+current-draft.json
+last-render.json

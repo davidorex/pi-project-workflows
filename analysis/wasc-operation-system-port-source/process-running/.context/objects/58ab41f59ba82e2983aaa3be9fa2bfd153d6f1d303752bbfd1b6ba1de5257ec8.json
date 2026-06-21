@@ -1,0 +1,10 @@
+{
+  "status": "planned",
+  "description": "T1 -- Settle and record the in-execution-evaluation decision: where per-spec self-verification lives in the linear render->apply pipeline, the single behaviour a step takes on a failed self-check, and the standing rule that every transposed discipline is enforced as a generation-time contract AND a per-step in-run check (not a post-hoc check only). Foundation for T2-T5 (FGAP-033).",
+  "acceptance_criteria": [
+    "A decision record exists in the project decision log stating that each generation step verifies its own success and process criteria during the run, at or before its output is applied to the draft.",
+    "The decision record specifies the single behaviour a step takes when its self-check does not pass.",
+    "The decision record states the standing rule that every transposed planning discipline is enforced as both a generation-time instruction and a per-step in-run check, and that a post-hoc check alone does not satisfy it.",
+    "The decision record names the tasks it governs."
+  ]
+}

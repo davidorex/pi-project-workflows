@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if improvement_types %}Improvement types in play at this school:\n{% for it in improvement_types %}- {{ it.code }}: {{ it.label }}\n{% endfor %}{% endif %}",
+  "section": "improvement_types"
+}

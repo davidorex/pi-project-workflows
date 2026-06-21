@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Slice 8a-ii (FEAT-010, TASK-068 / DEC-59): save the accumulated trio draft_state -> a saved Plan(lifecycle=PROPOSED). Branch trio-save-draft @ 1346d0a (IMPL d97af93 + test-strengthening 1346d0a). Added planner/orchestration.py:save_draft_state_as_plan(draft_state, *, school, author) + build_create_post_data + a formset management-form synthesizer + the CLIENT-prefill->form-POST grammar translation; refactored planner/views.py to extract PlanCreateView._bind_validate_and_save (+ _save_plan_for, _BindValidationError) so the trio save and the browser one-shot create run IDENTICAL bind->validate->_save_plan(PROPOSED)+save_nested+_save_flag_requests logic (parity); cycle derived via ai.services.grounding._active_cycle(school) and injected (no-active-cycle raises before any write); title flows from A1 (slice 8a-i); 7 gate-first tests. Verified through the verify-gated loop: IMPL d97af93 -> orchestrator-independent gate 'all blocking checks passed' -> SEPARATE adversarial audit (a90cf70) Total findings 4 -> Explore root-caused finding-4 (sparse step_index) FORECLOSED (top-level dense via enumerate services.py:156; save_nested preserves the (form_index,obj) mapping formsets.py:560/609/715 so children bind correctly + blank rows skip) -> re-IMPL 1346d0a (test-only) closed the 3 verification-completeness findings -> SEPARATE re-audit (acfc46f) Total findings 0 (every closure proven non-vacuous by mutation probes; scope test-only; gate exit 0). Done = gate blocking-pass AND audit findings 0 (DEC-58).",
+  "criteria_results": [
+    {
+      "criterion": "The accumulated flat draft_state from run_trio_pass is saved as a Plan(lifecycle=PROPOSED), school+author owned, with the full graph populated: scalars, every formset row, every nested child, every cross-row binding.",
+      "status": "passed",
+      "evidence": "test_slice_save_draft_persists_full_graph + ...round_trips_every_cross_row_binding assert, against EXPECTED catalogue values, the RESPONSIBLE Assignment kind+division, the 3 A3 alignment M2Ms by membership, the US-LLM-27 responsibility-children FKs, the D1 milestone->improvement_type, the G1 review_event->input; re-audit proved non-vacuous by mutation (wrong code/division FAIL)."
+    },
+    {
+      "criterion": "The save round-trips: re-reading the Plan reproduces the draft_state content with nothing dropped, duplicated, or mis-bound.",
+      "status": "passed",
+      "evidence": "round-trip tests re-read the saved Plan and match counts/values/bindings incl. non-target steps staying empty (no spill); the CLIENT-prefill->POST grammar translation (alignment pk->fk, responsibility pk->division/position_responsibility, assignment responsible_division->division + kind=responsible) was audit-verified complete vs ai-assist.js + the parsers."
+    },
+    {
+      "criterion": "Parity with the browser one-shot create + atomic all-or-nothing (invalid draft_state persists no Plan, surfaces the failure).",
+      "status": "passed",
+      "evidence": "both paths share the extracted _bind_validate_and_save body on identical bind data (parity test compares graphs); pre-validation rejection (blank title) + IN-ATOMIC rollback (unresolvable milestone_index raising inside transaction.atomic via the link resolver) both tested -> zero Plan rows persist whole-graph + the function raises; re-audit proved the rollback non-vacuous (control: unmutated draft_state creates +1 Plan)."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates. (Promotion-gate check / gate-closure / admin-promote / Flag persistence out of scope.)",
+      "status": "passed",
+      "evidence": "orchestrator-independent make verify-slice SLICE=save_draft -> all blocking checks passed (ruff/mypy/full pytest/test-js + context-validate 0 error-severity); scope = 3 files (orchestration.py, views.py, the test), audit confirmed no _check_promotion_gates/advance_plan_status/Flag leaked in (8b/9 excluded)."
+    }
+  ]
+}

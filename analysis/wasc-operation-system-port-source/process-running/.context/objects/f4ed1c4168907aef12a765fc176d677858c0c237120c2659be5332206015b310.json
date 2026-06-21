@@ -1,0 +1,5 @@
+{
+  "description": "When a definition, decision, or gap is settled in conversation, land it that turn in its home doc (DEC log, DISC log, ORCHESTRATOR-LOG.md, ORCHESTRATOR-STATE.md, memory) AND record the event in ORCHESTRATOR-LOG.md. Do not carry settled state only in working memory. Flagging is not persistence.",
+  "enforcement": "manual",
+  "severity": "error"
+}

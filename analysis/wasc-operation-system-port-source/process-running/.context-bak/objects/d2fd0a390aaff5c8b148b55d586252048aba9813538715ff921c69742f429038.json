@@ -1,0 +1,5 @@
+{
+  "description": "Never `git push --force` to main without explicit user confirmation. Warn the user if requested.",
+  "enforcement": "manual",
+  "severity": "error"
+}

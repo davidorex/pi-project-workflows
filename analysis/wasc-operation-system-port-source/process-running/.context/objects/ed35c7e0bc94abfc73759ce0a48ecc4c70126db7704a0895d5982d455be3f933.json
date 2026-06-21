@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "FGAP-040 (placement per DEC-0005: in-draft coverage-class): every identified action-step precursor that no division owns is recorded as an explicit in-draft decision-request (what decision, from whom, why, what it blocks/unblocks), via a generation contract + a parser-recognized element + a per-spec in-execution self-check. Depends on FGAP-041 precursor identification.",
+  "acceptance_criteria": [
+    "The generation contract requires every identified action-step precursor that no division owns to be recorded as an explicit in-draft decision-request carrying what decision is needed, from whom, why, and what it blocks or unblocks.",
+    "A generated/assembled draft stores each such decision-request as a discrete structured element (not only incidental prose), and a check reads that element; demonstrated.",
+    "During generation of the bearing step, the step's self-check fails when an identified precursor is neither owned nor recorded as a decision-request, and passes when each is one or the other; demonstrated.",
+    "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-05-30T10:00+08:00",
+  "focus": "Initialized .context substrate for the WASC school-improvement-plan project — accept-all'd the packaged conception, installed 16 block kinds, evaluated all schemas and relation types for project fit.",
+  "discoveries": [
+    "All 16 blocks installed but empty — zero items, zero relations",
+    "Substrate schemas are rich (id patterns, lifecycle annotations, prompt budgets, invariants) and well-suited to project tracking",
+    "Three schema ID patterns reject this project's naming: decisions (requires 4-digit DEC), framework-gaps (requires FGAP prefix), story (requires STORY prefix)",
+    "The 50KB read cap on enormous MD files is the primary problem the substrate solves — read-block-item, filter-block-items, and context-status return typed slices without the cap"
+  ],
+  "decisions_made": [
+    "Substrate is the right migration target for DECs, DISCs, stories, and phases",
+    "ID-pattern widening is the prerequisite before any data migration",
+    "DECs are the highest-priority first migration (most cross-referenced, largest context cost)"
+  ],
+  "current_status": "Substrate scaffolded and ready. 16 installed blocks, 28 relation types, 6 invariants, 2 lenses. All blocks empty. Schema changes needed before population: 3 ID-pattern widens (decisions, framework-gaps, story), 1 status-enum change (story), prose-budget relaxation on decisions fields.",
+  "next_steps": [
+    "Widen decisions schema ID pattern from ^DEC-\\\\d{4}$ to ^DEC-\\\\d{1,4}$",
+    "Remove or relax x-prompt-budget on decisions context/decision/consequences fields",
+    "Widen framework-gaps schema ID pattern to accept DISC naming",
+    "Widen story schema ID pattern + replace status enum with pending|enabled|vivified",
+    "Migrate 43 DECs from data/seed-round-plan.md into decisions block"
+  ]
+}

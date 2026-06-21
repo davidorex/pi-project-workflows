@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nFor EACH action step, decide the single responsible division:\n- Use the step's 0-based create-order index as \"step_index\".\n- Name the responsible division as \"responsible_division\", using EXACTLY one of the division labels provided above.\n- Propose exactly ONE responsible division per step — never a list, never a person, never a stakeholder group.\n- Use ONLY division labels that appear in the list above; do not invent a division.\n- Use ONLY step indices that exist in the draft above; do not refer to a step that is not listed.\n- Prefer distributing ownership across divisions — this is a school-wide plan; assign each step to its best-fit division so ownership spreads across the divisions that carry relevant responsibilities. When the step set genuinely clusters under one purview, best-fit governs over forced spread.\n\nOUTPUT CONTRACT (follow exactly):"
+}

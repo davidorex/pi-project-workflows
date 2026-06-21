@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if draft_state %}The plan draft so far:\n\nSuccess criteria (each line is \"<criterion_index>: <text>\"; criterion_index is the 0-based position you must use):\n{% for key, value in draft_state.items %}{% if value %}{% if \"-text\" in key and \"criteria-\" in key and \"_zh_hans\" not in key %}- {{ key }} = {{ value }}\n{% endif %}{% endif %}{% endfor %}\n\nFeedback channels (each line is \"<channel_index>: <label>\"; channel_index is the 0-based position you must use in channel_indices):\n{% for key, value in draft_state.items %}{% if value %}{% if \"-label\" in key and \"feedback-\" in key and \"_zh_hans\" not in key %}- {{ key }} = {{ value }}\n{% endif %}{% endif %}{% endfor %}{% endif %}",
+  "section": "draft_state"
+}

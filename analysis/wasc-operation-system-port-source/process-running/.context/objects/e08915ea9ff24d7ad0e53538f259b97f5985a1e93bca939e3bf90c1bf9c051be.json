@@ -1,0 +1,10 @@
+{
+  "title": "Workflow bridge scripts: render_from_substrate.py + apply_from_substrate.py",
+  "status": "complete",
+  "layer": "L3",
+  "description": "Per WORKSHOPPING-WORKFLOW-SPEC §5.",
+  "acceptance_criteria": [
+    "render_from_substrate.py emits the per-spec prompt JSON from .workshopping",
+    "apply_from_substrate.py parser-gates a response and writes a versioned draft"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "FGAP-050 fix (FEAT-010, TASK-073): the DEC-44 fabrication validator now uses the run's configured LLM. Branch trio-validator-provider @ 63524d5. Threaded an optional user=None through the chain: validate_candidates (planner/_llm_fabrication_validator.py -> get_llm(user=user) at :137; except NoProviderConfiguredError: raise at :144 BEFORE the broad except Exception->[] at :152) <- audit_freetext_flags/audit_freetext/audit_prefill_flags (_freetext_audit.py, forward user; validate_candidates(... user=user) at :1019) <- all 14 specs.py parsers (12 auditing pass user=user, 2 non-auditing accept inertly) <- the entry points spec.parse(..., user=author) at orchestration.py:270 and spec.parse(..., user=request.user) at views.py:620. So the validator resolves the SAME provider as the spec call's get_llm_logged(author); the observed openrouter-vs-anthropic silent no-op is gone. Verified through the verify-gated loop: plan-mode (EnterPlanMode -> Explore mapped the full caller chain + the resilience-loop exception classification -> corroborated -> plan -> ExitPlanMode approval) -> IMPL 63524d5 (5 slice tests + a 38-test integration blast radius fixed via an autouse conftest fake provider + 2 widened test-double parsers) -> orch-independent gate pass -> SEPARATE adversarial audit (acecbe7) Total findings 0: the autouse fixture probed HARDEST and confirmed NOT masking (the surfacing/threading tests apply in-body patches that override the autouse, verified via --setup-show); exception ordering correct (NoProviderConfiguredError before the broad except, so the re-raise is live; Pyright 'import not accessed' is a confirmed false positive, used at the except, mypy clean); NoProviderConfiguredError propagates out of run_trio_pass (the resilience loop catches only LLMTimeout/RateLimit/ValueError/LLMAuth/_FoldError); full chain forwards user with no dropped layer; scope = 5 production files (get_llm/resilience/audit-logic untouched); full planner suite 1240 passed. Done = gate blocking-pass AND audit 0 (DEC-58). Resolves FGAP-050.",
+  "criteria_results": [
+    {
+      "criterion": "The DEC-44 fabrication validator resolves its LLM via the run's user, so under the normal user-scoped provider config it runs against the SAME provider the trio's spec calls use -- no fall-through to an unconfigured default, no silent no-op.",
+      "status": "passed",
+      "evidence": "get_llm(user=user) at _llm_fabrication_validator.py:137; full forward chain audit-traced with no dropped layer; end-to-end test threads a sentinel user from parse_narrative -> get_llm (passes with the autouse fixture active, overridden by an in-body patch)."
+    },
+    {
+      "criterion": "A genuine no-provider/cannot-run failure SURFACES (not swallowed as empty); a transient provider error or malformed-response parse failure still degrades gracefully (returns []).",
+      "status": "passed",
+      "evidence": "except NoProviderConfiguredError: raise precedes the broad except Exception->[]+WARNING (ordering verified live); _parse_response except still ->[]; audit layers do not catch the re-raise; the config-error test is non-vacuous (would fail if the re-raise were removed/shadowed)."
+    },
+    {
+      "criterion": "Both entry paths thread the user (trio _run_one_spec author; browser AssistStreamView request.user); user=None default keeps current behavior.",
+      "status": "passed",
+      "evidence": "orchestration.py:270 user=author; views.py:620 user=request.user; all 14 spec.parse-reachable parsers accept user=None (backward-compatible); the default-None test passes."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates.",
+      "status": "passed",
+      "evidence": "orch-independent make verify-slice SLICE=fabrication_validator exit 0 (ruff/mypy/full pytest 1240 passed/test-js); pi-context context-validate 0 error-severity; scope = 5 production files, get_llm/resilience/audit-logic untouched."
+    }
+  ]
+}

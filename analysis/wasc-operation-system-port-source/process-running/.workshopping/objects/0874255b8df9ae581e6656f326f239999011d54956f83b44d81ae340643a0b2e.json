@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if policies %}Policies (the school's enumerated policies; name policies only from this list):\n{% for p in policies %}- {{ p.label }}{% if p.notes %} — {{ p.notes }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "policies"
+}

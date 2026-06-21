@@ -1,0 +1,29 @@
+{
+  "title": "Authoritative external plan-quality feedback (theme-framed single plan; HOW+frequency per step; diverse focus areas)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "curation",
+  "question": "What does an authoritative external reviewer state a WASC schoolwide action plan should look like, and how does it map to our findings?",
+  "method": "verbatim capture of authoritative external feedback (human-designated) + extraction + mapping to existing research; persisted to the findings_document.",
+  "findings_summary": "Full verbatim + mapping: docs/authoritative-plan-quality-feedback-2026-06-07.md. REQUIREMENTS (authoritative): (1) theme-framed SINGLE plan -- one theme (e.g. 'Implementation of SLOs into the Curriculum'), the actions are STEPS WITHIN it, not separate plans; (2) concrete operational/instructional steps (exemplars: introduce SLOs at faculty meetings; audit lessons across subjects; dept chairs embed SLOs in syllabi; gather student feedback by survey); (3) HOW per step (mechanism: surveys/meetings/lectures); (4) FREQUENCY per step (weekly/per semester/per academic year); (5) DIVERSITY of focus areas (school-wide -> not concentrated); (6) maximum step detail. MAPPING: strongly VALIDATES R-0003 A1 (our first draft's 6 steps were one governance cycle, 5/6 PO-owned -- req 5+2 are exactly A1's corrective, now from an authority). Refines decompose-action-steps (req 3/4/6 = per-step mechanism + cadence + concreteness generation requirements). Tension-to-hold with concision (R-0004/R-0005): 'as detailed as possible' lives in the structured cells (HOW->method/Resources, FREQUENCY->Timeline, action->tight imperative) -- so the distiller coverage floors (R-0005 5b) gain a per-step 'HOW + frequency retained' floor. Theme-framing = the plan title/area-for-improvement (our one-Plan-many-steps model matches). IMPLICATIONS (not actioned): decompose-action-steps prompt requires action+HOW+frequency per step + focus-area diversity across the set; coverage floors gain mechanism+frequency-retained; the quality rubric gains steps-with-HOW / steps-with-frequency / focus-area-diversity axes. MEASUREMENT TOOLS = KEY (human 2026-06-07): the measurement-tools dimension is designated key -- the criterion-side twin of the authority HOW+frequency. Already modeled (feedback_channels.instrument + stakeholder/owner/timing/frequency; success_criteria.verification_kind judgment/inspection/target; bind-measurement-channels B2). KPI BOUNDARY (load-bearing): measurement tools = instruments/methods, NOT KPIs (explicit project exclusion); numbers live ONLY inside a target criterion row, encoded at specs.py:33-34. Consequences: elevates R-0003 A2 to a headline (every criterion binds to a concrete instrument+cadence); adds a distiller coverage floor (R-0005 5b: measurement-tools dimension never zeroed, instrument+cadence survives distillation); adds rubric axes criteria-bound-to-instrument + instrument-has-named-frequency.",
+  "findings_document": "docs/authoritative-plan-quality-feedback-2026-06-07.md",
+  "citations": [
+    {
+      "label": "R-0003 A1 action-scope concentration (validated)",
+      "path": "docs/workshop-refinements-2026-06-07.md"
+    },
+    {
+      "label": "distiller coverage floors",
+      "path": "docs/distillation-transform-design-2026-06-07.md section 5b"
+    },
+    {
+      "label": "decompose-action-steps spec",
+      "path": "prompt-workshop/snippets/05-decompose-action-steps.md"
+    },
+    {
+      "label": "concise exemplar",
+      "path": "data/Sample-Schoolwide-Action-Plan.extracted.md"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

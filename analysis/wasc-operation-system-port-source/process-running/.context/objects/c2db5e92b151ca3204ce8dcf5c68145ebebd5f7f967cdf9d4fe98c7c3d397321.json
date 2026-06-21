@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "Write the workflow YAML: per-spec render->call->apply, object agent input {prompt:…}, output:{format:json} on commands, | shell for JSON args, draft_path threading (SPEC §4).",
+  "acceptance_criteria": [
+    "The workflow drives all 14 specs in dependency order — each rendered, sent to the agent, and its response applied — in sequence.",
+    "Each spec builds on the draft as merged by every prior spec; the first spec starts from the empty (seed) draft.",
+    "Each agent response is applied through the same validation production uses.",
+    "A response that fails validation halts the run with the last good draft intact; a clean or soft-flagged response continues.",
+    "The runner loads and steps the workflow with no engine-constraint failure, and a spec's render and apply run correctly against the threaded draft (the full live 14-spec run is the run task's).",
+    "The full project gate stays green."
+  ]
+}

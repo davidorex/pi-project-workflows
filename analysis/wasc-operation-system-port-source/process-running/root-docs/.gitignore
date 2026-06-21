@@ -1,0 +1,54 @@
+__pycache__/
+.DS_Store
+.idea/
+.vscode/
+*.pyc
+*.swp
+*~
+# .claude is local-operator config (ignored), EXCEPT the project-functional
+# artifacts — the context-currency auditor tooling and the run-* skills — which
+# are tracked so they are version-controlled + shared to every clone.
+/.claude/*
+!/.claude/agents/
+!/.claude/commands/
+!/.claude/skills/
+/.claude/agents/*
+!/.claude/agents/context-currency-auditor.md
+/.claude/commands/*
+!/.claude/commands/audit-context-currency.md
+/.claude/skills/*
+!/.claude/skills/run-prompt-workshop/
+!/.claude/skills/validate-context/
+!/.claude/skills/update-context/
+node_modules/
+# /tmp/ — temporarily NOT ignored so rendered prompts (bin/render-phase-prompt.sh outputs)
+# are accessible to Claude Code on web and desktop. Revisit at repo-publishing time.
+.pi/settings.json
+.workflows/monitors/
+.workflows/runs/
+.workflows/.pi/
+# Workshop draft versions a workflow run emits (the proper per-run out-dir is set at
+# run-invocation — TASK-011/FEAT-004 run-setup, cf. PI-WORKFLOWS-FINDINGS WF-12); ignored
+# so a run never pollutes the tree even when --out-dir falls back to the repo root.
+/draft-after-*.json
+# Pre-migration substrate backups from the content-addressing upgrade harness
+# (the original is also preserved in git history; this dir is a redundant on-disk backup)
+.context-archived*
+# Active-substrate pointer — ephemeral per-operator working state (which substrate
+# is active now, HEAD-like). Flips on every context-switch; not versioned. The
+# substrate MAP lives in the tracked .pi-context-registry.json.
+.pi-context.json
+.context-bak/
+
+# Word lock/owner temp files
+~$*
+
+# apply.py per-spec capture dirs (run artifacts, like current-draft.json)
+prompt-workshop/outputs/20*-*/
+
+# User-authored plan-draft Word exports under web/ (not tracked)
+web/*.docx
+
+# Context-currency auditor reports — gitignored scratch (the auditor changes no context;
+# /audit-context-currency persists each run's report here, e.g. on a /loop interval)
+/tmp/context-audits/

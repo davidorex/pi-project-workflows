@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "PlanDraftState versioned draft_state store (TASK-059, trio slice 1) built + verified through the verify-gated loop on branch trio-draftstate-store (a8dd299 build, ec2c1fe round-2 fixes). Files: plans/models/draft.py (PlanDraftState + manager save_version/load_latest/versions), plans/migrations/0049_plandraftstate.py, plans/models/__init__.py, plans/tests/test_slice_draftstate.py. Round-1 IMPL -> orchestrator independently ran make verify-slice SLICE=draftstate exit 0 -> SEPARATE adversarial audit (af8bb487) Total findings: 3 (F1 UniqueConstraint(draft_id,version) vs per-(draft_id,school) docstring -> cross-school save collides; F2 school-scoping test only exercised the read side; F3 save_version TOCTOU read-then-create). Round-2 IMPL (ec2c1fe) cleared each RED->GREEN with the decided resolution: a draft_id is owned by exactly one school, versioning is per-draft_id, a cross-school save raises ValidationError (not IntegrityError), save_version wrapped in transaction.atomic + select_for_update. Orchestrator independently re-ran the gate (exit 0). Round-2 SEPARATE adversarial audit (ac552270) re-ran the full project gate + live dev-DB probes + git diff main..HEAD and returned Total findings: 0 (F1/F2/F3 resolved non-vacuously -- F2/F3 tests proven to fail on round-1 code; no new defects; the _version/_school_id Pyright notes are idiomatic tuple-unpack discards, mypy clean; gate not weakened). Done = gate exit 0 AND audit findings == 0 (DEC-58), both orchestrator-observed independently of the implementer. Full gate: ruff All passed; mypy Success 328 files; pytest 3224 passed; make test-js 48/0; context-validate 0 errors; makemigrations --check clean.",
+  "criteria_results": [
+    {
+      "criterion": "Saving a draft_state persists a row scoped to the author and school and identified by a draft id; saving the same draft again APPENDS a new version (the prior version remains, history is walkable-back) rather than overwriting.",
+      "status": "passed",
+      "evidence": "save_version appends per draft_id (gap-free [1,2,3,4,5] test); prior versions remain (versions() walkable). UniqueConstraint(draft_id, version) present. Round-2 clarified the contract to per-draft_id (a draft_id owned by one school)."
+    },
+    {
+      "criterion": "Loading the latest version returns the exact flat draft_state dict that was saved (round-trip equal).",
+      "status": "passed",
+      "evidence": "load_latest round-trip deep-equality test; JSONField round-trip probed for str/int/bool/None/nested -- all equal. draft_state stored verbatim."
+    },
+    {
+      "criterion": "The stored flat draft_state, passed to build_grounding(...include=['draft_state']), is consumable unchanged: _draft_state_row_count and _draft_state_milestone_improvement_types return the same values.",
+      "status": "passed",
+      "evidence": "criterion-3 test imports the REAL build_grounding + planner.specs._draft_state_* helpers, runs a LOADED dict through them, asserts milestones=2/criteria=2/steps=1 and codes [INSTRUCTIONAL,STRUCTURAL] -- matches helper semantics (max(index)+1). Non-vacuous (round-2 audit confirmed)."
+    },
+    {
+      "criterion": "The store holds a draft with no saved Plan (pre-Plan accumulation) and is school-scoped -- a draft under one school is not loadable under another.",
+      "status": "passed",
+      "evidence": "Not FK'd to Plan (pre-Plan). load_latest/versions filter by school (read-isolation test: wrong school -> None/empty). A cross-school SAVE of the same draft_id raises ValidationError (write-side test, proven to fail on round-1 code). Live dev-DB probe confirmed no row leak."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates; nothing pre-existing is broken.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=draftstate exit 0; ruff/mypy(328)/pytest(3224)/test-js(48)/context-validate(0 errors)/makemigrations --check all green; git diff main..HEAD scoped to the 4 product files + bookkeeping; bin/verify-slice.sh + gate-before-commit.sh untouched."
+    }
+  ]
+}

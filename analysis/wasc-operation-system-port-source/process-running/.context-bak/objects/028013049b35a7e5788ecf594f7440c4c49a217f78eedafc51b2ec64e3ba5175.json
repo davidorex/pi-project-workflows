@@ -1,0 +1,5 @@
+{
+  "description": "Never act without user authorization.",
+  "enforcement": "manual",
+  "severity": "error"
+}

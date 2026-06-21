@@ -1,0 +1,18 @@
+{
+  "title": "Front-load precursor/dependency-identification step not transposed (mandatory front-load sequence step 3)",
+  "status": "closed",
+  "package": "prompt-workshop/shared/preamble.md (front-load criterion 7) + generation",
+  "description": "sim-revised-frame.md defines a MANDATORY plan-cycle-start front-load sequence (every cycle, before any action) of three steps: (1) establish a baseline; (2) articulate how progress + success will be measured; (3) IDENTIFY PRECURSOR REQUIREMENTS / DEPENDENCIES -- what must be in place first (data, tools, training, coordination, another division's output, a policy); 'if none, say so'. The preamble's front-load criterion 7 transposed steps 1+2 (baseline + measurement, with the three views) but NOT step 3 (precursor/dependency identification). The T5 audit confirmed it is absent from the preamble, the corpus, and the enforcement map. It is distinct from FGAP-040 (decision-requests -- the narrower UPWARD request raised only when a precursor is NOT owned) and from FGAP-039 (which names one bilingual-specific precursor instance, not the general discipline): precursor-identification is the broader prior front-load articulation step, including precursors the division can satisfy itself + the affirmative 'if none, say so'.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/sim-revised-frame.md",
+      "reference": "the mandatory front-load sequence step 3 -- identify precursor requirements/dependencies; 'if none, say so'"
+    },
+    {
+      "file": "prompt-workshop/shared/preamble.md",
+      "reference": "criterion 7 transposes baseline + three-views + durability only; no precursor/dependency clause"
+    }
+  ],
+  "impact": "Generated plans can launch actions without surfacing what must be in place first (data/tools/training/coordination/upstream output/policy) -- a validated mandatory front-load discipline is unenforced. Risk: action steps that silently depend on un-stood-up precursors.",
+  "proposed_resolution": "CLOSED by TASK-047 / VER-042 / commit 1c3550a: front-load precursor/dependency identification is now a generation contract -- preamble criterion 7 (front-load step 3: surface precursor requirements/dependencies before actions, or state plainly none) + the snippet-05 step-writing directive (each action-step description states its precursor(s)-or-none). A2 prose-embodied shape, verified by an adversarial read (a fresh generation: every action step states precursor-or-none, zero silent); NOT a deterministic gate (no self_check, no check_draft -- precursor prose is author-variable). OUTPUT CONTRACT unchanged; no production/specs.py/schema change. Re-run cleanly IN PLAN MODE after a prior out-of-process IMPL was interrupted (residue discarded via git restore/rm, never git reset). [Original plan: add precursor/dependency identification to the front-load generation contract (preamble criterion 7) + the action-bearing spec.]"
+}

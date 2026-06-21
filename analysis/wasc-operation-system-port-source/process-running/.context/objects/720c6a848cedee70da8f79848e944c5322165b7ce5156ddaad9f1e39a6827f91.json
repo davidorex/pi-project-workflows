@@ -1,0 +1,18 @@
+{
+  "title": "Front-load precursor/dependency-identification step not transposed (mandatory front-load sequence step 3)",
+  "status": "identified",
+  "package": "prompt-workshop/shared/preamble.md (front-load criterion 7) + generation",
+  "description": "sim-revised-frame.md defines a MANDATORY plan-cycle-start front-load sequence (every cycle, before any action) of three steps: (1) establish a baseline; (2) articulate how progress + success will be measured; (3) IDENTIFY PRECURSOR REQUIREMENTS / DEPENDENCIES -- what must be in place first (data, tools, training, coordination, another division's output, a policy); 'if none, say so'. The preamble's front-load criterion 7 transposed steps 1+2 (baseline + measurement, with the three views) but NOT step 3 (precursor/dependency identification). The T5 audit confirmed it is absent from the preamble, the corpus, and the enforcement map. It is distinct from FGAP-040 (decision-requests -- the narrower UPWARD request raised only when a precursor is NOT owned) and from FGAP-039 (which names one bilingual-specific precursor instance, not the general discipline): precursor-identification is the broader prior front-load articulation step, including precursors the division can satisfy itself + the affirmative 'if none, say so'.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/sim-revised-frame.md",
+      "reference": "the mandatory front-load sequence step 3 -- identify precursor requirements/dependencies; 'if none, say so'"
+    },
+    {
+      "file": "prompt-workshop/shared/preamble.md",
+      "reference": "criterion 7 transposes baseline + three-views + durability only; no precursor/dependency clause"
+    }
+  ],
+  "impact": "Generated plans can launch actions without surfacing what must be in place first (data/tools/training/coordination/upstream output/policy) -- a validated mandatory front-load discipline is unenforced. Risk: action steps that silently depend on un-stood-up precursors.",
+  "proposed_resolution": "Add precursor/dependency identification to the front-load generation contract (preamble criterion 7): each goal/action surfaces its precursors -- or affirmatively states none -- before action; consider a per-spec or whole-draft check. A future fix task in the FGAP-033 transposition-completion family."
+}

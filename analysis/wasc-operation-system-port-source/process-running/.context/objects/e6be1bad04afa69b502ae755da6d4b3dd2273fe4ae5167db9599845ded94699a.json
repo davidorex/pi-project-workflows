@@ -1,0 +1,10 @@
+{
+  "status": "in-progress",
+  "description": "Story A (shared preamble). R1 -- no-framework-terms render rule. Extend prompt-workshop/shared/preamble.md (plan-register rules) so generated output uses only the school's plain vocabulary and none of the coined framework/process method-terms. Mirror to .workshopping (re-stamp content_hash) + re-pass verify-render-parity.py.",
+  "acceptance_criteria": [
+    "A freshly generated plan, scanned against the enumerated process-method-term list, yields zero occurrences.",
+    "Compared against the pre-rule draft, the same plan retains its substantive content (all sections present and non-empty; nothing shortened or hollowed to dodge the terms) -- an adversarial reviewer confirms zero substance loss.",
+    "Plain descriptive English is still present where apt and is not flagged by the scan (e.g. 'talking at students' passes).",
+    "The dispatched output parses clean with no new fabrication flags, and the snippet-substrate parity check passes."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "in-progress",
+  "description": "Materialize hod-doc's head-accountability PositionResponsibility atom on every DIVISION-HEAD leader Position -- kind=leader with year_group unset (the HOD seats of 0048 + the Director seats of 0050; the year-group leaders of 0049, which carry a year_group FK, are excluded as they lead a year group, not a division) -- so a division-head leader Position carries its division's responsibilities and the US-LLM-27 spec-07 abort is closed. A seed migration mirroring the 0048/0050 pattern (idempotent, reversible); statement = hod-doc's wording generalized to the division: 'Be accountable for delivering the division's responsibilities.' No model/grounding/parser/spec change (the position-atom path already emits + admits). Addresses FGAP-046; enacts DEC-55.",
+  "acceptance_criteria": [
+    "Every division-head leader Position (kind=leader with year_group unset) carries a stored position-grain PositionResponsibility atom expressing that the seat is accountable for delivering its division's responsibilities -- a real materialized row, not a string computed at grounding time; the year-group leader seats (kind=leader with a year_group) do not receive it.",
+    "The atom appears in the grounding responsibility inventory under its position, and the propose-responsibilities parser admits a position-grain citation of it without rejection.",
+    "A full workshop generation that attributes a division-head leader-position's accountability for its division's responsibilities to that position completes without the spec-07 catalogue-gate abort.",
+    "The seed is idempotent (re-running it changes nothing) and reversible (the unseed removes exactly the rows it added); pre-existing position atoms are unchanged.",
+    "The project gate stays green (manage.py check, ruff, mypy, pytest, make test-js) and existing seeds, positions, and atoms are unaffected."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T08:45:00Z",
+  "evidence": "TASK-028 (R2 action-steps-are-learning-designed; shared-preamble success-criteria item 6) via the canonical pipeline. IMPL 2181067: added item 6 (each action step opens by recalling prior learning, sets a task participants actively DO, surfaces a check of understanding, closes with reflection/next-step; embodied in plain prose, no OPEN/CORE/EVIDENCE/CLOSE labels, no methodology aside; with a designed-vs-transmission exemplar) + mirrored FRAG-preamble + re-stamped content_hash + parity 14/14. EMPIRICAL verification: a fresh opus generation of decompose-action-steps (spec 05) under the new preamble produced 6 steps; check_draft Check 1 (process-method terms) = 0 and Check 2 (scaffolding labels) = 0. A SEPARATE adversarial audit built a per-step four-element matrix and confirmed all 6 steps show all four elements (recall / active task / check / reflection), zero transmission-only steps, zero scaffolding labels, and the steps parse clean against parse_decompose_action_steps (the only flags = 2 benign pre-existing soft-NER false-positives on the generic phrase 'Head of Department'; the specific HoD titles are all enumerated; not fabrications, not introduced by this rule). Audit Total findings: 0. Rule additive (no substance loss / no hollowing), harness-consistent. Scope: prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble only; no parser/grounding/migration/.context.",
+  "criteria_results": [
+    {
+      "criterion": "In a freshly generated plan, every action step shows four observable elements -- a reference to prior learning/context, a task participants actively do, a check of understanding, and a closing next-step/reflection -- an adversarial reviewer marks all four per step with zero steps failing.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The scan for step-scaffolding labels yields zero occurrences.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Zero action steps are attend/listen/read-only (transmission) -- an adversarial reviewer confirms none.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The dispatched output parses clean with no new fabrication flags.",
+      "status": "passed"
+    }
+  ]
+}

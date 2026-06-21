@@ -1,0 +1,47 @@
+{
+  "spec_key": "propose-accreditation-standards",
+  "order": 13,
+  "target_step": "standards",
+  "preview_mode": "fields",
+  "grounding_sections": [
+    "school",
+    "learner_outcomes",
+    "guiding_statements",
+    "areas_for_improvement",
+    "divisions",
+    "policies",
+    "accreditation_standards",
+    "draft_state"
+  ],
+  "deps": [
+    "narrative-draft"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-accreditation-standards-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-accreditation-standards-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-accreditation-standards-2",
+    "FRAG-gb-seed-standards",
+    "FRAG-intro-propose-accreditation-standards-3",
+    "FRAG-gb-accreditation-standards-choose",
+    "FRAG-intro-propose-accreditation-standards-4",
+    "FRAG-gb-learner-outcomes-slo",
+    "FRAG-intro-propose-accreditation-standards-5",
+    "FRAG-gb-guiding-statements",
+    "FRAG-intro-propose-accreditation-standards-6",
+    "FRAG-gb-areas-for-improvement-afi",
+    "FRAG-intro-propose-accreditation-standards-7",
+    "FRAG-gb-divisions-full",
+    "FRAG-intro-propose-accreditation-standards-8",
+    "FRAG-gb-policies",
+    "FRAG-intro-propose-accreditation-standards-9",
+    "FRAG-gb-draft-state-prose",
+    "FRAG-intro-propose-accreditation-standards-10",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-accreditation-standards"
+  ],
+  "parser": "parse_propose_accreditation_standards",
+  "source_migration": "ai/migrations/0013_seed_propose_accreditation_standards_template.py",
+  "output_schema": "shared/schemas/propose-accreditation-standards.schema.json"
+}

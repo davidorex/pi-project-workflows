@@ -1,0 +1,11 @@
+{
+  "status": "in-progress",
+  "description": "Build the persisted, versioned draft_state store for the trio (slice 1): a new append-versioned model (plans/models/draft.py, e.g. PlanDraftState) keyed by a UUID draft_id + school + created_by, holding the flat draft_state JSON verbatim, NOT FK'd to Plan (pre-Plan accumulation), with a thin school-scoped persistence API (save a new version, load latest, walk versions) + migration + __init__ registration. The accumulation seam (fold prefill->draft_state) is the next slice. Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=draftstate).",
+  "acceptance_criteria": [
+    "Saving a draft_state persists a row scoped to the author and school and identified by a draft id; saving the same draft again APPENDS a new version (the prior version remains, history is walkable-back) rather than overwriting.",
+    "Loading the latest version of a draft returns the exact flat draft_state dict that was saved — every key and value preserved (round-trip equal).",
+    "The stored flat draft_state, passed to build_grounding(school, draft_state=<loaded>, include=['draft_state']), is consumable unchanged: the spec helpers that read draft_state (row counts, milestone improvement-type codes) return the same values they would from the originally-saved dict.",
+    "The store holds a draft that has no saved Plan (the pre-Plan accumulation case), and is school-scoped — a draft created under one school is not loadable under another.",
+    "The whole-project gate stays green and the context cascade validates; nothing pre-existing is broken by adding the store."
+  ]
+}

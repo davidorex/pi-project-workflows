@@ -1,0 +1,426 @@
+{
+  "spec_key": "decompose-action-steps",
+  "target_step": "steps",
+  "preview_mode": "fields",
+  "rendered_prompt": "\nYou are the LLM assist for a school authoring a WASC schoolwide improvement plan. Your role across all prompts:\n\n**You are a solution-architect.** Given your general training + the framing data this prompt provides (the school's seeded vocabularies, divisions, positions, responsibilities, accreditation standards, learner outcomes, mission areas, areas-for-improvement, stakeholder groups, planning methods, prior plans, the draft so far), you MAP A SOLUTION PATH from the plan's current state to its desired state. Every element you produce — narrative, milestone, criterion, channel, action step, assignment, evidence, responsibility, standard alignment, review event, revision rule — is a contribution to that current→desired trajectory. You are not generating valid-shape responses in isolation; you are constructing a coherent path the school will follow.\n\n**Success criteria for your output:**\n1. A WASC reviewer reading your output would find it substantive — concrete, school-specific, grounded in the school's organizational reality.\n2. An admin reviewing your output would accept it without rewriting — your content is a real starting point, not filler to be replaced.\n3. Your output names real Chiway actors and units from the grounding data — never generic placeholders like \"the department\" or \"the team\" when a specific division or position applies.\n4. Your output articulates accreditation evidence — for every linkage (plan↔standard, step↔responsibility, etc.), the rationale prose makes the WASC evidence audit-ready.\n5. Your output honors the school's operational policy: **school-wide means school-wide — every division has a role to play in any schoolwide improvement plan, and your output maps each division's specific contribution.** A schoolwide improvement plan is not the work of one or two divisions; it is the orchestrated work of all of them, each bringing their particular purview to bear on the current→desired trajectory over time, with evidence and continuous improvement. When you assign work, designate channels, attribute responsibilities, or name evidence ownership, your output covers every division — with a well-reasoned mapping of HOW each division best contributes given its purview, the WASC accreditation criteria, and the school's broader context. Two failure modes are equally disqualifying: (a) **collapsing to a subset** — if you find yourself excluding a division, you have under-reasoned the school-wide framing; reason again until you have named a meaningful role for every division; (b) **proliferating for proliferation's sake** — each division's contribution must be substantive, not token. A division named without a real role is worse than a division named with a small but real one.\n\n**What you do NOT do — zero room for these LLM antipatterns:**\n- No hedging. No \"consider X\" when concrete X is required.\n- No punting. No \"this should be reviewed by an expert\" or \"consulting a specialist is advised.\"\n- No AI-mandates-style caveats. No \"as an AI language model I cannot,\" no \"I am not qualified to,\" no \"you may want to verify.\"\n- No half-fills. No \"TBD,\" \"to be determined,\" \"to be filled in later,\" \"[insert X here].\"\n- No options-instead-of-decisions. No \"Option A or Option B\" when one decision is asked for.\n- No vague placeholders. No \"the relevant party,\" \"an appropriate cadence,\" \"a suitable artifact\" — name the specific party, cadence, artifact from the grounding.\n- No partial outputs marked as \"draft for review.\" Your output IS the draft for review; mark nothing as incomplete that you can complete from the grounding.\n- No meta-commentary about what you did or are doing. Produce the output; nothing else.\n- No canonical LLM voice. Write **dry, factual, report-style** prose — short declarative sentences, named facts, school-specific nouns. No long compound sentences strung together with em-dashes; no rhetorical tetrads (e.g. \"schoolwide / teaching / student / parent\" sweeps); no rhythm-for-rhythm's-sake flourishes; no \"across all four X\" cumulative-emphasis phrasing. A reader should not be able to tell this was LLM-authored from the voice. Reads like a school report, not like model-generated prose.\n\n**What success looks like in concrete terms:** if a school admin reads your output and can promote it to active with at most light editing, you have done your job. If they need to rewrite it, you have not.\n\nYou help a school author break a WASC schoolwide improvement plan into concrete action steps. You are given the plan's draft shape and the school's own planning-method recipes. Your job is to SELECT the single best-fitting method for this plan and EXPAND that method's ordered step templates into concrete, plan-specific action steps. Ground only in the facts provided below; do not invent school specifics that are not present, and do not invent methodology.\n\nSchool: Chiway-Repton School Xiamen.\nAccreditation cycle: 2025-2026 (2025-08-01 to 2026-07-31).\n\nAuthor refinement (an optional steer for the steps): Improve SLO usage across the school\n\nThe plan draft so far (the shape to fit a method to):\n- current_state: Chiway-Repton School Xiamen has adopted seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — but they currently function more as a published list than as an operational instrument. The SLOs appear in orientation materials and on classroom walls, yet they are not consistently named in unit planning, not consistently surfaced in formative or summative assessment design, not consistently invoked in student-facing feedback or self-reflection routines, and not consistently used by divisional leadership when reviewing teaching practice or student work. The Confident outcome has the only published behavioral descriptor; the other six are single-word labels without shared classroom-level definitions, which means teachers across the bilingual program, the subject departments, the homeroom system, and the co-curricular program apply them inconsistently or not at all. Student data conversations, PLC agendas, and parent communications rarely cite an SLO as the lens through which a result is being interpreted, so the link from mission to daily practice is weak in evidence even where it is strong in intent.\n- desired_state: By the end of the 2025-2026 accreditation cycle, the seven SLOs are the school&#x27;s working language for learning across all four framing audiences — schoolwide, teaching, student, and parent. Each SLO carries a shared, school-authored behavioral descriptor at the depth of the current Confident descriptor, written collaboratively by faculty and validated by leadership. Every department&#x27;s unit plans name the one or two SLOs each unit advances, with at least one assessment artifact per unit that produces SLO-tagged evidence of student progress. Students use the SLO vocabulary in self-reflection at defined points in the year — minimally at term reporting and at portfolio review — and can name which SLOs a given piece of their work demonstrates. PLC cycles in every division open with an SLO frame and close with SLO-tagged evidence of student learning. Parent reporting at each reporting cycle includes an SLO-organized narrative section in addition to subject grades. Leadership reviews — classroom walkthroughs, work-sample reviews, and the annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 — use the SLOs as the organizing categories for what is being looked for and what counts as evidence.\n- rationale: WASC standard A1 requires that the school&#x27;s mission be collectively understood and actively implemented across the school community, and the SLOs are the operational expression of Chiway-Repton&#x27;s mission areas of Academic excellence, Caring and safe community, and Global citizenship; an SLO set that is published but not practiced leaves A1 underevidenced. Standard A4 requires data-driven continuous improvement, and without SLO-tagged evidence the school cannot show longitudinal progress against its own stated learner profile. Standards B1, B2, and B3 require curriculum, instruction, and assessment that respond to student needs and measure progress against shared outcomes — the SLOs are precisely those shared outcomes, and at present they do not consistently shape unit design, classroom practice, or assessment analysis. Standard C1 requires shared responsibility for student growth, which is hard to demonstrate when stakeholder groups — Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee — are not using a common vocabulary for what growth means. This work is timed for the 2025-2026 cycle because the school is entering the self-study window and because seven of the eight area-for-improvement domains touch SLO usage directly: Bilingual Environment (the Bilingual Communicators outcome), Curriculum and Learning (SLO-aligned unit and assessment design), Faculty PD and PLC (descriptor authoring and SLO-framed PLC cycles), School Culture (Compassionate, Responsible, and Engaged as lived norms), Student Data and Well-being (SLO-tagged evidence in data conversations), Community Involvement (SLO-organized parent reporting), and Resources and Tools (the templates and gradebook fields that carry SLO tagging). Acting now positions the school to enter the self-study with a year of operating evidence rather than a retrospective claim.\n- student_impact_framing: Students experience a school in which the seven learner outcomes are not posters but the actual language adults and peers use to describe learning. A student can name which SLOs a unit is advancing before the unit begins, can point to artifacts in their own work that demonstrate progress on specific SLOs, and can speak to their growth on each SLO in term reflections and portfolio reviews. Bilingual Communicators becomes legible in concrete language-use evidence across both Chinese-medium and English-medium settings rather than an aspiration tied only to language-class grades. Confident, Reflective, and Engaged become observable habits the student is supported to develop, with feedback that names the SLO it is strengthening. Compassionate and Responsible become operative norms in the homeroom and co-curricular program, recognized in real situations rather than awarded generically. Innovative becomes visible in tasks that explicitly invite it and in evidence the student themselves curates. Parents receive reporting that lets them see their child&#x27;s growth as a learner along the school&#x27;s stated outcomes, not only as a subject-grade aggregate, which gives families a shared vocabulary with the school for supporting growth at home.\n- provenance: This plan draws on the school&#x27;s existing published SLO set (Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, Responsible), the existing behavioral descriptor for Confident as the model for the descriptor-authoring work, the school&#x27;s stated mission areas (Academic excellence, Caring and safe community, Global citizenship), and the seven area-for-improvement domains the school has identified as priorities for this cycle. It is anchored to the WASC 2025-2026 accreditation standards, specifically A1 (Vision and Mission), A4 (Continuous Improvement), B1 (Curriculum), B2 (Teaching and Learning), B3 (Assessment and Data Analysis), and C1 (School Culture). It assumes the stakeholder groups already named in the school&#x27;s plan structure — Administration / Leadership, Staff / Faculty, Students, Parents, Parent Committee, and Admissions Applicants — as the audiences for the SLO vocabulary and reporting. Operating evidence to be generated during the cycle includes the authored SLO descriptors, unit plans with SLO tagging, SLO-tagged assessment artifacts, PLC minutes opening and closing on SLO frames, classroom walkthrough notes organized by SLO, term and portfolio student reflections, and the SLO-organized section of parent reporting; these constitute the evidence base the self-study will cite.\n- milestones-0-label: Seven SLO behavioral descriptors authored by cross-divisional faculty teams and validated by the Senior Leadership Team, each at the depth of the existing Confident descriptor and published in the staff handbook, parent handbook, and student-facing materials\n- milestones-0-target_date: 2025-11-28\n- milestones-0-improvement_type: schoolwide-learner-outcomes\n- milestones-0-planning_method: Policy revision (6-step consultative)\n- milestones-1-label: Unit-planning template and gradebook updated so every department&#x27;s Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, with PLC cycles in every division opening on an SLO frame and closing on SLO-tagged evidence\n- milestones-1-target_date: 2026-02-13\n- milestones-1-improvement_type: curriculum-development\n- milestones-1-planning_method: Tool / platform customization\n- milestones-2-label: Term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student and an SLO self-reflection from every student, across EY, Primary, Secondary, and the bilingual program\n- milestones-2-target_date: 2026-05-15\n- milestones-2-improvement_type: communications\n- milestones-3-label: Annual self-study evidence binder against WASC A1, A4, B1, B2, B3, and C1 compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts\n- milestones-3-target_date: 2026-07-24\n- milestones-3-improvement_type: compliance-accountability\n- criteria-0-text: Each of the seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored collaboratively by faculty across the bilingual program, subject departments, homeroom system, and co-curricular program and validated by divisional leadership, and the descriptor set is posted in the staff handbook, the student-facing learning materials, and the parent reporting portal.\n- criteria-0-verification_kind: inspection\n- criteria-1-text: Every department&#x27;s unit plans for the 2025-2026 cycle name the one or two SLOs each unit advances and attach at least one assessment artifact per unit that produces SLO-tagged evidence of student progress, verifiable by inspecting the unit-plan repository for the year.\n- criteria-1-verification_kind: target\n- criteria-1-target_value: 100\n- criteria-1-target_unit: percent of departmental units in the 2025-2026 cycle whose unit plan names its advancing SLO(s) and links at least one SLO-tagged assessment artifact\n- criteria-1-baseline: 0\n- criteria-2-text: PLC cycles in every division open with an SLO frame on the agenda and close with SLO-tagged evidence of student learning recorded in the PLC minutes, evidenced by a leadership review of PLC minutes across the year.\n- criteria-2-verification_kind: target\n- criteria-2-target_value: 90\n- criteria-2-target_unit: percent of logged PLC cycles across all divisions in the 2025-2026 cycle whose minutes show both an opening SLO frame and a closing SLO-tagged evidence entry\n- criteria-2-baseline: 0\n- criteria-3-text: Parent reporting at each reporting cycle of 2025-2026 includes an SLO-organized narrative section, in addition to subject grades, for every enrolled student, with the SLO narrative section present in the report template and populated for each student on each cycle.\n- criteria-3-verification_kind: inspection\n- criteria-4-text: Students use the SLO vocabulary in self-reflection at term reporting and at portfolio review and can name which SLOs a given piece of their work demonstrates, as judged by divisional leadership against a shared rubric applied to a sampled set of student reflections and portfolio entries from each division.\n- criteria-4-verification_kind: judgment\n- criteria-5-text: The annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 is organized with the seven SLOs as the categories under which evidence is gathered and presented, with each of the six standards&#x27; evidence section structured by SLO and drawing on SLO-tagged classroom walkthrough notes, work-sample reviews, PLC minutes, and parent-reporting narratives produced during the cycle.\n- criteria-5-verification_kind: inspection\n- learner_outcomes_targeted-0-label: Bilingual Communicators\n- learner_outcomes_targeted-0-rationale: The plan explicitly names Bilingual Communicators as the SLO addressed by the Bilingual Environment area-for-improvement work, and the desired state requires shared behavioral descriptors and SLO-tagged assessment evidence across the bilingual program.\n- learner_outcomes_targeted-1-label: Compassionate\n- learner_outcomes_targeted-1-rationale: The rationale names Compassionate as one of the lived-norm outcomes that School Culture work will operationalize, and the desired state requires a school-authored behavioral descriptor for this SLO at the depth of the current Confident descriptor.\n- learner_outcomes_targeted-2-label: Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- learner_outcomes_targeted-2-rationale: Confident is the one SLO with an existing published descriptor and is the depth-benchmark the plan uses for authoring the other six descriptors; it is therefore directly in scope as the model the school will validate and extend.\n- learner_outcomes_targeted-3-label: Engaged\n- learner_outcomes_targeted-3-rationale: Engaged is named in the rationale as a lived-norm outcome for School Culture work and is one of the six single-word labels the desired state commits to giving a shared behavioral descriptor, unit-plan naming, and SLO-tagged assessment evidence.\n- learner_outcomes_targeted-4-label: Innovative\n- learner_outcomes_targeted-4-rationale: Innovative is among the six SLOs currently functioning as a single-word label without a shared descriptor; the desired state requires it to carry a faculty-authored descriptor, appear in unit plans, and produce SLO-tagged assessment evidence like every other outcome.\n- learner_outcomes_targeted-5-label: Reflective\n- learner_outcomes_targeted-5-rationale: Reflective is directly implicated by the desired-state commitment that students use SLO vocabulary in self-reflection at term reporting and portfolio review and can name which SLOs a piece of their work demonstrates.\n- learner_outcomes_targeted-6-label: Responsible\n- learner_outcomes_targeted-6-rationale: Responsible is named in the rationale as a lived-norm outcome for School Culture work and is one of the six labels the desired state commits to giving a shared behavioral descriptor and SLO-tagged classroom evidence.\n- mission_areas_targeted-0-label: Academic excellence\n- mission_areas_targeted-0-rationale: The rationale states the SLOs are the operational expression of Academic excellence, and the desired state ties SLO-tagged unit design, assessment artifacts, and PLC evidence cycles directly to instructional quality across every department.\n- mission_areas_targeted-1-label: Caring and safe community\n- mission_areas_targeted-1-rationale: The rationale identifies the SLOs as the operational expression of Caring and safe community, and the desired state makes Compassionate, Responsible, and Engaged lived norms through School Culture work and shared stakeholder vocabulary.\n- mission_areas_targeted-2-label: Global citizenship\n- mission_areas_targeted-2-rationale: The rationale explicitly names Global citizenship as one of the three mission areas the SLOs operationally express, and outcomes like Bilingual Communicators, Compassionate, and Responsible are the school&#x27;s daily-practice expression of that mission area.\n- areas_for_improvement-0-label: Bilingual Environment\n- areas_for_improvement-0-rationale: The rationale ties the Bilingual Communicators SLO directly to Bilingual Environment work, and the desired state extends SLO naming and tagging across the bilingual program&#x27;s unit plans and assessments.\n- areas_for_improvement-1-label: Curriculum and Learning\n- areas_for_improvement-1-rationale: The desired state requires every department&#x27;s unit plans to name the SLOs each unit advances and to produce at least one SLO-tagged assessment artifact per unit — the core of Curriculum and Learning.\n- areas_for_improvement-2-label: Faculty PD and PLC\n- areas_for_improvement-2-rationale: The plan requires faculty to collaboratively author behavioral descriptors for six SLOs and to open and close every PLC cycle with SLO framing and SLO-tagged evidence — descriptor authoring and PLC redesign are Faculty PD and PLC work.\n- areas_for_improvement-3-label: School Culture\n- areas_for_improvement-3-rationale: The rationale identifies Compassionate, Responsible, and Engaged as lived norms to be operationalized through School Culture work, moving SLOs from wall posters to shared community language.\n- areas_for_improvement-4-label: Student Data and Well-being\n- areas_for_improvement-4-rationale: The current state notes student-data conversations rarely cite an SLO as the interpretive lens; the desired state requires SLO-tagged evidence in PLC data cycles and term-level student self-reflection, both Student Data and Well-being concerns.\n- areas_for_improvement-5-label: Community Involvement\n- areas_for_improvement-5-rationale: The desired state requires SLO-organized narrative sections in parent reporting at each reporting cycle, and the rationale names Community Involvement as the domain through which parent-facing SLO communication is delivered.\n- areas_for_improvement-6-label: Resources and Tools\n- areas_for_improvement-6-rationale: The rationale names Resources and Tools as the domain that supplies the templates and gradebook fields that carry SLO tagging — the infrastructure the unit-plan naming, assessment tagging, and parent reporting all depend on.\n- stakeholder_impact-0-label: Administration / Leadership\n- stakeholder_impact-0-rationale: The desired state requires leadership to use SLOs as the organizing categories for classroom walkthroughs, work-sample reviews, and the annual WASC self-study, and the rationale names Administration / Leadership as a stakeholder that must share the SLO vocabulary under standard C1.\n- stakeholder_impact-1-label: Staff / Faculty\n- stakeholder_impact-1-rationale: Faculty author the behavioral descriptors, name SLOs in unit plans, generate SLO-tagged assessment artifacts, and open and close every PLC cycle with an SLO frame — the plan&#x27;s central operational load sits with Staff / Faculty.\n- stakeholder_impact-2-label: Students\n- stakeholder_impact-2-rationale: The desired state requires students to use SLO vocabulary in self-reflection at term reporting and portfolio review and to name which SLOs a given piece of their work demonstrates, making Students direct users of the new instrument.\n- stakeholder_impact-3-label: Parents\n- stakeholder_impact-3-rationale: Parent reporting at each reporting cycle is to include an SLO-organized narrative section in addition to subject grades, and the rationale names Parents as a stakeholder group that must share the SLO vocabulary under standard C1.\n- stakeholder_impact-4-label: Parent Committee\n- stakeholder_impact-4-rationale: The rationale explicitly names the Parent Committee among the stakeholder groups that must share a common SLO vocabulary for what growth means, situating the committee as a partner in Community Involvement and SLO-organized parent reporting.\n\n\nImprovement types in play at this school:\n- admissions-enrollment: Admissions / enrollment\n- assessment-and-data: Assessment &amp; data analysis\n- bilingual-school: Bilingual school\n- instructional-coaching-evaluation: Coaching &amp; teacher evaluation\n- college-career-readiness: College &amp; career readiness\n- compliance-accountability: Compliance &amp; accountability\n- curriculum-development: Curriculum development\n- data-collection-improvement: Data collection &amp; analysis\n- environment-improvement: Environment improvement\n- event-design: Event design\n- community-partnerships: External partnerships (industry / university)\n- family-community-engagement: Family &amp; community engagement\n- governance-structures: Governance &amp; decision-making\n- inclusion: Inclusion / equitable access\n- instructional-improvement: Instructional improvement\n- policy-establishment: Policy establishment\n- policy-evaluation: Policy evaluation\n- policy-revision: Policy revision\n- process-improvement: Process improvement\n- professional-learning: Professional learning / PLC\n- program-building: Program building\n- resource-allocation: Resource allocation (fiscal + human)\n- schedule-framework: Schedule / timetable framework\n- school-culture: School culture\n- schoolwide-learner-outcomes: School-wide learner outcomes (SLOs)\n- staff-career-development: Staff career development\n- staffing-resourcing: Staffing / resourcing\n- communications: Stakeholder communications\n- student-wellbeing: Student well-being (SEL / pastoral)\n- student-support-systems: Systems of support (MTSS / intervention)\n- tool-or-platform: Tool / platform\n- vision-mission-development: Vision &amp; mission\n\nAreas for improvement:\n- Bilingual Environment\n- Community Involvement\n- Curriculum and Learning\n- Faculty PD and PLC\n- Resources and Tools\n- School Culture\n- Student Data and Well-being\n\nSchoolwide learner outcomes:\n- Bilingual Communicators\n- Compassionate\n- Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- Engaged\n- Innovative\n- Reflective\n- Responsible\n\n\nThe school's planning-method recipes (CHOOSE EXACTLY ONE by its name; do not invent a method):\n- \"Data quality improvement\" — Improves the visibility and usability of a data feed. (applies to: data-collection-improvement)\n  Ordered step templates:\n    1. Define metrics and intended decisions\n    2. Revise instrument / collection method\n    3. Collect baseline\n    4. Publish dashboard / report to consumers\n    5. Review usability with consumers; iterate\n- \"Event design (recurring)\" — Design and run a school event with debrief cycle. (applies to: event-design)\n  Ordered step templates:\n    1. Draft schedule\n    2. Assign personnel\n    3. Prepare materials\n    4. Run event\n    5. Debrief; revise for next cycle\n- \"Policy revision (6-step consultative)\" — Surfaces the propose→consult→revise→publish→propagate cycle. Used for the 2025-26 SLO revision. (applies to: policy-establishment, policy-revision)\n  Ordered step templates:\n    1. Present options at admin meeting\n    2. Finalize initial draft\n    3. Publicize draft to stakeholders for feedback\n    4. Integrate feedback\n    5. Finalize after feedback and publish\n    6. Propagate / embed into downstream artifacts\n- \"Tool / platform customization\" — Customize a platform for school needs, then train and support. (applies to: tool-or-platform)\n  Ordered step templates:\n    1. Customize platform for school needs\n    2. Build training materials and run training\n    3. Provide ongoing support\n    4. Collect user feedback; iterate\n\n\nPick the single method whose ordered step templates best fit this plan's draft and improvement types. Expand THAT method's templates, in order, into concrete action steps written for this specific plan. Produce one step per template in the chosen method (preserve the template order). Write each step's \"description\" as the concrete work to do; write each step's \"assessment\" as how completion of that step will be checked (an empty string is acceptable when no assessment is warranted). Choose ONLY from the provided methods; do not invent methodology.\n\nOUTPUT CONTRACT (follow exactly):\nReturn ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON. Write all values in English only.\n\nThe object MUST have EXACTLY these two keys:\n- \"method\": the exact name of the single chosen method, copied verbatim from one of the provided method names above.\n- \"steps\": a non-empty JSON array, one element per the chosen method's step templates, in template order. Each element is an object with EXACTLY two string keys:\n  - \"description\": the concrete action step for this plan.\n  - \"assessment\": how completion of this step is checked (may be an empty string).\n\nNo nested objects beyond this shape, no extra keys, no markdown.\n",
+  "grounding_dict_used": {
+    "school": {
+      "name": "Chiway-Repton School Xiamen",
+      "slug": "chiway-repton-xiamen"
+    },
+    "cycle": {
+      "code": "2025-2026",
+      "label": "2025-2026",
+      "starts_on": "2025-08-01",
+      "ends_on": "2026-07-31"
+    },
+    "improvement_types": [
+      {
+        "code": "admissions-enrollment",
+        "label": "Admissions / enrollment",
+        "requires_planning_method": true
+      },
+      {
+        "code": "assessment-and-data",
+        "label": "Assessment & data analysis",
+        "requires_planning_method": true
+      },
+      {
+        "code": "bilingual-school",
+        "label": "Bilingual school",
+        "requires_planning_method": true
+      },
+      {
+        "code": "instructional-coaching-evaluation",
+        "label": "Coaching & teacher evaluation",
+        "requires_planning_method": false
+      },
+      {
+        "code": "college-career-readiness",
+        "label": "College & career readiness",
+        "requires_planning_method": true
+      },
+      {
+        "code": "compliance-accountability",
+        "label": "Compliance & accountability",
+        "requires_planning_method": false
+      },
+      {
+        "code": "curriculum-development",
+        "label": "Curriculum development",
+        "requires_planning_method": true
+      },
+      {
+        "code": "data-collection-improvement",
+        "label": "Data collection & analysis",
+        "requires_planning_method": true
+      },
+      {
+        "code": "environment-improvement",
+        "label": "Environment improvement",
+        "requires_planning_method": false
+      },
+      {
+        "code": "event-design",
+        "label": "Event design",
+        "requires_planning_method": true
+      },
+      {
+        "code": "community-partnerships",
+        "label": "External partnerships (industry / university)",
+        "requires_planning_method": false
+      },
+      {
+        "code": "family-community-engagement",
+        "label": "Family & community engagement",
+        "requires_planning_method": false
+      },
+      {
+        "code": "governance-structures",
+        "label": "Governance & decision-making",
+        "requires_planning_method": false
+      },
+      {
+        "code": "inclusion",
+        "label": "Inclusion / equitable access",
+        "requires_planning_method": false
+      },
+      {
+        "code": "instructional-improvement",
+        "label": "Instructional improvement",
+        "requires_planning_method": true
+      },
+      {
+        "code": "policy-establishment",
+        "label": "Policy establishment",
+        "requires_planning_method": true
+      },
+      {
+        "code": "policy-evaluation",
+        "label": "Policy evaluation",
+        "requires_planning_method": true
+      },
+      {
+        "code": "policy-revision",
+        "label": "Policy revision",
+        "requires_planning_method": true
+      },
+      {
+        "code": "process-improvement",
+        "label": "Process improvement",
+        "requires_planning_method": false
+      },
+      {
+        "code": "professional-learning",
+        "label": "Professional learning / PLC",
+        "requires_planning_method": true
+      },
+      {
+        "code": "program-building",
+        "label": "Program building",
+        "requires_planning_method": true
+      },
+      {
+        "code": "resource-allocation",
+        "label": "Resource allocation (fiscal + human)",
+        "requires_planning_method": false
+      },
+      {
+        "code": "schedule-framework",
+        "label": "Schedule / timetable framework",
+        "requires_planning_method": true
+      },
+      {
+        "code": "school-culture",
+        "label": "School culture",
+        "requires_planning_method": false
+      },
+      {
+        "code": "schoolwide-learner-outcomes",
+        "label": "School-wide learner outcomes (SLOs)",
+        "requires_planning_method": true
+      },
+      {
+        "code": "staff-career-development",
+        "label": "Staff career development",
+        "requires_planning_method": true
+      },
+      {
+        "code": "staffing-resourcing",
+        "label": "Staffing / resourcing",
+        "requires_planning_method": false
+      },
+      {
+        "code": "communications",
+        "label": "Stakeholder communications",
+        "requires_planning_method": false
+      },
+      {
+        "code": "student-wellbeing",
+        "label": "Student well-being (SEL / pastoral)",
+        "requires_planning_method": false
+      },
+      {
+        "code": "student-support-systems",
+        "label": "Systems of support (MTSS / intervention)",
+        "requires_planning_method": true
+      },
+      {
+        "code": "tool-or-platform",
+        "label": "Tool / platform",
+        "requires_planning_method": true
+      },
+      {
+        "code": "vision-mission-development",
+        "label": "Vision & mission",
+        "requires_planning_method": false
+      }
+    ],
+    "planning_methods": [
+      {
+        "name": "Data quality improvement",
+        "rationale": "Improves the visibility and usability of a data feed.",
+        "applicable_improvement_types": [
+          "data-collection-improvement"
+        ],
+        "steps": [
+          "Define metrics and intended decisions",
+          "Revise instrument / collection method",
+          "Collect baseline",
+          "Publish dashboard / report to consumers",
+          "Review usability with consumers; iterate"
+        ]
+      },
+      {
+        "name": "Event design (recurring)",
+        "rationale": "Design and run a school event with debrief cycle.",
+        "applicable_improvement_types": [
+          "event-design"
+        ],
+        "steps": [
+          "Draft schedule",
+          "Assign personnel",
+          "Prepare materials",
+          "Run event",
+          "Debrief; revise for next cycle"
+        ]
+      },
+      {
+        "name": "Policy revision (6-step consultative)",
+        "rationale": "Surfaces the propose→consult→revise→publish→propagate cycle. Used for the 2025-26 SLO revision.",
+        "applicable_improvement_types": [
+          "policy-establishment",
+          "policy-revision"
+        ],
+        "steps": [
+          "Present options at admin meeting",
+          "Finalize initial draft",
+          "Publicize draft to stakeholders for feedback",
+          "Integrate feedback",
+          "Finalize after feedback and publish",
+          "Propagate / embed into downstream artifacts"
+        ]
+      },
+      {
+        "name": "Tool / platform customization",
+        "rationale": "Customize a platform for school needs, then train and support.",
+        "applicable_improvement_types": [
+          "tool-or-platform"
+        ],
+        "steps": [
+          "Customize platform for school needs",
+          "Build training materials and run training",
+          "Provide ongoing support",
+          "Collect user feedback; iterate"
+        ]
+      }
+    ],
+    "areas_for_improvement": [
+      {
+        "code": "afi-bilingual",
+        "label": "Bilingual Environment",
+        "description": ""
+      },
+      {
+        "code": "afi-community",
+        "label": "Community Involvement",
+        "description": ""
+      },
+      {
+        "code": "afi-curriculum",
+        "label": "Curriculum and Learning",
+        "description": ""
+      },
+      {
+        "code": "afi-pd",
+        "label": "Faculty PD and PLC",
+        "description": ""
+      },
+      {
+        "code": "afi-resources",
+        "label": "Resources and Tools",
+        "description": ""
+      },
+      {
+        "code": "afi-school-culture",
+        "label": "School Culture",
+        "description": ""
+      },
+      {
+        "code": "afi-data",
+        "label": "Student Data and Well-being",
+        "description": ""
+      }
+    ],
+    "learner_outcomes": [
+      {
+        "code": "bilingual-communicators",
+        "label": "Bilingual Communicators",
+        "description": ""
+      },
+      {
+        "code": "compassionate",
+        "label": "Compassionate",
+        "description": ""
+      },
+      {
+        "code": "confident",
+        "label": "Confident",
+        "description": "Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas."
+      },
+      {
+        "code": "engaged",
+        "label": "Engaged",
+        "description": ""
+      },
+      {
+        "code": "innovative",
+        "label": "Innovative",
+        "description": ""
+      },
+      {
+        "code": "reflective",
+        "label": "Reflective",
+        "description": ""
+      },
+      {
+        "code": "responsible",
+        "label": "Responsible",
+        "description": ""
+      }
+    ],
+    "draft_state": {
+      "current_state": "Chiway-Repton School Xiamen has adopted seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — but they currently function more as a published list than as an operational instrument. The SLOs appear in orientation materials and on classroom walls, yet they are not consistently named in unit planning, not consistently surfaced in formative or summative assessment design, not consistently invoked in student-facing feedback or self-reflection routines, and not consistently used by divisional leadership when reviewing teaching practice or student work. The Confident outcome has the only published behavioral descriptor; the other six are single-word labels without shared classroom-level definitions, which means teachers across the bilingual program, the subject departments, the homeroom system, and the co-curricular program apply them inconsistently or not at all. Student data conversations, PLC agendas, and parent communications rarely cite an SLO as the lens through which a result is being interpreted, so the link from mission to daily practice is weak in evidence even where it is strong in intent.",
+      "desired_state": "By the end of the 2025-2026 accreditation cycle, the seven SLOs are the school's working language for learning across all four framing audiences — schoolwide, teaching, student, and parent. Each SLO carries a shared, school-authored behavioral descriptor at the depth of the current Confident descriptor, written collaboratively by faculty and validated by leadership. Every department's unit plans name the one or two SLOs each unit advances, with at least one assessment artifact per unit that produces SLO-tagged evidence of student progress. Students use the SLO vocabulary in self-reflection at defined points in the year — minimally at term reporting and at portfolio review — and can name which SLOs a given piece of their work demonstrates. PLC cycles in every division open with an SLO frame and close with SLO-tagged evidence of student learning. Parent reporting at each reporting cycle includes an SLO-organized narrative section in addition to subject grades. Leadership reviews — classroom walkthroughs, work-sample reviews, and the annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 — use the SLOs as the organizing categories for what is being looked for and what counts as evidence.",
+      "rationale": "WASC standard A1 requires that the school's mission be collectively understood and actively implemented across the school community, and the SLOs are the operational expression of Chiway-Repton's mission areas of Academic excellence, Caring and safe community, and Global citizenship; an SLO set that is published but not practiced leaves A1 underevidenced. Standard A4 requires data-driven continuous improvement, and without SLO-tagged evidence the school cannot show longitudinal progress against its own stated learner profile. Standards B1, B2, and B3 require curriculum, instruction, and assessment that respond to student needs and measure progress against shared outcomes — the SLOs are precisely those shared outcomes, and at present they do not consistently shape unit design, classroom practice, or assessment analysis. Standard C1 requires shared responsibility for student growth, which is hard to demonstrate when stakeholder groups — Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee — are not using a common vocabulary for what growth means. This work is timed for the 2025-2026 cycle because the school is entering the self-study window and because seven of the eight area-for-improvement domains touch SLO usage directly: Bilingual Environment (the Bilingual Communicators outcome), Curriculum and Learning (SLO-aligned unit and assessment design), Faculty PD and PLC (descriptor authoring and SLO-framed PLC cycles), School Culture (Compassionate, Responsible, and Engaged as lived norms), Student Data and Well-being (SLO-tagged evidence in data conversations), Community Involvement (SLO-organized parent reporting), and Resources and Tools (the templates and gradebook fields that carry SLO tagging). Acting now positions the school to enter the self-study with a year of operating evidence rather than a retrospective claim.",
+      "student_impact_framing": "Students experience a school in which the seven learner outcomes are not posters but the actual language adults and peers use to describe learning. A student can name which SLOs a unit is advancing before the unit begins, can point to artifacts in their own work that demonstrate progress on specific SLOs, and can speak to their growth on each SLO in term reflections and portfolio reviews. Bilingual Communicators becomes legible in concrete language-use evidence across both Chinese-medium and English-medium settings rather than an aspiration tied only to language-class grades. Confident, Reflective, and Engaged become observable habits the student is supported to develop, with feedback that names the SLO it is strengthening. Compassionate and Responsible become operative norms in the homeroom and co-curricular program, recognized in real situations rather than awarded generically. Innovative becomes visible in tasks that explicitly invite it and in evidence the student themselves curates. Parents receive reporting that lets them see their child's growth as a learner along the school's stated outcomes, not only as a subject-grade aggregate, which gives families a shared vocabulary with the school for supporting growth at home.",
+      "provenance": "This plan draws on the school's existing published SLO set (Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, Responsible), the existing behavioral descriptor for Confident as the model for the descriptor-authoring work, the school's stated mission areas (Academic excellence, Caring and safe community, Global citizenship), and the seven area-for-improvement domains the school has identified as priorities for this cycle. It is anchored to the WASC 2025-2026 accreditation standards, specifically A1 (Vision and Mission), A4 (Continuous Improvement), B1 (Curriculum), B2 (Teaching and Learning), B3 (Assessment and Data Analysis), and C1 (School Culture). It assumes the stakeholder groups already named in the school's plan structure — Administration / Leadership, Staff / Faculty, Students, Parents, Parent Committee, and Admissions Applicants — as the audiences for the SLO vocabulary and reporting. Operating evidence to be generated during the cycle includes the authored SLO descriptors, unit plans with SLO tagging, SLO-tagged assessment artifacts, PLC minutes opening and closing on SLO frames, classroom walkthrough notes organized by SLO, term and portfolio student reflections, and the SLO-organized section of parent reporting; these constitute the evidence base the self-study will cite.",
+      "milestones-0-label": "Seven SLO behavioral descriptors authored by cross-divisional faculty teams and validated by the Senior Leadership Team, each at the depth of the existing Confident descriptor and published in the staff handbook, parent handbook, and student-facing materials",
+      "milestones-0-target_date": "2025-11-28",
+      "milestones-0-improvement_type": "schoolwide-learner-outcomes",
+      "milestones-0-planning_method": "Policy revision (6-step consultative)",
+      "milestones-1-label": "Unit-planning template and gradebook updated so every department's Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, with PLC cycles in every division opening on an SLO frame and closing on SLO-tagged evidence",
+      "milestones-1-target_date": "2026-02-13",
+      "milestones-1-improvement_type": "curriculum-development",
+      "milestones-1-planning_method": "Tool / platform customization",
+      "milestones-2-label": "Term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student and an SLO self-reflection from every student, across EY, Primary, Secondary, and the bilingual program",
+      "milestones-2-target_date": "2026-05-15",
+      "milestones-2-improvement_type": "communications",
+      "milestones-3-label": "Annual self-study evidence binder against WASC A1, A4, B1, B2, B3, and C1 compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts",
+      "milestones-3-target_date": "2026-07-24",
+      "milestones-3-improvement_type": "compliance-accountability",
+      "criteria-0-text": "Each of the seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored collaboratively by faculty across the bilingual program, subject departments, homeroom system, and co-curricular program and validated by divisional leadership, and the descriptor set is posted in the staff handbook, the student-facing learning materials, and the parent reporting portal.",
+      "criteria-0-verification_kind": "inspection",
+      "criteria-1-text": "Every department's unit plans for the 2025-2026 cycle name the one or two SLOs each unit advances and attach at least one assessment artifact per unit that produces SLO-tagged evidence of student progress, verifiable by inspecting the unit-plan repository for the year.",
+      "criteria-1-verification_kind": "target",
+      "criteria-1-target_value": "100",
+      "criteria-1-target_unit": "percent of departmental units in the 2025-2026 cycle whose unit plan names its advancing SLO(s) and links at least one SLO-tagged assessment artifact",
+      "criteria-1-baseline": "0",
+      "criteria-2-text": "PLC cycles in every division open with an SLO frame on the agenda and close with SLO-tagged evidence of student learning recorded in the PLC minutes, evidenced by a leadership review of PLC minutes across the year.",
+      "criteria-2-verification_kind": "target",
+      "criteria-2-target_value": "90",
+      "criteria-2-target_unit": "percent of logged PLC cycles across all divisions in the 2025-2026 cycle whose minutes show both an opening SLO frame and a closing SLO-tagged evidence entry",
+      "criteria-2-baseline": "0",
+      "criteria-3-text": "Parent reporting at each reporting cycle of 2025-2026 includes an SLO-organized narrative section, in addition to subject grades, for every enrolled student, with the SLO narrative section present in the report template and populated for each student on each cycle.",
+      "criteria-3-verification_kind": "inspection",
+      "criteria-4-text": "Students use the SLO vocabulary in self-reflection at term reporting and at portfolio review and can name which SLOs a given piece of their work demonstrates, as judged by divisional leadership against a shared rubric applied to a sampled set of student reflections and portfolio entries from each division.",
+      "criteria-4-verification_kind": "judgment",
+      "criteria-5-text": "The annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 is organized with the seven SLOs as the categories under which evidence is gathered and presented, with each of the six standards' evidence section structured by SLO and drawing on SLO-tagged classroom walkthrough notes, work-sample reviews, PLC minutes, and parent-reporting narratives produced during the cycle.",
+      "criteria-5-verification_kind": "inspection",
+      "learner_outcomes_targeted-0-label": "Bilingual Communicators",
+      "learner_outcomes_targeted-0-rationale": "The plan explicitly names Bilingual Communicators as the SLO addressed by the Bilingual Environment area-for-improvement work, and the desired state requires shared behavioral descriptors and SLO-tagged assessment evidence across the bilingual program.",
+      "learner_outcomes_targeted-1-label": "Compassionate",
+      "learner_outcomes_targeted-1-rationale": "The rationale names Compassionate as one of the lived-norm outcomes that School Culture work will operationalize, and the desired state requires a school-authored behavioral descriptor for this SLO at the depth of the current Confident descriptor.",
+      "learner_outcomes_targeted-2-label": "Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.",
+      "learner_outcomes_targeted-2-rationale": "Confident is the one SLO with an existing published descriptor and is the depth-benchmark the plan uses for authoring the other six descriptors; it is therefore directly in scope as the model the school will validate and extend.",
+      "learner_outcomes_targeted-3-label": "Engaged",
+      "learner_outcomes_targeted-3-rationale": "Engaged is named in the rationale as a lived-norm outcome for School Culture work and is one of the six single-word labels the desired state commits to giving a shared behavioral descriptor, unit-plan naming, and SLO-tagged assessment evidence.",
+      "learner_outcomes_targeted-4-label": "Innovative",
+      "learner_outcomes_targeted-4-rationale": "Innovative is among the six SLOs currently functioning as a single-word label without a shared descriptor; the desired state requires it to carry a faculty-authored descriptor, appear in unit plans, and produce SLO-tagged assessment evidence like every other outcome.",
+      "learner_outcomes_targeted-5-label": "Reflective",
+      "learner_outcomes_targeted-5-rationale": "Reflective is directly implicated by the desired-state commitment that students use SLO vocabulary in self-reflection at term reporting and portfolio review and can name which SLOs a piece of their work demonstrates.",
+      "learner_outcomes_targeted-6-label": "Responsible",
+      "learner_outcomes_targeted-6-rationale": "Responsible is named in the rationale as a lived-norm outcome for School Culture work and is one of the six labels the desired state commits to giving a shared behavioral descriptor and SLO-tagged classroom evidence.",
+      "mission_areas_targeted-0-label": "Academic excellence",
+      "mission_areas_targeted-0-rationale": "The rationale states the SLOs are the operational expression of Academic excellence, and the desired state ties SLO-tagged unit design, assessment artifacts, and PLC evidence cycles directly to instructional quality across every department.",
+      "mission_areas_targeted-1-label": "Caring and safe community",
+      "mission_areas_targeted-1-rationale": "The rationale identifies the SLOs as the operational expression of Caring and safe community, and the desired state makes Compassionate, Responsible, and Engaged lived norms through School Culture work and shared stakeholder vocabulary.",
+      "mission_areas_targeted-2-label": "Global citizenship",
+      "mission_areas_targeted-2-rationale": "The rationale explicitly names Global citizenship as one of the three mission areas the SLOs operationally express, and outcomes like Bilingual Communicators, Compassionate, and Responsible are the school's daily-practice expression of that mission area.",
+      "areas_for_improvement-0-label": "Bilingual Environment",
+      "areas_for_improvement-0-rationale": "The rationale ties the Bilingual Communicators SLO directly to Bilingual Environment work, and the desired state extends SLO naming and tagging across the bilingual program's unit plans and assessments.",
+      "areas_for_improvement-1-label": "Curriculum and Learning",
+      "areas_for_improvement-1-rationale": "The desired state requires every department's unit plans to name the SLOs each unit advances and to produce at least one SLO-tagged assessment artifact per unit — the core of Curriculum and Learning.",
+      "areas_for_improvement-2-label": "Faculty PD and PLC",
+      "areas_for_improvement-2-rationale": "The plan requires faculty to collaboratively author behavioral descriptors for six SLOs and to open and close every PLC cycle with SLO framing and SLO-tagged evidence — descriptor authoring and PLC redesign are Faculty PD and PLC work.",
+      "areas_for_improvement-3-label": "School Culture",
+      "areas_for_improvement-3-rationale": "The rationale identifies Compassionate, Responsible, and Engaged as lived norms to be operationalized through School Culture work, moving SLOs from wall posters to shared community language.",
+      "areas_for_improvement-4-label": "Student Data and Well-being",
+      "areas_for_improvement-4-rationale": "The current state notes student-data conversations rarely cite an SLO as the interpretive lens; the desired state requires SLO-tagged evidence in PLC data cycles and term-level student self-reflection, both Student Data and Well-being concerns.",
+      "areas_for_improvement-5-label": "Community Involvement",
+      "areas_for_improvement-5-rationale": "The desired state requires SLO-organized narrative sections in parent reporting at each reporting cycle, and the rationale names Community Involvement as the domain through which parent-facing SLO communication is delivered.",
+      "areas_for_improvement-6-label": "Resources and Tools",
+      "areas_for_improvement-6-rationale": "The rationale names Resources and Tools as the domain that supplies the templates and gradebook fields that carry SLO tagging — the infrastructure the unit-plan naming, assessment tagging, and parent reporting all depend on.",
+      "stakeholder_impact-0-label": "Administration / Leadership",
+      "stakeholder_impact-0-rationale": "The desired state requires leadership to use SLOs as the organizing categories for classroom walkthroughs, work-sample reviews, and the annual WASC self-study, and the rationale names Administration / Leadership as a stakeholder that must share the SLO vocabulary under standard C1.",
+      "stakeholder_impact-1-label": "Staff / Faculty",
+      "stakeholder_impact-1-rationale": "Faculty author the behavioral descriptors, name SLOs in unit plans, generate SLO-tagged assessment artifacts, and open and close every PLC cycle with an SLO frame — the plan's central operational load sits with Staff / Faculty.",
+      "stakeholder_impact-2-label": "Students",
+      "stakeholder_impact-2-rationale": "The desired state requires students to use SLO vocabulary in self-reflection at term reporting and portfolio review and to name which SLOs a given piece of their work demonstrates, making Students direct users of the new instrument.",
+      "stakeholder_impact-3-label": "Parents",
+      "stakeholder_impact-3-rationale": "Parent reporting at each reporting cycle is to include an SLO-organized narrative section in addition to subject grades, and the rationale names Parents as a stakeholder group that must share the SLO vocabulary under standard C1.",
+      "stakeholder_impact-4-label": "Parent Committee",
+      "stakeholder_impact-4-rationale": "The rationale explicitly names the Parent Committee among the stakeholder groups that must share a common SLO vocabulary for what growth means, situating the committee as a partner in Community Involvement and SLO-organized parent reporting."
+    }
+  },
+  "agent_response_raw": "{\"method\":\"Policy revision (6-step consultative)\",\"steps\":[{\"description\":\"Senior Leadership Team convenes the Principal, Vice Principal for Academics, Vice Principal for Bilingual Programme, Heads of Early Years, Primary, and Secondary, the Heads of Chinese and English Departments, the Head of Co-Curricular Programme, the Head of Student Affairs, and the Head of Admissions and Communications to present options for the SLO descriptor-authoring work and the downstream SLO-tagging architecture. The meeting works from the existing Confident descriptor as the depth benchmark, names the six SLOs requiring new descriptors (Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, Responsible), tables three authoring-team configurations (cross-divisional by SLO, by-division then cross-validated, central drafting then divisional consultation), three SLO-tagging architectures for the unit-planning template and gradebook (per-unit one-or-two SLO field, per-assessment SLO field, both), and a calendar that lands authored descriptors by 2025-11-28, the Term 2 unit-planning rollover, the Term reporting cycles, and the self-study evidence binder by 2026-07-24. The meeting selects one authoring-team configuration and one tagging architecture and records the selection in the SLT minutes alongside the named owners for each of the seven descriptor-authoring teams and the named owners for the unit-template, gradebook, parent-report-template, and PLC-minutes-template revisions.\",\"assessment\":\"SLT minutes record the selected authoring-team configuration, the selected SLO-tagging architecture, the named lead and members for each of the seven descriptor-authoring teams covering all seven SLOs, and the named owners for the unit-planning template revision, the gradebook configuration, the parent-report template revision, the PLC-minutes template revision, the classroom-walkthrough form revision, and the student-reflection prompt set.\"},{\"description\":\"The seven descriptor-authoring teams draft behavioral descriptors for Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, and Responsible at the depth of the existing Confident descriptor, with Confident carried forward unchanged as the reference. Each team includes faculty from the Bilingual Programme, the Chinese Department, the English Department, the Primary and Secondary subject departments, the Early Years team, the homeroom system, and the Co-Curricular Programme so that the descriptor language is operable across Chinese-medium and English-medium settings, across EY, Primary, and Secondary, and across academic and co-curricular contexts. The Vice Principal for Academics and the Vice Principal for Bilingual Programme co-edit the seven drafts into a single descriptor set that is internally consistent in voice, depth, and observable-behavior framing, cross-references the three mission areas of Academic excellence, Caring and safe community, and Global citizenship, and is mapped to WASC standards A1, A4, B1, B2, B3, and C1. The Heads of Early Years, Primary, and Secondary review the consolidated draft for divisional fit and the Senior Leadership Team approves it for publication to stakeholders for feedback.\",\"assessment\":\"The consolidated initial-draft descriptor set covers all seven SLOs at the depth of the Confident descriptor, carries a mapping table from each SLO to the mission areas and to WASC A1, A4, B1, B2, B3, and C1, and is signed off by the Vice Principal for Academics, the Vice Principal for Bilingual Programme, the Heads of Early Years, Primary, and Secondary, and the Principal in the SLT minutes.\"},{\"description\":\"The Head of Admissions and Communications, working with the Vice Principal for Academics, publicizes the initial draft to all five impacted stakeholder groups along the channel each group already uses. Staff and Faculty receive the draft in a whole-staff briefing followed by structured feedback in each division's PLC and in the Bilingual Programme cross-divisional meeting, with a written response form due within two weeks. Students receive a division-appropriate version through homeroom in Primary and Secondary and through EY teacher-led conversations, with student-voice feedback collected by the Head of Student Affairs in age-appropriate formats. Parents receive the draft through the parent reporting portal and a parent-evening presentation in each division, with written feedback collected through the portal. The Parent Committee receives the draft in a dedicated session with the Principal and the Head of Admissions and Communications and returns written commentary. Administration and Leadership review the draft in the SLT meeting that closes the consultation window. Each channel records its feedback in a single consultation log organized by SLO and by stakeholder group.\",\"assessment\":\"The consultation log shows feedback received from each of the five stakeholder groups (Administration / Leadership, Staff / Faculty, Students, Parents, and Parent Committee) on each of the seven SLO descriptors, with timestamps and the channel of origin recorded for each entry, and the Head of Admissions and Communications confirms in writing that every division and the Bilingual Programme have returned faculty feedback and that every division has returned student feedback.\"},{\"description\":\"The seven descriptor-authoring teams reconvene under the Vice Principal for Academics and the Vice Principal for Bilingual Programme to integrate the consultation feedback into a revised descriptor set. Each team works through its SLO's feedback entries in the consultation log, records a disposition for each entry (incorporated, partially incorporated with rationale, not incorporated with rationale), and revises the descriptor accordingly so that the resulting language is operable across the Bilingual Programme, the subject departments, the homeroom system, and the Co-Curricular Programme, and across EY, Primary, and Secondary. The Heads of Early Years, Primary, and Secondary review the revised set for divisional fit and the Head of Student Affairs reviews it for student-facing clarity. The disposition table and the revised descriptor set are presented to the Senior Leadership Team for the finalization decision.\",\"assessment\":\"The disposition table records a disposition with rationale for every consultation-log entry across all seven SLOs and all five stakeholder groups, the revised descriptor set retains the depth benchmark of the Confident descriptor, and the Vice Principal for Academics, the Vice Principal for Bilingual Programme, the Heads of Early Years, Primary, and Secondary, and the Head of Student Affairs sign the revised set as ready for SLT finalization.\"},{\"description\":\"The Senior Leadership Team finalizes the revised descriptor set by 2025-11-28, the Principal authorizes publication, and the Head of Admissions and Communications publishes the seven descriptors as a single canonical artifact in the staff handbook, the student-facing learning materials in the appropriate division-level form, the parent handbook, the parent reporting portal, and the school website's accreditation section. Publication includes the SLO-to-mission-area mapping and the SLO-to-WASC-standard mapping (A1, A4, B1, B2, B3, C1) so that downstream artifact owners and the self-study evidence binder draw on the same source of truth. The Vice Principal for Academics issues the version-stamped descriptor set to the unit-template owner, the gradebook configurator, the parent-report-template owner, the PLC-minutes template owner, the classroom-walkthrough form owner, and the student-reflection prompt owner as the input to the propagation step.\",\"assessment\":\"The seven finalized SLO descriptors with the mission-area and WASC-standard mapping are published, version-stamped, and dated on or before 2025-11-28 in the staff handbook, the parent handbook, the parent reporting portal, the student-facing learning materials in each division's form, and the school website's accreditation section, and the version-stamped artifact is in the hands of each downstream-artifact owner with receipt confirmed in writing.\"},{\"description\":\"The downstream-artifact owners embed the finalized SLO descriptors into the operating instruments of the school so that the SLOs become the working language for learning across all four framing audiences and across every division for the remainder of the 2025-2026 cycle. The Vice Principal for Academics revises the unit-planning template to require one or two SLOs per unit and at least one SLO-tagged assessment artifact per unit, and rolls the revised template into the Term 2 unit-planning round in Early Years, Primary, and Secondary and in the Bilingual Programme. The gradebook configurator adds the SLO field at the assessment level and configures the report generator to emit an SLO-organized parent narrative section at each reporting cycle. The PLC-minutes template owner revises the template so that every PLC agenda opens with an SLO frame and the closing item records SLO-tagged evidence of student learning, and the Heads of Early Years, Primary, and Secondary direct their division's PLC chairs to use the revised template from the next cycle. The classroom-walkthrough form owner reorganizes the form so that walkthrough notes are captured under the seven SLOs as the organizing categories. The Head of Student Affairs publishes the student-reflection prompt set for term reporting and portfolio review in age-appropriate forms for EY, Primary, and Secondary. The Head of Co-Curricular Programme adds the SLO frame to the co-curricular planning and recognition routines so that Compassionate, Responsible, and Engaged are evidenced in co-curricular settings. The Head of Admissions and Communications updates the parent-evening agenda template and the admissions-information materials so that the SLO vocabulary is the through-line. The Senior Leadership Team schedules the self-study evidence binder's construction against WASC A1, A4, B1, B2, B3, and C1 using the seven SLOs as the organizing evidence categories, with the binder due 2026-07-24.\",\"assessment\":\"The Term 2 unit-planning round shows the revised template in use across Early Years, Primary, Secondary, and the Bilingual Programme; the gradebook carries the SLO field at the assessment level and the report generator produces the SLO-organized parent narrative section at each reporting cycle; the PLC-minutes template is in use in every division with opening SLO frame and closing SLO-tagged evidence; the classroom-walkthrough form is organized by SLO; the student-reflection prompt set is published in division-appropriate forms; the co-curricular planning and recognition routines record SLO evidence; the parent-evening agenda template and admissions-information materials carry the SLO vocabulary; and the self-study evidence binder's construction plan against A1, A4, B1, B2, B3, and C1 organized by the seven SLOs is on the SLT calendar with the 2026-07-24 due date.\"}]}\n",
+  "agent_response_parsed": [
+    {
+      "description": "Senior Leadership Team convenes the Principal, Vice Principal for Academics, Vice Principal for Bilingual Programme, Heads of Early Years, Primary, and Secondary, the Heads of Chinese and English Departments, the Head of Co-Curricular Programme, the Head of Student Affairs, and the Head of Admissions and Communications to present options for the SLO descriptor-authoring work and the downstream SLO-tagging architecture. The meeting works from the existing Confident descriptor as the depth benchmark, names the six SLOs requiring new descriptors (Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, Responsible), tables three authoring-team configurations (cross-divisional by SLO, by-division then cross-validated, central drafting then divisional consultation), three SLO-tagging architectures for the unit-planning template and gradebook (per-unit one-or-two SLO field, per-assessment SLO field, both), and a calendar that lands authored descriptors by 2025-11-28, the Term 2 unit-planning rollover, the Term reporting cycles, and the self-study evidence binder by 2026-07-24. The meeting selects one authoring-team configuration and one tagging architecture and records the selection in the SLT minutes alongside the named owners for each of the seven descriptor-authoring teams and the named owners for the unit-template, gradebook, parent-report-template, and PLC-minutes-template revisions.",
+      "assessment": "SLT minutes record the selected authoring-team configuration, the selected SLO-tagging architecture, the named lead and members for each of the seven descriptor-authoring teams covering all seven SLOs, and the named owners for the unit-planning template revision, the gradebook configuration, the parent-report template revision, the PLC-minutes template revision, the classroom-walkthrough form revision, and the student-reflection prompt set."
+    },
+    {
+      "description": "The seven descriptor-authoring teams draft behavioral descriptors for Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, and Responsible at the depth of the existing Confident descriptor, with Confident carried forward unchanged as the reference. Each team includes faculty from the Bilingual Programme, the Chinese Department, the English Department, the Primary and Secondary subject departments, the Early Years team, the homeroom system, and the Co-Curricular Programme so that the descriptor language is operable across Chinese-medium and English-medium settings, across EY, Primary, and Secondary, and across academic and co-curricular contexts. The Vice Principal for Academics and the Vice Principal for Bilingual Programme co-edit the seven drafts into a single descriptor set that is internally consistent in voice, depth, and observable-behavior framing, cross-references the three mission areas of Academic excellence, Caring and safe community, and Global citizenship, and is mapped to WASC standards A1, A4, B1, B2, B3, and C1. The Heads of Early Years, Primary, and Secondary review the consolidated draft for divisional fit and the Senior Leadership Team approves it for publication to stakeholders for feedback.",
+      "assessment": "The consolidated initial-draft descriptor set covers all seven SLOs at the depth of the Confident descriptor, carries a mapping table from each SLO to the mission areas and to WASC A1, A4, B1, B2, B3, and C1, and is signed off by the Vice Principal for Academics, the Vice Principal for Bilingual Programme, the Heads of Early Years, Primary, and Secondary, and the Principal in the SLT minutes."
+    },
+    {
+      "description": "The Head of Admissions and Communications, working with the Vice Principal for Academics, publicizes the initial draft to all five impacted stakeholder groups along the channel each group already uses. Staff and Faculty receive the draft in a whole-staff briefing followed by structured feedback in each division's PLC and in the Bilingual Programme cross-divisional meeting, with a written response form due within two weeks. Students receive a division-appropriate version through homeroom in Primary and Secondary and through EY teacher-led conversations, with student-voice feedback collected by the Head of Student Affairs in age-appropriate formats. Parents receive the draft through the parent reporting portal and a parent-evening presentation in each division, with written feedback collected through the portal. The Parent Committee receives the draft in a dedicated session with the Principal and the Head of Admissions and Communications and returns written commentary. Administration and Leadership review the draft in the SLT meeting that closes the consultation window. Each channel records its feedback in a single consultation log organized by SLO and by stakeholder group.",
+      "assessment": "The consultation log shows feedback received from each of the five stakeholder groups (Administration / Leadership, Staff / Faculty, Students, Parents, and Parent Committee) on each of the seven SLO descriptors, with timestamps and the channel of origin recorded for each entry, and the Head of Admissions and Communications confirms in writing that every division and the Bilingual Programme have returned faculty feedback and that every division has returned student feedback."
+    },
+    {
+      "description": "The seven descriptor-authoring teams reconvene under the Vice Principal for Academics and the Vice Principal for Bilingual Programme to integrate the consultation feedback into a revised descriptor set. Each team works through its SLO's feedback entries in the consultation log, records a disposition for each entry (incorporated, partially incorporated with rationale, not incorporated with rationale), and revises the descriptor accordingly so that the resulting language is operable across the Bilingual Programme, the subject departments, the homeroom system, and the Co-Curricular Programme, and across EY, Primary, and Secondary. The Heads of Early Years, Primary, and Secondary review the revised set for divisional fit and the Head of Student Affairs reviews it for student-facing clarity. The disposition table and the revised descriptor set are presented to the Senior Leadership Team for the finalization decision.",
+      "assessment": "The disposition table records a disposition with rationale for every consultation-log entry across all seven SLOs and all five stakeholder groups, the revised descriptor set retains the depth benchmark of the Confident descriptor, and the Vice Principal for Academics, the Vice Principal for Bilingual Programme, the Heads of Early Years, Primary, and Secondary, and the Head of Student Affairs sign the revised set as ready for SLT finalization."
+    },
+    {
+      "description": "The Senior Leadership Team finalizes the revised descriptor set by 2025-11-28, the Principal authorizes publication, and the Head of Admissions and Communications publishes the seven descriptors as a single canonical artifact in the staff handbook, the student-facing learning materials in the appropriate division-level form, the parent handbook, the parent reporting portal, and the school website's accreditation section. Publication includes the SLO-to-mission-area mapping and the SLO-to-WASC-standard mapping (A1, A4, B1, B2, B3, C1) so that downstream artifact owners and the self-study evidence binder draw on the same source of truth. The Vice Principal for Academics issues the version-stamped descriptor set to the unit-template owner, the gradebook configurator, the parent-report-template owner, the PLC-minutes template owner, the classroom-walkthrough form owner, and the student-reflection prompt owner as the input to the propagation step.",
+      "assessment": "The seven finalized SLO descriptors with the mission-area and WASC-standard mapping are published, version-stamped, and dated on or before 2025-11-28 in the staff handbook, the parent handbook, the parent reporting portal, the student-facing learning materials in each division's form, and the school website's accreditation section, and the version-stamped artifact is in the hands of each downstream-artifact owner with receipt confirmed in writing."
+    },
+    {
+      "description": "The downstream-artifact owners embed the finalized SLO descriptors into the operating instruments of the school so that the SLOs become the working language for learning across all four framing audiences and across every division for the remainder of the 2025-2026 cycle. The Vice Principal for Academics revises the unit-planning template to require one or two SLOs per unit and at least one SLO-tagged assessment artifact per unit, and rolls the revised template into the Term 2 unit-planning round in Early Years, Primary, and Secondary and in the Bilingual Programme. The gradebook configurator adds the SLO field at the assessment level and configures the report generator to emit an SLO-organized parent narrative section at each reporting cycle. The PLC-minutes template owner revises the template so that every PLC agenda opens with an SLO frame and the closing item records SLO-tagged evidence of student learning, and the Heads of Early Years, Primary, and Secondary direct their division's PLC chairs to use the revised template from the next cycle. The classroom-walkthrough form owner reorganizes the form so that walkthrough notes are captured under the seven SLOs as the organizing categories. The Head of Student Affairs publishes the student-reflection prompt set for term reporting and portfolio review in age-appropriate forms for EY, Primary, and Secondary. The Head of Co-Curricular Programme adds the SLO frame to the co-curricular planning and recognition routines so that Compassionate, Responsible, and Engaged are evidenced in co-curricular settings. The Head of Admissions and Communications updates the parent-evening agenda template and the admissions-information materials so that the SLO vocabulary is the through-line. The Senior Leadership Team schedules the self-study evidence binder's construction against WASC A1, A4, B1, B2, B3, and C1 using the seven SLOs as the organizing evidence categories, with the binder due 2026-07-24.",
+      "assessment": "The Term 2 unit-planning round shows the revised template in use across Early Years, Primary, Secondary, and the Bilingual Programme; the gradebook carries the SLO field at the assessment level and the report generator produces the SLO-organized parent narrative section at each reporting cycle; the PLC-minutes template is in use in every division with opening SLO frame and closing SLO-tagged evidence; the classroom-walkthrough form is organized by SLO; the student-reflection prompt set is published in division-appropriate forms; the co-curricular planning and recognition routines record SLO evidence; the parent-evening agenda template and admissions-information materials carry the SLO vocabulary; and the self-study evidence binder's construction plan against A1, A4, B1, B2, B3, and C1 organized by the seven SLOs is on the SLT calendar with the 2026-07-24 due date."
+    }
+  ],
+  "parse_note": "Proposed from the \"Policy revision (6-step consultative)\" recipe — review the steps",
+  "schema_validation": "passed",
+  "draft_changed": true
+}

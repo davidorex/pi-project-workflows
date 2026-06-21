@@ -1,0 +1,29 @@
+{
+  "title": "Prompt & workflow refinement — governing option space",
+  "status": "complete",
+  "layer": "L3",
+  "type": "landscape",
+  "question": "What are the available options for refining the plan-generation prompts and workflow, given the research + heuristics, and how do they GOVERN the specifics?",
+  "method": "synthesis of R-0002..R-0010 + R-0009 heuristics + R-0007/R-0008 authoritative + DEC-48; structured into governing build-tracks. Full body: the findings_document.",
+  "findings_summary": "Governing option space (the prompt/workflow specifics conform to it): PROMPT-level (FEAT-005) = bake the heuristics + authoritative structure into generation (distributed ownership; in+out-of-class incl. SAO/HRT/YGL/Dorm; bilingual dual-purpose; HOW+frequency; diverse focus; measurement-tools-key; ACS-WASC per-Goal header + 6-col labels; no cert-risk meta + standards-key+name + Theme=title; verbatim labels; grounding-leanness). WORKFLOW-level (FEAT-006) = a post-generation transform/distiller (target-band distillation; coverage floors; grounded extrapolation; re-validation harness; distance-to-band scorer; iterate-to-band w/ separate judge; optional per-step decomposition). Three mechanism axes (generation-bias vs post-gen transform vs view-layer; LLM vs deterministic vs hybrid; one vs tiered artifacts). Recommended composition: generate-standard -> deterministic derivation -> freeze-list+budget -> LLM prose-distill -> re-validate+coverage-floors -> iterate-to-band w/ separate judge -> tier. Governed by DEC-49; carried as FEAT-005/FEAT-006 acceptance criteria.",
+  "findings_document": "docs/prompt-workflow-refinement-governing-options-2026-06-08.md",
+  "citations": [
+    {
+      "label": "build-tracks (governing criteria)",
+      "path": ".context FEAT-005 (prompt) + FEAT-006 (workflow)"
+    },
+    {
+      "label": "binding heuristics",
+      "path": "R-0009 / docs/plan-generation-heuristics.md"
+    },
+    {
+      "label": "authoritative structure",
+      "path": "R-0007 + R-0008"
+    },
+    {
+      "label": "option matrix + 2026 heuristics",
+      "path": "R-0006"
+    }
+  ],
+  "grounded_at": "2026-06-08"
+}

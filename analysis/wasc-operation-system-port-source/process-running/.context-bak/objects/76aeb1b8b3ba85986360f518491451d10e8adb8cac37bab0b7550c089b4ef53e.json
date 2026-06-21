@@ -1,0 +1,5 @@
+{
+  "description": "When the user says 'read this for insight, not to reframe what we've done': report only, do not edit artifacts, do not re-characterize prior decisions. KPIs are an explicit project exclusion — never introduce, model, or foreground them.",
+  "enforcement": "manual",
+  "severity": "warning"
+}

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "The per-slice hard gate (bin/verify-slice.sh, `make verify-slice SLICE=<key>`) built for TASK-058 and committed on branch verify-gated-dev-loop (5541eb2 build, 4ac6ea6 round-2 fixes). Verified through the verify-gated loop itself: (1) orchestrator independently ran the gate-first proof bin/test-verify-slice.sh -> exit 0, all FIVE two-class assertions held (failing slice test BLOCKS exit 1; fixed passes; cosmetic-only passes + [cosmetic] WARN; empty/typo SLICE BLOCKS 'no behavioral tests matched'; flaky slice behavioral test BLOCKS, no flaky exemption); (2) `make verify-slice SLICE=verifyslicefixture` -> exit 0; (3) full project gate observed green (ruff check All passed; ruff format 485 formatted; mypy Success 326 files; pytest 3215 passed; make test-js 48/0; context-validate 0 errors / 5 pre-existing warnings). Round-1 SEPARATE adversarial audit (a1eb0879) returned Total findings: 4 (F1 dead empty-selection guard, F2 stale docstring, F3 flaky slice-test exemption masking an intermittent acceptance regression, F4 false-clean on absent substrate); round-2 IMPL (4ac6ea6) reproduced + fixed each RED->GREEN; round-2 SEPARATE adversarial audit (a1f94ede) re-ran the gate + full project gate + git diff main..HEAD and returned Total findings: 0 (all 4 fixed non-vacuously, no new defects, gate-before-commit.sh + Makefile `test` target unweakened, tree clean). Done = gate exit 0 AND audit findings == 0 (DEC-58), both observed by the orchestrator independently of the implementer.",
+  "criteria_results": [
+    {
+      "criterion": "Running the slice gate command for a given slice exits 0 if and only if every BLOCKING check passes: the slice's behavioral tests, and the soundness (types, project test suite) that the slice's own code is responsible for.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=verifyslicefixture exit 0 with the full project gate green; proof (a) a failing slice test -> exit 1; (b) fixed -> exit 0. Round-2 audit re-traced every exit path: exit 0 only on all-blocking-checks-passed; each blocking check explicitly exit 1s."
+    },
+    {
+      "criterion": "A purely cosmetic failure, a language-register warning, or a failure demonstrably pre-existing/unrelated/flaky does NOT change a passing exit code, and each such item is emitted as a structured warning rather than silently dropped.",
+      "status": "passed",
+      "evidence": "proof (c) cosmetic-only -> exit 0 + [cosmetic] WARN; language-register WARN-only (section 7); unrelated/full-suite flaky retained as warn (section 4 retry loop). F3 fix tightened ONLY the slice's own behavioral selection to block (a flaky acceptance test is a broken contract, not trivia) without over-correcting trivia into blocking — audit confirmed trivia still warns."
+    },
+    {
+      "criterion": "A failure of a behavioral acceptance test, or a type/soundness error introduced by the slice's own code, makes the command exit non-zero.",
+      "status": "passed",
+      "evidence": "proof (a) failing slice test -> exit 1; round-1 audit injected a real mypy error + a real non-flaky pytest failure and confirmed nonzero exit; F3 fix makes a fail-then-pass slice test BLOCK (proof e)."
+    },
+    {
+      "criterion": "The command's exit code is the sole pass/fail verdict — no consumer needs to read prose to decide pass or fail.",
+      "status": "passed",
+      "evidence": "Both audits traced verify-slice.sh exit paths: exit code determined solely by the blocking set; set -uo pipefail (no -e gap), no swallowed $?, no non-blocking branch affecting the exit. The orchestrator loop's continue/stop used only the exit code."
+    },
+    {
+      "criterion": "The pre-existing whole-project gate (the `test` target and the commit hook's checks) remains green and is not weakened by adding this gate.",
+      "status": "passed",
+      "evidence": "git diff main..HEAD: .claude/hooks/gate-before-commit.sh unchanged (0 lines); Makefile change purely additive (new verify-slice target + help/PHONY), the `test` target recipe byte-identical. Full project gate green on the branch. gate-before-commit.sh allowed both commits (5541eb2, 4ac6ea6), proving the gate stayed green."
+    }
+  ]
+}

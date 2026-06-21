@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nPropose the standards the plan advances. For EACH proposed standard, give:\n- \"standard\": its EXACT code, chosen from the standards listed above (e.g. \"A1\").\n- \"rationale\": a concrete free-text explanation of why this plan advances that standard — tie it to the plan's desired state and rationale.\n\nPropose at least ONE standard (a plan must advance at least one). Use ONLY codes that appear in the catalogue above; do not refer to a standard that is not listed.\n\nEvery learner outcome, guiding clause, area for improvement, policy, or division named in `rationale` MUST be a verbatim match to a label from the corresponding catalogue above.\n\nOUTPUT CONTRACT (follow exactly):"
+}

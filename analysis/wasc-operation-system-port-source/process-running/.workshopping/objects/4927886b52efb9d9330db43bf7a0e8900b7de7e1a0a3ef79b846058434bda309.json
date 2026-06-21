@@ -1,0 +1,4 @@
+{
+  "kind": "output-contract-header",
+  "body": "Return ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON."
+}

@@ -1,0 +1,10 @@
+{
+  "status": "planned",
+  "description": "Trio save layer (FEAT-010 slice 8a): persist the accumulated flat draft_state produced by run_trio_pass (planner/orchestration.py) into a saved Plan in lifecycle=proposed, owned by the school+author. The flat draft_state ({prefix}-{i}-{field} grammar, the form-POST shape) is bound through PlanCreateView's existing path (build the form/formsets from the draft_state, validate, _save_plan creating Plan(lifecycle=proposed), save_nested persisting the full child graph + cross-row bindings), inside one transaction.atomic so a mid-save failure persists no Plan. This is the prerequisite for slice 8b (gate-closure runs _check_promotion_gates on a SAVED Plan). Out of scope here: the promotion-gate check, the gate-closure re-invoke loop (8b), admin-promote + Flag-row persistence (9). Addresses FEAT-010; harness SLICE=save_draft.",
+  "acceptance_criteria": [
+    "The accumulated flat draft_state from run_trio_pass is saved as a Plan in lifecycle=proposed, owned by the originating school and author, with the full graph populated: plan scalars, every formset row, every nested child, and every cross-row binding the draft_state carried.",
+    "The save round-trips: re-reading the saved Plan reproduces the draft_state's content (scalar values, formset row counts, nested children, and bindings) with nothing dropped, duplicated, or reordered into a different binding.",
+    "For a given draft_state, the saved Plan graph is identical to what the existing browser one-shot create flow persists from the same posted data (parity), and the save is atomic all-or-nothing: a draft_state whose forms/formsets fail validation persists no Plan and surfaces the validation failure rather than a partial or invalid Plan.",
+    "The whole-project gate stays green and the context cascade validates. The promotion-gate check, the gate-closure re-invoke loop, admin-promote, and Flag-row persistence are out of scope (slices 8b/9)."
+  ]
+}

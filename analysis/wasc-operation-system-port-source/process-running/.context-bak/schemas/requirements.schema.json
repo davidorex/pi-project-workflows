@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/requirements",
+  "version": "1.0.0",
+  "title": "Requirements",
+  "description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
+  "type": "object",
+  "required": ["requirements"],
+  "properties": {
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "type", "status", "priority"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^REQ-\\d{3,}$" },
+          "description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+          "type": { "type": "string", "enum": ["functional", "non-functional", "constraint", "integration"] },
+          "status": { "type": "string", "enum": ["proposed", "accepted", "deferred", "implemented", "verified"] },
+          "priority": { "type": "string", "enum": ["must", "should", "could", "wont"] },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } }
+          },
+          "source": {
+            "type": "string",
+            "enum": ["human", "agent", "analysis"],
+            "description": "How this requirement was created"
+          }
+        }
+      }
+    }
+  }
+}

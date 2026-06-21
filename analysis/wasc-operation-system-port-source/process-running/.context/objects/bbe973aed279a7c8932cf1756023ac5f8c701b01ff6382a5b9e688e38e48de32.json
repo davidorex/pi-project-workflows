@@ -1,0 +1,41 @@
+{
+  "title": "Transform option space + 2026 AI drafting/revising heuristics (web-researched)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "landscape",
+  "question": "What is the full procedural+coding option space for transforming the maximalist draft toward the concise exemplars, and what do CURRENT (2026) AI content-drafting/revising heuristics recommend?",
+  "method": "general-purpose agent: codebase grounding (the two design docs + pipeline + gate) + WEB search constrained to 2026-only (June-2026 targeted; 2025-and-earlier discarded, incl. '2026'-titled-but-2025-dated sources). Full verbatim report persisted to the findings_document.",
+  "findings_summary": "Full verbatim report: docs/transform-options-and-2026-heuristics-research-2026-06-07.md. PART 1 (option space, pipeline-grounded): procedural 1-7 (generation-bias / whole-draft distill / per-field / reflexion / view-derivation / iterate-to-band / tiered) + ADDED 8 derive-then-distill, 9 budget-planner, 10 evaluator-optimizer-w/-separate-judge, 11 anchored-span freeze-list; coding A-H + ADDED I freeze-list-builder (reuse build_catalogue_union+PhraseMatcher), J structured-array byte-equality assertion (reuse apply.py:403-405 before/after), K per-field budget planner (keyed off FREETEXT_SELECTORS_BY_SPEC). Re-verified: the gate is existence-based (services.py:98-207, no length predicate) -> prose compression round-trip-safe; FREETEXT_SELECTORS_BY_SPEC (_freetext_audit.py:1343-1359) IS the prose-field allow-list. PART 2 (2026-only web, date-verified): #1 promptbuilder.cc Jan-26-2026 (output-contract + success-criteria-first; STRUCTURE BEATS LENGTH; per-section length constraints; examples-over-adjectives); #2 Zylos May-12-2026 (GROUNDED self-correction works, INTRINSIC does not -> needs an external grounded signal + a SEPARATE judge model); #3 arXiv 2512.14244 Jan-6-2026 (discourse-unit/EDU faithful structure-preserving compression); #4 SurePrompts (selective compression WRONG for verbatim fidelity -> keep fidelity-critical spans verbatim; date flagged); #5 LEDGER/LEDGE 2026 (agentic in-place editing preserving cross-refs; numbers flagged); #6 LACONIC arXiv 2602.14468 Feb-2026 (length need not cost capability, training-time). NO 2026 source for few-shot style-transfer, content-distillation, or inference-time length-revision -> our R-0005 framing is AHEAD of indexed 2026 literature. PART 3 (mapping): 2026 practice VALIDATES our parser-as-schema-contract + the existence-gate as the grounded external evaluator that makes the distill->re-gate->re-distill loop the RELIABLE (not intrinsic) kind, and endorses DEC-40 verbatim-labels. REFINE: express R-0004's concision temperature as explicit per-field length CONSTRAINTS (not adjectives); use a SEPARATE judge model. MISSING techniques to adopt: discourse-unit-aware compression, structured-array byte-equality as a checked invariant, judge/generator separation. RECOMMENDED COMPOSITION: derive-then-discourse-distill, gate-anchored, judge-separated, budget-contracted (generate standard -> deterministic derivation evacuates enumerable data -> freeze-list + budget contract -> LLM distill residual prose only -> validate via existing parse+audit+byte-equality+gate harness -> iterate-to-band with separate judge -> tier per consumer).",
+  "findings_document": "docs/transform-options-and-2026-heuristics-research-2026-06-07.md",
+  "citations": [
+    {
+      "label": "existence-based gate (round-trip floor)",
+      "path": "school-improvement-plans/plans/services.py:98-207"
+    },
+    {
+      "label": "prose-field allow-list + catalogue gate + freeze-list source",
+      "path": "school-improvement-plans/planner/_freetext_audit.py:1343-1359, :744-783, :587"
+    },
+    {
+      "label": "parser-as-schema + before/after diff pattern",
+      "path": "prompt-workshop/dispatch/apply.py:386, :403-405"
+    },
+    {
+      "label": "2026 output-contract/structure-beats-length",
+      "path": "https://promptbuilder.cc/blog/prompt-engineering-best-practices-2026 (Jan 26 2026)"
+    },
+    {
+      "label": "2026 grounded-vs-intrinsic self-correction + separate judge",
+      "path": "https://zylos.ai/research/2026-05-12-agent-self-correction-reflexion-to-prm (May 12 2026)"
+    },
+    {
+      "label": "2026 discourse-unit faithful compression",
+      "path": "https://arxiv.org/pdf/2512.14244 (Jan 6 2026)"
+    },
+    {
+      "label": "R-0004 + R-0005 companions",
+      "path": "docs/concision-tuning-design-2026-06-07.md + docs/distillation-transform-design-2026-06-07.md"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T10:00:00Z",
+  "evidence": "TASK-029 (R4 front-load + three measurement views + durability; shared-preamble success-criteria item 7) via the canonical pipeline with full iterate-to-zero. IMPL 58e72f0: item 7 (establish a baseline BEFORE the actions; measure from three points of view -- student outcomes, staff/adult practice, parent/stakeholder; >=1 delayed/durability check that the change stuck, not a one-time occurrence) + FRAG-preamble mirror + content_hash re-stamp + parity 14/14. EMPIRICAL: a fresh opus generation of draft-success-criteria under the new preamble (6 criteria) scanned check_draft Check 1 (process-method terms) = 0. A SEPARATE adversarial audit confirmed: C1 baseline-before-action MET (criteria 1-2, baseline 0 at cycle-start, 'rising from', prior to + independent of the actions); C2 all three viewpoints present MET (student outcomes c3/c4, staff/PLC practice c1/c2, parent c0/c3/c5); C3 delayed durability re-check MET (criterion 4, final-cycle re-check months later, 'held rather than occurred once'); C4 parse clean MET (parse_draft_success_criteria no raise, no hard fabrication; one BENIGN soft-NER flag on the fragment 'Data-Driven Improvement' -- a WASC standard the draft-success-criteria spec's grounding_sections omit, verdict=None/source=ner, advisory). Audit Total findings: 0 BLOCKERS. Three language/advisory nits (parent viewpoint reads as reporting-reaching-parents not a parent-awareness measure; the soft-NER span; a British/American spelling mix) recorded for the single final whole-draft polish pass per DEC-53 (language is WARN, non-blocking). Scope: prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble only; no parser/grounding/migration/.context.",
+  "criteria_results": [
+    {
+      "criterion": "A freshly generated plan establishes a baseline positioned before its actions -- an adversarial reviewer confirms presence and ordering.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Its measurement names all three points of view (student outcomes, staff/adult practice, parent/stakeholder) -- each present.",
+      "status": "passed"
+    },
+    {
+      "criterion": "At least one measurement is a later/delayed re-check distinct from a one-time occurrence -- an adversarial reviewer confirms at least one.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The measurement content scans to zero process-method terms; the dispatched output parses clean.",
+      "status": "passed"
+    }
+  ]
+}

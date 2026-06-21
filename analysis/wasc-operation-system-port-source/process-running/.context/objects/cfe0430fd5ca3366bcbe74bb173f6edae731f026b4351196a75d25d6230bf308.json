@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-14T06:00:00Z",
+  "evidence": "TASK-052 (FGAP-042) IMPL via the canonical pipeline IN PLAN MODE. Commit 55e2c031. _iter_prose_fields (prompt-workshop/dispatch/check_draft.py) extended to walk domain_alignment: for each relation key, each list row, yield `rationale` (targeted rows) + `reason` (deferred-gap *_not_addressed rows) by field-presence, NEVER `label`. Mirrors the parse-time precedent planner/_freetext_audit.py _select_a3. run_checks calls _iter_prose_fields once, so all four WARN-only language scans now cover domain_alignment prose. Workshop-only; no gating behavior changed. Two tests added to planner/tests/test_workshop_check_draft.py. DEVIATION (validated): the AC2 test AUGMENTS _clean_draft's domain_alignment (keeps its catalogue `label` rows, adds prose rows) rather than replacing it -- a wholesale replace drops the label rows the structural `coverage` check reads (check_draft.py:523-580), gating strict-exit; the augment preserves coverage so strict exit stays 0. Root: the orchestrator IMPL directive over-specified the fixture construction with an internal tension (start-from-clean-draft vs set-domain_alignment-to-the-two-rows); the IMPL resolved it by honoring the directive's all-passing-clean-draft premise and disclosed it. SEPARATE adversarial audit Total findings: 0 -- diff-scope two files only; AC1 own-probe yields rationale+reason NOT label; AC2 NON-MASKING proven (baseline _clean_draft has zero process_method_terms hits, so the surfaced hits originate from the added domain_alignment prose, with domain_alignment.-prefixed field paths), WARN-only; NON-VACUITY proven (both new tests fail when the scanner block is neutered, tree restored clean); robustness across absent/None/list/empty/non-dict/missing-key/non-string shapes; coverage-interaction confirms the augment is sound. Gate green: targeted pytest 62; ruff clean + format 482 ok; mypy . 325 Success; full pytest 3214; make test-js 48/48; verify-render-parity 14/14; decompose 14/14.",
+  "criteria_results": [
+    {
+      "criterion": "The whole-draft prose scanner yields domain_alignment prose -- both the targeted-row rationale and the deferred-gap reason -- so they enter the whole-draft language-WARN scan; demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A banned process-method term or scaffolding label placed in a domain_alignment rationale or reason is surfaced by the whole-draft scan; demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: the parity gate passes 14/14, the project gate is green, and the existing whole-draft checks stay passing.",
+      "status": "passed"
+    }
+  ]
+}

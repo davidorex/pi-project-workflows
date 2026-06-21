@@ -1,0 +1,12 @@
+{
+  "title": "Production orchestration trio (US-LLM-23/24/25) — admin current+desired -> promotion-ready draft",
+  "status": "in-progress",
+  "layer": "L3",
+  "description": "The production realization of DEC-29's north star (NORTH-STAR.md) per the DEC-57 architecture: a server-side loop drives the 14 dependency-ordered per-element assists against the school's grounding, accumulating a persisted flat draft_state across DEC-33 staged admin review, repairing per-spec failures (degrade-to-Flag, no abort), until the assembled draft passes the real _check_promotion_gates; the admin alone activates it. Built lean in planner/plans/ai reusing the 9 essential families, importing zero retired-workshop/pi-workflows/.workshopping code; every slice gated by the verify-gated harness (FEAT-009 / make verify-slice). Decomposed into slices: (1) the persisted versioned draft_state store [TASK-059, this]; (2) the accumulation seam (fold a parsed prefill into the flat draft_state, by prefill-shape class); (3) the per-spec server-side loop (ground->render->stream->parse->resolve->accumulate); (4) bounded-retry + degrade-to-Flag resilience; (5) the US-LLM-25 gate-closure loop on the saved Plan; (6) final save_nested + admin-promote wiring. Plus the 3 pending per-element assists US-LLM-7/10/15 (pattern-fill).",
+  "acceptance_criteria": [
+    "From an admin's current+desired-state input, the system produces a fully-populated proposed plan draft that passes _check_promotion_gates, with every value drawn from the school's catalogue (no fabrication) and the run completing without aborting (each spec contributes or degrades to a recorded Flag).",
+    "The draft accumulates across staged admin review (it survives between stages) and the admin alone activates the final draft; the AI never persists the plan graph directly nor flips lifecycle.",
+    "The trio reuses the existing production validators/grounding/promotion-gate and introduces no retired-workshop or new-orchestration-engine dependency.",
+    "Every slice of the trio is built through the verify-gated harness: a hard per-slice gate (make verify-slice) passing AND a separate adversarial audit clean, with the done-state machine-checked via context-validate."
+  ]
+}

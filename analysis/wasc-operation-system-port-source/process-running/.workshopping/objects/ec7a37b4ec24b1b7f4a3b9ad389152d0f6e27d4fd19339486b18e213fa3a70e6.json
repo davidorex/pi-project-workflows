@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if learner_outcomes %}Learner outcomes (choose by EXACT label):\n{% for o in learner_outcomes %}- {{ o.label }}{% if o.description %}: {{ o.description }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "learner_outcomes"
+}

@@ -1,0 +1,201 @@
+{
+  "features": [
+    {
+      "id": "FEAT-001",
+      "title": "Claude-Code pi-workflows runner",
+      "status": "complete",
+      "layer": "L3",
+      "description": "Drives executeWorkflow headless per PI-WORKFLOWS-RUNNER-SURFACE.md.",
+      "acceptance_criteria": [
+        "executeWorkflow / parseWorkflowSpec / findIncompleteRun / createAgentLoader reachable via file:// loader from dist/",
+        "CLI surface run/resume/status/list functions headless"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T20:47:27.721Z",
+      "oid": "581124a33c96171399db24829a56e853",
+      "content_hash": "edda38cd932f49bec0494b5e1dd5035b5a64c498272b9cd5832c932d490405e1"
+    },
+    {
+      "id": "FEAT-002",
+      "title": "Workflow bridge scripts: render_from_substrate.py + apply_from_substrate.py",
+      "status": "complete",
+      "layer": "L3",
+      "description": "Per WORKSHOPPING-WORKFLOW-SPEC §5.",
+      "acceptance_criteria": [
+        "render_from_substrate.py emits the per-spec prompt JSON from .workshopping",
+        "apply_from_substrate.py parser-gates a response and writes a versioned draft"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-04T21:50:53.528Z",
+      "oid": "84af940b99d155ff4ccf3cbae25651d8",
+      "content_hash": "e08915ea9ff24d7ad0e53538f259b97f5985a1e93bca939e3bf90c1bf9c051be"
+    },
+    {
+      "id": "FEAT-003",
+      "title": "14-spec pi-workflow YAML (per WORKSHOPPING-WORKFLOW-SPEC)",
+      "status": "complete",
+      "layer": "L3",
+      "description": "Per WORKSHOPPING-WORKFLOW-SPEC: per-spec render->call->apply with draft_path threading.",
+      "acceptance_criteria": [
+        "YAML drives all 14 specs in dependency order",
+        "commands emit JSON; agent input is an object {prompt:…}"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-06T14:36:29.593Z",
+      "oid": "0374918384ed5af9e91bebc1b1a33c28",
+      "content_hash": "f057c523e7c26b9616ea094ed590e1ddf8cdef3c5ea93c798419c8a9e19ac6ff"
+    },
+    {
+      "id": "FEAT-004",
+      "title": "First run + per-spec quality iteration -> promotion-ready draft (DISC-26 closure)",
+      "status": "in-progress",
+      "layer": "L3",
+      "description": "Execute the sequence end-to-end and iterate per-spec quality to a promotion-ready whole-plan draft, closing DISC-26.",
+      "acceptance_criteria": [
+        "14-spec sequence runs headless against the Chiway dev-DB; run dir captured",
+        "per-spec quality evaluation yields a promotion-ready whole-plan draft"
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-06T15:01:35.581Z",
+      "oid": "2c611d51368202b1ae1bae32aecc0690",
+      "content_hash": "9ed68df96f0d54f484afbae1221097c11cb6d7ae464b74924ea9d4160c428b1b"
+    },
+    {
+      "id": "FEAT-005",
+      "title": "Prompt-level: bake plan-quality heuristics + authoritative WASC structure into generation",
+      "status": "in-progress",
+      "layer": "L3",
+      "description": "Govern the 14 spec snippets + shared preamble so the generated draft natively satisfies the binding heuristics (R-0009), the authoritative reviewer feedback (R-0007), the authoritative ACS-WASC structure (R-0008), and the role model (DEC-48). Decomposed into slices: A (prompt-only register+content), B (in/out-of-class grounding), C (grounding-leanness), D (measurement-binding gate). Criterion 7 (per-Goal header) RELOCATED to FEAT-007 (net-new model/parser, not a prompt bake). Sources: docs/prompt-workflow-refinement-governing-options-2026-06-08.md (R-0011).",
+      "acceptance_criteria": [
+        "Generated action steps distribute ownership across the divisions/positions whose responsibilities justify them; no single-department overload.",
+        "The plan covers both in-class and out-of-class contexts, using the seeded SAO + HRT/YGL/Dormitory Teacher out-of-lesson roles.",
+        "Relevant actions carry bilingual (Chinese-English) dual-purpose framing.",
+        "Each action step states its mechanism (HOW) and its frequency/cadence.",
+        "Action steps span diverse focus areas (school-wide), not concentrated.",
+        "Each success criterion binds a concrete measurement instrument + cadence; KPI exclusion held (numbers only inside a target criterion).",
+        "Descriptions never meta-invoke WASC certification/accreditation risk; a standard is given as key + name; Theme is the title, not success-criteria narrative.",
+        "Verbatim catalogue-label fidelity is preserved (no contraction/rename).",
+        "Each spec's grounding carries only what its task consumes (grounding-leanness)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-08T10:37:08.853Z",
+      "oid": "34aa0d42aa866f8d0c9ebba78bec8b38",
+      "content_hash": "f7c0bc45e937e7cf570880d9c4acda8bef584654ff7cc8a45ca97937854c4f55"
+    },
+    {
+      "id": "FEAT-006",
+      "title": "Workflow-level: maximalist->target transform/distiller stage",
+      "status": "proposed",
+      "layer": "L3",
+      "description": "Govern a new post-generation transform stage (after the 14-spec sequence) that takes the maximalist draft to the concise target band (canonical + Sample-2 anchors). Conforms to R-0005 (distillation + coverage floors + existence-gate safety), R-0006 (option matrix + 2026 heuristics), R-0009 (extrapolation license). Option detail + sources: docs/prompt-workflow-refinement-governing-options-2026-06-08.md (R-0011).",
+      "acceptance_criteria": [
+        "A post-generation transform produces a concise plan in the target band (canonical mock + Sample-2 anchors) without loss of signal.",
+        "Coverage floors are enforced: owners (incl. SAO/out-of-lesson roles), stakeholders, and measurement-tools are never zeroed by the transform.",
+        "Grounded extrapolation is permitted (distribute ownership, surface out-of-lesson roles, bilingual dual-purpose) bounded by catalogued entities + verbatim labels + no fabricated metrics + re-gating.",
+        "The transform output re-validates via the existing parse (planner/specs.py) + catalogue-gate (_freetext_audit.py) + promotion-gate (_check_promotion_gates) harness.",
+        "A distance-to-target-band scorer measures conformance (two anchors) = the DISC-26 / quality-rubric gate.",
+        "Iterate-to-band uses a judge model distinct from the generator (grounded self-correction).",
+        "Optionally, the 5 step-iterating specs may fan out per action-step (per-step parallel decomposition)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-08T08:24:59.518Z",
+      "oid": "a6d1c2ff5a4ebb4e711fc9f682f629e7",
+      "content_hash": "b59fd05fddbb226d88e2a227f203aaf523e60504e79b0072e24d05784409c5f6"
+    },
+    {
+      "id": "FEAT-007",
+      "title": "Structural: ACS-WASC per-Goal HEADER layer (model + parser + grounding + spec)",
+      "status": "proposed",
+      "layer": "L3",
+      "description": "Relocated from FEAT-005 criterion 7 (it is NOT a prompt bake): the authoritative ACS-WASC per-Goal header fields do not exist in the model/parser today (verified: plans/models/plan.py has current/desired/rationale/theme/priority but NO supporting_data / measurable_growth_targets / gap_closure_strategies / monitor / report). Net-new structural feature: extend the Plan model (or a GoalHeader model) + parser contract + grounding emitter + a draft spec to carry the per-Goal header layer, per R-0008 + R-0010. Larger, multi-day; reconcile measurable_growth_targets with the KPI exclusion (DEC-40/specs.py:33-34). Sequenced after FEAT-005's prompt slices.",
+      "acceptance_criteria": [
+        "The plan model + parser carry the ACS-WASC per-Goal header fields: rationale + supporting data, measurable growth targets, SLO/critical-need linkage, gap-closure strategies, monitor, report.",
+        "A generation spec drafts the per-Goal header from grounding; the parser validates it; the canonical render displays it.",
+        "measurable growth targets reconcile with the KPI exclusion (quantified outcomes vs standalone KPIs).",
+        "The full project gate stays green; the per-Goal header appears in a generated + rendered draft."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-08T10:36:27.879Z",
+      "oid": "66626f715b01c2d000cb0c01d413bf87",
+      "content_hash": "528056afbad21743d5c5add892bff5492779fda47e7a18a3d7d63bd2044fbe92"
+    },
+    {
+      "id": "FEAT-008",
+      "title": "Incorporate the validated sim-land planning findings into the prompt-workshop corpus",
+      "status": "proposed",
+      "layer": "L3",
+      "description": "Encode the validated sim-land planning-process findings (runs 001-008; prompt-workshop/sim-revised-frame.md + docs/plan-generation-heuristics.md R-0009) into the prompt-workshop corpus -- the dev-time mode of the production author-assist. Dev-time only; zero parser (planner/specs.py) changes, zero grounding.py changes; the production ai/00NN PromptTemplate migration is a deliberate later bridge, out of scope here. Decomposed into 3 stories: A (cross-cutting render + output rules in the shared preamble -- R1 no-framework-terms, R2 action-steps-are-learning-designed, R4 front-load + three measurement views + durability, R5 growth-mindset register); B (spec-specific -- R5 quarterly review + spiral in spec 14; R3 mission/vision/SLO ideation in specs 03/04/05); C (whole-draft + decision -- R6 verify distributed ownership, R7 coverage eval, R8 options-posture placement decision). Every snippet/preamble body edit mirrors into .workshopping (content_hash re-stamp) and re-passes prompt-workshop/dispatch/verify-render-parity.py (a per-task obligation, not its own task).",
+      "acceptance_criteria": [
+        "A generated plan uses only the school's plain vocabulary -- none of the generation-side framework/process method-terms -- while still showing the method's effects.",
+        "Each action a participant meets is an active learning event in plain prose (recall prior -> real task they do -> check understanding -> reflect/next-steps), never transmission-only, never labelled with method scaffolding.",
+        "Milestones, success criteria, and action steps visibly cohere with the school's mission, vision, and learner outcomes.",
+        "A plan establishes a baseline before action and measures from three points of view (students, staff practice, parents) as durable change confirmed by a later check, not mere occurrence.",
+        "The review loop is a quarter-by-quarter evaluate-and-adjust cycle with the first checkpoint before December, a monthly focus that retains priors, and adjustment framed as the system working, not failure.",
+        "Action-step ownership is distributed across the divisions whose purview bears on the goal -- no single division a disproportionate share -- and uncovered areas are surfaced as gaps.",
+        "The whole assembled draft covers every learner outcome and required area, or surfaces the gap.",
+        "Nothing already working breaks: outputs still parse, the catalogue-gate holds, the snippet-substrate parity gate passes, and the project gate stays green.",
+        "The options-posture placement is settled and recorded (orchestration / create-plan-UX layer; per-spec generation stays decide-one)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-09",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-09T07:32:33.213Z",
+      "oid": "c87705838db8c44cd3fa98d33f72dc69",
+      "content_hash": "038d48e7d3efca2f35d96f3e3b252dc3bacbe7b808284505de36a04741ab7c8d"
+    },
+    {
+      "id": "FEAT-009",
+      "title": "Hard-verification-gated autonomous dev-loop harness for the trio build",
+      "status": "in-progress",
+      "layer": "L3",
+      "description": "The development harness for building the production orchestration trio (US-LLM-23/24/25 + the 3 assists) under hard verification, per ~/.claude/plans/sequential-dreaming-cocke.md + DEC-58. Per trio slice: ONE runnable HARD gate (`make verify-slice`) composing the slice's behavioral pytest tests + the project static gate + context-validate + (where applicable) _check_promotion_gates-as-a-test; the slice's acceptance_criteria are authored as those tests BEFORE IMPL (gate-first). An agent loop runs IMPL -> gate -> re-IMPL (fresh agent, full state) until the gate exit code is 0, bounded by a hard iteration cap (then STOP+escalate, mandate-008), then a mandatory SEPARATE adversarial audit; done = gate exit 0 AND audit findings == 0. TWO-CLASS gate (DEC-58/DEC-53): only the semantic/behavioral core + this-slice-introduced soundness blocks; cosmetic/style, language WARNs, and pre-existing/unrelated/flaky failures are NON-BLOCKING (recorded as Flags) so trivia never blocks and the loop never hangs. Reuses existing primitives (Makefile gate, gate-before-commit.sh, _check_promotion_gates, context-validate); adds no orchestration engine; reintroduces no retired-workshop code. Proven on the trio's first slice; the trio's full slice decomposition is a separate pre-impl step reusing this harness.",
+      "acceptance_criteria": [
+        "There is one runnable command per trio slice whose exit code alone decides verification: exit 0 if and only if the slice's behavioral acceptance tests pass, the project static gate is green, the context cascade validates, and (where the slice touches promotion/draft accumulation) the promotion predicate holds.",
+        "A slice's acceptance criteria are expressed as executable tests that are observed failing before the slice is implemented and passing after; the loop's continue/stop decision is that command's exit code, never a model's reading of prose.",
+        "A failure that is cosmetic, a language-register warning, or pre-existing/unrelated/flaky to the slice does not block the slice from completing and is recorded rather than dropped; only failures bearing on the slice's behaviour or the soundness it introduced block.",
+        "The build loop always terminates: it either reaches a verified state or, after a bounded number of attempts, stops and surfaces the exact unresolved failure to the human; it never loops indefinitely and never silently abandons the work.",
+        "A slice is only marked done when both its hard gate passes and an independent adversarial check confirms the criteria are genuinely met (not vacuously passing), and that done-state is machine-checked, not asserted.",
+        "The harness is demonstrated end-to-end on the trio's first slice without reintroducing any retired-workshop tooling or adding a new orchestration engine."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-20T06:43:29.199Z",
+      "oid": "d4d0c9b5dccda71c0f6018999bc5030d",
+      "content_hash": "8f63c3bd6a584fa93738bc6f2c2238ca6c0f29301e36d2ccb22c02e35ac241b8"
+    },
+    {
+      "id": "FEAT-010",
+      "title": "Production orchestration trio (US-LLM-23/24/25) — admin current+desired -> promotion-ready draft",
+      "status": "in-progress",
+      "layer": "L3",
+      "description": "The production realization of DEC-29's north star (NORTH-STAR.md) per the DEC-57 architecture: a server-side loop drives the 14 dependency-ordered per-element assists against the school's grounding, accumulating a persisted flat draft_state across DEC-33 staged admin review, repairing per-spec failures (degrade-to-Flag, no abort), until the assembled draft passes the real _check_promotion_gates; the admin alone activates it. Built lean in planner/plans/ai reusing the 9 essential families, importing zero retired-workshop/pi-workflows/.workshopping code; every slice gated by the verify-gated harness (FEAT-009 / make verify-slice). Decomposed into slices: (1) the persisted versioned draft_state store [TASK-059, this]; (2) the accumulation seam (fold a parsed prefill into the flat draft_state, by prefill-shape class); (3) the per-spec server-side loop (ground->render->stream->parse->resolve->accumulate); (4) bounded-retry + degrade-to-Flag resilience; (5) the US-LLM-25 gate-closure loop on the saved Plan; (6) final save_nested + admin-promote wiring. Plus the 3 pending per-element assists US-LLM-7/10/15 (pattern-fill).",
+      "acceptance_criteria": [
+        "From an admin's current+desired-state input, the system produces a fully-populated proposed plan draft that passes _check_promotion_gates, with every value drawn from the school's catalogue (no fabrication) and the run completing without aborting (each spec contributes or degrades to a recorded Flag).",
+        "The draft accumulates across staged admin review (it survives between stages) and the admin alone activates the final draft; the AI never persists the plan graph directly nor flips lifecycle.",
+        "The trio reuses the existing production validators/grounding/promotion-gate and introduces no retired-workshop or new-orchestration-engine dependency.",
+        "Every slice of the trio is built through the verify-gated harness: a hard per-slice gate (make verify-slice) passing AND a separate adversarial audit clean, with the done-state machine-checked via context-validate."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-20",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-20T08:20:30.804Z",
+      "oid": "2bb03113fecce8b78b5d1f28ef249f29",
+      "content_hash": "ea33e0abffcf940bd5bbcf404f2aa5ef08f1f7949dcd0beff769c1ff98bad606"
+    }
+  ]
+}

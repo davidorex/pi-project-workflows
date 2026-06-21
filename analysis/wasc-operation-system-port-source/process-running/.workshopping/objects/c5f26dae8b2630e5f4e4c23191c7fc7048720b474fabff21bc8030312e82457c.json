@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if divisions %}Divisions at this school (CHOOSE each channel's owner_division by its LABEL from this list):\n{% for d in divisions %}- \"{{ d.label }}\"{% if d.scope_summary %} ({{ d.scope_summary }}){% endif %}\n{% endfor %}{% endif %}",
+  "section": "divisions"
+}

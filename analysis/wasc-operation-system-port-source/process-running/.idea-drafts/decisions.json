@@ -1,0 +1,55 @@
+{
+  "decisions": [
+    {
+      "title": "Field/relationship/constraint authority moves to structured, validated, introspection-checked JSON; domain-model.md stays prose",
+      "status": "open",
+      "context": "model-surface-audit.md is CLAUDE.md's designated field/relationship/constraint authority and is routed-to by adjacent work (the two envisioning docs + the gaps catalogue + domain-model.md, which defers field-authority to it). It drifted on DEC-45 (still asserts the deleted MissionArea, the removed mission-area promotion gate, Plan.guiding_clauses). reference-data-spec.md drifted undetected through the pre-DEC-45 Department->Division and SubjectKind->ImprovementType renames (DISC-40). A hand-maintained prose field-authority is therefore a standing drift liability. Per the DEC-41 framing the real authority is the code — the models, grounding.SECTION_KEYS, and the parsers (the parser is the schema validator). The open question is where field/relationship/constraint authority should live so it cannot silently drift.",
+      "decision": "Direction (not yet settled): field/relationship/constraint authority moves to structured, schema-validated JSON, ideally generated-from or checked-against the live code so it cannot drift silently (e.g. a registered lens-validator that introspects Django _meta + grounding.SECTION_KEYS + parser keys and fails context-validate on divergence). domain-model.md stays PROSE — it carries meaning/concepts (why mvv, what a clause is), which is not introspectable structure. model-surface-audit.md is demoted to a dated snapshot / derived artifact once the JSON authority exists, with its citers (CLAUDE.md's authority pointer, the two envisioning docs, the gaps catalogue) repointed.",
+      "options_considered": [
+        {
+          "label": "Generated / checked JSON authority",
+          "description": "The field-surface JSON is generated from, or verified against, live-code introspection by a registered validator.",
+          "tradeoffs": "Drift-proof and queryable, but the validator's registration is framework-side (barrel import), not project-local config; and a new invariant class needs source changes, so the check must be a lens-validator."
+        },
+        {
+          "label": "Curated JSON authority (hand-maintained)",
+          "description": "A typed JSON block holds the field surface, edited by hand on model changes.",
+          "tradeoffs": "Queryable and schema-shaped, but re-drifts exactly as the prose did — format is not what fixes drift."
+        },
+        {
+          "label": "Code-only (no prose or JSON mirror)",
+          "description": "Readers introspect the models directly; no maintained authority artifact.",
+          "tradeoffs": "Lowest maintenance and cannot drift, but least narratable/queryable for planning."
+        }
+      ],
+      "consequences": [
+        "domain-model.md's mvv concept correction is the high-leverage forward doc and stays prose.",
+        "model-surface-audit.md becomes a dated snapshot or a derived artifact; CLAUDE.md's authority pointer and the envisioning-doc + gaps-catalogue citers are repointed at the new authority.",
+        "The drift-check (an introspection lens-validator) is the piece that makes JSON authority non-drifting; without it, JSON is the same trap in a nicer format.",
+        "Open sub-forks remain: which of the three options; and whether model-surface-audit.md is demoted vs corrected-in-place."
+      ],
+      "references": [
+        {
+          "label": "docs/model-surface-audit.md (the drifted prose field-authority)"
+        },
+        {
+          "label": "docs/domain-model.md (stays prose; concept authority)"
+        },
+        {
+          "label": "DISC-40-0602-A (reference-data-spec unmaintained drift)"
+        },
+        {
+          "label": "DEC-41 (workshop=dev-mode framing; the parser is the schema validator)"
+        },
+        {
+          "label": "DEC-45 (the rename/teardown that drifted model-surface-audit.md)"
+        }
+      ],
+      "id": "DEC-0001",
+      "created_at": "2026-06-02T21:42:07.529Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "66a2edce719e86d8afc0f55438ec11b3",
+      "content_hash": "73cd3d9048e8a08f48b1f8e81d9269e99bf8ed875ba9744f224f02ad0a6a2c81"
+    }
+  ]
+}

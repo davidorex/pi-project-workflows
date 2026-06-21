@@ -1,0 +1,392 @@
+[
+  {
+    "seq": 1,
+    "kind": "section",
+    "text": "Source ↔ model representational gaps",
+    "raw": "# Source ↔ model representational gaps"
+  },
+  {
+    "seq": 2,
+    "kind": "prose",
+    "text": "Where the design sources — the WASC source documents (`sources/extracted/*.txt`) and the\ncanonical web prototype (`web/canonical.html`, `web/working.html`, `web/wizard.html`,\n`web/data/plan-data.js`, `web/DRAFT-VISION.md`) — contain concepts or fields the implemented\nDjango models **cannot hold**. This is the durable record of that impedance mismatch, so\nimport/seed work and any future modelling decisions are made with eyes open.",
+    "raw": "Where the design sources — the WASC source documents (`sources/extracted/*.txt`) and the\ncanonical web prototype (`web/canonical.html`, `web/working.html`, `web/wizard.html`,\n`web/data/plan-data.js`, `web/DRAFT-VISION.md`) — contain concepts or fields the implemented\nDjango models **cannot hold**. This is the durable record of that impedance mismatch, so\nimport/seed work and any future modelling decisions are made with eyes open."
+  },
+  {
+    "seq": 3,
+    "kind": "prose",
+    "text": "**Prototype pin (DEC-19).** `web/data/plan-data.js` has since been rebuilt to be model-faithful\n(commit `cf09618`); the divergence catalog below describes the **original prototype as of git SHA\n`529b3d0`** (the last commit before the rebuild). The current `plan-data.js` no longer carries the\nprototype's superseded keys (`org_units`/`lead_role`, plan-level `subject_kind`, `kpis[]`, `role-…`\nactors) — read those entries against `529b3d0:web/data/plan-data.js`, not the live file.",
+    "raw": "**Prototype pin (DEC-19).** `web/data/plan-data.js` has since been rebuilt to be model-faithful\n(commit `cf09618`); the divergence catalog below describes the **original prototype as of git SHA\n`529b3d0`** (the last commit before the rebuild). The current `plan-data.js` no longer carries the\nprototype's superseded keys (`org_units`/`lead_role`, plan-level `subject_kind`, `kpis[]`, `role-…`\nactors) — read those entries against `529b3d0:web/data/plan-data.js`, not the live file."
+  },
+  {
+    "seq": 4,
+    "kind": "prose",
+    "text": "Each entry marks the kind of difference: **[lossy]** (source carries data with no model home —\ndropped on import), **[needs-value]** (the model requires more than the source provides), or\n**[mismatch]** (layer / semantic / precision). Companions:\n`data/reference-data-spec.md` (field-level model expectations), `data/seed-round-plan.md`\n(the active seed round's conflicts + decisions), and `docs/model-surface-audit.md` (the\ncode-grounded, authoritative model inventory + the candidate-view capability-gap findings\nthat §I below reconciles).",
+    "raw": "Each entry marks the kind of difference: **[lossy]** (source carries data with no model home —\ndropped on import), **[needs-value]** (the model requires more than the source provides), or\n**[mismatch]** (layer / semantic / precision). Companions:\n`data/reference-data-spec.md` (field-level model expectations), `data/seed-round-plan.md`\n(the active seed round's conflicts + decisions), and `docs/model-surface-audit.md` (the\ncode-grounded, authoritative model inventory + the candidate-view capability-gap findings\nthat §I below reconciles)."
+  },
+  {
+    "seq": 5,
+    "kind": "section",
+    "text": "Materialization principle (DEC-18)",
+    "raw": "## Materialization principle (DEC-18)"
+  },
+  {
+    "seq": 6,
+    "kind": "prose",
+    "text": "`web/canonical.html` is a **required output materialization** — the formal WASC schoolwide\naction-plan document for a fixed audience (the visiting committee / accreditors) in a fixed\nshape (the WASC sample template) — **not** a prototype to be reconciled down to the model. The\nmodel is the single source of truth; it must be rich enough to **materialize canonical** (a\nreport/export view emits that exact shape from stored plan data) *and* to drive the staff-facing\ncreation/visualization views. Direction runs model → rendering. So this document is the ledger of\nwhere the model **cannot yet materialize a required rendering**: every datum canonical shows must\nbe producible from stored data, and where it is not, the **model** is what changes (the gap is a\nwork item here, mandate-007) — canonical is never edited down to what the model happens to hold.\ncanonical keeps its WASC-audience vocabulary (e.g. the column header \"Department / Person(s)\nResponsible\", KPI chips rendered from a target-kind `SuccessCriterion`); it is NOT relabeled to\ndb field names the way the staff mockups (`mockups/a–e`, `web/working.html`, `web/wizard.html`)\nare. DEC-16 / DEC-17 were already instances of this principle (the 2-of-6 WASC action-step columns\n— `assessment` / `communications` — and the audited `status` / `ActionStepImpediment` work all\nextended the model so canonical materializes).",
+    "raw": "`web/canonical.html` is a **required output materialization** — the formal WASC schoolwide\naction-plan document for a fixed audience (the visiting committee / accreditors) in a fixed\nshape (the WASC sample template) — **not** a prototype to be reconciled down to the model. The\nmodel is the single source of truth; it must be rich enough to **materialize canonical** (a\nreport/export view emits that exact shape from stored plan data) *and* to drive the staff-facing\ncreation/visualization views. Direction runs model → rendering. So this document is the ledger of\nwhere the model **cannot yet materialize a required rendering**: every datum canonical shows must\nbe producible from stored data, and where it is not, the **model** is what changes (the gap is a\nwork item here, mandate-007) — canonical is never edited down to what the model happens to hold.\ncanonical keeps its WASC-audience vocabulary (e.g. the column header \"Department / Person(s)\nResponsible\", KPI chips rendered from a target-kind `SuccessCriterion`); it is NOT relabeled to\ndb field names the way the staff mockups (`mockups/a–e`, `web/working.html`, `web/wizard.html`)\nare. DEC-16 / DEC-17 were already instances of this principle (the 2-of-6 WASC action-step columns\n— `assessment` / `communications` — and the audited `status` / `ActionStepImpediment` work all\nextended the model so canonical materializes)."
+  },
+  {
+    "seq": 7,
+    "kind": "prose",
+    "text": "**Resolution of the data↔view split (DEC-19).** `web/data/plan-data.js` is to be made **exactly\nfaithful to the Django modeling** — the JS stand-in for *stored plan data*, shaped like the models\n(`divisions` with `parent`/`head`; the `Milestone` tier `Plan → Milestone → Phase → ActionStep`\nwith per-milestone `improvement_type`/`planning_method`; actors as `division` + optional `person`,\n**Role retired**; per-step `status`/`assessment`/`communications`/`impediments`; quantification as a\ntarget-kind `SuccessCriterion`, no standalone KPI). It is the single model-faithful sample source of\ntruth. Each `.html` is a **view** over it that owns its own audience's shape: **`web/canonical.html`\nstays as it is** — its rendered WASC output/shape is held constant and it **does not bring in elements\nits shape does not display** (it projects the model-faithful data *down* to the fixed WASC document,\nomitting the milestone tier / division hierarchy it does not surface). Canonical's renderer is\nnecessarily updated to source its displayed values from the new model-faithful keys, but its OUTPUT is\noutput-frozen and guarded by a **golden-output check** against the WASC sample (`sources/`). The\n\"original prototype\" divergence record below is a **historical fact pinned to the git SHA** of the\nprototype (git freezes every prior state); `plan-data.js` is free to evolve past it.\n`web/working.html` / `web/wizard.html` read the same model-faithful data and show milestones /\ndivisions natively. This dissolves the two structural flags from the working/wizard alignment\n(improvement-type altitude; Role-encoded actors) by making the sample model-faithful rather than\nrelabeling over an outdated shape.",
+    "raw": "**Resolution of the data↔view split (DEC-19).** `web/data/plan-data.js` is to be made **exactly\nfaithful to the Django modeling** — the JS stand-in for *stored plan data*, shaped like the models\n(`divisions` with `parent`/`head`; the `Milestone` tier `Plan → Milestone → Phase → ActionStep`\nwith per-milestone `improvement_type`/`planning_method`; actors as `division` + optional `person`,\n**Role retired**; per-step `status`/`assessment`/`communications`/`impediments`; quantification as a\ntarget-kind `SuccessCriterion`, no standalone KPI). It is the single model-faithful sample source of\ntruth. Each `.html` is a **view** over it that owns its own audience's shape: **`web/canonical.html`\nstays as it is** — its rendered WASC output/shape is held constant and it **does not bring in elements\nits shape does not display** (it projects the model-faithful data *down* to the fixed WASC document,\nomitting the milestone tier / division hierarchy it does not surface). Canonical's renderer is\nnecessarily updated to source its displayed values from the new model-faithful keys, but its OUTPUT is\noutput-frozen and guarded by a **golden-output check** against the WASC sample (`sources/`). The\n\"original prototype\" divergence record below is a **historical fact pinned to the git SHA** of the\nprototype (git freezes every prior state); `plan-data.js` is free to evolve past it.\n`web/working.html` / `web/wizard.html` read the same model-faithful data and show milestones /\ndivisions natively. This dissolves the two structural flags from the working/wizard alignment\n(improvement-type altitude; Role-encoded actors) by making the sample model-faithful rather than\nrelabeling over an outdated shape."
+  },
+  {
+    "seq": 8,
+    "kind": "prose",
+    "text": "**IMPLEMENTED** (2026-05-23): `plan-data.js` rebuilt model-faithful + `canonical.html` re-pointed\noutput-frozen (`cf09618`, golden contract `web/data/canonical-golden.json`, zero shape diff);\n`working.html` + `wizard.html` switched to the native structural keys (`ca8ad5c` — divisions\nparent/head, milestone tier, structured assignments, impediments; wizard gained a Milestone step\ncapturing improvement_type/planning_method at the milestone altitude). Prototype pinned at `529b3d0`.",
+    "raw": "**IMPLEMENTED** (2026-05-23): `plan-data.js` rebuilt model-faithful + `canonical.html` re-pointed\noutput-frozen (`cf09618`, golden contract `web/data/canonical-golden.json`, zero shape diff);\n`working.html` + `wizard.html` switched to the native structural keys (`ca8ad5c` — divisions\nparent/head, milestone tier, structured assignments, impediments; wizard gained a Milestone step\ncapturing improvement_type/planning_method at the milestone altitude). Prototype pinned at `529b3d0`."
+  },
+  {
+    "seq": 9,
+    "kind": "section",
+    "text": "A. Concepts the model does not hold or consolidates",
+    "raw": "## A. Concepts the model does not hold or consolidates"
+  },
+  {
+    "seq": 10,
+    "kind": "list-item",
+    "text": "**ActionStep dependency `kind`.** Prototype dependencies carry `kind: \"blocked_by\"`. `ActionStepDependency` has no `kind` field — per the noun-list, \"the user story does not differentiate dependency kinds.\" Dependency type is dropped.",
+    "raw": "- **ActionStep dependency `kind`.** Prototype dependencies carry `kind: \"blocked_by\"`. `ActionStepDependency` has no `kind` field — per the noun-list, \"the user story does not differentiate dependency kinds.\" Dependency type is dropped."
+  },
+  {
+    "seq": 11,
+    "kind": "list-item",
+    "text": "**Standalone KPIs.** Prototype keeps `kpis[]` (metric / target / unit / baseline) separate from `success_criteria`. The model has no KPI entity; quantification is folded into `SuccessCriterion` (`verification_kind=\"target\"` → `target_value` / `target_unit` / `baseline`). A KPI is expressed as a target-kind success criterion, not a separate row.",
+    "raw": "- **Standalone KPIs.** Prototype keeps `kpis[]` (metric / target / unit / baseline) separate from `success_criteria`. The model has no KPI entity; quantification is folded into `SuccessCriterion` (`verification_kind=\"target\"` → `target_value` / `target_unit` / `baseline`). A KPI is expressed as a target-kind success criterion, not a separate row."
+  },
+  {
+    "seq": 12,
+    "kind": "list-item",
+    "text": "**Narrative `outcomes`.** Prototype plans carry an `outcomes[]` narrative distinct from `success_criteria`. The model has only `SuccessCriterion` (observable conditions). Narrative outcomes fold into `Plan.desired_state` / `rationale` or are dropped.",
+    "raw": "- **Narrative `outcomes`.** Prototype plans carry an `outcomes[]` narrative distinct from `success_criteria`. The model has only `SuccessCriterion` (observable conditions). Narrative outcomes fold into `Plan.desired_state` / `rationale` or are dropped."
+  },
+  {
+    "seq": 13,
+    "kind": "list-item",
+    "text": "**`gap_statements[]`.** Prototype plans carry a structured list of gap statements. The model has prose `Plan.current_state` / `rationale`; no structured gap list. Folds into prose.",
+    "raw": "- **`gap_statements[]`.** Prototype plans carry a structured list of gap statements. The model has prose `Plan.current_state` / `rationale`; no structured gap list. Folds into prose."
+  },
+  {
+    "seq": 14,
+    "kind": "list-item",
+    "text": "**Proposals / the pre-plan 13-item flow.** Prototype has a `proposals[]` registry; the design has a propose→promote flow. `promote_proposal_to_plan` is a `NotImplementedError` stub and there is no `Proposal` model.",
+    "raw": "- **Proposals / the pre-plan 13-item flow.** Prototype has a `proposals[]` registry; the design has a propose→promote flow. `promote_proposal_to_plan` is a `NotImplementedError` stub and there is no `Proposal` model."
+  },
+  {
+    "seq": 15,
+    "kind": "section",
+    "text": "B. Source fields with no model column  [lossy — dropped on import]",
+    "raw": "## B. Source fields with no model column  [lossy — dropped on import]"
+  },
+  {
+    "seq": 16,
+    "kind": "list-item",
+    "text": "**Division** (prototype `org_units`): `alt_labels`, `note` remain unrepresented. **Resolved (DISC-16, `048cf71`):** `parent_unit` (sub-unit / hierarchy) is now `Division.parent`, and `lead_role` is now `Division.head` (FK → `Person`). Division hierarchy (subject departments under Curriculum & Teaching) IS now representable. (Model class renamed `Department`→`Division`, DEC-13/`d5a2ad2`; \"Department\" survives only as the pinned-prototype key.)",
+    "raw": "- **Division** (prototype `org_units`): `alt_labels`, `note` remain unrepresented. **Resolved (DISC-16, `048cf71`):** `parent_unit` (sub-unit / hierarchy) is now `Division.parent`, and `lead_role` is now `Division.head` (FK → `Person`). Division hierarchy (subject departments under Curriculum & Teaching) IS now representable. (Model class renamed `Department`→`Division`, DEC-13/`d5a2ad2`; \"Department\" survives only as the pinned-prototype key.)"
+  },
+  {
+    "seq": 17,
+    "kind": "list-item",
+    "text": "**Role** (`individual_roles`): **N/A — `Role` retired (DISC-16, `048cf71`).** Seats are now `Division.head` (single accountable head) + `Position`/`Holding` (named, multi-holder seats; `6f7813d`); `Person.name` is translated (EN/中文). `alt_labels` for individuals remain unrepresented.",
+    "raw": "- **Role** (`individual_roles`): **N/A — `Role` retired (DISC-16, `048cf71`).** Seats are now `Division.head` (single accountable head) + `Position`/`Holding` (named, multi-holder seats; `6f7813d`); `Person.name` is translated (EN/中文). `alt_labels` for individuals remain unrepresented."
+  },
+  {
+    "seq": 18,
+    "kind": "list-item",
+    "text": "**LearnerOutcome / SLO** (`slos`): `synonyms[]` (SWO / Learner Attribute / Cambridge names) and `source` provenance (`legacy` / `draft 25-26`). The model has `code` / `label` / `description` only — the synonym-resolution the prototype relies on is lost.",
+    "raw": "- **LearnerOutcome / SLO** (`slos`): `synonyms[]` (SWO / Learner Attribute / Cambridge names) and `source` provenance (`legacy` / `draft 25-26`). The model has `code` / `label` / `description` only — the synonym-resolution the prototype relies on is lost."
+  },
+  {
+    "seq": 19,
+    "kind": "list-item",
+    "text": "**FramingVocabulary**: `order`. The model orders by `label`; there is no `order` column. (Already handled in the framing seed — order not carried.)",
+    "raw": "- **FramingVocabulary**: `order`. The model orders by `label`; there is no `order` column. (Already handled in the framing seed — order not carried.)"
+  },
+  {
+    "seq": 20,
+    "kind": "list-item",
+    "text": "**PlanningStep** (recipe step): `role_hint`. The model's step is `order` + `template` only.",
+    "raw": "- **PlanningStep** (recipe step): `role_hint`. The model's step is `order` + `template` only."
+  },
+  {
+    "seq": 21,
+    "kind": "list-item",
+    "text": "**Policy**: `status`, `owner`, `latest_revision`. The prototype tracks policy lifecycle metadata; the model `Policy` holds `label`, `notes`, `evaluation_frequency`, `evaluation_responsible` only. (Policy *lifecycle* is modelled for Plans via `PlanStatusTransition`, not for standalone Policies.)",
+    "raw": "- **Policy**: `status`, `owner`, `latest_revision`. The prototype tracks policy lifecycle metadata; the model `Policy` holds `label`, `notes`, `evaluation_frequency`, `evaluation_responsible` only. (Policy *lifecycle* is modelled for Plans via `PlanStatusTransition`, not for standalone Policies.)"
+  },
+  {
+    "seq": 22,
+    "kind": "list-item",
+    "text": "**ActionStep `status`. — RESOLVED (`cba276f`, audited form).** `ActionStep.status` (`ActionStepStatus`: not-started/in-progress/done, default not-started) added, **with a who/when/from/to audit trail**: `ActionStepStatusTransition` (append-only, reusing the new `StatusTransition` base), written server-side by `services.set_action_step_status`; status is readonly in admin and changed via bulk actions; the transition log is a view-only school-scoped admin (migrations plans/0026 schema + plans/0027 view-only group grants). Accreditation-defensible per user decision (DEC-16).",
+    "raw": "- **ActionStep `status`. — RESOLVED (`cba276f`, audited form).** `ActionStep.status` (`ActionStepStatus`: not-started/in-progress/done, default not-started) added, **with a who/when/from/to audit trail**: `ActionStepStatusTransition` (append-only, reusing the new `StatusTransition` base), written server-side by `services.set_action_step_status`; status is readonly in admin and changed via bulk actions; the transition log is a view-only school-scoped admin (migrations plans/0026 schema + plans/0027 view-only group grants). Accreditation-defensible per user decision (DEC-16)."
+  },
+  {
+    "seq": 23,
+    "kind": "list-item",
+    "text": "**ActionStep `assessment`. — RESOLVED (`deca4d5`).** `ActionStep.assessment` added — a translated `TextField` (twin of `description`), the per-step \"Assessing of Progress\" narrative. It coexists with the plan-level `SuccessCriterion`/`Measurement` (the canonical grid renders both); not collapsed into them. (migration plans/0025.)",
+    "raw": "- **ActionStep `assessment`. — RESOLVED (`deca4d5`).** `ActionStep.assessment` added — a translated `TextField` (twin of `description`), the per-step \"Assessing of Progress\" narrative. It coexists with the plan-level `SuccessCriterion`/`Measurement` (the canonical grid renders both); not collapsed into them. (migration plans/0025.)"
+  },
+  {
+    "seq": 24,
+    "kind": "list-item",
+    "text": "**ActionStep ↔ Communication link. — RESOLVED (`deca4d5`).** `ActionStep.communications` M2M → `Communication` (twin of `evidence_artifacts`, `related_name=\"action_steps\"`, optional). `Communication` stays plan-owned; a comm can be plan-only and/or referenced by one-or-more steps (the source's `communication_ids` shape). (migration plans/0025.)",
+    "raw": "- **ActionStep ↔ Communication link. — RESOLVED (`deca4d5`).** `ActionStep.communications` M2M → `Communication` (twin of `evidence_artifacts`, `related_name=\"action_steps\"`, optional). `Communication` stays plan-owned; a comm can be plan-only and/or referenced by one-or-more steps (the source's `communication_ids` shape). (migration plans/0025.)"
+  },
+  {
+    "seq": 25,
+    "kind": "section",
+    "text": "C. Model requires more than the source provides  [needs-value at import]",
+    "raw": "## C. Model requires more than the source provides  [needs-value at import]"
+  },
+  {
+    "seq": 26,
+    "kind": "list-item",
+    "text": "**Cycle.starts_on / ends_on** — required `DateField`s; source has the cycle as a bare string (`\"2025-2026\"`).",
+    "raw": "- **Cycle.starts_on / ends_on** — required `DateField`s; source has the cycle as a bare string (`\"2025-2026\"`)."
+  },
+  {
+    "seq": 27,
+    "kind": "list-item",
+    "text": "**Role.department** — **N/A (Role retired, DISC-16/`048cf71`).** The former required `Role.department` FK no longer exists; responsibility is `Division` + optional `Person`.",
+    "raw": "- **Role.department** — **N/A (Role retired, DISC-16/`048cf71`).** The former required `Role.department` FK no longer exists; responsibility is `Division` + optional `Person`."
+  },
+  {
+    "seq": 28,
+    "kind": "list-item",
+    "text": "**Policy.evaluation_frequency** — required FK → `Frequency`; source carries only an inline cadence *string*. (Plus `Policy.evaluation_responsible_division` required + `evaluation_responsible_person` optional — code-current; the prototype's `owner` is role-shaped.)",
+    "raw": "- **Policy.evaluation_frequency** — required FK → `Frequency`; source carries only an inline cadence *string*. (Plus `Policy.evaluation_responsible_division` required + `evaluation_responsible_person` optional — code-current; the prototype's `owner` is role-shaped.)"
+  },
+  {
+    "seq": 29,
+    "kind": "list-item",
+    "text": "**Evidence.owner_division** — required FK → `Division` (with an optional `owner_person` FK → `Person`); prototype `evidence_artifacts` have only `{id, label}` (no owner). (No department/role exactly-one-of — that polymorphism was retired with the org remodel; `owner_division` is unconditionally required.)",
+    "raw": "- **Evidence.owner_division** — required FK → `Division` (with an optional `owner_person` FK → `Person`); prototype `evidence_artifacts` have only `{id, label}` (no owner). (No department/role exactly-one-of — that polymorphism was retired with the org remodel; `owner_division` is unconditionally required.)"
+  },
+  {
+    "seq": 30,
+    "kind": "list-item",
+    "text": "**School.slug** — unique slug required; source is a bare name string (slug `chiway-repton-xiamen` minted at seed time).",
+    "raw": "- **School.slug** — unique slug required; source is a bare name string (slug `chiway-repton-xiamen` minted at seed time)."
+  },
+  {
+    "seq": 31,
+    "kind": "section",
+    "text": "D. Precision / type mismatches  [mismatch]",
+    "raw": "## D. Precision / type mismatches  [mismatch]"
+  },
+  {
+    "seq": 32,
+    "kind": "list-item",
+    "text": "**Date precision.** Prototype dates are year-month (`\"2025-10\"`; ranges `from:\"2025-09\", to:\"2025-12\"`; `ReviewEvent.scheduled \"2025-10\"`). The model uses full `DateField`s (`Timeline.date/from_date/to_date`, `ReviewEvent.scheduled_date`). Importing requires choosing a day (e.g. first of month) — month precision is not preserved as such.",
+    "raw": "- **Date precision.** Prototype dates are year-month (`\"2025-10\"`; ranges `from:\"2025-09\", to:\"2025-12\"`; `ReviewEvent.scheduled \"2025-10\"`). The model uses full `DateField`s (`Timeline.date/from_date/to_date`, `ReviewEvent.scheduled_date`). Importing requires choosing a day (e.g. first of month) — month precision is not preserved as such."
+  },
+  {
+    "seq": 33,
+    "kind": "section",
+    "text": "E. Wrong layer  [mismatch]",
+    "raw": "## E. Wrong layer  [mismatch]"
+  },
+  {
+    "seq": 34,
+    "kind": "list-item",
+    "text": "**FeedbackChannel.** Prototype treats `feedback_channels` as a shared **registry** (Layer-1 reference data). The model makes `FeedbackChannel` **plan-owned** (`plan` FK CASCADE, Phase 7). Channels cannot be seeded as shared reference data; each plan re-declares its own. (The same channel reused across plans becomes multiple rows.)",
+    "raw": "- **FeedbackChannel.** Prototype treats `feedback_channels` as a shared **registry** (Layer-1 reference data). The model makes `FeedbackChannel` **plan-owned** (`plan` FK CASCADE, Phase 7). Channels cannot be seeded as shared reference data; each plan re-declares its own. (The same channel reused across plans becomes multiple rows.)"
+  },
+  {
+    "seq": 35,
+    "kind": "list-item",
+    "text": "**Improvement type / planning method — plan-level in the prototype, milestone-level in the model.** The prototype attaches one `subject_kind` and one `recipe_instantiated` to the *plan* (`plan-data.js` `plan.subject_kind` / `recipe_instantiated`). The model carries `improvement_type` and `planning_method` **per `Milestone`** (`SubjectKind`→`ImprovementType`, altitude `Plan`→`ActionStep`→`Milestone`; commits `057f5ed`/DISC-14 then `19cc102`/DEC-14) — a plan is a bundle of differently-typed efforts grouped under milestones. Importing the prototype's single plan-level kind would map to the plan's milestones, not the plan; a one-kind plan has no direct model home at the plan level.",
+    "raw": "- **Improvement type / planning method — plan-level in the prototype, milestone-level in the model.** The prototype attaches one `subject_kind` and one `recipe_instantiated` to the *plan* (`plan-data.js` `plan.subject_kind` / `recipe_instantiated`). The model carries `improvement_type` and `planning_method` **per `Milestone`** (`SubjectKind`→`ImprovementType`, altitude `Plan`→`ActionStep`→`Milestone`; commits `057f5ed`/DISC-14 then `19cc102`/DEC-14) — a plan is a bundle of differently-typed efforts grouped under milestones. Importing the prototype's single plan-level kind would map to the plan's milestones, not the plan; a one-kind plan has no direct model home at the plan level."
+  },
+  {
+    "seq": 36,
+    "kind": "section",
+    "text": "F. Semantic mismatches  [mismatch]",
+    "raw": "## F. Semantic mismatches  [mismatch]"
+  },
+  {
+    "seq": 37,
+    "kind": "list-item",
+    "text": "**`subject_kinds.policy_lifecycle` vs `ImprovementType.requires_planning_method`.** Same shape (bool) but different meaning: the prototype flag marks policy-lifecycle kinds; the model flag gates whether a `Milestone`'s `planning_method` is required at promotion. Not a direct copy — resolved by seed-round D4 (DEC-7).",
+    "raw": "- **`subject_kinds.policy_lifecycle` vs `ImprovementType.requires_planning_method`.** Same shape (bool) but different meaning: the prototype flag marks policy-lifecycle kinds; the model flag gates whether a `Milestone`'s `planning_method` is required at promotion. Not a direct copy — resolved by seed-round D4 (DEC-7)."
+  },
+  {
+    "seq": 38,
+    "kind": "list-item",
+    "text": "**Cadence: string vs entity.** The source treats cadence as an inline string (`annual`, `termly`, `ongoing`, `one-off`, `milestone`); the model elevates it to a first-class `Frequency` entity (FK from `Policy`, `FeedbackChannel`, `Communication`, `ReviewEvent`). Frequency rows must be synthesized from the strings (seed-round D3); there is no canonical Frequency list in the source.",
+    "raw": "- **Cadence: string vs entity.** The source treats cadence as an inline string (`annual`, `termly`, `ongoing`, `one-off`, `milestone`); the model elevates it to a first-class `Frequency` entity (FK from `Policy`, `FeedbackChannel`, `Communication`, `ReviewEvent`). Frequency rows must be synthesized from the strings (seed-round D3); there is no canonical Frequency list in the source."
+  },
+  {
+    "seq": 39,
+    "kind": "list-item",
+    "text": "**PTA dual representation.** One real-world body maps to two model rows: `ou-pta` → a `Division` (when it owns/coordinates) and `sh-pta` → a `StakeholderGroup` (when it is an audience). One source concept becomes two reference rows.",
+    "raw": "- **PTA dual representation.** One real-world body maps to two model rows: `ou-pta` → a `Division` (when it owns/coordinates) and `sh-pta` → a `StakeholderGroup` (when it is an audience). One source concept becomes two reference rows."
+  },
+  {
+    "seq": 40,
+    "kind": "list-item",
+    "text": "**StakeholderGroup has no `code`.** Source ids (`sh-*`) have no model home; the importer keys on `label`.",
+    "raw": "- **StakeholderGroup has no `code`.** Source ids (`sh-*`) have no model home; the importer keys on `label`."
+  },
+  {
+    "seq": 41,
+    "kind": "section",
+    "text": "G. Concepts with no model at all",
+    "raw": "## G. Concepts with no model at all"
+  },
+  {
+    "seq": 42,
+    "kind": "list-item",
+    "text": "**Glossary** (`registries.glossary`): term / expansion / definition entries (SLO, SWO, HRT, YGL, PLC, Yungu, Cambridge, Repton, …). No model. The prototype uses it for tooltip/synonym resolution; nothing equivalent in the app.",
+    "raw": "- **Glossary** (`registries.glossary`): term / expansion / definition entries (SLO, SWO, HRT, YGL, PLC, Yungu, Cambridge, Repton, …). No model. The prototype uses it for tooltip/synonym resolution; nothing equivalent in the app."
+  },
+  {
+    "seq": 43,
+    "kind": "list-item",
+    "text": "**External frameworks** (`registries.external_frameworks`): WASC / Cambridge / Repton as named frameworks. WASC is modelled as *standards* (`accreditation`), but not as a \"framework\" entity; **Cambridge** and **Repton** have no representation at all, despite the SLO work being explicitly Cambridge/Repton-aligned.",
+    "raw": "- **External frameworks** (`registries.external_frameworks`): WASC / Cambridge / Repton as named frameworks. WASC is modelled as *standards* (`accreditation`), but not as a \"framework\" entity; **Cambridge** and **Repton** have no representation at all, despite the SLO work being explicitly Cambridge/Repton-aligned."
+  },
+  {
+    "seq": 44,
+    "kind": "list-item",
+    "text": "**\"Critical Areas for Follow-up\"** (WASC sample template): a numbered list distinct in the source from \"Areas for Improvement\"; no dedicated model.",
+    "raw": "- **\"Critical Areas for Follow-up\"** (WASC sample template): a numbered list distinct in the source from \"Areas for Improvement\"; no dedicated model."
+  },
+  {
+    "seq": 45,
+    "kind": "section",
+    "text": "H. Capability gaps — model lacks what a described workflow needs",
+    "raw": "## H. Capability gaps — model lacks what a described workflow needs"
+  },
+  {
+    "seq": 46,
+    "kind": "prose",
+    "text": "Not source-import differences, but places where the model lacks what a described workflow needs.",
+    "raw": "Not source-import differences, but places where the model lacks what a described workflow needs."
+  },
+  {
+    "seq": 47,
+    "kind": "list-item",
+    "text": "**Evidence auditability — `Evidence` holds no payload, location, or status history.** A plan's steps each *produce* evidence that must persist for auditing (e.g. a \"publish survey → analyze → revise → final survey\" chain, where each step yields a survey instrument, a responses dataset, an analysis report, a revised draft). The `Evidence` model is metadata only — `label`, `owner_division` (required) + `owner_person` (optional), `status` (`EvidenceStatus`), `retention_until` — with:\n  1. **No artifact payload or reference.** No FileField/upload, URL, or external identifier — so the model records *that* an artifact exists and its status, but **not where the actual file lives** (the \"tbd where it persists\" question). `retention_until` even implies something is being retained, yet nothing points at it. **Resolution direction (user, 2026-05-25 — to be thought out later, NOT decided):** the field is expected to be a *reference*, not file storage — either a link/URL to an asset, or (more likely) a **hand-authored free-text field describing where the artifact is** (a location/whereabouts note). File upload/managed storage is not the anticipated shape. The decision is deferred; this only narrows the candidate space. **Minimal step — BUILT (`edf4840`, US-UI-3, 2026-05-25):** added `Evidence.location` (`TextField(blank=True)`, NOT translated) — the hand-authored \"where it is\" note — via migration `plans/0033_evidence_location` (applied + verified on dev DB); surfaced in `EvidenceAdmin` + captured in the planner `EvidenceForm` (per-step Evidence sub-formset). Field-on-existing-model → no permission migration (DISC-19 n/a). **The fuller link/upload/managed-storage decision stays deferred** (still §H.1-open) and composes alongside `location` later without disturbing it.\n  2. **No status-change audit trail. — RESOLVED (`c54f8046`).** `Evidence.status` is now audited: `EvidenceStatusTransition` (append-only, reusing the `StatusTransition` base) records who/when/from/to, written server-side by `services.set_evidence_status`; status is readonly in admin and changed via bulk actions; the transition log is a view-only school-scoped admin (migrations plans/0028 + plans/0029 view-only group grants). \"Verified by whom, when\" for evidence is now captured. (Part of the global status-auditability decision DEC-16, which completes audit coverage: Plan lifecycle [`PlanStatusTransition`], Milestone reached [stamped], ActionStep status, Evidence status.)\n  Neither the WASC source docs nor the prototype carry this (prototype evidence is `{id, label}` only). **Still open — sub-point 1 (artifact payload/location).** The status-audit resolution (sub-point 2) is done; the artifact-reference/file field is a separate storage decision, not yet built.",
+    "raw": "- **Evidence auditability — `Evidence` holds no payload, location, or status history.** A plan's steps each *produce* evidence that must persist for auditing (e.g. a \"publish survey → analyze → revise → final survey\" chain, where each step yields a survey instrument, a responses dataset, an analysis report, a revised draft). The `Evidence` model is metadata only — `label`, `owner_division` (required) + `owner_person` (optional), `status` (`EvidenceStatus`), `retention_until` — with:\n  1. **No artifact payload or reference.** No FileField/upload, URL, or external identifier — so the model records *that* an artifact exists and its status, but **not where the actual file lives** (the \"tbd where it persists\" question). `retention_until` even implies something is being retained, yet nothing points at it. **Resolution direction (user, 2026-05-25 — to be thought out later, NOT decided):** the field is expected to be a *reference*, not file storage — either a link/URL to an asset, or (more likely) a **hand-authored free-text field describing where the artifact is** (a location/whereabouts note). File upload/managed storage is not the anticipated shape. The decision is deferred; this only narrows the candidate space. **Minimal step — BUILT (`edf4840`, US-UI-3, 2026-05-25):** added `Evidence.location` (`TextField(blank=True)`, NOT translated) — the hand-authored \"where it is\" note — via migration `plans/0033_evidence_location` (applied + verified on dev DB); surfaced in `EvidenceAdmin` + captured in the planner `EvidenceForm` (per-step Evidence sub-formset). Field-on-existing-model → no permission migration (DISC-19 n/a). **The fuller link/upload/managed-storage decision stays deferred** (still §H.1-open) and composes alongside `location` later without disturbing it.\n  2. **No status-change audit trail. — RESOLVED (`c54f8046`).** `Evidence.status` is now audited: `EvidenceStatusTransition` (append-only, reusing the `StatusTransition` base) records who/when/from/to, written server-side by `services.set_evidence_status`; status is readonly in admin and changed via bulk actions; the transition log is a view-only school-scoped admin (migrations plans/0028 + plans/0029 view-only group grants). \"Verified by whom, when\" for evidence is now captured. (Part of the global status-auditability decision DEC-16, which completes audit coverage: Plan lifecycle [`PlanStatusTransition`], Milestone reached [stamped], ActionStep status, Evidence status.)\n  Neither the WASC source docs nor the prototype carry this (prototype evidence is `{id, label}` only). **Still open — sub-point 1 (artifact payload/location).** The status-audit resolution (sub-point 2) is done; the artifact-reference/file field is a separate storage decision, not yet built."
+  },
+  {
+    "seq": 48,
+    "kind": "list-item",
+    "text": "**~~No `Milestone` tier~~ — RESOLVED (`e824283`, DISC-15-0521-A).** A `Milestone` tier now exists (`Plan → Milestone → Phase → ActionStep`): `Phase.milestone` optional FK; `Milestone` carries a target (aspiration) + service-stamped achieved state; the timing carriers gained a `timing_kind` + `milestone` FK so timing anchors to a milestone (the `cadence: \"milestone\"` case is now representable). The historical gap, kept for the record: The prototype expresses a feedback channel's timing as `cadence: \"milestone\"` (`fc-stakeholder-feedback`, \"Stakeholder feedback on draft SLOs\") — it fires *when a declared level of work is reached*, not on a period. A **milestone** is best understood as an *aspiration declaring a particular level of work complete* — a checkpoint that **groups one or more `Phase`s** (e.g. 3 milestones, each with n phases), with a target (aspired completion) and an achieved state (reached / when / by whom). The model has no such tier: today the hierarchy is `Plan → Phase → ActionStep`, and the timing carriers anchor only to a recurrence or a fixed date —\n  - `FeedbackChannel.frequency` (required FK, period),\n  - `Communication.frequency` (required FK, period),\n  - `ReviewEvent.scheduled_date` (required DateField, a fixed calendar date — **not** a frequency).",
+    "raw": "- **~~No `Milestone` tier~~ — RESOLVED (`e824283`, DISC-15-0521-A).** A `Milestone` tier now exists (`Plan → Milestone → Phase → ActionStep`): `Phase.milestone` optional FK; `Milestone` carries a target (aspiration) + service-stamped achieved state; the timing carriers gained a `timing_kind` + `milestone` FK so timing anchors to a milestone (the `cadence: \"milestone\"` case is now representable). The historical gap, kept for the record: The prototype expresses a feedback channel's timing as `cadence: \"milestone\"` (`fc-stakeholder-feedback`, \"Stakeholder feedback on draft SLOs\") — it fires *when a declared level of work is reached*, not on a period. A **milestone** is best understood as an *aspiration declaring a particular level of work complete* — a checkpoint that **groups one or more `Phase`s** (e.g. 3 milestones, each with n phases), with a target (aspired completion) and an achieved state (reached / when / by whom). The model has no such tier: today the hierarchy is `Plan → Phase → ActionStep`, and the timing carriers anchor only to a recurrence or a fixed date —\n  - `FeedbackChannel.frequency` (required FK, period),\n  - `Communication.frequency` (required FK, period),\n  - `ReviewEvent.scheduled_date` (required DateField, a fixed calendar date — **not** a frequency)."
+  },
+  {
+    "seq": 49,
+    "kind": "prose",
+    "text": "  So \"do X when milestone N is reached\" is **not representable**, and the model also cannot **declare a level of work complete** (related: `ActionStep` has no status field — §B). Resolution (DISC-15-0521-A): introduce a `Milestone` tier — `Plan → Milestone → Phase → ActionStep`, with `Phase.milestone` an optional FK (mirroring the optional `ActionStep.phase`), and `Milestone` carrying `label` / `order` / a target (aspired) and an audited achieved state (mirroring `PlanStatusTransition`); then anchor the timing carriers to a `Milestone` as a distinct axis from `Frequency` (period) and `scheduled_date` (fixed date). Companion D3 note: `ongoing` is redundant with having a period and `one-off` is an occurrence-mode, not a period (`Frequency` holds discrete periods only). Tracked as `phases/discoveries.md` DISC-15-0521-A.",
+    "raw": "  So \"do X when milestone N is reached\" is **not representable**, and the model also cannot **declare a level of work complete** (related: `ActionStep` has no status field — §B). Resolution (DISC-15-0521-A): introduce a `Milestone` tier — `Plan → Milestone → Phase → ActionStep`, with `Phase.milestone` an optional FK (mirroring the optional `ActionStep.phase`), and `Milestone` carrying `label` / `order` / a target (aspired) and an audited achieved state (mirroring `PlanStatusTransition`); then anchor the timing carriers to a `Milestone` as a distinct axis from `Frequency` (period) and `scheduled_date` (fixed date). Companion D3 note: `ongoing` is redundant with having a period and `one-off` is an occurrence-mode, not a period (`Frequency` holds discrete periods only). Tracked as `phases/discoveries.md` DISC-15-0521-A."
+  },
+  {
+    "seq": 50,
+    "kind": "section",
+    "text": "I. Capability gaps surfaced by the code-grounded model-surface audit",
+    "raw": "## I. Capability gaps surfaced by the code-grounded model-surface audit"
+  },
+  {
+    "seq": 51,
+    "kind": "prose",
+    "text": "Confirmed against code (2026-05-23; `docs/model-surface-audit.md`), framed by the candidate-view feasibility analysis. These are model-capability gaps (work items, mandate-007), not source-import differences — the model holds no such surface today:",
+    "raw": "Confirmed against code (2026-05-23; `docs/model-surface-audit.md`), framed by the candidate-view feasibility analysis. These are model-capability gaps (work items, mandate-007), not source-import differences — the model holds no such surface today:"
+  },
+  {
+    "seq": 52,
+    "kind": "list-item",
+    "text": "**No capacity / availability** on `Division` or `Person`, and `RequiredResource` is `kind` + free-text `note` only (no quantity/unit). → blocks any *overbooking* detection (commitment vs a ceiling); only raw contention (concurrent-commitment counts) is derivable.",
+    "raw": "- **No capacity / availability** on `Division` or `Person`, and `RequiredResource` is `kind` + free-text `note` only (no quantity/unit). → blocks any *overbooking* detection (commitment vs a ceiling); only raw contention (concurrent-commitment counts) is derivable."
+  },
+  {
+    "seq": 53,
+    "kind": "list-item",
+    "text": "**No structured recurrence rule.** Recurrence is a `TimelineKind`/`TimingKind` token + a `Frequency` (code/label, no interval) + free `note` — no RRULE — so recurring items cannot be expanded to concrete dates (a *calendar* materializes only fixed-date / range / milestone-anchored items).",
+    "raw": "- **No structured recurrence rule.** Recurrence is a `TimelineKind`/`TimingKind` token + a `Frequency` (code/label, no interval) + free `note` — no RRULE — so recurring items cannot be expanded to concrete dates (a *calendar* materializes only fixed-date / range / milestone-anchored items)."
+  },
+  {
+    "seq": 54,
+    "kind": "list-item",
+    "text": "**No conflict concept.** Only *dependency* conflict (via the `ActionStepDependency.cross_plan_ref` string) and *schedule-overlap* (same actor, overlapping `Timeline`s, fixed dates only) are derivable; *goal/semantic* conflict has no model representation.",
+    "raw": "- **No conflict concept.** Only *dependency* conflict (via the `ActionStepDependency.cross_plan_ref` string) and *schedule-overlap* (same actor, overlapping `Timeline`s, fixed dates only) are derivable; *goal/semantic* conflict has no model representation."
+  },
+  {
+    "seq": 55,
+    "kind": "list-item",
+    "text": "**No direct `ActionStep ↔ Position` link.** A *position* view must derive its set via `Position → Holding → Person → Assignment.person`; `Assignment.person` is optional, so unit-only steps carry no position attribution at all.",
+    "raw": "- **No direct `ActionStep ↔ Position` link.** A *position* view must derive its set via `Position → Holding → Person → Assignment.person`; `Assignment.person` is optional, so unit-only steps carry no position attribution at all."
+  },
+  {
+    "seq": 56,
+    "kind": "list-item",
+    "text": "**`ActionStepDependency.cross_plan_ref` has no referential integrity** — it is an unresolved `\"<plan>:<step>\"` string, not an FK; cross-plan dependency/conflict logic parses free-form text.",
+    "raw": "- **`ActionStepDependency.cross_plan_ref` has no referential integrity** — it is an unresolved `\"<plan>:<step>\"` string, not an FK; cross-plan dependency/conflict logic parses free-form text."
+  },
+  {
+    "seq": 57,
+    "kind": "list-item",
+    "text": "**Some uniqueness is seed-convention, not DB-enforced** — `Position(division,label)`, outcome `code`s, and `PlanAccreditationStandard(plan,standard)` rely on `get_or_create`, not a `UniqueConstraint`; the `Division`/`Phase` same-school / same-plan rules are `clean()`-only (not DB-enforced).",
+    "raw": "- **Some uniqueness is seed-convention, not DB-enforced** — `Position(division,label)`, outcome `code`s, and `PlanAccreditationStandard(plan,standard)` rely on `get_or_create`, not a `UniqueConstraint`; the `Division`/`Phase` same-school / same-plan rules are `clean()`-only (not DB-enforced)."
+  },
+  {
+    "seq": 58,
+    "kind": "list-item",
+    "text": "**`ai.LLMCall` has no link to plan / step / school** — AI calls are user/system-scoped only (a tenancy/work FK is deferred per DEC-21).",
+    "raw": "- **`ai.LLMCall` has no link to plan / step / school** — AI calls are user/system-scoped only (a tenancy/work FK is deferred per DEC-21)."
+  },
+  {
+    "seq": 59,
+    "kind": "prose",
+    "text": "See `docs/model-surface-audit.md` §7 (candidate-view readiness table) and §8 (full code-cited findings). Evidence artifact payload/location (§H.1), standalone KPI and `Proposal` (§A) remain the other open gaps.",
+    "raw": "See `docs/model-surface-audit.md` §7 (candidate-view readiness table) and §8 (full code-cited findings). Evidence artifact payload/location (§H.1), standalone KPI and `Proposal` (§A) remain the other open gaps."
+  },
+  {
+    "seq": 60,
+    "kind": "section",
+    "text": "Consequence summary",
+    "raw": "## Consequence summary"
+  },
+  {
+    "seq": 61,
+    "kind": "list-item",
+    "text": "**A (omits/consolidates) & G (no model):** the concept has no model representation.",
+    "raw": "- **A (omits/consolidates) & G (no model):** the concept has no model representation."
+  },
+  {
+    "seq": 62,
+    "kind": "list-item",
+    "text": "**Lossy (B):** importing the source drops these fields; they will not survive a plain import without a model change or an out-of-band record.",
+    "raw": "- **Lossy (B):** importing the source drops these fields; they will not survive a plain import without a model change or an out-of-band record."
+  },
+  {
+    "seq": 63,
+    "kind": "list-item",
+    "text": "**Needs-value (C):** these block creation until the missing values are supplied (the seed-round D-decisions cover the reference ones).",
+    "raw": "- **Needs-value (C):** these block creation until the missing values are supplied (the seed-round D-decisions cover the reference ones)."
+  },
+  {
+    "seq": 64,
+    "kind": "list-item",
+    "text": "**Mismatch (D, E, F):** require an explicit mapping/transform at import time (date coercion, Frequency synthesis, subject-kind mapping, channel-per-plan duplication).",
+    "raw": "- **Mismatch (D, E, F):** require an explicit mapping/transform at import time (date coercion, Frequency synthesis, subject-kind mapping, channel-per-plan duplication)."
+  },
+  {
+    "seq": 65,
+    "kind": "list-item",
+    "text": "**Capability (H, I):** the model lacks what a described workflow / candidate view needs (H = workflow gaps; I = the code-grounded capability gaps the model-surface audit confirmed).",
+    "raw": "- **Capability (H, I):** the model lacks what a described workflow / candidate view needs (H = workflow gaps; I = the code-grounded capability gaps the model-surface audit confirmed)."
+  }
+]

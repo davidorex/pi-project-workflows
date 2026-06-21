@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Build the headless ctx + no-op pi literals (SURFACE §3)."
+}

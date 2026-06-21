@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-06-03T05:50+08:00",
+  "via": "claude-code",
+  "focus": "Two arcs. (1) Closed the DEC-45 restabilization tail in the decomposed surface: DEC-46 item B (ai/0023 preamble-menu mvv + the coupled B2/B3 ai/0024, 2399037), Slice 4 (CatalogueUnion.guiding_clauses->mvv_clauses + DISC-36 fix, 305fa1e), and scoped Slice 5 (logged DISC-40); built the reusable check-rename.mjs completeness gate and persisted the atomic-process convention into CLAUDE.md. (2) Extensive pi-context adoption design, then stood up the .idea-drafts staging substrate and filed this session's architecture thinking as drafts, and settled the pointer-vs-registry tracking disposition.",
+  "discoveries": [
+    "pi-context namespacing is at the SUBSTRATE grain, not within a substrate: flat block_kinds + prefix; cross-substrate via the registry, aliases, foreign edges, and promote-item. Validators (registerLensValidator) are arbitrary code run by context-validate (an introspection drift-check is possible) but registration is framework-side; a new invariant CLASS needs source changes (config supports requires-edge + status-consistency only).",
+    "The .context config (schema_version 1.0.0, 2026-05-30) carries a session-notes block kind + session_touches_item relation + session-notes-by-via lens that are NOT in the package's current conception — a local addition relevant to the external compliance pass.",
+    "Project state splits into entity arrays (DEC/DISC/US/mandates/slice-facts) vs line-decomposed DOCUMENT files (00-preamble, phase.phases, phase.phase-tasks, PHASE-LAUNCH-CHECKLIST, source-model-gaps) that are byte-faithful frozen archive, not queryable entities.",
+    ".pi-context.json (the active-substrate pointer) is HEAD-like ephemeral working state; .pi-context-registry.json (the substrate_id->dir map) is .gitmodules-like structural intel that is load-bearing for promote-item resolution, cross-substrate edges, and context-validate's drift-check. Categorically different despite both being 'the pi-context bootstrap'.",
+    "session-notes exists only in .context (accept-all'd .idea-drafts has no session-notes); there is no Claude-side context-switch orchestrator script (only a runtime demo)."
+  ],
+  "decisions_made": [
+    "Adopt the .idea-drafts staging-substrate model: ideas are filed as drafts in the stock block shapes; promoting an item into .context (promote-item, recording item_derived_from_item lineage) is the officialization. Aim: .context is official-by-construction.",
+    "DEC-47 (decomposed seed-round-plan): pi-context adoption is sequenced and the decomposed JSON stays the live working surface; bringing .context to compliance and reshaping the decomposed JSON into pi-context form are EXTERNAL, not performed in-session.",
+    "Authority-home DIRECTION (filed as idea-drafts DEC-0001, open): field/relationship/constraint authority moves to structured, introspection-checked JSON; domain-model.md stays prose; model-surface-audit.md is demoted/derived. Three forks remain open.",
+    "git SHAs stay prose-by-default; promote to a first-class commit kind only if a pivot/invariant need appears, and only as a derived-from-cited-SHAs kind (idea-drafts R-0002).",
+    "Track .pi-context-registry.json (structural); gitignore + untrack .pi-context.json (ephemeral). Committed a560729 + 08e698c."
+  ],
+  "current_status": "DEC-45 restabilization tail closed in the decomposed surface (full gate green throughout: pytest 1952, test-js 42). .idea-drafts staging substrate stood up and committed (3a20c19) with 7 drafts: research R-0001 (pi-context characterization) + R-0002 (git-SHA analysis), rationale RAT-001 (substrate-as-projection thesis), features FEAT-001 (plan-generation-on-pi, proposed) + FEAT-002 (decomposed->pi-context migration design, proposed), decisions DEC-0001 (authority-home, open), framework-gaps FGAP-001 (prose-authority drift, identified). Registry registration committed (a560729); pointer untracked+gitignored (08e698c). Working tree clean. Active substrate flipped to .context to file this note; restoring .idea-drafts after.",
+  "next_steps": [
+    "Promote idea-drafts items into .context per-idea, on decision (the officialization).",
+    "External per DEC-47: bring .context to current-pi-context compliance and migrate the decomposed JSON into pi-context shape per the FEAT-002 design (7 project-shaped block kinds; mandates fold into conventions; document files stay frozen archive; re-point/dual-run the state.mjs session-start tooling).",
+    "Resolve the open forks: authority-home mechanism (curated vs generated/checked JSON) and model-surface-audit demote-vs-correct (DEC-0001); the introspection lens-validator that makes JSON authority non-drifting.",
+    "DEC-45 Slice 5 (docs): correct domain-model.md's mvv concept.",
+    "Remaining decomposed backlog (pending-actions seq 2-7): D7 user/Person seeding, the post-Phase-15 human end-to-end walkthrough, US-STATUS vivified flips, the four standing DISCs, the Mode-C prompt-workshop cascade."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "title": "decompose.py grounding-block dedup table stale after B2 added guiding_statements to snippets 03/04/05",
+  "status": "identified",
+  "package": "prompt-workshop/dispatch/decompose.py",
+  "description": "TASK-032 (B2) added the guiding_statements grounding block to snippets 03/04/05 (so they now share FRAG-gb-guiding-statements with 01/07/10/13). But decompose.py's _GB_TABLE dedup frozenset for guiding_statements is still {1, 7, 10, 13} (decompose.py:145) -- it was not updated to include 3/4/5. The decompose reconstruction gate STOPs on this drift. The live dispatch + the verify-render-parity gate are unaffected (parity stayed 14/14 throughout), so it is latent in the reconstruction tool only. Introduced by B2 (commit 0f13aae); a missed lockstep when the grounding block was added.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/decompose.py",
+      "reference": ":145 (\"guiding_statements\", frozenset({1, 7, 10, 13})) -- missing snippets 3/4/5 which B2 gave the guiding_statements block"
+    },
+    {
+      "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+      "reference": "carries the guiding_statements render block (B2/TASK-032) identical to snippets 1/7/10/13"
+    }
+  ],
+  "impact": "The decompose.py reconstruction gate fails (STOP) on the guiding_statements block; the .workshopping fragment dedup table under-counts shared blocks. No effect on live dispatch or parity; a tooling-integrity drift.",
+  "proposed_resolution": "Update decompose.py:145 frozenset to include snippets 3/4/5 (and verify 04 too) so the dedup table matches the post-B2 snippet set; re-run the decompose reconstruction gate to green. Add the dedup-table update to the grounding-block-wiring lockstep checklist so future additions update it."
+}

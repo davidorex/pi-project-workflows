@@ -1,0 +1,14 @@
+{
+  "title": "Gate's pytest runs on SQLite — Postgres-only constraint violations (VARCHAR length, CHECK, UNIQUE) are invisible to the gate",
+  "status": "identified",
+  "package": "config",
+  "description": "config/settings/test.py runs the suite on in-memory SQLite, which does not enforce VARCHAR max_length, CHECK constraints, or DB-level UNIQUE the way the dev/production Postgres does. A class of bugs therefore passes `pytest` (the standing gate) on SQLite yet raises DataError / IntegrityError on Postgres in production: an ORM create/save writing author-controlled strings into a capped column, a CHECK-violating row, a UNIQUE collision. Surfaced by TASK-020/FGAP-008's _save_flag_requests, where a valid-JSON oversize flag-request value 500s on Postgres but no SQLite test could catch it; TASK-020's fix routes through full_clean() so the ValidationError path (which fires on BOTH DBs) is the safety net.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/config/settings/test.py",
+      "reference": "test-suite DATABASES = in-memory SQLite (~:22-27); pytest selects this settings module"
+    }
+  ],
+  "impact": "The gate's pytest cannot catch Postgres-only constraint violations, so such bugs pass green and fail in production — a latent blind spot for any code path writing unvalidated input to constrained columns.",
+  "proposed_resolution": "Mitigation already applied in TASK-020: full_clean() before saving author input + a test asserting the ValidationError path. Fuller fix is a scope call: run the gate's pytest against Postgres (full fidelity) or add a Postgres CI lane. User scopes."
+}

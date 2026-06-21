@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "Run the 14-spec sequence headless against the Chiway dev-DB (preconditions: green 14/14 verify-render-parity, Postgres+DATABASE_URL, pi+backend if agent steps); capture the run dir.",
+  "acceptance_criteria": [
+    "The 14-spec sequence runs to completion headless against the Chiway dev-DB, its preconditions met.",
+    "Each spec's response is applied and merged, accumulating into a whole-plan draft.",
+    "A hard rejection halts at that spec with the prior draft intact; a soft-flagged response is recorded and the run continues.",
+    "The run is captured at an inspectable location holding each spec's draft and a completion or failure record.",
+    "Re-running a partially-completed run resumes from the last good draft without redoing completed specs.",
+    "The full project gate stays green."
+  ]
+}

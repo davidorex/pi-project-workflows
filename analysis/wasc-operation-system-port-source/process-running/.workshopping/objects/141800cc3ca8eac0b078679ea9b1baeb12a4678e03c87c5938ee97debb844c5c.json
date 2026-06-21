@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if divisions %}The school's divisions (choose each artifact's owner_division by its exact label from this list):\n{% for d in divisions %}- \"{{ d.label }}\"{% if d.scope_summary %} — {{ d.scope_summary }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "divisions"
+}

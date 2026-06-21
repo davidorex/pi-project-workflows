@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/issues",
+  "version": "1.0.1",
+  "title": "Issues",
+  "description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
+  "type": "object",
+  "required": [
+    "issues"
+  ],
+  "properties": {
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "body",
+          "location",
+          "status",
+          "category",
+          "priority",
+          "package"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^issue-\\d{3}$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Scannable one-liner (GitHub issue title pattern)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Full detail and context for downstream composition",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "location": {
+            "type": "string",
+            "description": "File path + line number, e.g. packages/pi-workflows/src/dag.ts:219"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved",
+              "deferred"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "primitive",
+              "issue",
+              "cleanup",
+              "capability",
+              "composition"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "package": {
+            "type": "string",
+            "description": "Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent",
+              "monitor",
+              "workflow"
+            ],
+            "description": "How this issue was created"
+          },
+          "resolved_by": {
+            "type": "string",
+            "description": "Commit message or reference if resolved"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    }
+  }
+}

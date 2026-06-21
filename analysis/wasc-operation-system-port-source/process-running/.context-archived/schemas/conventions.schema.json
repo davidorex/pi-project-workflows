@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/conventions",
+  "version": "1.0.0",
+  "title": "Conventions",
+  "description": "Code and process conventions the project follows. Rules with enforcement methods (lint, review, test) that agents must comply with when writing code. Injected into agent prompts as constraints.",
+  "type": "object",
+  "required": ["rules"],
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "enforcement", "severity"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string", "x-prompt-budget": { "tokens": 1000, "words": 800 } },
+          "enforcement": { "type": "string", "enum": ["lint", "test", "review", "manual"] },
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] }
+        }
+      }
+    },
+    "test_conventions": {
+      "type": "object",
+      "required": ["runner_command", "file_pattern"],
+      "properties": {
+        "runner_command": { "type": "string" },
+        "file_pattern": { "type": "string" }
+      }
+    },
+    "lint_command": { "type": "string" },
+    "lint_scope": { "type": "string" }
+  }
+}

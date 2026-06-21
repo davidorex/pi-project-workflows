@@ -1,0 +1,10 @@
+{
+  "status": "planned",
+  "description": "Story A (shared preamble). R2 cross-cutting -- define that action steps are learning-designed interventions, embodied in the step's plain description (recall -> real task -> check -> reflect), never transmission, never labelled. Add to the preamble success-criteria block. Mirror + re-stamp + parity.",
+  "acceptance_criteria": [
+    "In a freshly generated plan, every action step shows four observable elements -- a reference to prior learning/context, a task participants actively do, a check of understanding, and a closing next-step/reflection -- an adversarial reviewer marks all four per step with zero steps failing.",
+    "The scan for step-scaffolding labels yields zero occurrences.",
+    "Zero action steps are attend/listen/read-only (transmission) -- an adversarial reviewer confirms none.",
+    "The dispatched output parses clean with no new fabrication flags."
+  ]
+}

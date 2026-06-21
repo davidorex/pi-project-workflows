@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "Accumulation seam sub-slice 1 (form-step fold): a pure server-side function (in a new planner/services.py) that folds a parsed form-step AssistResult.prefill -- a flat {field: value} dict over bare field names, e.g. A1 narrative-draft's 5 fields on the `basics` step -- into the flat draft_state by setting draft_state[field]=value (bare keys, the collectDraftState grammar). Reads/writes the PlanDraftState store. No retired-workshop import (apply.py MERGE_RULES is dev-only reference). Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=fold_form).",
+  "acceptance_criteria": [
+    "Folding a parsed form-step prefill (a {field: value} dict over bare field names, e.g. the five narrative fields) into a draft_state sets each bare field key to its value.",
+    "Folding updates the given fields without clobbering unrelated pre-existing draft_state keys.",
+    "The folded draft_state round-trips through the PlanDraftState store (save then load returns it equal) and, passed to build_grounding(include=['draft_state']), is read back with the folded form fields present and unchanged.",
+    "The fold is a pure server-side transform that imports no retired-workshop code.",
+    "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+  ]
+}

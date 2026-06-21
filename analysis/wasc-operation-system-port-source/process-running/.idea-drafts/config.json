@@ -1,0 +1,604 @@
+{
+  "schema_version": "1.0.0",
+  "block_kinds": [
+    {
+      "canonical_id": "decisions",
+      "display_name": "Decisions",
+      "prefix": "DEC-",
+      "schema_path": "schemas/decisions.schema.json",
+      "array_key": "decisions",
+      "data_path": "decisions.json"
+    },
+    {
+      "canonical_id": "framework-gaps",
+      "display_name": "Framework Gaps",
+      "prefix": "FGAP-",
+      "schema_path": "schemas/framework-gaps.schema.json",
+      "array_key": "gaps",
+      "data_path": "framework-gaps.json"
+    },
+    {
+      "canonical_id": "tasks",
+      "display_name": "Tasks",
+      "prefix": "TASK-",
+      "schema_path": "schemas/tasks.schema.json",
+      "array_key": "tasks",
+      "data_path": "tasks.json"
+    },
+    {
+      "canonical_id": "verification",
+      "display_name": "Verification",
+      "prefix": "VER-",
+      "schema_path": "schemas/verification.schema.json",
+      "array_key": "verifications",
+      "data_path": "verification.json"
+    },
+    {
+      "canonical_id": "issues",
+      "display_name": "Issues",
+      "prefix": "issue-",
+      "schema_path": "schemas/issues.schema.json",
+      "array_key": "issues",
+      "data_path": "issues.json"
+    },
+    {
+      "canonical_id": "features",
+      "display_name": "Features",
+      "prefix": "FEAT-",
+      "schema_path": "schemas/features.schema.json",
+      "array_key": "features",
+      "data_path": "features.json"
+    },
+    {
+      "canonical_id": "research",
+      "display_name": "Research",
+      "prefix": "R-",
+      "schema_path": "schemas/research.schema.json",
+      "array_key": "research",
+      "data_path": "research.json"
+    },
+    {
+      "canonical_id": "rationale",
+      "display_name": "Design Rationale",
+      "prefix": "RAT-",
+      "schema_path": "schemas/rationale.schema.json",
+      "array_key": "rationales",
+      "data_path": "rationale.json"
+    },
+    {
+      "canonical_id": "spec-reviews",
+      "display_name": "Spec Reviews",
+      "prefix": "REVIEW-",
+      "schema_path": "schemas/spec-reviews.schema.json",
+      "array_key": "reviews",
+      "data_path": "spec-reviews.json"
+    },
+    {
+      "canonical_id": "layer-plans",
+      "display_name": "Layer Restructure Plans",
+      "prefix": "PLAN-",
+      "schema_path": "schemas/layer-plans.schema.json",
+      "array_key": "plans",
+      "data_path": "layer-plans.json"
+    },
+    {
+      "canonical_id": "requirements",
+      "display_name": "Requirements",
+      "prefix": "REQ-",
+      "schema_path": "schemas/requirements.schema.json",
+      "array_key": "requirements",
+      "data_path": "requirements.json"
+    },
+    {
+      "canonical_id": "conventions",
+      "display_name": "Conventions",
+      "prefix": "",
+      "schema_path": "schemas/conventions.schema.json",
+      "array_key": "rules",
+      "data_path": "conventions.json"
+    },
+    {
+      "canonical_id": "context-contracts",
+      "display_name": "Context Contracts",
+      "prefix": "CTX-",
+      "schema_path": "schemas/context-contracts.schema.json",
+      "array_key": "contracts",
+      "data_path": "context-contracts.json"
+    },
+    {
+      "canonical_id": "phase",
+      "display_name": "Phases",
+      "prefix": "PHASE-",
+      "schema_path": "schemas/phase.schema.json",
+      "array_key": "phases",
+      "data_path": "phase.json"
+    },
+    {
+      "canonical_id": "story",
+      "display_name": "Stories",
+      "prefix": "STORY-",
+      "schema_path": "schemas/story.schema.json",
+      "array_key": "stories",
+      "data_path": "story.json"
+    },
+    {
+      "canonical_id": "work-orders",
+      "display_name": "Work Orders",
+      "prefix": "WO-",
+      "schema_path": "schemas/work-orders.schema.json",
+      "array_key": "work_orders",
+      "data_path": "work-orders.json"
+    }
+  ],
+  "relation_types": [
+    {
+      "canonical_id": "decision_supersedes_decision",
+      "display_name": "supersedes",
+      "category": "ordering",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "decision_relates_to_decision",
+      "display_name": "relates to decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_issue",
+      "display_name": "addresses issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "decision_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "decisions"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "gap_addressed_by_decision",
+      "display_name": "addressed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "gap_addressed_by_feature",
+      "display_name": "addressed by feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "gap_relates_to_issue",
+      "display_name": "relates to issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "framework-gaps"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "feature_depends_on_item",
+      "display_name": "depends on item",
+      "category": "ordering",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "feature_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "feature_resolves_issue",
+      "display_name": "resolves issue",
+      "category": "data_flow",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "issues"
+      ]
+    },
+    {
+      "canonical_id": "feature_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "story_depends_on_story",
+      "display_name": "story depends on story",
+      "category": "ordering",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "story"
+      ]
+    },
+    {
+      "canonical_id": "story_gated_by_item",
+      "display_name": "story gated by",
+      "category": "ordering",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "task_depends_on_task",
+      "display_name": "depends on task",
+      "category": "ordering",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "tasks"
+      ]
+    },
+    {
+      "canonical_id": "requirement_depends_on_requirement",
+      "display_name": "depends on requirement",
+      "category": "ordering",
+      "source_kinds": [
+        "requirements"
+      ],
+      "target_kinds": [
+        "requirements"
+      ]
+    },
+    {
+      "canonical_id": "research_supersedes_research",
+      "display_name": "research supersedes research",
+      "category": "ordering",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "research"
+      ]
+    },
+    {
+      "canonical_id": "research_informs_item",
+      "display_name": "informs item",
+      "category": "data_flow",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "research_relates_to_research",
+      "display_name": "relates to research",
+      "category": "data_flow",
+      "source_kinds": [
+        "research"
+      ],
+      "target_kinds": [
+        "research"
+      ]
+    },
+    {
+      "canonical_id": "review_targets_item",
+      "display_name": "review targets",
+      "category": "membership",
+      "source_kinds": [
+        "spec-reviews"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "verification_verifies_item",
+      "display_name": "verifies",
+      "category": "data_flow",
+      "source_kinds": [
+        "verification"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    },
+    {
+      "canonical_id": "task_positioned_in_phase",
+      "display_name": "positioned in phase",
+      "category": "membership",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "phase"
+      ]
+    },
+    {
+      "canonical_id": "feature_contains_story",
+      "display_name": "contains story",
+      "category": "membership",
+      "source_kinds": [
+        "features"
+      ],
+      "target_kinds": [
+        "story"
+      ]
+    },
+    {
+      "canonical_id": "story_contains_task",
+      "display_name": "contains task",
+      "category": "membership",
+      "source_kinds": [
+        "story"
+      ],
+      "target_kinds": [
+        "tasks"
+      ]
+    },
+    {
+      "canonical_id": "rationale_supports_decision",
+      "display_name": "supports decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "rationale"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "task_addresses_gap",
+      "display_name": "addresses gap",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "framework-gaps"
+      ]
+    },
+    {
+      "canonical_id": "task_addresses_feature",
+      "display_name": "addresses feature",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "features"
+      ]
+    },
+    {
+      "canonical_id": "task_governed_by_decision",
+      "display_name": "governed by decision",
+      "category": "data_flow",
+      "source_kinds": [
+        "tasks"
+      ],
+      "target_kinds": [
+        "decisions"
+      ]
+    },
+    {
+      "canonical_id": "item_derived_from_item",
+      "display_name": "derived from",
+      "category": "data_flow",
+      "source_kinds": [
+        "*"
+      ],
+      "target_kinds": [
+        "*"
+      ]
+    }
+  ],
+  "lenses": [
+    {
+      "id": "tasks-by-status",
+      "kind": "target",
+      "target": "tasks",
+      "derived_from_field": "status",
+      "bins": [
+        "planned",
+        "in-progress",
+        "completed",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    {
+      "id": "gaps-by-status",
+      "kind": "target",
+      "target": "framework-gaps",
+      "derived_from_field": "status",
+      "bins": [
+        "identified",
+        "accepted",
+        "in-progress",
+        "closed",
+        "wontfix"
+      ]
+    }
+  ],
+  "layers": [],
+  "status_buckets": {},
+  "installed_schemas": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts",
+    "phase",
+    "story",
+    "work-orders"
+  ],
+  "installed_blocks": [
+    "decisions",
+    "framework-gaps",
+    "tasks",
+    "verification",
+    "issues",
+    "features",
+    "research",
+    "rationale",
+    "spec-reviews",
+    "layer-plans",
+    "requirements",
+    "conventions",
+    "context-contracts",
+    "phase",
+    "story",
+    "work-orders"
+  ],
+  "invariants": [
+    {
+      "id": "completed-task-has-verification",
+      "class": "requires-edge",
+      "block": "tasks",
+      "where": {
+        "status": "completed"
+      },
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_child",
+      "severity": "error",
+      "message": "Completed task '{id}' has no verification edge (verification_verifies_item)"
+    },
+    {
+      "id": "decision-cites-forcing-artifact",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "decision_addresses_issue",
+        "decision_addresses_feature",
+        "decision_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "severity": "error",
+      "message": "Decision '{id}' cites no forcing artifact (decision_addresses_issue|feature|gap edge)"
+    },
+    {
+      "id": "task-completed-gap-closed",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_gap"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a gap that is not closed"
+    },
+    {
+      "id": "task-completed-feature-complete",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_addresses_feature"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "warning",
+      "message": "Completed task '{id}' addresses a feature that is not complete"
+    },
+    {
+      "id": "verification-passed-task-complete",
+      "class": "status-consistency",
+      "block": "verification",
+      "relation_types": [
+        "verification_verifies_item"
+      ],
+      "direction": "as_parent",
+      "when_bucket": "complete",
+      "require_target_bucket": "complete",
+      "severity": "error",
+      "message": "Passed verification '{id}' verifies a task that is not completed"
+    },
+    {
+      "id": "task-not-on-superseded-decision",
+      "class": "status-consistency",
+      "block": "tasks",
+      "relation_types": [
+        "task_governed_by_decision"
+      ],
+      "direction": "as_parent",
+      "forbid_target_bucket": "unknown",
+      "severity": "warning",
+      "message": "Task '{id}' is governed by a superseded or cancelled decision"
+    }
+  ],
+  "tool_operations": [],
+  "tool_operations_forbidden": [],
+  "root": ".idea-drafts",
+  "substrate_id": "sub-3864ddf3fe0faf50"
+}

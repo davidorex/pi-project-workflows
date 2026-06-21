@@ -1,0 +1,14 @@
+{
+  "title": "Hard-verification-gated autonomous dev-loop harness for the trio build",
+  "status": "in-progress",
+  "layer": "L3",
+  "description": "The development harness for building the production orchestration trio (US-LLM-23/24/25 + the 3 assists) under hard verification, per ~/.claude/plans/sequential-dreaming-cocke.md + DEC-58. Per trio slice: ONE runnable HARD gate (`make verify-slice`) composing the slice's behavioral pytest tests + the project static gate + context-validate + (where applicable) _check_promotion_gates-as-a-test; the slice's acceptance_criteria are authored as those tests BEFORE IMPL (gate-first). An agent loop runs IMPL -> gate -> re-IMPL (fresh agent, full state) until the gate exit code is 0, bounded by a hard iteration cap (then STOP+escalate, mandate-008), then a mandatory SEPARATE adversarial audit; done = gate exit 0 AND audit findings == 0. TWO-CLASS gate (DEC-58/DEC-53): only the semantic/behavioral core + this-slice-introduced soundness blocks; cosmetic/style, language WARNs, and pre-existing/unrelated/flaky failures are NON-BLOCKING (recorded as Flags) so trivia never blocks and the loop never hangs. Reuses existing primitives (Makefile gate, gate-before-commit.sh, _check_promotion_gates, context-validate); adds no orchestration engine; reintroduces no retired-workshop code. Proven on the trio's first slice; the trio's full slice decomposition is a separate pre-impl step reusing this harness.",
+  "acceptance_criteria": [
+    "There is one runnable command per trio slice whose exit code alone decides verification: exit 0 if and only if the slice's behavioral acceptance tests pass, the project static gate is green, the context cascade validates, and (where the slice touches promotion/draft accumulation) the promotion predicate holds.",
+    "A slice's acceptance criteria are expressed as executable tests that are observed failing before the slice is implemented and passing after; the loop's continue/stop decision is that command's exit code, never a model's reading of prose.",
+    "A failure that is cosmetic, a language-register warning, or pre-existing/unrelated/flaky to the slice does not block the slice from completing and is recorded rather than dropped; only failures bearing on the slice's behaviour or the soundness it introduced block.",
+    "The build loop always terminates: it either reaches a verified state or, after a bounded number of attempts, stops and surfaces the exact unresolved failure to the human; it never loops indefinitely and never silently abandons the work.",
+    "A slice is only marked done when both its hard gate passes and an independent adversarial check confirms the criteria are genuinely met (not vacuously passing), and that done-state is machine-checked, not asserted.",
+    "The harness is demonstrated end-to-end on the trio's first slice without reintroducing any retired-workshop tooling or adding a new orchestration engine."
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Implement apply_from_substrate.py (rebuild grounding, run production parser, write a NEW versioned draft file, emit JSON; per SPEC §5 + §5a)."
+}

@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-14T03:00:00Z",
+  "evidence": "TASK-050 (FGAP-035 deferred-gap reason free-text scan) IMPL via the canonical pipeline IN PLAN MODE. Code commit 3597879. Production one-function fix: _select_a3 (planner/_freetext_audit.py) now also extracts the deferred-gap `reason` (field path A3.{relation}[{i}].reason) alongside the existing `rationale`, routing domain_alignment.*_not_addressed[].reason through the SAME audit_prefill_flags catalogue-survivor scan as targeted rationale. Field-presence based (a not_addressed item yields reason, a targeted item yields rationale; never both -- enforced by the parser builders _a3_selection_list / _a3_not_addressed_list). No specs.py/parser/snippet/schema/check_draft change (the not_addressed lists are already in prefill at the audit call). SEPARATE adversarial audit: Total findings: 0 -- verified end-to-end through the REAL parser: fabricated reasons on learner_outcomes_not_addressed[0].reason + areas_for_improvement_not_addressed[0].reason -> FreetextFlags on those fields carrying the fabricated spans (criterion 1); clean reasons -> 0 flags (criterion 2); targeted rationale branch byte-identical, all 82 freetext tests pass (criterion 3). Gate green: ruff clean, mypy . 325 Success, pytest 3212, make test-js 48/48, verify-render-parity 14/14. Files: _freetext_audit.py + test_freetext_audit.py only. PyRight not-accessed = uniform-selector-signature false positives. SCOPE NOTE (surfaced, separate): check_draft._iter_prose_fields does not walk domain_alignment at all (whole-draft hard-phrase/language-WARN coverage) -- a pre-existing matter distinct from the FGAP-035 catalogue-survivor asymmetry; not folded into TASK-050.",
+  "criteria_results": [
+    {
+      "criterion": "The free-text/catalogue audit scans the deferred-gap reason field the same way it scans targeted-row rationale: a fabricated or off-register reason on a deferred-gap entry is detected; demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A legitimate deferred-gap reason passes the audit; demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection on existing inputs, and the project gate is green.",
+      "status": "passed"
+    }
+  ]
+}

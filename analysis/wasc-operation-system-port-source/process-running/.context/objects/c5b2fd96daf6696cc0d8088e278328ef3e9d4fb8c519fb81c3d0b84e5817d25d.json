@@ -1,0 +1,18 @@
+{
+  "title": "Decision-requests (upward DECISION REQUEST surface) discipline not transposed into the corpus",
+  "status": "closed",
+  "package": "prompt-workshop corpus (no spec produces decision-requests) -- relates to TASK-035/R8 options-posture",
+  "description": "sim-revised-frame.md defines DECISION REQUEST as a first-class structural plan surface -- the upward complement to the options posture: what decision is needed, from whom, why, what it blocks/unblocks. The T5 audit found this discipline absent from the workshopping corpus: no spec produces a decision-requests output, no generation contract, no check. It is the upward-decision sibling of options-posture (R8), which TASK-035 is dispositioning as an orchestration/create-plan-UX-layer placement (not per-spec). Decision-requests plausibly belongs at the same orchestration/UX layer, but it is currently undispositioned -- neither transposed nor decided.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/sim-revised-frame.md",
+      "reference": "DECISION REQUEST defined as a first-class upward surface (what/from-whom/why/blocks-unblocks)"
+    },
+    {
+      "file": "prompt-workshop/snippets/",
+      "reference": "no spec_key produces a decision-requests output; absent from the 14-spec corpus + from self_check/check_draft"
+    }
+  ],
+  "impact": "A validated sim-land discipline (surfacing the upward decisions a plan needs) is not yet produced anywhere in the corpus. Placement is now SETTLED (DEC-0005: in-draft authored content, coverage-class); the generation contract + in-execution gate build remains open.",
+  "proposed_resolution": "CLOSED by TASK-048 / VER-043 / commit 49d7770: decision-requests are now an in-draft STRUCTURED element {what_decision, from_whom, why, blocks_unblocks} authored at propose-assignments (spec 06) for any action-step precursor no division can own. Carrier = a NEW optional AssistResult.decision_requests field (TASK-044/046 pattern; prefill stays the assignments list; absent key tolerated). Well-formedness gated deterministically (parser raise [exit 1] + _eval_decision_requests self_check [exit 3] defense-in-depth + check_decision_requests whole-draft Check 8); COMPLETENESS (every unowned precursor escalated) is generation-contract + adversarial-read -- decision-requests are emergent, not a catalogue universe (per DEC-0005 in-draft coverage-class; criterion 3 corrected from an impossible deterministic-completeness gate to the determinable split). [Original plan: decision-requests in-draft coverage-class element per DEC-0005, snippet contract + parser-recognized element + self-check.]"
+}

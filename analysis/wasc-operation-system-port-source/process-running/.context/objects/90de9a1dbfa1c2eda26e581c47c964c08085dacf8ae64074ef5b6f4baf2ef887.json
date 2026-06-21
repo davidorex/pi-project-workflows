@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "WORKSHOP FLAGGING A1 - surface DEC-44 verdicts (combines gap FGAP-002). planner/_llm_fabrication_validator.py validate_candidates (:83) returns the 3-way verdict per span (fabricated | catalogue-variant | ordinary-prose) instead of filtering to fabricated only (:144), so callers route catalogue-variant->FLAG, ordinary-prose->admit, fabricated->reject-or-flag. Base of the parser flag-classification chain; a dependency of the workshop soft-flag apply (TASK-015). Three-valued flagging model, parser layer. Build via the canonical pipeline."
+}

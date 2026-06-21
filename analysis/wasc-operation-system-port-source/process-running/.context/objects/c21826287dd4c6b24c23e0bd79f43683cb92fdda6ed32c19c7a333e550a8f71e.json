@@ -1,0 +1,5 @@
+{
+  "description": "Each rendered phase or slice prompt is fully self-contained. IMPL executes; never interprets. Cumulative IMPL outputs equal the cumulative user stories live.",
+  "enforcement": "manual",
+  "severity": "error"
+}

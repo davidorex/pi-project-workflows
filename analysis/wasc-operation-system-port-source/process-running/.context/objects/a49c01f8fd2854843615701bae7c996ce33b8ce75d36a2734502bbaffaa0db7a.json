@@ -1,0 +1,22 @@
+{
+  "status": "identified",
+  "package": "school-improvement-plans/ai/migrations (PromptTemplate corpus) + plans/services.py",
+  "title": "Trio: prose-named WASC standards (A1 narrative) can diverge from the structured accreditation_standards (A2/spec-13); no production prompt or gate reconciles them",
+  "description": "Production re-file of the discarded language-polish-pass branch's workshop-scoped FGAP-044, verified live against main 2026-06-21. In the trio, A1 narrative-draft writes prose (current_state/desired_state/rationale/action-step descriptions) that may name WASC standard codes and commit the plan to a targeted set, while A2 propose-accreditation-standards (spec-13) selects the authoritative STRUCTURED accreditation_standards independently from grounding. No production prompt directs the model to keep the prose-named set coherent with the structured set, and _check_promotion_gates only checks accreditation_standards.exists() (non-empty) -- it does NOT verify prose<->structured coherence. So the trio can emit a gate-PASSING draft whose prose commits to standards the structured targeted set omits (or names none the prose advances): an ungated incoherence. Corroborated against current source: no reconcil / 'targeted standards are' / 'coherent with the draft' directive anywhere in ai/migrations (only the no-fabrication preamble); no prose/coherence check in plans/services.py _check_promotion_gates.",
+  "impact": "A trio draft can pass the promotion gate while its narrative prose and its structured Standards-Targeted set disagree -- the admin is shown an internally incoherent plan, against NORTH-STAR's 'best route' coherence. Real on the production trio path (A1 + A2 both run). Not a gate blocker (the gate is satisfied by a non-empty structured set), so it surfaces only on read.",
+  "proposed_resolution": "A production prompt directive via an ai/00NN guarded migration (canonical pipeline): in the shared preamble and/or the spec-13 body, direct the model to treat the declared structured accreditation_standards as the authoritative targeted set, name a standard in prose only where the plan substantively ties to it (key+name, not an enumerated prose list), and make the proposed structured set coherent with the prose (include every standard the prose substantively advances; propose none the prose gives no support for). The discarded branch's draft directive text (workshop preamble + snippet-13) is a usable starting point. A structural coherence check is a heavier alternative; a prompt directive is the lighter first move.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/ai/migrations/",
+      "reference": "grep -rinE 'reconcil|targeted standards are|coherent with the draft' ai/migrations/ returns no match (only the no-fabrication preamble) -- the standards-reconciliation directive is absent from the production prompt corpus"
+    },
+    {
+      "file": "school-improvement-plans/plans/services.py",
+      "reference": "_check_promotion_gates: grep 'prose|reconcil|named|coheren' returns no prose<->structured coherence check; the gate only asserts accreditation_standards.exists()"
+    },
+    {
+      "file": "discarded language-polish-pass branch",
+      "reference": "origin = workshop-scoped FGAP-044 (commit 4001a87); its prompt fix (27ac24e) was applied to the retired workshop layer only, never to production ai/migrations"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-13T21:00:00Z",
+  "evidence": "TASK-047 (FGAP-041 front-load precursor-identification) IMPL via the canonical pipeline, RE-RUN CLEANLY IN PLAN MODE after a prior out-of-process IMPL was interrupted and left unverified residue (discarded via git restore + rm, never git reset). Code commit 1c3550a. A GENERATION-CONTRACT discipline (A2 prose-embodied shape), NOT a deterministic gate: preamble criterion 7 (preamble.md:24) extended with front-load step 3 (surface precursor requirements/dependencies before actions, or state plainly none); snippet 05 step-writing directive (~line 76) requires each step's description to state precursor(s)-or-none. OUTPUT CONTRACT {description, assessment} UNCHANGED; NO self_check, NO check_draft, NO specs.py/schema/assist.py change (precursors are author-variable prose -> a regex scan would be brittle; verification is the adversarial read per DEC-53). Lockstep: FRAG-preamble + FRAG-intro-decompose-action-steps-7 re-stamped (new content_hash, content_parent=prior, oid preserved; RFC 8785 JCS SHA-256, independently recomputed + matched by the audit); parity 14/14. SEPARATE adversarial audit verified each criterion against running code: Total findings: 0. Criterion 1: render.py decompose-action-steps carries BOTH the criterion-7 precursor clause AND the snippet-05 directive. Criterion 2 (authoritative): a FRESH 6-step decompose-action-steps generation under the new contract -> every action step states a precursor or affirms none, ZERO silent (the pre-existing old-contract steps 0-5 ARE silent, confirming the contract change is the differentiator). Criterion 3: full gate green (ruff clean, ruff format clean, mypy . 325 Success, pytest 3174 passed, make test-js 48/48), parity 14/14 + both cross-checks; files touched = exactly preamble.md + snippet 05 + .workshopping (prompt-fragment.json + 2 objects); no production/self_check/check_draft/schema change; no leftover residue. PROCESS NOTE: this is the corrected canonical-pipeline run (plan mode -> fresh in-process Explore -> corroborate vs current source + git ground truth -> plan -> ExitPlanMode approval -> discard residue -> IMPL -> separate adversarial audit -> cascade), after the plan-mode + approval-gate step was previously skipped.",
+  "criteria_results": [
+    {
+      "criterion": "The front-load generation contract requires every goal/action to surface its precursor requirements or dependencies before action, or to state affirmatively that none exist.",
+      "status": "passed"
+    },
+    {
+      "criterion": "An adversarial read of a generated draft finds every action step states its precursors or explicitly states none; zero action steps leave precursors unstated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing.",
+      "status": "passed"
+    }
+  ]
+}

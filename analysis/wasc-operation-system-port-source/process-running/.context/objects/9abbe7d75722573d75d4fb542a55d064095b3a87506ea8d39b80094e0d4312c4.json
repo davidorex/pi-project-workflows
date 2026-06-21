@@ -1,0 +1,33 @@
+{
+  "title": "Workshop / pipeline refinements — evidence-grounded roadmap",
+  "status": "complete",
+  "layer": "L3",
+  "type": "landscape",
+  "question": "Given the evidence from the workshop runs to date (the first complete draft, the FGAP-018/019/022 fixes, the WF-13/15/16 failures), what refinements are warranted — independent of any single run?",
+  "method": "synthesis of the evaluated draft (run ...092307) + the fix/finding record; not a code probe.",
+  "findings_summary": "A prioritized menu of refinement OPPORTUNITIES (not committed work; each becomes a task/FGAP when prioritized). Full body: docs/workshop-refinements-2026-06-07.md. (A) Draft content: A1 action-scope concentration -- the produced plan was governance-centric (6 steps = one policy-drafting cycle, 5/6 Principal's-Office-owned); prompt decompose-action-steps for a MIX of governance + distributed instructional actions (clearest content weakness). A2 criteria measurability -- 5/6 criteria were judgment; steer toward inspection/target with metrics. A3 soft-flags as a standing tuning signal -- recurring flags (e.g. 'HOD' abbreviation) -> prompt-reinforcement loop (DEC-40: prompt-side, never gate-loosening). (B) Pipeline: B4 generalize the grounding-leanness audit -- FGAP-022 scoped the atom inventory (sent to 13/14 specs that don't use it); audit ALL grounding sections + the whole-draft_state threading per spec (candidates: accreditation_standards, policies, prior_plans). B5 per-step parallel decomposition (R-0002) -- fan out the 5 step-iterating specs per action-step: speed + lighter calls (cap relief) + the production-trio realization. B6 upstream stdout-cap durability (WF-16) -- raise/remove the 10MB cap / quieter pi mode / disk-read independent of the tail. (C) Evaluation: C7 automated draft quality rubric -- score the DISC-26 11 axes + the FGAP-009 gate for a deterministic promotion verdict + regression catch. LEVERAGE RANK: 1) B4 grounding-leanness (cheap, broad, compounds), 2) A1 action-scope concreteness, 3) B5 per-step decomposition; then A2, A3, B6, C7.",
+  "findings_document": "docs/workshop-refinements-2026-06-07.md",
+  "citations": [
+    {
+      "label": "governance-centric action steps",
+      "path": "run ...092307 draft action_steps (evaluated)"
+    },
+    {
+      "label": "atom over-send (13/14 specs)",
+      "path": "FGAP-022"
+    },
+    {
+      "label": "per-step decomposition",
+      "path": "R-0002"
+    },
+    {
+      "label": "stdout cap",
+      "path": "prompt-workshop/PI-WORKFLOWS-FINDINGS.md WF-13/15/16"
+    },
+    {
+      "label": "11 quality gaps",
+      "path": "docs/wizard-v2-coverage-and-prompt-quality-audit-2026-05-28.md (DISC-26)"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

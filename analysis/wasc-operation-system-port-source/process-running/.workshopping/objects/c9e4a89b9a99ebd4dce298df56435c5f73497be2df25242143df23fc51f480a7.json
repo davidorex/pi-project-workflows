@@ -1,0 +1,36 @@
+{
+  "spec_key": "propose-timelines",
+  "order": 8,
+  "target_step": "steps",
+  "preview_mode": "timelines",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "frequencies",
+    "draft_state"
+  ],
+  "deps": [
+    "decompose-action-steps",
+    "propose-milestones"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-timelines-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-timelines-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-timelines-2",
+    "FRAG-gb-cycle-window",
+    "FRAG-intro-propose-timelines-3",
+    "FRAG-gb-seed-timelines",
+    "FRAG-intro-propose-timelines-4",
+    "FRAG-gb-draft-state-steps-milestones",
+    "FRAG-intro-propose-timelines-5",
+    "FRAG-gb-frequencies",
+    "FRAG-intro-propose-timelines-6",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-timelines"
+  ],
+  "parser": "parse_propose_timelines",
+  "source_migration": "ai/migrations/0010_seed_propose_timelines_template.py",
+  "output_schema": "shared/schemas/propose-timelines.schema.json"
+}

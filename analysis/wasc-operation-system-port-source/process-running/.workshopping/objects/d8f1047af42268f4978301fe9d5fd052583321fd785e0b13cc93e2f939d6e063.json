@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if year_groups %}Year groups (the school's enumerated year/grade bands; name year groups only from this list):\n{% for y in year_groups %}- {{ y.code }}: {{ y.label }}\n{% endfor %}{% endif %}",
+  "section": "year_groups"
+}

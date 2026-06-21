@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL A1: surface DEC-44 verdicts (catalogue-variant/ordinary-prose), not just fabricated",
+  "status": "closed",
+  "package": "planner",
+  "description": "The DEC-44 LLM fabrication validator (planner/_llm_fabrication_validator.py:83 validate_candidates) already classifies each candidate proper-name span into fabricated | catalogue-variant | ordinary-prose (the system prompt defines all three at :68 and :198), but :144 filters the return to verdict==fabricated only, discarding catalogue-variant and ordinary-prose. The three-valued validation model needs the verdict propagated: catalogue-variant -> FLAG (admit-with-annotation, not reject), ordinary-prose -> admit, fabricated -> reject-or-flag. Change validate_candidates to return (span, verdict) pairs so callers can route by verdict. Verified live + wired (called from _freetext_audit.py:972). Atomic gap in the three-valued (accept/flag/hard-reject) flagging model.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/_llm_fabrication_validator.py",
+      "reference": "school-improvement-plans/planner/_llm_fabrication_validator.py:83-145"
+    }
+  ],
+  "impact": "The validator already distinguishes catalogue-variant and ordinary-prose from fabricated, but those verdicts are discarded — so a legitimate paraphrase/variant cannot be flagged-and-admitted, and the three-valued model has no verdict to route on.",
+  "proposed_resolution": "Change validate_candidates to return (span, verdict) pairs so callers route catalogue-variant -> flag, ordinary-prose -> admit, fabricated -> reject-or-flag."
+}

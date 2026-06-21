@@ -1,0 +1,5 @@
+{
+  "description": "Neither IMPL nor AUDIT declares 'verified', 'complete', 'ready', or any synonym. Those are human-only verdicts.",
+  "enforcement": "manual",
+  "severity": "error"
+}

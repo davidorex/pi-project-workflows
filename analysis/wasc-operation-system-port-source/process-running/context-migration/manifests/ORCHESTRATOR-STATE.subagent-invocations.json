@@ -1,0 +1,8 @@
+{
+  "output": "ORCHESTRATOR-STATE.subagent-invocations.json",
+  "source": "ORCHESTRATOR-STATE.md",
+  "section": "## Last subagent invocations",
+  "itemLinePattern": "^- ",
+  "fields": ["seq", "sha", "context", "text", "kind", "raw"],
+  "required": ["seq", "kind", "raw"]
+}

@@ -1,0 +1,780 @@
+{
+  "spec_key": "narrative-draft",
+  "target_step": "basics",
+  "preview_mode": "fields",
+  "rendered_prompt": "\nYou are the LLM assist for a school authoring a WASC schoolwide improvement plan. Your role across all prompts:\n\n**You are a solution-architect.** Given your general training + the framing data this prompt provides (the school's seeded vocabularies, divisions, positions, responsibilities, accreditation standards, learner outcomes, mission areas, areas-for-improvement, stakeholder groups, planning methods, prior plans, the draft so far), you MAP A SOLUTION PATH from the plan's current state to its desired state. Every element you produce — narrative, milestone, criterion, channel, action step, assignment, evidence, responsibility, standard alignment, review event, revision rule — is a contribution to that current→desired trajectory. You are not generating valid-shape responses in isolation; you are constructing a coherent path the school will follow.\n\n**The grounding IS the universe — zero opportunity for fabrication.** The vocabularies enumerated in this prompt (divisions, positions, responsibility atoms, stakeholder groups, learner outcomes, mission areas, areas for improvement, improvement types, planning methods, accreditation standards, policies, frequencies, prior plans, the draft so far — whichever sections this particular prompt carries) ARE the complete universe of school-specific names, roles, units, and structures you may draw on. Every actor, unit, role, body, committee, office, position-title, or organizational structure you name in your output MUST be a verbatim match to a name that appears in the grounding above. If you find yourself reaching for a name from your general training of how international schools are typically organized (e.g. \"Vice Principal for Academics\", \"Head of Early Years\", \"PLC chairs\", \"the gradebook configurator\", \"the bilingual programme\") — STOP. That is fabrication. The school's actual roster of divisions and positions is enumerated in this prompt; if a role you would have invoked is not enumerated, the school does not have that role, and you must reason with the roles that ARE enumerated. The same rule applies to every other vocabulary: do not invent improvement types, planning methods, stakeholder groups, accreditation standards, learner outcomes, or any other named member that is not in the enumerated list. The grounding is exhaustive by design — if you need to name something the grounding does not enumerate, the answer is to compose from what IS enumerated, never to fill the gap from training. A specific-sounding fabricated name is worse than the absence of a name, because it gives a false impression of school-specific grounding while substituting a generic template for the school's actual organizational reality.\n\n**Success criteria for your output:**\n1. A WASC reviewer reading your output would find it substantive — concrete, school-specific, grounded in the school's organizational reality.\n2. An admin reviewing your output would accept it without rewriting — your content is a real starting point, not filler to be replaced.\n3. Your output names real Chiway actors and units from the grounding data — never generic placeholders like \"the department\" or \"the team\" when a specific division or position applies.\n4. Your output articulates accreditation evidence — for every linkage (plan↔standard, step↔responsibility, etc.), the rationale prose makes the WASC evidence audit-ready.\n5. Your output honors the school's operational policy: **school-wide means school-wide — every division has a role to play in any schoolwide improvement plan, and your output maps each division's specific contribution.** A schoolwide improvement plan is not the work of one or two divisions; it is the orchestrated work of all of them, each bringing their particular purview to bear on the current→desired trajectory over time, with evidence and continuous improvement. When you assign work, designate channels, attribute responsibilities, or name evidence ownership, your output covers every division — with a well-reasoned mapping of HOW each division best contributes given its purview, the WASC accreditation criteria, and the school's broader context. Two failure modes are equally disqualifying: (a) **collapsing to a subset** — if you find yourself excluding a division, you have under-reasoned the school-wide framing; reason again until you have named a meaningful role for every division; (b) **proliferating for proliferation's sake** — each division's contribution must be substantive, not token. A division named without a real role is worse than a division named with a small but real one.\n\n**What you do NOT do — zero room for these LLM antipatterns:**\n- No hedging. No \"consider X\" when concrete X is required.\n- No punting. No \"this should be reviewed by an expert\" or \"consulting a specialist is advised.\"\n- No AI-mandates-style caveats. No \"as an AI language model I cannot,\" no \"I am not qualified to,\" no \"you may want to verify.\"\n- No half-fills. No \"TBD,\" \"to be determined,\" \"to be filled in later,\" \"[insert X here].\"\n- No options-instead-of-decisions. No \"Option A or Option B\" when one decision is asked for.\n- No vague placeholders. No \"the relevant party,\" \"an appropriate cadence,\" \"a suitable artifact\" — name the specific party, cadence, artifact from the grounding.\n- No partial outputs marked as \"draft for review.\" Your output IS the draft for review; mark nothing as incomplete that you can complete from the grounding.\n- No meta-commentary about what you did or are doing. Produce the output; nothing else.\n- No canonical LLM voice. Write **dry, factual, report-style** prose — short declarative sentences, named facts, school-specific nouns. A reader should not be able to tell this was LLM-authored from the voice. Reads like a school report, not like model-generated prose. CONCRETE VOICE ANTIPATTERNS (observed in prior runs; do not produce): (a) long compound sentences strung together with em-dashes (\"The plan addresses reading — across grades, divisions, and stakeholders — through a coordinated effort that bridges curriculum, instruction, and assessment\"); (b) rhetorical tetrads / triplets (\"schoolwide, division-wide, classroom-wide, and student-wide\", \"teachers, students, parents, and community\"); (c) \"across all four X\" cumulative-emphasis phrasing (\"across all four areas of focus\", \"across all five learner outcomes\"); (d) rhythm-for-rhythm's-sake flourishes (\"not just X, but Y, and indeed Z\"); (e) abstract-noun stacks (\"the comprehensive implementation of strategic instructional improvement initiatives\"); (f) hedged transitions (\"It is worth noting that...\", \"Importantly, ...\", \"Notably, ...\"); (g) summative meta-claims (\"This plan represents a holistic approach to...\"). POSITIVE EXEMPLAR (the register to match): \"The Mathematics Department piloted small-group reading instruction with Year 4 in Term 1. Test scores rose from 62 to 71. The Head of Department reviewed results monthly with classroom teachers. The same approach will extend to Year 5 in Term 2.\" Plain. Named actors. Numbers in target rows only. No abstract stacks. No tetrads. No em-dash chains.\n\n**Use catalogue labels VERBATIM as enumerated.** Do not paraphrase, expand, or contract admin-curated labels. If the catalogue stores `\"Math\"` as a Division label, write `Math` in prose — not \"Mathematics\", not \"Mathematics Department\", not \"the Math Division\". If the catalogue stores `\"AAO - Academic Affairs Office\"` with its hyphenated prefix and full form, use that exact string when naming the Division — do not contract to \"AAO\" alone or expand to \"Academic Affairs Office of the school\". The admin-curated string IS the name; any variant is a fabrication of a label that doesn't exist. This rule extends the no-fabrication invariant from \"don't invent\" to \"don't paraphrase\". Parser-layer rejection (DEC-40) catches paraphrases as fabrications because they don't byte-match catalogue entries.\n\n**What success looks like in concrete terms:** if a school admin reads your output and can promote it to active with at most light editing, you have done your job. If they need to rewrite it, you have not.\n\nYou help a school author draft the narrative sections of a WASC schoolwide improvement plan. Write plain, concrete prose for an accreditation audience. Ground only in the facts provided below; do not invent school specifics that are not present.\n\nSchool: Chiway-Repton School Xiamen.\nAccreditation cycle: 2025-2026 (2025-08-01 to 2026-07-31).\n\nAuthor seed (a one-line intent for this plan): Improve SLO usage across the school\n\nAvailable framing vocabularies:\n- Parent-focused\n- Schoolwide-focused\n- Student-focused\n- Teaching-focused\n\nPriority tiers:\n- High\n- Medium\n- Low\n\nAreas for improvement:\n- Bilingual Environment\n- Community Involvement\n- Curriculum and Learning\n- Faculty PD and PLC\n- Resources and Tools\n- School Culture\n- Student Data and Well-being\n\nSchoolwide learner outcomes:\n- Bilingual Communicators\n- Compassionate\n- Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- Engaged\n- Innovative\n- Reflective\n- Responsible\n\nMission areas:\n- Academic excellence\n- Caring and safe community\n- Global citizenship\n\nStakeholder groups:\n- Administration / Leadership\n- Admissions Applicants\n- Parent Committee\n- Parents\n- Staff / Faculty\n- Students\n\nWASC accreditation standards:\n- A1 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families.\n- A2 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture.\n- A3 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes.\n- A4 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness.\n- A5 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students.\n- A6 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community.\n- B1 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success.\n- B2 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success.\n- B3 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments.\n- C1 (School Culture, Systems of Support, and Student Success and Community Partnerships): School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being.\n- C2 (School Culture, Systems of Support, and Student Success and Community Partnerships): Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students.\n- C3 (School Culture, Systems of Support, and Student Success and Community Partnerships): Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness.\n\n\nYear groups (the school's enumerated year/grade bands; name year groups only from this list):\n- ig1: IG1\n- ig2: IG2\n- as: AS\n- a2: A2\n\nGuiding statements (the school's vision/mission clauses; name guiding clauses only from this list):\n- mission:\n  0. GROUNDED: Self-motivated, critical thinkers who are emotionally resilient, healthy, and happy.\n  1. ROUNDED: Culturally attuned, socially conscious global citizens who are both environmentally aware and technologically adept.\n  2. UNBOUNDED: Courageous, confident, and intellectually curious leaders who seek opportunity and find achievement.\n- vision:\n  0. be engaged and realize their academic potential\n  1. become life-long learners fully capable of leveraging the science of how learning happens\n  2. cultivate an abiding ethic of personal responsibility\n  3. build a healthy foundation of self-esteem\n  4. effectively communicate their ideas in Chinese and English\n  5. develop deep compassion and concern for the well-being of others\n\nPolicies (the school's enumerated policies; name policies only from this list):\n- Admissions English Assessment criteria — Criteria and instrument for assessing English proficiency of applicants.\n- Class schedule framework — Daily/weekly schedule structure (block scheduling, period length, etc.).\n- Orientation Week design — Schedule, materials, and personnel assignments for student/parent and teacher orientation weeks.\n\nDivisions (with positions and responsibility atoms — the school's complete organizational roster; name actors only from this list):\n- AAO - Academic Affairs Office — Academic affairs: examinations, class scheduling, academic administration.\n  Positions:\n    - Academic Affairs Officer (staff)\n    - AP Coordinator (staff)\n    - CIE Exam Officer (staff)\n    - Class Schedule Officer (staff)\n    - Director of AAO (leader)\n    - Edexcel Exam Officer (staff)\n    - Exam Officer (staff)\n\n- Art Department\n  Positions:\n    - Art Teacher (staff)\n    - Head of Art Department (leader)\n\n- Business and Economics\n  Positions:\n    - Business Teacher (staff)\n    - Economics and Business Teacher (staff)\n    - Economics Teacher (staff)\n    - Head of Business and Economics (leader)\n\n- College Counseling Department — College and university counseling for students.\n  Positions:\n    - College Counseling Department Coordinator (leader)\n    - College Counselor (staff)\n\n- Curriculum and Teaching — Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.\n  Positions:\n    - Director of Teaching and Curriculum Center (leader)\n    - PD Leader (staff)\n    - Senior Teaching Coordinator (staff)\n\n- English\n  Positions:\n    - Drama Teacher (staff)\n    - English Teacher (staff)\n    - Head of English (leader)\n\n- Future Scholar Innovation Center — Future Scholar Innovation Center programs and initiatives.\n  Positions:\n    - Director of Future Scholar Innovation Center (leader)\n\n- Humanities\n  Positions:\n    - Chinese Teacher (staff)\n    - Geography Teacher (staff)\n    - Head of Humanities (leader)\n    - History Teacher (staff)\n    - Psychology Teacher (staff)\n\n- Library — Library services, resources, and information literacy support.\n  Positions:\n    - Librarian (staff)\n\n- Math\n  Positions:\n    - Head of Math (leader)\n    - Math Teacher (staff)\n\n- Music and Sports Department\n  Positions:\n    - Music Teacher (staff)\n    - PE Teacher (staff)\n\n- Principal&#x27;s Office (PO) — School leadership; the principal&#x27;s office.\n  Positions:\n    - IHS Assistant (staff)\n    - IHS Principal (leader)\n\n- Recruitment and Admissions — Recruitment and admissions; applicant assessment and enrollment.\n\n- SAO - Student Affairs Office (Pastoral and Well-Being) — Student well-being, behavior, pastoral care, student support outside lessons.\n  Positions:\n    - A2 Year Leader (leader)\n    - Assistant to Student Affairs (staff)\n    - AS Year Leader (leader)\n    - Director of Student Affairs Office (leader)\n    - Dormitory Teacher (staff)\n    - Homeroom Teacher (staff)\n    - IG1 Year Leader (leader)\n    - IG2 Year Leader (leader)\n\n- Sciences\n  Positions:\n    - Biology Teacher (staff)\n    - Chemistry Teacher (staff)\n    - Head of Sciences (leader)\n    - Physics Teacher (staff)\n\n\nThe author's in-progress draft so far:\n- milestones-0-label: Seven SLO behavioral descriptors authored by cross-divisional faculty teams and validated by the Senior Leadership Team, each at the depth of the existing Confident descriptor and published in the staff handbook, parent handbook, and student-facing materials\n- milestones-0-target_date: 2025-11-28\n- milestones-0-improvement_type: schoolwide-learner-outcomes\n- milestones-0-planning_method: Policy revision (6-step consultative)\n- milestones-1-label: Unit-planning template and gradebook updated so every department&#x27;s Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, with PLC cycles in every division opening on an SLO frame and closing on SLO-tagged evidence\n- milestones-1-target_date: 2026-02-13\n- milestones-1-improvement_type: curriculum-development\n- milestones-1-planning_method: Tool / platform customization\n- milestones-2-label: Term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student and an SLO self-reflection from every student, across EY, Primary, Secondary, and the bilingual program\n- milestones-2-target_date: 2026-05-15\n- milestones-2-improvement_type: communications\n- milestones-3-label: Annual self-study evidence binder against WASC A1, A4, B1, B2, B3, and C1 compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts\n- milestones-3-target_date: 2026-07-24\n- milestones-3-improvement_type: compliance-accountability\n- criteria-0-text: Each of the seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored collaboratively by faculty across the bilingual program, subject departments, homeroom system, and co-curricular program and validated by divisional leadership, and the descriptor set is posted in the staff handbook, the student-facing learning materials, and the parent reporting portal.\n- criteria-0-verification_kind: inspection\n- criteria-1-text: Every department&#x27;s unit plans for the 2025-2026 cycle name the one or two SLOs each unit advances and attach at least one assessment artifact per unit that produces SLO-tagged evidence of student progress, verifiable by inspecting the unit-plan repository for the year.\n- criteria-1-verification_kind: target\n- criteria-1-target_value: 100\n- criteria-1-target_unit: percent of departmental units in the 2025-2026 cycle whose unit plan names its advancing SLO(s) and links at least one SLO-tagged assessment artifact\n- criteria-1-baseline: 0\n- criteria-2-text: PLC cycles in every division open with an SLO frame on the agenda and close with SLO-tagged evidence of student learning recorded in the PLC minutes, evidenced by a leadership review of PLC minutes across the year.\n- criteria-2-verification_kind: target\n- criteria-2-target_value: 90\n- criteria-2-target_unit: percent of logged PLC cycles across all divisions in the 2025-2026 cycle whose minutes show both an opening SLO frame and a closing SLO-tagged evidence entry\n- criteria-2-baseline: 0\n- criteria-3-text: Parent reporting at each reporting cycle of 2025-2026 includes an SLO-organized narrative section, in addition to subject grades, for every enrolled student, with the SLO narrative section present in the report template and populated for each student on each cycle.\n- criteria-3-verification_kind: inspection\n- criteria-4-text: Students use the SLO vocabulary in self-reflection at term reporting and at portfolio review and can name which SLOs a given piece of their work demonstrates, as judged by divisional leadership against a shared rubric applied to a sampled set of student reflections and portfolio entries from each division.\n- criteria-4-verification_kind: judgment\n- criteria-5-text: The annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 is organized with the seven SLOs as the categories under which evidence is gathered and presented, with each of the six standards&#x27; evidence section structured by SLO and drawing on SLO-tagged classroom walkthrough notes, work-sample reviews, PLC minutes, and parent-reporting narratives produced during the cycle.\n- criteria-5-verification_kind: inspection\n- learner_outcomes_targeted-0-label: Bilingual Communicators\n- learner_outcomes_targeted-0-rationale: The plan explicitly names Bilingual Communicators as the SLO addressed by the Bilingual Environment area-for-improvement work, and the desired state requires shared behavioral descriptors and SLO-tagged assessment evidence across the bilingual program.\n- learner_outcomes_targeted-1-label: Compassionate\n- learner_outcomes_targeted-1-rationale: The rationale names Compassionate as one of the lived-norm outcomes that School Culture work will operationalize, and the desired state requires a school-authored behavioral descriptor for this SLO at the depth of the current Confident descriptor.\n- learner_outcomes_targeted-2-label: Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- learner_outcomes_targeted-2-rationale: Confident is the one SLO with an existing published descriptor and is the depth-benchmark the plan uses for authoring the other six descriptors; it is therefore directly in scope as the model the school will validate and extend.\n- learner_outcomes_targeted-3-label: Engaged\n- learner_outcomes_targeted-3-rationale: Engaged is named in the rationale as a lived-norm outcome for School Culture work and is one of the six single-word labels the desired state commits to giving a shared behavioral descriptor, unit-plan naming, and SLO-tagged assessment evidence.\n- learner_outcomes_targeted-4-label: Innovative\n- learner_outcomes_targeted-4-rationale: Innovative is among the six SLOs currently functioning as a single-word label without a shared descriptor; the desired state requires it to carry a faculty-authored descriptor, appear in unit plans, and produce SLO-tagged assessment evidence like every other outcome.\n- learner_outcomes_targeted-5-label: Reflective\n- learner_outcomes_targeted-5-rationale: Reflective is directly implicated by the desired-state commitment that students use SLO vocabulary in self-reflection at term reporting and portfolio review and can name which SLOs a piece of their work demonstrates.\n- learner_outcomes_targeted-6-label: Responsible\n- learner_outcomes_targeted-6-rationale: Responsible is named in the rationale as a lived-norm outcome for School Culture work and is one of the six labels the desired state commits to giving a shared behavioral descriptor and SLO-tagged classroom evidence.\n- mission_areas_targeted-0-label: Academic excellence\n- mission_areas_targeted-0-rationale: The rationale states the SLOs are the operational expression of Academic excellence, and the desired state ties SLO-tagged unit design, assessment artifacts, and PLC evidence cycles directly to instructional quality across every department.\n- mission_areas_targeted-1-label: Caring and safe community\n- mission_areas_targeted-1-rationale: The rationale identifies the SLOs as the operational expression of Caring and safe community, and the desired state makes Compassionate, Responsible, and Engaged lived norms through School Culture work and shared stakeholder vocabulary.\n- mission_areas_targeted-2-label: Global citizenship\n- mission_areas_targeted-2-rationale: The rationale explicitly names Global citizenship as one of the three mission areas the SLOs operationally express, and outcomes like Bilingual Communicators, Compassionate, and Responsible are the school&#x27;s daily-practice expression of that mission area.\n- areas_for_improvement-0-label: Bilingual Environment\n- areas_for_improvement-0-rationale: The rationale ties the Bilingual Communicators SLO directly to Bilingual Environment work, and the desired state extends SLO naming and tagging across the bilingual program&#x27;s unit plans and assessments.\n- areas_for_improvement-1-label: Curriculum and Learning\n- areas_for_improvement-1-rationale: The desired state requires every department&#x27;s unit plans to name the SLOs each unit advances and to produce at least one SLO-tagged assessment artifact per unit — the core of Curriculum and Learning.\n- areas_for_improvement-2-label: Faculty PD and PLC\n- areas_for_improvement-2-rationale: The plan requires faculty to collaboratively author behavioral descriptors for six SLOs and to open and close every PLC cycle with SLO framing and SLO-tagged evidence — descriptor authoring and PLC redesign are Faculty PD and PLC work.\n- areas_for_improvement-3-label: School Culture\n- areas_for_improvement-3-rationale: The rationale identifies Compassionate, Responsible, and Engaged as lived norms to be operationalized through School Culture work, moving SLOs from wall posters to shared community language.\n- areas_for_improvement-4-label: Student Data and Well-being\n- areas_for_improvement-4-rationale: The current state notes student-data conversations rarely cite an SLO as the interpretive lens; the desired state requires SLO-tagged evidence in PLC data cycles and term-level student self-reflection, both Student Data and Well-being concerns.\n- areas_for_improvement-5-label: Community Involvement\n- areas_for_improvement-5-rationale: The desired state requires SLO-organized narrative sections in parent reporting at each reporting cycle, and the rationale names Community Involvement as the domain through which parent-facing SLO communication is delivered.\n- areas_for_improvement-6-label: Resources and Tools\n- areas_for_improvement-6-rationale: The rationale names Resources and Tools as the domain that supplies the templates and gradebook fields that carry SLO tagging — the infrastructure the unit-plan naming, assessment tagging, and parent reporting all depend on.\n- stakeholder_impact-0-label: Administration / Leadership\n- stakeholder_impact-0-rationale: The desired state requires leadership to use SLOs as the organizing categories for classroom walkthroughs, work-sample reviews, and the annual WASC self-study, and the rationale names Administration / Leadership as a stakeholder that must share the SLO vocabulary under standard C1.\n- stakeholder_impact-1-label: Staff / Faculty\n- stakeholder_impact-1-rationale: Faculty author the behavioral descriptors, name SLOs in unit plans, generate SLO-tagged assessment artifacts, and open and close every PLC cycle with an SLO frame — the plan&#x27;s central operational load sits with Staff / Faculty.\n- stakeholder_impact-2-label: Students\n- stakeholder_impact-2-rationale: The desired state requires students to use SLO vocabulary in self-reflection at term reporting and portfolio review and to name which SLOs a given piece of their work demonstrates, making Students direct users of the new instrument.\n- stakeholder_impact-3-label: Parents\n- stakeholder_impact-3-rationale: Parent reporting at each reporting cycle is to include an SLO-organized narrative section in addition to subject grades, and the rationale names Parents as a stakeholder group that must share the SLO vocabulary under standard C1.\n- stakeholder_impact-4-label: Parent Committee\n- stakeholder_impact-4-rationale: The rationale explicitly names the Parent Committee among the stakeholder groups that must share a common SLO vocabulary for what growth means, situating the committee as a partner in Community Involvement and SLO-organized parent reporting.\n\n\nEvery name in the five output keys (a division, a position, a policy, a year-group, a guiding clause, an accreditation standard, a learner outcome, a mission area, an area for improvement, a stakeholder group, a prior plan) MUST be drawn verbatim from the enumerated catalogues above; do not name an entity not present.\n\nOUTPUT CONTRACT (follow exactly):\nReturn ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON. Write all values in English only.\n\nThe object MUST have EXACTLY these five string-valued keys:\n- \"current_state\": where the school is today on this focus, in concrete terms.\n- \"desired_state\": the specific improved state the plan aims to reach.\n- \"rationale\": why this improvement matters now, grounded in the facts above.\n- \"student_impact_framing\": how this improvement is expected to affect students.\n- \"provenance\": what evidence, data, or prior work this plan draws on.\n\nEach value is a single plain-prose string (no nested objects, no lists, no markdown). Include all five keys.\n",
+  "grounding_dict_used": {
+    "school": {
+      "name": "Chiway-Repton School Xiamen",
+      "slug": "chiway-repton-xiamen"
+    },
+    "cycle": {
+      "code": "2025-2026",
+      "label": "2025-2026",
+      "starts_on": "2025-08-01",
+      "ends_on": "2026-07-31"
+    },
+    "framing_vocabularies": [
+      {
+        "code": "parent-focused",
+        "label": "Parent-focused",
+        "description": ""
+      },
+      {
+        "code": "schoolwide-focused",
+        "label": "Schoolwide-focused",
+        "description": ""
+      },
+      {
+        "code": "student-focused",
+        "label": "Student-focused",
+        "description": ""
+      },
+      {
+        "code": "teaching-focused",
+        "label": "Teaching-focused",
+        "description": ""
+      }
+    ],
+    "priority_tiers": [
+      {
+        "code": "high",
+        "label": "High",
+        "order": 1
+      },
+      {
+        "code": "medium",
+        "label": "Medium",
+        "order": 2
+      },
+      {
+        "code": "low",
+        "label": "Low",
+        "order": 3
+      }
+    ],
+    "year_groups": [
+      {
+        "code": "ig1",
+        "label": "IG1",
+        "order": 1
+      },
+      {
+        "code": "ig2",
+        "label": "IG2",
+        "order": 2
+      },
+      {
+        "code": "as",
+        "label": "AS",
+        "order": 3
+      },
+      {
+        "code": "a2",
+        "label": "A2",
+        "order": 4
+      }
+    ],
+    "areas_for_improvement": [
+      {
+        "code": "afi-bilingual",
+        "label": "Bilingual Environment",
+        "description": ""
+      },
+      {
+        "code": "afi-community",
+        "label": "Community Involvement",
+        "description": ""
+      },
+      {
+        "code": "afi-curriculum",
+        "label": "Curriculum and Learning",
+        "description": ""
+      },
+      {
+        "code": "afi-pd",
+        "label": "Faculty PD and PLC",
+        "description": ""
+      },
+      {
+        "code": "afi-resources",
+        "label": "Resources and Tools",
+        "description": ""
+      },
+      {
+        "code": "afi-school-culture",
+        "label": "School Culture",
+        "description": ""
+      },
+      {
+        "code": "afi-data",
+        "label": "Student Data and Well-being",
+        "description": ""
+      }
+    ],
+    "mission_areas": [
+      {
+        "code": "ma-academic",
+        "label": "Academic excellence",
+        "description": ""
+      },
+      {
+        "code": "ma-caring",
+        "label": "Caring and safe community",
+        "description": ""
+      },
+      {
+        "code": "ma-global",
+        "label": "Global citizenship",
+        "description": ""
+      }
+    ],
+    "learner_outcomes": [
+      {
+        "code": "bilingual-communicators",
+        "label": "Bilingual Communicators",
+        "description": ""
+      },
+      {
+        "code": "compassionate",
+        "label": "Compassionate",
+        "description": ""
+      },
+      {
+        "code": "confident",
+        "label": "Confident",
+        "description": "Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas."
+      },
+      {
+        "code": "engaged",
+        "label": "Engaged",
+        "description": ""
+      },
+      {
+        "code": "innovative",
+        "label": "Innovative",
+        "description": ""
+      },
+      {
+        "code": "reflective",
+        "label": "Reflective",
+        "description": ""
+      },
+      {
+        "code": "responsible",
+        "label": "Responsible",
+        "description": ""
+      }
+    ],
+    "stakeholder_groups": [
+      {
+        "label": "Administration / Leadership"
+      },
+      {
+        "label": "Admissions Applicants"
+      },
+      {
+        "label": "Parent Committee"
+      },
+      {
+        "label": "Parents"
+      },
+      {
+        "label": "Staff / Faculty"
+      },
+      {
+        "label": "Students"
+      }
+    ],
+    "divisions": [
+      {
+        "label": "AAO - Academic Affairs Office",
+        "scope_summary": "Academic affairs: examinations, class scheduling, academic administration.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Academic Affairs Officer",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "AP Coordinator",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "CIE Exam Officer",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Class Schedule Officer",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Director of AAO",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Edexcel Exam Officer",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Exam Officer",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Art Department",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Art Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Head of Art Department",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Business and Economics",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Business Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Economics and Business Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Economics Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Head of Business and Economics",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "College Counseling Department",
+        "scope_summary": "College and university counseling for students.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "College Counseling Department Coordinator",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "College Counselor",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Curriculum and Teaching",
+        "scope_summary": "Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Director of Teaching and Curriculum Center",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "PD Leader",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Senior Teaching Coordinator",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "English",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Drama Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "English Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Head of English",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Future Scholar Innovation Center",
+        "scope_summary": "Future Scholar Innovation Center programs and initiatives.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Director of Future Scholar Innovation Center",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Humanities",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Chinese Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Geography Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Head of Humanities",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "History Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Psychology Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Library",
+        "scope_summary": "Library services, resources, and information literacy support.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Librarian",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Math",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Head of Math",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Math Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Music and Sports Department",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Music Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "PE Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Principal's Office (PO)",
+        "scope_summary": "School leadership; the principal's office.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "IHS Assistant",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "IHS Principal",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Recruitment and Admissions",
+        "scope_summary": "Recruitment and admissions; applicant assessment and enrollment.",
+        "responsibilities": [],
+        "positions": []
+      },
+      {
+        "label": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+        "scope_summary": "Student well-being, behavior, pastoral care, student support outside lessons.",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "A2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Assistant to Student Affairs",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "AS Year Leader",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Director of Student Affairs Office",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Dormitory Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Homeroom Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "IG1 Year Leader",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "IG2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          }
+        ]
+      },
+      {
+        "label": "Sciences",
+        "scope_summary": "",
+        "responsibilities": [],
+        "positions": [
+          {
+            "label": "Biology Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Chemistry Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          },
+          {
+            "label": "Head of Sciences",
+            "scope_summary": "",
+            "kind": "leader",
+            "responsibilities": []
+          },
+          {
+            "label": "Physics Teacher",
+            "scope_summary": "",
+            "kind": "staff",
+            "responsibilities": []
+          }
+        ]
+      }
+    ],
+    "guiding_statements": {
+      "mission": [
+        {
+          "text": "GROUNDED: Self-motivated, critical thinkers who are emotionally resilient, healthy, and happy.",
+          "order": 0
+        },
+        {
+          "text": "ROUNDED: Culturally attuned, socially conscious global citizens who are both environmentally aware and technologically adept.",
+          "order": 1
+        },
+        {
+          "text": "UNBOUNDED: Courageous, confident, and intellectually curious leaders who seek opportunity and find achievement.",
+          "order": 2
+        }
+      ],
+      "vision": [
+        {
+          "text": "be engaged and realize their academic potential",
+          "order": 0
+        },
+        {
+          "text": "become life-long learners fully capable of leveraging the science of how learning happens",
+          "order": 1
+        },
+        {
+          "text": "cultivate an abiding ethic of personal responsibility",
+          "order": 2
+        },
+        {
+          "text": "build a healthy foundation of self-esteem",
+          "order": 3
+        },
+        {
+          "text": "effectively communicate their ideas in Chinese and English",
+          "order": 4
+        },
+        {
+          "text": "develop deep compassion and concern for the well-being of others",
+          "order": 5
+        }
+      ]
+    },
+    "policies": [
+      {
+        "label": "Admissions English Assessment criteria",
+        "notes": "Criteria and instrument for assessing English proficiency of applicants."
+      },
+      {
+        "label": "Class schedule framework",
+        "notes": "Daily/weekly schedule structure (block scheduling, period length, etc.)."
+      },
+      {
+        "label": "Orientation Week design",
+        "notes": "Schedule, materials, and personnel assignments for student/parent and teacher orientation weeks."
+      }
+    ],
+    "accreditation_standards": [
+      {
+        "code": "A1",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families."
+      },
+      {
+        "code": "A2",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture."
+      },
+      {
+        "code": "A3",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes."
+      },
+      {
+        "code": "A4",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness."
+      },
+      {
+        "code": "A5",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students."
+      },
+      {
+        "code": "A6",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community."
+      },
+      {
+        "code": "B1",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success."
+      },
+      {
+        "code": "B2",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success."
+      },
+      {
+        "code": "B3",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments."
+      },
+      {
+        "code": "C1",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being."
+      },
+      {
+        "code": "C2",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students."
+      },
+      {
+        "code": "C3",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness."
+      }
+    ],
+    "prior_plans": [],
+    "draft_state": {
+      "milestones-0-label": "Seven SLO behavioral descriptors authored by cross-divisional faculty teams and validated by the Senior Leadership Team, each at the depth of the existing Confident descriptor and published in the staff handbook, parent handbook, and student-facing materials",
+      "milestones-0-target_date": "2025-11-28",
+      "milestones-0-improvement_type": "schoolwide-learner-outcomes",
+      "milestones-0-planning_method": "Policy revision (6-step consultative)",
+      "milestones-1-label": "Unit-planning template and gradebook updated so every department's Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, with PLC cycles in every division opening on an SLO frame and closing on SLO-tagged evidence",
+      "milestones-1-target_date": "2026-02-13",
+      "milestones-1-improvement_type": "curriculum-development",
+      "milestones-1-planning_method": "Tool / platform customization",
+      "milestones-2-label": "Term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student and an SLO self-reflection from every student, across EY, Primary, Secondary, and the bilingual program",
+      "milestones-2-target_date": "2026-05-15",
+      "milestones-2-improvement_type": "communications",
+      "milestones-3-label": "Annual self-study evidence binder against WASC A1, A4, B1, B2, B3, and C1 compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts",
+      "milestones-3-target_date": "2026-07-24",
+      "milestones-3-improvement_type": "compliance-accountability",
+      "criteria-0-text": "Each of the seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored collaboratively by faculty across the bilingual program, subject departments, homeroom system, and co-curricular program and validated by divisional leadership, and the descriptor set is posted in the staff handbook, the student-facing learning materials, and the parent reporting portal.",
+      "criteria-0-verification_kind": "inspection",
+      "criteria-1-text": "Every department's unit plans for the 2025-2026 cycle name the one or two SLOs each unit advances and attach at least one assessment artifact per unit that produces SLO-tagged evidence of student progress, verifiable by inspecting the unit-plan repository for the year.",
+      "criteria-1-verification_kind": "target",
+      "criteria-1-target_value": "100",
+      "criteria-1-target_unit": "percent of departmental units in the 2025-2026 cycle whose unit plan names its advancing SLO(s) and links at least one SLO-tagged assessment artifact",
+      "criteria-1-baseline": "0",
+      "criteria-2-text": "PLC cycles in every division open with an SLO frame on the agenda and close with SLO-tagged evidence of student learning recorded in the PLC minutes, evidenced by a leadership review of PLC minutes across the year.",
+      "criteria-2-verification_kind": "target",
+      "criteria-2-target_value": "90",
+      "criteria-2-target_unit": "percent of logged PLC cycles across all divisions in the 2025-2026 cycle whose minutes show both an opening SLO frame and a closing SLO-tagged evidence entry",
+      "criteria-2-baseline": "0",
+      "criteria-3-text": "Parent reporting at each reporting cycle of 2025-2026 includes an SLO-organized narrative section, in addition to subject grades, for every enrolled student, with the SLO narrative section present in the report template and populated for each student on each cycle.",
+      "criteria-3-verification_kind": "inspection",
+      "criteria-4-text": "Students use the SLO vocabulary in self-reflection at term reporting and at portfolio review and can name which SLOs a given piece of their work demonstrates, as judged by divisional leadership against a shared rubric applied to a sampled set of student reflections and portfolio entries from each division.",
+      "criteria-4-verification_kind": "judgment",
+      "criteria-5-text": "The annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 is organized with the seven SLOs as the categories under which evidence is gathered and presented, with each of the six standards' evidence section structured by SLO and drawing on SLO-tagged classroom walkthrough notes, work-sample reviews, PLC minutes, and parent-reporting narratives produced during the cycle.",
+      "criteria-5-verification_kind": "inspection",
+      "learner_outcomes_targeted-0-label": "Bilingual Communicators",
+      "learner_outcomes_targeted-0-rationale": "The plan explicitly names Bilingual Communicators as the SLO addressed by the Bilingual Environment area-for-improvement work, and the desired state requires shared behavioral descriptors and SLO-tagged assessment evidence across the bilingual program.",
+      "learner_outcomes_targeted-1-label": "Compassionate",
+      "learner_outcomes_targeted-1-rationale": "The rationale names Compassionate as one of the lived-norm outcomes that School Culture work will operationalize, and the desired state requires a school-authored behavioral descriptor for this SLO at the depth of the current Confident descriptor.",
+      "learner_outcomes_targeted-2-label": "Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.",
+      "learner_outcomes_targeted-2-rationale": "Confident is the one SLO with an existing published descriptor and is the depth-benchmark the plan uses for authoring the other six descriptors; it is therefore directly in scope as the model the school will validate and extend.",
+      "learner_outcomes_targeted-3-label": "Engaged",
+      "learner_outcomes_targeted-3-rationale": "Engaged is named in the rationale as a lived-norm outcome for School Culture work and is one of the six single-word labels the desired state commits to giving a shared behavioral descriptor, unit-plan naming, and SLO-tagged assessment evidence.",
+      "learner_outcomes_targeted-4-label": "Innovative",
+      "learner_outcomes_targeted-4-rationale": "Innovative is among the six SLOs currently functioning as a single-word label without a shared descriptor; the desired state requires it to carry a faculty-authored descriptor, appear in unit plans, and produce SLO-tagged assessment evidence like every other outcome.",
+      "learner_outcomes_targeted-5-label": "Reflective",
+      "learner_outcomes_targeted-5-rationale": "Reflective is directly implicated by the desired-state commitment that students use SLO vocabulary in self-reflection at term reporting and portfolio review and can name which SLOs a piece of their work demonstrates.",
+      "learner_outcomes_targeted-6-label": "Responsible",
+      "learner_outcomes_targeted-6-rationale": "Responsible is named in the rationale as a lived-norm outcome for School Culture work and is one of the six labels the desired state commits to giving a shared behavioral descriptor and SLO-tagged classroom evidence.",
+      "mission_areas_targeted-0-label": "Academic excellence",
+      "mission_areas_targeted-0-rationale": "The rationale states the SLOs are the operational expression of Academic excellence, and the desired state ties SLO-tagged unit design, assessment artifacts, and PLC evidence cycles directly to instructional quality across every department.",
+      "mission_areas_targeted-1-label": "Caring and safe community",
+      "mission_areas_targeted-1-rationale": "The rationale identifies the SLOs as the operational expression of Caring and safe community, and the desired state makes Compassionate, Responsible, and Engaged lived norms through School Culture work and shared stakeholder vocabulary.",
+      "mission_areas_targeted-2-label": "Global citizenship",
+      "mission_areas_targeted-2-rationale": "The rationale explicitly names Global citizenship as one of the three mission areas the SLOs operationally express, and outcomes like Bilingual Communicators, Compassionate, and Responsible are the school's daily-practice expression of that mission area.",
+      "areas_for_improvement-0-label": "Bilingual Environment",
+      "areas_for_improvement-0-rationale": "The rationale ties the Bilingual Communicators SLO directly to Bilingual Environment work, and the desired state extends SLO naming and tagging across the bilingual program's unit plans and assessments.",
+      "areas_for_improvement-1-label": "Curriculum and Learning",
+      "areas_for_improvement-1-rationale": "The desired state requires every department's unit plans to name the SLOs each unit advances and to produce at least one SLO-tagged assessment artifact per unit — the core of Curriculum and Learning.",
+      "areas_for_improvement-2-label": "Faculty PD and PLC",
+      "areas_for_improvement-2-rationale": "The plan requires faculty to collaboratively author behavioral descriptors for six SLOs and to open and close every PLC cycle with SLO framing and SLO-tagged evidence — descriptor authoring and PLC redesign are Faculty PD and PLC work.",
+      "areas_for_improvement-3-label": "School Culture",
+      "areas_for_improvement-3-rationale": "The rationale identifies Compassionate, Responsible, and Engaged as lived norms to be operationalized through School Culture work, moving SLOs from wall posters to shared community language.",
+      "areas_for_improvement-4-label": "Student Data and Well-being",
+      "areas_for_improvement-4-rationale": "The current state notes student-data conversations rarely cite an SLO as the interpretive lens; the desired state requires SLO-tagged evidence in PLC data cycles and term-level student self-reflection, both Student Data and Well-being concerns.",
+      "areas_for_improvement-5-label": "Community Involvement",
+      "areas_for_improvement-5-rationale": "The desired state requires SLO-organized narrative sections in parent reporting at each reporting cycle, and the rationale names Community Involvement as the domain through which parent-facing SLO communication is delivered.",
+      "areas_for_improvement-6-label": "Resources and Tools",
+      "areas_for_improvement-6-rationale": "The rationale names Resources and Tools as the domain that supplies the templates and gradebook fields that carry SLO tagging — the infrastructure the unit-plan naming, assessment tagging, and parent reporting all depend on.",
+      "stakeholder_impact-0-label": "Administration / Leadership",
+      "stakeholder_impact-0-rationale": "The desired state requires leadership to use SLOs as the organizing categories for classroom walkthroughs, work-sample reviews, and the annual WASC self-study, and the rationale names Administration / Leadership as a stakeholder that must share the SLO vocabulary under standard C1.",
+      "stakeholder_impact-1-label": "Staff / Faculty",
+      "stakeholder_impact-1-rationale": "Faculty author the behavioral descriptors, name SLOs in unit plans, generate SLO-tagged assessment artifacts, and open and close every PLC cycle with an SLO frame — the plan's central operational load sits with Staff / Faculty.",
+      "stakeholder_impact-2-label": "Students",
+      "stakeholder_impact-2-rationale": "The desired state requires students to use SLO vocabulary in self-reflection at term reporting and portfolio review and to name which SLOs a given piece of their work demonstrates, making Students direct users of the new instrument.",
+      "stakeholder_impact-3-label": "Parents",
+      "stakeholder_impact-3-rationale": "Parent reporting at each reporting cycle is to include an SLO-organized narrative section in addition to subject grades, and the rationale names Parents as a stakeholder group that must share the SLO vocabulary under standard C1.",
+      "stakeholder_impact-4-label": "Parent Committee",
+      "stakeholder_impact-4-rationale": "The rationale explicitly names the Parent Committee among the stakeholder groups that must share a common SLO vocabulary for what growth means, situating the committee as a partner in Community Involvement and SLO-organized parent reporting."
+    }
+  },
+  "agent_response_raw": "{\"current_state\": \"The seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — are posted as labels at Chiway-Repton School Xiamen, but only Confident carries a published school-authored behavioral descriptor. The other six function as single-word headings without shared definition. Unit plans across the AAO - Academic Affairs Office's departmental roster — Math, English, Humanities, Sciences, Art Department, Business and Economics, Music and Sports Department — do not consistently name which SLOs each unit advances, and assessment artifacts are not tagged to SLOs. PLC cycles run by the Curriculum and Teaching division open and close on subject-content frames rather than SLO frames. Parent reporting at each cycle carries subject grades without an SLO-organized narrative section. Student self-reflection at term reporting and portfolio review rarely cites an SLO as the interpretive lens. The SAO - Student Affairs Office (Pastoral and Well-Being) operates pastoral routines through Homeroom Teachers and the IG1, IG2, AS, and A2 Year Leaders without a shared SLO vocabulary linking those routines to academic evidence. The College Counseling Department, Library, and Future Scholar Innovation Center each run programs that touch SLO territory without naming the SLOs they advance.\", \"desired_state\": \"Each of the seven SLOs carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored by cross-divisional faculty teams drawn from Math, English, Humanities, Sciences, Art Department, Business and Economics, and Music and Sports Department, validated by the Director of Teaching and Curriculum Center and the IHS Principal, and posted in the staff handbook, the parent handbook, and student-facing materials by 2025-11-28. By 2026-02-13, the unit-planning template and gradebook operated through the AAO - Academic Affairs Office and the Curriculum and Teaching division are updated so every department's Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, and PLC cycles in every academic division open on an SLO frame and close on SLO-tagged evidence recorded in PLC minutes. By 2026-05-15, term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student across IG1, IG2, AS, and A2, and an SLO self-reflection from every student, with Homeroom Teachers and Year Leaders in the SAO - Student Affairs Office (Pastoral and Well-Being) facilitating the student reflection step. By 2026-07-24, the annual self-study evidence binder against WASC standards A1, A4, B1, B2, B3, and C1 is compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts.\", \"rationale\": \"The SLOs are the school's operational expression of its three mission areas: Academic excellence, Caring and safe community, and Global citizenship. Six of seven SLOs lack a shared behavioral descriptor, so faculty, students, parents, and the Parent Committee do not share a common definition of what Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, or Responsible looks like in daily practice. This gap weakens evidence under WASC standards A1 (vision and mission collectively understood and implemented), A4 (qualitative and quantitative data driving improvement), B1 (curriculum standards-aligned and responsive to student needs), B2 (instruction grounded in research-based strategies producing student agency), B3 (varied assessments measuring student progress), and C1 (school culture of shared responsibility supporting academic and social-emotional growth). The plan addresses the gap across seven areas for improvement — Bilingual Environment carries the Bilingual Communicators work through the English and Humanities departments; Curriculum and Learning carries unit-plan SLO naming and SLO-tagged assessment artifacts across every department; Faculty PD and PLC carries the descriptor authoring and PLC redesign through the Curriculum and Teaching division; School Culture carries Compassionate, Responsible, and Engaged as lived norms through the SAO - Student Affairs Office (Pastoral and Well-Being); Student Data and Well-being carries SLO-tagged evidence in PLC data cycles and term-level student self-reflection; Community Involvement carries SLO-organized parent reporting; Resources and Tools carries the unit-planning template and gradebook updates the rest of the work depends on.\", \"student_impact_framing\": \"Students at Chiway-Repton School Xiamen will encounter the SLOs as named instructional and reflective vocabulary rather than wall posters. Unit plans in every department will tell students which one or two SLOs each unit advances, and at least one assessment per unit will produce SLO-tagged evidence the student can review. At term reporting and portfolio review, every student across IG1, IG2, AS, and A2 will produce an SLO self-reflection naming which SLOs a given piece of their work demonstrates, facilitated by Homeroom Teachers under Year Leaders in the SAO - Student Affairs Office (Pastoral and Well-Being). Bilingual Communicators work in English and Humanities will give students a shared definition of bilingual proficiency tied to the school's vision clause on effective communication in Chinese and English. Reflective and Confident work will give students named language for self-assurance and reflective practice. Compassionate, Responsible, and Engaged work led through the SAO - Student Affairs Office (Pastoral and Well-Being) will give students shared norms for behavior in homerooms, classrooms, and co-curricular settings. Parent reporting carrying an SLO-organized narrative section means each student's family receives, at each reporting cycle, a named account of growth across all seven SLOs in addition to subject grades.\", \"provenance\": \"The plan draws on the existing published Confident SLO descriptor as the depth-benchmark for authoring descriptors for the other six SLOs. It draws on the school's vision clauses on engaging and realizing academic potential, lifelong learning, personal responsibility, self-esteem, communicating ideas in Chinese and English, and compassion for others, and on the mission clauses GROUNDED, ROUNDED, and UNBOUNDED. It draws on the AAO - Academic Affairs Office's existing unit-plan repository and gradebook, the Curriculum and Teaching division's existing PLC cycle, the SAO - Student Affairs Office (Pastoral and Well-Being)'s existing homeroom and Year Leader routines across IG1, IG2, AS, and A2, the existing reporting-cycle template, and the existing portfolio-review routine. Evidence sources for the 2026-07-24 self-study binder are the year's unit plans, PLC minutes, SLO-tagged assessment artifacts, student self-reflections, parent reporting narratives, and classroom walkthrough notes, organized against WASC standards A1, A4, B1, B2, B3, and C1. Stakeholder consultation under the Policy revision (6-step consultative) method engages Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee.\"}\n",
+  "agent_response_parsed": {
+    "current_state": "The seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — are posted as labels at Chiway-Repton School Xiamen, but only Confident carries a published school-authored behavioral descriptor. The other six function as single-word headings without shared definition. Unit plans across the AAO - Academic Affairs Office's departmental roster — Math, English, Humanities, Sciences, Art Department, Business and Economics, Music and Sports Department — do not consistently name which SLOs each unit advances, and assessment artifacts are not tagged to SLOs. PLC cycles run by the Curriculum and Teaching division open and close on subject-content frames rather than SLO frames. Parent reporting at each cycle carries subject grades without an SLO-organized narrative section. Student self-reflection at term reporting and portfolio review rarely cites an SLO as the interpretive lens. The SAO - Student Affairs Office (Pastoral and Well-Being) operates pastoral routines through Homeroom Teachers and the IG1, IG2, AS, and A2 Year Leaders without a shared SLO vocabulary linking those routines to academic evidence. The College Counseling Department, Library, and Future Scholar Innovation Center each run programs that touch SLO territory without naming the SLOs they advance.",
+    "desired_state": "Each of the seven SLOs carries a published school-authored behavioral descriptor at the depth of the current Confident descriptor, authored by cross-divisional faculty teams drawn from Math, English, Humanities, Sciences, Art Department, Business and Economics, and Music and Sports Department, validated by the Director of Teaching and Curriculum Center and the IHS Principal, and posted in the staff handbook, the parent handbook, and student-facing materials by 2025-11-28. By 2026-02-13, the unit-planning template and gradebook operated through the AAO - Academic Affairs Office and the Curriculum and Teaching division are updated so every department's Term 2 unit plans name one or two SLOs per unit and carry at least one SLO-tagged assessment artifact, and PLC cycles in every academic division open on an SLO frame and close on SLO-tagged evidence recorded in PLC minutes. By 2026-05-15, term reporting and portfolio-review routines deliver an SLO-organized parent narrative for every enrolled student across IG1, IG2, AS, and A2, and an SLO self-reflection from every student, with Homeroom Teachers and Year Leaders in the SAO - Student Affairs Office (Pastoral and Well-Being) facilitating the student reflection step. By 2026-07-24, the annual self-study evidence binder against WASC standards A1, A4, B1, B2, B3, and C1 is compiled with the seven SLOs as the organizing evidence categories, drawing on a full year of unit-level, PLC-level, student-reflection, and parent-reporting artifacts.",
+    "rationale": "The SLOs are the school's operational expression of its three mission areas: Academic excellence, Caring and safe community, and Global citizenship. Six of seven SLOs lack a shared behavioral descriptor, so faculty, students, parents, and the Parent Committee do not share a common definition of what Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, or Responsible looks like in daily practice. This gap weakens evidence under WASC standards A1 (vision and mission collectively understood and implemented), A4 (qualitative and quantitative data driving improvement), B1 (curriculum standards-aligned and responsive to student needs), B2 (instruction grounded in research-based strategies producing student agency), B3 (varied assessments measuring student progress), and C1 (school culture of shared responsibility supporting academic and social-emotional growth). The plan addresses the gap across seven areas for improvement — Bilingual Environment carries the Bilingual Communicators work through the English and Humanities departments; Curriculum and Learning carries unit-plan SLO naming and SLO-tagged assessment artifacts across every department; Faculty PD and PLC carries the descriptor authoring and PLC redesign through the Curriculum and Teaching division; School Culture carries Compassionate, Responsible, and Engaged as lived norms through the SAO - Student Affairs Office (Pastoral and Well-Being); Student Data and Well-being carries SLO-tagged evidence in PLC data cycles and term-level student self-reflection; Community Involvement carries SLO-organized parent reporting; Resources and Tools carries the unit-planning template and gradebook updates the rest of the work depends on.",
+    "student_impact_framing": "Students at Chiway-Repton School Xiamen will encounter the SLOs as named instructional and reflective vocabulary rather than wall posters. Unit plans in every department will tell students which one or two SLOs each unit advances, and at least one assessment per unit will produce SLO-tagged evidence the student can review. At term reporting and portfolio review, every student across IG1, IG2, AS, and A2 will produce an SLO self-reflection naming which SLOs a given piece of their work demonstrates, facilitated by Homeroom Teachers under Year Leaders in the SAO - Student Affairs Office (Pastoral and Well-Being). Bilingual Communicators work in English and Humanities will give students a shared definition of bilingual proficiency tied to the school's vision clause on effective communication in Chinese and English. Reflective and Confident work will give students named language for self-assurance and reflective practice. Compassionate, Responsible, and Engaged work led through the SAO - Student Affairs Office (Pastoral and Well-Being) will give students shared norms for behavior in homerooms, classrooms, and co-curricular settings. Parent reporting carrying an SLO-organized narrative section means each student's family receives, at each reporting cycle, a named account of growth across all seven SLOs in addition to subject grades.",
+    "provenance": "The plan draws on the existing published Confident SLO descriptor as the depth-benchmark for authoring descriptors for the other six SLOs. It draws on the school's vision clauses on engaging and realizing academic potential, lifelong learning, personal responsibility, self-esteem, communicating ideas in Chinese and English, and compassion for others, and on the mission clauses GROUNDED, ROUNDED, and UNBOUNDED. It draws on the AAO - Academic Affairs Office's existing unit-plan repository and gradebook, the Curriculum and Teaching division's existing PLC cycle, the SAO - Student Affairs Office (Pastoral and Well-Being)'s existing homeroom and Year Leader routines across IG1, IG2, AS, and A2, the existing reporting-cycle template, and the existing portfolio-review routine. Evidence sources for the 2026-07-24 self-study binder are the year's unit plans, PLC minutes, SLO-tagged assessment artifacts, student self-reflections, parent reporting narratives, and classroom walkthrough notes, organized against WASC standards A1, A4, B1, B2, B3, and C1. Stakeholder consultation under the Policy revision (6-step consultative) method engages Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee."
+  },
+  "parse_note": null,
+  "schema_validation": "passed",
+  "draft_changed": true
+}

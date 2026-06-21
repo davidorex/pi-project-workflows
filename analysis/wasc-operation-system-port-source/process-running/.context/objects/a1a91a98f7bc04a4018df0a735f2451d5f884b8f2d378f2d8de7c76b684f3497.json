@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T21:30:00Z",
+  "evidence": "FEAT-005 Slice A (prompt-only register+content heuristics) baked into the generation prompts, snippet<->substrate lockstep, through an iterate-to-zero loop. Edits: preamble register rules (no cert-risk meta; standards key+name; Theme=title); snippet 05 distribution/in-out-of-class/HOW/diversity/bilingual as within-template preferences; snippet 06 prefer-distribute (best-fit governs); snippet 13 renders each standard as '<code>: <name>' (grounding _accreditation_standards derives name = text before first colon). First adversarial audit returned 5 findings; the loop fixed F4 (render key+name), F5 (05/06 wording vs the one-step-per-template/best-fit contracts), F1 (re-stamped 5 fragment content_hashes via pi-context's own contentProjection+computeContentHash); a re-audit found 1 NEW defect (the key+name mandate sent un-admitted standard NAMES into the DEC-44 fabrication stage -- FGAP-019-class desync) which was fixed by admitting the standard name in build_catalogue_union; the round-2 re-audit returned Total findings: 0 (over-admission ruled out: only 12 real names added, zero changed fabrication outcomes). Parity 14/14; full gate green (ruff+format both trees, mypy . 323/0, pytest 3036, make test-js 48/0). Criterion 7 (per-Goal header) was relocated to FEAT-007 (net-new model/parser, not a prompt bake). Slices B/C/D remain. Filed FGAP-027 (.workshopping fragment content_hash staleness, inert; 14 pre-existing, this change repaired 2).",
+  "criteria_results": [
+    {
+      "criterion": "Generated action steps distribute ownership across the divisions/positions whose responsibilities justify them; no single division/role owns a disproportionate share.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each action step states its mechanism (HOW it is carried out).",
+      "status": "passed"
+    },
+    {
+      "criterion": "Action steps span diverse focus areas (multiple improvement types/areas), not one concentrated focus.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Relevant actions carry bilingual (Chinese-English) dual-purpose framing where the school's bilingual SLO supports it.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A WASC standard is referenced as key + name ('C1: School Culture'); descriptions never meta-invoke WASC certification/accreditation risk; Theme reads as a title, not success-criteria narrative.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Snippet<->substrate render parity stays 14/14; verbatim catalogue-label fidelity preserved; the full project gate stays green.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A re-render of the affected specs against the Chiway grounding shows these qualities present in the generated output.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T08:00:00Z",
+  "evidence": "TASK-027 (R1 no-framework-terms render rule into the shared preamble) via the canonical pipeline. IMPL ef89999: added the plan-register bullet + mirrored FRAG-preamble + re-stamped content_hash + parity 14/14. Adversarial audit returned 3 findings: F1 (preamble over-claimed -- listed bare refraction/weave/front-load as banned, contradicting the harness WARN policy + risking plain-English suppression); F2 (harness HARD list had only American 'behavior-change-primary', British spelling scanned clean); F3 (criterion 1 argued by-construction, not empirically observed). Fix b091792: F1 -> preamble banned-examples aligned to the harness coined-multi-word HARD set, bare singles reframed as plain-OK; F2 -> 'behaviour-change-primary' added to the harness HARD list + test (35 harness tests, 971 planner, gate green); parity 14/14. F3 closed EMPIRICALLY: a fresh opus generation of narrative-draft under the corrected preamble scans check_draft Check 1 (process-method terms) = 0, with all 5 narrative fields substantive + grounded. Orchestrator independently confirmed F1 (preamble grep), F2 (British test), F3 (the fresh-gen scan). Discovered + filed FGAP-032 (all-caps SLO-group-name strand-prefix leak -- a separate register concern, harness Check 2, NOT R1). Scope: prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble (+ check_draft.py/test for F2); no .context/parser/migration.",
+  "criteria_results": [
+    {
+      "criterion": "A freshly generated plan, scanned against the enumerated process-method-term list, yields zero occurrences.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Compared against the pre-rule draft, the same plan retains its substantive content (all sections present and non-empty; nothing shortened or hollowed to dodge the terms) -- an adversarial reviewer confirms zero substance loss.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Plain descriptive English is still present where apt and is not flagged by the scan (e.g. 'talking at students' passes).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The dispatched output parses clean with no new fabrication flags, and the snippet-substrate parity check passes.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-07T14:30:00Z",
+  "evidence": "PromptSanitizer role-token check fixed + the Unicode gap-evasion class closed category-exhaustively. Independent full-category sweep through the real sanitizer: 170 Cf + 17 Zs + every line-break boundary, 0 leaks on both sanitize_data + sanitize_refinement; benign mid-prose ('PD schedule system: /professional-learning/2025-2026/' etc.) passes; override/reassignment/delimiter patterns intact; no data-exclusion carve-out (production draft_state stays checked). 3 adversarial-audit rounds drove convergence (turn-boundary -> Unicode-space/zero-width gap -> category-based Cf/Zs closure). The --fresh run then COMPLETED 42/42: render_suggest_feedback_channels (spec 11, the step that previously crashed on the false-positive) rendered clean and the sequence finished end-to-end. Gate green (mypy 323/0, pytest 3032, make test-js 48/0, parity 14/14).",
+  "criteria_results": [
+    {
+      "criterion": "Benign plan prose containing a role token mid-line passes sanitization without raising.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A genuine role-injection at a turn boundary still rejects, for all three tokens, across every Unicode separator/space/format evasion (category-exhaustive, 0 leaks).",
+      "status": "passed"
+    },
+    {
+      "criterion": "No data is excluded from sanitization; the fix applies to both sanitize_data and sanitize_refinement (workshop render + production PromptTemplate.render).",
+      "status": "passed"
+    },
+    {
+      "criterion": "Pre-existing real-injection patterns (override/reassignment/delimiter) still reject; no regression.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green and the 14-spec run completes past spec 11.",
+      "status": "passed"
+    }
+  ]
+}

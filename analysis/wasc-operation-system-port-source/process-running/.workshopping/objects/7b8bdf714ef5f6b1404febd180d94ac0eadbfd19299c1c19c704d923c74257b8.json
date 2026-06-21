@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if guiding_statements %}Guiding statements (the school's vision/mission clauses; name guiding clauses only from this list):\n{% for kind, clauses in guiding_statements.items %}- {{ kind }}:\n{% for c in clauses %}  {{ c.order }}. {{ c.text }}\n{% endfor %}{% endfor %}{% endif %}",
+  "section": "guiding_statements"
+}

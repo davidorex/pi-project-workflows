@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "B2 soft-flag apply path. Both apply paths (apply.py, apply_from_substrate.py) now serialize a soft return's FreetextFlags via dataclasses.asdict, extend draft['flags'], mark the outcome flagged (capture schema_validation / result status), emit the flags, and exit 0; a parser raise still exits 1; clean parses unchanged. New test_workshop_apply_flags.py (8 tests, mocked parser, both paths imported so mypy . reaches apply_from_substrate). Separate-agent adversarial audit Total findings: 0 (incl. independent probes: apply.py accumulation, asdict round-trip, gate-coverage proven via injected type fault). Full gate GREEN: ruff check + ruff format --check (project + the 3 dispatch files), mypy . 315/0, pytest 1981, make test-js 42/0, verify-render-parity 14/14.",
+  "timestamp": "2026-06-06T20:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "A soft-flagged parse keeps its proposed values: applied to the draft, not discarded.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The flags from a soft-flagged parse are preserved in the running draft and retrievable after the run.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A soft-flagged outcome is recorded as flagged, distinct from a clean pass and a rejection.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The emitted result for a soft-flagged parse includes its flags.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A soft-flagged item does not halt a multi-spec run; the run continues and accumulates flags across every spec.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A fatal rejection halts the run.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Clean parses behave exactly as before, and the full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

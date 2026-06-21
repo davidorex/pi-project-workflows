@@ -1,0 +1,40 @@
+{
+  "research": [
+    {
+      "title": "pi-context functional characterization (current capabilities)",
+      "status": "complete",
+      "layer": "L5",
+      "type": "investigative",
+      "question": "What does the current pi-context framework afford — namespacing, custom/new block authoring, validation extension points, content-addressing, relations, cross-substrate operations, roadmap, schema versioning — and how does the .context config installed 2026-05-30 differ from the package's current conception?",
+      "method": "Read-only code-inspection of the pi-context package (src/, samples/conception.json, schemas/) plus the generated SKILL.md, conducted via a dispatched Explore agent.",
+      "findings_summary": "Namespacing is at the SUBSTRATE grain, not within a substrate. block_kinds are a flat array, each a global canonical_id with a display prefix; there is no within-substrate namespace/grouping field. The real namespacing unit is the substrate: a project-root .pi-context-registry.json enumerates multiple substrates by substrate_id, each with its own config + flat block set, linked by aliases and cross-substrate foreign edges, with promote-item for derivation across them. Custom/new block kinds are authored via write-schema (draft-07, meta-validated) + amend-config block_kinds (or canonicalize-substrate's registerBlocks); schemas are standalone, no inheritance/templating. Validation extension: config-declared invariants support exactly two classes generically — requires-edge and status-consistency — and a NEW class needs source changes; lens-validators (registerLensValidator) are arbitrary code run by context-validate (can read files / spawn processes, e.g. introspect external models), but registration is framework-side (barrel import), not project-local config. Content-addressing: each canonical item carries oid (32-hex, minted once, immutable), content_hash (SHA-256 over the content projection), content_parent (prior hash → per-item version chain); the content projection is stored in a git-tracked objects/<hash>.json store; the metadata floor {id, oid, content_hash, content_parent} plus author/closed fields is excluded from the hash, and x-identity.metadata_fields can extend the discretionary set. Relations are closure-table edges in relations.json — {parent, child, relation_type, ordinal?} — with dual-form endpoints (legacy string, structured item {kind:item, oid, substrate_id?}, or lens_bin); nested id-bearing arrays are forbidden (canonicalize promotes them to top-level entity + membership edges). Cross-substrate: resolveRef classifies endpoints active|foreign|dangling|unregistered; promote-item copies an item INTO another registered substrate as a NEW content-addressed item, recording an item_derived_from_item lineage edge and marking the source superseded when its status enum supports it; migrate-content-addressed backfills identity + converts legacy endpoints; canonicalize-substrate promotes nested arrays. Roadmaps (roadmap.json + roadmap tools) provide phases/lens-views/topo-ordering. Schema versioning: a version bump requires a companion migration in migrations.json (kind identity | declarative-transform); items declaring an older schema_version walk forward at next read/write. DRIFT FINDING: the .context config (schema_version 1.0.0, generated 2026-05-30) carries a session-notes block kind + session_touches_item relation + session-notes-by-via lens that are NOT in the package's current samples/conception.json — a local addition, not upstreamed; relevant to the external compliance pass, not this substrate.",
+      "scope": [
+        "/Users/david/Projects/workflowsPiExtension/packages/pi-context (src/, samples/conception.json, schemas/, skills/pi-context/SKILL.md)",
+        ".context/config.json (installed 2026-05-30, schema_version 1.0.0)"
+      ],
+      "id": "R-0001",
+      "created_at": "2026-06-02T21:30:18.782Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-02T21:30:18.784Z",
+      "oid": "419613fe2e4f266f9dbf4055e265e559",
+      "content_hash": "07b16933ec1c423705978c38b0e58cac40fa368cfd53480a8fdf0e19121a889f"
+    },
+    {
+      "title": "git SHAs as first-class substrate nodes — pros/cons and recommendation",
+      "status": "complete",
+      "layer": "L5",
+      "type": "comparative",
+      "question": "Should git SHAs become first-class substrate items (a commit block kind) so commit references become edges, or stay as prose annotations on existing fields — judged by how it would functionally improve our ability to use the substrate?",
+      "method": "Conceptual analysis of the two options against pi-context's operation surface (find-references, join-blocks, context-validate, requires-edge invariants, lenses, render).",
+      "findings_summary": "Framed by which substrate operations it unlocks, the gain collapses to a single capability class: commit-as-pivot. A SHA in a prose field is opaque to every substrate operation (find-references, join-blocks, context-validate, invariants, lenses all see a string). Making commits first-class would add: reverse lookup (find-references(commit) → every DEC/DISC/US/invocation/log item that cites it, in one edge query, vs a prose grep); join-blocks across the commit edge; enforceable commit-edge invariants (a vivified story MUST have a vivified_by_commit edge whose target exists, not merely a non-null field); dangling-ref integrity (context-validate flags a ref to an unrecorded commit); and provenance renderable from the graph. The cost is equally concentrated: forward provenance ('what commit vivified US-1?') needs no node — it is just reading the field; the commit item DUPLICATES git (subject/author/date/diff all answered by git show/log) and adds nothing git lacks except the edges TO project state; and a hand- or fully-mirrored commit block is a git mirror that drifts — the exact population/sync anti-pattern this whole effort has been eliminating, with the integrity benefit only as good as the sync discipline. For this project's actual query patterns (pivot on DEC/DISC/US entities; SHA used as one-directional evidence), the marquee reverse-lookup is low-demand while the population cost is constant — a poor trade as a default. RESOLUTION: do not choose between rich-mirror and prose-only. If adopted, do it as a DERIVED commit kind — mint a commit item only for SHAs already cited in the prose fields (refs, resolved_by, vivifying_commit, sha), id = SHA, no mirrored metadata, regenerable from those fields — so it is a projection of references the substrate already holds, not an authored git mirror; this captures the pivot + integrity pros and dissolves the drift con (same generate-from-the-source discipline as the model-surface-authority thread). The prose stays on the field verbatim; the commit node + edges are the additive, regenerable overlay. RECOMMENDATION: prose-by-default now; promote commits to first-class only when a real need to pivot on commits or enforce commit-edge invariants appears, and only as a derived-from-cited-SHAs kind, never as a maintained git mirror.",
+      "id": "R-0002",
+      "created_at": "2026-06-02T21:33:18.375Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-02T21:33:18.377Z",
+      "oid": "2f837dd552c382fdff77ac7d0f345935",
+      "content_hash": "c701275e6cb960c35de16e87a183cc59b877d6d4a08ca5d986940cfac8030f89"
+    }
+  ]
+}

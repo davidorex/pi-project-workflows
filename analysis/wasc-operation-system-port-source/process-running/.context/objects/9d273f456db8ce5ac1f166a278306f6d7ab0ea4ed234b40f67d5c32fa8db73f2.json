@@ -1,0 +1,5 @@
+{
+  "description": "Commit messages are detailed, specific, measured, descriptive forensic evidence for future AIs to understand the true state of functionality and the complete thinking and actions in code. Not promotional, not summarized.",
+  "enforcement": "review",
+  "severity": "error"
+}

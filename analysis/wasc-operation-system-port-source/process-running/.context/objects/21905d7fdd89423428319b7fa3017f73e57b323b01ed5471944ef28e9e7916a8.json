@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "Accumulation seam sub-slice 3a (A3 multi-section fold): a server-side function in planner/services.py that folds the A3 propose-domain-alignment prefill -- one object with 5 relation sections (learner_outcomes_targeted, areas_for_improvement, stakeholder_impact, policies_established, policies_revised), each a list[dict] of {pk-or-label-resolved-field, rationale} -- into the flat draft_state by routing each present section to the existing fold_formset_prefill with prefix == the relation field name. The not-addressed acknowledgment keys (learner_outcomes_not_addressed, areas_for_improvement_not_addressed) are NOT form selections and are skipped (not folded). Composes the existing formset fold (REPLACE per section); no new deletion logic. Addresses FEAT-010 / STORY-013; harness SLICE=fold_multisection_a3.",
+  "acceptance_criteria": [
+    "Folding the A3 prefill object sets, for each of the 5 relation sections present, the {section}-{i}-{field} keys via the existing per-section formset fold (one section's rows do not affect another's).",
+    "The non-formset acknowledgment keys (learner_outcomes_not_addressed / areas_for_improvement_not_addressed) are NOT written as draft_state form keys; they are skipped without error.",
+    "REPLACE holds per section (re-folding a section clears its prior direct rows incl. stale higher-index) and management-form keys for each section survive untouched; sections absent from the prefill are left unchanged.",
+    "The folded draft_state round-trips through PlanDraftState and is consumable: _draft_state_row_count(grounding, '<section>') returns that section's row count.",
+    "The fold is pure, imports no retired-workshop code, and raises a clear domain error on a malformed prefill (not a dict-of-lists).",
+    "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "output": "seed-round-plan.json",
+  "source": "data/seed-round-plan.md",
+  "section": "## Decisions log (decisions made)",
+  "itemLinePattern": "^- \\*\\*DEC-\\d+\\*\\* —",
+  "ignoreLinePattern": "^\\(Append new decisions here|^---$",
+  "fields": ["id", "num", "title", "body", "refs", "continuation", "raw"],
+  "required": ["id", "num", "raw"]
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Never end your response with a question.",
+  "enforcement": "manual",
+  "severity": "error"
+}

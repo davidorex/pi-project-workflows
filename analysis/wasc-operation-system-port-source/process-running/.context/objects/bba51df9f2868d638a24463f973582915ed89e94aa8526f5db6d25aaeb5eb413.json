@@ -1,0 +1,5 @@
+{
+  "description": "Fragility reachable only via a skippable human step → pull into the automated gate; never 'cover' it with a human-pass reminder. Distinguish config (browser-pass acceptable) from behavior/code (must be machine-tested).",
+  "enforcement": "review",
+  "severity": "warning"
+}

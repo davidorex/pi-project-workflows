@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-07T14:30:00Z",
+  "evidence": "The --fresh 14-spec run (out_dir tmp.PPHoxPH6kB) COMPLETED 42/42 (status completed, exit 0, ending apply_propose_review_loop) -- FGAP-022's criterion-1 (runs to completion) now met. decompose-action-steps (the spec whose 84KB atom-laden prompt overflowed the 10MB stdout cap) rendered at ~38KB and passed; propose-responsibilities kept the full atom inventory + resolved its responsibilities (the draft's 6 steps all carry division/position responsibilities). retry on the 14 call steps is in place (engine-confirmed). Parity 14/14; draft unchanged in kind (FGAP-018 complete steps + FGAP-019 clean prose both hold in the final draft). WF-16 records the upstream cap pathology. Full gate green (mypy 323/0, pytest 3032, make test-js 48/0).",
+  "criteria_results": [
+    {
+      "criterion": "The 14-spec sequence runs to completion end-to-end against the Chiway dev-DB.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A spec carries the full responsibility-atom inventory only if its task selects/cites atoms verbatim; propose-responsibilities retains the inventory and resolves its atoms with no catalogue rejection.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A transient agent no-JSON turn is bounded-retried, not fatal on first failure.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Snippet<->substrate parity stays 14/14; non-destructive to tenant data; the draft is unchanged in kind (FGAP-018/019 hold).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The upstream stdout-cap pathology is recorded; the full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

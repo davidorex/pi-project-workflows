@@ -1,0 +1,5 @@
+{
+  "description": "Compute GO/NO-GO from AUDIT's `Total findings: N` line deterministically: count > 0 → NO-GO; count == 0 → GO-RECOMMENDED. Never recompute severity; the count is the gate.",
+  "enforcement": "manual",
+  "severity": "error"
+}

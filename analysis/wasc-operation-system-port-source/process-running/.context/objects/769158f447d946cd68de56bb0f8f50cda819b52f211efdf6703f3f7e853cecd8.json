@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T10:30:00Z",
+  "evidence": "TASK-031 (B1 quarter-by-quarter review loop + spiral focus) via the FULL canonical pipeline: Explore agent -> orchestrator corroboration against live source (Chiway cycle 2025-08-01/2026-07-31 so the Check-5 anchor is 2025-12-01; FRAG-intro-propose-review-loop-9 is the byte-parity mirror target) -> plan ~/.claude/plans/cadent-spiraling-quill.md -> IMPL -> empirical -> separate adversarial audit -> cascade. IMPL c661bde: added a directive paragraph to snippet 14 (review_events are the evaluate-and-adjust checkpoints: >=4, ~one per quarter, EARLIEST before 1 December; each a measure->diagnose->adjust pass via inputs->scheduled_note->paired revision action; each later checkpoint re-examines earlier focuses (spiral); every adjustment framed as evidence-driven course-correction) + mirrored FRAG-intro-propose-review-loop-9 + re-stamped content_hash (215ad07a) + parity 14/14. EMPIRICAL: drafted 5 feedback_channels (suggest-feedback-channels) into a scratch draft alongside the 4 milestones, then dispatched a fresh propose-review-loop under the directive -> 4 review_events (2025-11-14, 2026-02-20, 2026-05-22, 2026-07-10), 4 revision_rules, 9 communications. check_draft Check 5: 4 checkpoints, earliest 2025-11-14 < 2025-12-01 -> criterion 1 PASS. A SEPARATE adversarial audit confirmed: C2 all 4 checkpoints carry the measure->diagnose->adjust shape AND genuine spiral retention (later scheduled_notes re-examine the earlier checkpoints' focuses verbatim; revision rules hold prior focuses under continued review); C3 zero failure-framed adjustments (deficit/shortfall language confined to condition TRIGGERS, which are permitted; every action is evidence-driven course-correction); C4 parse clean against parse_propose_review_loop with live grounding from the scratch draft, flags=[] (zero hard fabrication, zero soft-NER), every division/stakeholder/frequency/WASC-code a verbatim catalogue member, parity 14/14. Audit Total findings: 0 BLOCKERS. Two advisory (non-blocking): free-text roles (Homeroom Teachers / Year Leaders / year-group cohorts) in notes drawn verbatim from draft prose, parser returned 0 flags; one cadence-spread remark rested on a misread of cycle length -- the cycle is the single 2025-2026 academic year, so the Nov->Jul quarterly spread is correct. Scope: prompt-workshop/snippets/14-propose-review-loop.md + .workshopping FRAG-intro-propose-review-loop-9 only; no parser/schema/grounding/.context change.",
+  "criteria_results": [
+    {
+      "criterion": "A generated review loop has at least four evaluate-and-adjust checkpoints and the earliest checkpoint date falls before 1 December -- both machine-checked over the review events.",
+      "status": "passed"
+    },
+    {
+      "criterion": "An adversarial reviewer confirms each checkpoint carries a measure-then-diagnose-then-adjust shape and that earlier focuses are re-checked rather than dropped, with zero checkpoints failing.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Revision language is framed as course-correction not failure -- zero failure-framed instances.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The output parses clean, names only catalogued divisions/stakeholders/frequencies (zero fabrication flags), and the parity check passes.",
+      "status": "passed"
+    }
+  ]
+}

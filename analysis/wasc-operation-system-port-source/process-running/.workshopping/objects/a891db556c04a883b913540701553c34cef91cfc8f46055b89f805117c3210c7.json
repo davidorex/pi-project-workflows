@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if priority_tiers %}Priority tiers:\n{% for p in priority_tiers %}- {{ p.label }}\n{% endfor %}{% endif %}",
+  "section": "priority_tiers"
+}

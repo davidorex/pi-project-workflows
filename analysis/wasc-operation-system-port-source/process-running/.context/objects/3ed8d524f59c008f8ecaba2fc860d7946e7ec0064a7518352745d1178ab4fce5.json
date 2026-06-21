@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 3a (A3 multi-section fold, TASK-062): planner/services.fold_multisection_prefill + planner/tests/test_slice_fold_multisection_a3.py (11 tests), branch trio-seam-multisection-fold (62628d5 build, 738d932 round-2). Verified through the verify-gated loop: IMPL (ad67497f) routed the 5 A3 relation sections through fold_formset_prefill, skipping the *_not_addressed ack keys; orchestrator ran make verify-slice SLICE=fold_multisection_a3 exit 0. SEPARATE adversarial audit (abef7c73) Total findings: 2 (F1 cross-section partial-mutation asymmetry -- a malformed later section left earlier sections written, breaking the atomicity the sibling folds uphold + docstring overstatement; F2 silent drop of a real relation on a typo'd `sections`). IMPL round-2 (738d932): F1 -> a pre-validation pass checks all routed sections' shape BEFORE any mutation (atomic-on-guard-failure, mirroring fold_formset_prefill's guards) + docstring corrected; F2 -> an allowed_skip_keys param (A3 caller passes the 2 ack keys) + raise a clear ValueError on any unexpected prefill key. Both fixes proven RED on round-1. Orchestrator re-ran the gate exit 0. Re-audit (a2a6dbd8) Total findings: 0 (both resolved non-vacuously, pre-validation byte-identical to fold_formset_prefill's guards so no partial-write reintroduced, no over-correction, no new defects). Done = gate exit 0 AND audit 0 (DEC-58), orchestrator-observed. Full gate: ruff clean; mypy 332; pytest 3250 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Folding the A3 prefill sets each present section's {section}-{i}-{field} keys via the per-section formset fold; sections don't cross-contaminate; absent sections unchanged.",
+      "status": "passed",
+      "evidence": "11 slice tests; routing through fold_formset_prefill per section; isolation + absent-section tests."
+    },
+    {
+      "criterion": "The non-formset acknowledgment keys are not written as form keys and are skipped without error.",
+      "status": "passed",
+      "evidence": "ack keys passed via allowed_skip_keys; skip test; round-2 made undeclared keys raise (explicit skip)."
+    },
+    {
+      "criterion": "REPLACE per section (stale higher-index cleared) + management-form keys survive; absent sections untouched.",
+      "status": "passed",
+      "evidence": "REPLACE tests; reuses fold_formset_prefill's per-prefix REPLACE + survival; audit re-verified."
+    },
+    {
+      "criterion": "Round-trips through PlanDraftState; consumable via _draft_state_row_count per section.",
+      "status": "passed",
+      "evidence": "round-trip test: real parse_propose_domain_alignment -> fold -> save/load -> build_grounding -> _draft_state_row_count per section. Non-vacuous."
+    },
+    {
+      "criterion": "Pure, no retired-workshop import; raises a clear domain error on a malformed prefill (non-dict, non-list section, AND atomically — earlier sections untouched on a later malformed section).",
+      "status": "passed",
+      "evidence": "F1 atomicity: pre-validation pass before any mutation, draft_state entirely untouched on guard failure (test asserts untouched, fails on round-1); F2 unexpected-key ValueError."
+    },
+    {
+      "criterion": "Whole-project gate green; context cascade validates; nothing pre-existing breaks.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=fold_multisection_a3 exit 0; ruff/mypy 332/pytest 3250/test-js 48/context-validate 0 errors; diff scoped to the 2 files + .context; gate unweakened."
+    }
+  ]
+}

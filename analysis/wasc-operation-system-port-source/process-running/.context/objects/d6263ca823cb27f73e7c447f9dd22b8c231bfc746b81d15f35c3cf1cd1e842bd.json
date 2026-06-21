@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "Adopt the R-0012-verified context-contracts: declare CTX-001..004 (unit_kinds task / verification / feature / framework-gap) into .context/context-contracts.json so gather-execution-context resolves a per-unit-kind execution bundle, replacing manual edge-walking (the drift root cause this session cleaned). All bundle directions corroborated against the live relations.json edges via find-references; max_depth is recorded-only in this build; zero-edge relation_types (feature_governed_by_decision, gap_addressed_by_feature) excluded as scaffolding until edges exist. Source: R-0012 / the pi-context Usage Audit MD section IV.B.",
+  "acceptance_criteria": [
+    "gather-execution-context returns a correct single-hop bundle for a representative unit of each declared kind (task, verification, feature, framework-gap): each declared relation_type/direction resolves exactly the neighbors the live edges hold for that unit, with no inverted or empty bucket for a relation_type that has edges on that unit.",
+    "A representative task unit's bundle reaches its containing story, its phase, the gap/feature/decision it addresses, its verifications, and its prerequisite chain; a representative framework-gap unit's bundle reaches its addressing tasks, decisions, and verifications — demonstrating directions are correct rather than reversed.",
+    "After the four contracts are declared, context-validate reports 0 errors and introduces no warning beyond the pre-existing set (no invariant or lens reads context-contracts; the declaration is additive).",
+    "context-contracts.json contains exactly the four contracts with no zero-edge relation_type listed, and each carries id, unit_kind, bundle_relation_types, created_by, created_at."
+  ]
+}

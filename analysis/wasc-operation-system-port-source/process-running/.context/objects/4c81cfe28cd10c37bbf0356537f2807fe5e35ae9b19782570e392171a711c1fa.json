@@ -1,0 +1,26 @@
+{
+  "status": "identified",
+  "package": "school-improvement-plans/planner/_llm_fabrication_validator.py + ai/services/llm/__init__.py",
+  "title": "DEC-44 fabrication validator resolves its LLM provider without the run's user context (get_llm() no-user), so it silently no-ops under a user-scoped provider config -- the anti-fabrication LLM backstop is OFF whenever the configured provider is not a SYSTEM default",
+  "description": "Surfaced by the first real end-to-end run_trio run against the chiway tenant (2026-06-21, --dry-run, openrouter). The trio's spec calls go through get_llm_logged(author) (ai/services/llm/__init__.py:158) which resolves the USER-SPECIFIC LLMProviderConfig first -- the dev DB has exactly one config row: provider=openrouter, user=davidenchine@outlook.com, is_default=True, is_enabled=True, key on row, model=anthropic/claude-sonnet-4.6 -- so the spec calls correctly use openrouter (HTTP 200s observed). But the DEC-44 fabrication validator (planner/_llm_fabrication_validator.py:125) calls get_llm() with NO user, so _get_db_config(user=None) does not match the user-scoped row (an is_default flag on a user-scoped row does not satisfy a no-user lookup), and it falls through to settings (LLM_DEFAULT_PROVIDER unset -> base.py default 'anthropic') with no ANTHROPIC_API_KEY -> NoProviderConfiguredError('No API key configured for anthropic'). The validator is failure-falls-back-without-blocking (planner/_llm_fabrication_validator.py:21,132-134): it logs a WARNING and returns [], so the run PROCEEDS but the DEC-44 LLM fabrication backstop does not fire. Repeated twice in the observed run (validate_candidates invoked per spec that left free-text survivors).",
+  "evidence": [
+    {
+      "file": "planner/_llm_fabrication_validator.py",
+      "reference": "line 125 `llm = get_llm()` (no user/provider arg); line 50 _DEFAULT_MODEL='anthropic/claude-haiku-4.5'; lines 21,113-134 failure-falls-back-without-blocking -> logs WARNING + returns []"
+    },
+    {
+      "file": "ai/services/llm/__init__.py",
+      "reference": "get_llm(user=None) -> _get_db_config(user, provider): user-specific first then settings fallback (LLM_DEFAULT_PROVIDER default 'anthropic', base.py:367); a no-user lookup does not match a user-scoped is_default row"
+    },
+    {
+      "file": "dev DB state 2026-06-21",
+      "reference": "1 LLMProviderConfig: provider=openrouter user=davidenchine@outlook.com is_default=True is_enabled=True key_on_row=True; env LLM_DEFAULT_PROVIDER=None, no OPENROUTER/ANTHROPIC env keys -> run_trio openrouter calls succeed (author path) while the validator's get_llm() resolves anthropic and raises NoProviderConfiguredError"
+    },
+    {
+      "file": "observed run output",
+      "reference": "2026-06-21 17:09 run_trio --dry-run: repeated 'DEC-44 validator: provider call failed: NoProviderConfiguredError(...anthropic...)' WARNINGs interleaved with successful openrouter spec calls"
+    }
+  ],
+  "impact": "The DEC-44 LLM anti-fabrication backstop (the third-stage validator over the deterministic free-text-audit survivors) silently does not run whenever the active provider is user-scoped or otherwise not a system default -- i.e. in the normal dev configuration. The PRIMARY anti-fabrication protection (the deterministic free-text catalogue audit) still runs, so fabrication is degraded-not-absent; but the LLM backstop that DEC-44 added is effectively off, undetected except by the WARNING log. Affects any get_llm() caller that omits the user when configs are user-scoped, not just the validator.",
+  "proposed_resolution": "Thread the run's user (and/or the resolved provider) into the validator so it uses the SAME provider as the invoking run: validate_candidates(... , user=...) -> get_llm(user=...) (the trio passes its author; the dispatch path passes request.user). Needs its own canonical-pipeline pass to trace validate_candidates' callers (audit_freetext / the grounding free-text path) and thread the user through. Consider also: (a) failing LOUDER than a WARNING when the backstop cannot run (it is a safety layer, so a silent no-op is the dangerous part) -- e.g. surface a degraded-validation signal; (b) the anthropic-namespaced _DEFAULT_MODEL is openrouter-compatible (openrouter routes 'anthropic/...'), so the model string is not the bug -- the bug is provider resolution. Operational workaround to make the validator run NOW: make the openrouter LLMProviderConfig a SYSTEM row (user null, is_default) OR set LLM_DEFAULT_PROVIDER=openrouter + OPENROUTER_API_KEY in the env, so get_llm() (no user) resolves openrouter."
+}

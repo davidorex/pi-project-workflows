@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-016 / FGAP-002 (A1, surface DEC-44 verdict) gate green + separate-agent adversarial audit Total findings: 0. validate_candidates now returns list[tuple[span,verdict]] (all 3 classes fabricated|catalogue-variant|ordinary-prose surfaced, candidate order), the sole caller (_freetext_audit.py:974) filters verdict==fabricated so survivors is byte-identical (no admission drift). pytest 99 passed (test_llm_fabrication_validator + test_freetext_audit 71 admission tests = behaviour-preservation proof + test_parser_catalogue_enforcement_coverage); mypy clean (3 files); ruff clean. New test_validate_candidates_surfaces_all_three_verdicts is a real regression guard (would fail under the old filter-to-fabricated). Pure code, behaviour-preserving; flag-routing is A2/A3.",
+  "timestamp": "2026-06-05T09:45:00Z",
+  "criteria_results": [
+    {
+      "criterion": "validate_candidates surfaces all three verdicts as (span, verdict) pairs in candidate order",
+      "status": "passed"
+    },
+    {
+      "criterion": "admission unchanged: caller filters verdict==fabricated; survivors byte-identical (test_freetext_audit 71 green)",
+      "status": "passed"
+    },
+    {
+      "criterion": "failure modes preserved (empty/provider-error/malformed -> []; never raises)",
+      "status": "passed"
+    },
+    {
+      "criterion": "sole production consumer updated; no stale list[str] consumer; zip alignment strict",
+      "status": "passed"
+    },
+    {
+      "criterion": "static gate: pytest 99, mypy clean, ruff clean; scope-disciplined (no AssistResult/audit_prefill/flag-routing touched)",
+      "status": "passed"
+    }
+  ]
+}

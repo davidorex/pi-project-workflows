@@ -1,0 +1,54 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.0
+        env:
+          POSTGRES_USER: socrates
+          POSTGRES_PASSWORD: socrates
+          POSTGRES_DB: school_improvement_plans
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U socrates"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.local
+      DJANGO_SECRET_KEY: ci-test-secret-not-for-production
+      DATABASE_URL: postgres://socrates:socrates@localhost:5432/school_improvement_plans
+    defaults:
+      run:
+        working-directory: school-improvement-plans
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Sync project (with dev group)
+        run: uv sync
+
+      - name: Ruff lint
+        run: |
+          uv run ruff check . ../prompt-workshop/dispatch
+          uv run ruff format --check . ../prompt-workshop/dispatch
+
+      - name: Mypy
+        run: uv run mypy .
+
+      - name: Pytest
+        run: uv run pytest
+
+      - name: pip-audit
+        run: uv run pip-audit

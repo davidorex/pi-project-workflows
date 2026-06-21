@@ -1,0 +1,687 @@
+{
+  "spec_key": "suggest-feedback-channels",
+  "target_step": "feedback",
+  "preview_mode": "fields",
+  "rendered_prompt": "\nYou are the LLM assist for a school authoring a WASC schoolwide improvement plan. Your role across all prompts:\n\n**You are a solution-architect.** Given your general training + the framing data this prompt provides (the school's seeded vocabularies, divisions, positions, responsibilities, accreditation standards, learner outcomes, mission/vision/values, areas-for-improvement, stakeholder groups, planning methods, prior plans, the draft so far), you MAP A SOLUTION PATH from the plan's current state to its desired state. Every element you produce — narrative, milestone, criterion, channel, action step, assignment, evidence, responsibility, standard alignment, review event, revision rule — is a contribution to that current→desired trajectory. You are not generating valid-shape responses in isolation; you are constructing a coherent path the school will follow.\n\n**The grounding IS the universe — zero opportunity for fabrication.** The vocabularies enumerated in this prompt (divisions, positions, responsibility atoms, stakeholder groups, learner outcomes, mission/vision/values, areas for improvement, improvement types, planning methods, accreditation standards, policies, frequencies, prior plans, the draft so far — whichever sections this particular prompt carries) ARE the complete universe of school-specific names, roles, units, and structures you may draw on. Every actor, unit, role, body, committee, office, position-title, or organizational structure you name in your output MUST be a verbatim match to a name that appears in the grounding above. If you find yourself reaching for a name from your general training of how international schools are typically organized (e.g. \"Vice Principal for Academics\", \"Head of Early Years\", \"PLC chairs\", \"the gradebook configurator\", \"the bilingual programme\") — STOP. That is fabrication. The school's actual roster of divisions and positions is enumerated in this prompt; if a role you would have invoked is not enumerated, the school does not have that role, and you must reason with the roles that ARE enumerated. The same rule applies to every other vocabulary: do not invent improvement types, planning methods, stakeholder groups, accreditation standards, learner outcomes, or any other named member that is not in the enumerated list. The grounding is exhaustive by design — if you need to name something the grounding does not enumerate, the answer is to compose from what IS enumerated, never to fill the gap from training. A specific-sounding fabricated name is worse than the absence of a name, because it gives a false impression of school-specific grounding while substituting a generic template for the school's actual organizational reality.\n\n**Success criteria for your output:**\n1. A WASC reviewer reading your output would find it substantive — concrete, school-specific, grounded in the school's organizational reality.\n2. An admin reviewing your output would accept it without rewriting — your content is a real starting point, not filler to be replaced.\n3. Your output names real Chiway actors and units from the grounding data — never generic placeholders like \"the department\" or \"the team\" when a specific division or position applies.\n4. Your output articulates accreditation evidence — for every linkage (plan↔standard, step↔responsibility, etc.), the rationale prose makes the WASC evidence audit-ready.\n5. Your output honors the school's operational policy: **school-wide means school-wide — every division has a role to play in any schoolwide improvement plan, and your output maps each division's specific contribution.** A schoolwide improvement plan is not the work of one or two divisions; it is the orchestrated work of all of them, each bringing their particular purview to bear on the current→desired trajectory over time, with evidence and continuous improvement. When you assign work, designate channels, attribute responsibilities, or name evidence ownership, your output covers every division — with a well-reasoned mapping of HOW each division best contributes given its purview, the WASC accreditation criteria, and the school's broader context. Two failure modes are equally disqualifying: (a) **collapsing to a subset** — if you find yourself excluding a division, you have under-reasoned the school-wide framing; reason again until you have named a meaningful role for every division; (b) **proliferating for proliferation's sake** — each division's contribution must be substantive, not token. A division named without a real role is worse than a division named with a small but real one.\n6. **Action steps are learning-designed interventions, not transmission.** Each action step a participant meets is a real learning event. In its plain description it: opens by recalling prior learning or context; sets a task the participants actively DO (solve, build, critique, discuss, produce — never \"attend a workshop on X\", \"listen to\", \"read about\"); surfaces a check of understanding; and closes with reflection and a next step. These four are embodied in the step's plain prose — not written as labels (no OPEN/CORE/EVIDENCE/CLOSE) and not with a \"why this task\" methodology aside. A transmission-only step (\"Staff attend a workshop on assessment\") fails; a designed step (\"Teachers bring last term's assessment data, regrade three samples against the new rubric, compare scores with a partner, and pick one change to trial next week\") meets the bar.\n7. **Measurement is front-loaded and seen from three sides.** Establish a baseline — where the school actually starts on this improvement — BEFORE proposing the actions; the baseline precedes the action steps it will be measured against. Where the improvement warrants, measure progress from three points of view: student outcomes (what changes for learners), staff/adult practice (the behaviour change in the adults doing the work), and parent/stakeholder awareness. At least one measure is a delayed check that the change stuck — re-checked weeks or months later — distinct from a one-time occurrence (\"we held the session\", \"staff attended\"); attendance at an event is not evidence the practice took hold.\n\n**What you do NOT do — zero room for these LLM antipatterns:**\n- No hedging. No \"consider X\" when concrete X is required.\n- No punting. No \"this should be reviewed by an expert\" or \"consulting a specialist is advised.\"\n- No AI-mandates-style caveats. No \"as an AI language model I cannot,\" no \"I am not qualified to,\" no \"you may want to verify.\"\n- No half-fills. No \"TBD,\" \"to be determined,\" \"to be filled in later,\" \"[insert X here].\"\n- No options-instead-of-decisions. No \"Option A or Option B\" when one decision is asked for.\n- No vague placeholders. No \"the relevant party,\" \"an appropriate cadence,\" \"a suitable artifact\" — name the specific party, cadence, artifact from the grounding.\n- No partial outputs marked as \"draft for review.\" Your output IS the draft for review; mark nothing as incomplete that you can complete from the grounding.\n- No meta-commentary about what you did or are doing. Produce the output; nothing else.\n- No canonical LLM voice. Write **dry, factual, report-style** prose — short declarative sentences, named facts, school-specific nouns. A reader should not be able to tell this was LLM-authored from the voice. Reads like a school report, not like model-generated prose. CONCRETE VOICE ANTIPATTERNS (observed in prior runs; do not produce): (a) long compound sentences strung together with em-dashes (\"The plan addresses reading — across grades, divisions, and stakeholders — through a coordinated effort that bridges curriculum, instruction, and assessment\"); (b) rhetorical tetrads / triplets (\"schoolwide, division-wide, classroom-wide, and student-wide\", \"teachers, students, parents, and community\"); (c) \"across all four X\" cumulative-emphasis phrasing (\"across all four areas of focus\", \"across all five learner outcomes\"); (d) rhythm-for-rhythm's-sake flourishes (\"not just X, but Y, and indeed Z\"); (e) abstract-noun stacks (\"the comprehensive implementation of strategic instructional improvement initiatives\"); (f) hedged transitions (\"It is worth noting that...\", \"Importantly, ...\", \"Notably, ...\"); (g) summative meta-claims (\"This plan represents a holistic approach to...\"). POSITIVE EXEMPLAR (the register to match): \"The Mathematics Department piloted small-group reading instruction with Year 4 in Term 1. Test scores rose from 62 to 71. The Head of Department reviewed results monthly with classroom teachers. The same approach will extend to Year 5 in Term 2.\" Plain. Named actors. Numbers in target rows only. No abstract stacks. No tetrads. No em-dash chains.\n\n**Use catalogue labels VERBATIM as enumerated.** Do not paraphrase, expand, or contract admin-curated labels. If the catalogue stores `\"Math\"` as a Division label, write `Math` in prose — not \"Mathematics\", not \"Mathematics Department\", not \"the Math Division\". If the catalogue stores `\"AAO - Academic Affairs Office\"` with its hyphenated prefix and full form, use that exact string when naming the Division — do not contract to \"AAO\" alone or expand to \"Academic Affairs Office of the school\". The admin-curated string IS the name; any variant is a fabrication of a label that doesn't exist. This rule extends the no-fabrication invariant from \"don't invent\" to \"don't paraphrase\". Parser-layer rejection (DEC-40) catches paraphrases as fabrications because they don't byte-match catalogue entries. Catalogue choices are presented as `\"<value>\" (context)` — emit ONLY the exact quoted value, never the parenthetical or trailing context.\n\n**Plan-register rules (hold in every cell you write):**\n- **No accreditation-risk meta in descriptions.** State the substantive improvement need and scope. Do not argue that something \"carries an accreditation/certification risk\" or \"weakens standards\" as justification — the plan already declares its WASC frame via Standards Targeted, so re-invoking certification risk in prose is redundant and off-register. State the educational substance, not the accreditation threat.\n- **A WASC standard is always given as key + name** — e.g. `C1: School Culture`, `A1: Vision and Mission`, `B2: Teaching and Learning`. Not the key alone, not the name alone. Wherever you reference a standard, give its letter-number key with its name.\n- **Theme is a title, not a narrative.** A plan's Theme is a concise theme statement naming what the plan is about; it is not success-criteria narrative. Concrete criteria live in Success criteria, never in the Theme.\n- **Revising is the plan working, not the plan failing.** Wherever the plan describes revising, adjusting, or course-correcting — a review point that changes the plan, a target that gets reset, a strategy that gets dropped or replaced — frame it as evidence-driven course-correction: what the school learned, and the adjustment it makes in response. Adjusting on evidence is the expected, healthy behaviour of a living plan, not a failure, deficit, shortfall, or fault. Use plain words for it — \"adjust\", \"revise\", \"course-correct\", \"what we learned\" — never a coined label.\n- **No generation-side method-terms in the plan.** Write the plan in the school's own plain language and its admin-curated catalogue labels. NONE of the framework/process method-terms used to author the plan appear in the plan itself — they name the design discipline, never the content. The method's EFFECTS show (active well-designed steps, clear measurement, distributed responsibility); the method's NAME does not. Banned coinages, representative not exhaustive: \"contact-type structure\", \"self-refutation guard\", \"options posture\", \"evaluate-and-revise cadence\", \"growth-mindset loop\", \"durability-not-occurrence\", \"behaviour/behavior-change-primary\", \"refraction weave\", \"fractal/holographic principle\", \"cross-track\", and the step-scaffolding labels OPEN / CORE / EVIDENCE / CLOSE. Ordinary plain descriptive English is fine — \"talking at students\" is acceptable, as are words like \"weave\", \"refraction\", or \"front-load\" in their ordinary sense; only the coined (mostly multi-word) method-terms are excluded.\n\n**Reference learner outcomes and guiding clauses by their identity, not their gloss.** When you reference a learner outcome in prose, use its short label only (the description shown after it is context for you, not text to quote). When you reference a mission or vision clause in prose, convey its substance (you may name its label); never write the bare `GROUNDED:`/`ROUNDED:`/`UNBOUNDED:` prefix as the reference.\n\n**What success looks like in concrete terms:** if a school admin reads your output and can promote it to active with at most light editing, you have done your job. If they need to rewrite it, you have not.\n\nYou help a school author suggest the feedback channels for a WASC schoolwide improvement plan. You are given the plan's draft so far and the school's own stakeholder groups, divisions, and frequencies. Your job is to SUGGEST one feedback channel per engaged stakeholder — a stream of feedback the plan intends to consult (a survey, interview, dashboard, log, …), sourced from a stakeholder group, owned by a division, and anchored in time. Ground only in the facts provided below; do not invent school specifics that are not present, and choose only from the provided labels and codes.\n\nSchool: Chiway Repton School Xiamen.\nAccreditation cycle: 2025-2026 (2025-08-01 to 2026-07-31).\n\nAuthor refinement (an optional steer for the channels): Embed the schoolwide learner outcomes into every lesson and into every HRT / Year-Group-Leader workshop and meeting, and verify the embedding holds.\n\nThe plan draft so far (the engaged stakeholders to source feedback from, and the milestones a milestone-anchored channel may reference):\n- current_state: Chiway Repton School Xiamen has adopted seven schoolwide learner outcomes: Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible. The outcomes are published, but their use in daily teaching is uneven. Some teachers in English, Math, Sciences, Humanities, Art, Business and Economics, and Music and Sports name a learner outcome in their lesson plans; many do not, and few make the outcome visible to students during the lesson. In the SAO - Student Affairs Office, the IG1, IG2, AS, and A2 Year Leaders and Homeroom Teachers run weekly meetings and workshops, but these sessions rarely reference the learner outcomes as a working frame. Curriculum and Teaching has no agreed record of how often a lesson is built around a stated outcome. The school cannot currently say, with evidence, what share of lessons and pastoral sessions across IG1, IG2, AS, and A2 put a named learner outcome to work.\n- desired_state: Every lesson across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences names one schoolwide learner outcome and puts it to work in a task students do, with the outcome visible to students. Every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it. Curriculum and Teaching holds a standing record, reviewed each term, of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that embed a named outcome and use it in a student task. The embedding is checked again later in the year to confirm it held, not just that it started.\n- rationale: The school's vision is that students be engaged and realize their academic potential, become life-long learners capable of leveraging the science of how learning happens, cultivate an ethic of personal responsibility, build self-esteem, communicate ideas in Chinese and English, and develop compassion. The seven learner outcomes are how that vision reaches a single lesson. When an outcome is named only on a wall and not in the task a student does, the link between the school's stated purpose and the student's daily work is broken. Faculty PD and PLC and School Culture are named areas for improvement; embedding the outcomes in both lessons and pastoral sessions works directly on both. Doing this in the 2025-2026 cycle gives Curriculum and Teaching and the SAO - Student Affairs Office a shared, observable frame before the next accreditation review.\n- student_impact_framing: Students meet a named learner outcome inside the task they are doing, not as a poster. A student in an AS Sciences lesson regrading a partner's experiment write-up against a Reflective prompt sees what Reflective asks of them in that moment. A Homeroom session that opens from Responsible and closes with a student-chosen next step makes Responsible a thing the student practices, not a word. Confident is shown when self-assurance grows through taking risks and expressing ideas, and that growth shows in tasks where students try, check, and adjust. Over the year, students across IG1, IG2, AS, and A2 should be able to name the outcome a lesson worked on and what they did with it.\n- provenance: This plan draws on the school's published seven learner outcomes and the mission and vision guiding statements. It draws on the lesson-planning and teaching-evaluation work held by Curriculum and Teaching, and on the weekly workshop and meeting cadence run by the Year Leaders and Homeroom Teachers in the SAO - Student Affairs Office. It uses the school's enumerated year groups IG1, IG2, AS, and A2 as the bands across which embedding is observed. No prior schoolwide plan on this focus is on record, so the baseline is the current uneven state of outcome use that Curriculum and Teaching will establish at the start of the cycle.\n- milestones-0-label: Baseline established: Curriculum and Teaching has recorded the starting share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that name and use a learner outcome in a student task.\n- milestones-0-target_date: 2025-10-15\n- milestones-0-improvement_type: schoolwide-learner-outcomes\n- milestones-0-planning_method: Policy revision (6-step consultative)\n- milestones-1-label: Lesson embedding underway: every named department plans lessons that name one learner outcome and put it to work in a student task, with the outcome visible to students, and Curriculum and Teaching observation shows a rising share.\n- milestones-1-target_date: 2025-12-19\n- milestones-1-improvement_type: curriculum-development\n- milestones-1-planning_method: Tool / platform customization\n- milestones-2-label: Pastoral embedding underway: every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it.\n- milestones-2-target_date: 2026-03-13\n- milestones-2-improvement_type: professional-learning\n- milestones-2-planning_method: Event design (recurring)\n- milestones-3-label: Embedding verified to have held: the delayed re-check across IG1, IG2, AS, and A2 confirms lessons and pastoral sessions still name and use a learner outcome, not just that the practice started.\n- milestones-3-target_date: 2026-06-19\n- milestones-3-improvement_type: school-culture\n- criteria-0-text: Curriculum and Teaching holds a recorded baseline of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that name a learner outcome and use it in a student task, taken at the start of the cycle.\n- criteria-0-verification_kind: inspection\n- criteria-1-text: Of lessons observed by Curriculum and Teaching across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences, the share that name one learner outcome and put it to work in a student task with the outcome visible to students rises to the target level.\n- criteria-1-verification_kind: target\n- criteria-1-target_value: 90\n- criteria-1-target_unit: percent of observed lessons embedding a named learner outcome in a student task\n- criteria-1-baseline: 0\n- criteria-2-text: Of Homeroom Teacher and Year Leader workshops and meetings recorded by the SAO - Student Affairs Office, the share that open from a named learner outcome and end with a recorded next step tied to it reaches the target level.\n- criteria-2-verification_kind: target\n- criteria-2-target_value: 90\n- criteria-2-target_unit: percent of recorded pastoral sessions opening from a named learner outcome with a recorded next step\n- criteria-2-baseline: 0\n- criteria-3-text: A delayed re-check by Curriculum and Teaching late in the cycle finds that lessons and pastoral sessions across IG1, IG2, AS, and A2 still name and use a learner outcome in a student task, confirming the practice held rather than only started.\n- criteria-3-verification_kind: judgment\n- criteria-4-text: Students sampled across IG1, IG2, AS, and A2 can name the learner outcome a recent lesson worked on and describe what they did with it, as judged by Curriculum and Teaching against a shared prompt.\n- criteria-4-verification_kind: judgment\n- steps-0-description: At an admin meeting the Principal's Office (PO) opens by reviewing the current uneven use of the learner outcomes that Curriculum and Teaching has on record, then has each division leader bring two recent lesson or session plans, mark where a learner outcome is named and where it drives a student task, and trade plans with a leader from another division to spot one plan that names an outcome without putting it to work. Each leader picks one change their division will make so an outcome reaches a student task, and the Principal's Office (PO) records the strategic direction and the resourcing each division will get.\n- steps-0-assessment: The Principal's Office (PO) holds a meeting record listing, per division, the marked-up plans reviewed and the one change each division committed to.\n- steps-0-assignment-0-kind: responsible\n- steps-0-assignment-0-division: Principal's Office (PO)\n- steps-0-timeline-0-kind: single\n- steps-0-timeline-0-date: 2025-09-05\n- steps-0-timeline-0-note: Admin meeting that opens the consultative cycle, ahead of the baseline milestone.\n- steps-0-resource-0-kind: time\n- steps-0-resource-0-note: Two hours of admin-meeting time for all division leaders.\n- steps-0-resource-1-kind: human\n- steps-0-resource-1-note: The IHS Principal to chair and record the strategic direction and resourcing.\n- steps-0-resource-2-kind: human\n- steps-0-resource-2-note: The Director of Teaching and Curriculum Center to present the current outcome-use record.\n- steps-0-responsibility-0-division: Principal's Office (PO)\n- steps-0-responsibility-0-statement: Set and communicate the strategic direction for the school-wide learner outcomes, School Mission, and School Vision.\n- steps-0-responsibility-0-rationale: At the admin meeting the Principal's Office (PO) records the strategic direction for embedding the outcomes, which is exactly this responsibility.\n- steps-0-responsibility-1-division: Principal's Office (PO)\n- steps-0-responsibility-1-statement: Hold every division accountable for its contribution and allocate the resources to deliver it.\n- steps-0-responsibility-1-rationale: Each leader commits one division change and the Principal's Office (PO) records the resourcing each division will get, fulfilling the accountability-and-allocation responsibility.\n- steps-0-responsibility-2-division: Principal's Office (PO)\n- steps-0-responsibility-2-statement: Own and run the school-wide policy auditing and revision cycles.\n- steps-0-responsibility-2-rationale: Opening the consultative cycle by reviewing current outcome use is the Principal's Office (PO) running the school-wide revision cycle.\n- steps-0-position_responsibility-0-division: Principal's Office (PO)\n- steps-0-position_responsibility-0-position: IHS Principal\n- steps-0-position_responsibility-0-statement: Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.\n- steps-0-position_responsibility-0-rationale: The IHS Principal leads the meeting that sets the school-wide contribution to the outcomes and records each division's committed change.\n- steps-0-evidence-0-label: Admin-meeting record of strategic direction and per-division resourcing for outcome embedding\n- steps-0-evidence-0-owner_division: Principal's Office (PO)\n- steps-0-evidence-0-location: Shared drive: /plans/2025-26/slo-embedding/\n- steps-0-evidence-1-label: Marked-up lesson and session plans with each division leader's committed change\n- steps-0-evidence-1-owner_division: Curriculum and Teaching\n- steps-0-evidence-1-location: Shared drive: /plans/2025-26/slo-embedding/baseline-review/\n- steps-1-description: Curriculum and Teaching finalizes the initial draft of a shared lesson-and-session shape for embedding outcomes by taking the changes division leaders committed to, drafting a one-page lesson frame that names a learner outcome, sets a student task that uses it, makes the outcome visible to students, and checks understanding, then testing the draft against three real lessons from Math, Sciences, and English, regrading each against the frame, and revising the frame on what those three lessons showed it missed.\n- steps-1-assessment: Curriculum and Teaching holds the dated draft frame plus notes from the three trial lessons showing what was revised.\n- steps-1-assignment-0-kind: responsible\n- steps-1-assignment-0-division: Curriculum and Teaching\n- steps-1-timeline-0-kind: range\n- steps-1-timeline-0-from_date: 2025-09-08\n- steps-1-timeline-0-to_date: 2025-10-10\n- steps-1-timeline-0-note: Drafting and trialing the lesson frame before the baseline milestone is recorded.\n- steps-1-resource-0-kind: time\n- steps-1-resource-0-note: About six hours for the Director of Teaching and Curriculum Center across drafting and three trial-lesson regrades.\n- steps-1-resource-1-kind: human\n- steps-1-resource-1-note: The Director of Teaching and Curriculum Center to draft and revise the frame.\n- steps-1-resource-2-kind: human\n- steps-1-resource-2-note: One Math Teacher, one Physics Teacher, and one English Teacher to supply and co-regrade the three trial lessons.\n- steps-1-responsibility-0-division: Curriculum and Teaching\n- steps-1-responsibility-0-statement: Lead school-wide professional development aligned to the school-wide learner outcomes, School Mission, and School Vision.\n- steps-1-responsibility-0-rationale: Drafting a shared lesson frame that teachers will use to embed the outcomes is Curriculum and Teaching leading the school-wide development aligned to the outcomes.\n- steps-1-responsibility-1-division: Curriculum and Teaching\n- steps-1-responsibility-1-statement: Track and use data to evaluate the success of improvement work in your area of responsibility.\n- steps-1-responsibility-1-rationale: Regrading three trial lessons against the frame and revising on what they showed is using evidence to evaluate the draft.\n- steps-1-position_responsibility-0-division: Curriculum and Teaching\n- steps-1-position_responsibility-0-position: Director of Teaching and Curriculum Center\n- steps-1-position_responsibility-0-statement: Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.\n- steps-1-position_responsibility-0-rationale: The Director of Teaching and Curriculum Center owns the unit's contribution of authoring and trialing the embedding frame.\n- steps-1-evidence-0-label: One-page lesson-and-session embedding frame, dated draft\n- steps-1-evidence-0-owner_division: Curriculum and Teaching\n- steps-1-evidence-0-location: Shared drive: /plans/2025-26/slo-embedding/frame/\n- steps-1-evidence-1-label: Three trial-lesson regrade notes showing what the frame was revised to fix\n- steps-1-evidence-1-owner_division: Curriculum and Teaching\n- steps-1-evidence-1-location: Shared drive: /plans/2025-26/slo-embedding/frame/trials/\n- steps-2-description: The SAO - Student Affairs Office (Pastoral and Well-Being) publicizes the draft to its pastoral staff by having each IG1 Year Leader, IG2 Year Leader, AS Year Leader, A2 Year Leader, and Homeroom Teacher run one workshop or meeting that opens from a named learner outcome, sets the group a task tied to it, and closes with a recorded next step, then meet in year-group pairs to compare how the draft frame worked in a non-lesson setting and write down the two changes the frame needs for pass-times, meals, and dorm time. The Director of Student Affairs Office gathers feedback from Students on whether they could name the outcome the session worked on.\n- steps-2-assessment: The SAO - Student Affairs Office (Pastoral and Well-Being) holds the session records and the written list of pastoral-setting changes, plus the Student feedback gathered by the Director of Student Affairs Office.\n- steps-2-assignment-0-kind: responsible\n- steps-2-assignment-0-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-timeline-0-kind: recurrence\n- steps-2-timeline-0-note: Termly\n- steps-2-resource-0-kind: time\n- steps-2-resource-0-note: One workshop or meeting slot per Year Leader and Homeroom Teacher, plus year-group pair debrief time.\n- steps-2-resource-1-kind: human\n- steps-2-resource-1-note: The IG1 Year Leader, IG2 Year Leader, AS Year Leader, A2 Year Leader, and Homeroom Teacher to run the sessions.\n- steps-2-resource-2-kind: human\n- steps-2-resource-2-note: The Director of Student Affairs Office to gather Student feedback.\n- steps-2-responsibility-0-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-responsibility-0-statement: Plan and run regularly scheduled (weekly, monthly) SAO activities directly tied to the school-wide learner outcomes, School Mission, and School Vision.\n- steps-2-responsibility-0-rationale: Having each Year Leader and Homeroom Teacher run a workshop or meeting opening from a named outcome is the SAO running scheduled activities tied to the outcomes.\n- steps-2-responsibility-1-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-responsibility-1-statement: Gather feedback from the stakeholders relevant to your position.\n- steps-2-responsibility-1-rationale: The Director of Student Affairs Office gathers Student feedback on whether they could name the outcome the session worked on.\n- steps-2-position_responsibility-0-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-position_responsibility-0-position: Homeroom Teacher\n- steps-2-position_responsibility-0-statement: Plan and run regularly scheduled (weekly, monthly) SAO activities directly tied to the school-wide learner outcomes, School Mission, and School Vision.\n- steps-2-position_responsibility-0-rationale: Each Homeroom Teacher runs a meeting that opens from a named outcome, sets a task, and closes with a recorded next step.\n- steps-2-position_responsibility-1-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-position_responsibility-1-position: IG1 Year Leader\n- steps-2-position_responsibility-1-statement: Lead the IG1 year group's pastoral fostering of the school-wide learner outcomes, School Mission, and School Vision outside lessons, settling new students and tracking each one's early growth across the year.\n- steps-2-position_responsibility-1-rationale: The IG1 Year Leader runs and pairs up the IG1 sessions that test the frame in a non-lesson setting.\n- steps-2-position_responsibility-2-division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-position_responsibility-2-position: Director of Student Affairs Office\n- steps-2-position_responsibility-2-statement: Gather feedback from the stakeholders relevant to your position.\n- steps-2-position_responsibility-2-rationale: The Director of Student Affairs Office collects Student feedback on whether the session's outcome landed.\n- steps-2-evidence-0-label: Pastoral session records opening from a named outcome with recorded next steps\n- steps-2-evidence-0-owner_division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-evidence-0-location: SAO records: /slo-embedding/sessions/\n- steps-2-evidence-1-label: Year-group pair list of frame changes for pass-times, meals, and dorm time\n- steps-2-evidence-1-owner_division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-evidence-1-location: SAO records: /slo-embedding/\n- steps-2-evidence-2-label: Student feedback on whether the session outcome could be named\n- steps-2-evidence-2-owner_division: SAO - Student Affairs Office (Pastoral and Well-Being)\n- steps-2-evidence-2-location: SAO records: /slo-embedding/feedback/\n- steps-3-description: Curriculum and Teaching integrates the feedback by sitting with the Head of Art Department, Head of Business and Economics, Head of English, Head of Humanities, Head of Math, Head of Sciences, the Music and Sports Department, the Director of Future Scholar Innovation Center, the Librarian, and the Director of IT to walk each through one lesson they own against the frame, having each head regrade that lesson, name where the frame did not fit their subject, and agree one subject-specific adjustment; for English and Humanities the adjustment is framed to serve both the outcome and Chinese-English language use, since the Chinese Teacher and English Teacher draft tasks students do in both languages. The Director of IT records how lesson and session plans will store the named outcome so Curriculum and Teaching can count it.\n- steps-3-assessment: Curriculum and Teaching holds the per-head adjustment list and the Director of IT's note on where the named outcome is stored in plans.\n- steps-3-assignment-0-kind: responsible\n- steps-3-assignment-0-division: Curriculum and Teaching\n- steps-3-timeline-0-kind: range\n- steps-3-timeline-0-from_date: 2025-11-03\n- steps-3-timeline-0-to_date: 2025-12-12\n- steps-3-timeline-0-note: HOD feedback integration ahead of the lesson-embedding milestone.\n- steps-3-resource-0-kind: time\n- steps-3-resource-0-note: About one hour with each head of department, spread across the integration window.\n- steps-3-resource-1-kind: human\n- steps-3-resource-1-note: The Director of Teaching and Curriculum Center to run the per-head reviews.\n- steps-3-resource-2-kind: human\n- steps-3-resource-2-note: The Director of IT to record where the named outcome is stored in lesson and session plans.\n- steps-3-responsibility-0-division: Curriculum and Teaching\n- steps-3-responsibility-0-statement: Support HODs to embed best practices and to use student-progress data.\n- steps-3-responsibility-0-rationale: Walking each head of department through one lesson against the frame and agreeing a subject-specific adjustment is Curriculum and Teaching supporting HODs to embed the practice.\n- steps-3-responsibility-1-division: Curriculum and Teaching\n- steps-3-responsibility-1-statement: Incorporate that feedback into your practice and your area's plans.\n- steps-3-responsibility-1-rationale: Integrating each head's subject-specific feedback into the frame is incorporating feedback into the area's plans.\n- steps-3-position_responsibility-0-division: Art Department\n- steps-3-position_responsibility-0-position: Head of Art Department\n- steps-3-position_responsibility-0-statement: Coordinate with the other HODs to foster the school-wide learner outcomes, School Mission, and School Vision across all lessons.\n- steps-3-position_responsibility-0-rationale: The Head of Art Department joins the HOD review that adjusts the frame so the outcomes work across all subjects' lessons.\n- steps-3-position_responsibility-1-division: Curriculum and Teaching\n- steps-3-position_responsibility-1-position: Director of Teaching and Curriculum Center\n- steps-3-position_responsibility-1-statement: Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.\n- steps-3-position_responsibility-1-rationale: The Director of Teaching and Curriculum Center leads the integration of HOD feedback into the embedding frame.\n- steps-3-evidence-0-label: Per-head-of-department subject-specific adjustment list to the embedding frame\n- steps-3-evidence-0-owner_division: Curriculum and Teaching\n- steps-3-evidence-0-location: Shared drive: /plans/2025-26/slo-embedding/hod-adjustments/\n- steps-3-evidence-1-label: IT note on where lesson and session plans store the named outcome for counting\n- steps-3-evidence-1-owner_division: IT\n- steps-3-evidence-1-location: Shared drive: /plans/2025-26/slo-embedding/\n- steps-4-description: The Principal's Office (PO) finalizes and publishes the embedding expectation after feedback by reviewing the integrated frame at an admin meeting, confirming each division can deliver it with the resources allocated, and publishing the final lesson-and-session frame to Staff / Faculty; the AAO - Academic Affairs Office checks the published Class schedule framework leaves time in lessons and tutor periods for the student tasks the frame requires and adjusts scheduling where it does not. Curriculum and Teaching records the baseline share of lessons and sessions already meeting the frame before wider rollout.\n- steps-4-assessment: The published frame is on record with Staff / Faculty, the AAO - Academic Affairs Office holds its schedule check, and Curriculum and Teaching holds the recorded baseline figure.\n- steps-4-assignment-0-kind: responsible\n- steps-4-assignment-0-division: Principal's Office (PO)\n- steps-4-timeline-0-kind: single\n- steps-4-timeline-0-date: 2025-12-19\n- steps-4-timeline-0-note: Final frame published to Staff / Faculty with baseline recorded, at the lesson-embedding milestone.\n- steps-4-resource-0-kind: time\n- steps-4-resource-0-note: One admin-meeting slot plus Class Schedule Officer time for the scheduling check.\n- steps-4-resource-1-kind: human\n- steps-4-resource-1-note: The IHS Principal to confirm delivery and publish the frame.\n- steps-4-resource-2-kind: human\n- steps-4-resource-2-note: The Class Schedule Officer to check and adjust the Class schedule framework.\n- steps-4-resource-3-kind: platform\n- steps-4-resource-3-note: The plan and lesson-record system where the published frame and recorded baseline are stored.\n- steps-4-responsibility-0-division: Principal's Office (PO)\n- steps-4-responsibility-0-statement: Hold every division accountable for its contribution and allocate the resources to deliver it.\n- steps-4-responsibility-0-rationale: Confirming each division can deliver the frame with the resources allocated before publishing is the Principal's Office (PO) holding divisions accountable and allocating resources.\n- steps-4-responsibility-1-division: AAO - Academic Affairs Office\n- steps-4-responsibility-1-statement: Participate in the scheduled policy auditing and revision cycles for your area.\n- steps-4-responsibility-1-rationale: The AAO - Academic Affairs Office checks the Class schedule framework leaves time for the frame's student tasks and adjusts scheduling, participating in the revision of its area's policy.\n- steps-4-position_responsibility-0-division: Principal's Office (PO)\n- steps-4-position_responsibility-0-position: IHS Principal\n- steps-4-position_responsibility-0-statement: Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.\n- steps-4-position_responsibility-0-rationale: The IHS Principal finalizes and publishes the embedding expectation to Staff / Faculty.\n- steps-4-evidence-0-label: Published final lesson-and-session embedding frame for Staff / Faculty\n- steps-4-evidence-0-owner_division: Principal's Office (PO)\n- steps-4-evidence-0-location: Shared drive: /plans/2025-26/slo-embedding/published/\n- steps-4-evidence-1-label: Class schedule framework check and any scheduling adjustments for the frame's tasks\n- steps-4-evidence-1-owner_division: AAO - Academic Affairs Office\n- steps-4-evidence-1-location: AAO records: /scheduling/2025-26/\n- steps-4-evidence-2-label: Recorded baseline share of lessons and sessions meeting the frame before rollout\n- steps-4-evidence-2-owner_division: Curriculum and Teaching\n- steps-4-evidence-2-location: Shared drive: /plans/2025-26/slo-embedding/baseline/\n- steps-5-description: Curriculum and Teaching propagates and embeds the frame into daily practice by leading the Head of Art Department, Head of Business and Economics, Head of English, Head of Humanities, Head of Math, Head of Sciences, and the Music and Sports Department to observe a sample of their own division's lessons each term against the frame, score the share that name and use an outcome, and pick one weak spot to re-teach; the College Counseling Department applies the same frame to its IG1-through-A2 counseling sessions, and the Library applies it to information-literacy sessions. Late in the cycle Curriculum and Teaching re-observes the same lessons and sessions to check the practice held, not just that it started, and reports the term-over-term share to the Principal's Office (PO).\n- steps-5-assessment: Curriculum and Teaching holds the per-term observation scores per division plus the late-cycle re-observation showing whether the embedded practice held.\n- steps-5-assignment-0-kind: responsible\n- steps-5-assignment-0-division: Curriculum and Teaching\n- steps-5-timeline-0-kind: recurrence\n- steps-5-timeline-0-note: Termly; with a late-cycle re-observation before the verification milestone.\n- steps-5-resource-0-kind: time\n- steps-5-resource-0-note: Termly lesson-observation time for each head of department plus a late-cycle re-observation block.\n- steps-5-resource-1-kind: human\n- steps-5-resource-1-note: The Head of Math, Head of Sciences, Head of English, Head of Humanities, Head of Art Department, and Head of Business and Economics to observe their own divisions' lessons.\n- steps-5-resource-2-kind: human\n- steps-5-resource-2-note: The College Counselor and the Librarian to apply the frame to counseling and information-literacy sessions.\n- steps-5-responsibility-0-division: Curriculum and Teaching\n- steps-5-responsibility-0-statement: Track and use data to evaluate the success of improvement work in your area of responsibility.\n- steps-5-responsibility-0-rationale: Scoring the share of lessons that embed an outcome each term and re-observing late in the cycle is Curriculum and Teaching using data to evaluate the embedding work.\n- steps-5-responsibility-1-division: Curriculum and Teaching\n- steps-5-responsibility-1-statement: Support HODs to embed best practices and to use student-progress data.\n- steps-5-responsibility-1-rationale: Leading heads of department to observe their own lessons against the frame and re-teach weak spots is supporting HODs to embed the practice and use the data.\n- steps-5-position_responsibility-0-division: Art Department\n- steps-5-position_responsibility-0-position: Head of Art Department\n- steps-5-position_responsibility-0-statement: Lead the department's progress-data tracking and improvement cycle, and report progress to leadership.\n- steps-5-position_responsibility-0-rationale: The Head of Art Department observes a sample of the department's lessons, scores the embedding share, and reports progress.\n- steps-5-position_responsibility-1-division: Curriculum and Teaching\n- steps-5-position_responsibility-1-position: Director of Teaching and Curriculum Center\n- steps-5-position_responsibility-1-statement: Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.\n- steps-5-position_responsibility-1-rationale: The Director of Teaching and Curriculum Center runs the late-cycle re-observation and reports the term-over-term share to the Principal's Office (PO).\n- steps-5-evidence-0-label: Per-term per-division lesson-observation scores of outcome embedding\n- steps-5-evidence-0-owner_division: Curriculum and Teaching\n- steps-5-evidence-0-location: Shared drive: /plans/2025-26/slo-embedding/observations/\n- steps-5-evidence-1-label: Late-cycle re-observation report showing whether embedding held\n- steps-5-evidence-1-owner_division: Curriculum and Teaching\n- steps-5-evidence-1-location: Shared drive: /plans/2025-26/slo-embedding/observations/re-check/\n- steps-5-evidence-2-label: College counseling and information-literacy session records applying the frame\n- steps-5-evidence-2-owner_division: College Counseling Department\n- steps-5-evidence-2-location: College Counseling Department records: /slo-embedding/\n- learner_outcomes_targeted-0-label: Bilingual Communicators\n- learner_outcomes_targeted-0-rationale: The plan embeds every schoolwide learner outcome in every lesson and pastoral session; Bilingual Communicators is one of the seven the desired_state names, and the school's purpose includes students communicating ideas in Chinese and English, so lessons that put this outcome to work carry it into daily teaching.\n- learner_outcomes_targeted-1-label: Compassionate\n- learner_outcomes_targeted-1-rationale: The desired_state requires every lesson and Homeroom session to name and use one of the seven outcomes in a student task; Compassionate is among them, and the rationale ties the outcomes to the school's aim that students develop concern for the well-being of others.\n- learner_outcomes_targeted-2-label: Confident\n- learner_outcomes_targeted-2-rationale: The plan puts each outcome to work in tasks where students try, check, and adjust; Confident is shown when self-assurance grows through taking risks and expressing ideas, which the action focus on student tasks directly exercises.\n- learner_outcomes_targeted-3-label: Engaged\n- learner_outcomes_targeted-3-rationale: The desired_state moves the outcomes from a wall poster into the task a student does; Engaged is one of the seven, and the rationale names the vision that students be engaged and realize their academic potential.\n- learner_outcomes_targeted-4-label: Innovative\n- learner_outcomes_targeted-4-rationale: Innovative is one of the seven outcomes the plan embeds in every lesson and pastoral session, so designing tasks that put it to work brings it into daily classroom practice across divisions.\n- learner_outcomes_targeted-5-label: Reflective\n- learner_outcomes_targeted-5-rationale: The desired_state names a checked, recorded practice where students use a named outcome in a task; Reflective is one of the seven, exemplified in the draft by students regrading work against a Reflective prompt.\n- learner_outcomes_targeted-6-label: Responsible\n- learner_outcomes_targeted-6-rationale: The plan opens pastoral sessions from a named outcome and closes with a student-chosen next step; Responsible is one of the seven and aligns with the school's aim that students cultivate an ethic of personal responsibility.\n- areas_for_improvement-0-label: Faculty PD and PLC\n- areas_for_improvement-0-rationale: The rationale names Faculty PD and PLC as a target; embedding the outcomes changes how teachers plan lessons and how Year Leaders run workshops and meetings, which is professional practice the plan develops and reviews each term.\n- areas_for_improvement-1-label: School Culture\n- areas_for_improvement-1-rationale: The rationale names School Culture as a target; making the learner outcomes a working frame in both lessons and pastoral sessions across all year groups makes the shared outcomes part of how the school operates day to day.\n- areas_for_improvement-2-label: Curriculum and Learning\n- areas_for_improvement-2-rationale: The desired_state requires every lesson to name one outcome and put it to work in a student task, and Curriculum and Teaching to keep a termly record; this changes lesson design and curriculum practice directly.\n- stakeholder_impact-0-label: Students\n- stakeholder_impact-0-rationale: The desired_state has students across IG1, IG2, AS, and A2 meet a named outcome inside the task they do and be able to name the outcome a lesson worked on, so students are the direct subjects of the embedding.\n- stakeholder_impact-1-label: Staff / Faculty\n- stakeholder_impact-1-rationale: Teachers across the named departments and the Homeroom Teachers and Year Leaders in the SAO - Student Affairs Office change their lesson and session practice to name and use an outcome; the plan's adult-practice change rests on Staff / Faculty.\n- stakeholder_impact-2-label: Administration / Leadership\n- stakeholder_impact-2-rationale: Curriculum and Teaching holds the standing termly record of how often lessons and pastoral sessions embed a named outcome; Administration / Leadership owns the observation and review that verifies the embedding held.\n\n\nStakeholder groups at this school (CHOOSE each channel's stakeholder by its LABEL from this list):\n- \"Administration / Leadership\"\n- \"Admissions Applicants\"\n- \"Parent Committee\"\n- \"Parents\"\n- \"Staff / Faculty\"\n- \"Students\"\n\nDivisions at this school (CHOOSE each channel's owner_division by its LABEL from this list):\n- \"AAO - Academic Affairs Office\" (Academic affairs: examinations, class scheduling, academic administration.)\n- \"Art Department\"\n- \"Business and Economics\"\n- \"College Counseling Department\" (College and university counseling for students.)\n- \"Curriculum and Teaching\" (Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.)\n- \"English\"\n- \"Future Scholar Innovation Center\" (Future Scholar Innovation Center programs and initiatives.)\n- \"Humanities\"\n- \"IT\" (Information technology: the systems, infrastructure, and digital tools that support teaching, learning, and school operations.)\n- \"Library\" (Library services, resources, and information literacy support.)\n- \"Math\"\n- \"Music and Sports Department\"\n- \"Principal's Office (PO)\" (School leadership; the principal's office.)\n- \"Recruitment and Admissions\" (Recruitment and admissions; applicant assessment and enrollment.)\n- \"SAO - Student Affairs Office (Pastoral and Well-Being)\" (Student well-being, behavior, pastoral care, student support outside lessons.)\n- \"Sciences\"\n\nFrequencies at this school (CHOOSE a periodic channel's frequency by its CODE from this list):\n- \"annual\" (Annually)\n- \"monthly\" (Monthly)\n- \"termly\" (Termly)\n- \"bi-annual\" (Twice a year)\n\n\nSuggest one feedback channel for each engaged stakeholder in the draft. For EACH channel:\n- Write a concise \"label\" describing the channel (English only).\n- Choose a \"stakeholder\" — exactly one of the LABELS listed above (the group the feedback comes from).\n- ALWAYS choose an \"owner_division\" — exactly one of the division LABELS listed above (the accountable unit). This is REQUIRED on every channel.\n- Choose a \"timing_kind\" — one of \"periodic\", \"one-off\", or \"milestone\":\n  - \"periodic\": set \"frequency\" to one of the frequency CODES above; do NOT set \"milestone_index\".\n  - \"one-off\": set NEITHER \"frequency\" NOR \"milestone_index\".\n  - \"milestone\": set \"milestone_index\" to a 0-based integer index into the milestones listed in the draft above (0 is the first milestone); do NOT set \"frequency\".\n- Write a concise \"instrument\" naming how the feedback is collected, e.g. a survey, interview, dashboard, or log (English only).\n\nOUTPUT CONTRACT (follow exactly):\nReturn ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON. Write all values in English only.\n\nThe object MUST have EXACTLY one key:\n- \"channels\": a JSON array. Each element is an object describing one feedback channel:\n  - \"label\": the channel as a concise statement (required, non-empty).\n  - \"stakeholder\": exactly one of the stakeholder-group LABELS provided above (required).\n  - \"owner_division\": exactly one of the division LABELS provided above (required on every channel).\n  - \"timing_kind\": one of \"periodic\", \"one-off\", \"milestone\" (required).\n  - \"frequency\": one of the frequency CODES provided above — present ONLY for a \"periodic\" channel; otherwise omit it.\n  - \"milestone_index\": a 0-based integer index into the listed milestones — present ONLY for a \"milestone\" channel; otherwise omit it.\n  - \"instrument\": how the feedback is collected (required, non-empty).\n\nChoose only from the provided labels and codes. No extra keys, no nested objects beyond this shape, no markdown.\n",
+  "grounding_dict_used": {
+    "school": {
+      "name": "Chiway Repton School Xiamen",
+      "slug": "chiway-repton-xiamen"
+    },
+    "cycle": {
+      "code": "2025-2026",
+      "label": "2025-2026",
+      "starts_on": "2025-08-01",
+      "ends_on": "2026-07-31"
+    },
+    "stakeholder_groups": [
+      {
+        "label": "Administration / Leadership"
+      },
+      {
+        "label": "Admissions Applicants"
+      },
+      {
+        "label": "Parent Committee"
+      },
+      {
+        "label": "Parents"
+      },
+      {
+        "label": "Staff / Faculty"
+      },
+      {
+        "label": "Students"
+      }
+    ],
+    "frequencies": [
+      {
+        "code": "annual",
+        "label": "Annually"
+      },
+      {
+        "code": "monthly",
+        "label": "Monthly"
+      },
+      {
+        "code": "termly",
+        "label": "Termly"
+      },
+      {
+        "code": "bi-annual",
+        "label": "Twice a year"
+      }
+    ],
+    "divisions": [
+      {
+        "label": "AAO - Academic Affairs Office",
+        "scope_summary": "Academic affairs: examinations, class scheduling, academic administration.",
+        "positions": [
+          {
+            "label": "Academic Affairs Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "AP Coordinator",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "CIE Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Class Schedule Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Director of AAO",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Edexcel Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Exam Officer",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Art Department",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Art Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Art Department",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Business and Economics",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Business Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Economics and Business Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Economics Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Business and Economics",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "College Counseling Department",
+        "scope_summary": "College and university counseling for students.",
+        "positions": [
+          {
+            "label": "College Counseling Department Coordinator",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "College Counselor",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Curriculum and Teaching",
+        "scope_summary": "Curriculum design, lesson planning, teaching evaluation, professional development for teaching staff.",
+        "positions": [
+          {
+            "label": "Director of Teaching and Curriculum Center",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "PD Leader",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Senior Teaching Coordinator",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "English",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Drama Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "English Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of English",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Future Scholar Innovation Center",
+        "scope_summary": "Future Scholar Innovation Center programs and initiatives.",
+        "positions": [
+          {
+            "label": "Director of Future Scholar Innovation Center",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Humanities",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Chinese Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Geography Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Humanities",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "History Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Psychology Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "IT",
+        "scope_summary": "Information technology: the systems, infrastructure, and digital tools that support teaching, learning, and school operations.",
+        "positions": [
+          {
+            "label": "Director of IT",
+            "scope_summary": "Leads the school's IT function - systems, infrastructure, digital tools, and IT support.",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Library",
+        "scope_summary": "Library services, resources, and information literacy support.",
+        "positions": [
+          {
+            "label": "Librarian",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Math",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Head of Math",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Math Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Music and Sports Department",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Music Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "PE Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      },
+      {
+        "label": "Principal's Office (PO)",
+        "scope_summary": "School leadership; the principal's office.",
+        "positions": [
+          {
+            "label": "IHS Assistant",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "IHS Principal",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Recruitment and Admissions",
+        "scope_summary": "Recruitment and admissions; applicant assessment and enrollment.",
+        "positions": []
+      },
+      {
+        "label": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+        "scope_summary": "Student well-being, behavior, pastoral care, student support outside lessons.",
+        "positions": [
+          {
+            "label": "A2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Assistant to Student Affairs",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "AS Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Director of Student Affairs Office",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Dormitory Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Homeroom Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "IG1 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "IG2 Year Leader",
+            "scope_summary": "",
+            "kind": "leader"
+          }
+        ]
+      },
+      {
+        "label": "Sciences",
+        "scope_summary": "",
+        "positions": [
+          {
+            "label": "Biology Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Chemistry Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          },
+          {
+            "label": "Head of Sciences",
+            "scope_summary": "",
+            "kind": "leader"
+          },
+          {
+            "label": "Physics Teacher",
+            "scope_summary": "",
+            "kind": "staff"
+          }
+        ]
+      }
+    ],
+    "draft_state": {
+      "current_state": "Chiway Repton School Xiamen has adopted seven schoolwide learner outcomes: Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible. The outcomes are published, but their use in daily teaching is uneven. Some teachers in English, Math, Sciences, Humanities, Art, Business and Economics, and Music and Sports name a learner outcome in their lesson plans; many do not, and few make the outcome visible to students during the lesson. In the SAO - Student Affairs Office, the IG1, IG2, AS, and A2 Year Leaders and Homeroom Teachers run weekly meetings and workshops, but these sessions rarely reference the learner outcomes as a working frame. Curriculum and Teaching has no agreed record of how often a lesson is built around a stated outcome. The school cannot currently say, with evidence, what share of lessons and pastoral sessions across IG1, IG2, AS, and A2 put a named learner outcome to work.",
+      "desired_state": "Every lesson across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences names one schoolwide learner outcome and puts it to work in a task students do, with the outcome visible to students. Every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it. Curriculum and Teaching holds a standing record, reviewed each term, of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that embed a named outcome and use it in a student task. The embedding is checked again later in the year to confirm it held, not just that it started.",
+      "rationale": "The school's vision is that students be engaged and realize their academic potential, become life-long learners capable of leveraging the science of how learning happens, cultivate an ethic of personal responsibility, build self-esteem, communicate ideas in Chinese and English, and develop compassion. The seven learner outcomes are how that vision reaches a single lesson. When an outcome is named only on a wall and not in the task a student does, the link between the school's stated purpose and the student's daily work is broken. Faculty PD and PLC and School Culture are named areas for improvement; embedding the outcomes in both lessons and pastoral sessions works directly on both. Doing this in the 2025-2026 cycle gives Curriculum and Teaching and the SAO - Student Affairs Office a shared, observable frame before the next accreditation review.",
+      "student_impact_framing": "Students meet a named learner outcome inside the task they are doing, not as a poster. A student in an AS Sciences lesson regrading a partner's experiment write-up against a Reflective prompt sees what Reflective asks of them in that moment. A Homeroom session that opens from Responsible and closes with a student-chosen next step makes Responsible a thing the student practices, not a word. Confident is shown when self-assurance grows through taking risks and expressing ideas, and that growth shows in tasks where students try, check, and adjust. Over the year, students across IG1, IG2, AS, and A2 should be able to name the outcome a lesson worked on and what they did with it.",
+      "provenance": "This plan draws on the school's published seven learner outcomes and the mission and vision guiding statements. It draws on the lesson-planning and teaching-evaluation work held by Curriculum and Teaching, and on the weekly workshop and meeting cadence run by the Year Leaders and Homeroom Teachers in the SAO - Student Affairs Office. It uses the school's enumerated year groups IG1, IG2, AS, and A2 as the bands across which embedding is observed. No prior schoolwide plan on this focus is on record, so the baseline is the current uneven state of outcome use that Curriculum and Teaching will establish at the start of the cycle.",
+      "milestones-0-label": "Baseline established: Curriculum and Teaching has recorded the starting share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that name and use a learner outcome in a student task.",
+      "milestones-0-target_date": "2025-10-15",
+      "milestones-0-improvement_type": "schoolwide-learner-outcomes",
+      "milestones-0-planning_method": "Policy revision (6-step consultative)",
+      "milestones-1-label": "Lesson embedding underway: every named department plans lessons that name one learner outcome and put it to work in a student task, with the outcome visible to students, and Curriculum and Teaching observation shows a rising share.",
+      "milestones-1-target_date": "2025-12-19",
+      "milestones-1-improvement_type": "curriculum-development",
+      "milestones-1-planning_method": "Tool / platform customization",
+      "milestones-2-label": "Pastoral embedding underway: every Homeroom Teacher and Year Leader workshop and meeting in the SAO - Student Affairs Office opens from a named learner outcome and ends with a recorded next step tied to it.",
+      "milestones-2-target_date": "2026-03-13",
+      "milestones-2-improvement_type": "professional-learning",
+      "milestones-2-planning_method": "Event design (recurring)",
+      "milestones-3-label": "Embedding verified to have held: the delayed re-check across IG1, IG2, AS, and A2 confirms lessons and pastoral sessions still name and use a learner outcome, not just that the practice started.",
+      "milestones-3-target_date": "2026-06-19",
+      "milestones-3-improvement_type": "school-culture",
+      "criteria-0-text": "Curriculum and Teaching holds a recorded baseline of the share of observed lessons and pastoral sessions across IG1, IG2, AS, and A2 that name a learner outcome and use it in a student task, taken at the start of the cycle.",
+      "criteria-0-verification_kind": "inspection",
+      "criteria-1-text": "Of lessons observed by Curriculum and Teaching across the Art Department, Business and Economics, English, Humanities, Math, Music and Sports Department, and Sciences, the share that name one learner outcome and put it to work in a student task with the outcome visible to students rises to the target level.",
+      "criteria-1-verification_kind": "target",
+      "criteria-1-target_value": "90",
+      "criteria-1-target_unit": "percent of observed lessons embedding a named learner outcome in a student task",
+      "criteria-1-baseline": "0",
+      "criteria-2-text": "Of Homeroom Teacher and Year Leader workshops and meetings recorded by the SAO - Student Affairs Office, the share that open from a named learner outcome and end with a recorded next step tied to it reaches the target level.",
+      "criteria-2-verification_kind": "target",
+      "criteria-2-target_value": "90",
+      "criteria-2-target_unit": "percent of recorded pastoral sessions opening from a named learner outcome with a recorded next step",
+      "criteria-2-baseline": "0",
+      "criteria-3-text": "A delayed re-check by Curriculum and Teaching late in the cycle finds that lessons and pastoral sessions across IG1, IG2, AS, and A2 still name and use a learner outcome in a student task, confirming the practice held rather than only started.",
+      "criteria-3-verification_kind": "judgment",
+      "criteria-4-text": "Students sampled across IG1, IG2, AS, and A2 can name the learner outcome a recent lesson worked on and describe what they did with it, as judged by Curriculum and Teaching against a shared prompt.",
+      "criteria-4-verification_kind": "judgment",
+      "steps-0-description": "At an admin meeting the Principal's Office (PO) opens by reviewing the current uneven use of the learner outcomes that Curriculum and Teaching has on record, then has each division leader bring two recent lesson or session plans, mark where a learner outcome is named and where it drives a student task, and trade plans with a leader from another division to spot one plan that names an outcome without putting it to work. Each leader picks one change their division will make so an outcome reaches a student task, and the Principal's Office (PO) records the strategic direction and the resourcing each division will get.",
+      "steps-0-assessment": "The Principal's Office (PO) holds a meeting record listing, per division, the marked-up plans reviewed and the one change each division committed to.",
+      "steps-0-assignment-0-kind": "responsible",
+      "steps-0-assignment-0-division": "Principal's Office (PO)",
+      "steps-0-timeline-0-kind": "single",
+      "steps-0-timeline-0-date": "2025-09-05",
+      "steps-0-timeline-0-note": "Admin meeting that opens the consultative cycle, ahead of the baseline milestone.",
+      "steps-0-resource-0-kind": "time",
+      "steps-0-resource-0-note": "Two hours of admin-meeting time for all division leaders.",
+      "steps-0-resource-1-kind": "human",
+      "steps-0-resource-1-note": "The IHS Principal to chair and record the strategic direction and resourcing.",
+      "steps-0-resource-2-kind": "human",
+      "steps-0-resource-2-note": "The Director of Teaching and Curriculum Center to present the current outcome-use record.",
+      "steps-0-responsibility-0-division": "Principal's Office (PO)",
+      "steps-0-responsibility-0-statement": "Set and communicate the strategic direction for the school-wide learner outcomes, School Mission, and School Vision.",
+      "steps-0-responsibility-0-rationale": "At the admin meeting the Principal's Office (PO) records the strategic direction for embedding the outcomes, which is exactly this responsibility.",
+      "steps-0-responsibility-1-division": "Principal's Office (PO)",
+      "steps-0-responsibility-1-statement": "Hold every division accountable for its contribution and allocate the resources to deliver it.",
+      "steps-0-responsibility-1-rationale": "Each leader commits one division change and the Principal's Office (PO) records the resourcing each division will get, fulfilling the accountability-and-allocation responsibility.",
+      "steps-0-responsibility-2-division": "Principal's Office (PO)",
+      "steps-0-responsibility-2-statement": "Own and run the school-wide policy auditing and revision cycles.",
+      "steps-0-responsibility-2-rationale": "Opening the consultative cycle by reviewing current outcome use is the Principal's Office (PO) running the school-wide revision cycle.",
+      "steps-0-position_responsibility-0-division": "Principal's Office (PO)",
+      "steps-0-position_responsibility-0-position": "IHS Principal",
+      "steps-0-position_responsibility-0-statement": "Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.",
+      "steps-0-position_responsibility-0-rationale": "The IHS Principal leads the meeting that sets the school-wide contribution to the outcomes and records each division's committed change.",
+      "steps-0-evidence-0-label": "Admin-meeting record of strategic direction and per-division resourcing for outcome embedding",
+      "steps-0-evidence-0-owner_division": "Principal's Office (PO)",
+      "steps-0-evidence-0-location": "Shared drive: /plans/2025-26/slo-embedding/",
+      "steps-0-evidence-1-label": "Marked-up lesson and session plans with each division leader's committed change",
+      "steps-0-evidence-1-owner_division": "Curriculum and Teaching",
+      "steps-0-evidence-1-location": "Shared drive: /plans/2025-26/slo-embedding/baseline-review/",
+      "steps-1-description": "Curriculum and Teaching finalizes the initial draft of a shared lesson-and-session shape for embedding outcomes by taking the changes division leaders committed to, drafting a one-page lesson frame that names a learner outcome, sets a student task that uses it, makes the outcome visible to students, and checks understanding, then testing the draft against three real lessons from Math, Sciences, and English, regrading each against the frame, and revising the frame on what those three lessons showed it missed.",
+      "steps-1-assessment": "Curriculum and Teaching holds the dated draft frame plus notes from the three trial lessons showing what was revised.",
+      "steps-1-assignment-0-kind": "responsible",
+      "steps-1-assignment-0-division": "Curriculum and Teaching",
+      "steps-1-timeline-0-kind": "range",
+      "steps-1-timeline-0-from_date": "2025-09-08",
+      "steps-1-timeline-0-to_date": "2025-10-10",
+      "steps-1-timeline-0-note": "Drafting and trialing the lesson frame before the baseline milestone is recorded.",
+      "steps-1-resource-0-kind": "time",
+      "steps-1-resource-0-note": "About six hours for the Director of Teaching and Curriculum Center across drafting and three trial-lesson regrades.",
+      "steps-1-resource-1-kind": "human",
+      "steps-1-resource-1-note": "The Director of Teaching and Curriculum Center to draft and revise the frame.",
+      "steps-1-resource-2-kind": "human",
+      "steps-1-resource-2-note": "One Math Teacher, one Physics Teacher, and one English Teacher to supply and co-regrade the three trial lessons.",
+      "steps-1-responsibility-0-division": "Curriculum and Teaching",
+      "steps-1-responsibility-0-statement": "Lead school-wide professional development aligned to the school-wide learner outcomes, School Mission, and School Vision.",
+      "steps-1-responsibility-0-rationale": "Drafting a shared lesson frame that teachers will use to embed the outcomes is Curriculum and Teaching leading the school-wide development aligned to the outcomes.",
+      "steps-1-responsibility-1-division": "Curriculum and Teaching",
+      "steps-1-responsibility-1-statement": "Track and use data to evaluate the success of improvement work in your area of responsibility.",
+      "steps-1-responsibility-1-rationale": "Regrading three trial lessons against the frame and revising on what they showed is using evidence to evaluate the draft.",
+      "steps-1-position_responsibility-0-division": "Curriculum and Teaching",
+      "steps-1-position_responsibility-0-position": "Director of Teaching and Curriculum Center",
+      "steps-1-position_responsibility-0-statement": "Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.",
+      "steps-1-position_responsibility-0-rationale": "The Director of Teaching and Curriculum Center owns the unit's contribution of authoring and trialing the embedding frame.",
+      "steps-1-evidence-0-label": "One-page lesson-and-session embedding frame, dated draft",
+      "steps-1-evidence-0-owner_division": "Curriculum and Teaching",
+      "steps-1-evidence-0-location": "Shared drive: /plans/2025-26/slo-embedding/frame/",
+      "steps-1-evidence-1-label": "Three trial-lesson regrade notes showing what the frame was revised to fix",
+      "steps-1-evidence-1-owner_division": "Curriculum and Teaching",
+      "steps-1-evidence-1-location": "Shared drive: /plans/2025-26/slo-embedding/frame/trials/",
+      "steps-2-description": "The SAO - Student Affairs Office (Pastoral and Well-Being) publicizes the draft to its pastoral staff by having each IG1 Year Leader, IG2 Year Leader, AS Year Leader, A2 Year Leader, and Homeroom Teacher run one workshop or meeting that opens from a named learner outcome, sets the group a task tied to it, and closes with a recorded next step, then meet in year-group pairs to compare how the draft frame worked in a non-lesson setting and write down the two changes the frame needs for pass-times, meals, and dorm time. The Director of Student Affairs Office gathers feedback from Students on whether they could name the outcome the session worked on.",
+      "steps-2-assessment": "The SAO - Student Affairs Office (Pastoral and Well-Being) holds the session records and the written list of pastoral-setting changes, plus the Student feedback gathered by the Director of Student Affairs Office.",
+      "steps-2-assignment-0-kind": "responsible",
+      "steps-2-assignment-0-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-timeline-0-kind": "recurrence",
+      "steps-2-timeline-0-note": "Termly",
+      "steps-2-resource-0-kind": "time",
+      "steps-2-resource-0-note": "One workshop or meeting slot per Year Leader and Homeroom Teacher, plus year-group pair debrief time.",
+      "steps-2-resource-1-kind": "human",
+      "steps-2-resource-1-note": "The IG1 Year Leader, IG2 Year Leader, AS Year Leader, A2 Year Leader, and Homeroom Teacher to run the sessions.",
+      "steps-2-resource-2-kind": "human",
+      "steps-2-resource-2-note": "The Director of Student Affairs Office to gather Student feedback.",
+      "steps-2-responsibility-0-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-responsibility-0-statement": "Plan and run regularly scheduled (weekly, monthly) SAO activities directly tied to the school-wide learner outcomes, School Mission, and School Vision.",
+      "steps-2-responsibility-0-rationale": "Having each Year Leader and Homeroom Teacher run a workshop or meeting opening from a named outcome is the SAO running scheduled activities tied to the outcomes.",
+      "steps-2-responsibility-1-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-responsibility-1-statement": "Gather feedback from the stakeholders relevant to your position.",
+      "steps-2-responsibility-1-rationale": "The Director of Student Affairs Office gathers Student feedback on whether they could name the outcome the session worked on.",
+      "steps-2-position_responsibility-0-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-position_responsibility-0-position": "Homeroom Teacher",
+      "steps-2-position_responsibility-0-statement": "Plan and run regularly scheduled (weekly, monthly) SAO activities directly tied to the school-wide learner outcomes, School Mission, and School Vision.",
+      "steps-2-position_responsibility-0-rationale": "Each Homeroom Teacher runs a meeting that opens from a named outcome, sets a task, and closes with a recorded next step.",
+      "steps-2-position_responsibility-1-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-position_responsibility-1-position": "IG1 Year Leader",
+      "steps-2-position_responsibility-1-statement": "Lead the IG1 year group's pastoral fostering of the school-wide learner outcomes, School Mission, and School Vision outside lessons, settling new students and tracking each one's early growth across the year.",
+      "steps-2-position_responsibility-1-rationale": "The IG1 Year Leader runs and pairs up the IG1 sessions that test the frame in a non-lesson setting.",
+      "steps-2-position_responsibility-2-division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-position_responsibility-2-position": "Director of Student Affairs Office",
+      "steps-2-position_responsibility-2-statement": "Gather feedback from the stakeholders relevant to your position.",
+      "steps-2-position_responsibility-2-rationale": "The Director of Student Affairs Office collects Student feedback on whether the session's outcome landed.",
+      "steps-2-evidence-0-label": "Pastoral session records opening from a named outcome with recorded next steps",
+      "steps-2-evidence-0-owner_division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-evidence-0-location": "SAO records: /slo-embedding/sessions/",
+      "steps-2-evidence-1-label": "Year-group pair list of frame changes for pass-times, meals, and dorm time",
+      "steps-2-evidence-1-owner_division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-evidence-1-location": "SAO records: /slo-embedding/",
+      "steps-2-evidence-2-label": "Student feedback on whether the session outcome could be named",
+      "steps-2-evidence-2-owner_division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "steps-2-evidence-2-location": "SAO records: /slo-embedding/feedback/",
+      "steps-3-description": "Curriculum and Teaching integrates the feedback by sitting with the Head of Art Department, Head of Business and Economics, Head of English, Head of Humanities, Head of Math, Head of Sciences, the Music and Sports Department, the Director of Future Scholar Innovation Center, the Librarian, and the Director of IT to walk each through one lesson they own against the frame, having each head regrade that lesson, name where the frame did not fit their subject, and agree one subject-specific adjustment; for English and Humanities the adjustment is framed to serve both the outcome and Chinese-English language use, since the Chinese Teacher and English Teacher draft tasks students do in both languages. The Director of IT records how lesson and session plans will store the named outcome so Curriculum and Teaching can count it.",
+      "steps-3-assessment": "Curriculum and Teaching holds the per-head adjustment list and the Director of IT's note on where the named outcome is stored in plans.",
+      "steps-3-assignment-0-kind": "responsible",
+      "steps-3-assignment-0-division": "Curriculum and Teaching",
+      "steps-3-timeline-0-kind": "range",
+      "steps-3-timeline-0-from_date": "2025-11-03",
+      "steps-3-timeline-0-to_date": "2025-12-12",
+      "steps-3-timeline-0-note": "HOD feedback integration ahead of the lesson-embedding milestone.",
+      "steps-3-resource-0-kind": "time",
+      "steps-3-resource-0-note": "About one hour with each head of department, spread across the integration window.",
+      "steps-3-resource-1-kind": "human",
+      "steps-3-resource-1-note": "The Director of Teaching and Curriculum Center to run the per-head reviews.",
+      "steps-3-resource-2-kind": "human",
+      "steps-3-resource-2-note": "The Director of IT to record where the named outcome is stored in lesson and session plans.",
+      "steps-3-responsibility-0-division": "Curriculum and Teaching",
+      "steps-3-responsibility-0-statement": "Support HODs to embed best practices and to use student-progress data.",
+      "steps-3-responsibility-0-rationale": "Walking each head of department through one lesson against the frame and agreeing a subject-specific adjustment is Curriculum and Teaching supporting HODs to embed the practice.",
+      "steps-3-responsibility-1-division": "Curriculum and Teaching",
+      "steps-3-responsibility-1-statement": "Incorporate that feedback into your practice and your area's plans.",
+      "steps-3-responsibility-1-rationale": "Integrating each head's subject-specific feedback into the frame is incorporating feedback into the area's plans.",
+      "steps-3-position_responsibility-0-division": "Art Department",
+      "steps-3-position_responsibility-0-position": "Head of Art Department",
+      "steps-3-position_responsibility-0-statement": "Coordinate with the other HODs to foster the school-wide learner outcomes, School Mission, and School Vision across all lessons.",
+      "steps-3-position_responsibility-0-rationale": "The Head of Art Department joins the HOD review that adjusts the frame so the outcomes work across all subjects' lessons.",
+      "steps-3-position_responsibility-1-division": "Curriculum and Teaching",
+      "steps-3-position_responsibility-1-position": "Director of Teaching and Curriculum Center",
+      "steps-3-position_responsibility-1-statement": "Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.",
+      "steps-3-position_responsibility-1-rationale": "The Director of Teaching and Curriculum Center leads the integration of HOD feedback into the embedding frame.",
+      "steps-3-evidence-0-label": "Per-head-of-department subject-specific adjustment list to the embedding frame",
+      "steps-3-evidence-0-owner_division": "Curriculum and Teaching",
+      "steps-3-evidence-0-location": "Shared drive: /plans/2025-26/slo-embedding/hod-adjustments/",
+      "steps-3-evidence-1-label": "IT note on where lesson and session plans store the named outcome for counting",
+      "steps-3-evidence-1-owner_division": "IT",
+      "steps-3-evidence-1-location": "Shared drive: /plans/2025-26/slo-embedding/",
+      "steps-4-description": "The Principal's Office (PO) finalizes and publishes the embedding expectation after feedback by reviewing the integrated frame at an admin meeting, confirming each division can deliver it with the resources allocated, and publishing the final lesson-and-session frame to Staff / Faculty; the AAO - Academic Affairs Office checks the published Class schedule framework leaves time in lessons and tutor periods for the student tasks the frame requires and adjusts scheduling where it does not. Curriculum and Teaching records the baseline share of lessons and sessions already meeting the frame before wider rollout.",
+      "steps-4-assessment": "The published frame is on record with Staff / Faculty, the AAO - Academic Affairs Office holds its schedule check, and Curriculum and Teaching holds the recorded baseline figure.",
+      "steps-4-assignment-0-kind": "responsible",
+      "steps-4-assignment-0-division": "Principal's Office (PO)",
+      "steps-4-timeline-0-kind": "single",
+      "steps-4-timeline-0-date": "2025-12-19",
+      "steps-4-timeline-0-note": "Final frame published to Staff / Faculty with baseline recorded, at the lesson-embedding milestone.",
+      "steps-4-resource-0-kind": "time",
+      "steps-4-resource-0-note": "One admin-meeting slot plus Class Schedule Officer time for the scheduling check.",
+      "steps-4-resource-1-kind": "human",
+      "steps-4-resource-1-note": "The IHS Principal to confirm delivery and publish the frame.",
+      "steps-4-resource-2-kind": "human",
+      "steps-4-resource-2-note": "The Class Schedule Officer to check and adjust the Class schedule framework.",
+      "steps-4-resource-3-kind": "platform",
+      "steps-4-resource-3-note": "The plan and lesson-record system where the published frame and recorded baseline are stored.",
+      "steps-4-responsibility-0-division": "Principal's Office (PO)",
+      "steps-4-responsibility-0-statement": "Hold every division accountable for its contribution and allocate the resources to deliver it.",
+      "steps-4-responsibility-0-rationale": "Confirming each division can deliver the frame with the resources allocated before publishing is the Principal's Office (PO) holding divisions accountable and allocating resources.",
+      "steps-4-responsibility-1-division": "AAO - Academic Affairs Office",
+      "steps-4-responsibility-1-statement": "Participate in the scheduled policy auditing and revision cycles for your area.",
+      "steps-4-responsibility-1-rationale": "The AAO - Academic Affairs Office checks the Class schedule framework leaves time for the frame's student tasks and adjusts scheduling, participating in the revision of its area's policy.",
+      "steps-4-position_responsibility-0-division": "Principal's Office (PO)",
+      "steps-4-position_responsibility-0-position": "IHS Principal",
+      "steps-4-position_responsibility-0-statement": "Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.",
+      "steps-4-position_responsibility-0-rationale": "The IHS Principal finalizes and publishes the embedding expectation to Staff / Faculty.",
+      "steps-4-evidence-0-label": "Published final lesson-and-session embedding frame for Staff / Faculty",
+      "steps-4-evidence-0-owner_division": "Principal's Office (PO)",
+      "steps-4-evidence-0-location": "Shared drive: /plans/2025-26/slo-embedding/published/",
+      "steps-4-evidence-1-label": "Class schedule framework check and any scheduling adjustments for the frame's tasks",
+      "steps-4-evidence-1-owner_division": "AAO - Academic Affairs Office",
+      "steps-4-evidence-1-location": "AAO records: /scheduling/2025-26/",
+      "steps-4-evidence-2-label": "Recorded baseline share of lessons and sessions meeting the frame before rollout",
+      "steps-4-evidence-2-owner_division": "Curriculum and Teaching",
+      "steps-4-evidence-2-location": "Shared drive: /plans/2025-26/slo-embedding/baseline/",
+      "steps-5-description": "Curriculum and Teaching propagates and embeds the frame into daily practice by leading the Head of Art Department, Head of Business and Economics, Head of English, Head of Humanities, Head of Math, Head of Sciences, and the Music and Sports Department to observe a sample of their own division's lessons each term against the frame, score the share that name and use an outcome, and pick one weak spot to re-teach; the College Counseling Department applies the same frame to its IG1-through-A2 counseling sessions, and the Library applies it to information-literacy sessions. Late in the cycle Curriculum and Teaching re-observes the same lessons and sessions to check the practice held, not just that it started, and reports the term-over-term share to the Principal's Office (PO).",
+      "steps-5-assessment": "Curriculum and Teaching holds the per-term observation scores per division plus the late-cycle re-observation showing whether the embedded practice held.",
+      "steps-5-assignment-0-kind": "responsible",
+      "steps-5-assignment-0-division": "Curriculum and Teaching",
+      "steps-5-timeline-0-kind": "recurrence",
+      "steps-5-timeline-0-note": "Termly; with a late-cycle re-observation before the verification milestone.",
+      "steps-5-resource-0-kind": "time",
+      "steps-5-resource-0-note": "Termly lesson-observation time for each head of department plus a late-cycle re-observation block.",
+      "steps-5-resource-1-kind": "human",
+      "steps-5-resource-1-note": "The Head of Math, Head of Sciences, Head of English, Head of Humanities, Head of Art Department, and Head of Business and Economics to observe their own divisions' lessons.",
+      "steps-5-resource-2-kind": "human",
+      "steps-5-resource-2-note": "The College Counselor and the Librarian to apply the frame to counseling and information-literacy sessions.",
+      "steps-5-responsibility-0-division": "Curriculum and Teaching",
+      "steps-5-responsibility-0-statement": "Track and use data to evaluate the success of improvement work in your area of responsibility.",
+      "steps-5-responsibility-0-rationale": "Scoring the share of lessons that embed an outcome each term and re-observing late in the cycle is Curriculum and Teaching using data to evaluate the embedding work.",
+      "steps-5-responsibility-1-division": "Curriculum and Teaching",
+      "steps-5-responsibility-1-statement": "Support HODs to embed best practices and to use student-progress data.",
+      "steps-5-responsibility-1-rationale": "Leading heads of department to observe their own lessons against the frame and re-teach weak spots is supporting HODs to embed the practice and use the data.",
+      "steps-5-position_responsibility-0-division": "Art Department",
+      "steps-5-position_responsibility-0-position": "Head of Art Department",
+      "steps-5-position_responsibility-0-statement": "Lead the department's progress-data tracking and improvement cycle, and report progress to leadership.",
+      "steps-5-position_responsibility-0-rationale": "The Head of Art Department observes a sample of the department's lessons, scores the embedding share, and reports progress.",
+      "steps-5-position_responsibility-1-division": "Curriculum and Teaching",
+      "steps-5-position_responsibility-1-position": "Director of Teaching and Curriculum Center",
+      "steps-5-position_responsibility-1-statement": "Lead your unit's specific contribution to the school-wide learner outcomes, School Mission, and School Vision, and report its progress.",
+      "steps-5-position_responsibility-1-rationale": "The Director of Teaching and Curriculum Center runs the late-cycle re-observation and reports the term-over-term share to the Principal's Office (PO).",
+      "steps-5-evidence-0-label": "Per-term per-division lesson-observation scores of outcome embedding",
+      "steps-5-evidence-0-owner_division": "Curriculum and Teaching",
+      "steps-5-evidence-0-location": "Shared drive: /plans/2025-26/slo-embedding/observations/",
+      "steps-5-evidence-1-label": "Late-cycle re-observation report showing whether embedding held",
+      "steps-5-evidence-1-owner_division": "Curriculum and Teaching",
+      "steps-5-evidence-1-location": "Shared drive: /plans/2025-26/slo-embedding/observations/re-check/",
+      "steps-5-evidence-2-label": "College counseling and information-literacy session records applying the frame",
+      "steps-5-evidence-2-owner_division": "College Counseling Department",
+      "steps-5-evidence-2-location": "College Counseling Department records: /slo-embedding/",
+      "learner_outcomes_targeted-0-label": "Bilingual Communicators",
+      "learner_outcomes_targeted-0-rationale": "The plan embeds every schoolwide learner outcome in every lesson and pastoral session; Bilingual Communicators is one of the seven the desired_state names, and the school's purpose includes students communicating ideas in Chinese and English, so lessons that put this outcome to work carry it into daily teaching.",
+      "learner_outcomes_targeted-1-label": "Compassionate",
+      "learner_outcomes_targeted-1-rationale": "The desired_state requires every lesson and Homeroom session to name and use one of the seven outcomes in a student task; Compassionate is among them, and the rationale ties the outcomes to the school's aim that students develop concern for the well-being of others.",
+      "learner_outcomes_targeted-2-label": "Confident",
+      "learner_outcomes_targeted-2-rationale": "The plan puts each outcome to work in tasks where students try, check, and adjust; Confident is shown when self-assurance grows through taking risks and expressing ideas, which the action focus on student tasks directly exercises.",
+      "learner_outcomes_targeted-3-label": "Engaged",
+      "learner_outcomes_targeted-3-rationale": "The desired_state moves the outcomes from a wall poster into the task a student does; Engaged is one of the seven, and the rationale names the vision that students be engaged and realize their academic potential.",
+      "learner_outcomes_targeted-4-label": "Innovative",
+      "learner_outcomes_targeted-4-rationale": "Innovative is one of the seven outcomes the plan embeds in every lesson and pastoral session, so designing tasks that put it to work brings it into daily classroom practice across divisions.",
+      "learner_outcomes_targeted-5-label": "Reflective",
+      "learner_outcomes_targeted-5-rationale": "The desired_state names a checked, recorded practice where students use a named outcome in a task; Reflective is one of the seven, exemplified in the draft by students regrading work against a Reflective prompt.",
+      "learner_outcomes_targeted-6-label": "Responsible",
+      "learner_outcomes_targeted-6-rationale": "The plan opens pastoral sessions from a named outcome and closes with a student-chosen next step; Responsible is one of the seven and aligns with the school's aim that students cultivate an ethic of personal responsibility.",
+      "areas_for_improvement-0-label": "Faculty PD and PLC",
+      "areas_for_improvement-0-rationale": "The rationale names Faculty PD and PLC as a target; embedding the outcomes changes how teachers plan lessons and how Year Leaders run workshops and meetings, which is professional practice the plan develops and reviews each term.",
+      "areas_for_improvement-1-label": "School Culture",
+      "areas_for_improvement-1-rationale": "The rationale names School Culture as a target; making the learner outcomes a working frame in both lessons and pastoral sessions across all year groups makes the shared outcomes part of how the school operates day to day.",
+      "areas_for_improvement-2-label": "Curriculum and Learning",
+      "areas_for_improvement-2-rationale": "The desired_state requires every lesson to name one outcome and put it to work in a student task, and Curriculum and Teaching to keep a termly record; this changes lesson design and curriculum practice directly.",
+      "stakeholder_impact-0-label": "Students",
+      "stakeholder_impact-0-rationale": "The desired_state has students across IG1, IG2, AS, and A2 meet a named outcome inside the task they do and be able to name the outcome a lesson worked on, so students are the direct subjects of the embedding.",
+      "stakeholder_impact-1-label": "Staff / Faculty",
+      "stakeholder_impact-1-rationale": "Teachers across the named departments and the Homeroom Teachers and Year Leaders in the SAO - Student Affairs Office change their lesson and session practice to name and use an outcome; the plan's adult-practice change rests on Staff / Faculty.",
+      "stakeholder_impact-2-label": "Administration / Leadership",
+      "stakeholder_impact-2-rationale": "Curriculum and Teaching holds the standing termly record of how often lessons and pastoral sessions embed a named outcome; Administration / Leadership owns the observation and review that verifies the embedding held."
+    }
+  },
+  "agent_response_raw": "{\n  \"channels\": [\n    {\n      \"label\": \"Student check on naming and using the lesson's learner outcome\",\n      \"stakeholder\": \"Students\",\n      \"owner_division\": \"SAO - Student Affairs Office (Pastoral and Well-Being)\",\n      \"timing_kind\": \"periodic\",\n      \"frequency\": \"termly\",\n      \"instrument\": \"Short student survey asking which outcome a recent lesson worked on and what they did with it\"\n    },\n    {\n      \"label\": \"Teacher feedback on the embedding frame in lessons\",\n      \"stakeholder\": \"Staff / Faculty\",\n      \"owner_division\": \"Curriculum and Teaching\",\n      \"timing_kind\": \"periodic\",\n      \"frequency\": \"termly\",\n      \"instrument\": \"Department-meeting log of what worked and what the frame still misses in real lessons\"\n    },\n    {\n      \"label\": \"Leadership review of the term-over-term embedding share\",\n      \"stakeholder\": \"Administration / Leadership\",\n      \"owner_division\": \"Principal's Office (PO)\",\n      \"timing_kind\": \"milestone\",\n      \"milestone_index\": 3,\n      \"instrument\": \"Leadership review meeting against the observation dashboard at the verification milestone\"\n    }\n  ]\n}\n",
+  "agent_response_parsed": [
+    {
+      "label": "Student check on naming and using the lesson's learner outcome",
+      "stakeholder": "Students",
+      "owner_division": "SAO - Student Affairs Office (Pastoral and Well-Being)",
+      "timing_kind": "periodic",
+      "frequency": "termly",
+      "instrument": "Short student survey asking which outcome a recent lesson worked on and what they did with it"
+    },
+    {
+      "label": "Teacher feedback on the embedding frame in lessons",
+      "stakeholder": "Staff / Faculty",
+      "owner_division": "Curriculum and Teaching",
+      "timing_kind": "periodic",
+      "frequency": "termly",
+      "instrument": "Department-meeting log of what worked and what the frame still misses in real lessons"
+    },
+    {
+      "label": "Leadership review of the term-over-term embedding share",
+      "stakeholder": "Administration / Leadership",
+      "owner_division": "Principal's Office (PO)",
+      "timing_kind": "milestone",
+      "milestone_index": 3,
+      "instrument": "Leadership review meeting against the observation dashboard at the verification milestone"
+    }
+  ],
+  "parse_note": "Suggested 3 feedback channels — review and refine",
+  "schema_validation": "passed",
+  "flags": [],
+  "draft_changed": true
+}

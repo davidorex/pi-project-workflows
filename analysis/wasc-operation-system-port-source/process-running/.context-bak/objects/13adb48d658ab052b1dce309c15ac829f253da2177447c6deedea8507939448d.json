@@ -1,0 +1,5 @@
+{
+  "description": "Never `git reset --hard`, `git checkout .`, `git restore .`, `git clean -f`, `git branch -D` without explicit user direction. Default to non-destructive operations (git stash, git branch backup) when uncertain.",
+  "enforcement": "manual",
+  "severity": "error"
+}

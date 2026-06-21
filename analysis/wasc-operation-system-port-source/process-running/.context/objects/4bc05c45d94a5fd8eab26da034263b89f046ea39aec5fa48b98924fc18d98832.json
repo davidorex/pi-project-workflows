@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Trio resilience layer (FEAT-010 slice 4, TASK-067): planner/orchestration.py (DegradedSpec + _run_spec_with_resilience + run_trio_pass 4-tuple) + planner/tests/test_slice_resilience.py (7 tests) + test_slice_trio_pass.py (updated to 4-tuple) + conftest.py (shared trio_school fixture), branch trio-resilience @ abd0427. Verified through the verify-gated loop: IMPL (a45a7c35) wrapped each spec in a bounded retry/degrade loop (R=2): transient LLM (timeout/ratelimit) retry same prompt; parse/catalogue/resolve ValueError retry WITH FEEDBACK (rejection appended as steering); LLMAuthenticationError + fold TypeError/ValueError (via a _FoldError marker distinguishing fold from parse) degrade immediately; folds against a COPY so a degrade leaves draft_state untouched; degraded spec appends no version; run_trio_pass returns the DegradedSpec list (4th value, severity=FlagSeverity MUST_FIX value, no Flag row, no gate call). Orchestrator ran make verify-slice SLICE=resilience exit 0. SEPARATE adversarial audit (a81f8ce7): probed live -- no-abort, each classification (parse retryable attempts==2; fold ValueError non-retryable attempts==1 distinct from parse via _FoldError; auth immediate; transient retry-same-prompt; parse-retry 2nd-prompt-includes-rejection), copy-isolation (route gets dict(draft_state), degrade leaves original untouched), version-count == succeeded specs (degraded-D1 run -> 13 versions, no milestones- keys), exception-ordering sound (LLMError subclasses not ValueError, except-ValueError doesn't shadow auth), no Flag-row/gate-call (grep), tests non-vacuous -> Total findings: 0. Done = gate exit 0 AND audit 0 (DEC-58). Full gate: ruff clean; mypy 338; pytest 3314 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "A per-spec failure does not abort run_trio_pass; the run completes, the failing spec recorded rather than raising.",
+      "status": "passed",
+      "evidence": "no-abort test + audit live probe: persistently-failing spec returns a DegradedSpec, others fold; non-vacuous (would fail if the exception propagated)."
+    },
+    {
+      "criterion": "Retryable failures retry up to R=2; parse/catalogue re-renders with the rejection appended; transient LLM retries same prompt; a retry-success is NOT degraded.",
+      "status": "passed",
+      "evidence": "audit probed: parse-ValueError attempts==2; transient timeout retry-same-prompt; parse-retry 2nd prompt includes the steering rejection text (inspected); transient-then-success not degraded."
+    },
+    {
+      "criterion": "Non-retryable failures (LLM auth; fold shape TypeError/ValueError) degrade immediately, attempts==1.",
+      "status": "passed",
+      "evidence": "audit: auth attempts==1; fold ValueError/TypeError attempts==1 via _FoldError marker, distinct from a parse ValueError; exception-class ordering verified (except-ValueError doesn't shadow auth)."
+    },
+    {
+      "criterion": "After exhausting retries / immediate degrade, the spec degrades to a recorded entry (spec_key, attempts, reason, severity) and the loop continues; the degraded spec contributes nothing.",
+      "status": "passed",
+      "evidence": "folds against dict(draft_state) copy; degraded spec appends no version; version count == succeeded specs (degraded-D1 -> 13, no milestones- keys)."
+    },
+    {
+      "criterion": "run_trio_pass returns the degraded-specs list (4th value); a degraded prior spec does not crash a later spec (cascade-tolerant).",
+      "status": "passed",
+      "evidence": "4-tuple return; cascade test (degraded D1 -> F1 completes 0 milestones, no crash); test_slice_trio_pass updated + asserts degraded==[] on all-green."
+    },
+    {
+      "criterion": "LLM calls remain logged; gate green; no Flag-row/gate-call leaked (scope #9/#8 not built here).",
+      "status": "passed",
+      "evidence": "grep confirms no Flag.objects/_check_promotion_gates/save_nested in orchestration.py; make verify-slice SLICE=resilience exit 0; ruff/mypy 338/pytest 3314/test-js 48/context-validate 0 errors; diff scoped; gate unweakened."
+    }
+  ]
+}

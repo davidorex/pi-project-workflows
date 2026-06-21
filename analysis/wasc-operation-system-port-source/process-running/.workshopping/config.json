@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0.0",
+  "block_kinds": [
+    {
+      "canonical_id": "prompt-fragment",
+      "display_name": "Prompt Fragment",
+      "prefix": "FRAG-",
+      "schema_path": "schemas/prompt-fragment.schema.json",
+      "array_key": "fragments",
+      "data_path": "prompt-fragment.json"
+    },
+    {
+      "canonical_id": "prompt-spec",
+      "display_name": "Prompt Spec",
+      "prefix": "SPEC-",
+      "schema_path": "schemas/prompt-spec.schema.json",
+      "array_key": "specs",
+      "data_path": "prompt-spec.json"
+    }
+  ],
+  "root": ".workshopping",
+  "substrate_id": "sub-b24deff9b03169d7",
+  "relation_types": [
+    {
+      "canonical_id": "spec_composes_fragment",
+      "display_name": "composes fragment",
+      "category": "membership",
+      "source_kinds": [
+        "prompt-spec"
+      ],
+      "target_kinds": [
+        "prompt-fragment"
+      ]
+    },
+    {
+      "canonical_id": "spec_depends_on_spec",
+      "display_name": "depends on spec",
+      "category": "ordering",
+      "source_kinds": [
+        "prompt-spec"
+      ],
+      "target_kinds": [
+        "prompt-spec"
+      ]
+    }
+  ]
+}

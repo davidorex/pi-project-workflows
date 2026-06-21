@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-014 / FGAP-005 (B1, workshop draft flags channel) committed (1c1b98c) + separate-agent adversarial audit Total findings: 0. _workshop.py: flags:[] in _EMPTY_DRAFT + flatten skip-comment + 2 unused-ignores removed; preserved automatically by load->mutate->save (no per-rule guard); excluded from flatten (allowlist). New test_workshop_flags.py (3 tests, genuinely type-checked, no mypy ignore). conftest sys.path-inject (PEP 420). pyproject mypy_path + dispatch.apply sibling-override (load-bearing; dispatch._workshop checked, reveal_type real types). Makefile/CI ruff of _workshop.py. Full gate GREEN: ruff check + ruff format --check + mypy . (314) + pytest 1973 + make test-js 42/0 + verify-render-parity 14/14. Whole-dispatch-dir debt deferred to FGAP-010, not masked.",
+  "timestamp": "2026-06-06T17:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "_EMPTY_DRAFT carries top-level flags channel defaulting to []",
+      "status": "passed"
+    },
+    {
+      "criterion": "flags preserved across the draft-after chain by load->mutate->save (no per-rule guard); proven by test",
+      "status": "passed"
+    },
+    {
+      "criterion": "flatten_draft_for_grounding excludes flags (allowlist; documented skip)",
+      "status": "passed"
+    },
+    {
+      "criterion": "tests assert empty-shell flags==[], merge+roundtrip preservation, flatten exclusion; genuinely type-checked (no mypy ignore)",
+      "status": "passed"
+    },
+    {
+      "criterion": "standing gate green (ruff check + ruff format --check + mypy . + pytest + make test-js) + verify-parity 14/14 + adversarial audit zero",
+      "status": "passed"
+    },
+    {
+      "criterion": "_workshop.py genuinely in the standing gate (mypy . transitive check, not suppressed; 2 unused-ignores removed; Makefile/CI ruff line); whole-dir gate = FGAP-010",
+      "status": "passed"
+    }
+  ]
+}

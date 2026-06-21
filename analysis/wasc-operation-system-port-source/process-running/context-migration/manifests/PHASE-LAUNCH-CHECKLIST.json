@@ -1,0 +1,10 @@
+{
+  "output": "PHASE-LAUNCH-CHECKLIST.json",
+  "source": "phases/PHASE-LAUNCH-CHECKLIST.md",
+  "section": null,
+  "itemLinePattern": "^(#{1,6}\\s|\\d+\\.\\s|[-*]\\s)",
+  "rawStrip": "^(?!)",
+  "ignoreLinePattern": "^---$",
+  "fields": ["seq", "kind", "text", "raw"],
+  "required": ["seq", "kind", "raw"]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "planned",
+  "description": "FGAP-031 -- build the draft->docx REVIEW EXPORTER, folded into the current focus. Load the assembled whole-plan draft (prompt-workshop/outputs/current-draft.json) and emit a genuine OOXML .docx structured like data/'Sample - Schoolwide Action Plan 2.docx' (label/value header table + bordered 6-column action-step grid with a shaded header). Lives in prompt-workshop/dispatch/ (sibling of render/apply/sequence). Declare python-docx (+ any HTML-parse dep) in school-improvement-plans/pyproject.toml + uv.lock. Exports ANY assembled draft (review surface): warn per missing section, do not block. NOTE: this is a delivery/review surface, distinct in scope from FEAT-008's prompt-corpus tasks (it adds an export script + a dependency).",
+  "acceptance_criteria": [
+    "Running the exporter on the assembled whole-plan draft produces a file that `file` reports as Microsoft OOXML (a real .docx, not HTML-as-.doc) and whose `unzip -l` lists word/document.xml.",
+    "The exported document carries the draft's content as real Word tables -- a label/value header table and a bordered multi-column action-step grid -- structured like the exemplar; an adversarial reviewer confirms every populated draft section is present and none is dropped.",
+    "Exporting a partially-populated draft succeeds and emits a warning per missing section rather than failing.",
+    "python-docx (and any HTML-parse dependency) is declared in the project dependency files; a fresh resolve/install plus the exporter's unit test pass, with no reliance on an undeclared environment package.",
+    "The full project gate stays green (ruff + ruff format --check + mypy . + pytest)."
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "description": "When a phase or slice's verification clause states a capability, the IMPL steps must deliver it. Pre-flight amend the steps if needed; never offer a defer-option or hedge with a question. Deferring a stated deliverable is mandate-004/007 negligence.",
+  "enforcement": "review",
+  "severity": "error"
+}

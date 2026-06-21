@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "description": "WORKSHOP FLAGGING W2 - soft-flag apply path (combines gap FGAP-006 / B2). apply.py (:295-361) + apply_from_substrate.py (:113-152): on a soft-flag parser return (prefill + flags, no hard raise), merge the prefill, record the flags into the draft flags channel (TASK-014), set the capture/result-envelope validation status to flagged, emit flags in the JSON, and EXIT 0 (not 1) so the 14-spec sequence runs to completion accumulating flags (run_workflow.mjs:478 treats exit 0 as continue) - the iteration accelerator; hard rejects still exit 1. Depends on TASK-014 (draft channel) and on the parser A-layer (FGAP-002/003/004: AssistResult.flags + audit_prefill returns flags) to PRODUCE the soft-flag return: end-to-end verification needs the A-layer; unit-testable now via a mocked parser-returns-flags. Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "A soft-flagged parse (a usable result carrying flags, not a fatal rejection) keeps its proposed values: they are applied to the draft, not discarded.",
+    "The flags from a soft-flagged parse are preserved in the running draft and remain retrievable after the run.",
+    "A soft-flagged outcome is recorded as flagged, distinct from both a clean pass and a rejection.",
+    "The emitted result for a soft-flagged parse includes its flags.",
+    "A soft-flagged item does not halt a multi-spec run; the run continues and accumulates flags across every spec.",
+    "A fatal rejection (an unusable parse) halts the run.",
+    "Clean parses behave exactly as before, and the full project gate stays green."
+  ]
+}

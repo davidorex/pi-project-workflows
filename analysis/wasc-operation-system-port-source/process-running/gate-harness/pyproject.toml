@@ -1,0 +1,104 @@
+[project]
+name = "school-improvement-plans"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=6.0,<7.0",
+    "django-axes>=8.3.1",
+    "django-csp>=4.0",
+    "django-guardian>=3.3.1",
+    "django-modeltranslation>=0.20.3",
+    "gunicorn>=26.0.0",
+    "httpx>=0.27",
+    "psycopg[binary]>=3.2",
+    "spacy>=3.8",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    # spaCy 3.8 imports `click` transitively through its CLI module on
+    # `import spacy`, but declares only `typer` as a runtime dep. typer
+    # ≥0.16 split out `typer-slim` and dropped `click` from its required
+    # set, leaving `click` uninstalled in fresh environments. Pinning
+    # typer to <0.16 keeps `click` resolved as a transitive dep without
+    # adding `click` as a first-party requirement of this project.
+    "typer<0.16",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "pip-audit>=2.10.0",
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+    "pytest-django>=4.12.0",
+    "ruff>=0.15.13",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [".venv", "staticfiles", "media"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "DJ",  # flake8-django
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit
+    "N",   # pep8-naming
+]
+ignore = [
+    "S101",  # use of assert (acceptable in tests)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**" = ["S101", "S105", "S106"]
+"conftest.py" = ["S101", "S105", "S106"]
+"**/migrations/**" = ["E501", "N806"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.mypy]
+python_version = "3.12"
+mypy_path = "../prompt-workshop"
+strict_optional = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unused_configs = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+exclude = [
+    "^\\.venv/",
+    "^staticfiles/",
+    "^media/",
+    "/migrations/",
+]
+
+[[tool.mypy.overrides]]
+module = "*.migrations.*"
+ignore_errors = true
+
+# Third-party packages without py.typed markers. Ignoring missing
+# imports here keeps the typecheck signal focused on first-party code.
+# Django itself ships no `py.typed` marker; the project does not use
+# the `django-stubs` plugin (see CONTRIBUTING.md), so Django imports
+# resolve as `Any` here rather than producing per-import noise.
+[[tool.mypy.overrides]]
+module = [
+    "django.*",
+    "axes.*",
+    "csp.*",
+    "guardian.*",
+    "modeltranslation.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--strict-markers --tb=short"

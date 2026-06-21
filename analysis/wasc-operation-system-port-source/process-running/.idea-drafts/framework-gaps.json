@@ -1,0 +1,44 @@
+{
+  "gaps": [
+    {
+      "title": "Prose field-authority (model-surface-audit.md) drifts silently and asserts DEC-45-deleted constructs",
+      "status": "identified",
+      "package": "docs",
+      "description": "model-surface-audit.md is CLAUDE.md's designated field/relationship/constraint authority and is routed-to by adjacent work (the two envisioning docs, the gaps catalogue, and domain-model.md, which defers field-authority to it). It still asserts constructs DEC-45 removed: MissionArea as a live model, the mission_areas_targeted M2M, the removed >=1-mission-area promotion gate, and Plan.guiding_clauses (renamed to mvv_clauses). A hand-maintained prose field-authority drifts silently: it drifted on DEC-45, and reference-data-spec.md drifted undetected through the pre-DEC-45 Department->Division and SubjectKind->ImprovementType renames (DISC-40).",
+      "evidence": [
+        {
+          "file": "docs/model-surface-audit.md",
+          "reference": "asserts MissionArea as a live model",
+          "lines": "16/91/320/335/451/505"
+        },
+        {
+          "file": "docs/model-surface-audit.md",
+          "reference": "mission_areas_targeted M2M",
+          "lines": "152"
+        },
+        {
+          "file": "docs/model-surface-audit.md",
+          "reference": "the removed >=1-mission-area promotion gate in the verbatim gate list",
+          "lines": "413"
+        },
+        {
+          "file": "docs/domain-model.md",
+          "reference": "Plan.guiding_clauses (renamed to mvv_clauses in DEC-45 Slice 4)",
+          "lines": "273"
+        }
+      ],
+      "impact": "A future reader or subagent handed the designated field-authority trusts stale assertions over the code — a deleted model, a removed gate, an old field name — and the prose authority will silently re-drift on every future model change.",
+      "canonical_vocabulary": "documentation drift (stale single-source-of-truth)",
+      "proposed_resolution": "Move field/relationship/constraint authority to structured, introspection-checked JSON (see the authority-home decision draft); keep domain-model.md as prose and correct its mvv concept now; demote model-surface-audit.md to a dated snapshot / derived artifact and repoint its citers. The check that an introspection lens-validator enforces is what prevents re-drift.",
+      "related_decisions": [
+        "DEC-0001 (authority-home direction, idea-drafts)",
+        "DEC-45 (the rename/teardown that drifted model-surface-audit.md)"
+      ],
+      "id": "FGAP-001",
+      "created_at": "2026-06-02T21:44:38.126Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "78ea22f74bf3c75f23da60ea3a2d31a3",
+      "content_hash": "6895a2e4be7b078e05d423f772d361d046acb2f3d419726ef967e2e13331097e"
+    }
+  ]
+}

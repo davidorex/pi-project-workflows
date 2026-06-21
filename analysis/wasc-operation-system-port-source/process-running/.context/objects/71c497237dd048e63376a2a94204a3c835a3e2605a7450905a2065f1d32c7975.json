@@ -1,0 +1,18 @@
+{
+  "title": "Type-check gate does not cover prompt-workshop/dispatch (blocker: module-name ambiguity / no __init__.py)",
+  "status": "identified",
+  "package": "school-improvement-plans/pyproject.toml [tool.mypy] + prompt-workshop/dispatch",
+  "description": "The gate's `mypy .` (from school-improvement-plans) does not type-check prompt-workshop/dispatch (outside the cwd; mypy_path=../prompt-workshop only adds the import path, not the check set). Running `mypy ../prompt-workshop/dispatch` directly fails on a duplicate-module ambiguity (_workshop.py resolves under two qualified names because dispatch lacks __init__.py). Package-izing dispatch (adding __init__.py) risks the scripts' top-level imports (`from _workshop import ...`) and the run_workflow.mjs invocation paths, so it needs its own focused pass: package-ize (or mypy explicit-module/namespace-package config) + verify every dispatch script + run_workflow still run + add dispatch to the gate's mypy scope (mirroring FGAP-020's ruff-scope extension). Sibling to FGAP-020, which closed the RUFF half of the same gate gap; this is the MYPY half. OPEN (status 'identified' = unworked).",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/pyproject.toml",
+      "reference": "[tool.mypy] mypy_path=../prompt-workshop; `mypy .` checks 323 Django files only (dispatch excluded)"
+    },
+    {
+      "file": "prompt-workshop/dispatch",
+      "reference": "no __init__.py; `mypy ../prompt-workshop/dispatch` -> duplicate-module (_workshop.py) error"
+    }
+  ],
+  "impact": "Type regressions in the workshop dispatch python (apply.py merge rules, the parsers' callers, decompose/_workshop) are not caught by the gate -- the class that FGAP-018's apply.py merge bug lived in. Ruff now covers dispatch (FGAP-020); types do not.",
+  "proposed_resolution": "Own pass: package-ize dispatch (or configure mypy namespace packages / explicit modules) so `mypy . ../prompt-workshop/dispatch` runs without the duplicate-module error; confirm all dispatch scripts + run_workflow.mjs still import/run; then extend the gate's mypy line (hook + Makefile + CI) to include dispatch."
+}

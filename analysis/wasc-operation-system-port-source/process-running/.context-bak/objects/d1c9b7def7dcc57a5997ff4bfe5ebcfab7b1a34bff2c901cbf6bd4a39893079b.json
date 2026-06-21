@@ -1,0 +1,5 @@
+{
+  "description": "When given a slash command with an agent invocation, invoke the agent. Never attempt to do the agent's work yourself.",
+  "enforcement": "manual",
+  "severity": "error"
+}

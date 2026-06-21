@@ -1,0 +1,32 @@
+{
+  "spec_key": "propose-step-resources",
+  "order": 9,
+  "target_step": "steps",
+  "preview_mode": "resources-substeps",
+  "grounding_sections": [
+    "school",
+    "divisions",
+    "draft_state"
+  ],
+  "deps": [
+    "decompose-action-steps"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-step-resources-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-step-resources-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-step-resources-2",
+    "FRAG-gb-seed-resources",
+    "FRAG-intro-propose-step-resources-3",
+    "FRAG-gb-draft-state-steps",
+    "FRAG-intro-propose-step-resources-4",
+    "FRAG-gb-divisions-full",
+    "FRAG-intro-propose-step-resources-5",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-step-resources"
+  ],
+  "parser": "parse_propose_step_resources",
+  "source_migration": "ai/migrations/0011_seed_propose_step_resources_template.py",
+  "output_schema": "shared/schemas/propose-step-resources.schema.json"
+}

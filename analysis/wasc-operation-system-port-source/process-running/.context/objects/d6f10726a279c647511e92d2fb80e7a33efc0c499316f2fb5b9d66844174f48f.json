@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "WORKSHOP FLAGGING W1 - draft flags channel (combines gap FGAP-005 / B1). Add a top-level flags channel to the workshop draft: _EMPTY_DRAFT (prompt-workshop/dispatch/_workshop.py:215-243); the 14 MERGE_RULES (apply.py:51-215) PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (a setdefault(flags,[]) guard at the apply entry or per-rule preservation); flatten_draft_for_grounding (_workshop.py:466-584) SKIPS flags from the production draft_state projection exactly as it skips meta (:577-582). Independently buildable + unit-testable now (no parser A-layer dependency). Part of the three-valued flagging model, workshop layer. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "_EMPTY_DRAFT (prompt-workshop/dispatch/_workshop.py:215-243) carries a top-level `flags` channel defaulting to an empty list.",
+    "Flags accumulated in the draft are PRESERVED across the immutable draft-after-<spec>.json chain by the existing load->mutate->save mechanism (apply_from_substrate.py:133-141) -- NO per-rule guard; proven by a test.",
+    "flatten_draft_for_grounding (_workshop.py:466-584) EXCLUDES `flags` from the production projection, exactly as it excludes `meta` (:577-582) -- the allowlist omits it; documented skip-comment + the test are the guard.",
+    "Unit tests assert: empty_draft_shell()['flags'] == []; a draft carrying flags survives a real MERGE_RULE + a save_draft->load_draft round-trip; flatten_draft_for_grounding(<draft with flags>) has no `flags` key. The test is genuinely type-checked (no blanket # mypy: ignore-errors).",
+    "Standing gate green: uv run pytest (incl. the new test), uv run mypy ., uv run ruff check, make test-js; + verify-render-parity.py 14/14; + a separate-agent adversarial audit at zero.",
+    "_workshop.py (the code B1 edits) is genuinely in the standing gate: mypy . type-checks it transitively via the test import (siblings suppressed via mypy_path=../prompt-workshop + per-module override; dispatch._workshop NOT suppressed; its 2 unused-ignores at :299/:339 removed -> clean) AND an added Makefile/CI `ruff check ../prompt-workshop/dispatch/_workshop.py` lints it. The whole-dispatch-dir gate + pre-existing sibling debt (decompose.py 4 ruff; apply.py real type errors) is a SEPARATE FGAP, not B1."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "status": "in-progress",
+  "description": "Enact DEC-56: correct spec 07's render so only responsibility statements are copy-targets (scope_summary/kind non-citable), and add a deterministic guard that enforces the rendered-citable == parser-admissible invariant across all 14 specs. No change to planner/specs.py parse/resolve, the apply hard-abort, or the DEC-40/DEC-53 gate posture. Addresses FGAP-047.",
+  "acceptance_criteria": [
+    "Spec 07's responsibility inventory presents only parser-admissible values as copy-targets: division/position scope_summary and kind no longer appear as copyable items (omitted from the citable list or rendered as unambiguous context the instruction states is never copied).",
+    "A deterministic guard verifies, for every one of the 14 specs, that each value the rendered prompt presents as a copy-target is in that spec's parser-admissible catalogue; it passes for all 14 after the spec-07 fix and fails when a non-admissible value is injected into a spec's citable inventory.",
+    "A full workshop generation no longer aborts at spec 07 on a context-value (scope_summary / kind) mis-citation.",
+    "The DEC-40 catalogue/fabrication gate, the resolve hooks' raise-on-miss, and the apply hard-abort are unchanged; genuine fabrication and structural failure stay fatal; the workshop and production share the identical parser/resolve.",
+    "The edited snippet body and its .workshopping fragment render byte-identical (verify-render-parity 14/14, both cross-checks pass) and the edited fragment's content hash is re-stamped.",
+    "The project and workshop gate stays green (manage.py check, ruff, mypy, pytest, make test-js, verify-render-parity, the new guard) and spec 07's JSON output contract is unchanged (no added or removed keys)."
+  ]
+}

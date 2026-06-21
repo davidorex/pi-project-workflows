@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 1 (form-step fold, TASK-060): planner/services.py fold_form_step_prefill + planner/tests/test_slice_fold_form.py, branch trio-seam-form-fold (205914e build, 2a7e1af round-2 guard). Verified through the verify-gated loop: IMPL (ac6fb73a) -> orchestrator independently ran make verify-slice SLICE=fold_form exit 0 -> SEPARATE adversarial audit (a0e20af7) Total findings: 1 (no runtime guard for the dict-only form contract; a formset list[dict] raised a cryptic dict.update ValueError, a list[tuple] silently corrupted draft_state) -> IMPL round-2 (a32a7400, 2a7e1af) added an isinstance(prefill, dict) guard before any mutation raising a clear TypeError, + 2 tests proven RED on round-1 -> orchestrator re-ran the gate exit 0 -> re-audit (a9550ef1) Total findings: 0 (guard precedes mutation, both reject paths raise the clear TypeError with draft_state untouched, happy path intact, no over-correction, no new defects, gate not weakened). Done = gate exit 0 AND audit findings == 0 (DEC-58), orchestrator-observed independent of the implementer. Full gate: ruff clean; mypy 330; pytest 3230 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Folding a {field: value} form-step prefill (bare field names) into a draft_state sets each bare field key to its value.",
+      "status": "passed",
+      "evidence": "test_slice_fold_form_sets_each_bare_field; fold_form_step_prefill draft_state.update(prefill) over bare keys."
+    },
+    {
+      "criterion": "Folding updates the given fields without clobbering unrelated pre-existing draft_state keys.",
+      "status": "passed",
+      "evidence": "test_slice_fold_form_preserves_unrelated_keys (a milestones-0-label survives); audit probed overlap + unrelated keys live."
+    },
+    {
+      "criterion": "The folded draft_state round-trips through PlanDraftState save/load (equal) and, via build_grounding(include=['draft_state']), is read back with the folded form fields present and unchanged.",
+      "status": "passed",
+      "evidence": "test_slice_fold_form_round_trips_through_store_and_grounding -- real parse_narrative -> fold -> save_version/load_latest -> build_grounding asserts folded fields + the unrelated key present. Non-vacuous (sabotage-to-no-op fails all 4)."
+    },
+    {
+      "criterion": "The fold is a pure server-side transform importing no retired-workshop code.",
+      "status": "passed",
+      "evidence": "planner/services.py imports only __future__ + typing; apply.py MERGE_RULES referenced in docstring only. Audit confirmed via imports + git diff."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=fold_form exit 0; ruff/mypy 330/pytest 3230/test-js 48/context-validate 0 errors; git diff main..HEAD scoped to planner/services.py + the test + .context; gate scripts unweakened."
+    }
+  ]
+}

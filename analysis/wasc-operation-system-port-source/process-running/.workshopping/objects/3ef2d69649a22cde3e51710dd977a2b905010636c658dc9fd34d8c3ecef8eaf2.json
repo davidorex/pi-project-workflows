@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY these five string-valued keys:\n- \"current_state\": where the school is today on this focus, in concrete terms.\n- \"desired_state\": the specific improved state the plan aims to reach.\n- \"rationale\": why this improvement matters now, grounded in the facts above.\n- \"student_impact_framing\": how this improvement is expected to affect students.\n- \"provenance\": what evidence, data, or prior work this plan draws on.\n\nEach value is a single plain-prose string (no nested objects, no lists, no markdown). Include all five keys.\n"
+}

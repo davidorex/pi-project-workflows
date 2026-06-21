@@ -1,0 +1,5 @@
+{
+  "description": "Never leave the working tree dirty. After every task, `git status` must return clean modulo user-owned files (e.g. `data/school-content-intake-2026-05-26.md`).",
+  "enforcement": "manual",
+  "severity": "error"
+}

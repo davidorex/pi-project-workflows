@@ -1,0 +1,32 @@
+{
+  "spec_key": "propose-assignments",
+  "order": 6,
+  "target_step": "steps",
+  "preview_mode": "assignments",
+  "grounding_sections": [
+    "school",
+    "divisions",
+    "draft_state"
+  ],
+  "deps": [
+    "decompose-action-steps"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-assignments-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-assignments-1",
+    "FRAG-gb-school",
+    "FRAG-intro-propose-assignments-2",
+    "FRAG-gb-seed-assignments",
+    "FRAG-intro-propose-assignments-3",
+    "FRAG-gb-divisions-labels-only",
+    "FRAG-intro-propose-assignments-4",
+    "FRAG-gb-draft-state-steps",
+    "FRAG-intro-propose-assignments-5",
+    "FRAG-output-contract-header",
+    "FRAG-contract-propose-assignments"
+  ],
+  "parser": "parse_propose_assignments",
+  "source_migration": "ai/migrations/0009_seed_propose_assignments_template.py",
+  "output_schema": "shared/schemas/propose-assignments.schema.json"
+}

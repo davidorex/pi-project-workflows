@@ -1,0 +1,5 @@
+{
+  "description": "Never `git pull` or `git fetch` during an IMPL slice or tracking commit. Local is source of truth; pulling will undo work. Remote state arrives via explicit user direction.",
+  "enforcement": "manual",
+  "severity": "error"
+}

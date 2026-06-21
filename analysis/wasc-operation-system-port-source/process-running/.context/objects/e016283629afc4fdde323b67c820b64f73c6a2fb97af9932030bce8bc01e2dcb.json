@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-13T15:30:00Z",
+  "evidence": "TASK-044 (FGAP-037 three-view measurement) IMPL via the canonical pipeline; commit 429878f. Design CORRECTED after a planning failure (the first IMPL STOPPED on ambiguity: the plan's 'change the parser return shape to a dict' would have broken C1's prefill-is-a-list contract -- ai-assist.js Array.isArray, resolve_feedback_vocab, test_c1_feedback). Corrected carrier: a NEW OPTIONAL AssistResult.measurement_views field; prefill stays the channels LIST; apply.py main() lifts draft['measurement_views'] from getattr(parsed,...) before the self-check (the flags precedent); _extract_prefill / MergeRule / _merge_feedback_channels UNCHANGED. Three-view = generation contract (snippet 11 directive + the agent measurement_views map: 3 fixed view-ids -> channel index OR {gap}) + per-spec in-execution self-check (self_check.py three_view evaluator, mirrors _eval_coverage; structural fail -> apply exit 3, not saved) + whole-draft check (check_draft.check_three_view, Check 6, --strict). Production tolerance: an ABSENT measurement_views key parses to None with NO raise (production prompt template does not emit it until the later ai/00NN bridge; the self-check is workshop-only) -- the T3 optional-authored-gap pattern. SEPARATE adversarial audit (not the implementer) re-ran the full gate + runtime probes: Total findings: 0. Gate green: ruff clean, ruff format clean, mypy . Success 325 files, pytest 3147 passed, make test-js 48/48, verify-render-parity 14/14 + both cross-checks (snippet 11 body mirrored into .workshopping, re-stamped). Empirical (apply.main harness, real snippet-11 frontmatter): parent view missing+un-gapped -> exit 3, NOT saved, reason names parent_stakeholder; covered-by-index OR explicit {gap} -> exit 0 saved; out-of-range index -> exit 3. Parser validation: out-of-range / unknown / missing view-id / bool-index / non-object -> raise; in-range index + {gap} accepted. Production code footprint: assist.py (+optional field) + specs.py (+additive optional parse) only; views.py and ai-assist.js untouched; existing C1 tests green. PyRight not-accessed warnings = uniform Evaluator/ParseFn-signature false positives (mypy is the gate). The prompt-template migration to production PromptTemplate is the later ai/00NN bridge, out of this task.",
+  "criteria_results": [
+    {
+      "criterion": "During generation of the measurement-bearing step, the step's self-check fails when any of the three measurement views -- student outcomes, staff/adult practice, parent/stakeholder -- is neither produced nor recorded as an explicit not-this-cycle gap, and passes when each is one or the other; demonstrated on an input that would otherwise omit the parent/stakeholder view.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over a full assembled draft, each of the three measurement views is present or recorded as an explicit gap, confirmed by a whole-draft check.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A generated plan produces a parent/stakeholder measurement track (a parent feedback channel, a parent-facing measure, or an explicit gap), not parents only as a communication audience; confirmed by reading the draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if divisions %}The school's divisions (use ONLY these labels for \"responsible_division\"):\n{% for division in divisions %}- {{ division.label }}{% if division.scope_summary %} — {{ division.scope_summary }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "divisions"
+}

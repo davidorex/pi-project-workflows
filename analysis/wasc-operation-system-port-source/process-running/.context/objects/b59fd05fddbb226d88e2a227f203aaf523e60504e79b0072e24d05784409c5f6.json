@@ -1,0 +1,15 @@
+{
+  "title": "Workflow-level: maximalist->target transform/distiller stage",
+  "status": "proposed",
+  "layer": "L3",
+  "description": "Govern a new post-generation transform stage (after the 14-spec sequence) that takes the maximalist draft to the concise target band (canonical + Sample-2 anchors). Conforms to R-0005 (distillation + coverage floors + existence-gate safety), R-0006 (option matrix + 2026 heuristics), R-0009 (extrapolation license). Option detail + sources: docs/prompt-workflow-refinement-governing-options-2026-06-08.md (R-0011).",
+  "acceptance_criteria": [
+    "A post-generation transform produces a concise plan in the target band (canonical mock + Sample-2 anchors) without loss of signal.",
+    "Coverage floors are enforced: owners (incl. SAO/out-of-lesson roles), stakeholders, and measurement-tools are never zeroed by the transform.",
+    "Grounded extrapolation is permitted (distribute ownership, surface out-of-lesson roles, bilingual dual-purpose) bounded by catalogued entities + verbatim labels + no fabricated metrics + re-gating.",
+    "The transform output re-validates via the existing parse (planner/specs.py) + catalogue-gate (_freetext_audit.py) + promotion-gate (_check_promotion_gates) harness.",
+    "A distance-to-target-band scorer measures conformance (two anchors) = the DISC-26 / quality-rubric gate.",
+    "Iterate-to-band uses a judge model distinct from the generator (grounded self-correction).",
+    "Optionally, the 5 step-iterating specs may fan out per action-step (per-step parallel decomposition)."
+  ]
+}

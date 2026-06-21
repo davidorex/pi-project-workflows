@@ -1,0 +1,6 @@
+- Pre-commit hook fails (husky runs `npm run check && npm test`) — fix root cause + create NEW commit; NEVER `--no-verify`
+- Any test count regression in any of the 4 packages — STOP, surface
+- Discovered cascade target NOT in the cascade-target table at /tmp/explore-fgap035-canonical-v2.md — file the additional row in commit body, do NOT silently apply (mandate-007 — surface discovered issues; user decides scope)
+- TypeScript compile error elsewhere in the workspace — STOP, surface
+- Any cascade-table row whose Required-change cell is ambiguous OR contains OR-clauses — STOP, do NOT guess; surface for orchestrator decision
+- Audit-grep result divergence: post-commit grep of `'.project'` literals OR `= PROJECT_DIR` returns non-zero in production source (excluding @deprecated PROJECT_DIR/SCHEMAS_DIR exports per Phase 7 separation of concerns) — STOP, regression

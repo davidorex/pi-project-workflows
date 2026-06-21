@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if divisions %}Divisions (choose an owner / responsible unit by EXACT label):\n{% for d in divisions %}- {{ d.label }}{% if d.scope_summary %}: {{ d.scope_summary }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "divisions"
+}

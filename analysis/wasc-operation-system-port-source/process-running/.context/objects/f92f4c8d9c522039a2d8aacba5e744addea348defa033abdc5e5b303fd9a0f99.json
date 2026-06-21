@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-13T19:00:00Z",
+  "evidence": "TASK-046 (FGAP-039 bilingual measurement strand) IMPL via the canonical pipeline; commit 2e3712b. The exact TASK-044 three-view pattern applied to a parallel 2-view strand {staff_english_usage, student_bilingual_progress}: snippet 11 emits an OPTIONAL bilingual_views map (each view-id -> a feedback_channels index OR {gap}); carried on a NEW optional AssistResult.bilingual_views field (distinct from measurement_views); prefill stays the channels LIST (production ai-assist.js Array.isArray / resolve_feedback_vocab / test_c1_feedback unbroken). apply.py main lifts draft['bilingual_views'] before the self-check; _eval_bilingual_views (self_check.py, mirrors _eval_three_view, reuses _is_gap_object) gates in-execution (exit 3); check_bilingual_views (check_draft Check 7) gates whole-draft. Production tolerance: an ABSENT bilingual_views key -> None, no raise (the prompt-template migration is the later ai/00NN bridge; self-check is workshop-only). Discipline corroborated against sim-revised-frame.md:96-109 (staff English-usage survey + student bilingual-progress measure, both required, on the spiral cadence; distinct from R7 SLO coverage). SEPARATE adversarial audit re-ran the full gate + drove parser/evaluator/check directly: Total findings: 0. Gate green: ruff clean, ruff format --check clean (no residual), mypy . Success 325, pytest 3174 passed, make test-js 48/48, verify-render-parity 14/14 + both cross-checks (snippet 11 body mirrored into .workshopping, re-stamped). Empirical (apply.main): both views accounted -> exit 0 saved; student view missing+un-gapped -> exit 3 not saved (reason names student_bilingual_progress); explicitly gapped -> exit 0; out-of-range index -> exit 3. Parser: out-of-range / unknown / missing view-id / bool-index / non-object -> raise; in-range index + gap accepted; absent -> None no raise. DISTINCTNESS confirmed: a draft satisfying three_view still fails bilingual_views; both distinct from the Bilingual-Communicators SLO coverage. Production footprint: assist.py + specs.py additive-optional only; views.py/.js untouched. PyRight not-accessed warnings = uniform Evaluator/parse-signature false positives (mypy is the gate).",
+  "criteria_results": [
+    {
+      "criterion": "During generation of the measurement-bearing step, the step's self-check fails when the bilingual measurement strand -- a staff English-usage measure and a student bilingual-progress measure -- is neither produced nor recorded as an explicit not-this-cycle gap, and passes when it is one or the other; demonstrated on an input that would otherwise omit it.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over a full assembled draft, the bilingual measurement strand (staff and student) is present or recorded as an explicit gap, distinct from the Bilingual-Communicators-SLO coverage entry, confirmed by a whole-draft check.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing.",
+      "status": "passed"
+    }
+  ]
+}

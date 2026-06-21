@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "WORKSHOP FLAGGING A3 - AssistResult.flags + the 12 parsers populate it (combines gap FGAP-004). planner/assist.py AssistResult (:33-57) gains an optional flags field; the 12 free-text parsers in specs.py collect the audit_prefill flags (A2) and attach them to the returned AssistResult while still raising on the hard-reject classes; the bare-return narrative parser gets the same carrier. Produces the soft-flag return the workshop apply (TASK-015) records. Depends on TASK-017 (A2). Parser layer; the load-bearing dependency of the workshop soft-flag apply. Build via the canonical pipeline."
+}

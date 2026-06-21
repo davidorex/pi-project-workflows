@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if areas_for_improvement %}Areas for improvement (choose by EXACT label):\n{% for a in areas_for_improvement %}- {{ a.label }}{% if a.description %}: {{ a.description }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "areas_for_improvement"
+}

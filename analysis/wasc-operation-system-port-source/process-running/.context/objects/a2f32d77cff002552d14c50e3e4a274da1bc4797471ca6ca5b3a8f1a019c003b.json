@@ -1,0 +1,5 @@
+{
+  "description": "Keep ORCHESTRATOR-STATE.md current as the SYNTHESIS layer (current position, per-phase commit map, standing decisions, open decisions, pending actions, known issues). Do not hand-duplicate the per-commit event spine — that lives in ORCHESTRATOR-LOG.md + `git log`.",
+  "enforcement": "manual",
+  "severity": "error"
+}

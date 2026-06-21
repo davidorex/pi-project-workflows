@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL C2: assist response carries flags; client renders inline badges + resolution UX",
+  "status": "closed",
+  "package": "planner",
+  "description": "AssistStreamView (planner/views.py:404) streams SSE; the result frame (:506) normalizes AssistResult to {prefill, note}; the error frame (:508) carries {error}. The client (planner/static/wizard/js/ai-assist.js) applies prefill DIRECTLY on the result frame (no approval gate) and shows event:error in the status line. For the three-valued model: (1) views.py must include the parser flags (A3) in the result-frame payload alongside prefill/note; (2) ai-assist.js must route a flags payload to attach per-element annotations to the affected .planner-fs-row rows (_formset.html:15/30/45 carry data-row index) - a badge/highlight; (3) a flag-resolution affordance per flagged element: accept (keep + acknowledge), replace (pick a catalogued value), or request-catalogue-addition (admin task). This is the DISC-30/DISC-31 UX-layer closure (admin sees an actionable signal, not event:error). All net-new. Atomic gap; depends on A3 (+ C1 if resolution persists to the Flag model).",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/views.py",
+      "reference": "school-improvement-plans/planner/views.py:404-513; planner/static/wizard/js/ai-assist.js; planner/templates/planner/_formset.html"
+    }
+  ],
+  "impact": "The assist response and client apply prefill directly with no flag surfacing, so a school admin sees an opaque event:error instead of an actionable per-element review signal.",
+  "proposed_resolution": "views.py includes flags in the result frame; ai-assist.js renders per-row badges on .planner-fs-row; a flag-resolution affordance (accept / replace / request-catalogue-addition) per flagged element."
+}

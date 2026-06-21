@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 3b (G1 review-loop fold, TASK-063): planner/services.fold_review_loop_prefill + planner/tests/test_slice_fold_g1.py (15 tests), branch trio-seam-g1-fold @ d303633. Verified through the verify-gated loop: IMPL (adb0c3fb) built the G1 router (communications->'review' name-mapping; review_events scalars->'review_events'; revision_rules->'revision_rules'; nested inputs->review_events-{i}-input-{j}-channel_index; atomic pre-validation + unexpected-key guard carried forward from the A3 round-2 lessons). Its own gate-first test caught a nested-REPLACE orphan bug (only cleared new-event indices, leaving orphaned review_events-1-input-* counted by _draft_state_row_count) -> fixed to clear the whole events section's nested rows before writing. Orchestrator ran make verify-slice SLICE=fold_g1 exit 0. SEPARATE adversarial audit (aa4056de): independently RAN all 5 angles -- key generation, nested-input REPLACE (3->2 events leaves zero orphans, management+scalars survive), no cross-section clobber (review_ underscore defeats ^review- anchor), atomicity + unexpected-key (non-vacuous, draft untouched on guard failure), round-trip non-vacuous -> Total findings: 0. Done = gate exit 0 AND audit 0 (DEC-58), orchestrator-observed. Full gate: ruff clean; mypy 333; pytest 3265 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Folding sets communications->review-{i}-{field}, review_events scalars->review_events-{i}-{field} (inputs not a scalar key), revision_rules->revision_rules-{i}-{field}, nested inputs->review_events-{i}-input-{j}-channel_index.",
+      "status": "passed",
+      "evidence": "15 slice tests + audit live probe with real parse_propose_review_loop; keys verified per section + nested."
+    },
+    {
+      "criterion": "communications->'review' name mapping; inputs(plural)->input(singular); index refs stored as integers unchanged.",
+      "status": "passed",
+      "evidence": "audit confirmed channel_index/trigger_index/milestone_index stored as ints; prefix mapping + singular token verified."
+    },
+    {
+      "criterion": "REPLACE per section + nested-input REPLACE clears review_events-{i}-input-* for rewritten events without clobbering event scalars/nested management; communications REPLACE doesn't touch review_events/revision_rules.",
+      "status": "passed",
+      "evidence": "3->2 events: zero orphaned review_events-2-* / stale input rows, _draft_state_row_count drops correctly; input-TOTAL_FORMS + scalars survive; cross-section isolation probed."
+    },
+    {
+      "criterion": "Atomic on guard failure (malformed section/nested leaves draft untouched); unexpected top-level key raises a clear domain error.",
+      "status": "passed",
+      "evidence": "non-dict prefill / non-list section / non-list-or-non-dict-row nested inputs / unexpected key each raise BEFORE mutation; tests assert draft==prior (non-empty), non-vacuous."
+    },
+    {
+      "criterion": "Round-trips through PlanDraftState; consumable: _draft_state_row_count per section + nested input keys read back as integers.",
+      "status": "passed",
+      "evidence": "round-trip test: real prefill -> fold -> save/load -> build_grounding -> _draft_state_row_count review/review_events/revision_rules + nested channel_index ints. Non-vacuous."
+    },
+    {
+      "criterion": "Pure, no retired-workshop import; whole-project gate green; context cascade validates; nothing pre-existing breaks.",
+      "status": "passed",
+      "evidence": "make verify-slice SLICE=fold_g1 exit 0; ruff/mypy 333/pytest 3265/test-js 48/context-validate 0 errors; diff scoped to the 2 files + .context; gate unweakened."
+    }
+  ]
+}

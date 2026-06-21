@@ -1,0 +1,22 @@
+{
+  "title": "load_draft crashes on an empty --draft-path: Path('')==Path('.') skips the empty-shell fallback -> IsADirectoryError",
+  "status": "closed",
+  "package": "prompt-workshop",
+  "description": "_workshop.py load_draft(path) does `target = path or draft_path(); if not target.exists(): return empty_draft_shell(); return json.loads(target.read_text())`. An empty --draft-path (argparse type=Path turns '' into Path(''), which equals Path('.'), an existing directory) is truthy, so target=Path('.'), .exists() is True, the empty-shell fallback is skipped, and read_text() on the directory raises IsADirectoryError (exit 1). Surfaced by TASK-010: the workflow interpolates an absent input.draft_path to --draft-path '', so spec-1 (the empty-draft start, criterion 2) crashes at its first render/apply. The fallback works for an omitted flag (path=None) or a nonexistent path, but not empty string. Workflow-driven bridges hit it: render_from_substrate.py:88 and apply_from_substrate.py:104,133 (args.draft_path); render.py:67 also if --draft '' is passed. apply.py/sequence.py/verify-render-parity.py call load_draft() with no path, so are unaffected.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/_workshop.py",
+      "reference": ":255-259 load_draft fallback; target=path or draft_path(); Path('')==Path('.') exists+is_dir -> read_text IsADirectoryError"
+    },
+    {
+      "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+      "reference": ":104,133 load_draft(args.draft_path)"
+    },
+    {
+      "file": "prompt-workshop/dispatch/render_from_substrate.py",
+      "reference": ":88 load_draft(args.draft_path)"
+    }
+  ],
+  "impact": "The 14-spec workflow cannot start from the empty draft (TASK-010 criterion 2): spec-1's render + apply crash on the engine-interpolated --draft-path ''. Blocks TASK-010 / FEAT-003.",
+  "proposed_resolution": "In load_draft (the shared helper -> fixes every caller), treat an empty path (Path('')/Path('.')) as absent and return a fresh empty_draft_shell() (NOT the draft_path() default, which could load a stale current-draft.json). Preserves: omitted flag -> shell; real existing path -> loads; nonexistent path -> shell; empty -> shell. Add a regression test for the empty-path case."
+}

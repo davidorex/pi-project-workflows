@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-022 / FGAP-011 fix complete + separate-agent adversarial audit Total findings: 1 (a stray untracked pyproject.toml.test scratch — removed; not a code defect; all 5 criteria PASS). Fix: _workshop.py ParseFunction(Protocol) (__call__(text, *, school=None, grounding=...) -> Any; -> Any avoids importing AssistResult so _workshop stays Django-deferred) returned by get_parse_function; unused # type: ignore removed at apply.py:268 + apply_from_substrate.py:101; the 3 touched dispatch files ruff format-ed; Makefile lint + CI test.yml gate them under BOTH ruff check AND ruff format --check (gate proven to bite). dispatch.apply mypy override stays removed (no re-suppression; reveal_type confirms apply.py sees the real Protocol, not Any). Full gate GREEN, independently re-run: ruff check + ruff format --check (project 459 + the 3 files), mypy . (314, 0 errors), pytest 1973, import dispatch._workshop django=False/planner.assist=False, make test-js 42/0, verify-render-parity 14/14.",
+  "timestamp": "2026-06-06T19:00:00Z",
+  "criteria_results": [
+    {
+      "criterion": "uv run mypy . is GREEN (0 errors) and apply.py is genuinely type-checked under it -- the debt is resolved, not hidden by any re-suppression.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No runtime behavior change -- the fix is typing/config only; the full pytest suite is green with unchanged behavior.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No regression to dependents -- importing dispatch._workshop does not trigger Django setup, and the full pytest suite stays green.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Every dispatch file the fix touches (apply.py, apply_from_substrate.py, _workshop.py) is clean under BOTH ruff check AND ruff format --check, and the standing gate (Makefile lint + CI) enforces BOTH checks on them so a future lint OR format regression is caught.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Full gate green: ruff check + ruff format --check + mypy . + pytest + make test-js, plus verify-render-parity 14/14.",
+      "status": "passed"
+    }
+  ]
+}

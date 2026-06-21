@@ -1,0 +1,21 @@
+{
+  "unit_kind": "feature",
+  "description": "Execution bundle for a feature: its contained stories (out), its dependencies (out), and its gates (out). All stored parent=feature -> child, so they resolve as descendants. The zero-edge feature_governed_by_decision is omitted (feature_gated_by_item already reaches gating decisions); add it if/when such edges exist.",
+  "bundle_relation_types": [
+    {
+      "relation_type": "feature_contains_story",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "feature_depends_on_item",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "feature_gated_by_item",
+      "direction": "out",
+      "max_depth": 1
+    }
+  ]
+}

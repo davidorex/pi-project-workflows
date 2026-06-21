@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "Responsibility-atom importer built + Chiway seeded; the full 14-spec workflow then ran to completion. Real seed: 444 atoms, 0 errors; every one of the 16 divisions (incl. the new IT) + all positions has >=1 atom; Director of IT created (FGAP-016 + FGAP-017 data-curated). Importer: adversarial audit Total findings: 0; idempotent (2nd run 0 created) + dry-run writes nothing; full gate green (ruff+format, mypy . 322/0, pytest 2025, make test-js 48/0). Run workshop-run-plan-sequence-20260607-092307-0c56: status completed, all 42 steps; propose-responsibilities (spec 7) applied (each of the 6 action steps carries responsibilities), and every downstream spec cleared -- the first complete accumulated whole-plan draft (4 milestones, 6 criteria, 6 action steps, 6 channels, 11 standards, 18 communications, 7 review events, 8 revision rules; 24 soft-flags surfaced for review, none hard).",
+  "timestamp": "2026-06-07T09:45:00Z",
+  "criteria_results": [
+    {
+      "criterion": "After the seed, every division and every position for the tenant has at least one responsibility atom.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The agreed atom set is present at the correct owners.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The importer is idempotent and supports a dry-run that writes nothing.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Re-running the workflow advances past the propose-responsibilities spec.",
+      "status": "passed"
+    }
+  ]
+}

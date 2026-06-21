@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if stakeholder_groups %}Stakeholder groups (the school's enumerated audiences; name stakeholder groups only from this list):\n{% for s in stakeholder_groups %}- {{ s.label }}\n{% endfor %}{% endif %}",
+  "section": "stakeholder_groups"
+}

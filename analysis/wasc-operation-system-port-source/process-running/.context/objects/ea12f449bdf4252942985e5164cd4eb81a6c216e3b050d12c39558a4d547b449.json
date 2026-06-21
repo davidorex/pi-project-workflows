@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T09:00:00Z",
+  "evidence": "TASK-033 (C1 / R6 distributed-ownership VERIFY -- read-only, no corpus change) via the canonical pipeline. Ownership representation grounded first: decompose-action-steps (spec 05) names the owning division in each step's prose and its contract enforces R6 (line 74: spread across divisions, no single division a majority); the STRUCTURED owner (assignments[].division) is produced by the downstream propose-assignments spec (apply.py _merge_assignments from rows {step_index, responsible_division}). So C1 measured the assigned set: a fresh decompose-action-steps run (6 steps under the current corpus) -> a fresh propose-assignments run over them. check_draft Check 3 (machine): 5 distinct owners over 6 steps, largest single-owner share 33.33% (<50%), 6 owned / 0 unowned -> criterion 1 PASS. A SEPARATE adversarial audit built the 16-division responsibility map (build_grounding division_responsibility_summary) and confirmed criterion 2: 15/16 divisions own a step or are named contributors (the 7 academic Heads as authoring teams; College Counseling / Library / Future Scholar Innovation Center named; out-of-lesson coverage via SAO owning steps 2 & 5 plus Homeroom Teachers / Year Leaders / dorm routines named); the single omitted division (Recruitment and Admissions) legitimately does NOT bear on the SLO-embedding goal (applicant intake, 0 roster positions, only the universal boilerplate SLO link) -> zero relevant divisions silently omitted. Criterion 3: confirmed with NO corpus edit (git diff over snippets/shared/ai empty; the sole TASK-033 commit is the status flip) -- R6 holds from the EXISTING corpus (snippet-05 contract + propose-assignments). Audit Total findings: 0 BLOCKERS. EVIDENCE for the TASK-026 / FGAP-028 (DEC-50) distribution concern: the existing corpus produced a distributed, non-majority ownership set WITHOUT intervention -- positive evidence that the 'distribution did not move' premise behind TASK-026's blocked state may no longer hold; surfaced for human reconsideration (NOT auto-unblocked, since TASK-026's root framing is upstream seed / SLO-operationalization, distinct from this output-level check).",
+  "criteria_results": [
+    {
+      "criterion": "Over a freshly generated action-step set, more than one division owns steps and no single division owns a majority (>50%) -- machine-checked.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Every division whose responsibilities bear on the goal either owns at least one step or is named in a surfaced gap -- an adversarial reviewer confirms zero relevant divisions silently omitted.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Confirmed with no edit to the corpus; if the distribution thresholds fail, a defect is filed.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Never offer negligent fix options. Don't present options that leave known fragility unaddressed. If root causes are identified, only paths that address them are acceptable. No LLM laziness.",
+  "enforcement": "manual",
+  "severity": "error"
+}

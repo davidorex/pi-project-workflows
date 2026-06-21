@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T14:00:00Z",
+  "evidence": "TASK-041 (T4 -- distribution as a per-spec in-execution gate) via the full canonical pipeline. EXPLORE root-caused (no-prejudice): CRITERION 1 -- the assembled-run ownership concentration (3 distinct owners, Curriculum & Teaching 3/6 = 50%, PO 2/6, SAO 1/6) is HONEST step-clustering: 3 of the 6 steps genuinely fall under Curriculum & Teaching's purview for an SLO-embedding-into-every-lesson plan (drafting the embedding frame, integrating HOD feedback, observing/embedding/re-checking lessons), and propose-assignments (spec 06) correctly best-fit each step to its purview; it PASSES the gate (pass = >1 distinct owner AND largest single-owner share <= 50%). The ISOLATED run (5 owners/33%, VER-031) differed because the assembled run's propose-assignments saw a far richer draft_state (full narrative + domain_alignment + criteria) and LLM generation is non-deterministic; both pass the gate. So there was no distribution BUG to fix by forcing spread (which would pad with false owners); the real gap (same class as the coverage regression, FGAP-033) was that distribution had NO PER-SPEC in-execution gate -- only the post-hoc check_draft. IMPL fdc287b closes that: registered a `distribution` evaluator in self_check.py that IMPORTS + REUSES check_draft.check_owner_distribution (the single source of the >1-owner / <=50% threshold -- no re-derivation, no drift), wired as a STRUCTURAL success_criteria on snippet 06 (the assignment-bearing step, where assignments[0].division are structured at the apply attach point). No parser change; no forced spread; no .workshopping change (success_criteria does not render). A SEPARATE adversarial audit verified empirically via apply.main(): C2 the self-check PASSES the previously-concentrated honest 50% (exit 0, saved), FAILS a >50% set (one division 4/6 = 66.67%, exit 3, NOT saved, reason names C&T + 66.67%), FAILS a single-distinct-owner set (exit 3), PASSES a 3/3 even split (<=50%), FAILS a 0-owned set; C3 whole-draft owner-distribution PASS over current-draft.json (3 owners, 50%); C4 full gate green (pytest planner/tests 1020 passed, ruff + ruff format --check + mypy --explicit-package-bases clean on self_check.py, verify-render-parity 14/14 + both cross-checks), and T4 changed nothing in check_draft's coverage logic or the coverage evaluator (the stale current-draft.json coverage FAIL is a PRE-T3-draft artifact, not a T4 regression; distribution + cadence checks stay passing). Audit Total findings: 0 BLOCKERS. Scope: self_check.py, snippet 06, test_workshop_self_check.py (5 new tests).",
+  "criteria_results": [
+    {
+      "criterion": "The cause of the assembled-run ownership concentration, versus the isolated run, is recorded with the evidence that distinguishes the two execution contexts.",
+      "status": "passed"
+    },
+    {
+      "criterion": "During generation of the assignment-bearing step, the step's self-check fails when one division owns more than 50% of steps or fewer than two divisions own any, and passes otherwise -- demonstrated on the previously-concentrated context.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over a full assembled draft, more than one division owns steps and no single division owns more than 50% of them, confirmed by the whole-draft distribution check.",
+      "status": "passed"
+    },
+    {
+      "criterion": "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the coverage and review-cadence checks stay passing.",
+      "status": "passed"
+    }
+  ]
+}

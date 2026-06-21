@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-11T09:30:00Z",
+  "evidence": "TASK-038 (T1 -- record the in-execution-evaluation DEC) via the canonical pipeline. Explore grounded the design space (apply.py attach point: parsed prefill + grounding universe + merged draft + spec_key all in hand at main() lines 386/402/404 before save_draft 406 and the capture; flags channel + FGAP-005/006 flag-and-continue precedent at 414-418; specs carry no machine-checkable criteria today; per-spec check reusability matrix). Orchestrator corroborated the attach point directly against apply.py main(). DEC-54 recorded in the project DEC log (seed-round-plan.json): generation contract + per-spec in-execution self-check at the apply attach point; HARD-FAIL for STRUCTURAL criteria (fail the apply, re-dispatch the failing spec with feedback, retry cap then stop per mandate-008), flag-and-continue retained for language/advisory (DEC-53); per-spec criteria authored in snippet frontmatter; each check runs where its inputs are complete; check_draft remains the whole-draft safety net; standing rule = every transposed discipline is a generation contract AND an in-execution self-check, a post-hoc check alone insufficient; GOVERNS TASK-039..043. A SEPARATE adversarial audit verified all 4 acceptance_criteria met against the recorded text, the on-failure behaviour determinate, and no internal contradiction (hard-fail consistently scoped to structural/process; language exempted per DEC-53). Audit Total findings: 0.",
+  "criteria_results": [
+    {
+      "criterion": "A decision record exists in the project decision log stating that each generation step verifies its own success and process criteria during the run, at or before its output is applied to the draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The decision record specifies the single behaviour a step takes when its self-check does not pass.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The decision record states the standing rule that every transposed planning discipline is enforced as both a generation-time instruction and a per-step in-run check, and that a post-hoc check alone does not satisfy it.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The decision record names the tasks it governs.",
+      "status": "passed"
+    }
+  ]
+}

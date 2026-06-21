@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nYou help a school author break a WASC schoolwide improvement plan into concrete action steps. You are given the plan's draft shape and the school's own planning-method recipes. Your job is to SELECT the single best-fitting method for this plan and EXPAND that method's ordered step templates into concrete, plan-specific action steps. Ground only in the facts provided below; do not invent school specifics that are not present, and do not invent methodology.\n"
+}

@@ -1,0 +1,10 @@
+{
+  "output": "discoveries.json",
+  "source": "phases/discoveries.md",
+  "section": null,
+  "itemLinePattern": "^\\| DISC-",
+  "rawStrip": "^\\| ",
+  "ignoreLinePattern": "^# Phase discoveries|^Append-only\\. IMPL|^Orchestrator appends when|^issues surface\\. Human|^themselves are never deleted|^Row format:|^Categories:|^---$|^\\| id \\| phase|^\\|---",
+  "fields": ["id", "phase", "iso_ts", "category", "summary", "concerns", "action_taken", "downstream_impact", "resolved_by", "raw"],
+  "required": ["id", "raw"]
+}

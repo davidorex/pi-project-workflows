@@ -1,0 +1,18 @@
+{
+  "title": "Review-cadence discipline has a generation contract + post-hoc check but no per-spec in-execution self-check",
+  "status": "closed",
+  "package": "prompt-workshop/snippets/14-propose-review-loop.md + prompt-workshop/dispatch/self_check.py",
+  "description": "The quarterly review-cadence discipline (B1/TASK-031: >=4 evaluate-and-adjust checkpoints, earliest before 1 Dec) has a generation contract (snippet 14) AND a post-hoc check (check_draft.check_review_cadence, Check 5) -- but NO per-spec in-execution self-check at propose-review-loop. Per DEC-54's standing rule (every transposed discipline = generation contract + in-execution check; post-hoc alone insufficient), this is a check-only structural discipline. Coverage (T3) + distribution (T4) got in-execution gates; cadence is the remaining structural discipline without one.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/check_draft.py",
+      "reference": "check_review_cadence (~:598-633) is the post-hoc gate (>=4 checkpoints, earliest < 1 Dec), report-only by default / --strict to gate"
+    },
+    {
+      "file": "prompt-workshop/snippets/14-propose-review-loop.md",
+      "reference": "frontmatter has no success_criteria cadence entry -> no per-spec in-execution self-check"
+    }
+  ],
+  "impact": "A review loop with <4 checkpoints or a back-loaded first checkpoint surfaces only at the post-hoc check (or final assembly), not during the propose-review-loop generation -- the FGAP-033 late-discovery class for the cadence discipline.",
+  "proposed_resolution": "CLOSED by TASK-045 / VER-040 / commit be1bbf2: review-cadence now has a per-spec in-execution self-check (self_check.py review_cadence evaluator, reusing check_draft.check_review_cadence; structural fail -> apply exit 3) alongside its existing generation contract (snippet 14) + whole-draft check (Check 5). cycle_year sourced from grounding['cycle']['starts_on']; the cycle-unavailable case structural-fails ('cycle year unavailable') rather than degrading. Workshop-only (no production touch); snippet-14 frontmatter-only change (parity 14/14). [Original plan: register a cadence self-check evaluator reusing check_review_cadence + a snippet-14 structural success_criteria, mirroring the T3 coverage / T4 distribution pattern.]"
+}

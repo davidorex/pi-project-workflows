@@ -1,0 +1,9 @@
+{
+  "status": "blocked",
+  "description": "Story C. R7 WHOLE-DRAFT EVAL -- run the full 14-spec sequence + render-whole-draft; judge coverage across the assembled draft.",
+  "acceptance_criteria": [
+    "Scanning the assembled whole-plan draft, every schoolwide learner outcome appears at least once or is listed in an explicit gap section -- machine-checked, zero unaccounted outcomes.",
+    "Every improvement area appears at least once or is listed in the gap section -- machine-checked, zero unaccounted areas.",
+    "The coverage check runs over the assembled draft (all specs combined), not a single spec in isolation."
+  ]
+}

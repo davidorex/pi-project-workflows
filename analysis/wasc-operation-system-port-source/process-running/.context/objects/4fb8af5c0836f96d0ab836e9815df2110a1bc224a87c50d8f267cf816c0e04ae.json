@@ -1,0 +1,10 @@
+{
+  "status": "planned",
+  "description": "Trio save prerequisite (FEAT-010 slice 8a-i, DEC-59): extend the A1 narrative-draft spec to emit a concise plan `title`, so the accumulated trio draft_state carries the Plan.title the save (TASK-068) requires. Mechanism: add `title` to NARRATIVE_FIELDS (planner/specs.py:403) so parse_narrative keeps it; edit the DB PromptTemplate(slug='plan-narrative-draft') body to instruct the model to also produce a concise `title` key, landed via an ai/00NN data migration using the guarded byte-match pattern (ai/0016) so it applies only to the known prior template body. The existing form-step fold already passes bare narrative keys through, so `title` flows to the unprefixed PlanForm.title with no fold change. Title is system-PROPOSED per NORTH-STAR (admin writes only current+desired); a mechanical/placeholder title is a fabrication and is rejected. Out of scope: cycle (TASK-068 derives it via _active_cycle), the save itself (TASK-068). Addresses FEAT-010.",
+  "acceptance_criteria": [
+    "A trio run's accumulated draft_state carries a non-empty `title` (within the Plan.title 200-char limit) that binds to PlanForm.title, produced by A1's reasoning from its grounding rather than a fixed or placeholder string.",
+    "A1's existing four narrative scalars (current_state, desired_state, rationale, student_impact_framing) still parse and fold unchanged; an A1 response lacking a title degrades gracefully to a partial prefill exactly as a missing scalar does today.",
+    "The production prompt-template change applies only to the expected prior template body (a guarded change, not a blind overwrite) and is reversible.",
+    "The whole-project gate stays green and the context cascade validates."
+  ]
+}

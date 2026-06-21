@@ -1,0 +1,11 @@
+{
+  "output": "MANDATES.json",
+  "source": "MANDATES.md",
+  "section": null,
+  "itemLinePattern": "^## mandate-\\d+ —",
+  "rawStrip": "^## ",
+  "ignoreLinePattern": "^# Mandates$|^These nine mandates are binding",
+  "foldsRaw": true,
+  "fields": ["id", "num", "title", "body", "tags", "raw"],
+  "required": ["id", "num", "title", "raw"]
+}

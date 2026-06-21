@@ -1,0 +1,21 @@
+{
+  "timestamp": "2026-05-30T11:15+08:00",
+  "focus": "Created the session-notes block kind in the .context substrate — a new custom block for recording session-boundary handoff notes, replacing the hand-maintained 'Current position' and 'Pending orchestrator actions' sections of the 200KB ORCHESTRATOR-STATE.md.",
+  "discoveries": [
+    "Custom block-kind creation is a 5-step sequence: write-schema → amend-config block_kinds → amend-config relation_types → write-block → validate",
+    "None of the 5 steps require user authorization — only write-schema-migration gates on auth",
+    "The relation type session_touches_item with source_kinds=[session-notes] and target_kinds=[*] enables linking any session to any item it discussed",
+    "Installed_schemas + installed_blocks manifest entries are separate from the block_kinds registration — needed for context install survival"
+  ],
+  "decisions_made": [
+    "session-notes block shape: id (SESSION-NNN), timestamp, focus, discoveries[], questions[], decisions_made[], current_status, next_steps[]",
+    "Relation type: session_touches_item (membership category, session → any item)",
+    "This block replaces the hand-maintained synthesis sections of ORCHESTRATOR-STATE.md — those sections grow unboundedly and cause the 200KB truncation problem"
+  ],
+  "current_status": "session-notes block fully operational: schema created, block kind registered, relation type registered, data file created, both validators clean. Ready for append-block-item at every session boundary. First two sessions recorded (substrate bootstrap + session-notes setup).",
+  "next_steps": [
+    "Widen decisions, framework-gaps, and story schema ID patterns",
+    "Migrate 43 DECs into decisions block",
+    "Record SESSION-003 after first migration session"
+  ]
+}

@@ -1,0 +1,195 @@
+{
+  "schema_version": "1.0.0",
+  "sessions": [
+    {
+      "id": "SESSION-001",
+      "timestamp": "2026-05-30T10:00+08:00",
+      "focus": "Initialized .context substrate for the WASC school-improvement-plan project — accept-all'd the packaged conception, installed 16 block kinds, evaluated all schemas and relation types for project fit.",
+      "discoveries": [
+        "All 16 blocks installed but empty — zero items, zero relations",
+        "Substrate schemas are rich (id patterns, lifecycle annotations, prompt budgets, invariants) and well-suited to project tracking",
+        "Three schema ID patterns reject this project's naming: decisions (requires 4-digit DEC), framework-gaps (requires FGAP prefix), story (requires STORY prefix)",
+        "The 50KB read cap on enormous MD files is the primary problem the substrate solves — read-block-item, filter-block-items, and context-status return typed slices without the cap"
+      ],
+      "decisions_made": [
+        "Substrate is the right migration target for DECs, DISCs, stories, and phases",
+        "ID-pattern widening is the prerequisite before any data migration",
+        "DECs are the highest-priority first migration (most cross-referenced, largest context cost)"
+      ],
+      "current_status": "Substrate scaffolded and ready. 16 installed blocks, 28 relation types, 6 invariants, 2 lenses. All blocks empty. Schema changes needed before population: 3 ID-pattern widens (decisions, framework-gaps, story), 1 status-enum change (story), prose-budget relaxation on decisions fields.",
+      "next_steps": [
+        "Widen decisions schema ID pattern from ^DEC-\\\\d{4}$ to ^DEC-\\\\d{1,4}$",
+        "Remove or relax x-prompt-budget on decisions context/decision/consequences fields",
+        "Widen framework-gaps schema ID pattern to accept DISC naming",
+        "Widen story schema ID pattern + replace status enum with pending|enabled|vivified",
+        "Migrate 43 DECs from data/seed-round-plan.md into decisions block"
+      ]
+    },
+    {
+      "id": "SESSION-002",
+      "timestamp": "2026-05-30T11:15+08:00",
+      "focus": "Created the session-notes block kind in the .context substrate — a new custom block for recording session-boundary handoff notes, replacing the hand-maintained 'Current position' and 'Pending orchestrator actions' sections of the 200KB ORCHESTRATOR-STATE.md.",
+      "discoveries": [
+        "Custom block-kind creation is a 5-step sequence: write-schema → amend-config block_kinds → amend-config relation_types → write-block → validate",
+        "None of the 5 steps require user authorization — only write-schema-migration gates on auth",
+        "The relation type session_touches_item with source_kinds=[session-notes] and target_kinds=[*] enables linking any session to any item it discussed",
+        "Installed_schemas + installed_blocks manifest entries are separate from the block_kinds registration — needed for context install survival"
+      ],
+      "decisions_made": [
+        "session-notes block shape: id (SESSION-NNN), timestamp, focus, discoveries[], questions[], decisions_made[], current_status, next_steps[]",
+        "Relation type: session_touches_item (membership category, session → any item)",
+        "This block replaces the hand-maintained synthesis sections of ORCHESTRATOR-STATE.md — those sections grow unboundedly and cause the 200KB truncation problem"
+      ],
+      "current_status": "session-notes block fully operational: schema created, block kind registered, relation type registered, data file created, both validators clean. Ready for append-block-item at every session boundary. First two sessions recorded (substrate bootstrap + session-notes setup).",
+      "next_steps": [
+        "Widen decisions, framework-gaps, and story schema ID patterns",
+        "Migrate 43 DECs into decisions block",
+        "Record SESSION-003 after first migration session"
+      ]
+    },
+    {
+      "id": "SESSION-003",
+      "timestamp": "2026-05-30T13:15:00+08:00",
+      "via": "claude-code",
+      "focus": "DEC-42 IMPL halted on a spaCy noun_chunks mismatch; reframed (Explore agent) as closed-set entity linking and landed DEC-43 (PhraseMatcher gazetteer admission + spaCy ner fabrication detection). Then baseline-committed the pi-context substrate and landed the operator how-to doc.",
+      "discoveries": [
+        "spaCy doc.noun_chunks is structurally incompatible with the catalogue-label grammar: PP-attachment exclusion splits 'Director of Studies', coordination-head collapse drops list tails, paren contents split off. DEC-42's API choice was wrong; its principle (library-provided extraction replaces ad-hoc regex) stands.",
+        "Closed-set entity linking + outlier detection is the correct abstraction, not open noun-phrase extraction: the per-tenant catalogue is a known closed set (~200 admin-curated labels). Gazetteer + open-NER hybrid is an established pattern.",
+        "DEC-43 admission layer (spaCy PhraseMatcher attr=LOWER over the CatalogueUnion's 13 sub-fields) is empirically watertight — 0 fabrications across all 5 A1 prose fields including the DISC-32 colon-boundary case.",
+        "DEC-43 fabrication-detection layer (spaCy ner) is empirically partial — catches sub-spans of fabricated 'Vice Principal for X' titles but misses full-form titles. This is the DISC-35 Option H escalation candidate.",
+        "spaCy ner over-triggers on common edu/admin English (Dashboard, Attendance, verb-led clauses), tags numeric-suffix forms (Term 2, WASC A1), and emits both sub- and super-spans of catalogue labels. DISC-34 closed all three classes inline via KNOWN_GENERIC_TERMS + pure-numeric-token rule + containment/word-coverage rules.",
+        "Orchestrator scripts at scripts/orchestrator/*.ts require NODE_PATH=/Users/david/Projects/workflowsPiExtension/node_modules to resolve @davidorex/pi-context/* from this Python-primary project's cwd (reuses the sibling pi-context repo's node_modules instead of a local install).",
+        "docs/2026-05-30-pi-context-claude-code-howto.md is the canonical operator-side reference for substrate ops; auth-gate is bypassed for orchestrator-script invocations (only Pi-REPL dispatch fires ctx.ui.confirm)."
+      ],
+      "decisions_made": [
+        "DEC-43 established: PhraseMatcher gazetteer admission + spaCy ner fabrication detection + KNOWN_GENERIC_TERMS denylist + catalogue.admits check; supersedes DEC-42's noun_chunks direction, DEC-42's principle stands.",
+        "Two zero-lift pi-context adoption moves chosen: append SESSION-003; populate conventions with mandates 001..009. Neither needs schema-widens or auth-gated migrations.",
+        "Block-kind shape proposal (not yet persisted): widen decisions/framework-gaps/story id patterns + add fields; add 3 custom block kinds (workshop-experiment, prompt-spec, migration); add 9 relation types; add 5 context-contracts."
+      ],
+      "current_status": "DEC-43 IMPL landed + post-IMPL tracked. DISC-29/31-residual/32/33 RESOLVED; DISC-34 RESOLVED-INLINE; DISC-35 standing-open as the Option H escalation candidate. pi-context substrate + scripts + runtime baseline-committed; operator how-to doc landed. Workshop iteration architecturally unblocked — A1 re-dispatch + cascade 02/03/04/05/06 ready to resume.",
+      "next_steps": [
+        "Widen 3 packaged-block schemas: decisions id ^DEC-\\d{4}$ -> ^DEC-\\d{1,4}$ + x-prompt-budget relaxation + supersession/commit_chain fields; framework-gaps id accepts DISC-N-DATE-LETTER + status enum + kind/resolved_by_commit fields; story id widen + status pending|enabled|vivified + vivifying_commit.",
+        "Land 3 custom block kinds via the 5-step pattern: workshop-experiment, prompt-spec, migration.",
+        "After widens land, migrate recent DECs first (DEC-39..43) to establish the supersession + commit_chain + user_directive_quote field patterns, then lazy-migrate older DECs as touched.",
+        "Resume Mode C workshop iteration: A1 re-dispatch first, then cascade 02 (A3) / 03 (D1) / 04 (B1) / 06 (F2)."
+      ]
+    },
+    {
+      "id": "SESSION-004",
+      "timestamp": "2026-05-30T23:00:11+08:00",
+      "via": "claude-code",
+      "focus": "DEC-44 (Option H LLM-validator) IMPL landed and A1 workshop dispatch passed live end-to-end; DEC-45 (collapse MissionArea + GuidingStatement into SchoolMissionVisionValues) established, but its IMPL failed and all three IMPL commits were excised via rebase.",
+      "discoveries": [
+        "DEC-44 LLM-validator third stage works in live dispatch: A1 passed through all 4 fabrication-closure layers with 4 OpenRouter validator calls. Required a system-default LLMProviderConfig (user=NULL) and the validator model id in OpenRouter routing format (anthropic/claude-haiku-4.5).",
+        "The A1 live dispatch surfaced and closed 4 catalogue/denylist completeness gaps in planner/_freetext_audit.py: plural-form admission, lowercase-content-word bridge for NER super-spans, guiding_statements pulled into the catalogue union, Stakeholder class-noun added to the denylist.",
+        "MVV field survey (18 international K-12 schools + WASC/CIS/NEASC/IB) established that 'mission areas' is empirically absent (0/20) and the Mission/Vision/Values trio is the field convention.",
+        "DEC-45 IMPL was dispatched as a single agent over a 36-file mechanical rename; it ran ~50 minutes, never converged on test-file cleanup, and was killed; a follow-on agent committed with 9 failing tests still present. Single-agent dispatch is the wrong tool for a large mechanical rename."
+      ],
+      "decisions_made": [
+        "DEC-45 established: SchoolMissionVisionValues(school, kind, statement) + StatementClause(label, text, code, order); kinds mission/vision/values; >=1 clause per kind; plans target at both whole-statement and per-clause granularity; MissionArea deleted (mockup-fantasy); LearnerOutcome untouched.",
+        "DEC-45 IMPL rejected as defective and excised via git rebase --onto, replaying the user's later commits and dropping the three IMPL commits."
+      ],
+      "current_status": "Full pytest suite 1948 passed (pre-DEC-45-IMPL baseline restored). DEC-44 intact (establishment + IMPL + tracking); the 4 _freetext_audit.py completeness fixes intact (predate the rebase base). DEC-45 is ESTABLISHED but UNIMPLEMENTED — its IMPL was excised and must be re-planned.",
+      "next_steps": [
+        "Re-plan DEC-45 IMPL with smaller commit boundaries and the mechanical rename done deterministically (sed/grep over the ~36 files), reserving agent dispatch for the judgment-bearing parts (model design, migration shape, test logic).",
+        "Carry the pi-context schema-widen prerequisite (DEC ids ^DEC-\\d{4}$ -> ^DEC-\\d{1,4}$) so DEC-44/DEC-45 can land in .context/decisions.json."
+      ]
+    },
+    {
+      "id": "SESSION-005",
+      "timestamp": "2026-05-31T00:00:00+08:00",
+      "via": "pi",
+      "focus": "Added optional `via` field to session-notes schema (v1.0.0 → v1.1.0) to record writing context (e.g. 'pi' or 'claude-code').",
+      "current_status": "Schema replaced at .context/schemas/session-notes.schema.json; migration 1.0.0→1.1.0 declared (declarative-transform backfilling via='claude-code' on existing sessions).",
+      "next_steps": []
+    },
+    {
+      "id": "SESSION-006",
+      "timestamp": "2026-05-31T09:30:00+08:00",
+      "via": "claude-code",
+      "focus": "De-trackered CLAUDE.md's reference-docs index, then began the context-migration decomposition phase: first three decompose scripts written and run.",
+      "discoveries": [
+        "CLAUDE.md reference-docs entries must be pointers, not trackers: state what a file is and that it is authoritative; never embed counts, watermarks, or authority the file itself defers elsewhere.",
+        "Decomposition output is one array per source, not file-per-item: the consumption script wants a single JSON.parse-able array to map and bulk-write, since .context (not the staging dir) is the addressable store. Dir is decomposed/; filenames are the source MD basename, .kind infix for two-kind sources.",
+        "Decomposition's bar is faithful, lossless, internally-consistent re-encoding (every element carries raw), NOT matching a not-yet-existing schema; mapping is the consumption phase's job.",
+        "ORCHESTRATOR-STATE.md 'Pending orchestrator actions' is grouped numbered sub-lists with nested children and inline-DONE, not the plan's predicted flat struck-through list. Plan prose corrected to match observed reality.",
+        "seed-round-plan DEC bodies are single prose blobs, not the decisions schema's discrete context/decision/consequences fields; splitting at decomposition would be fabrication.",
+        "Source-vs-schema gaps live in a 'Consumption-phase mapping notes' section in the migration plan doc (one entry per source), so a future consumption LLM reads them before writing a block."
+      ],
+      "current_status": "decompose-log/-state/-decs written, run, committed. Outputs in context-migration/decomposed/: ORCHESTRATOR-LOG.json (253), ORCHESTRATOR-STATE.{subagent-invocations,pending-actions}.json, seed-round-plan.json (45). Plan doc is the live spec (out/->decomposed/, source-basename naming, mapping-notes section all landed).",
+      "next_steps": [
+        "Continue the cascade in plan order: decompose-stories (US-STATUS.md) next, then discs / preamble / source-gaps / checklist / mandates / phases.",
+        "Expect each prose-heavy source to surface its own structural divergence and consumption-phase mapping note; record each in the plan.",
+        "Consumption phase (later): land tracked schema-widens, then write scripts that parse each array, reconcile per mapping notes, bulk-write to .context blocks.",
+        "The 7 docs/ files in Out-of-Claude-md-items.md plus CLAUDE.md are not covered by the decompose plan; decide migration path.",
+        "DEC-45 IMPL still established-but-unimplemented; re-plan with smaller commits and deterministic rename."
+      ]
+    },
+    {
+      "id": "SESSION-007",
+      "timestamp": "2026-05-31T13:00:00+08:00",
+      "via": "claude-code",
+      "focus": "Made the decomposed JSON the authoritative state surface (MD spine retired to archive), built the read/write/search tooling and write-policies, then produced an agent-verified DEC-45 implementation frame.",
+      "discoveries": [
+        "The MD-derived pending-actions snapshot was stale — it listed the Department→Division (DEC-13) and SubjectKind→ImprovementType (DEC-14) renames as not-done; both are done, verified via LOG seq 64-68, migrations school/0029-0034, and live classes Division/ImprovementType with no Department/SubjectKind outside migrations.",
+        "DEC-45 content state: the DB holds two user-authorized statement rows under school_schoolmissionvisionvalues — mission (3 clauses GROUNDED/ROUNDED/UNBOUNDED) and vision (6 clauses) — both to be preserved; values is a settled third kind awaiting content. (Committed school/0039 seeds vision only; mission is authored content in the DB. The earlier 'no seeded mission / don't preserve mission rows' framing was wrong — it conflated the deleted old MissionArea model's 3-item mockup seed with the mission statement kind.)",
+        "DEC-45 promotion-gate: the mission-area predicate is one of five required domain-alignment gates; the analogous rationale-bearing surface (guiding_clauses) is ungated, so the settled default is to remove the mission-area gate, not replace it.",
+        "DEC-45 child-clause invariant (>=1 StatementClause per row): no DB cross-row-cardinality CheckConstraint exists or is possible; the established idiom is service/admin .exists() checks + a test.",
+        "DISC-36 logged: planner/_llm_fabrication_validator.py enumerates 13 of 14 CatalogueUnion sub-fields (guiding_clauses omitted) — pre-existing bug, fixed during the DEC-45 rename slice.",
+        "Verified migration numbers: school at 0057, plans at 0041 (new migrations are school/0058+, plans/0042+); PlanMissionArea (plans) must be deleted before MissionArea (school) — cross-app FK ordering."
+      ],
+      "decisions_made": [
+        "JSON authoritative, MD spine archive: state lives in context-migration/decomposed/*.json, interacted with via state.mjs (read/filter/tail/append/upsert) and search.mjs; append/upsert show write-policies.json (9 reflective pre-write policies) before writing. CLAUDE.md operational references repointed; current-focus is a runnable query (state.mjs filter pending-actions status eq open; priority:next marks the focus). The decompose-*/verify gate retired as completed one-time migration tooling.",
+        "DEC-45 re-IMPL is the current focus, framed by docs/2026-05-31-dec-45-validated-impl-frame.md (built from 5 parallel read-only Explore agents; every claim file:line-verified, no hedges). No plan written, no code touched."
+      ],
+      "current_status": "JSON-authoritative transition committed; pending-actions.json reflects current reality (7 open / 4 done, each with evidence). DEC-45 remains established-but-unimplemented with a validated frame ready for plan-writing. Suite at 1948. .workflows/monitors/ gitignored.",
+      "next_steps": [
+        "Write the sliced DEC-45 plan from docs/2026-05-31-dec-45-validated-impl-frame.md (slices 0-5: inventory; school model rename + values kind + clause label/code; plan linkage rename + mvv_statements add + mission-area delete; MissionArea deletion; grounding/catalogue/planner/prompt alignment + DISC-36 fix; docs/tracking refresh), then implement in small commit-bounded slices.",
+        "Carry the other open pending-actions: D7 accounts, post-Phase-15 walkthrough + US-STATUS vivification, the 4 standing DISCs, the Mode-C workshop cascade.",
+        "Monitors need reconfiguration work (separate from the gitignore that stopped them dirtying the tree)."
+      ]
+    },
+    {
+      "id": "SESSION-008",
+      "timestamp": "2026-05-31T19:30:00+08:00",
+      "via": "claude-code",
+      "focus": "Landed DEC-45 Slice 1 (school model rename GuidingStatement->SchoolMissionVisionValues + values kind + StatementClause label/code) and the owed mission seed; corrected a propagated mission disclarity; reset and reconciled the diverged dev DB to the clean on-disk graph.",
+      "discoveries": [
+        "The 'validated frame' wrongly claimed mission was unseeded / not to be preserved — it conflated the deleted MissionArea model with the mission statement kind. Per conversation history the settled model is SchoolMissionVisionValues (adopted after the field-survey research); mission (3 clauses GROUNDED/ROUNDED/UNBOUNDED) and vision (6 clauses) are both user-authorized rows, values a settled third kind awaiting content. Corrected across the frame doc, session-notes, and pending-actions.",
+        "Mission was admin-authored directly into the dev DB and never migration-backed (school/0039 seeds vision only; the excised 0058 was schema-only and deferred the mission seed to a 'future' migration never written). Closed with school/0060_dec45_seed_mission, generated byte-exact from the dev-DB row (statement_en md5 46786f2a) and verified on a from-scratch migrate.",
+        "The dev DB had diverged from the on-disk graph (the excised attempt's ghost records school/0058_schoolmvv + 0059_dec45_drop + plans/0042, and MissionArea dropped ahead of Slice 3). Migration-slice planning had never inspected the actual DB state — that omission caused the whole detour; future migration slices must check django_migrations + table presence first.",
+        "Resetting the dev DB as postgres wipes the socrates app-role grants (prefix-less manage.py then fails 'permission denied'); restored grants + ALTER DEFAULT PRIVILEGES matching the backup. Local pg_dump is v14 vs server v18 — back up via the postgres:18 container. migrate alone yields 0 persons/holdings/users; the staff roster is reproduced by import_staff_roster (committed CSV) and the superuser by createsuperuser. Saved as memory project-dev-db-reset-restores-socrates-grants."
+      ],
+      "decisions_made": [
+        "DEC-45 sliced re-implementation underway: Slice 1 committed (118e0cd) + mission seed 0060 (8d61bcf); rename migrations hand-authored per DISC-37 (mirroring school/0032 + 0034). Disclarity correction committed 79fac77; dev-DB reconciliation tracking 331a304.",
+        "Chose a full dev-DB reset (drop/recreate/migrate/import_staff_roster) over in-place surgical reconciliation, once 0060 made mission migration-backed and a full v18 container backup was taken + validated as restorable. Reconciled to clean lineage (school 0050-0060, plans 0040-0041, no ghosts); content byte-exact; socrates grants restored; superuser recreated; admin verified."
+      ],
+      "current_status": "DEC-45 Slice 1 fully landed and verified; the dev DB is a clean substrate matching the on-disk graph. Commits on main: 118e0cd, 8d61bcf, 79fac77, 331a304 (+ this context/session-note commit).",
+      "next_steps": [
+        "Slice 2 — Plan-side M2M restructure: hand-authored RenameModel PlanGuidingClause->PlanMvvClause (+ Plan.guiding_clauses->mvv_clauses), add PlanMvvStatement + Plan.mvv_statements. Then Slice 3 (MissionArea deletion, plans-side before school-side), Slice 4 (grounding/CatalogueUnion restructure + DISC-36 fix), Slice 5 (docs/tracking).",
+        "Carry the other open pending-actions: D7 accounts, post-Phase-15 walkthrough + US-STATUS vivification, the 4 standing DISCs, the Mode-C workshop cascade."
+      ]
+    },
+    {
+      "id": "SESSION-009",
+      "timestamp": "2026-05-31T20:30:00+08:00",
+      "via": "claude-code",
+      "focus": "Landed DEC-45 Slice 2 (plan-side per-clause linkage rename guiding_*->mvv_*), after renaming the assistant-introduced advanced_* names to mvv_* across all context, and a ground-truth fact sweep for Slices 2/3.",
+      "discoveries": [
+        "The plan-side linkage names advanced_clauses/PlanAdvancedClause were assistant-introduced (never user-chosen) and incoherent ('advanced' reads as an adjective). Renamed to mvv_clauses/PlanMvvClause/mvv_statements/PlanMvvStatement across every context surface incl the authoritative DEC-45 record (commit eefa568); git history retains advanced_* only as the discarded-attempt record.",
+        "Built context-migration/decomposed/dec45-slice23-facts.json — 14 atomic ground-truth facts/landmines (DEC45-F01..F14) for Slices 2/3, verified against current source + the reset dev DB, NOT the stale frame. Key: F07 Slice 3 must remove every MissionArea reference in-slice; F04 PlanGuidingClause had no UniqueConstraint; F06 DISC-36's target file unconfirmed.",
+        "The mission seed 0060 (8d61bcf) had silently reddened the suite: school/tests/test_seed_dec32_slos_and_vision.py asserted 'no mission seeded' plus an order-0 .get() that became ambiguous across vision+mission. The 'gate green / pytest 1952' note was recorded without re-running the full suite after 0060. Caught when Slice 2's IMPL ran full pytest; fixed in 4f558a5; suite now 1953 passed. Lesson: re-run the FULL gate after any seed/data migration, not a scoped check."
+      ],
+      "decisions_made": [
+        "Slice 2 scoped to the rename ONLY (data-preserving). The additive whole-statement targeting (Plan.mvv_statements + PlanMvvStatement) is split into its own next slice to avoid the sprawl that sank the first DEC-45 attempt. Settled names: mvv_clauses/mvv_statements, PlanMvvClause/PlanMvvStatement.",
+        "Slice 2 committed e6120ea (rename: M2M/through-model/FK/related_names/4 permission codenames; hand-authored plans/0042 RenameModel+RenameField mirroring school/0032 + plans/0043 codename rename mirroring school/0034); applied + verified on dev DB (plans_planmvvclause, perms renamed, socrates reads it, 0042/0043 reversible). Seed-test fix 4f558a5; tracking 02e4939."
+      ],
+      "current_status": "DEC-45 Slices 1 and 2 landed and verified on the clean dev DB; full pytest 1953 passed. The plan-side MVV linkage is coherently named mvv_*. Slice-2/3 ground-truth facts persisted (dec45-slice23-facts.json).",
+      "next_steps": [
+        "Additive whole-statement targeting slice: new Plan.mvv_statements M2M + PlanMvvStatement through-model (+ rationale) + planner formset + DISC-19 school_admin grant migration. Additive, independently green-gated.",
+        "Then Slice 3 — MissionArea teardown: the large in-slice reference removal (grounding.py / plans.services promotion gate / planner specs _A3_GATE_REQUIRED / forms / formsets / steps / ai-assist.js), plans-side PlanMissionArea before school-side DeleteModel; neutralize school/0011 seed; ai/00NN prompt-template edit per DEC-41 (DEC45-F07/F10/F11/F13).",
+        "Then Slice 4 (grounding-output + CatalogueUnion incl catalogue guiding_clauses->mvv_clauses + DISC-36, verifying its target file first per F06), Slice 5 docs/tracking. Carry the other open pending-actions (D7, post-Phase-15 walkthrough, 4 DISCs, Mode-C cascade)."
+      ]
+    }
+  ]
+}

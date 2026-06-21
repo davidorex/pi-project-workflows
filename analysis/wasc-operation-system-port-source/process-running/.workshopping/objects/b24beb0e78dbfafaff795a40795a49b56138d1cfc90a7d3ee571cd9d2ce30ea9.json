@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if framing_vocabularies %}Available framing vocabularies:\n{% for f in framing_vocabularies %}- {{ f.label }}{% if f.description %}: {{ f.description }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "framing_vocabularies"
+}

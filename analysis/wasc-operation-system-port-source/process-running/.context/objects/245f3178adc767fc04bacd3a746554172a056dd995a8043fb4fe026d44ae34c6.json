@@ -1,0 +1,5 @@
+{
+  "name": "Vivify the prompt-workshop via pi-workflows",
+  "status": "in-progress",
+  "intent": "Run the 14 prompt-specs as a resumable, parser-gated pi-workflow over the .workshopping substrate to a promotion-ready whole-plan draft — closes DISC-26 and advances the DEC-29 orchestration trio (US-LLM-23/24/25). Data layer (.workshopping) done + 14/14 parity-proven; execution + runner layers unbuilt."
+}

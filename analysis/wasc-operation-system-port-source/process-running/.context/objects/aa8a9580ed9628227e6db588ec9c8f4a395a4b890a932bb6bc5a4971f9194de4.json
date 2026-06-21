@@ -1,0 +1,18 @@
+{
+  "status": "identified",
+  "package": "school-improvement-plans/ai/migrations (PromptTemplate corpus, shared preamble)",
+  "title": "Trio: no production prompt rule governs spelling-variety consistency; a draft can mix British and American spelling within itself",
+  "description": "Production re-file of the discarded language-polish-pass branch's workshop-scoped FGAP-045, verified live against main 2026-06-21. The production shared preamble's register rules govern voice, verbatim catalogue labels, method-terms, and reference-by-identity; NONE governs spelling variety. So a single trio-produced draft can mix British and American forms in free prose (counselling/counseling, programme/programs, labelled/labeling, categorisation/categorization). Corroborated against current source: no spelling / variety / British / American directive in ai/migrations (the 'bilingual programme' string in the no-fabrication preamble is a fabrication EXAMPLE, not a spelling rule).",
+  "impact": "Cosmetic register inconsistency within a draft. Per DEC-53 language/register/spelling is NON-BLOCKING (WARN / final-polish, never gates). Low priority -- a line item for the production prompt language-polish pass, not a trio milestone blocker.",
+  "proposed_resolution": "A one-line additive bullet in the shared preamble register block via an ai/00NN guarded migration: direct a single spelling convention matching the school's catalogue labels, no British/American mixing within a plan. Fold into the eventual DEC-53 production-prompt language-polish pass (the production analog of the discarded workshop TASK-055).",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/ai/migrations/",
+      "reference": "grep -rinE 'spelling|british|american|one spelling' ai/migrations/ returns only the no-fabrication preamble's 'bilingual programme' fabrication-example; no spelling-convention directive exists in the production corpus"
+    },
+    {
+      "file": "discarded language-polish-pass branch",
+      "reference": "origin = workshop-scoped FGAP-045 (commit 4001a87); the spelling-rule fix was workshop-layer only, never migrated to production"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Whole-draft prose scan (check_draft._iter_prose_fields) does not walk domain_alignment",
+  "status": "closed",
+  "package": "prompt-workshop/dispatch/check_draft.py",
+  "description": "check_draft._iter_prose_fields (the whole-draft prose enumerator feeding the hard-phrase / scaffolding-label / language-WARN scans, DEC-53) yields prose from plan.*, action_steps[].description, success_criteria[].text, milestones[].label, and review_events/communications/revision_rules[].* -- but does NOT walk `domain_alignment` at all. So neither the targeted-row `rationale` nor the deferred-gap `reason` prose enters the whole-draft language-WARN scan. Surfaced during TASK-050 (FGAP-035): distinct from that gap (the parse-time catalogue-survivor audit asymmetry, which audit_prefill_flags/_select_a3 closes). This is the whole-draft hard-phrase/language-WARN coverage layer, a pre-existing omission for all domain_alignment prose.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/check_draft.py",
+      "reference": "_iter_prose_fields (~209-253) enumerates plan/action_steps/success_criteria/milestones/review-collections; no domain_alignment branch"
+    }
+  ],
+  "impact": "A banned process-method term / scaffolding label / off-register phrase in a domain_alignment rationale or reason would not be surfaced by the whole-draft language-WARN scan (it IS caught at parse-time for fabrication via audit_prefill_flags, but the whole-draft hard-phrase WARN layer skips it). Low blast radius (WARN-class, language; parse-time fabrication audit is unaffected).",
+  "proposed_resolution": "Add a domain_alignment branch to _iter_prose_fields yielding the targeted *_targeted[].rationale and the *_not_addressed[].reason prose, so the whole-draft language-WARN scan covers domain_alignment prose like the other collections. Workshop-only (check_draft.py). DEC-53 language-WARN class. A future fix task (human-scoped)."
+}

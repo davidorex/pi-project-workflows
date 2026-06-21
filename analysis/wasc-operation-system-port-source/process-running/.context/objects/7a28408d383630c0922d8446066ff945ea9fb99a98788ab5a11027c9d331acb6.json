@@ -1,0 +1,8 @@
+{
+  "status": "in-progress",
+  "description": "FGAP-036: update the decompose reconstruction dedup table to reflect the post-B2 snippet set (snippets 3/4/5 now share the guiding_statements grounding block), so the reconstruction gate passes; live dispatch and parity are already unaffected.",
+  "acceptance_criteria": [
+    "The decompose reconstruction gate passes with no STOP for the guiding_statements grounding block, with the dedup table reflecting every snippet that shares the block.",
+    "No previously-passing check moves from passing to failing: the parity gate passes 14/14 and the project gate is green."
+  ]
+}

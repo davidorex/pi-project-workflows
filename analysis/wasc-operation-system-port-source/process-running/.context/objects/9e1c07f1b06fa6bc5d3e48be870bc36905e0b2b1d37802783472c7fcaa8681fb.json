@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-017 / FGAP-003 (A2, free-text gate flag surface) gate green + separate-agent adversarial audit Total findings: 0 (full planner suite 892 passed). _freetext_audit.py: new FreetextSpan/FreetextFlag dataclasses; audit_freetext_flags is the structured core (NER survivors (span,None,ner); LLM-leftover fabricated (span,fabricated,llm); verdict==fabricated filter intact so catalogue-variant/ordinary-prose still admit); audit_freetext delegates -> [s.span for ...] byte-identical list[str] (the ~40 existing tests + parity prove it); audit_prefill_flags collects all selector fields into FreetextFlags (the A2 deliverable + A3 surface); audit_prefill UNCHANGED (raises on first field; 12 parsers untouched = no gate regression). pytest 105 (target files) / 892 (full planner) passed; mypy clean; ruff clean. Hard/soft partition inherent: only the free-text catalogue layer flags; structural/FK/invariant stay hard-reject. AssistResult/parser switch is A3.",
+  "timestamp": "2026-06-05T10:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "audit_freetext_flags returns structured survivors carrying A1 verdict + source (ner/None, llm/fabricated) - NOT all-ner",
+      "status": "passed"
+    },
+    {
+      "criterion": "audit_freetext byte-identical list[str] (delegates to flags core); ~40 tests + parity green = no admission drift",
+      "status": "passed"
+    },
+    {
+      "criterion": "audit_prefill unchanged (raises first-field); 12 specs.py parsers untouched = gate not regressed",
+      "status": "passed"
+    },
+    {
+      "criterion": "audit_prefill_flags collects all fields; [] for no-selector/clean; never raises; carries spec_key/field/span/verdict/source/reason",
+      "status": "passed"
+    },
+    {
+      "criterion": "scope-disciplined (only _freetext_audit.py + its test; no AssistResult/specs.py/flag-routing); mypy/ruff clean; full planner 892 passed",
+      "status": "passed"
+    }
+  ]
+}

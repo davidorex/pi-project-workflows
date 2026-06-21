@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "T6 full 14-spec run (run_workflow.mjs workshop-run-plan-sequence --fresh --yes, seed 'Improve SLO usage across the school', deepseek-v4-pro) completed 42/42 exit 0; all 14 draft-after-*.json present. check_draft.py --strict on draft-after-propose-review-loop.json: EXIT 0, RESULT PASS — Check3 distribution 5 owners/33.33% max/0 unowned, Check4 coverage LO 7/7 + areas 6+1/7 (Bilingual Environment deferred w/ substantive reason), Check5 cadence 4 checkpoints earliest 2025-11-18, Check6 three-view 3/3, Check7 bilingual 2/2, Check8 decision-requests 0/0-malformed; language checks 1-2 WARN-only (DEC-53). SEPARATE adversarial audit (af196044) re-ran --strict + scrutinized the draft against live grounding: Total findings: 1 (a non-blocking language nit — step-0 narrative cites standard C2 while accreditation_standards carries A4; both valid codes, no structural check covers it). Distribution/coverage/decision-requests non-vacuous; draft substantive. First-ever --strict on a real full-run draft, against the corpus tightened by TASK-054.",
+  "timestamp": "2026-06-17",
+  "criteria_results": [
+    {
+      "criterion": "A fresh full sequence run produces an assembled draft on which the whole-draft coverage check passes (every learner outcome and improvement area targeted or recorded as an explicit gap).",
+      "status": "passed",
+      "evidence": "check_draft --strict Check4 PASS: learner outcomes 7/7 present 0 gaps; improvement areas 6/7 present 0 gaps (the 7th, Bilingual Environment, in areas_for_improvement_not_addressed with a substantive deferral reason — audit V3 confirmed all 7+7 accounted, none silently dropped)."
+    },
+    {
+      "criterion": "The same run's assembled distribution check passes (more than one owner, no owner more than 50%), and TASK-026's status is updated to record whether its distribution premise is superseded, with the run's evidence.",
+      "status": "passed",
+      "evidence": "Check3 PASS: 5 distinct owners, largest share 33.33%, 6 owned 0 unowned; audit V2 confirmed 6 genuinely distinct step->division assignments, no padding. TASK-026's responsibility-map-driven distribution premise is validated (NOT superseded) — recorded via TASK-026 completion in this cascade."
+    },
+    {
+      "criterion": "The run completes end-to-end; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green; and no structural check (coverage, distribution, cadence, three-view student/staff/parent, bilingual staff-English/student-bilingual) is failing.",
+      "status": "passed",
+      "evidence": "42/42 exit 0; all 14 drafts parsed + applied; the 25 catalogue-gate flags are advisory verdict:null NER spans (real division abbreviations), not rejections; verify-render-parity GATE 14/14 (re-confirmed pre-run on the tightened corpus); check_draft --strict structural checks 3-8 all PASS, structural_ok=True."
+    }
+  ]
+}

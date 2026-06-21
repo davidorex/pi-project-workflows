@@ -1,0 +1,9 @@
+{
+  "output": "ORCHESTRATOR-LOG.json",
+  "source": "ORCHESTRATOR-LOG.md",
+  "section": null,
+  "itemLinePattern": "^- \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}\\b",
+  "ignoreLinePattern": "^# Orchestrator event log|^The exact, chronological|^rewrite or delete a line|^definition, recorded gap|^reconstructs the exact process|^substrate for code, and|^pending, conventions\\)|^Entry format:|^Types:|^Epoch: this log begins|^\\(Phases 0–14|^---$",
+  "fields": ["seq", "timestamp", "type", "text", "refs", "continuation", "raw"],
+  "required": ["seq", "timestamp", "type", "raw"]
+}

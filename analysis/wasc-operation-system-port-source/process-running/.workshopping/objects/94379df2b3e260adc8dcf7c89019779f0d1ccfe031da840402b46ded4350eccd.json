@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY one key:\n- \"standards\": a NON-EMPTY JSON array (at least one standard). Each element is an object:\n  - \"standard\": one of the exact standard codes listed above (required).\n  - \"rationale\": a free-text string explaining why the plan advances that standard (required).\n\nAt least one standard. standard must be one of the listed codes. No extra keys, no nested objects beyond this shape, no markdown.\n"
+}

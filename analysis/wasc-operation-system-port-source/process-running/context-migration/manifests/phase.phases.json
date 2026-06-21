@@ -1,0 +1,27 @@
+{
+  "output": "phase.phases.json",
+  "sources": [
+    "phases/phase-00-foundation.md",
+    "phases/phase-01-custom-user.md",
+    "phases/phase-02-school-app.md",
+    "phases/phase-03-accreditation-app.md",
+    "phases/phase-04-planning-method.md",
+    "phases/phase-05-plans-scaffold.md",
+    "phases/phase-06-plan-core.md",
+    "phases/phase-07-success-criterion-measurement.md",
+    "phases/phase-08-phase-and-action-step-skeleton.md",
+    "phases/phase-09-action-step-children.md",
+    "phases/phase-10-outputs.md",
+    "phases/phase-11-review-loop.md",
+    "phases/phase-12-promotion-service.md",
+    "phases/phase-13-i18n-initialization.md",
+    "phases/phase-14-extension-fields.md",
+    "phases/phase-15-final-validation.md"
+  ],
+  "section": null,
+  "itemLinePattern": "^(#{1,6}\\s|\\d+\\.\\s|[-*]\\s)",
+  "rawStrip": "^(?!)",
+  "ignoreLinePattern": "^---$",
+  "fields": ["seq", "phase", "kind", "text", "raw"],
+  "required": ["seq", "phase", "kind", "raw"]
+}

@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "evidence": "Separate adversarial-audit agent (a87c63e0) verified TASK-054 by id on branch tighten-gated-snippets commit f73f6af, posture falsify-each. Total findings: 0. verify-render-parity GATE 14/14 both cross-checks PASS; git diff f73f6af^ f73f6af touches only the four snippet MDs + .workshopping (fragment + 4 content-addressed objects), no validator/gate/schema; the four FRAG-intro content_hashes re-stamped with clean content_parent lineage; pointer back on .context (gitignored), tree clean except untracked T6-PRERUN-AUDIT.md.",
+  "timestamp": "2026-06-17",
+  "criteria_results": [
+    {
+      "criterion": "Snippet 06 contains no instruction permitting a single division to own a majority of steps; it requires distributed ownership and directs a before-output check that more than one division owns steps and none owns more than half.",
+      "status": "passed",
+      "evidence": "A1: grep for 'best-fit governs'/'forced spread'/'clusters under one purview' returns nothing; bullet now requires >1 division and none over half; A3(06): before-output self-check counts assignments per division against the >1-owner/none-over-half rule."
+    },
+    {
+      "criterion": "Snippet 06 still directs a single best-fit division per step and does not instruct assigning a step to an ill-fitting division merely to spread; where best-fit would concentrate over half, it directs re-examining each step's fit rather than silent concentration.",
+      "status": "passed",
+      "evidence": "A2: keeps 'single best-fit division (the unit whose responsibilities most accurately fit the work)' + explicit 'You must NOT assign a step to an ill-fitting division merely to spread ownership'; self-check says re-examine best fit rather than forcing/mis-assigning."
+    },
+    {
+      "criterion": "Each of the four gated snippets directs the model, at the point of output, to self-verify the structural property its gate enforces (02 coverage exactly-once; 06 >1-owner/none-over-half + decision_request four fields; 11 fixed three-view/bilingual key maps index-or-gap with channels for non-deferred; 14 >=4 checkpoints earliest before 1 Dec).",
+      "status": "passed",
+      "evidence": "A3: each self-check checked against the live evaluators in self_check.py (_eval_coverage 123-183, _eval_distribution 408-450 + _eval_decision_requests 344-405, _eval_three_view 203-256 + _eval_bilingual_views 273-328, _eval_review_cadence 471-526) — same property, not a near-miss."
+    },
+    {
+      "criterion": "The four edited snippet bodies and their .workshopping fragments render byte-identical: verify-render-parity GATE 14/14 with both cross-checks passing.",
+      "status": "passed",
+      "evidence": "A6: all 14 PASS, cross-check (a) PASS, cross-check (b) PASS, GATE 14/14, exit 0."
+    },
+    {
+      "criterion": "Each edited .workshopping fragment's content_hash differs from its pre-edit value (re-stamped) and the substrate validates clean.",
+      "status": "passed",
+      "evidence": "A7: all four content_hashes changed with old hash carried as content_parent; the four new objects/*.json filenames equal the new content_hash values (content-addressed write internally consistent); parity 14/14 confirms substrate composes correctly."
+    },
+    {
+      "criterion": "The validator, gate logic, and output schemas are unchanged, and no output-contract key is added or removed.",
+      "status": "passed",
+      "evidence": "A4: per-snippet diff is a single inserted before-output sentence ahead of the OUTPUT CONTRACT header; the contract key/enum token stream is byte-identical pre/post. A5: git diff name-only touches no check_draft.py / self_check.py / .workflows/schemas."
+    },
+    {
+      "criterion": "The working tree on the branch is clean with the changes committed.",
+      "status": "passed",
+      "evidence": "A8: commit f73f6af on tighten-gated-snippets; git status --short shows only the untracked prompt-workshop/T6-PRERUN-AUDIT.md; pointer contextDir=.context (gitignored)."
+    }
+  ]
+}

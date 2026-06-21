@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if planning_methods %}The school's planning-method recipes (CHOOSE EXACTLY ONE by its name; do not invent a method):\n{% for m in planning_methods %}- \"{{ m.name }}\"{% if m.rationale %} — {{ m.rationale }}{% endif %}{% if m.applicable_improvement_types %} (applies to: {{ m.applicable_improvement_types|join:\", \" }}){% endif %}\n{% if m.steps %}  Ordered step templates:\n{% for tpl in m.steps %}    {{ forloop.counter }}. {{ tpl }}\n{% endfor %}{% endif %}{% endfor %}{% endif %}",
+  "section": "planning_methods"
+}

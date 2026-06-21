@@ -1,0 +1,274 @@
+{
+  "spec_key": "narrative-draft",
+  "target_step": "basics",
+  "preview_mode": "fields",
+  "rendered_prompt": "\nYou are the LLM assist for a school authoring a WASC schoolwide improvement plan. Your role across all prompts:\n\n**You are a solution-architect.** Given your general training + the framing data this prompt provides (the school's seeded vocabularies, divisions, positions, responsibilities, accreditation standards, learner outcomes, mission areas, areas-for-improvement, stakeholder groups, planning methods, prior plans, the draft so far), you MAP A SOLUTION PATH from the plan's current state to its desired state. Every element you produce — narrative, milestone, criterion, channel, action step, assignment, evidence, responsibility, standard alignment, review event, revision rule — is a contribution to that current→desired trajectory. You are not generating valid-shape responses in isolation; you are constructing a coherent path the school will follow.\n\n**Success criteria for your output:**\n1. A WASC reviewer reading your output would find it substantive — concrete, school-specific, grounded in the school's organizational reality.\n2. An admin reviewing your output would accept it without rewriting — your content is a real starting point, not filler to be replaced.\n3. Your output names real Chiway actors and units from the grounding data — never generic placeholders like \"the department\" or \"the team\" when a specific division or position applies.\n4. Your output articulates accreditation evidence — for every linkage (plan↔standard, step↔responsibility, etc.), the rationale prose makes the WASC evidence audit-ready.\n5. Your output honors the school's operational policy: **all divisions must be involved in bringing about the specific improvements through the lens of their particular purviews**. When you assign work, name evidence ownership, designate channels, or attribute responsibilities, distribute across the divisions whose purviews are relevant — do not collapse to one or two divisions when several have legitimate purview.\n\n**What you do NOT do — zero room for these LLM antipatterns:**\n- No hedging. No \"consider X\" when concrete X is required.\n- No punting. No \"this should be reviewed by an expert\" or \"consulting a specialist is advised.\"\n- No AI-mandates-style caveats. No \"as an AI language model I cannot,\" no \"I am not qualified to,\" no \"you may want to verify.\"\n- No half-fills. No \"TBD,\" \"to be determined,\" \"to be filled in later,\" \"[insert X here].\"\n- No options-instead-of-decisions. No \"Option A or Option B\" when one decision is asked for.\n- No vague placeholders. No \"the relevant party,\" \"an appropriate cadence,\" \"a suitable artifact\" — name the specific party, cadence, artifact from the grounding.\n- No partial outputs marked as \"draft for review.\" Your output IS the draft for review; mark nothing as incomplete that you can complete from the grounding.\n- No meta-commentary about what you did or are doing. Produce the output; nothing else.\n\n**What success looks like in concrete terms:** if a school admin reads your output and can promote it to active with at most light editing, you have done your job. If they need to rewrite it, you have not.\n\nYou help a school author draft the narrative sections of a WASC schoolwide improvement plan. Write plain, concrete prose for an accreditation audience. Ground only in the facts provided below; do not invent school specifics that are not present.\n\nSchool: Chiway-Repton School Xiamen.\nAccreditation cycle: 2025-2026 (2025-08-01 to 2026-07-31).\n\nAuthor seed (a one-line intent for this plan): Improve SLO usage across the school\n\nAvailable framing vocabularies:\n- Parent-focused\n- Schoolwide-focused\n- Student-focused\n- Teaching-focused\n\nPriority tiers:\n- High\n- Medium\n- Low\n\nAreas for improvement:\n- Bilingual Environment\n- Community Involvement\n- Curriculum and Learning\n- Faculty PD and PLC\n- Resources and Tools\n- School Culture\n- Student Data and Well-being\n\nSchoolwide learner outcomes:\n- Bilingual Communicators\n- Compassionate\n- Confident: Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas.\n- Engaged\n- Innovative\n- Reflective\n- Responsible\n\nMission areas:\n- Academic excellence\n- Caring and safe community\n- Global citizenship\n\nStakeholder groups:\n- Administration / Leadership\n- Admissions Applicants\n- Parent Committee\n- Parents\n- Staff / Faculty\n- Students\n\nWASC accreditation standards:\n- A1 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families.\n- A2 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture.\n- A3 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes.\n- A4 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness.\n- A5 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students.\n- A6 (Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance): Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community.\n- B1 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success.\n- B2 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success.\n- B3 (Curriculum, Teaching and Learning, and Assessment and Data Analysis): Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments.\n- C1 (School Culture, Systems of Support, and Student Success and Community Partnerships): School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being.\n- C2 (School Culture, Systems of Support, and Student Success and Community Partnerships): Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students.\n- C3 (School Culture, Systems of Support, and Student Success and Community Partnerships): Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness.\n\n\nThe author's in-progress draft so far:\n- meta: {&#x27;entry_mode&#x27;: &#x27;I have a problem&#x27;, &#x27;seed_text&#x27;: &#x27;Improve SLO usage across the school&#x27;, &#x27;source_proposal_id&#x27;: None, &#x27;started_at&#x27;: &#x27;2026-05-29T06:29:44.364637&#x27;}\n- domain_alignment: {&#x27;learner_outcomes_targeted&#x27;: [], &#x27;mission_areas_targeted&#x27;: [], &#x27;areas_for_improvement&#x27;: [], &#x27;stakeholder_impact&#x27;: [], &#x27;policies_established&#x27;: [], &#x27;policies_revised&#x27;: []}\n- responsibilities: {&#x27;division&#x27;: [], &#x27;position&#x27;: []}\n\n\nOUTPUT CONTRACT (follow exactly):\nReturn ONE JSON object and nothing else. Do not wrap it in markdown code fences. Do not write any prose before or after the JSON. Write all values in English only.\n\nThe object MUST have EXACTLY these five string-valued keys:\n- \"current_state\": where the school is today on this focus, in concrete terms.\n- \"desired_state\": the specific improved state the plan aims to reach.\n- \"rationale\": why this improvement matters now, grounded in the facts above.\n- \"student_impact_framing\": how this improvement is expected to affect students.\n- \"provenance\": what evidence, data, or prior work this plan draws on.\n\nEach value is a single plain-prose string (no nested objects, no lists, no markdown). Include all five keys.\n",
+  "grounding_dict_used": {
+    "school": {
+      "name": "Chiway-Repton School Xiamen",
+      "slug": "chiway-repton-xiamen"
+    },
+    "cycle": {
+      "code": "2025-2026",
+      "label": "2025-2026",
+      "starts_on": "2025-08-01",
+      "ends_on": "2026-07-31"
+    },
+    "framing_vocabularies": [
+      {
+        "code": "parent-focused",
+        "label": "Parent-focused",
+        "description": ""
+      },
+      {
+        "code": "schoolwide-focused",
+        "label": "Schoolwide-focused",
+        "description": ""
+      },
+      {
+        "code": "student-focused",
+        "label": "Student-focused",
+        "description": ""
+      },
+      {
+        "code": "teaching-focused",
+        "label": "Teaching-focused",
+        "description": ""
+      }
+    ],
+    "priority_tiers": [
+      {
+        "code": "high",
+        "label": "High",
+        "order": 1
+      },
+      {
+        "code": "medium",
+        "label": "Medium",
+        "order": 2
+      },
+      {
+        "code": "low",
+        "label": "Low",
+        "order": 3
+      }
+    ],
+    "areas_for_improvement": [
+      {
+        "code": "afi-bilingual",
+        "label": "Bilingual Environment",
+        "description": ""
+      },
+      {
+        "code": "afi-community",
+        "label": "Community Involvement",
+        "description": ""
+      },
+      {
+        "code": "afi-curriculum",
+        "label": "Curriculum and Learning",
+        "description": ""
+      },
+      {
+        "code": "afi-pd",
+        "label": "Faculty PD and PLC",
+        "description": ""
+      },
+      {
+        "code": "afi-resources",
+        "label": "Resources and Tools",
+        "description": ""
+      },
+      {
+        "code": "afi-school-culture",
+        "label": "School Culture",
+        "description": ""
+      },
+      {
+        "code": "afi-data",
+        "label": "Student Data and Well-being",
+        "description": ""
+      }
+    ],
+    "mission_areas": [
+      {
+        "code": "ma-academic",
+        "label": "Academic excellence",
+        "description": ""
+      },
+      {
+        "code": "ma-caring",
+        "label": "Caring and safe community",
+        "description": ""
+      },
+      {
+        "code": "ma-global",
+        "label": "Global citizenship",
+        "description": ""
+      }
+    ],
+    "learner_outcomes": [
+      {
+        "code": "bilingual-communicators",
+        "label": "Bilingual Communicators",
+        "description": ""
+      },
+      {
+        "code": "compassionate",
+        "label": "Compassionate",
+        "description": ""
+      },
+      {
+        "code": "confident",
+        "label": "Confident",
+        "description": "Shows self-assurance in learning and communicating, knowing that growth happens through taking risks and expressing their ideas."
+      },
+      {
+        "code": "engaged",
+        "label": "Engaged",
+        "description": ""
+      },
+      {
+        "code": "innovative",
+        "label": "Innovative",
+        "description": ""
+      },
+      {
+        "code": "reflective",
+        "label": "Reflective",
+        "description": ""
+      },
+      {
+        "code": "responsible",
+        "label": "Responsible",
+        "description": ""
+      }
+    ],
+    "stakeholder_groups": [
+      {
+        "label": "Administration / Leadership"
+      },
+      {
+        "label": "Admissions Applicants"
+      },
+      {
+        "label": "Parent Committee"
+      },
+      {
+        "label": "Parents"
+      },
+      {
+        "label": "Staff / Faculty"
+      },
+      {
+        "label": "Students"
+      }
+    ],
+    "accreditation_standards": [
+      {
+        "code": "A1",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Vision and Mission: The school has a clear mission and vision centered on student learning, success, and well-being, which actively guide all aspects of the school and are collectively understood and implemented by the school community to support students and engage families."
+      },
+      {
+        "code": "A2",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Leadership and Governance: The school’s leadership and governance facilitate effective decision-making, shared accountability, and continuous improvement to support student learning and to foster a collaborative culture."
+      },
+      {
+        "code": "A3",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Faculty and Staff:  Qualified faculty and staff engage in ongoing, collaborative, differentiated, professional learning and reflective dialogue aligned to student needs and schoolwide goals to enhance instruction, strengthen practices, and improve teaching and student outcomes."
+      },
+      {
+        "code": "A4",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Continuous Improvement: The school uses a variety of qualitative and quantitative data to support ongoing improvement planning, guide decision-making, and drive initiatives that improve student outcomes and organizational effectiveness."
+      },
+      {
+        "code": "A5",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Resources:  Fiscal and human resources are appropriately and strategically allocated to ensure and sustain financial stability, supporting the school’s mission, educational programs, continuous improvement, and success for all students."
+      },
+      {
+        "code": "A6",
+        "category": "Vision, Leadership, Faculty and Staff, Resources, Continuous Improvement, and Accountability and Compliance",
+        "text": "Accountability and Compliance: The school demonstrates accountability by implementing clear policies and ethical practices aligned with its mission, ensuring compliance with all applicable laws and regulations established by civil authorities within its operating jurisdiction(s), and effectively communicating these efforts to the entire community."
+      },
+      {
+        "code": "B1",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Curriculum:  The school provides a rigorous, relevant and research-based curriculum that is standards aligned and responds to student needs that prepares them for future success."
+      },
+      {
+        "code": "B2",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Teaching and Learning: Instruction is student-centered, differentiated, grounded in research-based strategies that ensure engagement, critical thinking, real-world application, student agency, and ownership of learning to prepare all students for success."
+      },
+      {
+        "code": "B3",
+        "category": "Curriculum, Teaching and Learning, and Assessment and Data Analysis",
+        "text": "Assessment and Data Analysis: The faculty uses varied, comprehensive, and valid assessments to collect and analyze qualitative and quantitative data that measures student progress, identifies learning needs, and guides instructional and curricular adjustments."
+      },
+      {
+        "code": "C1",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "School Culture: The entire school community fosters a collaborative and safe culture based on trust, respect, and shared responsibility to ensure all students have access to programs and opportunities that support them in their academic and social-emotional growth toward achieving their full potential and well-being."
+      },
+      {
+        "code": "C2",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Systems of Support:  The school provides effective and responsive systems of support that address students’ academic and social-emotional needs through personalized learning pathways, and timely and targeted interventions and assistance that lead toward academic growth, and success for all students."
+      },
+      {
+        "code": "C3",
+        "category": "School Culture, Systems of Support, and Student Success and Community Partnerships",
+        "text": "Student Success and Community Partnerships: The school prepares all students for future college, career, and life success by promoting engagement and providing impactful learning opportunities through meaningful partnerships with families, community, education, and industry organizations that strengthen student agency and readiness."
+      }
+    ],
+    "prior_plans": [],
+    "draft_state": {
+      "meta": {
+        "entry_mode": "I have a problem",
+        "seed_text": "Improve SLO usage across the school",
+        "source_proposal_id": null,
+        "started_at": "2026-05-29T06:29:44.364637"
+      },
+      "plan": {},
+      "milestones": [],
+      "phases": [],
+      "action_steps": [],
+      "success_criteria": [],
+      "feedback_channels": [],
+      "evidence_artifacts": [],
+      "review_events": [],
+      "communications": [],
+      "revision_rules": [],
+      "accreditation_standards": [],
+      "domain_alignment": {
+        "learner_outcomes_targeted": [],
+        "mission_areas_targeted": [],
+        "areas_for_improvement": [],
+        "stakeholder_impact": [],
+        "policies_established": [],
+        "policies_revised": []
+      },
+      "guiding_clauses": [],
+      "responsibilities": {
+        "division": [],
+        "position": []
+      }
+    }
+  },
+  "agent_response_raw": "{\"current_state\":\"Chiway-Repton School Xiamen has adopted seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — but they currently function more as a published list than as an operational instrument. The SLOs appear in orientation materials and on classroom walls, yet they are not consistently named in unit planning, not consistently surfaced in formative or summative assessment design, not consistently invoked in student-facing feedback or self-reflection routines, and not consistently used by divisional leadership when reviewing teaching practice or student work. The Confident outcome has the only published behavioral descriptor; the other six are single-word labels without shared classroom-level definitions, which means teachers across the bilingual program, the subject departments, the homeroom system, and the co-curricular program apply them inconsistently or not at all. Student data conversations, PLC agendas, and parent communications rarely cite an SLO as the lens through which a result is being interpreted, so the link from mission to daily practice is weak in evidence even where it is strong in intent.\",\"desired_state\":\"By the end of the 2025-2026 accreditation cycle, the seven SLOs are the school's working language for learning across all four framing audiences — schoolwide, teaching, student, and parent. Each SLO carries a shared, school-authored behavioral descriptor at the depth of the current Confident descriptor, written collaboratively by faculty and validated by leadership. Every department's unit plans name the one or two SLOs each unit advances, with at least one assessment artifact per unit that produces SLO-tagged evidence of student progress. Students use the SLO vocabulary in self-reflection at defined points in the year — minimally at term reporting and at portfolio review — and can name which SLOs a given piece of their work demonstrates. PLC cycles in every division open with an SLO frame and close with SLO-tagged evidence of student learning. Parent reporting at each reporting cycle includes an SLO-organized narrative section in addition to subject grades. Leadership reviews — classroom walkthroughs, work-sample reviews, and the annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 — use the SLOs as the organizing categories for what is being looked for and what counts as evidence.\",\"rationale\":\"WASC standard A1 requires that the school's mission be collectively understood and actively implemented across the school community, and the SLOs are the operational expression of Chiway-Repton's mission areas of Academic excellence, Caring and safe community, and Global citizenship; an SLO set that is published but not practiced leaves A1 underevidenced. Standard A4 requires data-driven continuous improvement, and without SLO-tagged evidence the school cannot show longitudinal progress against its own stated learner profile. Standards B1, B2, and B3 require curriculum, instruction, and assessment that respond to student needs and measure progress against shared outcomes — the SLOs are precisely those shared outcomes, and at present they do not consistently shape unit design, classroom practice, or assessment analysis. Standard C1 requires shared responsibility for student growth, which is hard to demonstrate when stakeholder groups — Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee — are not using a common vocabulary for what growth means. This work is timed for the 2025-2026 cycle because the school is entering the self-study window and because seven of the eight area-for-improvement domains touch SLO usage directly: Bilingual Environment (the Bilingual Communicators outcome), Curriculum and Learning (SLO-aligned unit and assessment design), Faculty PD and PLC (descriptor authoring and SLO-framed PLC cycles), School Culture (Compassionate, Responsible, and Engaged as lived norms), Student Data and Well-being (SLO-tagged evidence in data conversations), Community Involvement (SLO-organized parent reporting), and Resources and Tools (the templates and gradebook fields that carry SLO tagging). Acting now positions the school to enter the self-study with a year of operating evidence rather than a retrospective claim.\",\"student_impact_framing\":\"Students experience a school in which the seven learner outcomes are not posters but the actual language adults and peers use to describe learning. A student can name which SLOs a unit is advancing before the unit begins, can point to artifacts in their own work that demonstrate progress on specific SLOs, and can speak to their growth on each SLO in term reflections and portfolio reviews. Bilingual Communicators becomes legible in concrete language-use evidence across both Chinese-medium and English-medium settings rather than an aspiration tied only to language-class grades. Confident, Reflective, and Engaged become observable habits the student is supported to develop, with feedback that names the SLO it is strengthening. Compassionate and Responsible become operative norms in the homeroom and co-curricular program, recognized in real situations rather than awarded generically. Innovative becomes visible in tasks that explicitly invite it and in evidence the student themselves curates. Parents receive reporting that lets them see their child's growth as a learner along the school's stated outcomes, not only as a subject-grade aggregate, which gives families a shared vocabulary with the school for supporting growth at home.\",\"provenance\":\"This plan draws on the school's existing published SLO set (Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, Responsible), the existing behavioral descriptor for Confident as the model for the descriptor-authoring work, the school's stated mission areas (Academic excellence, Caring and safe community, Global citizenship), and the seven area-for-improvement domains the school has identified as priorities for this cycle. It is anchored to the WASC 2025-2026 accreditation standards, specifically A1 (Vision and Mission), A4 (Continuous Improvement), B1 (Curriculum), B2 (Teaching and Learning), B3 (Assessment and Data Analysis), and C1 (School Culture). It assumes the stakeholder groups already named in the school's plan structure — Administration / Leadership, Staff / Faculty, Students, Parents, Parent Committee, and Admissions Applicants — as the audiences for the SLO vocabulary and reporting. Operating evidence to be generated during the cycle includes the authored SLO descriptors, unit plans with SLO tagging, SLO-tagged assessment artifacts, PLC minutes opening and closing on SLO frames, classroom walkthrough notes organized by SLO, term and portfolio student reflections, and the SLO-organized section of parent reporting; these constitute the evidence base the self-study will cite.\"}\n",
+  "agent_response_parsed": {
+    "current_state": "Chiway-Repton School Xiamen has adopted seven Schoolwide Learner Outcomes — Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, and Responsible — but they currently function more as a published list than as an operational instrument. The SLOs appear in orientation materials and on classroom walls, yet they are not consistently named in unit planning, not consistently surfaced in formative or summative assessment design, not consistently invoked in student-facing feedback or self-reflection routines, and not consistently used by divisional leadership when reviewing teaching practice or student work. The Confident outcome has the only published behavioral descriptor; the other six are single-word labels without shared classroom-level definitions, which means teachers across the bilingual program, the subject departments, the homeroom system, and the co-curricular program apply them inconsistently or not at all. Student data conversations, PLC agendas, and parent communications rarely cite an SLO as the lens through which a result is being interpreted, so the link from mission to daily practice is weak in evidence even where it is strong in intent.",
+    "desired_state": "By the end of the 2025-2026 accreditation cycle, the seven SLOs are the school's working language for learning across all four framing audiences — schoolwide, teaching, student, and parent. Each SLO carries a shared, school-authored behavioral descriptor at the depth of the current Confident descriptor, written collaboratively by faculty and validated by leadership. Every department's unit plans name the one or two SLOs each unit advances, with at least one assessment artifact per unit that produces SLO-tagged evidence of student progress. Students use the SLO vocabulary in self-reflection at defined points in the year — minimally at term reporting and at portfolio review — and can name which SLOs a given piece of their work demonstrates. PLC cycles in every division open with an SLO frame and close with SLO-tagged evidence of student learning. Parent reporting at each reporting cycle includes an SLO-organized narrative section in addition to subject grades. Leadership reviews — classroom walkthroughs, work-sample reviews, and the annual self-study against WASC standards A1, A4, B1, B2, B3, and C1 — use the SLOs as the organizing categories for what is being looked for and what counts as evidence.",
+    "rationale": "WASC standard A1 requires that the school's mission be collectively understood and actively implemented across the school community, and the SLOs are the operational expression of Chiway-Repton's mission areas of Academic excellence, Caring and safe community, and Global citizenship; an SLO set that is published but not practiced leaves A1 underevidenced. Standard A4 requires data-driven continuous improvement, and without SLO-tagged evidence the school cannot show longitudinal progress against its own stated learner profile. Standards B1, B2, and B3 require curriculum, instruction, and assessment that respond to student needs and measure progress against shared outcomes — the SLOs are precisely those shared outcomes, and at present they do not consistently shape unit design, classroom practice, or assessment analysis. Standard C1 requires shared responsibility for student growth, which is hard to demonstrate when stakeholder groups — Administration / Leadership, Staff / Faculty, Students, Parents, and the Parent Committee — are not using a common vocabulary for what growth means. This work is timed for the 2025-2026 cycle because the school is entering the self-study window and because seven of the eight area-for-improvement domains touch SLO usage directly: Bilingual Environment (the Bilingual Communicators outcome), Curriculum and Learning (SLO-aligned unit and assessment design), Faculty PD and PLC (descriptor authoring and SLO-framed PLC cycles), School Culture (Compassionate, Responsible, and Engaged as lived norms), Student Data and Well-being (SLO-tagged evidence in data conversations), Community Involvement (SLO-organized parent reporting), and Resources and Tools (the templates and gradebook fields that carry SLO tagging). Acting now positions the school to enter the self-study with a year of operating evidence rather than a retrospective claim.",
+    "student_impact_framing": "Students experience a school in which the seven learner outcomes are not posters but the actual language adults and peers use to describe learning. A student can name which SLOs a unit is advancing before the unit begins, can point to artifacts in their own work that demonstrate progress on specific SLOs, and can speak to their growth on each SLO in term reflections and portfolio reviews. Bilingual Communicators becomes legible in concrete language-use evidence across both Chinese-medium and English-medium settings rather than an aspiration tied only to language-class grades. Confident, Reflective, and Engaged become observable habits the student is supported to develop, with feedback that names the SLO it is strengthening. Compassionate and Responsible become operative norms in the homeroom and co-curricular program, recognized in real situations rather than awarded generically. Innovative becomes visible in tasks that explicitly invite it and in evidence the student themselves curates. Parents receive reporting that lets them see their child's growth as a learner along the school's stated outcomes, not only as a subject-grade aggregate, which gives families a shared vocabulary with the school for supporting growth at home.",
+    "provenance": "This plan draws on the school's existing published SLO set (Bilingual Communicators, Compassionate, Confident, Engaged, Innovative, Reflective, Responsible), the existing behavioral descriptor for Confident as the model for the descriptor-authoring work, the school's stated mission areas (Academic excellence, Caring and safe community, Global citizenship), and the seven area-for-improvement domains the school has identified as priorities for this cycle. It is anchored to the WASC 2025-2026 accreditation standards, specifically A1 (Vision and Mission), A4 (Continuous Improvement), B1 (Curriculum), B2 (Teaching and Learning), B3 (Assessment and Data Analysis), and C1 (School Culture). It assumes the stakeholder groups already named in the school's plan structure — Administration / Leadership, Staff / Faculty, Students, Parents, Parent Committee, and Admissions Applicants — as the audiences for the SLO vocabulary and reporting. Operating evidence to be generated during the cycle includes the authored SLO descriptors, unit plans with SLO tagging, SLO-tagged assessment artifacts, PLC minutes opening and closing on SLO frames, classroom walkthrough notes organized by SLO, term and portfolio student reflections, and the SLO-organized section of parent reporting; these constitute the evidence base the self-study will cite."
+  },
+  "parse_note": null,
+  "schema_validation": "passed",
+  "draft_changed": true
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Never use language like 'this fixes…', 'this ensures…', 'this guarantees…'. Speak to aims and intentions; commits document attempts, not certainties.",
+  "enforcement": "review",
+  "severity": "error"
+}

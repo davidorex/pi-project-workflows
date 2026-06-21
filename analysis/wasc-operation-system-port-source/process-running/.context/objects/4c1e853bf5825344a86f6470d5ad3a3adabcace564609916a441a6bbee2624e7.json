@@ -1,0 +1,5 @@
+{
+  "title": "T5-surfaced gap closure -> T6 capstone",
+  "status": "proposed",
+  "description": "Close the eight gaps the T5 transposition audit surfaced (FGAP-034..041), each as a task with binary criteria, BEFORE the T6 capstone run (TASK-043) so T6 is one clean full-sequence run. Three FGAP-033-family in-execution gates: three-view measurement (FGAP-037), review-cadence (FGAP-038), bilingual strand (FGAP-039). Two transposition-completion generation builds: front-load precursor identification (FGAP-041), decision-requests (FGAP-040, in-draft coverage-class per DEC-0005). Three infra/enforcement-uniformity fixes: apply_from_substrate gate (FGAP-034), gap-reason scan (FGAP-035), decompose dedup table (FGAP-036). Each task addresses_gap its FGAP; TASK-043 (T6) depends on all eight."
+}

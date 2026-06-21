@@ -1,0 +1,5 @@
+{
+  "description": "Update phases/US-STATUS.md after every commit that enables a user story (fill `Vivifying commit` cell, change `Status` from `pending` to `enabled`). Flip to `vivified` only after end-to-end browser exercise during the post-Phase-15 verification pass.",
+  "enforcement": "manual",
+  "severity": "error"
+}

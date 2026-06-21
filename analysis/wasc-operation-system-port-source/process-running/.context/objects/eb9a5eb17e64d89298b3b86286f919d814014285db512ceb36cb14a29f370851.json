@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "FGAP-015 fixed: added autoescape=False to the Context(...) at the 4 workshop prompt-render call-sites (render.py:90, render_from_substrate.py:109, verify-render-parity.py:145+149). Parser, snippet/substrate bodies, and production ai/models/llm.py untouched (DEC-40 + DEC-41). Probe: a value with ' & < > \" now renders literally (autoescape ON gave entities). Live --fresh re-run advanced spec 6 -> spec 7: propose-assignments applied on the literal 'Principal's Office (PO)' (zero &#x27; entities in any output). verify-render-parity 14/14 + both cross-checks PASS, with both parity renders AND the run render autoescape-off (gate tests reality). Separate-agent adversarial audit Total findings: 0 (scope = exactly 4 lines; parser byte-unchanged; new spec-7 halt confirmed a distinct empty-catalogue class). Full gate GREEN: ruff + ruff format --check, mypy . 318/0, pytest 2008, make test-js 48/0. Run then halts at spec 7 (propose-responsibilities) on a grounding/parser mismatch -> FGAP-016, next iteration.",
+  "timestamp": "2026-06-07T08:00:00Z",
+  "criteria_results": [
+    {
+      "criterion": "A catalogue value containing an HTML-special character renders literally in the prompt; the agent emits the exact catalogue value.",
+      "status": "passed"
+    },
+    {
+      "criterion": "On a fresh run, no spec halts because an emitted catalogue value was HTML-entity-escaped; the run advances past the spec that previously hit it.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The workshop snippet and substrate renders remain byte-identical (parity 14/14), and the parity gate renders the same way the run does.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing spec regresses; the parser is unchanged.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "T4 -- Root-cause why the full pipeline concentrates ownership more than the isolated propose-assignments run (assembled 3 owners/50% vs isolated 5/33%, VER-031) and bring assembled-draft distribution back to a healthy spread, with the distribution discipline self-checked during the run. EXPLORE-FIRST: the assembled-vs-isolated cause is unverified (FGAP-033 secondary regression).",
+  "acceptance_criteria": [
+    "The cause of the assembled-run ownership concentration, versus the isolated run, is recorded with the evidence that distinguishes the two execution contexts.",
+    "During generation of the assignment-bearing step, the step's self-check fails when one division owns more than 50% of steps or fewer than two divisions own any, and passes otherwise -- demonstrated on the previously-concentrated context.",
+    "Over a full assembled draft, more than one division owns steps and no single division owns more than 50% of them, confirmed by the whole-draft distribution check.",
+    "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the coverage and review-cadence checks stay passing."
+  ]
+}

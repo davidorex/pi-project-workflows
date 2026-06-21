@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "description": "FGAP-036: _GB_TABLE drifted from live snippet grounding_sections via 3 lockstep misses across 3 commits, STOPing the decompose reconstruction gate. Re-sync the table to the live snippet sets so the gate reconstructs a clean bijection. Live dispatch + render parity unaffected (reconstruction-tool only).",
+  "acceptance_criteria": [
+    "python prompt-workshop/dispatch/decompose.py exits 0 with GATE 14/14: every computed grounding-block group over the current snippet corpus matches exactly one table row and every table row is hit by exactly one computed group (zero computed-without-row, zero row-without-computed).",
+    "No previously-passing check regresses: the render-parity gate passes 14/14 and the full project gate is green."
+  ]
+}

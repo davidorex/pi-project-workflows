@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "Re-audit ACCEPT (separate agent, zero blocking/major) + orchestrator load/list confirmation (exit 0); smoke 7/7 green.",
+  "timestamp": "2026-06-05T00:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "F1: dead --writer/resolveIdentity removed; now exit-2 unknown flag",
+      "status": "passed"
+    },
+    {
+      "criterion": "No regression: list/run/auth-gate/fail->status->resume-skips-completed/auto-resume/--input modes/exit codes 0-1-2",
+      "status": "passed"
+    },
+    {
+      "criterion": "Agent-step pre-flight detects top-level + nested (loop/parallel/forEach); command-only skips it",
+      "status": "passed"
+    },
+    {
+      "criterion": "--json envelope faithful to WorkflowResult; stdout single-line pure",
+      "status": "passed"
+    },
+    {
+      "criterion": "F2: pause-step behavior documented (header + --help)",
+      "status": "passed"
+    }
+  ]
+}

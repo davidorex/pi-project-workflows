@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY one key:\n- \"criteria\": a JSON array of 3 to 6 elements. Each element is an object describing one success criterion:\n  - \"text\": the criterion as a concrete, observable statement (required, non-empty).\n  - \"verification_kind\": exactly one of \"inspection\", \"judgment\", or \"target\" (required).\n  - For a \"target\" criterion ONLY, also include:\n    - \"target_value\": a number (the threshold).\n    - \"target_unit\": a non-empty string naming what is measured.\n    - \"baseline\": a number (the current level).\n  - For an \"inspection\" or \"judgment\" criterion, OMIT \"target_value\", \"target_unit\", and \"baseline\" entirely (or set them to null).\n\nNo extra keys, no nested objects beyond this shape, no markdown.\n"
+}

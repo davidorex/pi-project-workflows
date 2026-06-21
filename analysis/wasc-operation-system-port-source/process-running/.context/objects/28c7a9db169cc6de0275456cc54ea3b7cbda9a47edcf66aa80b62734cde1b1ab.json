@@ -1,0 +1,9 @@
+{
+  "status": "planned",
+  "description": "FGAP-042: extend the whole-draft prose scanner (check_draft._iter_prose_fields) to walk domain_alignment -- the targeted-row rationale AND the deferred-gap reason -- so domain_alignment prose enters the whole-draft language-WARN scan, completing the scanner's stated 'every prose string in the draft' contract. Workshop-only (check_draft.py).",
+  "acceptance_criteria": [
+    "The whole-draft prose scanner yields domain_alignment prose -- both the targeted-row rationale and the deferred-gap reason -- so they enter the whole-draft language-WARN scan; demonstrated.",
+    "A banned process-method term or scaffolding label placed in a domain_alignment rationale or reason is surfaced by the whole-draft scan; demonstrated.",
+    "No previously-passing check moves from passing to failing: the parity gate passes 14/14, the project gate is green, and the existing whole-draft checks stay passing."
+  ]
+}

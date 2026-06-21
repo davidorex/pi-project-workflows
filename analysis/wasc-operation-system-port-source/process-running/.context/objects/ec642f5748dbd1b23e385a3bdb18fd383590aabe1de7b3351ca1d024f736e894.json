@@ -1,0 +1,18 @@
+{
+  "title": "Three-view measurement (parent/stakeholder track) is neither produced nor enforced -- only student + staff present",
+  "status": "closed",
+  "package": "prompt-workshop/shared/preamble.md (criterion 7) + propose-domain-alignment/success-criteria/feedback-channels generation + no per-spec self-check",
+  "description": "R4 (preamble criterion 7; sim-revised-frame.md) mandates measurement from THREE points of view -- student outcomes, staff/adult practice, parent/stakeholder. The T5 audit determined the assembled draft delivers student + staff but the PARENT/STAKEHOLDER track is wholly absent (no parent feedback channel, no parent-awareness success criterion, no parent review event) -- parents appear only as a one-off communication audience. The discipline is a generation contract (criterion 7) but is NOT enforced by any per-spec in-execution self-check nor a post-hoc check, so the missing third view surfaced only on audit -- the same class as the coverage regression (FGAP-033): a stated whole-draft invariant with no in-execution gate.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "feedback_channels = Students / Staff-Faculty / Administration-Leadership only (no parent/stakeholder); success_criteria carry no parent-awareness measure; communications[3] is the only parent mention (a year-end note, not a measure)"
+    },
+    {
+      "file": "prompt-workshop/shared/preamble.md",
+      "reference": "criterion 7 states the three-view requirement (generation contract) but no self_check evaluator enforces it"
+    }
+  ],
+  "impact": "Generated plans can omit the parent/stakeholder measurement track while appearing complete; R4's three-view discipline is honored only for 2 of 3 views. Analogous to the coverage/distribution regressions -- needs a generation reinforcement + an in-execution self-check.",
+  "proposed_resolution": "CLOSED by TASK-044 / VER-039 / commit 429878f: three-view measurement is now a generation contract (snippet 11 directive + the agent measurement_views map: 3 fixed view-ids -> channel index OR {gap}) + a per-spec in-execution self-check (self_check.py three_view evaluator; structural fail -> apply exit 3, not saved) + a whole-draft check (check_draft.check_three_view, --strict). Production-safe optional carrier: a new optional AssistResult.measurement_views field (prefill stays the channels list; an absent key tolerated -> None, no raise; the prompt-template migration to production PromptTemplate is the later ai/00NN bridge). [Original plan: add a three-view per-spec in-execution self-check on the measurement-bearing spec, mirroring the T3 coverage pattern.]"
+}

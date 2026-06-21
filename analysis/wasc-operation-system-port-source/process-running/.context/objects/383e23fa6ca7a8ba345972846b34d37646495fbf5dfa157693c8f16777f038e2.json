@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "C1 Flag model on Plan. Net-new plans/models/flag.py: Flag FK Plan (CASCADE, related_name flags), element_path, message, created_by_spec, created_at (auto_now_add), verdict (nullable, unconstrained), severity (FlagSeverity TextChoices must-fix/should-review/informational in plans/choices.py), is_resolved (default False); re-exported in plans/models/__init__. Migration 0048_flag (dep 0047) applied to the dev DB. New plans/tests/test_flag.py (10 tests). Separate-agent adversarial audit Total findings: 0 (independent probes: CASCADE delete, nullable verdict, severity full_clean rejection; noqa DJ001 matches verification.py:78 + action.py:744 precedents; message correctly not in translation.py; scope clean). Full gate GREEN: makemigrations --check clean, ruff check + format, mypy . 317/0, pytest 1991, make test-js 42/0; showmigrations shows 0048_flag [X].",
+  "timestamp": "2026-06-06T21:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "A plan can carry any number of persisted flags, and they remain retrievable after a reload.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each flag records the element it addresses, a message, the spec that produced it, its creation time, its verdict, and whether it is resolved (unresolved by default).",
+      "status": "passed"
+    },
+    {
+      "criterion": "A flag's severity is exactly one of must-fix, should-review, or informational; any other value is rejected.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Deleting a plan deletes its flags; no flag outlives its plan.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

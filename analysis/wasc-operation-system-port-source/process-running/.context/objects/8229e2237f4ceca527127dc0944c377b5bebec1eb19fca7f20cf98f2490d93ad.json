@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "Accumulation seam sub-slice 2 (simple-formset fold): a pure server-side function (planner/services.py, sibling to fold_form_step_prefill) folding a parsed formset-step AssistResult.prefill -- a list[dict] of per-row field values -- into the flat draft_state as {prefix}-{i}-{field} keys, where prefix == the spec's target_step (B1 criteria / D1 milestones / F1 steps / C1 feedback / A2 standards). REPLACE semantics (re-running a spec replaces its section, mirroring applyFormsetPrefill): clears the prior direct-row keys for that prefix before writing, WITHOUT clobbering management-form keys ({prefix}-TOTAL_FORMS etc.) or nested-child keys (e.g. criteria-{i}-measurement-...). Management-form counts are deferred (build_grounding reads by regex via _draft_state_row_count, not TOTAL_FORMS). Guards a non-list prefill with a clear error. Addresses FEAT-010 / STORY-013; built through the verify-gated harness (SLICE=fold_formset).",
+  "acceptance_criteria": [
+    "Folding a list[dict] formset prefill with a given prefix sets draft_state['{prefix}-{i}-{field}'] = value for each row i and each field in that row.",
+    "REPLACE: folding a new prefill for a prefix clears the prior direct-row keys for that prefix (including stale higher-index rows from a larger prior prefill), and an empty-list prefill leaves no direct rows for that prefix.",
+    "REPLACE does NOT delete or alter management-form keys ({prefix}-TOTAL_FORMS / -INITIAL_FORMS etc.) nor nested-child keys that share the prefix (e.g. criteria-{i}-measurement-...); those are preserved untouched.",
+    "The folded draft_state is consumable: _draft_state_row_count(grounding, prefix) returns len(prefill), and for milestones _draft_state_milestone_improvement_types reads the folded improvement_type codes in row order; it round-trips through the PlanDraftState store.",
+    "The fold is pure, imports no retired-workshop code, and raises a clear domain error on a non-list prefill (mirroring the form-fold's dict guard).",
+    "The whole-project gate stays green and the context cascade validates; nothing pre-existing breaks."
+  ]
+}

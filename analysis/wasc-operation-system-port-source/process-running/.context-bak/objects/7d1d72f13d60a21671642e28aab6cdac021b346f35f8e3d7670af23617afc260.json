@@ -1,0 +1,5 @@
+{
+  "description": "Never commit `data/school-content-intake-2026-05-26.md`. User-owned working surface; appears in `git status` as Modified; orchestrator never stages it.",
+  "enforcement": "manual",
+  "severity": "error"
+}

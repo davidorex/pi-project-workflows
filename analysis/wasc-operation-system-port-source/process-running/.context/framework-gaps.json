@@ -1,0 +1,1364 @@
+{
+  "gaps": [
+    {
+      "title": "Catalogue-gate false-rejects DB-enumerated entities (completeness + variant tolerance + school short form)",
+      "status": "closed",
+      "package": "planner",
+      "description": "The free-text catalogue-gate (planner/_freetext_audit.py CatalogueUnion/build_catalogue_union/admits) false-rejects values that ARE enumerated in the school DB; it must reject only genuine fabrications. Three modes (Explore live-probe, current-source-verified): (a) COMPLETENESS - framing_vocabularies and priority_tiers are emitted by build_grounding (SECTION_KEYS, builders grounding.py:111/:118) but absent from the union src tuple (_freetext_audit.py:653-668), so their labels (e.g. Student-focused, High) are false-rejected; both models live (school/models/framing.py:26, priority_tier.py:23, no delete migration). (b) VARIANT - admits is exact union_casefold membership (+ -es/-s plural strip) with no hyphen/space/underscore/case collapse, so any formatting variant of any enumerated entity is false-rejected. (c) SHORT FORM - the school brand stem (Chiway-Repton, a token-prefix of Chiway Repton School Xiamen) is false-rejected. Fix (global, pure code, no migration, planner/_freetext_audit.py only): pull the two sections into the union; add a _collapse_normalize helper + a precomputed union_collapsed set (every entry collapse + every >=2-token contiguous prefix of the school name/slug); admits gains one union_collapsed membership check. Preserve fabrication rejection (a name whose collapse matches no entry/prefix still rejects). DEC-45 stands: MissionArea deleted, Caring not enumerated and correctly rejected; no sub-token matching. Surfaced in FEAT-002 apply-smoke; user directive: think globally, no enumerated-from-DB entity is rejected.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/_freetext_audit.py",
+          "reference": "school-improvement-plans/planner/_freetext_audit.py:529-551 (admits); :653-668 (union src tuple); :486-488 (_normalize_for_catalogue)"
+        }
+      ],
+      "impact": "DB-enumerated entities (the school name + its short form, framing_vocabularies, priority_tiers, and any catalogued value's formatting variant) were false-rejected as fabrications, blocking legitimate prose in the create-plan draft.",
+      "proposed_resolution": "Resolved (TASK-013 / VER-003): framing_vocabularies + priority_tiers pulled into the union + PhraseMatcher; a _collapse_normalize helper + a precomputed union_collapsed (every entry collapse + every >=2-token contiguous prefix of the school name/slug); admits gains one union_collapsed membership check. Fabrications still reject. Committed on main.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-001",
+      "oid": "9b3bf0c36f846272143dc10b4fe2b685",
+      "content_hash": "61024a1effe317ced3ae4d9c065ec430e89264d4f8435387d97d4d0797c7d56c"
+    },
+    {
+      "title": "FLAG-MODEL A1: surface DEC-44 verdicts (catalogue-variant/ordinary-prose), not just fabricated",
+      "status": "closed",
+      "package": "planner",
+      "description": "The DEC-44 LLM fabrication validator (planner/_llm_fabrication_validator.py:83 validate_candidates) already classifies each candidate proper-name span into fabricated | catalogue-variant | ordinary-prose (the system prompt defines all three at :68 and :198), but :144 filters the return to verdict==fabricated only, discarding catalogue-variant and ordinary-prose. The three-valued validation model needs the verdict propagated: catalogue-variant -> FLAG (admit-with-annotation, not reject), ordinary-prose -> admit, fabricated -> reject-or-flag. Change validate_candidates to return (span, verdict) pairs so callers can route by verdict. Verified live + wired (called from _freetext_audit.py:972). Atomic gap in the three-valued (accept/flag/hard-reject) flagging model.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/_llm_fabrication_validator.py",
+          "reference": "school-improvement-plans/planner/_llm_fabrication_validator.py:83-145"
+        }
+      ],
+      "impact": "The validator already distinguishes catalogue-variant and ordinary-prose from fabricated, but those verdicts are discarded — so a legitimate paraphrase/variant cannot be flagged-and-admitted, and the three-valued model has no verdict to route on.",
+      "proposed_resolution": "Change validate_candidates to return (span, verdict) pairs so callers route catalogue-variant -> flag, ordinary-prose -> admit, fabricated -> reject-or-flag.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-002",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-05T09:45:00Z",
+      "oid": "1bddec967e22c7e0f51e2a3b143ab222",
+      "content_hash": "454dec02ee4403fbfb3f93c7374f8c4ed75ce0219c86e87fdff01645a91235b4"
+    },
+    {
+      "title": "FLAG-MODEL A2: audit_prefill returns flags for catalogue-survivors instead of raising; structural/FK/invariant stay hard-reject",
+      "status": "closed",
+      "package": "planner",
+      "description": "audit_prefill (planner/_freetext_audit.py:1320-1338) currently raises ValueError on the first non-empty free-text survivors list, which the parsers propagate as a hard reject (apply exits non-zero, workflow halts). The three-valued model needs this single class - free-text proper-name survivors from the catalogue gate - to become a FLAG (admit-with-annotation) rather than a hard reject. audit_prefill should return a flags list (path, span, verdict from A1, reason) instead of raising. This is the load-bearing HARD/SOFT PARTITION: ONLY free-text catalogue-survivors become flags; every structural failure (unparseable JSON, missing/extra keys, wrong types, gates), coded-FK failure (improvement_type/planning_method/division/position/standard/frequency/timing/kind/enum), index/range check, and cross-field invariant (type-method, per-kind date rules, target-iff-kind, verbatim statement match) STAYS a hard reject (data unmergeable). FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes which 12 of 14 specs/fields are free-text (flag-eligible); B2/F2 have none. Atomic gap; depends on A1.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/_freetext_audit.py",
+          "reference": "school-improvement-plans/planner/_freetext_audit.py:1301-1338"
+        }
+      ],
+      "impact": "audit_prefill raises on the first free-text survivor, so a single catalogue-survivor hard-halts the whole apply/sequence instead of becoming a reviewable flag.",
+      "proposed_resolution": "audit_prefill returns a flags list (path, span, verdict, reason) for free-text catalogue-survivors; structural/FK/invariant/index failures stay hard-reject. FREETEXT_SELECTORS_BY_SPEC scopes the 12 flag-eligible specs.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-003",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-05T10:30:00Z",
+      "oid": "7c2ab010117def98a9515b25bd3addce",
+      "content_hash": "652c8a0595f9a28f0e3072340411738c394bca5a9d2a12665c8cf8b43cad10a7"
+    },
+    {
+      "title": "FLAG-MODEL A3: AssistResult gains a flags field; the 12 free-text parsers populate it",
+      "status": "closed",
+      "package": "planner",
+      "description": "AssistResult (planner/assist.py:33-57) carries only prefill + optional note. Add an optional flags field (list of {path, span, verdict, severity, message}). The 12 free-text parsers in planner/specs.py (all except B2 bind-measurement-channels and F2 propose-assignments, per FREETEXT_SELECTORS_BY_SPEC) currently call audit_prefill expecting it to raise; they must instead collect the flags it returns (A2) and attach them to the returned AssistResult, while still raising on the hard-reject classes. parse_narrative (A1) returns a bare dict today, so the narrative parser also needs the AssistResult(+flags) shape or an equivalent carrier. Bare-return parsers normalize through views.py / apply, so a flags channel must thread there too (see C2/B2). Atomic gap; depends on A2.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/assist.py",
+          "reference": "school-improvement-plans/planner/assist.py:33-57; planner/specs.py (12 audit_prefill call sites)"
+        }
+      ],
+      "impact": "AssistResult cannot carry flags, so the parsers have nowhere to return soft-flag annotations to the apply / UX layers.",
+      "proposed_resolution": "Add an optional flags field to AssistResult; the 12 free-text parsers collect audit_prefill flags and attach them (raising only on hard-reject classes); the bare-return narrative parser gains the same carrier.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-004",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T11:30:00Z",
+      "oid": "e57b06e65ba8467be6009d12ca12e804",
+      "content_hash": "2aa60a20be5676277197773dfc9b88a455e5e70b0aee267f2d240beb2ee09768"
+    },
+    {
+      "title": "FLAG-MODEL B1: workshop draft gains a flags channel (preserved across the chain, skipped by flatten)",
+      "status": "closed",
+      "package": "prompt-workshop",
+      "description": "The workshop draft (_EMPTY_DRAFT, prompt-workshop/dispatch/_workshop.py:215-243) has 15 top-level keys (meta/plan/milestones/.../responsibilities) and NO annotation channel. Add a top-level flags channel. Two threading requirements: (1) the 14 MERGE_RULES (apply.py:51-215) each mutate one draft section and none touch flags - they must PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (e.g. a setdefault(flags,[]) guard at the apply entry, or per-rule preservation); (2) flatten_draft_for_grounding (_workshop.py:466-584) must SKIP flags from the production draft_state projection exactly as it already skips meta (:577-582) - flags are workshop/review annotation, not a form field collectDraftState emits. Atomic gap; pairs with B2.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/prompt-workshop/dispatch/_workshop.py",
+          "reference": "school-improvement-plans/prompt-workshop/dispatch/_workshop.py:215-243,466-584; apply.py:51-215"
+        }
+      ],
+      "impact": "The workshop draft has no annotation channel, so flags cannot accumulate across the 14-spec draft-after chain.",
+      "proposed_resolution": "Add a top-level flags channel to _EMPTY_DRAFT; MERGE_RULES preserve it across the chain; flatten_draft_for_grounding skips it (as it skips meta).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-005",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T17:30:00Z",
+      "oid": "2e7ccb9051595e1110c843eb7b604463",
+      "content_hash": "fee20ff5115c56dc5e992584e0fb2e3f9f5d1d383d9191510273ce68466e2d77"
+    },
+    {
+      "title": "FLAG-MODEL B2: apply records flags + exits 0 (not 1) on soft-flag; capture/result envelope carry flags",
+      "status": "closed",
+      "package": "prompt-workshop",
+      "description": "Both apply paths hard-halt on the parser today: apply.py:295-300 and apply_from_substrate.py:113-121 catch any parse exception and return 1 (workflow halts at that step; run_workflow.mjs:478 treats exit 1 as halt, exit 0 as continue). For a soft-flag outcome (A2/A3 - the parser returned prefill + flags, no hard raise), apply must: merge the prefill, record the flags into the draft flags channel (B1), set the capture/envelope validation status to flagged (apply.py capture :346-361 hardcodes schema_validation:passed; apply_from_substrate result envelope :143-152 has status:merged), include the flags in the emitted JSON, and EXIT 0 so the 14-spec sequence runs to completion accumulating flags. Hard rejects still exit 1 (halt). THIS IS THE ACCELERATION: the sequence completes in one pass producing a whole draft + a flag batch, instead of halting at the first catalogue-survivor. Atomic gap; depends on A3, B1.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/prompt-workshop/dispatch/apply.py",
+          "reference": "school-improvement-plans/prompt-workshop/dispatch/apply.py:295-361; apply_from_substrate.py:113-152; run_workflow.mjs:478"
+        }
+      ],
+      "impact": "Both apply paths exit non-zero on any parser raise, halting the sequence at the first catalogue-survivor — preventing a complete draft from one pass.",
+      "proposed_resolution": "On a soft-flag return (prefill + flags), merge, record flags into the draft channel, mark the capture/envelope flagged, emit flags, and exit 0 (hard rejects still exit 1) so the sequence completes accumulating flags.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-006",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T20:30:00Z",
+      "oid": "72d8d78a6c3ae386719a2da1b60badfa",
+      "content_hash": "898110f68d319e623ae037c907bfaaecfb5e87b7c58651e4ee002ad3737aa98e"
+    },
+    {
+      "title": "FLAG-MODEL C1: a Flag model on Plan (net-new) to persist human-review annotations",
+      "status": "closed",
+      "package": "plans",
+      "description": "There is NO flag/annotation model in production (verified: no class Flag in plans/models/; ReviewEvent/ReviewEventInput/RevisionRule are the plans built-in review loop, and ActionStepImpediment is orthogonal per services.py - none are draft-element validation annotations). Net-new: a Flag model FK to Plan (CASCADE), carrying element_path (e.g. criteria-1-measurement-0, matching the formset-row addressing collectDraftState/_formset.html use), severity (must_fix | should_review | informational), message, verdict (from A1), is_resolved (default False), created_by_spec, created_at. This is the production-side persistence the workshop draft flags channel (B1) maps onto when the orchestration trio (US-LLM-23/24/25, currently UNBUILT) lands. Requires a DB migration. Atomic gap; prerequisite for C2/C3.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/plans/models/",
+          "reference": "school-improvement-plans/plans/models/ (net-new Flag model + migration)"
+        }
+      ],
+      "impact": "No production model persists per-element review flags, so flags surfaced at generation cannot be carried to the plan for human resolution.",
+      "proposed_resolution": "Net-new Flag model FK to Plan (element_path, severity, message, verdict, is_resolved, created_by_spec, created_at) + migration.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-007",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T21:30:00Z",
+      "oid": "6238e07256229aa44386bdfe092c55a7",
+      "content_hash": "24e11b6f39d4b4563e1a73f887cf040b505d1aa6045f11e9c63454811ce8ae50"
+    },
+    {
+      "title": "FLAG-MODEL C2: assist response carries flags; client renders inline badges + resolution UX",
+      "status": "closed",
+      "package": "planner",
+      "description": "AssistStreamView (planner/views.py:404) streams SSE; the result frame (:506) normalizes AssistResult to {prefill, note}; the error frame (:508) carries {error}. The client (planner/static/wizard/js/ai-assist.js) applies prefill DIRECTLY on the result frame (no approval gate) and shows event:error in the status line. For the three-valued model: (1) views.py must include the parser flags (A3) in the result-frame payload alongside prefill/note; (2) ai-assist.js must route a flags payload to attach per-element annotations to the affected .planner-fs-row rows (_formset.html:15/30/45 carry data-row index) - a badge/highlight; (3) a flag-resolution affordance per flagged element: accept (keep + acknowledge), replace (pick a catalogued value), or request-catalogue-addition (admin task). This is the DISC-30/DISC-31 UX-layer closure (admin sees an actionable signal, not event:error). All net-new. Atomic gap; depends on A3 (+ C1 if resolution persists to the Flag model).",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/views.py",
+          "reference": "school-improvement-plans/planner/views.py:404-513; planner/static/wizard/js/ai-assist.js; planner/templates/planner/_formset.html"
+        }
+      ],
+      "impact": "The assist response and client apply prefill directly with no flag surfacing, so a school admin sees an opaque event:error instead of an actionable per-element review signal.",
+      "proposed_resolution": "views.py includes flags in the result frame; ai-assist.js renders per-row badges on .planner-fs-row; a flag-resolution affordance (accept / replace / request-catalogue-addition) per flagged element.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-008",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T23:30:00Z",
+      "oid": "0c1881f893368be1badd9cb6984e0c4b",
+      "content_hash": "e62d1b15b80de92c31575f1f68d74c3a81460d46e739d2947ac3c960afa3d5cd"
+    },
+    {
+      "title": "FLAG-MODEL C3: promotion-gate predicate - zero unresolved must-fix flags",
+      "status": "closed",
+      "package": "plans",
+      "description": "_check_promotion_gates (plans/services.py:98-203) aggregates all promotion predicates into a failures list and is invoked by advance_plan_status (:206) only on the transition to Lifecycle.ACTIVE (proposed->active). It currently checks no flags (no Flag model exists). Add a predicate: if the Plan has any Flag with severity=must_fix and is_resolved=False, append a failure (block promotion until resolved/accepted). This is the contract shift the three-valued model implies: enforcement moves from generation-time hard-reject to promotion-time flag-resolution, so the DEC-29 promotion-ready predicate becomes zero-unresolved-must-fix-flags. Depends on C1 (Flag model). Atomic gap.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/plans/services.py",
+          "reference": "school-improvement-plans/plans/services.py:98-225"
+        }
+      ],
+      "impact": "The promotion gate cannot block on unresolved flags, so a draft with unreviewed must-fix flags could be promoted.",
+      "proposed_resolution": "_check_promotion_gates gains a predicate: any Plan Flag with severity=must_fix and is_resolved=False blocks promotion to ACTIVE.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-05T08:40:00Z",
+      "id": "FGAP-009",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T00:30:00Z",
+      "oid": "dd530a2e54f418db2af73c074910ef7d",
+      "content_hash": "d0db1668335ff69b16a98f9462fb311030c1b762266a5c61069f69b13897e769"
+    },
+    {
+      "title": "prompt-workshop/dispatch is outside the standing gate + carries pre-existing ruff/mypy debt",
+      "status": "identified",
+      "package": "prompt-workshop",
+      "description": "prompt-workshop/dispatch/ (the workshop bridge: _workshop.py, apply.py, apply_from_substrate.py, render.py, render_from_substrate.py, sequence.py, decompose.py, verify-render-parity.py) sits at repo-root, OUTSIDE the school-improvement-plans/ rootdir where the standing gate is configured (pyproject [tool.ruff]/[tool.mypy]/[tool.pytest], Makefile lint/typecheck/test, CI test.yml). So `uv run ruff check` / `uv run mypy .` / `uv run pytest` never cover the dispatch dir; FEAT-002 gated it only via a one-shot manual verify-render-parity.py. Pointing the gate at the dir (verified by running): `ruff check ../prompt-workshop/dispatch` -> 4 errors (decompose.py:190 E501; :267/:348/:349 E741 ambiguous `l`); `mypy ../prompt-workshop/dispatch` -> real errors incl. apply.py:294 Unexpected keyword argument school/grounding [call-arg] + unused-ignore across siblings, and the dir is a PEP-420 namespace pkg mypy can't resolve without mypy_path. B1 (FGAP-005) brings ONLY _workshop.py into the standing gate (via mypy_path + a sibling-scoped ignore override + a ruff line); this FGAP is the dir-wide closure.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/decompose.py",
+          "reference": ":190 E501; :267/:348/:349 E741 (ruff)"
+        },
+        {
+          "file": "prompt-workshop/dispatch/apply.py",
+          "reference": ":294 call-arg Unexpected keyword argument school/grounding (mypy)"
+        },
+        {
+          "file": "school-improvement-plans/pyproject.toml",
+          "reference": "[tool.ruff]/[tool.mypy]/[tool.pytest] rootdir = school-improvement-plans; dispatch dir uncovered"
+        }
+      ],
+      "impact": "Workshop dispatch code (the workshop<->production bridge per DEC-41) can regress lint/type without the standing gate catching it -- a skippable-manual-check fragility (automate-don't-human-remind). B2 (FGAP-006) + future workshop work edit these siblings; they need standing-gate coverage.",
+      "proposed_resolution": "Bring the whole prompt-workshop/dispatch dir into the standing gate: fix decompose.py's 4 ruff errors; fix or correctly-ignore apply.py's real type errors + sibling unused-ignores; settle the mypy namespace-resolution (mypy_path + per-module config) so the whole dir type-checks; add `ruff check ../prompt-workshop/dispatch` + dir-wide mypy to Makefile lint/typecheck + CI. Run through the canonical pipeline.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-06T16:00:00Z",
+      "id": "FGAP-010",
+      "oid": "6711e75a0b20cf902f597d58c196b2be",
+      "content_hash": "838f4d0c1fa9cd6eda0c4df9a60042422bd89f81a7357d1a90f2c359ebe50356"
+    },
+    {
+      "title": "apply.py mypy debt (un-suppressed): get_parse_function's Callable type omits school/grounding kwargs -> 2 call-arg + 1 unused-ignore; gate RED",
+      "status": "closed",
+      "package": "prompt-workshop",
+      "description": "The B1 negligence-suppression (pyproject [[tool.mypy.overrides]] module=['dispatch.apply'] ignore_errors=true) has been REMOVED, re-exposing apply.py's real mypy errors to the standing `mypy .`: (1) apply.py:294 `parse_fn(response_text, school=school, grounding=grounding)` produces 2 `call-arg` errors (Unexpected keyword argument 'school' / 'grounding') because `parse_fn = get_parse_function(args.spec_key)` (prompt-workshop/dispatch) returns a Callable whose type does NOT declare the school/grounding keyword params -- although every concrete parser accepts `*, school=None, grounding=None` and it works at runtime (a typing imprecision, not a runtime bug); (2) apply.py:268 carries an unused `# type: ignore`. With the override gone, `mypy .` is RED (3 errors / 314 files), so the standing gate + the PreToolUse commit hook BLOCK all commits until apply.py is fixed. This is the apply.py slice of FGAP-010 (whole-dispatch-dir gate), now un-suppressed and ACTIVE (a blocker, not deferred debt). apply.py + apply_from_substrate.py are ruff-clean.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/apply.py",
+          "reference": ":294 call-arg (school/grounding); :268 unused-ignore (mypy)"
+        },
+        {
+          "file": "prompt-workshop/dispatch/(get_parse_function definition)",
+          "reference": "return Callable type omits the school/grounding kwargs the concrete parsers accept"
+        },
+        {
+          "file": "school-improvement-plans/pyproject.toml",
+          "reference": "[[tool.mypy.overrides]] dispatch.apply override removed (un-suppression)"
+        }
+      ],
+      "impact": "mypy . RED -> the standing gate + the commit hook block ALL commits (main + subagent) until resolved. Surfaced by undoing a negligent B1 suppression of known, trivially-fixable typing debt.",
+      "proposed_resolution": "Widen get_parse_function's return type (e.g. a Protocol or precise Callable declaring __call__(self, text: str, *, school=..., grounding=...)) so apply.py:294 type-checks; remove the unused # type: ignore at apply.py:268. Then mypy . green; apply.py genuinely gated. Add ruff check of apply.py/apply_from_substrate.py to the Makefile/CI gate. Run via the canonical pipeline.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-06T18:00:00Z",
+      "id": "FGAP-011",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-06T19:00:00Z",
+      "oid": "3b7b1707edfc39857df6bf860d6c4c16",
+      "content_hash": "1c88637104ef6c0a17ee96b72286da350bfbbe9a42aa0de808af4aa33d8a32fa"
+    },
+    {
+      "title": "Gate's pytest runs on SQLite — Postgres-only constraint violations (VARCHAR length, CHECK, UNIQUE) are invisible to the gate",
+      "status": "identified",
+      "package": "config",
+      "description": "config/settings/test.py runs the suite on in-memory SQLite, which does not enforce VARCHAR max_length, CHECK constraints, or DB-level UNIQUE the way the dev/production Postgres does. A class of bugs therefore passes `pytest` (the standing gate) on SQLite yet raises DataError / IntegrityError on Postgres in production: an ORM create/save writing author-controlled strings into a capped column, a CHECK-violating row, a UNIQUE collision. Surfaced by TASK-020/FGAP-008's _save_flag_requests, where a valid-JSON oversize flag-request value 500s on Postgres but no SQLite test could catch it; TASK-020's fix routes through full_clean() so the ValidationError path (which fires on BOTH DBs) is the safety net.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/config/settings/test.py",
+          "reference": "test-suite DATABASES = in-memory SQLite (~:22-27); pytest selects this settings module"
+        }
+      ],
+      "impact": "The gate's pytest cannot catch Postgres-only constraint violations, so such bugs pass green and fail in production — a latent blind spot for any code path writing unvalidated input to constrained columns.",
+      "proposed_resolution": "Mitigation already applied in TASK-020: full_clean() before saving author input + a test asserting the ValidationError path. Fuller fix is a scope call: run the gate's pytest against Postgres (full fidelity) or add a Postgres CI lane. User scopes.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-06",
+      "id": "FGAP-012",
+      "oid": "a082b6b89312e96f6fb1e5a56701abb9",
+      "content_hash": "0d6110dfe7c9ac1539eb45089188ba0a44a217924efaec27e44a85df941964ae"
+    },
+    {
+      "title": "load_draft crashes on an empty --draft-path: Path('')==Path('.') skips the empty-shell fallback -> IsADirectoryError",
+      "status": "closed",
+      "package": "prompt-workshop",
+      "description": "_workshop.py load_draft(path) does `target = path or draft_path(); if not target.exists(): return empty_draft_shell(); return json.loads(target.read_text())`. An empty --draft-path (argparse type=Path turns '' into Path(''), which equals Path('.'), an existing directory) is truthy, so target=Path('.'), .exists() is True, the empty-shell fallback is skipped, and read_text() on the directory raises IsADirectoryError (exit 1). Surfaced by TASK-010: the workflow interpolates an absent input.draft_path to --draft-path '', so spec-1 (the empty-draft start, criterion 2) crashes at its first render/apply. The fallback works for an omitted flag (path=None) or a nonexistent path, but not empty string. Workflow-driven bridges hit it: render_from_substrate.py:88 and apply_from_substrate.py:104,133 (args.draft_path); render.py:67 also if --draft '' is passed. apply.py/sequence.py/verify-render-parity.py call load_draft() with no path, so are unaffected.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/_workshop.py",
+          "reference": ":255-259 load_draft fallback; target=path or draft_path(); Path('')==Path('.') exists+is_dir -> read_text IsADirectoryError"
+        },
+        {
+          "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+          "reference": ":104,133 load_draft(args.draft_path)"
+        },
+        {
+          "file": "prompt-workshop/dispatch/render_from_substrate.py",
+          "reference": ":88 load_draft(args.draft_path)"
+        }
+      ],
+      "impact": "The 14-spec workflow cannot start from the empty draft (TASK-010 criterion 2): spec-1's render + apply crash on the engine-interpolated --draft-path ''. Blocks TASK-010 / FEAT-003.",
+      "proposed_resolution": "In load_draft (the shared helper -> fixes every caller), treat an empty path (Path('')/Path('.')) as absent and return a fresh empty_draft_shell() (NOT the draft_path() default, which could load a stale current-draft.json). Preserves: omitted flag -> shell; real existing path -> loads; nonexistent path -> shell; empty -> shell. Add a regression test for the empty-path case.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-013",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T02:00:00Z",
+      "oid": "69b42a77f679fc1eb0f7fac17c191b73",
+      "content_hash": "9f3d619c17c0bb640ac2342c8fdcb9867b37ecf84744a6a509158c0049812280"
+    },
+    {
+      "title": "Snippet catalogue renders concatenate the emit-value with human context; the agent copies the whole token -> exact-match parser hard-rejects",
+      "status": "closed",
+      "package": "prompt-workshop/snippets (+ production PromptTemplate rows per DEC-41)",
+      "description": "The per-spec snippets render each catalogue choice as '<emit-value><sep><human-context>'. The agent, told 'choose by EXACT label/code', copies the entire rendered token as the emitted value; the parser catalogue check (_check_in_catalogue, planner/specs.py:499 `if value in members`) is exact string equality against the bare code/label, so the concatenated value hard-rejects (apply halts). Confirmed renders: 02:26 learner_outcomes `{{o.label}}{% if o.description %}: {{o.description}}`, 02:30 areas_for_improvement (same), 02:38 policies `{{p.label}}{% if p.notes %}: {{p.notes}}`; 03:32 improvement_types `{{it.code}}: {{it.label}}`; 06:23 / 10:26 / 13:45 divisions `{{d.label}}{% if d.scope_summary %} — {{d.scope_summary}}`; 11:37 frequencies `{{f.code}}: {{f.label}}`; 13:28 accreditation_standards `{{s.code}} ({{s.category}}): {{s.text}}`; 14:31 divisions `{{d.label}}{% if d.scope_summary %}: {{d.scope_summary}}`. Clean only where the emit-value is quoted/isolated: 03:35 planning_method `\"{{m.name}}\"`, 07:27 division `Division \"{{d.label}}\"`, 02:34 stakeholder `{{s.label}}` bare.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/snippets/02-propose-domain-alignment.md",
+          "reference": ":26,:30,:38 label/code rendered with trailing :description/:notes"
+        },
+        {
+          "file": "prompt-workshop/snippets/03-propose-milestones.md",
+          "reference": ":32 improvement_types `code: label` (emit field is code)"
+        },
+        {
+          "file": "prompt-workshop/snippets/11-suggest-feedback-channels.md",
+          "reference": ":37 frequencies `code: label` (emit field is code)"
+        },
+        {
+          "file": "prompt-workshop/snippets/13-propose-accreditation-standards.md",
+          "reference": ":28 standards `code (category): text` (emit field is code)"
+        },
+        {
+          "file": "school-improvement-plans/planner/specs.py",
+          "reference": ":499 _check_in_catalogue exact match `if value in members`"
+        },
+        {
+          "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-061244-e5bc/outputs/call_propose_domain_alignment.json",
+          "reference": "agent emitted learner_outcomes label 'Confident: Shows self-assurance...' vs catalogue 'Confident' -> A3 hard reject, apply halt"
+        }
+      ],
+      "impact": "Blocks the 14-spec run wherever an emitted catalogue field is rendered with trailing context; spec 2 (propose-domain-alignment) is the first halt, specs 03/10/11/13/14 would follow. DISC-26's promotion-ready whole-plan draft is unreachable until catalogue values are emitted in the bare form the parser accepts.",
+      "proposed_resolution": "Corpus-wide render convention: present the EXACT emit-value unambiguously (quote/delimit the bare code/label the agent must emit) with the human context clearly separated, and reinforce in the OUTPUT CONTRACT to emit only that exact value. Generalize the existing quoted pattern (03:35, 07:27). REJECT parser-loosening / variant-tolerant catalogue matching (DEC-40: a coded-FK fuzzy match would admit fabricated values). Per DEC-41 the snippet fix is the dev-time form; the validated convention mirrors to production PromptTemplate rows via an ai/00NN migration. Then re-run the workflow to confirm the specs apply.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-014",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T07:30:00Z",
+      "oid": "bac7425f7d050bca6b785f8019889d9d",
+      "content_hash": "599ac9a3ff3e735de592e5ab90b160c49bc82dc40c3596abdd9bc634209e4949"
+    },
+    {
+      "title": "Workshop prompt render autoescapes HTML-special chars in catalogue values; the agent copies the entity -> exact-match parser hard-rejects",
+      "status": "closed",
+      "package": "prompt-workshop (render path; + production PromptTemplate.render per DEC-41)",
+      "description": "render_from_substrate.py:109 (and the substrate-assembled + verify-render-parity render paths) call Django `Template(body).render(Context(...))` with autoescape ON by default. A catalogue value containing an HTML-special char (apostrophe, &, <, >, \") renders as an entity -- e.g. the division `Principal's Office (PO)` renders as `Principal&#x27;s Office (PO)` (confirmed in the live render, run ...065027). The agent faithfully copies the entity-bearing token; the parser catalogue check (planner/specs.py:499 `if value in members`) exact-matches the un-escaped catalogue value -> hard reject. Surfaced at spec 6 (propose-assignments, responsible_division) once the FGAP-014 fix let the run reach a catalogue value with an apostrophe. Orthogonal to FGAP-014 (concatenation): these prompts are PLAIN TEXT, not HTML, so Django autoescape is wrong for them. Blast: any emitted catalogue value with an HTML-special char, across all specs (possessive names / apostrophes are common).",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/render_from_substrate.py",
+          "reference": ":109 Template(body).render(Context(...)) -- Django autoescape on by default"
+        },
+        {
+          "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-065027-e4e3/outputs/render_propose_assignments.json",
+          "reference": "rendered division line 'Principal&#x27;s Office' (apostrophe -> &#x27;)"
+        },
+        {
+          "file": "school-improvement-plans/planner/specs.py",
+          "reference": ":499 _check_in_catalogue exact match; F2 reject responsible_division='Principal&#x27;s Office (PO)' vs catalogue 'Principal's Office (PO)'"
+        }
+      ],
+      "impact": "Blocks the run at any spec whose validly-chosen catalogue value contains an HTML-special char; spec 6 is the first. The DISC-26 promotion-ready draft cannot assemble until fixed.",
+      "proposed_resolution": "Render the plain-text prompts with Django autoescape OFF (wrap the body in {% autoescape off %}...{% endautoescape %}, or render via a Template/Engine with autoescape=False), applied at the render call in BOTH the snippet and substrate render paths in lockstep so verify-render-parity stays 14/14 (render_from_substrate.py + the _workshop assemble + verify-render-parity renders). Reject parser entity-tolerance (DEC-40). Production PromptTemplate.render likely shares the bug (parallel; DEC-41 migration-time). The next DISC-26 iteration.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-015",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T08:00:00Z",
+      "oid": "d11d604b80328af1a4021b3789192995",
+      "content_hash": "c07c4fbfecd4fed78d6cb5cca8696b9d53b9f546dcc4bddcbef1dd7a7c76c683"
+    },
+    {
+      "title": "propose-responsibilities cannot run: the responsibility-atom layer is entirely unseeded for the tenant (all divisions + positions have zero atoms)",
+      "status": "closed",
+      "package": "prompt-workshop (snippet 07 + shared preamble); DISC-30 admin-curation class",
+      "description": "At spec 7 (propose-responsibilities, US-LLM-27) the run halts. Querying the Chiway grounding (build_grounding) shows ALL 15 divisions AND all ~46 positions have ZERO responsibility atoms -- the DEC-32 Layer-1 responsibility-atom data is entirely unseeded for this tenant. The parser gates each division-grain and position-grain `statement` verbatim against these (empty) per-owner atom sets (planner/specs.py:543 _responsibility_statements_under_division -> div['responsibilities']; positions analogously), so NO proposal can pass for ANY owner. 'Principal's Office (PO)' was merely the first owner the run reached. The shared preamble's all-divisions mandate pushes the LLM to propose for every division (copying the division description rendered at 07:27/07:29), but there are no atoms to match. Primary root cause: the uncurated responsibility-atom catalogue (DISC-30 admin-curation / tenant-data gap), NOT a prompt tension -- the all-divisions-vs-empty-set tension is moot when every set is empty; the spec simply cannot produce valid output for this tenant until the atoms are curated.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/planner/specs.py",
+          "reference": ":2447-2453 division-grain statement catalogue check; :543 _responsibility_statements_under_division reads div['responsibilities']"
+        },
+        {
+          "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-073407-9730/outputs/apply_propose_responsibilities.json",
+          "reference": "error: US-LLM-27 division-grain statement (under division='Principal's Office (PO)')='School leadership; the principal's office.' not in catalogue. Available: [<no members enumerated>]"
+        },
+        {
+          "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+          "reference": ":27 division description rendered; :29 per-division responsibility atoms rendered (empty for PO)"
+        },
+        {
+          "file": "prompt-workshop/shared/preamble.md",
+          "reference": "the all-divisions mandate ('every division has a role... excluding a division = under-reasoned')"
+        }
+      ],
+      "impact": "propose-responsibilities (US-LLM-27) cannot produce any valid output for the Chiway tenant -- all 15 divisions + ~46 positions lack curated responsibility atoms. Blocks the run at spec 7. Any tenant whose responsibility-atom layer is unseeded hits this; it is the DISC-30 onboarding-data class, surfaced by the workshop run.",
+      "proposed_resolution": "Resolution path (materialized-defaults seed): populate data/chiway-responsibility-atoms-template.csv -- author the shared responsibilities once in the DEFAULT scopes (all / all-divisions / all-positions / leader-positions) plus each owner's specific atoms -- then run the importer per data/tenant-seed-importer-plan.md, which creates is_new owners and materializes each default onto every matching owner as a STORED atom (honoring DEC-35 / docs/hod-default-responsibilities.md: atoms must be stored rows, FK-linkable per DEC-32, not a runtime cascade). After import every division + position has >=1 atom; re-run the workflow to confirm propose-responsibilities clears spec 7. A DEC formalizing the materialized-defaults design (extending DEC-35) lands with the importer build. Parser coded-FK integrity (DEC-40) preserved.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-016",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T09:45:00Z",
+      "oid": "3664e64ac56119cf93288e9b97b1d396",
+      "content_hash": "c3c4fe609076aade4615196dd2c6f4fc3086c2224c740a2d1f9e8b341f0df010"
+    },
+    {
+      "title": "Tenant catalogue lacks an IT division and a Director of IT position",
+      "status": "closed",
+      "package": "tenant data (Chiway divisions/positions catalogue); DISC-30 class",
+      "description": "The Chiway division/position catalogue (15 divisions) has no IT division and no Director of IT position. The school has an IT function; the grounding catalogue is the complete universe the LLM may draw on (no fabrication), so without an IT division + Director of IT, no plan can assign IT-owned work, evidence, channels, or responsibilities for this tenant. Needs an IT division and a Director of IT position curated into the tenant data.",
+      "evidence": [
+        {
+          "file": "(grounding query, build_grounding on the Chiway tenant)",
+          "reference": "15 divisions, none IT: AAO, Art Department, Business and Economics, College Counseling Department, Curriculum and Teaching, English, Future Scholar Innovation Center, Humanities, Library, Math, Music and Sports Department, Principal's Office (PO), Recruitment and Admissions, SAO, Sciences"
+        }
+      ],
+      "impact": "IT-related schoolwide-improvement work cannot be assigned or owned in any plan for the Chiway tenant until an IT division + Director of IT are curated into the catalogue.",
+      "proposed_resolution": "The IT division + Director of IT are created by the responsibility-atom importer (data/tenant-seed-importer-plan.md) from the two is_new=yes rows in data/chiway-responsibility-atoms-template.csv (fill their scope_summary + atoms). Same import that closes FGAP-016.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-017",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T09:45:00Z",
+      "oid": "40adf7db6c31365707c39330df503025",
+      "content_hash": "7bba5ad2875508666dfbfaa54781cd1d13e10eb73ab8d404f272f2136b4ae3e1"
+    },
+    {
+      "title": "Workshop apply.py MERGE_RULES silently drop assignments/timelines/evidence (field names mismatch the parser prefill)",
+      "status": "closed",
+      "package": "prompt-workshop/dispatch/apply.py",
+      "description": "apply.py's per-step MERGE_RULES overlay field names that do not match the parser prefill keys for 3 of the 5 step-iterating specs, so the overlay copies nothing (silent no-op) and the workshop draft loses that per-step data. Confirmed against run ...092307: _merge_assignments fields=('assignments',) but parse_propose_assignments prefill row = {step_index, responsible_division} -> draft-after-propose-assignments step0 assignments=[]. _merge_timelines fields=('timeline','start_date','end_date') but prefill = {step_index, kind, date|from_date|to_date} -> empty. _merge_evidence fields=('evidence_artifacts',) but prefill = {step_index, evidence:[...]} -> empty. _merge_step_resources (resources, substeps) + _merge_responsibilities (division_responsibilities, position_responsibilities) MATCH -> work. The agents generated and the parser parsed full content for all three (apply_*.json status=merged, parsed array[6] with responsible_division / kind+dates / evidence labels), but _set_indexed_field_on_steps (apply.py:83, copies row[f] for f in fields) found none of the named fields. apply reports 'merged' despite copying zero -> silent.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/apply.py",
+          "reference": ":113-140 _merge_assignments/_merge_timelines/_merge_evidence fields vs :83 _set_indexed_field_on_steps copies row[f]"
+        },
+        {
+          "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-092307-0c56/outputs/apply_propose_assignments.json",
+          "reference": "parsed[0] keys [step_index, responsible_division]; timelines [step_index,kind,date]; evidence [step_index,evidence] -- none match the merge fields"
+        },
+        {
+          "file": "(out_dir)/draft-after-propose-assignments.json",
+          "reference": "step0 assignments=[] at the assignments step itself (merge no-op proven); final draft steps have no assignments/timeline/evidence_artifacts"
+        }
+      ],
+      "impact": "The first complete whole-plan draft (run ...092307) has every action step missing its assignment (responsible division), timeline (dates), and evidence artifacts -- a third of the per-step detail -- though all were generated + parsed. Any draft-quality/promotion-readiness evaluation on workshop output is reading an incomplete draft. Production merges via the AssistStreamView form-prefill (a different code path, likely unaffected), but apply.py is the DISC-26 evaluation surface and is meant to mirror production (DEC-41).",
+      "proposed_resolution": "Align each MERGE_RULE's fields with the parser prefill keys + the draft's canonical step-field names: assignments -> map responsible_division onto the step's assignment field; timelines -> copy kind + date/from_date/to_date; evidence -> map evidence onto evidence_artifacts. Add a guard so a MERGE_RULE that copies zero fields from a non-empty prefill row raises (not a silent no-op) -- this class hid because status stayed 'merged'. Re-run to confirm the steps carry assignments/timelines/evidence.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-018",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T10:30:00Z",
+      "oid": "fb15b6039098cb2d6177fff1bacdbf53",
+      "content_hash": "05c98ad557e7ed3a41641e30f373560e59410175a402c0c067836c1ea72c66e8"
+    },
+    {
+      "title": "Prose-grounding leaks: SLO long label + mission-clause keys pasted into generated prose",
+      "status": "closed",
+      "package": "prompt-workshop/snippets + shared/preamble + ai/services/grounding.py",
+      "description": "The generated draft's prose copies two grounding-presentation artifacts verbatim (DISC-26 quality, distinct from FGAP-014/015): (1) SLO LONG LABEL -- the agent writes 'Confident: Shows self-assurance...' (label+description) instead of 'Confident'; the SLO CONTEXT block renders '- {{o.label}}{% if o.description %}: {{o.description}}' (snippets 01:44, 03:38, 04:32, 05:41, 07:37, 13:32) and the agent copies the concatenated form into prose (the data is clean: grounding._learner_outcomes -> {code,label,description}). (2) MISSION-CLAUSE KEYS -- the agent writes 'the mission clauses GROUNDED, ROUNDED, and UNBOUNDED' (bare keys); GROUNDED/ROUNDED/UNBOUNDED are Chiway's real mission labels but the DEC-45 seed (migrations/0060) baked them into StatementClause.text ('GROUNDED: <prose>') leaving the model's dedicated label field empty; grounding._guiding_statements emits {text,order}, the render (01:59-61, 07:41-43, 10:30-32, 13:36-38) shows 'GROUNDED: <prose>', and the agent cites the prefix. (Vision clauses have no prefix.) The preamble's VERBATIM rule + the FGAP-014 quoted-choice convention do not cover prose references to SLOs/clauses.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/snippets/01-narrative-draft.md",
+          "reference": ":44 SLO context '- {{o.label}}: {{o.description}}'; :59-61 clause render '{{c.order}}. {{c.text}}'"
+        },
+        {
+          "file": "school-improvement-plans/ai/services/grounding.py",
+          "reference": "_learner_outcomes {code,label,description}; _guiding_statements ~:224-240 emits {text,order} (no label)"
+        },
+        {
+          "file": "school-improvement-plans/school/migrations/0060_dec45_seed_mission.py",
+          "reference": ":24-31 MISSION_CLAUSES bake 'GROUNDED: <prose>' into text; StatementClause.label (mvv.py) exists but empty"
+        },
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "plan.provenance 'mission clauses GROUNDED, ROUNDED, and UNBOUNDED'; a label 'Confident: Shows self-assurance...'"
+        }
+      ],
+      "impact": "The generated whole-plan prose reads with grounding artifacts (long SLO labels; bare clause keys), degrading the WASC-committee voice and driving several of the 24 soft-flags. Blocks promotion-readiness on prose quality.",
+      "proposed_resolution": "(A) Preamble prose-reference rule: in prose, reference an SLO by its short label only (description is context), and a mission/vision clause by its substance/label, never the bare prefix. (B) SLO context render: quote the label (mirror FGAP-014) '- \"{{o.label}}\"{% if o.description %} - {{o.description}}{% endif %}' across the 6 snippets + substrate fragments (lockstep). (C) Clause separation: grounding._guiding_statements parses a leading 'PREFIX: rest' (short ALL-CAPS prefix) into {label, text} (non-destructive, no data migration; vision clauses unaffected); the clause render (4 snippets + fragments) shows the label distinct from the prose. Keep parity 14/14; production PromptTemplate mirror + an optional StatementClause.label data migration are later DEC-41/DEC-45 follow-ons.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-019",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T11:40:00Z",
+      "oid": "eeacf736bfcb398e98f1205f84973247",
+      "content_hash": "84d893b7cb25b8760c928ab8180b3ce7e6d6d8d7d08dd915e98a657ddc722950"
+    },
+    {
+      "title": "Lint-gate scope gap: the standing gate does not lint prompt-workshop/dispatch (uncaught decompose.py ruff debt)",
+      "status": "closed",
+      "package": ".claude/hooks/gate-before-commit.sh + Makefile + .github/workflows/test.yml + prompt-workshop/dispatch/decompose.py",
+      "description": "The standing commit gate (.claude/hooks/gate-before-commit.sh) runs `uv run ruff check` / `ruff format --check` / `mypy .` from school-improvement-plans/, whose cwd-default scope EXCLUDES prompt-workshop/dispatch/ (outside the project root; no ruff config in prompt-workshop). So lint debt accumulates with a green local gate: dispatch/decompose.py has 4 uncaught ruff errors -- E501:190 (long _segment_body signature) + E741 ambiguous 'l' at :267,:348,:349. The Makefile `lint` target + .github/workflows/test.yml lint dispatch only via ad-hoc explicit file paths (_workshop.py, apply.py, apply_from_substrate.py -- incomplete, and not what the commit hook runs). `mypy .` likewise never checks dispatch. RECORDED SUB-GAP (open, not this fix): mypy does not cover dispatch; `mypy ../prompt-workshop/dispatch` fails on a duplicate-module ambiguity (_workshop.py under two qualified names; dispatch has no __init__.py), and package-izing risks the scripts' top-level imports + run_workflow.mjs -- its own focused pass.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/decompose.py",
+          "reference": "E501:190; E741:267,348,349 (uv run ruff check ../prompt-workshop/ from school-improvement-plans)"
+        },
+        {
+          "file": ".claude/hooks/gate-before-commit.sh",
+          "reference": ":29-38 runs `uv run ruff check` (no path -> cwd school-improvement-plans only)"
+        },
+        {
+          "file": "school-improvement-plans/Makefile",
+          "reference": "lint target :63-67 ad-hoc explicit dispatch file paths (3 files, not the tree)"
+        },
+        {
+          "file": ".github/workflows/test.yml",
+          "reference": ":42-47 same ad-hoc explicit dispatch paths"
+        }
+      ],
+      "impact": "Style/format debt in the workshop dispatch python accumulates undetected by the blocking local gate (green while dispatch is dirty); local gate and CI diverge; future dispatch files inherit the same uncaught class. Surfaced when FGAP-019's audit noted decompose.py errors that the gate had never flagged.",
+      "proposed_resolution": "(A) Clear the debt: rename l->line (267/348/349); resolve E501:190 (ruff format / type alias / wrap); ruff format decompose.py -- no behavior change. (B) Extend ruff+format scope to the whole dispatch tree in ALL THREE gate definitions (hook + Makefile lint + CI), same target `. ../prompt-workshop/dispatch` run from school-improvement-plans (inherits its [tool.ruff]). (C) Record the mypy-dispatch sub-gap as open (above). Verify: ruff check/format over both trees clean; dispatch still imports/runs (verify-render-parity 14/14); the gate now goes red on a temp dispatch ruff error.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-020",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T12:10:00Z",
+      "oid": "d514c6a338ec678b41e1cbf226439ee3",
+      "content_hash": "58a85afef00ae6db9346e2c245bb20a97d1814cdc0f9313b9bb03f1e75ef13b5"
+    },
+    {
+      "title": "Type-check gate does not cover prompt-workshop/dispatch (blocker: module-name ambiguity / no __init__.py)",
+      "status": "identified",
+      "package": "school-improvement-plans/pyproject.toml [tool.mypy] + prompt-workshop/dispatch",
+      "description": "The gate's `mypy .` (from school-improvement-plans) does not type-check prompt-workshop/dispatch (outside the cwd; mypy_path=../prompt-workshop only adds the import path, not the check set). Running `mypy ../prompt-workshop/dispatch` directly fails on a duplicate-module ambiguity (_workshop.py resolves under two qualified names because dispatch lacks __init__.py). Package-izing dispatch (adding __init__.py) risks the scripts' top-level imports (`from _workshop import ...`) and the run_workflow.mjs invocation paths, so it needs its own focused pass: package-ize (or mypy explicit-module/namespace-package config) + verify every dispatch script + run_workflow still run + add dispatch to the gate's mypy scope (mirroring FGAP-020's ruff-scope extension). Sibling to FGAP-020, which closed the RUFF half of the same gate gap; this is the MYPY half. OPEN (status 'identified' = unworked).",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/pyproject.toml",
+          "reference": "[tool.mypy] mypy_path=../prompt-workshop; `mypy .` checks 323 Django files only (dispatch excluded)"
+        },
+        {
+          "file": "prompt-workshop/dispatch",
+          "reference": "no __init__.py; `mypy ../prompt-workshop/dispatch` -> duplicate-module (_workshop.py) error"
+        }
+      ],
+      "impact": "Type regressions in the workshop dispatch python (apply.py merge rules, the parsers' callers, decompose/_workshop) are not caught by the gate -- the class that FGAP-018's apply.py merge bug lived in. Ruff now covers dispatch (FGAP-020); types do not.",
+      "proposed_resolution": "Own pass: package-ize dispatch (or configure mypy namespace packages / explicit modules) so `mypy . ../prompt-workshop/dispatch` runs without the duplicate-module error; confirm all dispatch scripts + run_workflow.mjs still import/run; then extend the gate's mypy line (hook + Makefile + CI) to include dispatch.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-021",
+      "oid": "f23b3504564000bf700899459910d5ca",
+      "content_hash": "71c497237dd048e63376a2a94204a3c835a3e2605a7450905a2065f1d32c7975"
+    },
+    {
+      "title": "Workshop run halts on the heaviest spec: pi stdout (52MB) overflows the 10MB dispatch cap, dropping the agent's output (WF-13 x atom-laden prompt)",
+      "status": "closed",
+      "package": "school-improvement-plans/ai/services/grounding.py + .workshopping/prompt-spec.json + .workflows/workshop-run-plan-sequence.workflow.yaml",
+      "description": "The 14-spec run reliably halts at call_decompose_action_steps (spec 5, the heaviest). pi --mode json emits ~52MB stdout for that call; dispatch caps stdout at 10MB (dist/dispatch.js:18) and on overflow does NOT kill but DROPS the tail (dist/dispatch.js:202-220), so the agent's final JSON + the schema disk-read's <runDir>/outputs/<step>.json never land -> step-agent raises 'has output schema but no valid JSON output was produced' (step state: truncated:true, '...truncated at 52649648 bytes', usage.turns:0, no output file). The TRIGGER is prompt bulk: decompose's 84KB prompt is ~63% (~52KB) the 444-atom responsibility inventory. The grounding is already per-spec (grounding_sections in .workshopping/prompt-spec.json -> render_from_substrate.py:105; _divisions dumps every atom, grounding.py:187-222). Verified: ONLY propose-responsibilities (07) consumes atom STATEMENTS (selects a statement verbatim; parser exact-matches). Every other spec -- incl. the failing decompose (05, task line 68 needs Division/Position LABELS verbatim), narrative (01), success-criteria (04), accreditation (13), and the label-only 06/09/10/11/14 -- carries the atoms as dead weight (the {{r.statement}} is the shared divisions render block, not a task requirement). Systematic (2/2 post-seed runs), not transient; retry alone would not fix it.",
+      "evidence": [
+        {
+          "file": "workflowsPiExtension/packages/pi-workflows/dist/dispatch.js",
+          "reference": ":18 MAX_STDOUT_BYTES=10MB; :202-220 overflow drops the tail (no kill); --mode json hardcoded :41-88"
+        },
+        {
+          "file": "workflowsPiExtension/packages/pi-workflows/dist/step-agent.js",
+          "reference": ":166-184 schema path: file-missing -> parse truncated textOutput -> fail 'no valid JSON output'"
+        },
+        {
+          "file": "school-improvement-plans/ai/services/grounding.py",
+          "reference": ":187-222 _divisions emits all responsibility atoms; build_grounding per-section :307-369"
+        },
+        {
+          "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+          "reference": ":53-59 divisions render block dumps atoms; :68 task needs Division/Position LABELS verbatim (not statements)"
+        },
+        {
+          "file": "run state",
+          "reference": "runs .../112811 + .../120301 both failed at call_decompose_action_steps; .../092307 (pre-FGAP-019, but also pre this analysis) completed"
+        }
+      ],
+      "impact": "The 14-spec workshop cannot complete a full draft when the tenant's responsibility inventory is large -- the heaviest spec overflows the stdout cap and aborts the run. Blocks a complete promotion-ready draft (DEC-29) for any tenant with a substantial atom inventory.",
+      "proposed_resolution": "(A root fix) Scope the 444-atom inventory to propose-responsibilities (07) only -- a labels-only divisions render (labels + scope_summary + position kind, NO statements) for all other specs, via the existing per-spec grounding_sections (add a labels-only section / atom-section split in grounding.py + SECTION_KEYS; repoint .workshopping/prompt-spec.json; edit the snippet divisions render block + substrate fragments in lockstep). Drops decompose ~84KB->~30KB, under the stdout trigger. (B defense) retry on the 14 call steps (engine-confirmed: agent steps retryable, prior errors steered). (C) record the upstream cap pathology (raise/remove MAX_STDOUT_BYTES; quieter pi mode; disk-read independent of the dropped tail) in PI-WORKFLOWS-FINDINGS. Engine NOT modified.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-022",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T14:30:00Z",
+      "oid": "91447ccca53ba3ffc00410bf5bcad869",
+      "content_hash": "9d2a51a80c52e6b6c7fb3037b7c9664425f35dd28b9a42c2f916db513500ff02"
+    },
+    {
+      "title": "PromptSanitizer rejects legitimate plan prose containing 'system:'/'user:'/'assistant:' — the role-token injection patterns are too broad (production + workshop)",
+      "status": "closed",
+      "package": "school-improvement-plans/ai/services/prompt_sanitizer.py (+ render_from_substrate.py / ai/models/llm.py call sites)",
+      "description": "render_suggest_feedback_channels (spec 11) crashed: PromptSanitizationError 'system message injection detected'. Root cause (verified at source): the DATA_INJECTION_PATTERNS role-token regexes are too broad and the sanitizer REJECTS (raises) rather than scrubs. The pattern `(?i)\\bsystem\\s*:\\s*` (prompt_sanitizer.py:44) matched a legitimate evidence-artifact location in the accumulated draft: action_steps[4].evidence_artifacts[1].location = 'PD schedule system: /professional-learning/2025-2026/'. sanitize_data (prompt_sanitizer.py:106) runs DATA_INJECTION_PATTERNS and raises on any match; sanitize_data_dict (:185) applies it indiscriminately to every string in the grounding bundle. BOTH layers hit it: the workshop render (render_from_substrate.py:107 sanitize_data_dict(grounding)) AND production (PromptTemplate.render llm.py:217 sanitize_data_dict(context); AssistStreamView views.py:550-551 tpl.render(**grounding) where grounding includes the author's draft_state). So this is a PRODUCTION bug too -- any plan whose prose legitimately contains 'system:'/'user:'/'assistant:' (e.g. '...reporting system:', 'IT systems:') hard-fails the render. Surfaced now only because FGAP-022 let the run reach spec 11 (the accumulated draft made a benign 'system:' near-certain).",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/ai/services/prompt_sanitizer.py",
+          "reference": ":44 pattern `\\bsystem\\s*:\\s*`; :106 sanitize_data runs DATA_INJECTION_PATTERNS + raises; :185 sanitize_data_dict applies to all strings"
+        },
+        {
+          "file": "prompt-workshop/dispatch/render_from_substrate.py",
+          "reference": ":107 PromptSanitizer.sanitize_data_dict(grounding) over the whole bundle incl. draft_state"
+        },
+        {
+          "file": "school-improvement-plans/ai/models/llm.py",
+          "reference": ":217 PromptTemplate.render sanitize_data_dict(context) -> production has the same false-positive"
+        },
+        {
+          "file": "school-improvement-plans/planner/views.py",
+          "reference": ":526 draft_state=body.get('draft_state') (author's in-progress, untrusted); :550-551 build_grounding+tpl.render"
+        },
+        {
+          "file": "run draft",
+          "reference": "draft-after-propose-evidence.json action_steps[4].evidence_artifacts[1].location = 'PD schedule system: /professional-learning/2025-2026/' (1 benign hit; no user:/assistant: hits)"
+        }
+      ],
+      "impact": "The 14-spec run cannot complete (halts at spec 11). Independent of FGAP-022 (whose cap-overflow target IS fixed -- the run reached 30/31, past the heavy specs). In PRODUCTION the same render-reject hard-fails any assist whose grounding/draft prose legitimately contains a role token + colon -- a latent availability bug for real plans.",
+      "proposed_resolution": "RECOMMENDED: tighten the role-token patterns (system:/user:/assistant: and the code-block/xml/inst variants if needed) to fire only at a TURN BOUNDARY -- start-of-string or newline-preceded (e.g. `(?im)(?:^|\\n)\\s*system\\s*:`) -- so a real role-injection ('\\nsystem: ignore...') still matches but mid-prose 'PD schedule system: /path' does not. Production-shared (DEC-41) -> fixes both layers; excludes NO data -> no trust-boundary weakening. REJECTED: excluding draft_state from the check (the Explore's first instinct) -- in production draft_state is the AUTHOR's untrusted input (views.py:526), so blanket-excluding it would WEAKEN production injection protection. Verify a tightened pattern still catches the existing role-injection test cases; add a regression test for benign 'X system: /path' prose. Pattern change touches a production security layer -- user to confirm the security posture.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-023",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-07T14:30:00Z",
+      "oid": "73b75670bfaa41c0e4b042e31b2fa459",
+      "content_hash": "df8781a944edf8c3c3c1c7190633715f3486e3be89c37a9e84cfe9a631aa5db6"
+    },
+    {
+      "title": "PromptSanitizer role-token check is evadable by TOKEN-glyph obfuscation (fullwidth / homoglyph / combining-mark) — distinct from the FGAP-023 gap-evasion class; needs CJK-safe confusable folding",
+      "status": "identified",
+      "package": "school-improvement-plans/ai/services/prompt_sanitizer.py",
+      "description": "Surfaced by the FGAP-023 iteration-4 adversarial audit (a DISTINCT class from FGAP-023, which closed benign-prose tolerance + separator/invisible gap-evasion between a boundary and an ASCII token). The role-token patterns match ASCII 'system'/'user'/'assistant'; the render/dispatch path applies NO NFKC/NFC normalization (grep of ai/, planner/, prompt-workshop/dispatch/, the Anthropic provider returns none). So the TOKEN GLYPHS can be obfuscated to evade the regex while a model may still read a role turn: (3a) fullwidth/compatibility -- '\\nｓystem: evil' (U+FF53), '\\nsystem： evil' (U+FF1A) BYPASS; (3b) homoglyph -- '\\nѕystem:' (Cyrillic U+0455), '\\nsystеm:' (U+0435) BYPASS; (3c) in-token combining mark -- '\\nsy͏stem:' (U+034F CGJ, category Mn -> kept) BYPASS. Credibility is uneven + model-tokenizer-dependent (fullwidth highest; CGJ-split lowest).",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/ai/services/prompt_sanitizer.py",
+          "reference": "role-token patterns match ASCII tokens; _normalize_separators folds Cf/Zs/line-breaks but does NOT NFKC-normalize the token glyphs"
+        },
+        {
+          "file": "render/dispatch path",
+          "reference": "no unicodedata.normalize/NFKC/NFC anywhere (grep ai/ planner/ prompt-workshop/dispatch/ + provider)"
+        },
+        {
+          "file": "FGAP-023 iteration-4 audit",
+          "reference": "fullwidth/homoglyph/CGJ token forms BYPASS sanitize_data + sanitize_refinement; gap-class itself is converged (0 leaks)"
+        }
+      ],
+      "impact": "A crafted role-token using non-ASCII glyphs could evade the injection check on both the workshop render and production PromptTemplate.render. Lower-credibility than the gap-evasion class (requires the model's tokenizer to read the obfuscated glyphs as the ASCII role marker) + the actor in production is an authenticated admin editing their own plan. Real but distinct debt, recorded per mandate-007 (user decides scope: address now or as a follow-up).",
+      "proposed_resolution": "NFKC-fold (and/or apply a confusables map) the string BEFORE the role-token regex check -- but CAREFULLY: NFKC alters compatibility/fullwidth CJK forms, and this is a bilingual (Chinese) tenant (Chiway), so blanket NFKC of stored/forwarded content could mangle legitimate CJK. Likely shape: NFKC a COPY used only for the injection pattern check (not the content that reaches the LLM), or a targeted confusable-fold limited to the Latin role-token glyphs + strip category-Mn marks for the check only. Needs its own canonical-pipeline pass (explore the CJK-safety + the check-only-copy design). Distinct from FGAP-023.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-07",
+      "id": "FGAP-024",
+      "oid": "d28934e0f7b88bdedb82713bd707a2e8",
+      "content_hash": "5a487c72475c104bcb9df3e700d32808b1103b44202f7fab2118c4745e8c433d"
+    },
+    {
+      "title": "Tenant responsibility-atom data does not realize the DEC-48 SAO out-of-lesson roles: YGL absent, HRT carries a misplaced in-lesson atom",
+      "status": "closed",
+      "package": "data/chiway-responsibility-atoms-template.csv + school/management/commands/import_responsibility_atoms.py + grounding",
+      "description": "DEC-48 settles that HRT, YGL, and Dormitory Teacher are PURE SAO roles for planning (targeted only in-role, never as the individual subject teachers who fill them; the in-lesson responsibility belongs to the subject-teacher seat). The tenant data does not realize this: (1) YGL (Year Group Leader) is ABSENT from the responsibility-atom seed entirely, though the Position model supports it (year_group FK explicitly for 'AS/A2/IG1/IG2 Year Leader' + kind=LEADER; YearGroups seeded by migration 0046: IG1/IG2/AS/A2). (2) The Homeroom Teacher seat carries a MISPLACED atom 'Take primary responsibility for developing the school-wide learner outcomes... in every lesson - 100% in-class time' (CSV line ~60) — that is the subject-teacher seat's in-lesson responsibility, not the HRT seat's; per DEC-48 it must be removed so the HRT seat carries only SAO out-of-lesson atoms. (3) Dormitory Teacher is present under SAO with its residential out-of-lesson atom (correct). CONSEQUENCE: the generated plan draft cannot target these out-of-lesson pastoral roles correctly — the distiller-input audit found the draft dropped HRT/Dorm and lacks YGL, so out-of-lesson SLO ownership is unrepresentable. All three must sit under the SAO division carrying the SAO out-of-lesson responsibility set; YGL is per year group.",
+      "evidence": [
+        {
+          "file": "data/chiway-responsibility-atoms-template.csv",
+          "reference": ":60-62 Homeroom Teacher atoms incl. the misplaced in-lesson one; :105 Dormitory Teacher; NO YGL/Year Group Leader rows (grep: 0)"
+        },
+        {
+          "file": "school-improvement-plans/school/models/person.py",
+          "reference": "Position.year_group FK + kind=LEADER explicitly for 'AS/A2/IG1/IG2 Year Leader' — YGL is model-supported"
+        },
+        {
+          "file": "school-improvement-plans/school/migrations/0046_seed_year_groups.py",
+          "reference": "YearGroups seeded: IG1/IG2/AS/A2"
+        },
+        {
+          "file": "/tmp/final-complete-draft.json",
+          "reference": "distiller-input audit: HRT 0 in position layer, YGL 0, Dorm 0 — out-of-lesson roles absent from the generated draft"
+        }
+      ],
+      "impact": "Out-of-lesson pastoral SLO ownership (the direct out-of-lesson student-interaction party per DEC-48) is not representable in generated plans. Blocks the school-wide-coverage + in/out-of-class heuristics (R-0009) and a faithful plan; the SAO out-of-lesson dimension is structurally thin.",
+      "proposed_resolution": "Mode-B data change via the canonical pipeline: in data/chiway-responsibility-atoms-template.csv, (a) remove the misplaced in-lesson atom from the Homeroom Teacher seat, leaving only SAO out-of-lesson atoms; (b) add YGL (Year Group Leader) — per year group IG1/IG2/AS/A2 (year_group-bound, kind=LEADER) under SAO, with SAO out-of-lesson year-group pastoral/SLO atoms; (c) confirm HRT + Dorm + YGL all carry the SAO out-of-lesson set under the SAO division. Then re-run import_responsibility_atoms against the dev DB + re-ground; verify the three roles appear with their out-of-lesson atoms and no in-lesson atom on the HRT/YGL/Dorm seats. Whether YGL needs a YearGroup-bound Position (vs a single seat) + the importer's handling of year_group-bound positions is a load-bearing fact to verify in the plan's explore step.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "FGAP-025",
+      "closed_by": "orchestrator",
+      "closed_at": "2026-06-08T18:30:00Z",
+      "oid": "d65ef85fdd5545b488b73630b97db633",
+      "content_hash": "c1c24b5527025db04b0eb9dd0c29295b2e3e06ff251a80974bae31ecfcbf5e09"
+    },
+    {
+      "title": "Responsibility-atom importer is additive-only: removing an atom/row from the CSV does NOT un-seed it from an already-imported DB",
+      "status": "identified",
+      "package": "school-improvement-plans/school/management/commands/import_responsibility_atoms.py",
+      "description": "The importer is additive + idempotent BY DESIGN (re-runnable materialized-defaults seeder; get_or_create on (owner, statement)). It never deletes. So editing data/chiway-responsibility-atoms-template.csv to REMOVE an atom (or a position's owner row) stops RE-creating it but leaves any previously-imported copy in the DB. Surfaced in FGAP-025/DEC-48: removing the HRT teacher-base atoms from the CSV did not remove them from the already-seeded dev DB; the orchestrator had to delete the 3 stale PositionResponsibility rows directly (a one-time manual correction) to realize the target. The CSV is the source of truth and is now correct, but the importer cannot reconcile the DB to a SHRUNK CSV.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/school/management/commands/import_responsibility_atoms.py",
+          "reference": "_attach_position_atom get_or_create on (position, statement_en) — create-or-dedup only; no prune of atoms absent from the CSV"
+        },
+        {
+          "file": "FGAP-025 / DEC-48",
+          "reference": "removing the HRT in-lesson atoms from the CSV left them in the dev DB; required a direct orchestrator delete of 3 stale rows"
+        }
+      ],
+      "impact": "Any future tenant-data correction that REMOVES an atom/seat via the CSV silently fails to un-seed an already-imported DB — a footgun: the CSV looks authoritative but the DB drifts. Low blast radius today (dev DB, manual correction works), but it makes the CSV non-declarative for removals.",
+      "proposed_resolution": "Decide (human scope) whether the importer should gain a RECONCILE mode (delete, per seat, the materialized atoms no longer present in the CSV for that seat) so the CSV becomes fully declarative — bounded carefully (a partial CSV must not delete legit atoms; likely scoped per-owner-touched, or a separate --prune flag). Alternatively keep it additive and document that removals require a manual DB correction (or a fresh re-seed). Distinct from FGAP-025 (which is closed by the data correction + the year_group extension).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "FGAP-026",
+      "oid": "8042f18002ed316b9078d1b86a272e50",
+      "content_hash": "e95a7f16b53a0e51f18b1472c71905aa7677dde8b5f1d14041a730bc6038fbc9"
+    },
+    {
+      "title": ".workshopping fragment content_hash/content_parent are stale at HEAD (hand-maintained JSON, no re-stamping write-path)",
+      "status": "identified",
+      "package": ".workshopping/prompt-fragment.json + the .workshopping substrate governance",
+      "description": "The .workshopping prompt-fragment.json fragments carry pi-context content-addressed identity fields (id/oid/content_hash/content_parent), but the file is hand-maintained raw JSON read only by the wasc Python dispatch (_workshop.py load_fragments joins `body`; nothing in prompt-workshop/dispatch reads content_hash; verify-render-parity ignores it). There is NO pi-context CLI write-path governing .workshopping that re-stamps content_hash on a body edit, so any hand edit leaves the hash stale. ~14 fragments are stale at HEAD (FRAG-preamble was; the FGAP-022/019 era + ~empty-body bootstrap fragments) -- independent of the Slice-A edits (those 5 were re-stamped via pi-context's own contentProjection+computeContentHash). content_hash is currently INERT (functional render impact nil), but the substrate's declared identity does not match content, which would drift any future content-addressed operation (promote/verify/diff against pi-context governance).",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/_workshop.py",
+          "reference": "load_fragments reads data['fragments'], dispatch joins only body; zero content_hash refs in dispatch/"
+        },
+        {
+          "file": ".workshopping/prompt-fragment.json",
+          "reference": "~14 fragments stale at HEAD (content_hash != recompute-from-body via pi-context contentProjection+computeContentHash); 162/181 match"
+        },
+        {
+          "file": "workflowsPiExtension/packages/pi-context/dist/content-hash.js",
+          "reference": "the canonical algo (RFC-8785 JCS canonicalize over contentProjection excl. id/oid/content_hash/content_parent -> SHA-256) -- the re-stamp source"
+        }
+      ],
+      "impact": "Inert today (dispatch ignores it), but .workshopping is a registered pi-context substrate whose fragment identity is internally inconsistent. Any move to bring .workshopping under a live pi-context write-path / content-addressed verify would surface ~14 mismatches; hand-edits silently desync the field.",
+      "proposed_resolution": "Decide (human scope): (a) bring .workshopping fragment maintenance under a pi-context CLI write-path that re-stamps content_hash + sets content_parent on body change (so edits stay consistent); OR (b) bulk re-stamp all stale fragments once (reuse the pi-context contentProjection+computeContentHash, as the Slice-A 5 were); OR (c) treat content_hash as vestigial for .workshopping and drop it from the fragment shape. Distinct from FEAT-005 Slice A (which re-stamped only its 5 edited fragments).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "FGAP-027",
+      "oid": "a70fa2d8964ef7dd5feed50be0f42115",
+      "content_hash": "af95744b464ab23ae9683adcebb205dc650e8c0402a068e45144febdf1fe0f1f"
+    },
+    {
+      "title": "Ownership distribution concentrates at the ASSIGNMENT layer because the chosen method's templates are single-purview (one-step-per-template x one-best-fit-assignment)",
+      "status": "closed",
+      "package": "prompt-workshop/snippets/05-decompose-action-steps.md + 06-propose-assignments.md (the decompose->assign model)",
+      "description": "ROOT CAUSE (verified, see DEC-50): action concentration is architectural. Spec 05 generates the action set by SELECTING ONE planning method and EXPANDING its templates (one-per-template); all 4 catalogued methods are single-purview process cycles; spec 05 does not even receive division_responsibility_atoms; spec 07 only ANNOTATES the method-derived steps. So the responsibility map is downstream annotation, never the upstream driver of actions -> the plan talks school-wide but acts one-division. NOT an assignment-logic miss (spec 06) and NOT fixable by FEAT-006 (can not invent un-generated actions). Original symptom framing (best-fit concentrates for single-purview methods) was the surface; DEC-50 carries the root + the responsibility-map-driven-generation fix path.",
+      "evidence": [
+        {
+          "file": "/tmp/slice-a-draft.json",
+          "reference": "assignments: 5/6 steps -> Curriculum and Teaching, 1 -> Principal's Office (PO); leads = Director of Teaching and Curriculum Center / IHS Principal / PD Leader"
+        },
+        {
+          "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+          "reference": "one step per the chosen method's templates, in template order -> if the method is single-purview, steps cluster"
+        },
+        {
+          "file": "prompt-workshop/snippets/06-propose-assignments.md",
+          "reference": "one best-fit responsible division per step -> best-fit governs when clustered (the Slice-A F5 wording)"
+        }
+      ],
+      "impact": "FEAT-005 criterion 1 (distributed ownership) is satisfied at the responsibility/standards/evidence layers but NOT at the assignment layer when the chosen planning method's templates are single-purview. A reviewer scanning 'Person(s) Responsible' sees Curriculum and Teaching on nearly every step despite the plan being school-wide elsewhere. Prompt-only Slice A cannot fix this without either (a) the method-selection producing a more cross-divisional template set, or (b) the decompose model allowing multi-owner / cross-divisional steps, or (c) accepting that assignment concentrates while responsibilities distribute.",
+      "proposed_resolution": "Per DEC-50: make action generation RESPONSIBILITY-MAP-driven -- spec 05 (or a new action-generation stage) reads the division/position responsibility atoms and produces distinct substantive actions per division purview toward the plan goal; planning methods become optional process-shapers; likely a model touch. Design via the canonical pipeline as the next FEAT-005 / governing-feature slice.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-08",
+      "id": "FGAP-028",
+      "oid": "097193298dc9cf6497607dc6c46fb680",
+      "content_hash": "8649cfa7003ff4d161c94bab17de20a00c42920d549b23855055f03a8062f81d",
+      "content_parent": "d7215557b9f07f5bbeea481fab72c7db2da4393e9a7d33b54962b240d30c3e75"
+    },
+    {
+      "title": "SLO descriptions are 6/7 EMPTY in the tenant data — the grounding emits a description field with no substance to apply",
+      "status": "identified",
+      "package": "tenant SLO (LearnerOutcome) data + the seed/import that populates it",
+      "description": "LearnerOutcome.description is blank for 6 of the 7 Chiway SLOs (only 'Confident' is populated; Bilingual Communicators, Compassionate, Engaged, Innovative, Reflective, Responsible are empty). grounding.py _learner_outcomes emits {code,label,description} to the specs, but with 6/7 descriptions empty the LLM has no substantive meaning to apply -- it can name the SLO but cannot reason about what (e.g.) 'Responsible' or 'Compassionate' requires of an actor. This is a primary cause (with DEC-51's model + spec layers) of the plan staying meta ('map work to SLOs') instead of operationalizing each SLO per actor. A data gap, fixable like the HRT/YGL responsibility seeding.",
+      "evidence": [
+        {
+          "file": "dev DB probe",
+          "reference": "LearnerOutcome.objects.filter(school=chiway): 7 SLOs, 1 with non-empty description; Confident='Shows self-assurance in learning and communicating...'; the other 6 blank"
+        },
+        {
+          "file": "school-improvement-plans/ai/services/grounding.py",
+          "reference": "_learner_outcomes emits {code,label,description} -- description carried but mostly empty"
+        }
+      ],
+      "impact": "Even with a good seed + the model links (DEC-51) + spec rewrites, the LLM cannot apply SLOs it has no description for. The plan's SLO content stays generic because 6/7 SLOs have no machine-readable meaning. Blocks DEC-51's per-actor SLO operationalization at the data layer.",
+      "proposed_resolution": "Populate LearnerOutcome.description for all 7 SLOs (the substantive meaning of each, in the school's voice) via the SLO seed/import (the same data-seeding path as the responsibility atoms); set the base (en) field, leave zh-hans per the EN-only convention. Then re-ground. Verify all 7 carry a non-empty description. Likely human-authored content (the school's real SLO definitions).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-09",
+      "id": "FGAP-029",
+      "oid": "cd3c16d270c6021243d58a799e5a0bff",
+      "content_hash": "119eaddb856060834a7a9ba70cf62d493025f8ea8f945dab802e1c6f97925b4f"
+    },
+    {
+      "title": "Mission/vision (guiding_statements) is grounded into the IDEATION specs 03/04/05 but does not DRIVE ideation (grounding-reach resolved by TASK-032; the ideate-from-vision directive is the open residual)",
+      "status": "identified",
+      "package": ".workshopping/prompt-spec.json grounding_sections (per-spec) + the ideation specs",
+      "description": "guiding_statements (mission + vision clause atoms, populated + substantive in the dev DB) reached the IDEATION specs propose-milestones(03) / draft-success-criteria(04) / decompose-action-steps(05) via TASK-032 (commit 0f13aae) — the grounding-REACH half of this gap is RESOLVED (it is now in the grounding_sections of all three, alongside the original narrative-draft(01)/propose-responsibilities(07)/propose-evidence(10)/propose-accreditation-standards(13)). RESIDUAL (open): there is still no directive in 03/04/05 to IDEATE FROM the vision/mission/SLO triad — to derive the plan's organizing dimensions from them — so per DEC-52 the plan is grounded by mission/vision upstream but not generated FROM them at the ideation layer. The residual folds into the DEC-51 multi-layer SLO-operationalization initiative (per-actor baseline->adjust->measure arcs, currently inexpressible in the models) and overlaps FGAP-043 (the theme/seed steers each spec but does not structurally drive the plan's dimensions).",
+      "evidence": [
+        {
+          "file": ".workshopping/prompt-spec.json",
+          "reference": "guiding_statements IS in the grounding_sections of narrative-draft(01)/propose-milestones(03)/draft-success-criteria(04)/decompose-action-steps(05)/propose-responsibilities(07)/propose-evidence(10)/propose-accreditation-standards(13) — added to the ideation specs 03/04/05 by TASK-032 (commit 0f13aae), resolving the grounding-REACH half of this gap"
+        },
+        {
+          "file": "school-improvement-plans/ai/services/grounding.py",
+          "reference": "_guiding_statements emits mission/vision clause atoms {label,text,order}; dev DB has both populated"
+        },
+        {
+          "file": "prompt-workshop/snippets/03-propose-milestones.md, 04-draft-success-criteria.md, 05-decompose-action-steps.md",
+          "reference": "RESIDUAL (open): the three specs render guiding_statements in grounding but carry no directive to IDEATE / derive the plan's organizing dimensions FROM the vision/mission/SLO triad — a grep of the snippet bodies finds no derive-from-theme/ideate-from-mission instruction; this unbuilt half keeps the gap identified"
+        }
+      ],
+      "impact": "The plan's ideated substance (milestones, criteria, actions) carries mission/vision in grounding-view but has no directive to derive its organizing dimensions FROM the vision/mission/SLO triad, so the DEC-52 coherence requirement (visibly advancing-vision / vivifying-mission) cannot hold at the ideation layer. Compounds FGAP-029 (empty SLO descriptions) and DEC-51 (no per-actor SLO arcs).",
+      "proposed_resolution": "DONE (TASK-032 / 0f13aae): guiding_statements added to the grounding_sections of propose-milestones(03), draft-success-criteria(04), decompose-action-steps(05) (grounding-leanness respected — guiding_statements is small). REMAINING: add directives in those three specs to IDEATE from the vision/mission/SLO triad and make the advance-vision / vivify-mission / foster-SLO-progress coherence explicit; execute within the DEC-51 initiative and co-resolve with FGAP-043. Compounds FGAP-029 (empty SLO descriptions).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-09",
+      "id": "FGAP-030",
+      "oid": "96c08759a7bc4fd3d90213be7b87d837",
+      "content_hash": "7660cf135170282e94d2bda5950849403ae7ead4db1952e1c279197cb5b0deb1",
+      "content_parent": "e899f59ea62c68a8597fe2e4da56c3c1e00c1396ac187bd364def8970fd5db64"
+    },
+    {
+      "id": "FGAP-031",
+      "title": "No review-ready .docx export of the assembled whole-plan draft",
+      "status": "identified",
+      "package": "prompt-workshop/dispatch (new export script) + school-improvement-plans/pyproject.toml (deps)",
+      "description": "The workshop assembles a whole-plan draft (prompt-workshop/outputs/current-draft.json) but can only render it as Markdown (sequence.py --render-whole-draft) and as ad-hoc static HTML; there is no export to a real Microsoft Word .docx for human review in the form reviewers actually use -- the canonical schoolwide-action-plan format exemplified by data/'Sample - Schoolwide Action Plan 2.docx' (a label/value header table + a 6-column action-step grid). python-docx is present in the .venv but is NOT declared in school-improvement-plans/pyproject.toml or uv.lock, so any exporter would depend on an undeclared package. No production-side draft->document export exists either. This is a delivery/review surface (orthogonal to the prompt-corpus work of FEAT-008) but is folded into the current focus per direction.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "the assembled whole-plan draft (shape defined in prompt-workshop/dispatch/_workshop.py:214-243); 13 top-level keys (plan, milestones, action_steps, success_criteria, feedback_channels, review_events, communications, revision_rules, accreditation_standards, domain_alignment, responsibilities, guiding_clauses, flags)"
+        },
+        {
+          "file": "prompt-workshop/dispatch/sequence.py",
+          "reference": "--render-whole-draft emits Markdown only (_render_whole_draft); no .docx path"
+        },
+        {
+          "file": "school-improvement-plans/pyproject.toml",
+          "reference": "python-docx / beautifulsoup4 not declared (present in .venv only)"
+        },
+        {
+          "file": "data/Sample - Schoolwide Action Plan 2.docx",
+          "reference": "the target Word format: label/value header table + 6-column action grid"
+        }
+      ],
+      "impact": "Reviewers cannot get the generated draft in the Word form they review and sign in; the canonical action-plan .docx cannot be produced from a generated draft; this blocks human review/sign-off of workshop drafts and the eventual promotion sign-off surface for the orchestration trio (DEC-29).",
+      "proposed_resolution": "Add a draft->docx exporter (prompt-workshop/dispatch/export_to_docx.py) that loads current-draft.json and emits a genuine OOXML .docx structured like the exemplar (header label/value table + bordered 6-col action grid), exporting any assembled draft (review surface; warn on missing sections, do not block); declare python-docx (and any HTML-parse dep) in the project dependency files. Folds into the current focus; eventually mirrored as a production export for the trio's review/sign-off.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-09",
+      "oid": "6847f5b13b11e591ff850e972810609d",
+      "content_hash": "fbbd98b300186090f72a3b74eeb2591e80b7e342d85f73f0acaa50759a448c74"
+    },
+    {
+      "id": "FGAP-032",
+      "title": "Generation leaks ALL-CAPS SLO-group names (GROUNDED/ROUNDED/UNBOUNDED) into plan prose",
+      "status": "wontfix",
+      "package": "prompt-workshop/shared/preamble.md (strand-name register rule) + generation",
+      "description": "A fresh guarded generation of narrative-draft (under the TASK-027 preamble) AND the committed prompt-workshop/outputs/current-draft.json both write the SLO group names in ALL-CAPS (GROUNDED, ROUNDED, UNBOUNDED) in plan.rationale / plan.provenance; check_draft Check 2 flags 6 strand-prefix hits. The existing preamble rule (the 'Reference learner outcomes and guiding clauses by their identity' paragraph: 'never write the bare GROUNDED:/ROUNDED:/UNBOUNDED: prefix as the reference') targets the COLON form and is a soft clause; the all-caps no-colon listing slips through. The school's groups are named Grounded/Rounded/Unbounded -- legitimate in normal case ('the Grounded outcomes'), a register leak in all-caps. This is NOT a process-method term (TASK-027 / R1 Check 1 = 0); it is a register leak under the pre-existing strand-prefix rule, surfaced by the harness.",
+      "evidence": [
+        {
+          "file": "/tmp/fresh-narrative.json (fresh narrative-draft generation under the TASK-027 preamble)",
+          "reference": "check_draft Check 2 = 6 hits: plan.rationale + plan.provenance each carry GROUNDED/ROUNDED/UNBOUNDED all-caps"
+        },
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "same leak in plan.provenance (predates TASK-027)"
+        },
+        {
+          "file": "prompt-workshop/shared/preamble.md",
+          "reference": "the guiding-clause-identity paragraph bans the bare 'GROUNDED:' colon prefix but not the all-caps no-colon listing"
+        }
+      ],
+      "impact": "Generated plans carry raw all-caps catalogue prefixes instead of natural prose ('the Grounded outcomes'); off-register; the harness hard-fails Check 2 on it. Adjacent to the FEAT-008 register work (R2 / the preamble register rules).",
+      "proposed_resolution": "Strengthen the strand-name register rule: instruct writing SLO group names in normal case ('the Grounded outcomes'), never all-caps and never the bare prefix; cover the no-colon all-caps form, not only 'GROUNDED:'. Verify via a fresh generation scanning check_draft Check 2 = 0. Folds into the FEAT-008 register pass (adjacent to TASK-028/R2; a small preamble-rule strengthening).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-10",
+      "oid": "f120ddf51cd07df6fd987b7335e315b2",
+      "content_hash": "ba895ab38a0cbb6ad74b0ae6ae26033aed179c2fba19299ede7855b4251c762c",
+      "content_parent": "c4bab028bb9a4f74de84a08a7ceaf5e60818646bf1b9c35febd4bcf8ceff6417"
+    },
+    {
+      "id": "FGAP-033",
+      "title": "Transposition regression: whole-draft invariants landed as post-hoc checks only, with no generation-time contract or in-execution evaluation",
+      "status": "closed",
+      "package": "prompt-workshop (sim->workshopping transposition): shared/preamble.md + snippets/01,02 + check_draft.py + the 14-spec run method",
+      "description": "PROCESS ROOT (root-caused by an independent audit): the sim-land -> workshopping transposition moved each sim discipline into the corpus WITHOUT a verification step that it survived as BOTH (a) a generation-time contract AND (b) an in-execution (per-spec, during-run) evaluation. Per-cell/per-step disciplines (R1-R6: register, learning-designed actions, three-view measurement, growth-mindset, quarterly cadence, distribution) landed as generation contracts in the preamble/snippets and are checkable. The WHOLE-DRAFT invariants -- improvement-area coverage above all -- landed as POST-HOC CHECKS ONLY (check_draft Check 4, lines 490-546), with NO generation-time instruction in any spec and NO per-spec self-check; the linear render->apply pipeline has no feedback loop, so an under-covering spec is never re-prompted. RESULT REGRESSION (the trigger): a full 14-spec assembled draft (current-draft.json) covers learner outcomes 7/7 but improvement areas only 3/7 -- 4 silently dropped (Bilingual Environment, Community Involvement, Resources and Tools, Student Data and Well-being), neither targeted in domain_alignment nor mentioned in prose. Mechanism: snippets/02-propose-domain-alignment.md line 57 mandates >=1 area_for_improvement, never all-relevant-or-surface-the-rest-as-gaps; snippets/01-narrative-draft.md lists the areas in grounding but never mandates addressing/acknowledging each; check_draft catches the silent gap only after assembly. SECONDARY regression: in the same assembled run, owner distribution degraded to 3 owners / 50% max (Curriculum and Teaching 3/6) -- passing the gate only at the boundary -- vs the isolated propose-assignments run (VER-031: 5 owners / 33%); the full pipeline concentrates ownership more than the isolated check showed. OPEN (audit could not confirm from source, needs verification): whether the three-view (student/staff/parent) measurement and the learning-designed contact-type action-step shape hold across the assembled draft, or also degraded -- neither has an in-execution or post-hoc gate.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "check_draft --strict: Check 4 coverage FAIL (improvement areas 3/7, 4 SILENT GAPs); Check 3 distribution 3 owners/50% max"
+        },
+        {
+          "file": "prompt-workshop/snippets/02-propose-domain-alignment.md",
+          "reference": "line 57: areas_for_improvement requires >=1, no all-or-surface-gap mandate"
+        },
+        {
+          "file": "prompt-workshop/snippets/01-narrative-draft.md",
+          "reference": "lines ~40-42 list areas in grounding; no mandate to address/acknowledge each"
+        },
+        {
+          "file": "prompt-workshop/dispatch/check_draft.py",
+          "reference": "lines 490-546 coverage is post-hoc only; no generation-time signal, no feedback loop to spec 02"
+        }
+      ],
+      "impact": "Generated whole-plan drafts can silently omit improvement areas (and potentially other whole-draft qualities) -- the plan looks complete but under-covers the school's own improvement agenda; regressions are discoverable only at final assembly, not during execution, defeating early correction. This is the class of failure any future tenant's run will hit. Establishes the need to (1) make whole-draft invariants generation-time contracts with per-spec in-execution evaluation, and (2) add a transposition-verification discipline ensuring every sim finding survives as contract + in-execution eval, not check-only.",
+      "proposed_resolution": "(1) Coverage as a generation contract: snippet 02 (and/or 01) must account for EVERY improvement area the goal bears on -- target it, or explicitly surface it as a not-this-cycle gap recorded in the draft -- and a per-spec self-check evaluates this during the run, not only at output. (2) Build in-execution evaluation: each spec carries exact success + process criteria the generation step self-verifies before apply (DEC for the principle). (3) Confirm + address the secondary distribution degradation and the open three-view/learning-design questions across the assembled draft. (4) Audit the full transposition map (each sim finding -> generation contract + in-execution eval), filing any other check-only/absent discipline. Execute via the canonical pipeline once scoped.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-11",
+      "oid": "1ece891e1438b0fdef5d25dec0bd035f",
+      "content_hash": "82836c2c4a0417c92cf85e608e8c0857c2a488cbd535f4dbc119bc791fbf5906",
+      "content_parent": "32bd71b6760d3cbbb8d3954dc10789b79d9141d12436f52575d69a8ad2359b6b"
+    },
+    {
+      "id": "FGAP-034",
+      "title": "apply_from_substrate.py is a second apply attach point that bypasses the in-execution self-check (ungated)",
+      "status": "closed",
+      "package": "prompt-workshop/dispatch/apply_from_substrate.py",
+      "description": "DEC-54's per-spec in-execution self-check (run_self_check, structural hard-fail) is wired into apply.py (the orchestrator-driven render->dispatch->apply path; apply.py:478). But apply_from_substrate.py (the FEAT-002 substrate-driven apply that writes immutable versioned outputs) parses + merges + writes WITHOUT calling run_self_check -- confirmed absent. A draft assembled via the substrate path therefore skips the structural gates (coverage, distribution, and any future self-checks). The in-scope T2 path (sequence.py -> apply.py) is gated; this sibling is not.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+          "reference": "main() parses via get_parse_function, merges via MERGE_RULES, writes -- no run_self_check call anywhere (grep confirms absent)"
+        },
+        {
+          "file": "prompt-workshop/dispatch/apply.py",
+          "reference": ":478 run_self_check call gating the orchestrator path"
+        }
+      ],
+      "impact": "Substrate-fed assembled drafts can persist structural shortfalls (silent coverage/distribution failures) the apply.py path would catch. The in-execution enforcement (DEC-54) is not uniform across both apply attach points.",
+      "proposed_resolution": "CLOSED by TASK-049 / VER-044 / commit 73a9e90: apply_from_substrate.py now runs the SAME per-spec in-execution self-check as apply.py -- the 3-carrier lift extracted to a shared _apply_carrier_fields(draft, parsed) (in apply.py, called by both paths; anti-drift); the substrate path loads frontmatter (load_snippet), lifts carriers, runs run_self_check after merge + before write, structural fail -> stderr + return 3 (no draft-after written). Workshop-only (dispatch + tests), no production code; full gate green; parity 14/14. [Original plan: add the run_self_check gate to apply_from_substrate.py at the same attach point as apply.py.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "1082ff5dba878e02a54d55510ece982b",
+      "content_hash": "769eb7fcfef8be2c2458b840147f07dd1c4fefde5bc483e473ca6e5c10b5ae9b",
+      "content_parent": "200fb71925cfe3e2879029dd0e29df09531fffb44453754ac01a8e26ebb1d658"
+    },
+    {
+      "id": "FGAP-035",
+      "title": "Authored-gap reason prose (domain_alignment *_not_addressed[].reason) is not free-text-scanned",
+      "status": "closed",
+      "package": "prompt-workshop/dispatch/check_draft.py + school-improvement-plans/planner/_freetext_audit.py",
+      "description": "TASK-040 added authored deferred-gap entries {label, reason} to domain_alignment.*_not_addressed. The label is catalogue-validated, but the reason prose is not run through the free-text audit (the catalogue-survivor / fabrication scan) the way the targeted rows' rationale is, and _iter_prose_fields in check_draft does not include the reason field. A reason could name a fabricated entity or off-register text without detection. Low-impact (reason is a brief structured field), but a real asymmetry vs the targeted rationale path.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/check_draft.py",
+          "reference": "_iter_prose_fields (~:506) collects action_steps/success_criteria/milestones/review prose but NOT domain_alignment[*_not_addressed][].reason"
+        },
+        {
+          "file": "school-improvement-plans/planner/_freetext_audit.py",
+          "reference": "FREETEXT_SELECTORS_BY_SPEC scans targeted rationale prose; the not_addressed reason field is not a selector"
+        }
+      ],
+      "impact": "A fabricated/off-register reason on a deferred-gap entry escapes the free-text/catalogue audit. Low blast radius (brief structured field) but an enforcement asymmetry.",
+      "proposed_resolution": "CLOSED by TASK-050 / VER-045 / commit 3597879: _select_a3 (planner/_freetext_audit.py) now extracts the deferred-gap `reason` alongside `rationale`, routing domain_alignment.*_not_addressed[].reason through the SAME audit_prefill_flags catalogue-survivor scan as targeted rationale (field-presence based; mutual exclusivity enforced by the parser builders). Production fix; full gate green; audit verified end-to-end through the real parser (fabricated reason -> flag; clean -> none). SCOPE NOTE: the whole-draft check_draft._iter_prose_fields not walking domain_alignment is a separate pre-existing matter, not this parse-time catalogue-survivor asymmetry. [Original plan: add the *_not_addressed[].reason field to the free-text audit selectors so deferred-gap reasons are scanned like targeted rationales.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "11dbeb67b67befb97a90f7ac5e29728a",
+      "content_hash": "8f15d6dbd2460aee3813d51327b9667c7b4e4fac79be1a90dcdf097bfab642a2",
+      "content_parent": "3905163399eec99b167e3740cc90402133cc122d2a641424273c3c0ad9df6651"
+    },
+    {
+      "id": "FGAP-036",
+      "title": "decompose.py _GB_TABLE drifted from live snippet grounding_sections -- 4 edits across 3 commits; reconstruction gate red",
+      "status": "closed",
+      "package": "prompt-workshop/dispatch/decompose.py",
+      "description": "_GB_TABLE (decompose.py:109-171) diverged from the live snippet grounding_sections via 3 separate lockstep misses; _assign_gb_ids (:287-321) STOPs on the first, so a single run surfaces only one. Full set (computed-group vs table-key, both directions): (1) guiding_statements (:145) {1,7,10,13} -> {1,3,4,5,7,10,13} [0f13aae / B2 / TASK-032]; (2) divisions {7} row 'FRAG-gb-divisions-inventory' (:150) orphaned -- no computed group matches -- delete [fa25965]; (3) division_responsibility_atoms {7} has no row -- add [fa25965, which swapped snippet-07's divisions block for division_responsibility_atoms, causing both (2) and (3)]; (4) division_responsibility_summary {5} has no row -- add [b2e4d61 / TASK-026]. Reconstruction-tool only; live dispatch + render parity unaffected.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/decompose.py",
+          "reference": ":145 guiding_statements {1,7,10,13} (live {1,3,4,5,7,10,13}); :150 divisions {7} 'FRAG-gb-divisions-inventory' orphaned; no row for division_responsibility_atoms {7} or division_responsibility_summary {5}"
+        },
+        {
+          "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+          "reference": "grounding_sections carries division_responsibility_atoms (not divisions) since fa25965"
+        },
+        {
+          "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+          "reference": "grounding_sections carries division_responsibility_summary (b2e4d61) + guiding_statements (0f13aae)"
+        }
+      ],
+      "impact": "decompose reconstruction gate STOPs (red). A guiding_statements-only fix re-STOPs on division_responsibility_atoms then division_responsibility_summary. Table-vs-live: 1 stale frozenset + 1 dead row + 2 missing rows.",
+      "proposed_resolution": "Re-sync _GB_TABLE to the live snippet sets (4 edits): (1) widen :145 guiding_statements -> {1,3,4,5,7,10,13}; (2) delete the orphaned :150 divisions {7} row; (3) add (division_responsibility_atoms, frozenset({7})); (4) add (division_responsibility_summary, frozenset({5})); the two new rows take FRAG-gb-* ids per the neighbour convention. DONE = python prompt-workshop/dispatch/decompose.py exits 0 / GATE 14/14 (clean bijection: zero computed-without-row, zero row-without-computed). Retain the lockstep-checklist note so future grounding-block additions update the table.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "d756adb239d37d29f8f3d3cf30b53ea8",
+      "content_hash": "c81c8856e4033ecbdce921046c753161a89e3f017e88cf8247b9e5eaacae4583",
+      "content_parent": "ccb0da4acf4444ed89e96e4dc6fa9d7ea3524ed86ed8eb3cf979ca3ff3d87971"
+    },
+    {
+      "id": "FGAP-037",
+      "title": "Three-view measurement (parent/stakeholder track) is neither produced nor enforced -- only student + staff present",
+      "status": "closed",
+      "package": "prompt-workshop/shared/preamble.md (criterion 7) + propose-domain-alignment/success-criteria/feedback-channels generation + no per-spec self-check",
+      "description": "R4 (preamble criterion 7; sim-revised-frame.md) mandates measurement from THREE points of view -- student outcomes, staff/adult practice, parent/stakeholder. The T5 audit determined the assembled draft delivers student + staff but the PARENT/STAKEHOLDER track is wholly absent (no parent feedback channel, no parent-awareness success criterion, no parent review event) -- parents appear only as a one-off communication audience. The discipline is a generation contract (criterion 7) but is NOT enforced by any per-spec in-execution self-check nor a post-hoc check, so the missing third view surfaced only on audit -- the same class as the coverage regression (FGAP-033): a stated whole-draft invariant with no in-execution gate.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "feedback_channels = Students / Staff-Faculty / Administration-Leadership only (no parent/stakeholder); success_criteria carry no parent-awareness measure; communications[3] is the only parent mention (a year-end note, not a measure)"
+        },
+        {
+          "file": "prompt-workshop/shared/preamble.md",
+          "reference": "criterion 7 states the three-view requirement (generation contract) but no self_check evaluator enforces it"
+        }
+      ],
+      "impact": "Generated plans can omit the parent/stakeholder measurement track while appearing complete; R4's three-view discipline is honored only for 2 of 3 views. Analogous to the coverage/distribution regressions -- needs a generation reinforcement + an in-execution self-check.",
+      "proposed_resolution": "CLOSED by TASK-044 / VER-039 / commit 429878f: three-view measurement is now a generation contract (snippet 11 directive + the agent measurement_views map: 3 fixed view-ids -> channel index OR {gap}) + a per-spec in-execution self-check (self_check.py three_view evaluator; structural fail -> apply exit 3, not saved) + a whole-draft check (check_draft.check_three_view, --strict). Production-safe optional carrier: a new optional AssistResult.measurement_views field (prefill stays the channels list; an absent key tolerated -> None, no raise; the prompt-template migration to production PromptTemplate is the later ai/00NN bridge). [Original plan: add a three-view per-spec in-execution self-check on the measurement-bearing spec, mirroring the T3 coverage pattern.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "ab4d83101e911a284e3930c9ee7786e8",
+      "content_hash": "ec642f5748dbd1b23e385a3bdb18fd383590aabe1de7b3351ca1d024f736e894",
+      "content_parent": "0e3737a982e92ae224b1fcbb74b1318953949873446e7e75ab639d37b40b003b"
+    },
+    {
+      "id": "FGAP-038",
+      "title": "Review-cadence discipline has a generation contract + post-hoc check but no per-spec in-execution self-check",
+      "status": "closed",
+      "package": "prompt-workshop/snippets/14-propose-review-loop.md + prompt-workshop/dispatch/self_check.py",
+      "description": "The quarterly review-cadence discipline (B1/TASK-031: >=4 evaluate-and-adjust checkpoints, earliest before 1 Dec) has a generation contract (snippet 14) AND a post-hoc check (check_draft.check_review_cadence, Check 5) -- but NO per-spec in-execution self-check at propose-review-loop. Per DEC-54's standing rule (every transposed discipline = generation contract + in-execution check; post-hoc alone insufficient), this is a check-only structural discipline. Coverage (T3) + distribution (T4) got in-execution gates; cadence is the remaining structural discipline without one.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/check_draft.py",
+          "reference": "check_review_cadence (~:598-633) is the post-hoc gate (>=4 checkpoints, earliest < 1 Dec), report-only by default / --strict to gate"
+        },
+        {
+          "file": "prompt-workshop/snippets/14-propose-review-loop.md",
+          "reference": "frontmatter has no success_criteria cadence entry -> no per-spec in-execution self-check"
+        }
+      ],
+      "impact": "A review loop with <4 checkpoints or a back-loaded first checkpoint surfaces only at the post-hoc check (or final assembly), not during the propose-review-loop generation -- the FGAP-033 late-discovery class for the cadence discipline.",
+      "proposed_resolution": "CLOSED by TASK-045 / VER-040 / commit be1bbf2: review-cadence now has a per-spec in-execution self-check (self_check.py review_cadence evaluator, reusing check_draft.check_review_cadence; structural fail -> apply exit 3) alongside its existing generation contract (snippet 14) + whole-draft check (Check 5). cycle_year sourced from grounding['cycle']['starts_on']; the cycle-unavailable case structural-fails ('cycle year unavailable') rather than degrading. Workshop-only (no production touch); snippet-14 frontmatter-only change (parity 14/14). [Original plan: register a cadence self-check evaluator reusing check_review_cadence + a snippet-14 structural success_criteria, mirroring the T3 coverage / T4 distribution pattern.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "937ea079f2420016e5f63c540014d508",
+      "content_hash": "03d39249aec5d9529ec6431bc532b86004dd5d9e9f91be5f8fe922fdca426de6",
+      "content_parent": "6510cb4a89ebbac91c904b2c37a7bf12cffabbc382008ea0bb1f5b995539682c"
+    },
+    {
+      "id": "FGAP-039",
+      "title": "Bilingual-language-improvement measurement strand not produced or enforced (distinct from the Bilingual Communicators SLO coverage)",
+      "status": "closed",
+      "package": "prompt-workshop generation (measurement-bearing specs) + self_check.py + check_draft.py",
+      "description": "sim-revised-frame.md establishes always-bilingual language improvement as a distinct MEASURED structural strand (a staff English-usage measure + a student bilingual-progress measure on the spiral cadence; R-0009: 'account for always-bilingual language improvement' + 'bilingual dual-purpose framing'). This is DISTINCT from R7 coverage (which only ensures the 'Bilingual Communicators' SLO is targeted-or-gapped). The T5 audit found the bilingual MEASUREMENT strand absent from the assembled draft (no staff English-usage survey, no bilingual student-progress measure, no bilingual feedback channel -- only incidental mission-quote mentions) AND absent from all enforcement (no generation-contract self-check, no check_draft scan). Same class as the three-view parent-track gap (FGAP-037): a stated measurement strand produced for only some tracks, ungated.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/sim-revised-frame.md",
+          "reference": "the bilingual 9th-measured-strand + always-bilingual discipline (staff English-usage + student progress on the spiral cadence)"
+        },
+        {
+          "file": "docs/plan-generation-heuristics.md",
+          "reference": "R-0009: always-bilingual language improvement + bilingual dual-purpose framing"
+        },
+        {
+          "file": "prompt-workshop/outputs/current-draft.json",
+          "reference": "no bilingual measurement (no staff English-usage survey / bilingual progress measure / bilingual feedback channel); grep bilingual/chinese/english over check_draft.py + self_check.py returns nothing"
+        }
+      ],
+      "impact": "Generated plans can omit the bilingual-language-improvement measurement strand while appearing complete; a validated sim-land discipline is unenforced. For a bilingual school this is a material coverage hole.",
+      "proposed_resolution": "CLOSED by TASK-046 / VER-041 / commit 2e3712b: the bilingual measurement strand is now a generation contract (snippet 11 directive + the agent bilingual_views map: {staff_english_usage, student_bilingual_progress} -> channel index OR {gap}) + a per-spec in-execution self-check (self_check.py _eval_bilingual_views; structural fail -> apply exit 3) + a whole-draft check (check_draft.check_bilingual_views, Check 7). Carried on a NEW optional AssistResult.bilingual_views field (TASK-044 pattern; prefill stays a list; absent key tolerated -> None, no raise). Distinct from the three-view measurement_views gate and from the Bilingual-Communicators SLO coverage. Production parser change; the prompt-template migration is the later ai/00NN bridge. [Original plan: add a bilingual-measurement generation contract + per-spec in-execution self-check (staff English-usage + student bilingual-progress, present-or-gap), mirroring the T3/three-view pattern.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "974bccf233bad93439b345d6e3f8e671",
+      "content_hash": "6d59e1b598d86b910e15397264fedbfdbd19bbcb1ea44268cdc7ba84d7af900a",
+      "content_parent": "9e62362b9e339ad4fb303d3ea0f1dd1913a0ca97d6e71193d35f7c09b2e29840"
+    },
+    {
+      "id": "FGAP-040",
+      "title": "Decision-requests (upward DECISION REQUEST surface) discipline not transposed into the corpus",
+      "status": "closed",
+      "package": "prompt-workshop corpus (no spec produces decision-requests) -- relates to TASK-035/R8 options-posture",
+      "description": "sim-revised-frame.md defines DECISION REQUEST as a first-class structural plan surface -- the upward complement to the options posture: what decision is needed, from whom, why, what it blocks/unblocks. The T5 audit found this discipline absent from the workshopping corpus: no spec produces a decision-requests output, no generation contract, no check. It is the upward-decision sibling of options-posture (R8), which TASK-035 is dispositioning as an orchestration/create-plan-UX-layer placement (not per-spec). Decision-requests plausibly belongs at the same orchestration/UX layer, but it is currently undispositioned -- neither transposed nor decided.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/sim-revised-frame.md",
+          "reference": "DECISION REQUEST defined as a first-class upward surface (what/from-whom/why/blocks-unblocks)"
+        },
+        {
+          "file": "prompt-workshop/snippets/",
+          "reference": "no spec_key produces a decision-requests output; absent from the 14-spec corpus + from self_check/check_draft"
+        }
+      ],
+      "impact": "A validated sim-land discipline (surfacing the upward decisions a plan needs) is not yet produced anywhere in the corpus. Placement is now SETTLED (DEC-0005: in-draft authored content, coverage-class); the generation contract + in-execution gate build remains open.",
+      "proposed_resolution": "CLOSED by TASK-048 / VER-043 / commit 49d7770: decision-requests are now an in-draft STRUCTURED element {what_decision, from_whom, why, blocks_unblocks} authored at propose-assignments (spec 06) for any action-step precursor no division can own. Carrier = a NEW optional AssistResult.decision_requests field (TASK-044/046 pattern; prefill stays the assignments list; absent key tolerated). Well-formedness gated deterministically (parser raise [exit 1] + _eval_decision_requests self_check [exit 3] defense-in-depth + check_decision_requests whole-draft Check 8); COMPLETENESS (every unowned precursor escalated) is generation-contract + adversarial-read -- decision-requests are emergent, not a catalogue universe (per DEC-0005 in-draft coverage-class; criterion 3 corrected from an impossible deterministic-completeness gate to the determinable split). [Original plan: decision-requests in-draft coverage-class element per DEC-0005, snippet contract + parser-recognized element + self-check.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "8f6d9a9b26290ed35a89492a9b4c14e3",
+      "content_hash": "c5b2fd96daf6696cc0d8088e278328ef3e9d4fb8c519fb81c3d0b84e5817d25d",
+      "content_parent": "cf4f0142acad0e200ff9726662c216f395c3508031d2e3f1823a2a6ef0595431"
+    },
+    {
+      "id": "FGAP-041",
+      "title": "Front-load precursor/dependency-identification step not transposed (mandatory front-load sequence step 3)",
+      "status": "closed",
+      "package": "prompt-workshop/shared/preamble.md (front-load criterion 7) + generation",
+      "description": "sim-revised-frame.md defines a MANDATORY plan-cycle-start front-load sequence (every cycle, before any action) of three steps: (1) establish a baseline; (2) articulate how progress + success will be measured; (3) IDENTIFY PRECURSOR REQUIREMENTS / DEPENDENCIES -- what must be in place first (data, tools, training, coordination, another division's output, a policy); 'if none, say so'. The preamble's front-load criterion 7 transposed steps 1+2 (baseline + measurement, with the three views) but NOT step 3 (precursor/dependency identification). The T5 audit confirmed it is absent from the preamble, the corpus, and the enforcement map. It is distinct from FGAP-040 (decision-requests -- the narrower UPWARD request raised only when a precursor is NOT owned) and from FGAP-039 (which names one bilingual-specific precursor instance, not the general discipline): precursor-identification is the broader prior front-load articulation step, including precursors the division can satisfy itself + the affirmative 'if none, say so'.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/sim-revised-frame.md",
+          "reference": "the mandatory front-load sequence step 3 -- identify precursor requirements/dependencies; 'if none, say so'"
+        },
+        {
+          "file": "prompt-workshop/shared/preamble.md",
+          "reference": "criterion 7 transposes baseline + three-views + durability only; no precursor/dependency clause"
+        }
+      ],
+      "impact": "Generated plans can launch actions without surfacing what must be in place first (data/tools/training/coordination/upstream output/policy) -- a validated mandatory front-load discipline is unenforced. Risk: action steps that silently depend on un-stood-up precursors.",
+      "proposed_resolution": "CLOSED by TASK-047 / VER-042 / commit 1c3550a: front-load precursor/dependency identification is now a generation contract -- preamble criterion 7 (front-load step 3: surface precursor requirements/dependencies before actions, or state plainly none) + the snippet-05 step-writing directive (each action-step description states its precursor(s)-or-none). A2 prose-embodied shape, verified by an adversarial read (a fresh generation: every action step states precursor-or-none, zero silent); NOT a deterministic gate (no self_check, no check_draft -- precursor prose is author-variable). OUTPUT CONTRACT unchanged; no production/specs.py/schema change. Re-run cleanly IN PLAN MODE after a prior out-of-process IMPL was interrupted (residue discarded via git restore/rm, never git reset). [Original plan: add precursor/dependency identification to the front-load generation contract (preamble criterion 7) + the action-bearing spec.]",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-12",
+      "oid": "0a27776a87eabe4b178ac25f517e1143",
+      "content_hash": "df7a94e737d9ff9f54189ee649353dd3f5b36513ad26c305c2d6c3525c8b35df",
+      "content_parent": "720c6a848cedee70da8f79848e944c5322165b7ce5156ddaad9f1e39a6827f91"
+    },
+    {
+      "id": "FGAP-042",
+      "title": "Whole-draft prose scan (check_draft._iter_prose_fields) does not walk domain_alignment",
+      "status": "closed",
+      "package": "prompt-workshop/dispatch/check_draft.py",
+      "description": "check_draft._iter_prose_fields (the whole-draft prose enumerator feeding the hard-phrase / scaffolding-label / language-WARN scans, DEC-53) yields prose from plan.*, action_steps[].description, success_criteria[].text, milestones[].label, and review_events/communications/revision_rules[].* -- but does NOT walk `domain_alignment` at all. So neither the targeted-row `rationale` nor the deferred-gap `reason` prose enters the whole-draft language-WARN scan. Surfaced during TASK-050 (FGAP-035): distinct from that gap (the parse-time catalogue-survivor audit asymmetry, which audit_prefill_flags/_select_a3 closes). This is the whole-draft hard-phrase/language-WARN coverage layer, a pre-existing omission for all domain_alignment prose.",
+      "evidence": [
+        {
+          "file": "prompt-workshop/dispatch/check_draft.py",
+          "reference": "_iter_prose_fields (~209-253) enumerates plan/action_steps/success_criteria/milestones/review-collections; no domain_alignment branch"
+        }
+      ],
+      "impact": "A banned process-method term / scaffolding label / off-register phrase in a domain_alignment rationale or reason would not be surfaced by the whole-draft language-WARN scan (it IS caught at parse-time for fabrication via audit_prefill_flags, but the whole-draft hard-phrase WARN layer skips it). Low blast radius (WARN-class, language; parse-time fabrication audit is unaffected).",
+      "proposed_resolution": "Add a domain_alignment branch to _iter_prose_fields yielding the targeted *_targeted[].rationale and the *_not_addressed[].reason prose, so the whole-draft language-WARN scan covers domain_alignment prose like the other collections. Workshop-only (check_draft.py). DEC-53 language-WARN class. A future fix task (human-scoped).",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-14",
+      "oid": "dde29e7e619ce62f9898d092eab4a186",
+      "content_hash": "a9c835b3f55a185e5984e2cc52016b51221d2d55cbe73aacf53af3d9a47580ea",
+      "content_parent": "f04d8de615b4b69cf13f0c16cd8704b804437764e604c569994471b6ea5bc6df"
+    },
+    {
+      "id": "FGAP-043",
+      "title": "The originating theme (the `seed`) enters every spec only as a one-line optional steer, not as a structural driver of the plan's organizing dimensions",
+      "status": "identified",
+      "priority": "P2",
+      "package": "prompt-workshop generation — the ideation specs 03/04/05 + the seed grounding mechanism; DEC-52 theme-coherence",
+      "description": "The author `seed` (the originating theme, e.g. 'Improve SLO usage across the school') enters as a required workflow input and is threaded --seed into ALL 14 render steps, resolved per render and injected into the template context. But in every spec it appears ONLY as a one-line nudge: spec 01 inline; specs 02-14 as the {% if seed %} 'Author refinement (an optional steer for the <task>)' fragment. Corroborated against source: in the IDEATION specs the seed line sits in the grounding preamble and the TASK BODY derives the plan's substance from the CATALOGUES + accumulated draft_state, NOT from the theme — propose-milestones (03) chooses improvement_type CODES from the catalogue + reads draft_state, with no directive to derive the plan's organizing dimensions FROM the seed/theme. The seed is also NOT carried in draft_state (re-injected each render; production-parity). So the theme steers every step but does not structurally organize the plan. DISTINCT from FGAP-030 (the guiding_statements/mission-vision grounding-REACH vector); FGAP-043 is the seed/theme vector. The intended behavior (sim run-006): the framework is theme-agnostic and the organizing axis should be DERIVED FROM the theme.",
+      "evidence": [
+        {
+          "file": ".workflows/workshop-run-plan-sequence.workflow.yaml",
+          "lines": "5-11, 24-440",
+          "reference": "seed = required input ('threaded into every spec's render'); --seed passed to all 14 render steps"
+        },
+        {
+          "file": "prompt-workshop/dispatch/render_from_substrate.py",
+          "lines": "89, 109",
+          "reference": "seed resolved per render and injected into the Django template context"
+        },
+        {
+          "file": "prompt-workshop/snippets/03-propose-milestones.md",
+          "lines": "28, 51-55",
+          "reference": "seed appears ONLY as the '{% if seed %}Author refinement (an optional steer for the milestones)' line; the task body derives milestones from the improvement_types catalogue + draft_state, NOT from the theme"
+        },
+        {
+          "file": "prompt-workshop/snippets/01-narrative-draft.md",
+          "lines": "32",
+          "reference": "spec 01 inline seed: 'Author seed (a one-line intent for this plan): {{ seed }}'"
+        },
+        {
+          "file": "prompt-workshop/WORKSHOPPING-SUBSTRATE-SPEC.md",
+          "lines": "98-110",
+          "reference": "the FRAG-gb-seed-* 'optional steer' fragments, one per spec 02-14"
+        },
+        {
+          "file": "prompt-workshop/dispatch/_workshop.py",
+          "lines": "511-513",
+          "reference": "seed NOT carried in draft_state; re-injected each render (production-parity via PromptTemplate.render(seed=))"
+        },
+        {
+          "file": "prompt-workshop/sim-runs/run-006.md",
+          "lines": "41-45, 52",
+          "reference": "authoritative intended behavior: framework is THEME-AGNOSTIC; 'the organizing axis is derived FROM the theme … add derive this plan's organizing dimensions from the theme'; this finding is UNFILED (grep-confirmed across framework-gaps/seed-round-plan/discoveries)"
+        }
+      ],
+      "impact": "A plan authored with a strong thematic seed is not structurally organized by it: the milestones/criteria/action-steps' organizing dimensions come from the LLM's free inference over the catalogues + draft_state, with the theme only a one-line advisory. The plan may cohere if the LLM infers it, but it is not driven by the theme — violating the sim run-006 intent (organizing axis derived FROM the theme) and the DEC-52 theme-coherence requirement at the ideation layer. Sibling-class to FGAP-030; together they are the 'ideation should be DRIVEN by the input vectors (theme + mission/vision/SLO), not just steered by them' gap.",
+      "proposed_resolution": "Per sim run-006: make the theme a STRUCTURAL input to the ideation specs (03/04/05), not a per-spec optional steer — add a directive that derives the plan's organizing dimensions FROM the theme (the seed + the mission/vision/SLO triad), e.g. a front-load 'derive this plan's organizing dimensions from the theme' step, so a different seed yields a different organizing axis by construction. Bound by grounding-leanness / the stdout cap. Co-resolve with FGAP-030 (guiding_statements into 03/04/05) and DEC-51/DEC-52 (per-actor SLO operationalization + vision/mission as ideation vectors) — the same theme-into-ideation initiative. Investigate the exact directive wording + whether the seed should persist into draft_state for downstream specs, before IMPL.",
+      "related_decisions": [
+        "DEC-51",
+        "DEC-52"
+      ],
+      "created_by": "orchestrator (2026-06-14; Explore-investigated + source-corroborated before filing)",
+      "created_at": "2026-06-14",
+      "oid": "5a29f0fddd7cd1dff00f4a209da0bf04",
+      "content_hash": "b46d50ded23932339c53e4e092edd5f97088bd8d3cd276b521b4e568b86f0746"
+    },
+    {
+      "id": "FGAP-046",
+      "title": "hod-doc's head-accountability PositionResponsibility atom is designed but unbuilt; no leader Position carries its division's responsibilities",
+      "status": "identified",
+      "priority": "P2",
+      "package": "school seed (leader Position responsibility atoms) + the US-LLM-27 propose-responsibilities path; design source docs/hod-default-responsibilities.md; surfaced by the prompt-workshop run",
+      "description": "docs/hod-default-responsibilities.md designs, as a position-grain default of the head seat, 'Be accountable for delivering the department's responsibility atoms' (line 56), and its materialization constraint (lines 20-27) requires this to live as a stored PositionResponsibility atom, not a string computed at grounding time. That materialization was never built: school/migrations/0050_seed_director_positions.py seeds the four Director leader positions (incl. IHS Principal, kind=leader) and states it seeds no responsibility-atom rows. So no leader Position carries an atom expressing accountability for its division's responsibilities. When the US-LLM-27 model tried to express the IHS Principal's accountability for the Principal's Office division's responsibilities, it had no position-grain atom to cite and attributed a division-grain atom to the position; the parser's position-grain check (which admits only the position's own atoms) rejected it, aborting the run.",
+      "evidence": [
+        {
+          "file": "docs/hod-default-responsibilities.md",
+          "lines": "20-27, 49-59",
+          "reference": "the materialization constraint (responsibilities must be STORED atoms, not computed) + the position-grain head-accountability default 'Be accountable for delivering the department's responsibility atoms'"
+        },
+        {
+          "file": "school/migrations/0050_seed_director_positions.py",
+          "lines": "28-30, 47-78",
+          "reference": "seeds the four Director leader positions (kind=leader, incl. IHS Principal under Principal's Office (PO)) and explicitly seeds no responsibility-atom rows"
+        },
+        {
+          "file": "planner/specs.py",
+          "lines": "575-606, 2755-2770",
+          "reference": "parse_propose_responsibilities position-grain check admits only the position's own atoms (_responsibility_statements_under_position); no fallback to the division's atoms"
+        },
+        {
+          "file": "ai/services/grounding.py",
+          "lines": "222-259",
+          "reference": "_division_responsibility_atoms emits each position's responsibilities separately from the division's; a materialized position atom would surface here"
+        }
+      ],
+      "impact": "A workshop full run aborts at spec 07 (US-LLM-27) whenever the model expresses a leader-position's accountability for its division's responsibilities, because no position-grain atom exists to cite. The hard catalogue-gate rejection halts the whole 42-step generation. It also blocks TASK-055's confirming run, which cannot reach an assembled draft while the run aborts at spec 07.",
+      "proposed_resolution": "Per DEC-55: materialize hod-doc's head-accountability default as a stored position-grain PositionResponsibility atom on every kind=leader Position (a seed migration mirroring 0048/0050; idempotent, reversible). No model/grounding/parser/spec change. TASK-056 addresses this gap.",
+      "related_decisions": [
+        "DEC-55",
+        "DEC-35",
+        "DEC-36"
+      ],
+      "created_by": "orchestrator (2026-06-20; run-surfaced, Explore root-caused, source-corroborated before filing)",
+      "created_at": "2026-06-20",
+      "oid": "86cfaeade78db04522e011bc939d0508",
+      "content_hash": "8d98f938446ae24574a41c40c622d2a10cffc998af1b3065327f94ab9f410334"
+    },
+    {
+      "id": "FGAP-047",
+      "title": "Prompt-vs-parser citability gap: a spec can render context values (scope_summary/kind) as copy-targets the parser rejects, aborting the run",
+      "status": "identified",
+      "priority": "P2",
+      "package": "prompt-workshop spec rendering (snippet 'copy from this list' inventories) vs planner/specs.py parser admission; surfaced at spec 07 (US-LLM-27); design DEC-56",
+      "description": "The grounding emits contextual fields (scope_summary, kind, category, prose) beside the citable identity fields (label, statement, code). A spec's prompt can render that superset inside a 'copy exactly from this list' inventory, while the parser admits only the exact identity field at the exact owner/grain. So the model can copy a presented-but-non-admitted value, and the hard catalogue-gate (apply_from_substrate.py parse -> ValueError -> return 1) aborts the whole 42-step run. Spec 07 (propose-responsibilities) is the lone current violator: it renders division/position scope_summary and kind inline with the labels in the citable inventory (snippet lines 26-34), so they read as copyable. The other 13 specs render context but never as copy-targets (spec 13's 'code (category): text', only code cited, is the clean pattern). Three confirming runs aborted at spec 07 on instances of this one class (a scope_summary cited as a division responsibility; a cross-grain atom cited at the position grain).",
+      "evidence": [
+        {
+          "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+          "lines": "26-34",
+          "reference": "renders division/position scope_summary (and kind) inline with the labels inside the citable responsibility inventory the model is told to copy from"
+        },
+        {
+          "file": "school-improvement-plans/planner/specs.py",
+          "lines": "483-507, 547-606, 2702-2770",
+          "reference": "_check_in_catalogue + _responsibility_statements_under_division/_under_position admit only the exact responsibility statements at the exact owner/grain; scope_summary and kind are never admitted"
+        },
+        {
+          "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+          "lines": "127-135",
+          "reference": "parse ValueError -> return 1; a single mis-slotted citation aborts the whole run; a mis-slotted real value is treated identically to a fabrication"
+        },
+        {
+          "file": "prompt-workshop/snippets/13-propose-accreditation-standards.md",
+          "lines": "49-51",
+          "reference": "the clean exemplar: renders 'code (category): text' and the contract cites only code, so rendered-citable == parser-admissible"
+        }
+      ],
+      "impact": "Spec 07 aborts a full workshop generation non-deterministically whenever the model copies a rendered context value; each run can hit a different element of the gap (scope_summary, kind, cross-grain). It blocks every promotion-ready run and the TASK-055 + TASK-056 confirming runs. The hard catalogue-gate kills all 42 steps on one mis-pick.",
+      "proposed_resolution": "Per DEC-56: establish the invariant rendered-citable == parser-admissible and enforce it with a deterministic guard across all 14 specs; correct spec 07's render so only the responsibility statements are copy-targets (scope_summary/kind non-citable). No change to the parser, the resolve raise-on-miss, the apply hard-abort, or the DEC-40/DEC-53 gate posture (apply-layer graceful-drop is rejected -- it would breach DEC-40). TASK-057 addresses this gap.",
+      "related_decisions": [
+        "DEC-56",
+        "DEC-40",
+        "DEC-53"
+      ],
+      "created_by": "orchestrator (2026-06-20; run-surfaced x3, two read-only explores root-caused the class + the apply error model, source-corroborated before filing)",
+      "created_at": "2026-06-20",
+      "oid": "07e2e9cf74b2454434cf68933aee679b",
+      "content_hash": "272d565455ce9137380b8b9043b94b05d52a9b28c686d0675198a970cf875684"
+    },
+    {
+      "id": "FGAP-048",
+      "status": "identified",
+      "package": "school-improvement-plans/ai/migrations (PromptTemplate corpus) + plans/services.py",
+      "title": "Trio: prose-named WASC standards (A1 narrative) can diverge from the structured accreditation_standards (A2/spec-13); no production prompt or gate reconciles them",
+      "description": "Production re-file of the discarded language-polish-pass branch's workshop-scoped FGAP-044, verified live against main 2026-06-21. In the trio, A1 narrative-draft writes prose (current_state/desired_state/rationale/action-step descriptions) that may name WASC standard codes and commit the plan to a targeted set, while A2 propose-accreditation-standards (spec-13) selects the authoritative STRUCTURED accreditation_standards independently from grounding. No production prompt directs the model to keep the prose-named set coherent with the structured set, and _check_promotion_gates only checks accreditation_standards.exists() (non-empty) -- it does NOT verify prose<->structured coherence. So the trio can emit a gate-PASSING draft whose prose commits to standards the structured targeted set omits (or names none the prose advances): an ungated incoherence. Corroborated against current source: no reconcil / 'targeted standards are' / 'coherent with the draft' directive anywhere in ai/migrations (only the no-fabrication preamble); no prose/coherence check in plans/services.py _check_promotion_gates.",
+      "impact": "A trio draft can pass the promotion gate while its narrative prose and its structured Standards-Targeted set disagree -- the admin is shown an internally incoherent plan, against NORTH-STAR's 'best route' coherence. Real on the production trio path (A1 + A2 both run). Not a gate blocker (the gate is satisfied by a non-empty structured set), so it surfaces only on read.",
+      "proposed_resolution": "A production prompt directive via an ai/00NN guarded migration (canonical pipeline): in the shared preamble and/or the spec-13 body, direct the model to treat the declared structured accreditation_standards as the authoritative targeted set, name a standard in prose only where the plan substantively ties to it (key+name, not an enumerated prose list), and make the proposed structured set coherent with the prose (include every standard the prose substantively advances; propose none the prose gives no support for). The discarded branch's draft directive text (workshop preamble + snippet-13) is a usable starting point. A structural coherence check is a heavier alternative; a prompt directive is the lighter first move.",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/ai/migrations/",
+          "reference": "grep -rinE 'reconcil|targeted standards are|coherent with the draft' ai/migrations/ returns no match (only the no-fabrication preamble) -- the standards-reconciliation directive is absent from the production prompt corpus"
+        },
+        {
+          "file": "school-improvement-plans/plans/services.py",
+          "reference": "_check_promotion_gates: grep 'prose|reconcil|named|coheren' returns no prose<->structured coherence check; the gate only asserts accreditation_standards.exists()"
+        },
+        {
+          "file": "discarded language-polish-pass branch",
+          "reference": "origin = workshop-scoped FGAP-044 (commit 4001a87); its prompt fix (27ac24e) was applied to the retired workshop layer only, never to production ai/migrations"
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "d84a6545f947ef08f29d01810eca0fbe",
+      "content_hash": "a49c01f8fd2854843615701bae7c996ce33b8ce75d36a2734502bbaffaa0db7a"
+    },
+    {
+      "id": "FGAP-049",
+      "status": "identified",
+      "package": "school-improvement-plans/ai/migrations (PromptTemplate corpus, shared preamble)",
+      "title": "Trio: no production prompt rule governs spelling-variety consistency; a draft can mix British and American spelling within itself",
+      "description": "Production re-file of the discarded language-polish-pass branch's workshop-scoped FGAP-045, verified live against main 2026-06-21. The production shared preamble's register rules govern voice, verbatim catalogue labels, method-terms, and reference-by-identity; NONE governs spelling variety. So a single trio-produced draft can mix British and American forms in free prose (counselling/counseling, programme/programs, labelled/labeling, categorisation/categorization). Corroborated against current source: no spelling / variety / British / American directive in ai/migrations (the 'bilingual programme' string in the no-fabrication preamble is a fabrication EXAMPLE, not a spelling rule).",
+      "impact": "Cosmetic register inconsistency within a draft. Per DEC-53 language/register/spelling is NON-BLOCKING (WARN / final-polish, never gates). Low priority -- a line item for the production prompt language-polish pass, not a trio milestone blocker.",
+      "proposed_resolution": "A one-line additive bullet in the shared preamble register block via an ai/00NN guarded migration: direct a single spelling convention matching the school's catalogue labels, no British/American mixing within a plan. Fold into the eventual DEC-53 production-prompt language-polish pass (the production analog of the discarded workshop TASK-055).",
+      "evidence": [
+        {
+          "file": "school-improvement-plans/ai/migrations/",
+          "reference": "grep -rinE 'spelling|british|american|one spelling' ai/migrations/ returns only the no-fabrication preamble's 'bilingual programme' fabrication-example; no spelling-convention directive exists in the production corpus"
+        },
+        {
+          "file": "discarded language-polish-pass branch",
+          "reference": "origin = workshop-scoped FGAP-045 (commit 4001a87); the spelling-rule fix was workshop-layer only, never migrated to production"
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "a265b75a88363e042c824cfea4a80419",
+      "content_hash": "aa8a9580ed9628227e6db588ec9c8f4a395a4b890a932bb6bc5a4971f9194de4"
+    },
+    {
+      "id": "FGAP-050",
+      "status": "closed",
+      "package": "school-improvement-plans/planner/_llm_fabrication_validator.py + ai/services/llm/__init__.py",
+      "title": "DEC-44 fabrication validator resolves its LLM provider without the run's user context (get_llm() no-user), so it silently no-ops under a user-scoped provider config -- the anti-fabrication LLM backstop is OFF whenever the configured provider is not a SYSTEM default",
+      "description": "Surfaced by the first real end-to-end run_trio run against the chiway tenant (2026-06-21, --dry-run, openrouter). The trio's spec calls go through get_llm_logged(author) (ai/services/llm/__init__.py:158) which resolves the USER-SPECIFIC LLMProviderConfig first -- the dev DB has exactly one config row: provider=openrouter, user=davidenchine@outlook.com, is_default=True, is_enabled=True, key on row, model=anthropic/claude-sonnet-4.6 -- so the spec calls correctly use openrouter (HTTP 200s observed). But the DEC-44 fabrication validator (planner/_llm_fabrication_validator.py:125) calls get_llm() with NO user, so _get_db_config(user=None) does not match the user-scoped row (an is_default flag on a user-scoped row does not satisfy a no-user lookup), and it falls through to settings (LLM_DEFAULT_PROVIDER unset -> base.py default 'anthropic') with no ANTHROPIC_API_KEY -> NoProviderConfiguredError('No API key configured for anthropic'). The validator is failure-falls-back-without-blocking (planner/_llm_fabrication_validator.py:21,132-134): it logs a WARNING and returns [], so the run PROCEEDS but the DEC-44 LLM fabrication backstop does not fire. Repeated twice in the observed run (validate_candidates invoked per spec that left free-text survivors).",
+      "evidence": [
+        {
+          "file": "planner/_llm_fabrication_validator.py",
+          "reference": "line 125 `llm = get_llm()` (no user/provider arg); line 50 _DEFAULT_MODEL='anthropic/claude-haiku-4.5'; lines 21,113-134 failure-falls-back-without-blocking -> logs WARNING + returns []"
+        },
+        {
+          "file": "ai/services/llm/__init__.py",
+          "reference": "get_llm(user=None) -> _get_db_config(user, provider): user-specific first then settings fallback (LLM_DEFAULT_PROVIDER default 'anthropic', base.py:367); a no-user lookup does not match a user-scoped is_default row"
+        },
+        {
+          "file": "dev DB state 2026-06-21",
+          "reference": "1 LLMProviderConfig: provider=openrouter user=davidenchine@outlook.com is_default=True is_enabled=True key_on_row=True; env LLM_DEFAULT_PROVIDER=None, no OPENROUTER/ANTHROPIC env keys -> run_trio openrouter calls succeed (author path) while the validator's get_llm() resolves anthropic and raises NoProviderConfiguredError"
+        },
+        {
+          "file": "observed run output",
+          "reference": "2026-06-21 17:09 run_trio --dry-run: repeated 'DEC-44 validator: provider call failed: NoProviderConfiguredError(...anthropic...)' WARNINGs interleaved with successful openrouter spec calls"
+        }
+      ],
+      "impact": "The DEC-44 LLM anti-fabrication backstop (the third-stage validator over the deterministic free-text-audit survivors) silently does not run whenever the active provider is user-scoped or otherwise not a system default -- i.e. in the normal dev configuration. The PRIMARY anti-fabrication protection (the deterministic free-text catalogue audit) still runs, so fabrication is degraded-not-absent; but the LLM backstop that DEC-44 added is effectively off, undetected except by the WARNING log. Affects any get_llm() caller that omits the user when configs are user-scoped, not just the validator.",
+      "proposed_resolution": "Thread the run's user (and/or the resolved provider) into the validator so it uses the SAME provider as the invoking run: validate_candidates(... , user=...) -> get_llm(user=...) (the trio passes its author; the dispatch path passes request.user). Needs its own canonical-pipeline pass to trace validate_candidates' callers (audit_freetext / the grounding free-text path) and thread the user through. Consider also: (a) failing LOUDER than a WARNING when the backstop cannot run (it is a safety layer, so a silent no-op is the dangerous part) -- e.g. surface a degraded-validation signal; (b) the anthropic-namespaced _DEFAULT_MODEL is openrouter-compatible (openrouter routes 'anthropic/...'), so the model string is not the bug -- the bug is provider resolution. Operational workaround to make the validator run NOW: make the openrouter LLMProviderConfig a SYSTEM row (user null, is_default) OR set LLM_DEFAULT_PROVIDER=openrouter + OPENROUTER_API_KEY in the env, so get_llm() (no user) resolves openrouter.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "bf3f1391aff09c42e05ad81f4c7910b5",
+      "content_hash": "ddcbeb034d12031f65eae9ccecb68e622601456c42296cb90fadbaf29519e1e5",
+      "content_parent": "4c81cfe28cd10c37bbf0356537f2807fe5e35ae9b19782570e392171a711c1fa"
+    },
+    {
+      "id": "FGAP-051",
+      "status": "identified",
+      "package": "school-improvement-plans/planner/orchestration.py (run_trio_to_proposed_plan / the terminal save) + planner/specs.py (the parsers) + planner/views.py (_bind_validate_and_save)",
+      "title": "An LLM-produced model field-constraint violation (e.g. label > max_length=200) aborts the WHOLE trio run at the terminal save -- defeating the 'always yields a Plan' + 'no run aborts' guarantees, because constraint violations are not caught until the unguarded terminal save",
+      "description": "Surfaced by the second live run_trio run (2026-06-21, chiway, openrouter; after FGAP-050 fixed the validator). The run completed all 14 specs + gate-closure, then aborted with a CommandError aggregating per-formset form-validation errors -- one formset had 4 rows whose `label` was 279-363 chars against the model max_length=200 (Milestone/FeedbackChannel/ReviewEvent/Evidence all define `label = CharField(max_length=200)`: review.py:57, output.py:168, milestone.py:72, feedback.py:48). ROOT CAUSE + abort path (corroborated vs source): the per-spec parsers (planner/specs.py) validate catalogue membership + shape + non-empty, but DO NOT validate model field constraints like max_length (e.g. C1 parse_suggest_feedback_channels:1509 checks label non-empty, not its length). So an over-long label parses + folds + saves into draft_state cleanly. At the terminal save: run_gate_closure_loop probes by saving (save+gate+rollback); an over-long label makes EVERY probe save FAIL form validation -> the loop never converges -> returns plan=None; run_trio_to_proposed_plan's fallback `plan = save_draft_state_as_plan(final_state, ...)` (orchestration.py:1170) then ALSO fails form validation and RAISES -- and that line is NOT wrapped in a try/except -> the ValidationError propagates out of run_trio_to_proposed_plan -> CommandError, NO Plan saved. The resilience loop (_run_spec_with_resilience) only catches PER-SPEC LLM/parse/fold errors (LLMTimeout/RateLimit/ValueError/LLMAuth/_FoldError); it does NOT cover a constraint violation that only manifests at the post-all-specs terminal save. So the DEC-57 dec-4 'no run aborts' + TASK-071's 'always yields a Plan(PROPOSED)' guarantees are BOTH defeated by a single over-long field.",
+      "evidence": [
+        {
+          "file": "planner/orchestration.py",
+          "reference": "run_trio_to_proposed_plan:1170 -- `if plan is None: plan = save_draft_state_as_plan(final_state, ...)` is NOT wrapped in try/except; a form-validation ValidationError from the save propagates out -> CommandError, no Plan (the always-yields-a-Plan hole)"
+        },
+        {
+          "file": "planner/specs.py",
+          "reference": "C1 parse_suggest_feedback_channels ~1509 (and D1/G1/F5 parsers) validate label non-empty + catalogue, NOT max_length=200 -> over-long values pass parse + fold into draft_state"
+        },
+        {
+          "file": "plans/models/{review,output,milestone,feedback}.py",
+          "reference": "label = models.CharField(max_length=200) on ReviewEvent:57 / Evidence:168 / Milestone:72 / FeedbackChannel:48 -- the 200-char limit the LLM violated (279-363 chars)"
+        },
+        {
+          "file": "observed run output 2026-06-21",
+          "reference": "CommandError aggregate: one formset group = [{'label':['...at most 200 characters (it has 306)']}, {...363}, {...279}, {...357}]; all other groups {} (valid)"
+        }
+      ],
+      "impact": "A single over-long (or otherwise model-constraint-violating) LLM field aborts the ENTIRE trio run with no Plan persisted -- the exact 'a triviality blocks completion' failure the resilience layer was meant to prevent, but it slips through at the terminal save which is outside the resilience loop. This is a CLASS, not just `label`: any CharField max_length (Plan.title 200, Communication.channel 200, FeedbackChannel.instrument 500, etc.), choices-field value, timing-kind CheckConstraint, or required-FK that a spec fills can equally pass the gate-closure yet fail the terminal save and abort the run. Blocks the post-Phase-15 end-to-end walkthrough (the run cannot produce a draft when any field overflows).",
+      "proposed_resolution": "PROPORTIONATE FIX (user-directed 2026-06-21, empirical-first). NO TRUNCATION -- truncation is signal loss that is hard to recover later; rejected. The model field lengths are NOT sacred -- relaxing a capped field (e.g. label -> a larger cap or TextField) is the acceptable FALLBACK if the LLM will not comply, NOT truncation. STEP 1 (do now, then measure): (a) PROMPT -- tell the label/name/title-producing specs, with the REASON, that the value goes into a 200-character database column and WILL BREAK ON SAVE, so produce a concise + communicative label well under 200 chars (the directive itself concise + communicative; a shared-preamble register rule covers all capped name/label/title/channel fields in one edit, landed via a guarded ai/00NN migration). (b) ONE bounded retry-with-feedback: have the label-producing parsers flag an over-long value as a ValueError so the existing resilience loop nudges the LLM once (the rejection text -- N chars, must be <=200 -- becomes the retry steering); bounded, not wasteful. Then DRY-RUN run_trio and OBSERVE whether the prompt+retry makes the LLM comply (it usually will). STEP 2 (only if the dry-run shows the LLM still overflows after the retry): decide between relaxing the field (lengths not sacred) vs another non-lossy handling -- NOT truncation. Note: enabling the parser length-flag converts the current whole-run ABORT (the over-long value otherwise reaches the terminal save and raises) into, at worst, the existing per-spec degrade on retry-exhaustion (the run completes) -- strictly better than abort; the dry-run measures whether exhaustion even occurs. Supersedes the earlier degrade-to-flag and the (rejected) truncate sketches.",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-21",
+      "oid": "222b999e3aea964826a656ebd814e5fa",
+      "content_hash": "4206e1f42482fc446b68d7ae8fdec794bddb6e1196bff94a539c24dc3387569f",
+      "content_parent": "b63500b6f82ffe05c63ce550845162d80022a2738202907d02af114150138b7d"
+    }
+  ]
+}

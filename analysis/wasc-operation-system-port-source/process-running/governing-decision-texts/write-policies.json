@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "description": "Reflective write-policies. On each write to a decomposed JSON state file, the writing agent must re-read its own filing against every policy below and affirm each holds before the write lands. These are NOT pattern matchers — each is a judgment the writer makes about its own content; the gate forces the look and records the clearance (or a logged exception), it does not inspect bytes. Soft and bypassable by design; the value is the forced, visible per-write check. Edit this file to add/retire policies — it is the single source.",
+  "enforcement": {
+    "mode": "pre-write-show",
+    "behavior": "before each write, the script prints these policies alongside the item to be written, then performs the write. The writer sees all policies against its own filing at the moment of writing. Soft and bypassable by design — the forcing-function is the unavoidable pre-write look, not a block."
+  },
+  "policies": [
+    {
+      "id": "POL-no-performative-noise",
+      "assertion": "This filing contains no performative noise — no 'awaiting your direction', 'your call', 'worth recording', 'worth noting', 'for the record', or any phrase that narrates the act of filing rather than the content.",
+      "why": "User-as-decider and the value of a record are structurally presumed; saying so is noise that burns context and signals nothing."
+    },
+    {
+      "id": "POL-no-meta-preamble",
+      "assertion": "No sentence is rhetorical-move preamble — no 'Verdict:', 'Acknowledged error', 'Honest comparison', 'What this means', 'Caveat:', 'To be clear'. Section labels describe content, not the move being made.",
+      "why": "Meta-preamble is packaging; the reader needs the fact, not the announcement of the fact."
+    },
+    {
+      "id": "POL-no-unwarranted-certainty",
+      "assertion": "No claim asserts unwarranted certainty about effect — no 'this ensures', 'this fixes', 'this guarantees', 'this prevents'. Statements speak to aim and intention, or to verified observation, not to assumed outcomes.",
+      "why": "Future readers must distinguish what was intended from what was proven; certainty language collapses that distinction and misleads."
+    },
+    {
+      "id": "POL-positive-statements-only",
+      "assertion": "This states what IS. It does not enumerate what is NOT, what does not apply, or absences — unless the absence is itself the load-bearing fact being recorded.",
+      "why": "Negative-space enumeration pads length and dilutes the signal of what actually holds."
+    },
+    {
+      "id": "POL-signal-density",
+      "assertion": "Every sentence carries information a future reader needs. No sentence restates another, hedges a prior statement, or exists to soften. Length is proportional to the information, not to thoroughness-as-performance.",
+      "why": "Verbosity without added signal is the primary context-burn the JSON-state move exists to avoid; cost/size is never a reason to pad and never a reason to omit signal."
+    },
+    {
+      "id": "POL-no-stale-duplication",
+      "assertion": "This does not duplicate content authoritative elsewhere (git log, another state file, the source it derives from). It states what is not derivable from another live source, or it is the authoritative record itself.",
+      "why": "Duplicated content goes stale the instant the other source advances; a record must own its facts or point at the owner, not copy them."
+    },
+    {
+      "id": "POL-no-git-reproducible-cruft",
+      "assertion": "This carries no content git already records as a matter of course — no 'working tree clean', no 'N commits ahead of origin', no commit-SHA lists that exist only to restate history git holds.",
+      "why": "Tree/branch/commit state is git's job; restating it in a state file is noise that is wrong the moment the next commit lands."
+    },
+    {
+      "id": "POL-faithful-not-augmented",
+      "assertion": "This records only what was stated or entailed by the work/direction. It adds no adjacent feature, requirement, or scope the user did not raise; not-raised is not the same as deferred.",
+      "why": "Augmentation injects invented intent into the authoritative record, which then drives future work off a fabricated basis."
+    },
+    {
+      "id": "POL-plain-diction",
+      "assertion": "This is written plainly — readable aloud and understood on one pass. No elevated diction or abstract noun-stacks standing in for concrete statements.",
+      "why": "A state record that cannot be parsed quickly defeats the purpose of fast, low-burn reads."
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+{
+  "title": "C2 flag-surfacing reuses the existing client nav, result-frame catalogue, and the C1 Flag model — no A3 or C1 extension",
+  "status": "enacted",
+  "context": "TASK-020 / FGAP-008 (surface A3 flags to the client, mark the specific element each concerns, and offer accept / replace / request-catalogue-addition) raised three apparent forks: how a flag addresses its DOM element, how the client offers a catalogued replacement, and where a resolution persists. Each is settled by current source, not a user choice.",
+  "decision": "Addressing: the client maps a flag to its row by reusing the existing prefill->row navigation (targetFormset / directRows / nestedFormset / stepChildFormset), parsing the flag's spec-prose `field` by the same index structure the apply functions already use — no `element_path` on FreetextFlag, no parser / A3 change. Catalogue: `build_catalogue_union(grounding)` rides the assist result frame (there is no client catalogue endpoint). Resolution maps onto the existing C1 Flag model: accept keeps the value (no row); replace substitutes the flagged span in the draft field (no row); request-catalogue-addition persists one Flag row (is_resolved=False) created in PlanCreateView.post after the plan PK exists — no `resolution_action` field, no C1 extension.",
+  "consequences": [
+    "C2 touches only planner/views.py (result frame + create-view persistence), planner/static/wizard/js/ai-assist.js, and tests; FreetextFlag / the parsers (A3) and the Flag model / a migration (C1) are unchanged.",
+    "Request-catalogue-addition rows (is_resolved=False) are the durable admin signal; accept and replace are corrected in the draft content and leave no row.",
+    "Flag persistence is bound to plan creation, the only point a Plan PK exists; assist-time resolutions are client form-state until the create POST carries them."
+  ],
+  "references": [
+    {
+      "label": "result frame drops flags (criterion-1 change site)",
+      "path": "school-improvement-plans/planner/views.py",
+      "lines": "~506"
+    },
+    {
+      "label": "client prefill->row navigation reused for flag addressing",
+      "path": "school-improvement-plans/planner/static/wizard/js/ai-assist.js",
+      "lines": "183,189,230,290"
+    },
+    {
+      "label": "flag `field` spec-prose encoding",
+      "path": "school-improvement-plans/planner/_freetext_audit.py",
+      "lines": "1187-1318"
+    },
+    {
+      "label": "C1 Flag model — the persistence target",
+      "path": "school-improvement-plans/plans/models/flag.py"
+    },
+    {
+      "label": "plan PK created at the create POST",
+      "path": "school-improvement-plans/planner/views.py",
+      "lines": "~309"
+    }
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-06-06T22:00:00Z"
+}

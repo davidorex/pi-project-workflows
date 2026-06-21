@@ -1,0 +1,22 @@
+{
+  "schema_version": "1.0.0",
+  "migrations": [
+    {
+      "schemaName": "session-notes",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.1.0",
+      "kind": "declarative-transform",
+      "transform": {
+        "operations": [
+          {
+            "op": "set",
+            "path": "sessions.*.via",
+            "value": "claude-code"
+          }
+        ]
+      },
+      "created_by": "davidryan@gmail.com",
+      "created_at": "2026-05-30T11:41:00.896Z"
+    }
+  ]
+}

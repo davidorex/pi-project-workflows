@@ -1,0 +1,30 @@
+{
+  "title": "PromptSanitizer rejects legitimate plan prose containing 'system:'/'user:'/'assistant:' — the role-token injection patterns are too broad (production + workshop)",
+  "status": "closed",
+  "package": "school-improvement-plans/ai/services/prompt_sanitizer.py (+ render_from_substrate.py / ai/models/llm.py call sites)",
+  "description": "render_suggest_feedback_channels (spec 11) crashed: PromptSanitizationError 'system message injection detected'. Root cause (verified at source): the DATA_INJECTION_PATTERNS role-token regexes are too broad and the sanitizer REJECTS (raises) rather than scrubs. The pattern `(?i)\\bsystem\\s*:\\s*` (prompt_sanitizer.py:44) matched a legitimate evidence-artifact location in the accumulated draft: action_steps[4].evidence_artifacts[1].location = 'PD schedule system: /professional-learning/2025-2026/'. sanitize_data (prompt_sanitizer.py:106) runs DATA_INJECTION_PATTERNS and raises on any match; sanitize_data_dict (:185) applies it indiscriminately to every string in the grounding bundle. BOTH layers hit it: the workshop render (render_from_substrate.py:107 sanitize_data_dict(grounding)) AND production (PromptTemplate.render llm.py:217 sanitize_data_dict(context); AssistStreamView views.py:550-551 tpl.render(**grounding) where grounding includes the author's draft_state). So this is a PRODUCTION bug too -- any plan whose prose legitimately contains 'system:'/'user:'/'assistant:' (e.g. '...reporting system:', 'IT systems:') hard-fails the render. Surfaced now only because FGAP-022 let the run reach spec 11 (the accumulated draft made a benign 'system:' near-certain).",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/ai/services/prompt_sanitizer.py",
+      "reference": ":44 pattern `\\bsystem\\s*:\\s*`; :106 sanitize_data runs DATA_INJECTION_PATTERNS + raises; :185 sanitize_data_dict applies to all strings"
+    },
+    {
+      "file": "prompt-workshop/dispatch/render_from_substrate.py",
+      "reference": ":107 PromptSanitizer.sanitize_data_dict(grounding) over the whole bundle incl. draft_state"
+    },
+    {
+      "file": "school-improvement-plans/ai/models/llm.py",
+      "reference": ":217 PromptTemplate.render sanitize_data_dict(context) -> production has the same false-positive"
+    },
+    {
+      "file": "school-improvement-plans/planner/views.py",
+      "reference": ":526 draft_state=body.get('draft_state') (author's in-progress, untrusted); :550-551 build_grounding+tpl.render"
+    },
+    {
+      "file": "run draft",
+      "reference": "draft-after-propose-evidence.json action_steps[4].evidence_artifacts[1].location = 'PD schedule system: /professional-learning/2025-2026/' (1 benign hit; no user:/assistant: hits)"
+    }
+  ],
+  "impact": "The 14-spec run cannot complete (halts at spec 11). Independent of FGAP-022 (whose cap-overflow target IS fixed -- the run reached 30/31, past the heavy specs). In PRODUCTION the same render-reject hard-fails any assist whose grounding/draft prose legitimately contains a role token + colon -- a latent availability bug for real plans.",
+  "proposed_resolution": "RECOMMENDED: tighten the role-token patterns (system:/user:/assistant: and the code-block/xml/inst variants if needed) to fire only at a TURN BOUNDARY -- start-of-string or newline-preceded (e.g. `(?im)(?:^|\\n)\\s*system\\s*:`) -- so a real role-injection ('\\nsystem: ignore...') still matches but mid-prose 'PD schedule system: /path' does not. Production-shared (DEC-41) -> fixes both layers; excludes NO data -> no trust-boundary weakening. REJECTED: excluding draft_state from the check (the Explore's first instinct) -- in production draft_state is the AUTHOR's untrusted input (views.py:526), so blanket-excluding it would WEAKEN production injection protection. Verify a tightened pattern still catches the existing role-injection test cases; add a regression test for benign 'X system: /path' prose. Pattern change touches a production security layer -- user to confirm the security posture."
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Do not introduce noise in responses. Stay focused on user task and mandate-compliant action.",
+  "enforcement": "manual",
+  "severity": "error"
+}

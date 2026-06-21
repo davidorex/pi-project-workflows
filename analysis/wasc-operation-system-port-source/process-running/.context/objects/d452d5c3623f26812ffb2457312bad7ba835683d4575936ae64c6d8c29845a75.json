@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T10:40:00Z",
+  "evidence": "TASK-030 (A4 growth-mindset planning register; shared-preamble plan-register bullet 'Revising is the plan working, not the plan failing') via the canonical pipeline with full iterate-to-zero. IMPL 0784dc4: the bullet (revising/adjusting/course-correcting framed as evidence-driven course-correction -- the review system working as designed -- never failure/deficit/shortfall/fault; plain words; conditions may still state measurable triggers) + FRAG-preamble mirror + content_hash re-stamp + parity 14/14. EMPIRICAL: a fresh opus generation of propose-review-loop under the new preamble (6 revision_rules + 6 review_events + 10 communications) scanned check_draft Check 1 (process-method terms) = 0. A SEPARATE adversarial audit gave a per-item verdict: all 6 revision-rule ACTIONS and all 6 review-events frame the adjustment as evidence-driven course-correction ('what was learned -> the adjustment made'), with ZERO framed as failure/deficit/blame (a failure/deficit/blame-word regex returned 0 hits); the rule CONDITIONS state measurable triggers only ('fewer than seven SLOs carry a descriptor', 'below the 100 percent target'), which are permitted triggers, not violations. Parse clean against parse_propose_review_loop (2 BENIGN soft-NER flags on sentence-initial capitals 'Inspect'/'Reconvene', verdict=None/source=ner; no hard fabrication, no catalogue-gate rejection). Audit Total findings: 0 BLOCKERS. Three advisory nits (the current-draft-incompleteness channel_index artifact; the rule-wording risk that did not materialize; the soft-NER spans) recorded for the final whole-draft polish per DEC-53 (language WARN, non-blocking). Scope: prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble only; no parser/grounding/migration/.context. Completes the A-chain (A1-A4).",
+  "criteria_results": [
+    {
+      "criterion": "Wherever a generated plan describes revising/adjusting, an adversarial reviewer finds it framed as evidence-driven course-correction, with zero instances framed as failure or deficit.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The framing scans to zero process-method terms; the dispatched output parses clean.",
+      "status": "passed"
+    }
+  ]
+}

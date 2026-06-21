@@ -1,0 +1,142 @@
+{
+  "decisions": [
+    {
+      "id": "DEC-0001",
+      "title": "Runner home: wasc-local driver vs new monorepo sibling package",
+      "status": "enacted",
+      "context": "Runner home: wasc-local driver in prompt-workshop/dispatch/ (file:// deep imports) vs a new monorepo sibling package pi-workflows-cli. Both constraint-compliant (no pi-workflows change); pick before runner impl.",
+      "decision": "Wasc-local driver in prompt-workshop/dispatch/ using absolute file:// deep imports of the pi-workflows dist/ engine functions. Sibling package rejected: it adds a package in another repo for no functional gain (only createAgentLoader gains a bare import) and is ecosystem scope the task does not need; the workshop tooling and substrate live in the wasc repo and absolute file:// is the established ESM-loader pattern here.",
+      "consequences": [
+        "Determines where FEAT-001 runner code lives and how the engine is imported."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z",
+      "oid": "42e82841499ebe7d02b7e092ab2ee536",
+      "content_hash": "bdc4ea43b47c640edaaf98da5a990ce435dcaf85fa0133726084412f79c7e816"
+    },
+    {
+      "id": "DEC-0002",
+      "title": "Runner ctx.cwd value: project root vs substrate root",
+      "status": "enacted",
+      "context": "Runner ctx.cwd value: the project root vs the substrate root — fix per where the run blocks/paths resolve.",
+      "decision": "ctx.cwd is the wasc project root. The workflow .workflows discovery and run-dirs/artifacts belong in the project, not a substrate dir; the workflow uses no native block steps; command steps handle their own Django cd, uv, and DATABASE_URL.",
+      "consequences": [
+        "Determines path/block resolution semantics for every workflow step."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z",
+      "oid": "84244ebb61fd0917eaa4e8003457b988",
+      "content_hash": "807279f9d765257fe05e7c4ec8455c51e5cb15f15b3a4f9053181e90f30841d6"
+    },
+    {
+      "id": "DEC-0003",
+      "title": "Runner v1 agent-step scope: agent steps in v1 vs command/transform/gate-only first",
+      "status": "enacted",
+      "context": "Runner v1 agent-step scope: support agent steps in v1 (requires the pi-on-PATH + model-backend pre-flight) vs ship command/transform/gate-only first and add agent support later.",
+      "decision": "Agent steps in v1. The workflow call leg is an agent step (14 across the sequence); a command/transform/gate-only runner cannot run the workshop. TASK-007 (pi-on-PATH plus model-backend pre-flight) is in scope. Agent dispatch is runtime-verified (A6).",
+      "consequences": [
+        "Gates whether the agent-step pre-flight task is in v1 scope (the conditional task)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z",
+      "oid": "5a602bc8df5cf09d0bcbf85abfeb851d",
+      "content_hash": "24d2e53260094963612448f017cb52cbeda64112e2238bb9de29e867d9c9e554"
+    },
+    {
+      "title": "C2 flag-surfacing reuses the existing client nav, result-frame catalogue, and the C1 Flag model — no A3 or C1 extension",
+      "status": "enacted",
+      "context": "TASK-020 / FGAP-008 (surface A3 flags to the client, mark the specific element each concerns, and offer accept / replace / request-catalogue-addition) raised three apparent forks: how a flag addresses its DOM element, how the client offers a catalogued replacement, and where a resolution persists. Each is settled by current source, not a user choice.",
+      "decision": "Addressing: the client maps a flag to its row by reusing the existing prefill->row navigation (targetFormset / directRows / nestedFormset / stepChildFormset), parsing the flag's spec-prose `field` by the same index structure the apply functions already use — no `element_path` on FreetextFlag, no parser / A3 change. Catalogue: `build_catalogue_union(grounding)` rides the assist result frame (there is no client catalogue endpoint). Resolution maps onto the existing C1 Flag model: accept keeps the value (no row); replace substitutes the flagged span in the draft field (no row); request-catalogue-addition persists one Flag row (is_resolved=False) created in PlanCreateView.post after the plan PK exists — no `resolution_action` field, no C1 extension.",
+      "consequences": [
+        "C2 touches only planner/views.py (result frame + create-view persistence), planner/static/wizard/js/ai-assist.js, and tests; FreetextFlag / the parsers (A3) and the Flag model / a migration (C1) are unchanged.",
+        "Request-catalogue-addition rows (is_resolved=False) are the durable admin signal; accept and replace are corrected in the draft content and leave no row.",
+        "Flag persistence is bound to plan creation, the only point a Plan PK exists; assist-time resolutions are client form-state until the create POST carries them."
+      ],
+      "references": [
+        {
+          "label": "result frame drops flags (criterion-1 change site)",
+          "path": "school-improvement-plans/planner/views.py",
+          "lines": "~506"
+        },
+        {
+          "label": "client prefill->row navigation reused for flag addressing",
+          "path": "school-improvement-plans/planner/static/wizard/js/ai-assist.js",
+          "lines": "183,189,230,290"
+        },
+        {
+          "label": "flag `field` spec-prose encoding",
+          "path": "school-improvement-plans/planner/_freetext_audit.py",
+          "lines": "1187-1318"
+        },
+        {
+          "label": "C1 Flag model — the persistence target",
+          "path": "school-improvement-plans/plans/models/flag.py"
+        },
+        {
+          "label": "plan PK created at the create POST",
+          "path": "school-improvement-plans/planner/views.py",
+          "lines": "~309"
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-06",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-06T22:00:00Z",
+      "id": "DEC-0004",
+      "oid": "827b08229f462dcc1693177ef7f5ab8e",
+      "content_hash": "8e727402cfe7443e186e7fd727c323b1cde10ba9e6ae0e8bcad6582758253d26"
+    },
+    {
+      "id": "DEC-0005",
+      "title": "Human-decision-surface placement: options-posture at the orchestration/UX layer; unowned-precursor decision-requests as in-draft plan content",
+      "status": "enacted",
+      "context": "C3/R8 (options-posture) and FGAP-040 (upward decision-requests for unowned precursors) both ask WHERE human-decides surfaces live, given per-spec generation stays decide-one (the preamble's no-options-instead-of-decisions rule). Originally framed as an open decision; on inspection the placement is DERIVABLE from the app's stated purpose, not a free choice. Stated purpose: DEC-29 north-star + the US-DRAFT frame (00-preamble) -- the AI renders a COMPLETE deliverable draft from full DB context, the school admin then fine-tunes it via the create-plan UX (versioned saves), and the admin alone flips draft->active. DEC-41 consequence 4 + its UX clause -- the orchestration trio US-LLM-23/24/25 is the production realization, and its UX surfaces decide-points to admins as actionable items. The plan is also a real deliverable document (TASK-037 .docx, Sample Schoolwide Action Plan shape) whose content includes the decisions/dependencies a real action plan records.",
+      "decision": "Two human-decision kinds, two placements, each DERIVED from the stated purpose (not selected among alternatives). (1) OPTIONS-POSTURE (R8) -- genuine value/scope forks a leader must set (e.g. the target increment) -> resolved at the ORCHESTRATION / create-plan-UX layer, realized with the US-LLM-23/24/25 trio. Derivation: a leader setting a value IS 'the human fine-tunes the rendered draft', which US-DRAFT + DEC-41 locate at the UX/orchestration surface; per-spec generation stays decide-one (commits a best default), preserving the no-options-instead-of-decisions rule. (2) DECISION-REQUESTS (FGAP-040) -- an action-step precursor no division owns -> authored as IN-DRAFT plan content, the SAME account-for-every-item-or-flag-it class as coverage (FGAP-037/041 pattern: assign an owner, OR record an explicit unowned decision-request with a reason). Derivation: an unowned precursor is a planning finding the COMPLETE draft must account for, and a deliverable action plan carries decisions/dependencies-to-resolve as body content; buildable now on the coverage pattern, independent of the trio. No corpus body changed by this record (decision only).",
+      "consequences": [
+        "FGAP-040 placement is settled: an in-draft authored discipline on the FGAP-037/041 coverage pattern (snippet contract + parser-recognized element + per-spec in-execution self-check), buildable independent of the trio; its build is a future task the human scopes.",
+        "R8 options-posture remains an orchestration/UX concern realized when US-LLM-23/24/25 is built; no per-spec snippet emits option menus.",
+        "Per-spec generation invariant (decide-one) reaffirmed: snippets commit a best default and never emit options-instead-of-decisions.",
+        "Placement decision only -- zero changes to any snippet, preamble, or parser body attributable to this record (corpus diff = zero)."
+      ],
+      "references": [
+        {
+          "label": "DEC-29 north-star: render complete draft -> admin fine-tunes/flips; US-LLM-23/24/25 orchestration",
+          "path": "context-migration/decomposed/seed-round-plan.json"
+        },
+        {
+          "label": "US-DRAFT frame: renders draft -> user fine-tunes; versioned saves",
+          "path": "phases/00-preamble.md"
+        },
+        {
+          "label": "DEC-41 consequence 4 + UX clause: trio = production realization; UX surfaces decide-points to admins",
+          "path": "context-migration/decomposed/seed-round-plan.json"
+        },
+        {
+          "label": "FGAP-037/041 coverage pattern (account-for-every-item-or-flag-it) reused by FGAP-040",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "FGAP-040 decision-requests gap (placement settled here)",
+          "path": ".context/framework-gaps.json"
+        },
+        {
+          "label": "preamble decide-one / no-options-instead-of-decisions rule",
+          "path": "prompt-workshop/shared/preamble.md"
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-13",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-13T12:00:00Z",
+      "oid": "5636404b17ccd2a9e53af18c41128f7d",
+      "content_hash": "14f30969730a6c7b419a9b045e4dcd3d02c397b1ba2e094b9111a85f89df3d54",
+      "content_parent": "899c1679a624b5396cd39378319d4cf93b21117fa36eb190816fc5d9ee18733b"
+    }
+  ]
+}

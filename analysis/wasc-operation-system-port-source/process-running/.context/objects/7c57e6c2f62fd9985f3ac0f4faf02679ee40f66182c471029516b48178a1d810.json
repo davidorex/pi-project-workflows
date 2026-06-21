@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-13T17:00:00Z",
+  "evidence": "TASK-045 (FGAP-038 review-cadence) IMPL via the canonical pipeline; commit be1bbf2. WORKSHOP-ONLY (T4 distribution shape): a new self_check.py `review_cadence` evaluator REUSES check_draft.check_review_cadence (single source of truth; check_draft byte-unchanged) + a snippet-14 frontmatter `success_criteria` entry (frontmatter-only, no rendered-body change). cycle_year is extracted from grounding['cycle']['starts_on'] (4-digit year); when the cycle year is UNAVAILABLE (grounding None / cycle missing or non-dict / starts_on missing or non-4-digit) the evaluator STRUCTURAL-FAILS ('cycle year unavailable') rather than running the degraded cycle_year=None branch (which would make the before-1-Dec rule near-vacuous) -- mirrors _eval_coverage's can't-verify fail. SEPARATE adversarial audit re-ran the full gate + drove the evaluator/apply.main directly: Total findings: 0. Gate green: ruff clean, ruff format clean, mypy . Success 325 files, mypy self_check.py clean, pytest 3153 passed, make test-js 48/48, verify-render-parity 14/14 + both cross-checks (frontmatter key does not render -> parity unperturbed). Empirical (apply.main, real snippet-14 frontmatter): <4 checkpoints -> exit 3 not saved (reason names the count <4); >=4 with earliest 2026-12-01 -> exit 3 (earliest_before_december=False); >=4 earliest before 1 Dec -> exit 0 saved; missing/non-dict cycle grounding -> exit 3 'cycle year unavailable'. git show --stat be1bbf2 touches ONLY self_check.py + 14-propose-review-loop.md + test_workshop_self_check.py (no specs.py/grounding.py/check_draft.py/views.py/.js). Whole-draft Check 5 (check_review_cadence) unchanged covers criterion 2. PyRight not-accessed warnings = uniform Evaluator-signature false positives (mypy is the gate).",
+  "criteria_results": [
+    {
+      "criterion": "During generation of the review-loop step, the step's self-check fails when the review loop has fewer than four evaluate-and-adjust checkpoints or its earliest checkpoint is not before 1 December, and passes otherwise; demonstrated on a deficient input.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over a full assembled draft, the review loop has at least four checkpoints with the earliest before 1 December, confirmed by a whole-draft check.",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing.",
+      "status": "passed"
+    }
+  ]
+}

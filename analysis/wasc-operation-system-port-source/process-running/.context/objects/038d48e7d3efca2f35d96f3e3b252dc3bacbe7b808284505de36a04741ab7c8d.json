@@ -1,0 +1,17 @@
+{
+  "title": "Incorporate the validated sim-land planning findings into the prompt-workshop corpus",
+  "status": "proposed",
+  "layer": "L3",
+  "description": "Encode the validated sim-land planning-process findings (runs 001-008; prompt-workshop/sim-revised-frame.md + docs/plan-generation-heuristics.md R-0009) into the prompt-workshop corpus -- the dev-time mode of the production author-assist. Dev-time only; zero parser (planner/specs.py) changes, zero grounding.py changes; the production ai/00NN PromptTemplate migration is a deliberate later bridge, out of scope here. Decomposed into 3 stories: A (cross-cutting render + output rules in the shared preamble -- R1 no-framework-terms, R2 action-steps-are-learning-designed, R4 front-load + three measurement views + durability, R5 growth-mindset register); B (spec-specific -- R5 quarterly review + spiral in spec 14; R3 mission/vision/SLO ideation in specs 03/04/05); C (whole-draft + decision -- R6 verify distributed ownership, R7 coverage eval, R8 options-posture placement decision). Every snippet/preamble body edit mirrors into .workshopping (content_hash re-stamp) and re-passes prompt-workshop/dispatch/verify-render-parity.py (a per-task obligation, not its own task).",
+  "acceptance_criteria": [
+    "A generated plan uses only the school's plain vocabulary -- none of the generation-side framework/process method-terms -- while still showing the method's effects.",
+    "Each action a participant meets is an active learning event in plain prose (recall prior -> real task they do -> check understanding -> reflect/next-steps), never transmission-only, never labelled with method scaffolding.",
+    "Milestones, success criteria, and action steps visibly cohere with the school's mission, vision, and learner outcomes.",
+    "A plan establishes a baseline before action and measures from three points of view (students, staff practice, parents) as durable change confirmed by a later check, not mere occurrence.",
+    "The review loop is a quarter-by-quarter evaluate-and-adjust cycle with the first checkpoint before December, a monthly focus that retains priors, and adjustment framed as the system working, not failure.",
+    "Action-step ownership is distributed across the divisions whose purview bears on the goal -- no single division a disproportionate share -- and uncovered areas are surfaced as gaps.",
+    "The whole assembled draft covers every learner outcome and required area, or surfaces the gap.",
+    "Nothing already working breaks: outputs still parse, the catalogue-gate holds, the snippet-substrate parity gate passes, and the project gate stays green.",
+    "The options-posture placement is settled and recorded (orchestration / create-plan-UX layer; per-spec generation stays decide-one)."
+  ]
+}

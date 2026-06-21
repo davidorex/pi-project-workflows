@@ -1,0 +1,14 @@
+{
+  "title": "Catalogue-gate false-rejects DB-enumerated entities (completeness + variant tolerance + school short form)",
+  "status": "closed",
+  "package": "planner",
+  "description": "The free-text catalogue-gate (planner/_freetext_audit.py CatalogueUnion/build_catalogue_union/admits) false-rejects values that ARE enumerated in the school DB; it must reject only genuine fabrications. Three modes (Explore live-probe, current-source-verified): (a) COMPLETENESS - framing_vocabularies and priority_tiers are emitted by build_grounding (SECTION_KEYS, builders grounding.py:111/:118) but absent from the union src tuple (_freetext_audit.py:653-668), so their labels (e.g. Student-focused, High) are false-rejected; both models live (school/models/framing.py:26, priority_tier.py:23, no delete migration). (b) VARIANT - admits is exact union_casefold membership (+ -es/-s plural strip) with no hyphen/space/underscore/case collapse, so any formatting variant of any enumerated entity is false-rejected. (c) SHORT FORM - the school brand stem (Chiway-Repton, a token-prefix of Chiway Repton School Xiamen) is false-rejected. Fix (global, pure code, no migration, planner/_freetext_audit.py only): pull the two sections into the union; add a _collapse_normalize helper + a precomputed union_collapsed set (every entry collapse + every >=2-token contiguous prefix of the school name/slug); admits gains one union_collapsed membership check. Preserve fabrication rejection (a name whose collapse matches no entry/prefix still rejects). DEC-45 stands: MissionArea deleted, Caring not enumerated and correctly rejected; no sub-token matching. Surfaced in FEAT-002 apply-smoke; user directive: think globally, no enumerated-from-DB entity is rejected.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/_freetext_audit.py",
+      "reference": "school-improvement-plans/planner/_freetext_audit.py:529-551 (admits); :653-668 (union src tuple); :486-488 (_normalize_for_catalogue)"
+    }
+  ],
+  "impact": "DB-enumerated entities (the school name + its short form, framing_vocabularies, priority_tiers, and any catalogued value's formatting variant) were false-rejected as fabrications, blocking legitimate prose in the create-plan draft.",
+  "proposed_resolution": "Resolved (TASK-013 / VER-003): framing_vocabularies + priority_tiers pulled into the union + PhraseMatcher; a _collapse_normalize helper + a precomputed union_collapsed (every entry collapse + every >=2-token contiguous prefix of the school name/slug); admits gains one union_collapsed membership check. Fabrications still reject. Committed on main."
+}

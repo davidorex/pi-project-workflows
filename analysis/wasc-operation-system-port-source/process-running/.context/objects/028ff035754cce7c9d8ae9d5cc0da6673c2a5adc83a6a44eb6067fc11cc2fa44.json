@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T13:00:00Z",
+  "evidence": "TASK-040 (T3 -- coverage as an authored property, Option A) via the full canonical pipeline; the FGAP-033 coverage regression fix. Explore + orchestrator corroboration (parse_propose_domain_alignment / resolve / merge / _EMPTY_DRAFT / check_coverage / self_check signature + grounding pass-through). Plan ~/.claude/plans/covenant-authored-coverage.md. User confirmed Option A + the parser change (a DEC-41 departure from FEAT-008's zero-parser intent; the production prompt-template migration is a later bridge, NOT this task). IMPL b8430c7: parser parse_propose_domain_alignment accepts two OPTIONAL authored-gap keys learner_outcomes_not_addressed + areas_for_improvement_not_addressed (each {label, reason}; label catalogue-validated like the targeted path -- no fabrication; reason lenient; absent->[]; a label in BOTH targeted and not_addressed for one dimension RAISES); resolve_domain_alignment_vocab SKIPS the gap keys (no PK resolution -> production resolve/form path stays coherent); .workflows schema gains the two optional {label,reason} properties (the shared/schemas file named in the plan does not exist on disk -- the imperative parser IS the validator per DEC-41); _EMPTY_DRAFT.domain_alignment gains the two gap lists; snippet 02 gains the COVERAGE RULE (every learner outcome + area is targeted-with-rationale OR recorded in *_not_addressed with a reason) + the two output keys + two STRUCTURAL success_criteria coverage entries (+ its rendered .workshopping fragments re-stamped); self_check registers a structural `coverage` evaluator (universe from grounding[dimension]; passes iff universe subset of targeted+not_addressed; grounding-None/bad-dimension -> structural fail); check_draft check_coverage counts structured not_addressed rows as accounted_gaps (prose-mention demoted to fallback only). A SEPARATE rigorous adversarial audit verified ALL 5 criteria empirically against live Chiway grounding (7 learner outcomes + 7 areas): C1 the self-check runs on the merged draft BEFORE save (apply.py:478 before :491) and structural-fails (exit 3, no save, names the missing label) on a dropped area, passes when all accounted; C2 the gap is a discrete {label,reason} element the self-check reads structurally (not prose); C3 whole-draft check_coverage shows all areas accounted (targeted + accounted_gaps), zero remaining, zero prose mentions (the FGAP-033 scenario, closed); C4 same for learner outcomes; C5 fabricated gap label rejected identically to the targeted path, both-lists conflict raises, resolve does not choke, FULL project gate green (ruff + ruff format --check + mypy . [325 files] + pytest [3121 passed] + make test-js [48]), parity 14/14 + both cross-checks, distribution + review-cadence checks unmoved. Audit Total findings: 0 BLOCKERS. Advisories (non-blocking, recorded): (a) the gap `reason` prose is not free-text-scanned (only the targeted `rationale` is) -- an asymmetry / future-tightening note; (b) a PRE-EXISTING decompose.py reconstruction-gate drift on guiding_statements (snippets 1/3/4/5/7/10/13), byte-identical at the parent commit, unrelated to this change -> carried to TASK-042 (T5) transposition audit. Scope: planner/specs.py, .workflows schema, _workshop.py, snippet 02 + .workshopping fragments, self_check.py, check_draft.py, 3 test files (21 new tests).",
+  "criteria_results": [
+    {
+      "criterion": "During generation of the alignment/narrative step(s), the step's self-check fails when any improvement area in the school's universe is neither targeted nor recorded as an explicit gap, and passes when each is one or the other -- demonstrated on an input that would otherwise drop an area.",
+      "status": "passed"
+    },
+    {
+      "criterion": "An acknowledged not-this-cycle gap is stored in the draft as a discrete recorded element (not only incidental prose), and the self-check reads that element -- demonstrated.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over a full assembled draft, every improvement area in the school's universe is either targeted or recorded as an explicit gap (zero silently absent), confirmed by the whole-draft coverage check run over all specs combined.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Over the same draft, every learner outcome in the school's universe is targeted or recorded as an explicit gap.",
+      "status": "passed"
+    },
+    {
+      "criterion": "On the same draft: outputs parse, the catalogue-gate raises no new rejection, the snippet-substrate parity gate passes 14/14, the project gate is green, and the distribution and review-cadence checks do not move from pass to fail.",
+      "status": "passed"
+    }
+  ]
+}

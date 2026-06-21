@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Accumulation seam sub-slice 5 (B2 nested-bindings fold, TASK-065, the LAST seam fold): planner/services.fold_measurement_bindings_prefill + planner/tests/test_slice_fold_b2.py (13 tests), branch trio-seam-b2-fold @ 534c1f1. Verified through the verify-gated loop: IMPL (a4d617e9) built the two-level B2 fold (criteria-{i}-measurement-0-channel-{k}-channel_index; per-criterion REPLACE ^criteria-{i}-measurement-\\d+-channel-\\d+-[^-]+$; atomic pre-validation incl. distinct criterion_index + bool rejection; indices as-is; management forms deferred). Orchestrator ran make verify-slice SLICE=fold_b2 exit 0. SEPARATE adversarial audit (a0e40049): probed live -- key generation by criterion_index value (non-contiguous), measurement index literally 0, bool rejected at every position, two-level REPLACE clears stale bindings while sparing scalars/measurement-fields/management-forms/other-criteria, no collision with the criteria fold in both orders, atomicity, dedup guard proven non-vacuous -> Total findings: 0 (clean first round). Done = gate exit 0 AND audit 0 (DEC-58), orchestrator-observed. Full gate: ruff clean; mypy 335; pytest 3302 passed; make test-js 48/0; context-validate 0 errors.",
+  "criteria_results": [
+    {
+      "criterion": "Folding writes criteria-{criterion_index}-measurement-0-channel-{k}-channel_index = channel_indices[k] per row/channel.",
+      "status": "passed",
+      "evidence": "13 slice tests + audit live probe with real parse_bind_measurement_channels; one {k} per channel index, measurement index 0."
+    },
+    {
+      "criterion": "criterion_index + channel_index stored as integers unchanged (not resolved at fold).",
+      "status": "passed",
+      "evidence": "indices stored as-is; bool rejected (int-subclass trap handled); audit probed unordered criterion_index keyed by value not row position."
+    },
+    {
+      "criterion": "REPLACE per criterion clears prior two-level bindings without clobbering criterion scalars, measurement-row fields, channel/measurement management forms, or other criteria.",
+      "status": "passed",
+      "evidence": "REPLACE scope ^criteria-{i}-measurement-\\d+-channel-\\d+-[^-]+$; audit confirmed sparing of TOTAL_FORMS/scalars/other-criteria + multi-digit non-over-match."
+    },
+    {
+      "criterion": "No collision with the criteria simple-formset fold (both directions).",
+      "status": "passed",
+      "evidence": "test + audit: criteria scalars survive B2; ^criteria-\\d+-[^-]+$ cannot reach the deeper keys; both fold orders verified."
+    },
+    {
+      "criterion": "Atomic on guard failure; clear domain error on malformed prefill (non-list/non-dict row/non-list channel_indices/non-int) or duplicate criterion_index.",
+      "status": "passed",
+      "evidence": "full pre-validation before mutation; malformed-later-row leaves draft untouched; dedup guard proven non-vacuous (test fails without it)."
+    },
+    {
+      "criterion": "Round-trips through PlanDraftState; two-level keys read back; gate green; context cascade validates.",
+      "status": "passed",
+      "evidence": "round-trip test (real parser -> fold -> save/load -> build_grounding); make verify-slice SLICE=fold_b2 exit 0; ruff/mypy 335/pytest 3302/test-js 48/context-validate 0 errors; diff scoped; gate unweakened."
+    }
+  ]
+}

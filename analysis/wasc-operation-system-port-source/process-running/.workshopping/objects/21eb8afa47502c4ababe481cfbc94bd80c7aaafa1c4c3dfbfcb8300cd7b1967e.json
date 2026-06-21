@@ -1,0 +1,40 @@
+{
+  "spec_key": "draft-success-criteria",
+  "order": 4,
+  "target_step": "criteria",
+  "preview_mode": "fields",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "learner_outcomes",
+    "areas_for_improvement",
+    "divisions",
+    "policies",
+    "draft_state"
+  ],
+  "deps": [
+    "narrative-draft"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-draft-success-criteria-0",
+    "FRAG-preamble",
+    "FRAG-intro-draft-success-criteria-1",
+    "FRAG-gb-school",
+    "FRAG-gb-cycle",
+    "FRAG-intro-draft-success-criteria-2",
+    "FRAG-gb-seed-criteria",
+    "FRAG-intro-draft-success-criteria-3",
+    "FRAG-gb-draft-state-criteria-source",
+    "FRAG-intro-draft-success-criteria-4",
+    "FRAG-gb-learner-outcomes",
+    "FRAG-gb-areas-for-improvement",
+    "FRAG-gb-divisions-full",
+    "FRAG-gb-policies",
+    "FRAG-intro-draft-success-criteria-5",
+    "FRAG-output-contract-header-en",
+    "FRAG-contract-draft-success-criteria"
+  ],
+  "parser": "parse_draft_success_criteria",
+  "source_migration": "ai/migrations/0005_seed_draft_success_criteria_template.py",
+  "output_schema": "shared/schemas/draft-success-criteria.schema.json"
+}

@@ -1,0 +1,12 @@
+{
+  "status": "in-progress",
+  "description": "Accumulation seam sub-slice 4 (per-step-children fold): a generic server-side function fold_per_step_child_prefill in planner/services.py folding the per-step-child prefills (F2 assignment, F3 timeline, F4 resource+substep, F5 evidence, US-LLM-27 responsibility+position_responsibility) -- each list[{step_index, ...}] -- into draft_state under steps-{step_index}-{segment}-{k}-{field}. Handles single-row segments (F2/F3 -> row 0 from the row's direct fields) and multi-row segments (F4/F5/US-LLM-27 -> {k} rows from a named nested list field); a spec with two segments (F4 resource+substep, US-LLM-27 responsibility+position_responsibility) calls it once per segment. step_index + any index/pk refs stored as integers/strings as-is (resolved at save). REPLACE scoped per (step_index, segment): ^steps-{i}-{segment}-\\d+-[^-]+$ (collision-safe incl. responsibility vs position_responsibility). Atomic pre-validation + unexpected-key guard per the A3/G1 lessons. Reuses the review_loop nested-fold precedent. Addresses FEAT-010 / STORY-013; harness SLICE=fold_stepchild.",
+  "acceptance_criteria": [
+    "For each prefill row, the fold writes that row's step_index's child-segment keys: a single-row segment -> steps-{step_index}-{segment}-0-{field} from the row's direct fields; a multi-row segment -> steps-{step_index}-{segment}-{k}-{field} from the named nested list (one {k} per list element).",
+    "step_index and any pk/index reference fields are stored as integers/strings unchanged (not resolved at fold time).",
+    "REPLACE per (step_index, segment): re-folding a step's segment clears its prior steps-{step_index}-{segment}-{k}-* rows (incl. stale higher-index) without clobbering the step's own scalar fields, OTHER segments under the same step, the segment's nested management-form keys, or other steps.",
+    "Folding segment 'responsibility' does not touch 'position_responsibility' keys and vice versa (the prefix-overlap is collision-safe).",
+    "The fold is atomic on guard failure (a malformed row/nested list leaves draft_state entirely untouched) and raises a clear domain error on a malformed prefill (non-list, non-dict row, or a non-list nested segment value).",
+    "The folded draft_state round-trips through PlanDraftState and the steps-{i}-{segment}-{k}-{field} keys read back with their values; the whole-project gate stays green and the context cascade validates."
+  ]
+}

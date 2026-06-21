@@ -1,0 +1,9 @@
+{
+  "status": "planned",
+  "description": "Story C. R6 VERIFY (no edit) -- confirm distributed ownership is wired + rendered (snippet 05 division_responsibility_summary) and actually distributes on a dispatched output; file a defect if it does not hold.",
+  "acceptance_criteria": [
+    "Over a freshly generated action-step set, more than one division owns steps and no single division owns a majority (>50%) -- machine-checked.",
+    "Every division whose responsibilities bear on the goal either owns at least one step or is named in a surfaced gap -- an adversarial reviewer confirms zero relevant divisions silently omitted.",
+    "Confirmed with no edit to the corpus; if the distribution thresholds fail, a defect is filed."
+  ]
+}

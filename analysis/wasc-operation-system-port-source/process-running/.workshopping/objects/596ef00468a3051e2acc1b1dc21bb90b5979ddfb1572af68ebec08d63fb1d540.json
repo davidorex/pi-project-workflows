@@ -1,0 +1,40 @@
+{
+  "spec_key": "propose-milestones",
+  "order": 3,
+  "target_step": "milestones",
+  "preview_mode": "fields",
+  "grounding_sections": [
+    "school",
+    "cycle",
+    "improvement_types",
+    "planning_methods",
+    "learner_outcomes",
+    "areas_for_improvement",
+    "draft_state"
+  ],
+  "deps": [
+    "narrative-draft"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-propose-milestones-0",
+    "FRAG-preamble",
+    "FRAG-intro-propose-milestones-1",
+    "FRAG-gb-school",
+    "FRAG-gb-cycle-milestone",
+    "FRAG-intro-propose-milestones-2",
+    "FRAG-gb-seed-milestones",
+    "FRAG-intro-propose-milestones-3",
+    "FRAG-gb-draft-state-milestones-target",
+    "FRAG-intro-propose-milestones-4",
+    "FRAG-gb-improvement-types",
+    "FRAG-gb-planning-methods",
+    "FRAG-gb-learner-outcomes",
+    "FRAG-gb-areas-for-improvement",
+    "FRAG-intro-propose-milestones-5",
+    "FRAG-output-contract-header-en",
+    "FRAG-contract-propose-milestones"
+  ],
+  "parser": "parse_propose_milestones",
+  "source_migration": "ai/migrations/0006_seed_propose_milestones_template.py",
+  "output_schema": "shared/schemas/propose-milestones.schema.json"
+}

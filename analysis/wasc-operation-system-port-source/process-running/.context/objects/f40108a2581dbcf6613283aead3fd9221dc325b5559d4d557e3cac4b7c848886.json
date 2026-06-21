@@ -1,0 +1,18 @@
+{
+  "title": "Mission/vision (guiding_statements) grounding does not reach the IDEATION specs (milestones 03 / criteria 04 / actions 05)",
+  "status": "identified",
+  "package": ".workshopping/prompt-spec.json grounding_sections (per-spec) + the ideation specs",
+  "description": "guiding_statements (mission + vision clause atoms, populated + substantive in the dev DB) reached the IDEATION specs propose-milestones(03) / draft-success-criteria(04) / decompose-action-steps(05) via TASK-032 (commit 0f13aae) — the grounding-REACH half of this gap is RESOLVED (it is now in the grounding_sections of all three, alongside the original narrative-draft(01)/propose-responsibilities(07)/propose-evidence(10)/propose-accreditation-standards(13)). RESIDUAL (open): there is still no directive in 03/04/05 to IDEATE FROM the vision/mission/SLO triad — to derive the plan's organizing dimensions from them — so per DEC-52 the plan is grounded by mission/vision upstream but not generated FROM them at the ideation layer. The residual folds into the DEC-51 multi-layer SLO-operationalization initiative (per-actor baseline->adjust->measure arcs, currently inexpressible in the models) and overlaps FGAP-043 (the theme/seed steers each spec but does not structurally drive the plan's dimensions).",
+  "evidence": [
+    {
+      "file": ".workshopping/prompt-spec.json",
+      "reference": "guiding_statements in grounding_sections of narrative-draft/propose-responsibilities/propose-evidence/propose-accreditation-standards only; NOT in propose-milestones/draft-success-criteria/decompose-action-steps"
+    },
+    {
+      "file": "school-improvement-plans/ai/services/grounding.py",
+      "reference": "_guiding_statements emits mission/vision clause atoms {label,text,order}; dev DB has both populated"
+    }
+  ],
+  "impact": "The plan's ideated substance (milestones, criteria, actions) is generated without the vision/mission in view, so the DEC-52 coherence requirement (visibly advancing-vision / vivifying-mission) cannot hold at the ideation layer. Compounds FGAP-029 (empty SLO descriptions) and DEC-51 (no per-actor SLO arcs).",
+  "proposed_resolution": "DONE (TASK-032 / 0f13aae): guiding_statements added to the grounding_sections of propose-milestones(03), draft-success-criteria(04), decompose-action-steps(05) (grounding-leanness respected — guiding_statements is small). REMAINING: add directives in those three specs to IDEATE from the vision/mission/SLO triad and make the advance-vision / vivify-mission / foster-SLO-progress coherence explicit; execute within the DEC-51 initiative and co-resolve with FGAP-043. Compounds FGAP-029 (empty SLO descriptions)."
+}

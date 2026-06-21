@@ -1,0 +1,50 @@
+{
+  "features": [
+    {
+      "title": "AI-orchestrated WASC plan generation on pi-context (substrate-native, no Django)",
+      "status": "proposed",
+      "layer": "L4",
+      "description": "Generate a WASC schoolwide-improvement plan as pi-context substrate, with the canonical-shape doc as the deliverable, and no Django in the loop. The flow: the user states end-state + current condition in pi; that is composed with the school's catalogue atoms (the grounding) and the generation prompt; the model generates the plan as substrate block items + edges, schema-validated on write; the promotion-ready plan renders to the canonical .doc as the output artifact. The substrate is the system of record (no Django Plan materialization); the canonical doc is render(substrate); a leaner render of the same substrate is the grounding composed into the generation prompt; a prior promotion-ready plan's canonical render can serve as the few-shot exemplar for the next generation. The three pi extensions map onto the stack: pi-context = the plan model + catalogues + promotion-gate-as-invariants + content-addressed versioned saves; pi-workflows = the dependency-ordered generation DAG (agent steps, block writes, output.schema + error-injecting retry as the parser-gate-and-self-correct, monitor steps as the semantic fabrication check, loop/gate to the promotion gate, checkpoint/resume); pi-agent-dispatch = the deterministic real-checks (no LLM self-report) + the bounded human-OK-retry work-order loop + attested commits.",
+      "motivation": "Realizes the DEC-29 north-star (an AI-orchestrated, promotion-ready complete draft) natively: it is the Mode-C workshop / orchestration-trio loop run on the substrate in pi rather than as a Django service. The Django parsers become block JSON Schemas + workflow retry; the structured anti-fabrication becomes referential integrity on catalogue edges; the promotion gate becomes requires-edge invariants; the orchestration trio becomes a pi-workflow + the work-order loop.",
+      "acceptance_criteria": [
+        "The user's stated situation plus the school's catalogue atoms compose the generation input; no Django involved.",
+        "Generation produces the plan as substrate block items + edges, schema-validated on each write.",
+        "Anti-fabrication is structural: targeting edges must resolve to catalogue items (referential integrity), with a monitor step for the semantic (prose-smuggled) fabrication case.",
+        "The promotion gate is the conjunction of requires-edge invariants holding (context-validate clean).",
+        "The deliverable is a canonical-shape doc rendered from the plan substrate via per-item macros (a workflow artifact).",
+        "Versioned, walkable-back saves are content_parent chains; fine-tuning is an agent-mediated substrate-edit loop (render → human directs → schema-validated edit → re-render).",
+        "Per-school catalogues are reference blocks (a per-tenant substrate), referenced by foreign edge — the tenant-onboarding direction."
+      ],
+      "id": "FEAT-001",
+      "created_at": "2026-06-02T21:36:56.755Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-02T21:36:56.756Z",
+      "oid": "6653a4f7d631e58c68fb9a23e3ad0c22",
+      "content_hash": "275ad5f318a808ae8b5692117a0ac91296fc56b55a4cee7ea941567983606797"
+    },
+    {
+      "title": "Migrate the ad-hoc decomposed JSON project state into pi-context, with project-shaped block kinds",
+      "status": "proposed",
+      "layer": "L5",
+      "description": "Design (from the project, not the stock kinds) for moving the home-rolled context-migration/decomposed/*.json state into the pi-context substrate. Seven project-shaped block kinds, each derived from the real ad-hoc item shapes: decisions (DEC-N: id, num, title?, body, refs[], continuation[], raw; no status — supersession is a relation); discoveries (full DISC shape; resolution derived from resolved_by presence; category an open string-enum); story (multi-namespace US-/US-ORG-/.../US-DRAFT- under one kind; status pending|enabled|vivified; enabling_phase + vivifying_commit); orchestrator-log (append-only seq/timestamp/type/text/refs; type stays free prose, with an optional event_class facet populated going forward only, never back-fill-guessed); pending-actions (base seq/status(open|done)/priority/item/evidence required-minimal, plus the focus-only optional narrative fields arc/next_step/slice_status/...); subagent-invocations (seq/sha?/context/text/kind); slice-facts (generalized with an arc field so it is reusable across arcs). Mandates fold into the existing conventions block via a class:mandate facet — no separate mandates kind (kills the MANDATES.json-vs-conventions duplicate). The load-bearing principle: prose fields keep their content verbatim (lossless) and relations are an additive overlay parsed out of those prose fields — relations are never the only home for a fact.",
+      "motivation": "Enacts pi-context adoption (DEC-47) for the orchestration state, with the substrate shape following the project (new kinds welcome, no contorting to the stock 17). Replaces the home-rolled state.mjs surface (no schema validation, no referential integrity, no first-class relations) with schema-validated blocks + closure-table relations + content-addressed version chains.",
+      "acceptance_criteria": [
+        "DECs → decisions, DISCs → a new discoveries kind, US-STATUS → story (status pending|enabled|vivified + enabling_phase + vivifying_commit), ORCHESTRATOR-LOG → an append-only orchestrator-log kind, pending-actions → a pending-actions kind preserving the open|done + single priority:next focus contract and the optional focus-narrative fields, subagent-invocations → its own kind, slice-facts → an arc-scoped kind.",
+        "Mandates are deduped into conventions (a class facet); no separate mandates block; MANDATES.json becomes a derived view.",
+        "The 5 line-decomposed document files (00-preamble, phase.phases, phase.phase-tasks, PHASE-LAUNCH-CHECKLIST, source-model-gaps) stay frozen raw-fidelity archive — not entity blocks (they are document structure, not queryable entities; verify-decomposed.mjs proves them lossless).",
+        "Relations are an additive overlay parsed from the prose fields; the prose stays verbatim on the item. Substrate-internal edges (DISC resolved_by DEC, DEC references DEC/DISC, slice-fact for arc DEC) are buildable now; the *_by_commit edges are deferred pending the commit-as-first-class decision.",
+        "Invariants turned on at zero legacy cost: exactly one priority:next among open pending-actions; pending-actions.status in {open,done}. The story/DISC edge invariants are deferred to the edge-building decision (legacy resolved_by prose is not uniformly parseable → encode as warn, not hard reject).",
+        "The live state.mjs session-start tooling re-points to substrate queries (filter-block-items / read-block-page), run dual until the substrate queries reconstruct identical results, then cut over the CLAUDE.md session-start steps.",
+        "Per DEC-47 the standing-up is performed externally; this item is the shape to build to."
+      ],
+      "id": "FEAT-002",
+      "created_at": "2026-06-02T21:38:31.766Z",
+      "created_by": "human/davidryan@gmail.com",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-02T21:38:31.768Z",
+      "oid": "8272809f7711cedb679decdbc4a15b76",
+      "content_hash": "60e645a6a599ba185d2f35218283e00725acb9631c8d26749a6f8437d8ef7fe1"
+    }
+  ]
+}

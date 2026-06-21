@@ -1,0 +1,10 @@
+{
+  "output": "00-preamble.json",
+  "source": "phases/00-preamble.md",
+  "section": null,
+  "itemLinePattern": "^(#{2,6}\\s|\\d+\\.\\s|[-*]\\s|>\\s)",
+  "rawStrip": "^(?!)",
+  "ignoreLinePattern": "^---$",
+  "fields": ["seq", "kind", "text", "raw"],
+  "required": ["seq", "kind", "raw"]
+}

@@ -1,0 +1,13 @@
+{
+  "status": "completed",
+  "description": "Realize DEC-48 in the tenant data (FGAP-025): make HRT, YGL, Dormitory Teacher pure SAO out-of-lesson roles. Extend import_responsibility_atoms to bind a Position to a YearGroup via a new year_group_code CSV column; in data/chiway-responsibility-atoms-template.csv remove the misplaced in-lesson atom from the Homeroom Teacher seat and add four year_group-bound YGL seats (IG1/IG2/AS/A2 Year Leader, kind=LEADER) under SAO; re-import to the dev DB + re-ground. Mode-B data+code change via the canonical pipeline.",
+  "acceptance_criteria": [
+    "After the seed, four Year Group Leader seats exist for the tenant - one bound to each year group (IG1, IG2, AS, A2) - each a leadership seat, each carrying the SAO out-of-lesson responsibility set.",
+    "The Homeroom Teacher seat carries no in-lesson responsibility - only out-of-lesson (SAO) responsibilities.",
+    "Dormitory Teacher continues to carry its out-of-lesson responsibility.",
+    "No subject-teacher in-lesson responsibility is attached to any HRT, YGL, or Dorm seat.",
+    "The seed is idempotent (a second run changes nothing) and a dry-run writes nothing.",
+    "The full project gate stays green, including a test that a year-group-bound leadership seat is created with its year group set.",
+    "The four roles surface in the tenant grounding with their out-of-lesson atoms (so a plan can target them)."
+  ]
+}

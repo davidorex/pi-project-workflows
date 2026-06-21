@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if stakeholder_groups %}Stakeholder groups (choose a communication's audience by EXACT label):\n{% for s in stakeholder_groups %}- {{ s.label }}\n{% endfor %}{% endif %}",
+  "section": "stakeholder_groups"
+}

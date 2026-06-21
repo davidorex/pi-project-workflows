@@ -1,0 +1,26 @@
+{
+  "timestamp": "2026-05-30T13:15:00+08:00",
+  "via": "claude-code",
+  "focus": "DEC-42 IMPL halted on a spaCy noun_chunks mismatch; reframed (Explore agent) as closed-set entity linking and landed DEC-43 (PhraseMatcher gazetteer admission + spaCy ner fabrication detection). Then baseline-committed the pi-context substrate and landed the operator how-to doc.",
+  "discoveries": [
+    "spaCy doc.noun_chunks is structurally incompatible with the catalogue-label grammar: PP-attachment exclusion splits 'Director of Studies', coordination-head collapse drops list tails, paren contents split off. DEC-42's API choice was wrong; its principle (library-provided extraction replaces ad-hoc regex) stands.",
+    "Closed-set entity linking + outlier detection is the correct abstraction, not open noun-phrase extraction: the per-tenant catalogue is a known closed set (~200 admin-curated labels). Gazetteer + open-NER hybrid is an established pattern.",
+    "DEC-43 admission layer (spaCy PhraseMatcher attr=LOWER over the CatalogueUnion's 13 sub-fields) is empirically watertight — 0 fabrications across all 5 A1 prose fields including the DISC-32 colon-boundary case.",
+    "DEC-43 fabrication-detection layer (spaCy ner) is empirically partial — catches sub-spans of fabricated 'Vice Principal for X' titles but misses full-form titles. This is the DISC-35 Option H escalation candidate.",
+    "spaCy ner over-triggers on common edu/admin English (Dashboard, Attendance, verb-led clauses), tags numeric-suffix forms (Term 2, WASC A1), and emits both sub- and super-spans of catalogue labels. DISC-34 closed all three classes inline via KNOWN_GENERIC_TERMS + pure-numeric-token rule + containment/word-coverage rules.",
+    "Orchestrator scripts at scripts/orchestrator/*.ts require NODE_PATH=/Users/david/Projects/workflowsPiExtension/node_modules to resolve @davidorex/pi-context/* from this Python-primary project's cwd (reuses the sibling pi-context repo's node_modules instead of a local install).",
+    "docs/2026-05-30-pi-context-claude-code-howto.md is the canonical operator-side reference for substrate ops; auth-gate is bypassed for orchestrator-script invocations (only Pi-REPL dispatch fires ctx.ui.confirm)."
+  ],
+  "decisions_made": [
+    "DEC-43 established: PhraseMatcher gazetteer admission + spaCy ner fabrication detection + KNOWN_GENERIC_TERMS denylist + catalogue.admits check; supersedes DEC-42's noun_chunks direction, DEC-42's principle stands.",
+    "Two zero-lift pi-context adoption moves chosen: append SESSION-003; populate conventions with mandates 001..009. Neither needs schema-widens or auth-gated migrations.",
+    "Block-kind shape proposal (not yet persisted): widen decisions/framework-gaps/story id patterns + add fields; add 3 custom block kinds (workshop-experiment, prompt-spec, migration); add 9 relation types; add 5 context-contracts."
+  ],
+  "current_status": "DEC-43 IMPL landed + post-IMPL tracked. DISC-29/31-residual/32/33 RESOLVED; DISC-34 RESOLVED-INLINE; DISC-35 standing-open as the Option H escalation candidate. pi-context substrate + scripts + runtime baseline-committed; operator how-to doc landed. Workshop iteration architecturally unblocked — A1 re-dispatch + cascade 02/03/04/05/06 ready to resume.",
+  "next_steps": [
+    "Widen 3 packaged-block schemas: decisions id ^DEC-\\d{4}$ -> ^DEC-\\d{1,4}$ + x-prompt-budget relaxation + supersession/commit_chain fields; framework-gaps id accepts DISC-N-DATE-LETTER + status enum + kind/resolved_by_commit fields; story id widen + status pending|enabled|vivified + vivifying_commit.",
+    "Land 3 custom block kinds via the 5-step pattern: workshop-experiment, prompt-spec, migration.",
+    "After widens land, migrate recent DECs first (DEC-39..43) to establish the supersession + commit_chain + user_directive_quote field patterns, then lazy-migrate older DECs as touched.",
+    "Resume Mode C workshop iteration: A1 re-dispatch first, then cascade 02 (A3) / 03 (D1) / 04 (B1) / 06 (F2)."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "title": "14-spec output shapes inferred from the parsers (required agent-response JSON per spec)",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "What is the required output JSON shape for each of the 14 workshop specs, as inferred from the known workshop/production code (rather than from spec prose)?",
+  "method": "code-inspection of the parse_* functions in school-improvement-plans/planner/specs.py, the MERGE_RULES in prompt-workshop/dispatch/apply.py, FREETEXT_SELECTORS_BY_SPEC in planner/_freetext_audit.py, AssistResult in planner/assist.py, and a real run output (outputs/call_narrative_draft.json).",
+  "scope": [
+    "school-improvement-plans/planner/specs.py",
+    "prompt-workshop/dispatch/apply.py",
+    "planner/_freetext_audit.py",
+    "planner/assist.py"
+  ],
+  "findings_summary": "Each spec's required AGENT OUTPUT is a top-level JSON OBJECT — every parser does `if not isinstance(loaded, dict): raise`, then reads an envelope key (e.g. loaded.get('milestones')). NOT a bare list. 3 specs are flat objects: narrative-draft {current_state?, desired_state?, rationale?, student_impact_framing?, provenance?} (>=1 non-empty); propose-domain-alignment {learner_outcomes, stakeholder_impact, areas_for_improvement (each >=1), policies_established?, policies_revised?} each -> [{label, rationale?}]; propose-review-loop {communications, review_events, revision_rules} (each >=1). The other 11 wrap rows under one envelope key: propose-milestones {milestones:[{label, improvement_type, target_date?, planning_method?}]}; draft-success-criteria {criteria:[{text, verification_kind, target_* iff target}]}; decompose-action-steps {method, steps:[{description, assessment?}]}; propose-assignments {assignments:[{step_index, responsible_division}]}; propose-responsibilities {steps:[{step_index, division_responsibilities?, position_responsibilities?}]}; propose-timelines {timelines:[{step_index, kind, date|from_date+to_date, note?}]}; propose-step-resources {steps:[{step_index, resources:[{kind,note}]>=1, substeps?}]}; propose-evidence {steps:[{step_index, evidence:[{label, owner_division, location?}]>=1}]}; suggest-feedback-channels {channels:[{label, stakeholder, owner_division, timing_kind, frequency|milestone_index, instrument}]}; bind-measurement-channels {bindings:[{criterion_index, channel_indices:[int]>=1}]}; propose-accreditation-standards {standards:[{standard (global code), rationale?}]}. The parser strips a json fence, json.loads, requires dict, reads the envelope, validates, returns AssistResult(prefill, note, flags). Catalogue FKs school-scoped except accreditation standards (global); *_index range-checked; 12/14 carry audited free-text. The 14 .workflows/schemas/*.schema.json files are now the authoritative machine encoding (declared as each call step's output.schema; AJV strict:false -> permissive: top-level type + required envelope/keys + stable enums only; cross-field invariants + catalogue + index left to the parser). CORRECTION (2026-06-07): the original recorded a bare LIST for 11 specs + some post-parse key names (e.g. learner_outcomes_targeted) — that was the parser's PREFILL return, not the agent output; corrected after verifying the parsers + a live run (agent output passed schema validation through spec 2). Full table + schemas: prompt-workshop/SPEC-OUTPUT-SHAPES.md + .workflows/schemas/.",
+  "findings_document": "prompt-workshop/SPEC-OUTPUT-SHAPES.md",
+  "citations": [
+    {
+      "label": "parse_* functions (the per-spec validators)",
+      "path": "school-improvement-plans/planner/specs.py"
+    },
+    {
+      "label": "MERGE_RULES (per-spec draft merge)",
+      "path": "prompt-workshop/dispatch/apply.py",
+      "lines": "194-216"
+    },
+    {
+      "label": "FREETEXT_SELECTORS_BY_SPEC (free-text-eligible fields, 12/14)",
+      "path": "school-improvement-plans/planner/_freetext_audit.py"
+    },
+    {
+      "label": "AssistResult(prefill, note, flags)",
+      "path": "school-improvement-plans/planner/assist.py"
+    },
+    {
+      "label": "engine disk-read path for output.schema (WF-13 bypass)",
+      "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-agent.ts",
+      "lines": "205-227"
+    }
+  ],
+  "stale_conditions": [
+    "A parse_* function's required keys, types, or invariants change",
+    "apply.py MERGE_RULES change a spec's consumed shape",
+    "a spec is added to or removed from the 14"
+  ],
+  "grounded_at": "2026-06-07"
+}

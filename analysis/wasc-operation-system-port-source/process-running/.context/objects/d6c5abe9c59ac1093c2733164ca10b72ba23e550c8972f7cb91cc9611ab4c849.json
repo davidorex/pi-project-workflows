@@ -1,0 +1,5 @@
+{
+  "description": "Never edit code an IMPL subagent produced unless the human explicitly directs the edit. The IMPL slice's commits are read-only to the orchestrator.",
+  "enforcement": "manual",
+  "severity": "error"
+}

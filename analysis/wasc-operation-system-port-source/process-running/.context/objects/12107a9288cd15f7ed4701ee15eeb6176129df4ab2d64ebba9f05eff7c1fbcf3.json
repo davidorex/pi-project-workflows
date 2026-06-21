@@ -1,0 +1,5 @@
+{
+  "description": "To assemble a work-unit's context, use `pi-context gather-execution-context --unitId <id> --kind <kind>` — it resolves the declared context-contracts (CTX-001 task / CTX-002 verification / CTX-003 feature / CTX-004 framework-gap) into per-relation-type buckets in one call — instead of hand-walking edges with find-references. Manual edge-walking is the drift source these contracts exist to remove.",
+  "enforcement": "manual",
+  "severity": "warning"
+}

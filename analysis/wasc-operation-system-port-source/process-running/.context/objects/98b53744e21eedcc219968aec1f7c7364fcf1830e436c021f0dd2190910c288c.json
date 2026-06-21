@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "C3 promotion-gate must-fix-flags predicate. plans/services.py _check_promotion_gates gains: if plan.flags.filter(severity=FlagSeverity.MUST_FIX, is_resolved=False).exists() -> failures.append(...), composed into the existing aggregate ValidationError before the raise; reached only via advance_plan_status on target_status==Lifecycle.ACTIVE (so only at promotion, not other transitions). Reuses C1 Flag (no model/migration). 6 new tests in test_services_advance_plan_status.py over the real advance_plan_status + _complete_plan fixture + real Flag rows. Separate-agent adversarial audit Total findings: 0 (predicate is the only must-fix message producer -> the blocking test is specific to this gate, not a false-green from an incomplete plan). Full gate GREEN: ruff check + ruff format --check (project + the 3 dispatch files), mypy . 317/0, pytest 2003, make test-js 48/0.",
+  "timestamp": "2026-06-07T00:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "A plan with an unresolved must-fix flag cannot be promoted from proposed to active.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Once every must-fix flag on the plan is resolved, the plan can be promoted.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A flag whose severity is not must-fix never blocks promotion, and a resolved must-fix flag never blocks promotion.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The block applies only at the proposed-to-active promotion, not at other lifecycle transitions.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

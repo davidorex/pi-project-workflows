@@ -1,0 +1,5 @@
+{
+  "description": "Pass multi-line commit messages via `git commit -m \"$(cat <<'EOF' ... EOF)\"` to preserve formatting. Avoid stacked -m flags for multi-paragraph bodies.",
+  "enforcement": "manual",
+  "severity": "warning"
+}

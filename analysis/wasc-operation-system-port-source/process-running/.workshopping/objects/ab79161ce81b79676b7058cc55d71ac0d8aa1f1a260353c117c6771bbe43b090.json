@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if frequencies %}Frequencies (the school's enumerated cadences; name frequencies only from this list):\n{% for f in frequencies %}- {{ f.code }}: {{ f.label }}\n{% endfor %}{% endif %}",
+  "section": "frequencies"
+}

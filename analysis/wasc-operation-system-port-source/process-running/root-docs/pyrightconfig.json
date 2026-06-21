@@ -1,0 +1,9 @@
+{
+  "venvPath": "./school-improvement-plans",
+  "venv": ".venv",
+  "include": ["school-improvement-plans"],
+  "exclude": ["**/.venv", "**/__pycache__", "**/migrations/0001_initial.py"],
+  "typeCheckingMode": "off",
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none"
+}

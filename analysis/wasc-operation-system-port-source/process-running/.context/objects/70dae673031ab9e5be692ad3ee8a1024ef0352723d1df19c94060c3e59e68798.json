@@ -1,0 +1,10 @@
+{
+  "status": "in-progress",
+  "description": "Per-spec quality evaluation toward a promotion-ready whole-plan draft (the substantive DISC-26 work).",
+  "acceptance_criteria": [
+    "The assembled whole-plan draft would pass the production promotion gate.",
+    "The draft is catalogue-clean — it contains no fabricated values.",
+    "No unresolved must-fix flags remain on the draft.",
+    "The full project gate stays green."
+  ]
+}

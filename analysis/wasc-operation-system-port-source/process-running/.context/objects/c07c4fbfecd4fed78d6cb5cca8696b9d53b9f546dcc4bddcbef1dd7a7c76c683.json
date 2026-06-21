@@ -1,0 +1,22 @@
+{
+  "title": "Workshop prompt render autoescapes HTML-special chars in catalogue values; the agent copies the entity -> exact-match parser hard-rejects",
+  "status": "closed",
+  "package": "prompt-workshop (render path; + production PromptTemplate.render per DEC-41)",
+  "description": "render_from_substrate.py:109 (and the substrate-assembled + verify-render-parity render paths) call Django `Template(body).render(Context(...))` with autoescape ON by default. A catalogue value containing an HTML-special char (apostrophe, &, <, >, \") renders as an entity -- e.g. the division `Principal's Office (PO)` renders as `Principal&#x27;s Office (PO)` (confirmed in the live render, run ...065027). The agent faithfully copies the entity-bearing token; the parser catalogue check (planner/specs.py:499 `if value in members`) exact-matches the un-escaped catalogue value -> hard reject. Surfaced at spec 6 (propose-assignments, responsible_division) once the FGAP-014 fix let the run reach a catalogue value with an apostrophe. Orthogonal to FGAP-014 (concatenation): these prompts are PLAIN TEXT, not HTML, so Django autoescape is wrong for them. Blast: any emitted catalogue value with an HTML-special char, across all specs (possessive names / apostrophes are common).",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/render_from_substrate.py",
+      "reference": ":109 Template(body).render(Context(...)) -- Django autoescape on by default"
+    },
+    {
+      "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-065027-e4e3/outputs/render_propose_assignments.json",
+      "reference": "rendered division line 'Principal&#x27;s Office' (apostrophe -> &#x27;)"
+    },
+    {
+      "file": "school-improvement-plans/planner/specs.py",
+      "reference": ":499 _check_in_catalogue exact match; F2 reject responsible_division='Principal&#x27;s Office (PO)' vs catalogue 'Principal's Office (PO)'"
+    }
+  ],
+  "impact": "Blocks the run at any spec whose validly-chosen catalogue value contains an HTML-special char; spec 6 is the first. The DISC-26 promotion-ready draft cannot assemble until fixed.",
+  "proposed_resolution": "Render the plain-text prompts with Django autoescape OFF (wrap the body in {% autoescape off %}...{% endautoescape %}, or render via a Template/Engine with autoescape=False), applied at the render call in BOTH the snippet and substrate render paths in lockstep so verify-render-parity stays 14/14 (render_from_substrate.py + the _workshop assemble + verify-render-parity renders). Reject parser entity-tolerance (DEC-40). Production PromptTemplate.render likely shares the bug (parallel; DEC-41 migration-time). The next DISC-26 iteration."
+}

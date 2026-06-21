@@ -1,0 +1,33 @@
+{
+  "title": "Maximalist -> target distillation transform (complements R-0004 generation-temperature)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "feasibility",
+  "question": "Given a maximalist generated draft and two high-target-signal exemplars (canonical.html + a real WASC .docx), what PROCESS transforms the maximalist draft toward the target signal, safely?",
+  "method": "agent extraction + analysis of data/Sample - Schoolwide Action Plan.docx (-> data/Sample-Schoolwide-Action-Plan.extracted.md) vs web/canonical.html + /tmp/final-complete-draft.json; design grounded in the pipeline + the promotion gate; keystone (gate is existence-based) verified at plans/services.py:_check_promotion_gates by the orchestrator.",
+  "findings_summary": "Full body: docs/distillation-transform-design-2026-06-07.md. The .docx is a SAMPLE WASC schoolwide action plan (labeled 'Sample' -- a curated exemplar/template, NOT an enacted real plan) -- a 6-column tabular grid (Action Steps | Person(s) Responsible | Timeline | Resources | Assessing of Progress | Communication of Progress) + 15-standard reference; extreme concision (~1159 words whole plan; step descriptions 6-11 words; assignments = bare role labels; fragment lists). It does NOT compete with canonical.html -- two facets of ONE target: .docx = authoring-grid/export shape; canonical = normalized-store/derived-view; both terse; target = a BAND [canonical .. docx]. TRANSFORM DESIGN: generate maximalist (complete coverage) -> DISTILL AFTER via a new whole-draft stage (distill.py, run once after the 14-spec sequence -- needs the complete draft to collapse cross-field repetition). The distiller rewrites ONLY prose fields (allow-list: narrative, step descriptions, linkage rationales, criterion text) and passes ALL structured arrays through byte-identical. KEYSTONE (verified): _check_promotion_gates (plans/services.py:86-207) is entirely EXISTENCE-based (.strip() non-empty, .exists(), not steps/criteria, improvement_type_id is not None) -- NO length cap -- so prose compression can never fail the gate; maximalist-first is the correct safe base (compress present data, never recover absent). Composes with R-0004: generate at standard, distill to terse/docx band; maximalist = internal record, distilled = export; production = the orchestration trio's final pre-promotion pass (DEC-41). ROUND-TRIP SAFETY: distilled draft must re-parse (planner/specs.py parse_*), re-pass the catalogue-gate (_freetext_audit.py; no contracted labels -- DEC-40/FGAP-014/019), re-satisfy _check_promotion_gates; iterate-to-zero else. MEASURABLE: distance-to-target-BAND (canonical + .docx as 2 anchors) = the DISC-26 / R-0003-C7 rubric on an authority-format exemplar. NOT implemented -- design only. OPEN/TBD (human-flagged): a separate decision-policy layer governs USE of the mechanism -- operating heuristics + decision-making policies (when to distill and to which band per audience/consumer; generate-temperature vs distill per situation; round-trip rules when the band conflicts with the gate floor -> keep coverage over length; encode as a policy object the orchestration trio applies deterministically). To design; own pass + .context items when prioritized. See docs/distillation-transform-design-2026-06-07.md section 6. POC-SURFACED COVERAGE FLOORS (doc section 5b): the POC distillation (data/chiway-slo-plan-distilled-POC.md) compressed away coverage the SOURCE had -- SAO (70x in source, 5/6 steps + a criterion -> kept only as a role-label) and the stakeholder dimension (6 groups -> ~2-4 thin, Parent Committee/Admissions Applicants dropped). The existence-gate is NECESSARY BUT NOT SUFFICIENT (it requires >=1 stakeholder/communication, never SAO specifically), so distillation can PASS the gate while collapsing breadth. REQUIRED: coverage FLOORS above the gate -- owner-coverage floor (every division/position with SUBSTANTIVE source involvement stays visibly present, not merely derivable), stakeholder-coverage floor (the stakeholder dimension + audiences not silently subset), dimension floor (a source section may be compressed, never zeroed). Mechanics: the scorer gains coverage metrics measured against the SOURCE (the coverage floor) distinct from the exemplar (the concision target); a distillation below a floor is rejected + re-run. Makes the section-6 never-drop-coverage rule checkable.",
+  "findings_document": "docs/distillation-transform-design-2026-06-07.md",
+  "citations": [
+    {
+      "label": ".docx target (extracted)",
+      "path": "data/Sample-Schoolwide-Action-Plan.extracted.md (from data/Sample - Schoolwide Action Plan.docx)"
+    },
+    {
+      "label": "normalized target",
+      "path": "web/canonical.html + web/data/plan-data.js"
+    },
+    {
+      "label": "generation-temperature complement",
+      "path": "R-0004 / docs/concision-tuning-design-2026-06-07.md"
+    },
+    {
+      "label": "gate floor (existence-based, verified)",
+      "path": "school-improvement-plans/plans/services.py:_check_promotion_gates"
+    },
+    {
+      "label": "round-trip validation surface",
+      "path": "planner/specs.py parse_* + planner/_freetext_audit.py (DEC-41 parser=schema)"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

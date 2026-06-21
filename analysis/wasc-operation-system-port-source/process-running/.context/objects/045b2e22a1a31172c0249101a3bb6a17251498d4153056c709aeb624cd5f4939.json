@@ -1,0 +1,5 @@
+{
+  "description": "Orchestrator-script invocations (`npx tsx scripts/orchestrator/*.ts`) require `NODE_PATH=/Users/david/Projects/workflowsPiExtension/node_modules` prefix because `@davidorex/pi-context/*` imports don't resolve from this project's cwd. See `docs/2026-05-30-pi-context-claude-code-howto.md` Environment prerequisites section.",
+  "enforcement": "manual",
+  "severity": "error"
+}

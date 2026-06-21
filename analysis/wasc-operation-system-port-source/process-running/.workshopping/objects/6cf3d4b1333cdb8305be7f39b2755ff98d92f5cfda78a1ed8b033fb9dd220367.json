@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if division_responsibility_summary %}Division responsibilities (each division's purview — generate distinct actions across these):\n{% for d in division_responsibility_summary %}- {{ d.division }}: {% for r in d.responsibilities %}{{ r }}{% if not forloop.last %}; {% endif %}{% endfor %}\n{% endfor %}{% endif %}",
+  "section": "division_responsibility_summary"
+}

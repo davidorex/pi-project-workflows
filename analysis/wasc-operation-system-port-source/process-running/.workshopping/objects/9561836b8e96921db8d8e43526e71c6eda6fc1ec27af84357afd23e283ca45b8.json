@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nAuthor seed (a one-line intent for this plan): {{ seed }}\n"
+}

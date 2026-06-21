@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if improvement_types %}Improvement types at this school (CHOOSE each milestone's improvement_type by its CODE from this list):\n{% for it in improvement_types %}- {{ it.code }}: {{ it.label }}{% if it.requires_planning_method %} (REQUIRES a planning method){% else %} (no planning method required){% endif %}\n{% endfor %}{% endif %}",
+  "section": "improvement_types"
+}

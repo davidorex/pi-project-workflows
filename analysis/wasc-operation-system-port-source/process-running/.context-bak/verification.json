@@ -1,0 +1,95 @@
+{
+  "verifications": [
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Re-audit ACCEPT (separate agent, zero blocking/major) + orchestrator load/list confirmation (exit 0); smoke 7/7 green.",
+      "timestamp": "2026-06-05T00:30:00Z",
+      "criteria_results": [
+        {
+          "criterion": "F1: dead --writer/resolveIdentity removed; now exit-2 unknown flag",
+          "status": "passed"
+        },
+        {
+          "criterion": "No regression: list/run/auth-gate/fail->status->resume-skips-completed/auto-resume/--input modes/exit codes 0-1-2",
+          "status": "passed"
+        },
+        {
+          "criterion": "Agent-step pre-flight detects top-level + nested (loop/parallel/forEach); command-only skips it",
+          "status": "passed"
+        },
+        {
+          "criterion": "--json envelope faithful to WorkflowResult; stdout single-line pure",
+          "status": "passed"
+        },
+        {
+          "criterion": "F2: pause-step behavior documented (header + --help)",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-001"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "FEAT-002 gate green + separate-agent adversarial audit ACCEPT (Total findings: 0 beyond the known ruff E501, since fixed). Parity re-gate GATE 14/14 + both cross-checks PASS (covers the bridge's assemble_spec_body after the loader move into _workshop.py). render smoke: stdout one pure JSON object (5 keys), AXES log on stderr only (stdout-guard works, audit F2). apply smoke: HAPPY exit 0 (status merged, 5 plan fields written to draft-after-narrative-draft.json, input draft byte-unchanged = single-writer) + REJECT exit 1 (stdout empty, no draft-after written = reject-before-write, spec 5a). ruff clean across the 4 files; mypy import-not-found/unused-ignore are pre-existing false positives shared by the untouched render.py/apply.py (mypy scope is the Django app, baseline-confirmed by running it on render.py/apply.py).",
+      "timestamp": "2026-06-05T06:00:00Z",
+      "criteria_results": [
+        {
+          "criterion": "render_from_substrate.py emits the per-spec prompt JSON from .workshopping as one pure JSON object, fragment_refs resolved in array order",
+          "status": "passed"
+        },
+        {
+          "criterion": "apply_from_substrate.py parser-gates a response and writes a versioned immutable draft-after-<spec_key>.json (single-writer; reject-before-write)",
+          "status": "passed"
+        },
+        {
+          "criterion": "stdout-purity guard keeps django-axes logging off stdout on all paths (audit F2)",
+          "status": "passed"
+        },
+        {
+          "criterion": "grounding rebuilt against --draft-path for the parser catalogue checks (audit F8)",
+          "status": "passed"
+        },
+        {
+          "criterion": "loader move into _workshop.py: parity gate 14/14 exercises the same assemble_spec_body the bridge uses",
+          "status": "passed"
+        },
+        {
+          "criterion": "run_workflow.mjs stale identity-comment sweep complete (0 remaining)",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-002"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Global catalogue-gate fix gate green + separate-agent adversarial audit converged to zero (0 code defects; its 2 test-coverage findings closed by an added 4-token-production-name prefix-boundary test, verified present + passing). pytest planner/tests/test_freetext_audit.py 71 passed; mypy planner/_freetext_audit.py + test clean; ruff clean. Live admit probe against the real Chiway grounding: every enumerated section's labels admit (divisions/positions/stakeholder_groups/policies/accreditation_standards/learner_outcomes/areas_for_improvement/frequencies/improvement_types/planning_methods/year_groups/school/mvv + the newly-unioned framing_vocabularies + priority_tiers; 0 not-admitted of 177 labels), formatting variants (hyphen/underscore/case) admit, the school short/brand form admits, and fabrications (Springfield Academy of Excellence, Director-of-Innovation) + single tokens + non-prefix subsequences (Repton School / Repton Xiamen) reject. Captured 2026-05-29 response rejection list went ['Chiway-Repton's','Caring'] -> ['Caring'] (school short-form closed end-to-end; 'Caring' correctly rejected, not enumerated post-DEC-45). Collapse merges no two distinct labels (only case-variant dupes). union_casefold + exact/plural paths unregressed.",
+      "timestamp": "2026-06-05T07:30:00Z",
+      "criteria_results": [
+        {
+          "criterion": "COMPLETENESS: framing_vocabularies + priority_tiers pulled into the union (+ PhraseMatcher); every enumerated DB label admits",
+          "status": "passed"
+        },
+        {
+          "criterion": "VARIANT TOLERANCE: hyphen/underscore/whitespace/case variant of any enumerated entity admits via union_collapsed",
+          "status": "passed"
+        },
+        {
+          "criterion": "SCHOOL SHORT FORM: >=2-token contiguous prefix of name/slug admits; single tokens + non-prefix subsequences reject",
+          "status": "passed"
+        },
+        {
+          "criterion": "ANTI-FABRICATION: a name matching no entry/prefix collapse still rejects; no distinct-label collapse collision",
+          "status": "passed"
+        },
+        {
+          "criterion": "NO REGRESSION: union_casefold exact-match + -es/-s plural-strip paths unchanged; full suite 71 passed; mypy/ruff clean",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-003"
+    }
+  ]
+}

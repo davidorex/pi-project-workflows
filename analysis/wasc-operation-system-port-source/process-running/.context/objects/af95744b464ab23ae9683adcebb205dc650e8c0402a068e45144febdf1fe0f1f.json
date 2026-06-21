@@ -1,0 +1,22 @@
+{
+  "title": ".workshopping fragment content_hash/content_parent are stale at HEAD (hand-maintained JSON, no re-stamping write-path)",
+  "status": "identified",
+  "package": ".workshopping/prompt-fragment.json + the .workshopping substrate governance",
+  "description": "The .workshopping prompt-fragment.json fragments carry pi-context content-addressed identity fields (id/oid/content_hash/content_parent), but the file is hand-maintained raw JSON read only by the wasc Python dispatch (_workshop.py load_fragments joins `body`; nothing in prompt-workshop/dispatch reads content_hash; verify-render-parity ignores it). There is NO pi-context CLI write-path governing .workshopping that re-stamps content_hash on a body edit, so any hand edit leaves the hash stale. ~14 fragments are stale at HEAD (FRAG-preamble was; the FGAP-022/019 era + ~empty-body bootstrap fragments) -- independent of the Slice-A edits (those 5 were re-stamped via pi-context's own contentProjection+computeContentHash). content_hash is currently INERT (functional render impact nil), but the substrate's declared identity does not match content, which would drift any future content-addressed operation (promote/verify/diff against pi-context governance).",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/_workshop.py",
+      "reference": "load_fragments reads data['fragments'], dispatch joins only body; zero content_hash refs in dispatch/"
+    },
+    {
+      "file": ".workshopping/prompt-fragment.json",
+      "reference": "~14 fragments stale at HEAD (content_hash != recompute-from-body via pi-context contentProjection+computeContentHash); 162/181 match"
+    },
+    {
+      "file": "workflowsPiExtension/packages/pi-context/dist/content-hash.js",
+      "reference": "the canonical algo (RFC-8785 JCS canonicalize over contentProjection excl. id/oid/content_hash/content_parent -> SHA-256) -- the re-stamp source"
+    }
+  ],
+  "impact": "Inert today (dispatch ignores it), but .workshopping is a registered pi-context substrate whose fragment identity is internally inconsistent. Any move to bring .workshopping under a live pi-context write-path / content-addressed verify would surface ~14 mismatches; hand-edits silently desync the field.",
+  "proposed_resolution": "Decide (human scope): (a) bring .workshopping fragment maintenance under a pi-context CLI write-path that re-stamps content_hash + sets content_parent on body change (so edits stay consistent); OR (b) bulk re-stamp all stale fragments once (reuse the pi-context contentProjection+computeContentHash, as the Slice-A 5 were); OR (c) treat content_hash as vestigial for .workshopping and drop it from the fragment shape. Distinct from FEAT-005 Slice A (which re-stamped only its 5 edited fragments)."
+}

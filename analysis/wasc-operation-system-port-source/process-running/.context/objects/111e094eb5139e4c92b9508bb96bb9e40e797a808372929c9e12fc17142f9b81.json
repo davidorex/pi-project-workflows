@@ -1,0 +1,20 @@
+{
+  "timestamp": "2026-05-31T20:30:00+08:00",
+  "via": "claude-code",
+  "focus": "Landed DEC-45 Slice 2 (plan-side per-clause linkage rename guiding_*->mvv_*), after renaming the assistant-introduced advanced_* names to mvv_* across all context, and a ground-truth fact sweep for Slices 2/3.",
+  "discoveries": [
+    "The plan-side linkage names advanced_clauses/PlanAdvancedClause were assistant-introduced (never user-chosen) and incoherent ('advanced' reads as an adjective). Renamed to mvv_clauses/PlanMvvClause/mvv_statements/PlanMvvStatement across every context surface incl the authoritative DEC-45 record (commit eefa568); git history retains advanced_* only as the discarded-attempt record.",
+    "Built context-migration/decomposed/dec45-slice23-facts.json — 14 atomic ground-truth facts/landmines (DEC45-F01..F14) for Slices 2/3, verified against current source + the reset dev DB, NOT the stale frame. Key: F07 Slice 3 must remove every MissionArea reference in-slice; F04 PlanGuidingClause had no UniqueConstraint; F06 DISC-36's target file unconfirmed.",
+    "The mission seed 0060 (8d61bcf) had silently reddened the suite: school/tests/test_seed_dec32_slos_and_vision.py asserted 'no mission seeded' plus an order-0 .get() that became ambiguous across vision+mission. The 'gate green / pytest 1952' note was recorded without re-running the full suite after 0060. Caught when Slice 2's IMPL ran full pytest; fixed in 4f558a5; suite now 1953 passed. Lesson: re-run the FULL gate after any seed/data migration, not a scoped check."
+  ],
+  "decisions_made": [
+    "Slice 2 scoped to the rename ONLY (data-preserving). The additive whole-statement targeting (Plan.mvv_statements + PlanMvvStatement) is split into its own next slice to avoid the sprawl that sank the first DEC-45 attempt. Settled names: mvv_clauses/mvv_statements, PlanMvvClause/PlanMvvStatement.",
+    "Slice 2 committed e6120ea (rename: M2M/through-model/FK/related_names/4 permission codenames; hand-authored plans/0042 RenameModel+RenameField mirroring school/0032 + plans/0043 codename rename mirroring school/0034); applied + verified on dev DB (plans_planmvvclause, perms renamed, socrates reads it, 0042/0043 reversible). Seed-test fix 4f558a5; tracking 02e4939."
+  ],
+  "current_status": "DEC-45 Slices 1 and 2 landed and verified on the clean dev DB; full pytest 1953 passed. The plan-side MVV linkage is coherently named mvv_*. Slice-2/3 ground-truth facts persisted (dec45-slice23-facts.json).",
+  "next_steps": [
+    "Additive whole-statement targeting slice: new Plan.mvv_statements M2M + PlanMvvStatement through-model (+ rationale) + planner formset + DISC-19 school_admin grant migration. Additive, independently green-gated.",
+    "Then Slice 3 — MissionArea teardown: the large in-slice reference removal (grounding.py / plans.services promotion gate / planner specs _A3_GATE_REQUIRED / forms / formsets / steps / ai-assist.js), plans-side PlanMissionArea before school-side DeleteModel; neutralize school/0011 seed; ai/00NN prompt-template edit per DEC-41 (DEC45-F07/F10/F11/F13).",
+    "Then Slice 4 (grounding-output + CatalogueUnion incl catalogue guiding_clauses->mvv_clauses + DISC-36, verifying its target file first per F06), Slice 5 docs/tracking. Carry the other open pending-actions (D7, post-Phase-15 walkthrough, 4 DISCs, Mode-C cascade)."
+  ]
+}

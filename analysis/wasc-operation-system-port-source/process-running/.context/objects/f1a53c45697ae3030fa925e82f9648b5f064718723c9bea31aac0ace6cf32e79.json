@@ -1,0 +1,52 @@
+{
+  "title": "Context Contracts leverage plan — forensic verification + corrected contracts",
+  "status": "complete",
+  "layer": "L3",
+  "type": "audit",
+  "question": "Are the load-bearing claims of the Context Contracts leverage plan (the context-contracts schema + gather-execution-context behavior, the named relation_types + their directions, the specific item edges, the quantitative + lens/invariant claims) accurate against the real pi-context op source and the live .context substrate — and what is the corrected, source-verified form of each proposed contract.",
+  "method": "Code-inspection of the gather-execution-context implementation (pi-context/src/execution-context.ts + context.ts walk primitives) and substrate query (config.json relation_types/invariants, relations.json edges, the context-contracts schema) via the pi-context CLI; each direction verified against the stored parent->child edge convention.",
+  "findings_summary": "The Context Contracts machinery is present and installed: the context-contracts schema, the gather-execution-context op, and every relation_type the leverage plan names. Verifying the plan's claims against the op source and the live substrate established several corrections. gather-execution-context performs an independent single-hop walk per declared relation_type from the work unit; it does not chain, so a task contract reaches the task's direct edges (its story, its phase, its dependency chain, and any direct gap/decision/feature/verification edges) but not its feature-via-story. max_depth is recorded, not enforced, in the current build. The direction value is one of in|out|both; for a task, story_contains_task and verification_verifies_item resolve as in, task_depends_on_task as in (a task's prerequisites are its ancestors), and task_addresses_gap / task_addresses_feature / task_governed_by_decision as out. The graph holds 261 edges across 14 of 30 registered relation_types. A decision contract reaches only the substrate DEC-0001..0005 (the seed-round DECs are not substrate items); eight relation_types the plan names have no edges. The corrected task, verification, feature, and framework-gap contracts are viable; the decision contract is deferred. The corrected, schema-valid contracts and the full claim-by-claim verification are in the findings_document (section IV.B).",
+  "findings_document": "docs/2026 06 15 Project pi-context Usage Audit & Optimization Report.md",
+  "citations": [
+    {
+      "label": "gather-execution-context impl (lookup by unit_kind / closure walk / direction / Math.min maxDepth / empty buckets / 3 error-returns)",
+      "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/execution-context.ts:150-222"
+    },
+    {
+      "label": "walkAncestors/walkDescendants direction semantics + NOT depth-bounded (recorded-only)",
+      "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-context/src/context.ts:1400-1452, 31-36"
+    },
+    {
+      "label": "context-contracts schema (direction enum in|out|both; required created_by/created_at; id ^CTX-\\d{3,}$; arrayKey contracts)",
+      "path": ".context/schemas/context-contracts.schema.json"
+    },
+    {
+      "label": "real edges (261 total; 14 of 30 registered relation_types in use; per-type counts)",
+      "path": ".context/relations.json + .context/config.json"
+    },
+    {
+      "label": "TASK-043 graph (12 inbound task_depends_on_task prereqs; STORY-010; PHASE-PROMPTWORKSHOP-RUNNER; no gap/decision/feature/verification edges)",
+      "path": ".context/relations.json"
+    },
+    {
+      "label": "decision split (substrate DEC-0001..0005 vs product DEC-44.. in seed-round-plan)",
+      "path": ".context/decisions.json + context-migration/decomposed/seed-round-plan.json"
+    }
+  ],
+  "conducted_by": "general-purpose forensic agent (add4bd00) + orchestrator corroboration",
+  "conducted_at": "2026-06-15",
+  "grounding": {
+    "dependencies": [
+      "pi-context engine @ /Users/david/Projects/workflowsPiExtension/packages/pi-context (execution-context.ts + context.ts walk primitives); catalog @davidorex/pi-context@0.30.0"
+    ],
+    "revisions": [
+      "wasc .context/relations.json at 261 edges, 2026-06-15"
+    ]
+  },
+  "stale_conditions": [
+    "gather-execution-context gains real depth-bounding (max_depth becomes enforced)",
+    "the context-contracts schema direction enum changes from in|out|both",
+    "the registered relation_type set or the stored parent->child edge convention changes",
+    "the relation edge counts shift materially from the 2026-06-15 snapshot (261 edges)"
+  ]
+}

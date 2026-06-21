@@ -1,0 +1,5 @@
+{
+  "description": "Mode A — Phased workflow (Phase 0–15). For any work that fits a new phase MD. Sequence: render phase prompt via `bin/render-phase-prompt.sh {impl|audit} NN` → dispatch IMPL sub-agent with the rendered prompt → IMPL executes numbered steps + Layer additions verbatim, commits, returns → optional AUDIT dispatch → orchestrator computes GO/NO-GO from AUDIT's `Total findings: N` (0 → GO, >0 → NO-GO) → automated gate (manage.py check 0 + ruff baseline + mypy clean + pytest all-pass + make test-js all-pass + AUDIT count == 0 if AUDIT run) → advance to phase N+1 when gate green. Per-phase human browser-verification batched into one post-Phase-15 pass per the project's verification convention. Phase MDs live in `phases/phase-NN-{slug}.md`; the canonical operational procedure is `phases/PHASE-LAUNCH-CHECKLIST.md`.",
+  "enforcement": "review",
+  "severity": "warning"
+}

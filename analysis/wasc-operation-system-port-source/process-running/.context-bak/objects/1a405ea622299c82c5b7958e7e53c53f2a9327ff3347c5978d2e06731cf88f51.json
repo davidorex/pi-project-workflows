@@ -1,0 +1,5 @@
+{
+  "description": "When a gap, issue, or bug surfaces, dispatch Explore/eval agent(s) to establish its FULL context — root cause, blast radius, current-source grounding — BEFORE filing it as a .context item (framework-gaps / issues / tasks). File the investigated finding, never a surface-impression stub. Singular: a surfaced problem is never recorded from first impression; the agent investigation is the prerequisite to the filing. Operative copy in CLAUDE.md Active-phase-management.",
+  "enforcement": "manual; the filed item must carry investigated root-cause + blast-radius, not a one-line impression",
+  "severity": "error"
+}

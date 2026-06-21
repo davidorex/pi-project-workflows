@@ -1,0 +1,7 @@
+[
+  {
+    "parent": "SESSION-002",
+    "child": "SESSION-001",
+    "relation_type": "session_touches_item"
+  }
+]

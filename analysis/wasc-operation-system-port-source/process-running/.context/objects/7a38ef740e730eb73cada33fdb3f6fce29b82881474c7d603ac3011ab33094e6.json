@@ -1,0 +1,13 @@
+{
+  "status": "planned",
+  "description": "Tighten the four gated workshop snippets so the model satisfies each per-spec structural gate by construction, removing snippet-06's distribution generation/enforcement contradiction. Prompt bodies only — the validator/gate-logic/output-schemas are NOT touched (the distribution gate is a structural process-blocker; relaxing it is rejected). Canonical lockstep edit: snippet MD body + the matching .workshopping per-spec-unique FRAG-intro fragment, edited to identical text + re-stamped, verify-render-parity 14/14. Gated specs/fragments: 02 FRAG-intro-propose-domain-alignment-8 (coverage), 06 FRAG-intro-propose-assignments-5 (distribution contradiction + decision_requests), 11 FRAG-intro-suggest-feedback-channels-5 (three-view + bilingual), 14 FRAG-intro-propose-review-loop-9 (cadence). On branch tighten-gated-snippets; merge to main only on user authority.",
+  "acceptance_criteria": [
+    "Snippet 06 contains no instruction permitting a single division to own a majority of steps; it requires distributed ownership and directs the model, before output, to verify that more than one division owns steps and that no division owns more than half.",
+    "Snippet 06 still directs a single best-fit division per step and does not instruct assigning a step to an ill-fitting division merely to spread; where best-fit assignment would concentrate more than half under one division, it directs re-examining each step's fit rather than silent concentration.",
+    "Each of the four gated snippets directs the model, at the point of output, to self-verify the structural property its gate enforces: 02 = every catalogue learner-outcome and improvement-area appears exactly once across the targeted and not_addressed arrays; 06 = more than one owner and none over half, and each decision_request carries its four non-empty fields; 11 = the fixed three measurement_views keys and two bilingual_views keys, each an index or a gap, with a channel present for every view and bilingual side not explicitly deferred; 14 = at least four review checkpoints with the earliest scheduled before 1 December of the cycle's first year.",
+    "The four edited snippet bodies and their .workshopping fragments render byte-identical: verify-render-parity reports GATE 14/14 with both cross-checks passing.",
+    "Each edited .workshopping fragment's content_hash differs from its pre-edit value (re-stamped) and the substrate validates clean.",
+    "The validator, gate logic, and output schemas are unchanged from before the task, and no output-contract key is added or removed by the edits.",
+    "The working tree on the branch is clean with the changes committed."
+  ]
+}

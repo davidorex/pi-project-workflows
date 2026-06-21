@@ -1,0 +1,12 @@
+{
+  "status": "completed",
+  "description": "Accumulation seam sub-slice 5 (B2 nested-bindings fold, the LAST seam fold): a server-side function in planner/services.py folding the B2 bind-measurement-channels prefill -- list[{criterion_index: int, channel_indices: [int, ...]}] -- into the flat draft_state under the TWO-LEVEL nested key criteria-{criterion_index}-measurement-0-channel-{k}-channel_index (measurement row always 0 -- the blank extra grouping channel bindings per criterion; channel sub-row {k}; field channel_index). Writes only the channel-binding rows (management-form reconstruction for save is the save slice, consistent with the prior folds deferring management forms). criterion_index + channel_index stored as integers as-is (resolved at save). Per-criterion REPLACE scope ^criteria-{i}-measurement-\\d+-channel-\\d+-[^-]+$ (collision-safe vs the criteria simple-formset fold's ^criteria-\\d+-[^-]+$). Carries forward the atomic pre-validation + duplicate-index-guard + unexpected-shape-guard lessons. Addresses FEAT-010 / STORY-013; harness SLICE=fold_b2.",
+  "acceptance_criteria": [
+    "Folding the B2 prefill writes, for each row, criteria-{criterion_index}-measurement-0-channel-{k}-channel_index = channel_indices[k] for each k (the two-level nested key, measurement index 0).",
+    "criterion_index and channel_index values are stored as integers unchanged (not resolved at fold time).",
+    "REPLACE per criterion: re-folding a criterion's bindings clears its prior criteria-{i}-measurement-{j}-channel-{k}-* rows (incl. stale higher-index) without clobbering the criterion's scalar fields, the measurement row's own fields, the channel/measurement management-form keys, or OTHER criteria's keys.",
+    "Folding B2 does not disturb the criteria simple-formset scalars (no collision: the criteria fold's ^criteria-\\d+-[^-]+$ scope does not match the deeper measurement/channel keys, and B2's scope does not match criteria scalars).",
+    "The fold is atomic on guard failure (a malformed row/nested list leaves draft_state untouched) and raises a clear domain error on a malformed prefill (non-list, non-dict row, non-list channel_indices) or a duplicate criterion_index within the call.",
+    "The folded draft_state round-trips through PlanDraftState and the two-level channel-binding keys read back with their integer values; the whole-project gate stays green and the context cascade validates."
+  ]
+}

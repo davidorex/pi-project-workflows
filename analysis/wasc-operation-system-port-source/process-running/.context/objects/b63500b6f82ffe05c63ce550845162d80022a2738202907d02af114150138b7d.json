@@ -1,0 +1,26 @@
+{
+  "status": "identified",
+  "package": "school-improvement-plans/planner/orchestration.py (run_trio_to_proposed_plan / the terminal save) + planner/specs.py (the parsers) + planner/views.py (_bind_validate_and_save)",
+  "title": "An LLM-produced model field-constraint violation (e.g. label > max_length=200) aborts the WHOLE trio run at the terminal save -- defeating the 'always yields a Plan' + 'no run aborts' guarantees, because constraint violations are not caught until the unguarded terminal save",
+  "description": "Surfaced by the second live run_trio run (2026-06-21, chiway, openrouter; after FGAP-050 fixed the validator). The run completed all 14 specs + gate-closure, then aborted with a CommandError aggregating per-formset form-validation errors -- one formset had 4 rows whose `label` was 279-363 chars against the model max_length=200 (Milestone/FeedbackChannel/ReviewEvent/Evidence all define `label = CharField(max_length=200)`: review.py:57, output.py:168, milestone.py:72, feedback.py:48). ROOT CAUSE + abort path (corroborated vs source): the per-spec parsers (planner/specs.py) validate catalogue membership + shape + non-empty, but DO NOT validate model field constraints like max_length (e.g. C1 parse_suggest_feedback_channels:1509 checks label non-empty, not its length). So an over-long label parses + folds + saves into draft_state cleanly. At the terminal save: run_gate_closure_loop probes by saving (save+gate+rollback); an over-long label makes EVERY probe save FAIL form validation -> the loop never converges -> returns plan=None; run_trio_to_proposed_plan's fallback `plan = save_draft_state_as_plan(final_state, ...)` (orchestration.py:1170) then ALSO fails form validation and RAISES -- and that line is NOT wrapped in a try/except -> the ValidationError propagates out of run_trio_to_proposed_plan -> CommandError, NO Plan saved. The resilience loop (_run_spec_with_resilience) only catches PER-SPEC LLM/parse/fold errors (LLMTimeout/RateLimit/ValueError/LLMAuth/_FoldError); it does NOT cover a constraint violation that only manifests at the post-all-specs terminal save. So the DEC-57 dec-4 'no run aborts' + TASK-071's 'always yields a Plan(PROPOSED)' guarantees are BOTH defeated by a single over-long field.",
+  "evidence": [
+    {
+      "file": "planner/orchestration.py",
+      "reference": "run_trio_to_proposed_plan:1170 -- `if plan is None: plan = save_draft_state_as_plan(final_state, ...)` is NOT wrapped in try/except; a form-validation ValidationError from the save propagates out -> CommandError, no Plan (the always-yields-a-Plan hole)"
+    },
+    {
+      "file": "planner/specs.py",
+      "reference": "C1 parse_suggest_feedback_channels ~1509 (and D1/G1/F5 parsers) validate label non-empty + catalogue, NOT max_length=200 -> over-long values pass parse + fold into draft_state"
+    },
+    {
+      "file": "plans/models/{review,output,milestone,feedback}.py",
+      "reference": "label = models.CharField(max_length=200) on ReviewEvent:57 / Evidence:168 / Milestone:72 / FeedbackChannel:48 -- the 200-char limit the LLM violated (279-363 chars)"
+    },
+    {
+      "file": "observed run output 2026-06-21",
+      "reference": "CommandError aggregate: one formset group = [{'label':['...at most 200 characters (it has 306)']}, {...363}, {...279}, {...357}]; all other groups {} (valid)"
+    }
+  ],
+  "impact": "A single over-long (or otherwise model-constraint-violating) LLM field aborts the ENTIRE trio run with no Plan persisted -- the exact 'a triviality blocks completion' failure the resilience layer was meant to prevent, but it slips through at the terminal save which is outside the resilience loop. This is a CLASS, not just `label`: any CharField max_length (Plan.title 200, Communication.channel 200, FeedbackChannel.instrument 500, etc.), choices-field value, timing-kind CheckConstraint, or required-FK that a spec fills can equally pass the gate-closure yet fail the terminal save and abort the run. Blocks the post-Phase-15 end-to-end walkthrough (the run cannot produce a draft when any field overflows).",
+  "proposed_resolution": "Make the terminal save ABORT-PROOF as the STRUCTURAL guarantee (addresses the whole class, per mandate-004 -- not per-field whack-a-mole): on a form-constraint violation, the save should DEGRADE the offending rows/specs to MUST_FIX Flag rows (and/or conform them, e.g. truncate-with-flag) rather than raise, so run_trio_to_proposed_plan ALWAYS yields a Plan(PROPOSED) carrying the violations as flags -- consistent with degrade-to-Flag (DEC-57) + always-yields-a-Plan (TASK-071). LIKELY ALSO add parser-level field-constraint validation (max_length etc.) for the spec-filled fields so a violation is caught EARLY per-spec -> the resilience loop retries-with-feedback (the LLM may shorten on retry) then degrades that spec -- defense-in-depth + better UX than a terminal degrade. The exact design (save-boundary degrade granularity: per-row vs per-spec; truncate vs drop; which layer owns which constraints) is a plan-mode decision. Needs its own canonical-pipeline pass. Out of scope for FGAP-051 itself: per the no-abort intent, the save-boundary robustness is the load-bearing fix."
+}

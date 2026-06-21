@@ -1,0 +1,41 @@
+{
+  "unit_kind": "task",
+  "description": "Execution bundle for a task: its containing story (in), its phase (out), the gap/feature/decision it addresses (out), its verifications (in), and its prerequisite chain (in, depth 2). Single-hop per relation_type (no chaining); max_depth recorded-only in this build. Directions corroborated against live edges; matches R-0012 section IV.B.",
+  "bundle_relation_types": [
+    {
+      "relation_type": "story_contains_task",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "task_positioned_in_phase",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "task_addresses_gap",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "task_addresses_feature",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "task_governed_by_decision",
+      "direction": "out",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "verification_verifies_item",
+      "direction": "in",
+      "max_depth": 1
+    },
+    {
+      "relation_type": "task_depends_on_task",
+      "direction": "in",
+      "max_depth": 2
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "title": "propose-responsibilities cannot run: the responsibility-atom layer is entirely unseeded for the tenant (all divisions + positions have zero atoms)",
+  "status": "closed",
+  "package": "prompt-workshop (snippet 07 + shared preamble); DISC-30 admin-curation class",
+  "description": "At spec 7 (propose-responsibilities, US-LLM-27) the run halts. Querying the Chiway grounding (build_grounding) shows ALL 15 divisions AND all ~46 positions have ZERO responsibility atoms -- the DEC-32 Layer-1 responsibility-atom data is entirely unseeded for this tenant. The parser gates each division-grain and position-grain `statement` verbatim against these (empty) per-owner atom sets (planner/specs.py:543 _responsibility_statements_under_division -> div['responsibilities']; positions analogously), so NO proposal can pass for ANY owner. 'Principal's Office (PO)' was merely the first owner the run reached. The shared preamble's all-divisions mandate pushes the LLM to propose for every division (copying the division description rendered at 07:27/07:29), but there are no atoms to match. Primary root cause: the uncurated responsibility-atom catalogue (DISC-30 admin-curation / tenant-data gap), NOT a prompt tension -- the all-divisions-vs-empty-set tension is moot when every set is empty; the spec simply cannot produce valid output for this tenant until the atoms are curated.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/specs.py",
+      "reference": ":2447-2453 division-grain statement catalogue check; :543 _responsibility_statements_under_division reads div['responsibilities']"
+    },
+    {
+      "file": ".workflows/runs/workshop-run-plan-sequence/runs/workshop-run-plan-sequence-20260607-073407-9730/outputs/apply_propose_responsibilities.json",
+      "reference": "error: US-LLM-27 division-grain statement (under division='Principal's Office (PO)')='School leadership; the principal's office.' not in catalogue. Available: [<no members enumerated>]"
+    },
+    {
+      "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+      "reference": ":27 division description rendered; :29 per-division responsibility atoms rendered (empty for PO)"
+    },
+    {
+      "file": "prompt-workshop/shared/preamble.md",
+      "reference": "the all-divisions mandate ('every division has a role... excluding a division = under-reasoned')"
+    }
+  ],
+  "impact": "propose-responsibilities (US-LLM-27) cannot produce any valid output for the Chiway tenant -- all 15 divisions + ~46 positions lack curated responsibility atoms. Blocks the run at spec 7. Any tenant whose responsibility-atom layer is unseeded hits this; it is the DISC-30 onboarding-data class, surfaced by the workshop run.",
+  "proposed_resolution": "Resolution path (materialized-defaults seed): populate data/chiway-responsibility-atoms-template.csv -- author the shared responsibilities once in the DEFAULT scopes (all / all-divisions / all-positions / leader-positions) plus each owner's specific atoms -- then run the importer per data/tenant-seed-importer-plan.md, which creates is_new owners and materializes each default onto every matching owner as a STORED atom (honoring DEC-35 / docs/hod-default-responsibilities.md: atoms must be stored rows, FK-linkable per DEC-32, not a runtime cascade). After import every division + position has >=1 atom; re-run the workflow to confirm propose-responsibilities clears spec 7. A DEC formalizing the materialized-defaults design (extending DEC-35) lands with the importer build. Parser coded-FK integrity (DEC-40) preserved."
+}

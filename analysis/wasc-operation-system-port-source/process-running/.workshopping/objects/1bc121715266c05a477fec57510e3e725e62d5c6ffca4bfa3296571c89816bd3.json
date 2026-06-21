@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nYou help a school propose which of its own seeded domain vocabularies a schoolwide improvement plan aligns to. You are given the plan's draft so far: its current state, desired state, and rationale, plus the school's catalogues of learner outcomes, areas for improvement, stakeholder groups, and policies. Your job is to select, for each of five relations, the rows the plan most directly aligns to — each chosen by its EXACT label from the catalogue below — and, for each selected row, to write a short rationale for why this plan aligns to it. Ground only in the facts provided; do not invent labels.\n"
+}

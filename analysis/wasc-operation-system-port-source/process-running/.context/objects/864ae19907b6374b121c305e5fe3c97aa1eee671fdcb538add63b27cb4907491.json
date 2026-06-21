@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "PRODUCTION FLAGGING C1 - Flag model on Plan (combines gap FGAP-007 / C1). Net-new Flag model in plans/models/ FK to Plan (CASCADE): element_path (formset-row addressing, cf. collectDraftState/_formset.html), severity (must_fix|should_review|informational), message, verdict (from A1), is_resolved (default False), created_by_spec, created_at. Requires a DB migration. The production-side persistence the workshop draft flags channel (B1/TASK-014) maps onto when the orchestration trio (US-LLM-23/24/25, unbuilt) lands. Prerequisite for C2/C3. Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "A plan can carry any number of persisted flags, and they remain retrievable after a reload.",
+    "Each flag records the element it addresses, a message, the spec that produced it, its creation time, its verdict, and whether it is resolved (unresolved by default).",
+    "A flag's severity is exactly one of must-fix, should-review, or informational; any other value is rejected.",
+    "Deleting a plan deletes its flags; no flag outlives its plan.",
+    "The full project gate stays green."
+  ]
+}

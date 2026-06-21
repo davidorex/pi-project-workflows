@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if planning_methods %}The school's planning methods (CHOOSE a planning_method by its NAME from this list, only when the chosen improvement type requires one):\n{% for m in planning_methods %}- \"{{ m.name }}\"{% if m.applicable_improvement_types %} (applies to types: {{ m.applicable_improvement_types|join:\", \" }}){% else %} (applies to any type){% endif %}\n{% endfor %}{% endif %}",
+  "section": "planning_methods"
+}

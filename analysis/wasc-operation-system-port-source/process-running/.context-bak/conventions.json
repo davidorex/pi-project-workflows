@@ -1,0 +1,382 @@
+{
+  "schema_version": "1.0.0",
+  "rules": [
+    {
+      "id": "mandate-001",
+      "description": "Never act without user authorization.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "65ae5240067f189bc69859a638537158",
+      "content_hash": "028013049b35a7e5788ecf594f7440c4c49a217f78eedafc51b2ec64e3ba5175"
+    },
+    {
+      "id": "mandate-002",
+      "description": "Never augment or add to user-given specifications or text.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "ab20706bf89dd10e378b8fd304f3d23c",
+      "content_hash": "cd8b164994aeff3c1fb89a1d712dbfae4618307a42604c4f8f53a0755f488a25"
+    },
+    {
+      "id": "mandate-003",
+      "description": "Never end your response with a question.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "67c355b5d0d7c0552fe33e326666112c",
+      "content_hash": "84af4877904a9bedba038ee831c2fbd12292f7e23d06b09dc62f39a5fe745f4e"
+    },
+    {
+      "id": "mandate-004",
+      "description": "Never offer negligent fix options. Don't present options that leave known fragility unaddressed. If root causes are identified, only paths that address them are acceptable. No LLM laziness.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "0c91cd90a4bbc8dcf9f53baf94445d27",
+      "content_hash": "dd7499388c2b85cb0dcce003937d89d597bf07bda56cdc6c2dcd4670fd0bc1ff"
+    },
+    {
+      "id": "mandate-005",
+      "description": "Never present manual implementation as an option. Manual implementation bypasses workflow tooling. Only happens at explicit user direction, never as LLM-suggested alternative.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "3ac541ce94ebb5189e241dc4d32165c4",
+      "content_hash": "93dbbc750689a343c444ee0745115ac6698ada61936b8bb52215a65a6295a54a"
+    },
+    {
+      "id": "mandate-006",
+      "description": "When given a slash command with an agent invocation, invoke the agent. Never attempt to do the agent's work yourself.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "6989a307d504e66fba32c2db6f8dcc18",
+      "content_hash": "d1c9b7def7dcc57a5997ff4bfe5ebcfab7b1a34bff2c901cbf6bd4a39893079b"
+    },
+    {
+      "id": "mandate-007",
+      "description": "Do not favor deferring discovered issues to an unknown future. If a new issue or bug is found whose neglect creates architectural debt, do NOT claim it is out of scope. User decides scope.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "1af1143ae1fbdd7f87d80990cc17bc5e",
+      "content_hash": "0915f516fb6a62e74047f61fbb0a7dc2eef7e0bff7c072c8df5b3283d060a5e7"
+    },
+    {
+      "id": "mandate-008",
+      "description": "If a subagent returns an issue, STOP. Report to user. User decides next action.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "9b4cd80a18f3657f45222eef24f18f96",
+      "content_hash": "6a62f16b6bc499beb25f1b27276e5d1d43fa4b28c92019507eaa41106a55c13b"
+    },
+    {
+      "id": "mandate-009",
+      "description": "Do not introduce noise in responses. Stay focused on user task and mandate-compliant action.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "31097d5b2107b9652a0d459b114d0847",
+      "content_hash": "8d25982a68618dcac7098552852ff61584c71b090f94d4755e97ba1d57dee122"
+    },
+    {
+      "id": "orch-never-declare-phase-complete",
+      "description": "Never declare a phase complete. Only the human does. Orchestrator may compute GO-RECOMMENDED from gate state, not COMPLETE.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "265f33b7cc941f0d775beaf6d0ee6612",
+      "content_hash": "d571c1553ca4ff91c6742f1b1bc976c96e7585ae2858a90d765222ecb30b12e3"
+    },
+    {
+      "id": "orch-never-retry-subagent-autonomously",
+      "description": "Never retry a subagent autonomously after failure. Surface the failure to the user and wait for direction.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "7d43e2e5f4ae1cb651c6a257755d4326",
+      "content_hash": "264621e881cb7067c03a2ebaaa9728a8811b60c79cf1da1834520b27361a413f"
+    },
+    {
+      "id": "orch-never-edit-impl-output",
+      "description": "Never edit code an IMPL subagent produced unless the human explicitly directs the edit. The IMPL slice's commits are read-only to the orchestrator.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "6c1290d1334de668cd763d845e020ecb",
+      "content_hash": "d6c5abe9c59ac1093c2733164ca10b72ba23e550c8972f7cb91cc9611ab4c849"
+    },
+    {
+      "id": "orch-persistence-in-same-turn",
+      "description": "When a definition, decision, or gap is settled in conversation, land it that turn in its home doc (DEC log, DISC log, ORCHESTRATOR-LOG.md, ORCHESTRATOR-STATE.md, memory) AND record the event in ORCHESTRATOR-LOG.md. Do not carry settled state only in working memory. Flagging is not persistence.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "b7950511d603f8a1b32f64c4b74186c5",
+      "content_hash": "f4ed1c4168907aef12a765fc176d677858c0c237120c2659be5332206015b310"
+    },
+    {
+      "id": "orch-working-tree-clean-before-task-end",
+      "description": "Never leave the working tree dirty. After every task, `git status` must return clean modulo user-owned files (e.g. `data/school-content-intake-2026-05-26.md`).",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "647bdba277f1bec6354ef34c9bff3df7",
+      "content_hash": "41c16955c2c22eb4e438189851b38bb93e89b6fc4cf4b6e7f88ec0015957e637"
+    },
+    {
+      "id": "orch-ORCHESTRATOR-LOG-append-only",
+      "description": "ORCHESTRATOR-LOG.md is the append-only event spine. Never rewrite or delete prior lines. One immutable line per state-changing event (commit, user direction, decision, established definition, recorded gap, correction) in chronological order.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "839cf0a5f0a90addc822c9abccf898b5",
+      "content_hash": "32b4d63be4e10002c4f8d4f58eacfa586e4bed4a08e53211ddaff4bacc58284c"
+    },
+    {
+      "id": "orch-ORCHESTRATOR-STATE-as-synthesis",
+      "description": "Keep ORCHESTRATOR-STATE.md current as the SYNTHESIS layer (current position, per-phase commit map, standing decisions, open decisions, pending actions, known issues). Do not hand-duplicate the per-commit event spine — that lives in ORCHESTRATOR-LOG.md + `git log`.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "3c526b88e434a581f87d9e92b3adc08b",
+      "content_hash": "a2f32d77cff002552d14c50e3e4a274da1bc4797471ca6ca5b3a8f1a019c003b"
+    },
+    {
+      "id": "orch-discoveries-md-append-only-or-resolved-by-fill",
+      "description": "Never edit phases/discoveries.md rows other than appending new rows or filling `resolved_by` (or analogous closure-state) cells. Rows are immutable history.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "3b91af5c8336a040e71369ca22df7047",
+      "content_hash": "36e64a1e1bbdfa4823e981dd7a3993ea50715a4ef21dcf9cc3b4b5be1801a13e"
+    },
+    {
+      "id": "orch-US-STATUS-flips-after-vivifying-commit",
+      "description": "Update phases/US-STATUS.md after every commit that enables a user story (fill `Vivifying commit` cell, change `Status` from `pending` to `enabled`). Flip to `vivified` only after end-to-end browser exercise during the post-Phase-15 verification pass.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "9ac123cb124ac767b78444d56e239d73",
+      "content_hash": "b8fdf035ba054760555ebf05306821735f5c1b79b598951c4134ff30e1d994da"
+    },
+    {
+      "id": "orch-GO-NO-GO-from-AUDIT-count",
+      "description": "Compute GO/NO-GO from AUDIT's `Total findings: N` line deterministically: count > 0 → NO-GO; count == 0 → GO-RECOMMENDED. Never recompute severity; the count is the gate.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "7134dd4f42c3328e5c7f87d46efa59cc",
+      "content_hash": "fc3791e68956a3ffa39052805fe5058ae960561e9ef01d199b4119178cbbe4b2"
+    },
+    {
+      "id": "impl-subagent-verbatim-execution",
+      "description": "IMPL subagent executes phase content verbatim. Never interprets. On spec ambiguity, stops and reports to the orchestrator rather than guessing.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "071330fb4cd47c140349aaa9bd276ffa",
+      "content_hash": "b142168f304435c72589eeabd4bc4ad553d9e6fc1c87eb00813b68dcb6b7d422"
+    },
+    {
+      "id": "audit-subagent-enumerates-no-recommendations",
+      "description": "AUDIT subagent emits a numbered findings list ending with `Total findings: N`. Never recommends fixes. Never grades severity. A finding either exists or does not.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "5bb73234b936cff465fac2c935435c42",
+      "content_hash": "d1830eb305df4fcc341d00c2964d008f2253823af34242348ddd4d7edcda018a"
+    },
+    {
+      "id": "subagent-never-declares-verified-complete-ready",
+      "description": "Neither IMPL nor AUDIT declares 'verified', 'complete', 'ready', or any synonym. Those are human-only verdicts.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "cb967fe55fb029dc131ba26032fd451b",
+      "content_hash": "0f7c45bd10d3700ab757ba6038757354b8c8a9753e4e55935ae92506773f476c"
+    },
+    {
+      "id": "commit-forensic-evidence",
+      "description": "Commit messages are detailed, specific, measured, descriptive forensic evidence for future AIs to understand the true state of functionality and the complete thinking and actions in code. Not promotional, not summarized.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "6ecd7849088e0e73a3186f7327a00e98",
+      "content_hash": "9d273f456db8ce5ac1f166a278306f6d7ab0ea4ed234b40f67d5c32fa8db73f2"
+    },
+    {
+      "id": "commit-speak-to-aims-not-certainties",
+      "description": "Never use language like 'this fixes…', 'this ensures…', 'this guarantees…'. Speak to aims and intentions; commits document attempts, not certainties.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "fe6c584918d1234586760718d800e480",
+      "content_hash": "24152eeeb821edee8bd019b3a3e8f74f329f9e0aa99b01a158b397012654fafa"
+    },
+    {
+      "id": "commit-no-author-credit-pollution",
+      "description": "Never add Co-Authored-By lines to commit messages. The repo's semantics belong to the work, not to agent attribution.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "16d5f9d629a589fb42d7e028c8acb8e8",
+      "content_hash": "11cd41bdfe31679f0b37c1e4f3d9702228af9e2f58d2bba85d988f242061d6dd"
+    },
+    {
+      "id": "commit-heredoc-for-multiline",
+      "description": "Pass multi-line commit messages via `git commit -m \"$(cat <<'EOF' ... EOF)\"` to preserve formatting. Avoid stacked -m flags for multi-paragraph bodies.",
+      "enforcement": "manual",
+      "severity": "warning",
+      "oid": "89f6aab45a4a39b5f21aeb516f8fead8",
+      "content_hash": "7f512df9539027841ea884b7eb5e1a7b8e612552f9c83c8293f4b8b364dccc47"
+    },
+    {
+      "id": "commit-no-skip-hooks-no-skip-signing",
+      "description": "Never `--no-verify` or `--no-gpg-sign` unless the user explicitly requests it. Hook failures are signals; investigate and fix the underlying issue rather than bypassing.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "96c57822d7930fe307eb724271df643a",
+      "content_hash": "a15c90d559bb912b21ca2d10f94b32d2684f05c4e9e69ada22437ec3f7babd2f"
+    },
+    {
+      "id": "commit-prefer-new-over-amend",
+      "description": "Prefer creating a new commit over `--amend`. After a pre-commit hook failure, the commit did NOT happen; `--amend` would modify the PREVIOUS commit and risk destroying prior work.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "3c2a34a4d946e51d8e3e99eb2590012d",
+      "content_hash": "800c25d06ebe5e2d8b897a66a0d69a91f638ec5237c2266ea2d611d3c7f8bb46"
+    },
+    {
+      "id": "git-never-pull-fetch-during-impl",
+      "description": "Never `git pull` or `git fetch` during an IMPL slice or tracking commit. Local is source of truth; pulling will undo work. Remote state arrives via explicit user direction.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "94617133420961cec5d9ec83aa5d0cf1",
+      "content_hash": "bb2891f10e4ec61780b9f0e1ee243bc53a8e34dc41473b42048970b454747560"
+    },
+    {
+      "id": "git-never-reset-hard-without-explicit-direction",
+      "description": "Never `git reset --hard`, `git checkout .`, `git restore .`, `git clean -f`, `git branch -D` without explicit user direction. Default to non-destructive operations (git stash, git branch backup) when uncertain.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "45fc698c0b0d9c28c33331c131d7b01f",
+      "content_hash": "13adb48d658ab052b1dce309c15ac829f253da2177447c6deedea8507939448d"
+    },
+    {
+      "id": "git-no-force-push-to-main-without-confirmation",
+      "description": "Never `git push --force` to main without explicit user confirmation. Warn the user if requested.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "5f5b89a7b973a7a27cf97bd42336a657",
+      "content_hash": "d2fd0a390aaff5c8b148b55d586252048aba9813538715ff921c69742f429038"
+    },
+    {
+      "id": "git-never-commit-school-content-intake",
+      "description": "Never commit `data/school-content-intake-2026-05-26.md`. User-owned working surface; appears in `git status` as Modified; orchestrator never stages it.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "b6260c3c31b1f11f66163b34f1dfd0a1",
+      "content_hash": "7d1d72f13d60a21671642e28aab6cdac021b346f35f8e3d7670af23617afc260"
+    },
+    {
+      "id": "pi-context-orchestrator-scripts-need-NODE_PATH-prefix",
+      "description": "Orchestrator-script invocations (`npx tsx scripts/orchestrator/*.ts`) require `NODE_PATH=/Users/david/Projects/workflowsPiExtension/node_modules` prefix because `@davidorex/pi-context/*` imports don't resolve from this project's cwd. See `docs/2026-05-30-pi-context-claude-code-howto.md` Environment prerequisites section.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "d94a4a9f2280c13ecf6b7984fd3e200b",
+      "content_hash": "045b2e22a1a31172c0249101a3bb6a17251498d4153056c709aeb624cd5f4939"
+    },
+    {
+      "id": "mode-B-canonical-pipeline-shape",
+      "description": "Mode B — Post-Phase-15 architecture-refinement slice. For discoveries surfaced after Phase 15 (new DISCs, new DECs, cleavage carry-forward, per-element model evolution). Sequence: (1) settle design in conversation; (2) persist same turn — DEC entry in `data/seed-round-plan.md` + DISC row in `phases/discoveries.md` + entry in `docs/domain-model.md` if model-touching + LOG event in `ORCHESTRATOR-LOG.md` + STATE refresh in `ORCHESTRATOR-STATE.md` + tracking commit; (3) plan-mode — write plan to `~/.claude/plans/<slug>.md`; (4) ExitPlanMode for user approval; (5) dispatch general-purpose IMPL sub-agent with a fully self-contained directive (per `prompts-as-complete-directives` convention) — the agent STOPs on ambiguity per mandate-008 rather than guessing; (6) orchestrator post-IMPL pass — re-run the gate independently, apply migrations to dev DB via the postgres superuser DSN, verify, refresh tracking docs, tracking commit. Dev DB carries the tenant `chiway-repton-xiamen`; all `manage.py` + `uv` runs from `school-improvement-plans/`. PyRight `.objects`/import errors are documented false positives; mypy is the type gate.",
+      "enforcement": "review",
+      "severity": "warning",
+      "oid": "1756cf353e99346a0a5c336665cb920d",
+      "content_hash": "dc5e0b149da99ae4f5f24c5b4769d404b553b3a27b3447f3d16a8bbd33f9cea9"
+    },
+    {
+      "id": "no-out-of-scope-framing",
+      "description": "Never use 'out of scope' framing in commit messages, plans, or agent communications. Per mandate-007: if a new issue or bug surfaces whose neglect would create architectural debt, surface it explicitly. User decides scope; orchestrator does not declare scope-foreclosure.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "f581280f6eea29ac5aad367fb8a39804",
+      "content_hash": "291e4893dc9863c639654d690077374a4d0d6504474949c45ece32cb76f64c1e"
+    },
+    {
+      "id": "narrow-directive-parsing",
+      "description": "Parse user directives at the narrowest reading. Touch only artifacts explicitly named. No editorial commentary on adjacent items. Authorization for X is not authorization for adjacent-to-X.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "53995846cea5fbb3f0744aa9024461eb",
+      "content_hash": "185206a96ff151470f82451e7381a7bf26ce2467dfdd693cdf7eda401817496a"
+    },
+    {
+      "id": "scope-the-noun-they-named",
+      "description": "When the user names a scope ('code', 'this file', 'the spec', 'the doc'), act only within that scope-noun. Do not extrapolate to adjacent scopes; user shouldn't have to repeat.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "02702c18a64b822e8986fe05cbb6f164",
+      "content_hash": "f7fb785cac8a470ae511aae06d774cb79398c9089b6cc103779b856699676b76"
+    },
+    {
+      "id": "verification-clause-is-the-deliverable",
+      "description": "When a phase or slice's verification clause states a capability, the IMPL steps must deliver it. Pre-flight amend the steps if needed; never offer a defer-option or hedge with a question. Deferring a stated deliverable is mandate-004/007 negligence.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "4a3fdeea5fface0170232188d72831ff",
+      "content_hash": "7a4e2ecc8797082a7f1cbbc7b775fac942d313a707d78b1c2c98b319be84f4d0"
+    },
+    {
+      "id": "noted-gap-is-a-work-item",
+      "description": "A gap the user records is a work item to be addressed. Never append 'scope decision for the user / not an autopilot change / surfaced per mandate-007' hedging. State the resolution directly.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "258eb5fa7d8ba3eb07598fa09e5fbc4b",
+      "content_hash": "7eb4b994c0412a6b3534b1e4fc33db27066aefa873ea9419d116c2dcdc41bedb"
+    },
+    {
+      "id": "prompts-as-complete-directives",
+      "description": "Each rendered phase or slice prompt is fully self-contained. IMPL executes; never interprets. Cumulative IMPL outputs equal the cumulative user stories live.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "5e57ff3b87b314dba627fe9b74b9acc2",
+      "content_hash": "c21826287dd4c6b24c23e0bd79f43683cb92fdda6ed32c19c7a333e550a8f71e"
+    },
+    {
+      "id": "automate-not-human-pass-reminder",
+      "description": "Fragility reachable only via a skippable human step → pull into the automated gate; never 'cover' it with a human-pass reminder. Distinguish config (browser-pass acceptable) from behavior/code (must be machine-tested).",
+      "enforcement": "review",
+      "severity": "warning",
+      "oid": "66257e112764ac927930ea5a7ecfdaf2",
+      "content_hash": "bba51df9f2868d638a24463f973582915ed89e94aa8526f5db6d25aaeb5eb413"
+    },
+    {
+      "id": "insight-not-reframe",
+      "description": "When the user says 'read this for insight, not to reframe what we've done': report only, do not edit artifacts, do not re-characterize prior decisions. KPIs are an explicit project exclusion — never introduce, model, or foreground them.",
+      "enforcement": "manual",
+      "severity": "warning",
+      "oid": "198f26c4c9c89df0731b9f88519af456",
+      "content_hash": "76aeb1b8b3ba85986360f518491451d10e8adb8cac37bab0b7550c089b4ef53e"
+    },
+    {
+      "id": "mode-A-phased",
+      "description": "Mode A — Phased workflow (Phase 0–15). For any work that fits a new phase MD. Sequence: render phase prompt via `bin/render-phase-prompt.sh {impl|audit} NN` → dispatch IMPL sub-agent with the rendered prompt → IMPL executes numbered steps + Layer additions verbatim, commits, returns → optional AUDIT dispatch → orchestrator computes GO/NO-GO from AUDIT's `Total findings: N` (0 → GO, >0 → NO-GO) → automated gate (manage.py check 0 + ruff baseline + mypy clean + pytest all-pass + make test-js all-pass + AUDIT count == 0 if AUDIT run) → advance to phase N+1 when gate green. Per-phase human browser-verification batched into one post-Phase-15 pass per the project's verification convention. Phase MDs live in `phases/phase-NN-{slug}.md`; the canonical operational procedure is `phases/PHASE-LAUNCH-CHECKLIST.md`.",
+      "enforcement": "review",
+      "severity": "warning",
+      "oid": "07c42a732add0f94f3a6c798d1af67b7",
+      "content_hash": "c621d46a119584ffcc138cd2dfd8758df73c141fbe8a312449993d1644d22e02"
+    },
+    {
+      "id": "mode-C-prompt-workshop-iteration",
+      "description": "Mode C — Prompt-workshop iteration (DISC-26 resolution path). For prompt-corpus rewrite work — closing the 11 named gaps in the wizard-v2 coverage + prompt-quality audit. Per-spec loop: edit snippet at `prompt-workshop/snippets/<NN>-<spec-key>.md` (or the shared preamble at `prompt-workshop/shared/preamble.md` for all-14 uplift) → orchestrator runs `python prompt-workshop/dispatch/render.py SPEC_KEY` → captures the rendered prompt → dispatches a sub-agent (Agent tool, opus model) with the rendered prompt → captures the agent's response JSON → orchestrator runs `python prompt-workshop/dispatch/apply.py SPEC_KEY` (validates response via the production `parse_*` parser in `planner/specs.py` per DEC-41 workshop-production framing, merges into `prompt-workshop/outputs/current-draft.json`) → reads output + judges → tunes. When per-spec snippets read well, run the whole-plan sequence via `python prompt-workshop/dispatch/sequence.py` and judge the assembled draft. When the whole sequence produces an acceptable draft, the snippet bodies become the rewrite spec for a production `ai/0018+` PromptTemplate-evolution migration (the `ai/0016` guarded byte-match pattern). Per DEC-41 the workshop IS the development-time mode of the same Django production system — bugs fixed in workshop are production fixes; the orchestration trio US-LLM-23/24/25 is the production-side realization of this loop.",
+      "enforcement": "review",
+      "severity": "warning",
+      "oid": "e6ae6e9056de856eda0d59463ad5550c",
+      "content_hash": "d82b19ff16e7fecc12add9830d0ecfc3b93e34f21c8a12340549c177b8cd62d7"
+    },
+    {
+      "id": "prefer-substrate-over-prose-MD",
+      "description": "Use `.context/` substrate blocks (decisions / framework-gaps / session-notes / conventions / rationale / tasks / work-orders / etc.) as the default persistence surface. Freeform MD writes (seed-round-plan.md DEC bodies, phases/discoveries.md DISC rows, ORCHESTRATOR-LOG.md events, ORCHESTRATOR-STATE.md preambles, commit messages) are a fallback for cases where the substrate path is genuinely gated (schema widen pending for that block; substrate block kind doesn't exist yet) or genuinely unsuitable (multi-file git commit messages, etc.). When MD writes ARE unavoidable: keep them tight — DEC bodies ~3-5 sentences; LOG events 1-3 sentences; commit messages summary + bullets only when needed (drop `What this does NOT do` sections, drop user-directive-quote chains, drop cross-reference enumeration); STATE preamble refreshes carry only the delta from the prior block. Cross-references + recovery come from git log + ORCHESTRATOR-LOG spine + prior STATE blocks; do not recreate that context inline on every write. Context window is operationally valuable; verbose MD entries burn it for diminishing returns when substrate types + relations.json edges express the same semantic content with schema-enforced concision.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "5fc7f842125036881a5f53ee0c6a5026",
+      "content_hash": "7deee9cbd80db5356707422a5ba458849da9385b2020858f3a1c70e55c25e87d"
+    },
+    {
+      "id": "plan-mode-plan-required-structure",
+      "description": "The canonical pipeline for .context-managed work — THE required shape, no triviality exemption and no ad-hoc path. In order: (1) plan mode -> EXPLORE by dispatching Explore/eval agents (read-only, against current source, never from memory, never assume docs match runtime) -> VERIFY load-bearing findings: corroborate yourself, against current source, every load-bearing fact an Explore/eval finding asserts (a model/field/function/vocabulary exists and is LIVE, a signature, a file:line, a data shape) BEFORE it enters the plan; a confident file:line-cited report is not verification; run the cheap disambiguating check directly (grep 'class Name' in live source + a *_delete_*/DeleteModel migration + tests asserting absence — a hit only in a seed/create migration or a .pyc proves it once existed, NOT that it exists now); an unverified load-bearing claim never enters the plan and is never deferred to IMPL to confirm -> write plan to ~/.claude/plans/ encoding steps 2-5; (2) PRE-IMPL file .context task items (+ story/feature/phase membership + depends_on/gated_by edges) BEFORE launching IMPL; (3) IMPL agent(s) (self-contained directive; STOP on ambiguity); (4) a SEPARATE agent (not the implementer) adversarially audits the IMPL output; (5) POST-IMPL status cascade (task status + verification_verifies_item edge + context-validate; cascade task->story->feature->phase) + orchestrator-independent gate re-run. ITERATE TO ZERO: any finding from the adversarial audit, the gate, or context-validate -> loop re-explore/eval -> verify load-bearing findings -> re-plan -> re-IMPL -> re-adversarial-audit until clean. The fix loop EXPLORE precedes its plan exactly as initially — a finding is investigated by Explore/eval agents to full root-cause context AND its load-bearing facts verified against current source before any fix plan is written, NOT planned from the orchestrator read of the finding alone. Work is not done while any finding stands; a nonzero audit is never accepted. Authoritative operative copy in CLAUDE.md Active-phase-management; .context is this phase focused status surface while the decomposed-JSON session-start pointer still holds.",
+      "enforcement": "manual; context-validate machine-verifies the task->story->feature->phase chain in step 4",
+      "severity": "error",
+      "oid": "f636fc1ed8f88da405cd3ac998670d41",
+      "content_hash": "f48aab32cfd854461a77e304828c71758107ac2314ccb86fe21a6144326cb6b3",
+      "content_parent": "3cc6bf0965217661e899359e149a63853d04424544aa351377737e3a4d6671d7"
+    },
+    {
+      "id": "explore-before-filing-a-discovery",
+      "description": "When a gap, issue, or bug surfaces, dispatch Explore/eval agent(s) to establish its FULL context — root cause, blast radius, current-source grounding — BEFORE filing it as a .context item (framework-gaps / issues / tasks). File the investigated finding, never a surface-impression stub. Singular: a surfaced problem is never recorded from first impression; the agent investigation is the prerequisite to the filing. Operative copy in CLAUDE.md Active-phase-management.",
+      "enforcement": "manual; the filed item must carry investigated root-cause + blast-radius, not a one-line impression",
+      "severity": "error",
+      "oid": "36ea8c9b1a597523b9fc127aca404a7d",
+      "content_hash": "1a405ea622299c82c5b7958e7e53c53f2a9327ff3347c5978d2e06731cf88f51"
+    }
+  ]
+}

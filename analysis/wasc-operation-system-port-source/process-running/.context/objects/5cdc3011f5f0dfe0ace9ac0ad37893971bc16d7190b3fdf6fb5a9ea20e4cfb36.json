@@ -1,0 +1,10 @@
+{
+  "status": "in-progress",
+  "description": "T2 -- Build the per-spec in-execution self-check mechanism (shared infrastructure the discipline tasks plug into): a generation step evaluates its own success + process criteria during the run, before its output is applied, and acts on the result per the T1 decision (FGAP-033).",
+  "acceptance_criteria": [
+    "On a run, a spec's output is checked against that spec's stated success and process criteria before it is committed to the draft, and the check's pass/fail result is present in the run record -- demonstrated on at least one spec end-to-end.",
+    "On an input that meets the criteria the run proceeds and records a pass; on a deliberately under-delivering input the step takes the decided on-failure behaviour and records a fail -- both demonstrated.",
+    "A second spec uses the same mechanism without per-spec bespoke wiring.",
+    "A full sequence run completes; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green."
+  ]
+}

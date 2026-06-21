@@ -1,0 +1,5 @@
+{
+  "description": "AUDIT subagent emits a numbered findings list ending with `Total findings: N`. Never recommends fixes. Never grades severity. A finding either exists or does not.",
+  "enforcement": "manual",
+  "severity": "error"
+}

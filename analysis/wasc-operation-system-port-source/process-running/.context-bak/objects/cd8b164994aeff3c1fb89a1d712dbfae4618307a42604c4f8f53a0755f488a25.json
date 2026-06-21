@@ -1,0 +1,5 @@
+{
+  "description": "Never augment or add to user-given specifications or text.",
+  "enforcement": "manual",
+  "severity": "error"
+}

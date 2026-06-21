@@ -1,0 +1,5 @@
+{
+  "description": "Never retry a subagent autonomously after failure. Surface the failure to the user and wait for direction.",
+  "enforcement": "manual",
+  "severity": "error"
+}

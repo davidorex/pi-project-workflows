@@ -1,0 +1,9 @@
+{
+  "status": "planned",
+  "description": "Story C. R8 DECISION (no corpus edit) -- record that the options posture lives at the orchestration / create-plan-UX layer, not per-spec snippets (per-spec stays decide-one, honoring the preamble's no-options-instead-of-decisions rule).",
+  "acceptance_criteria": [
+    "A decision record exists in the project decision log stating the options posture is honored at the orchestration/create-plan-UX layer, not in per-spec generation -- confirmed by reading the decision block.",
+    "The record states the reason: per-spec generation stays decide-one, preserving the existing no-options-instead-of-decisions rule.",
+    "A diff of the corpus shows zero changes to any snippet or preamble attributable to this record -- machine-checked."
+  ]
+}

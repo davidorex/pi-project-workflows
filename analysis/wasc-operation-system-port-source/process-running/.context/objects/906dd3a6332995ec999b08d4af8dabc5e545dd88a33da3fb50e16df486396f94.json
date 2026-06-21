@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "The two prose-grounding leaks are fixed (preamble prose-reference rule + SLO-label quoting in the context render across snippets 01/03/04/05/07/13 + fragments + the grounding clause label/text split in _guiding_statements + the clause render). Live render: '- \"Confident\" — Shows self-assurance…'; '0. GROUNDED — Self-motivated…'. A --fresh re-run (run ...112811) generated specs 1-5; the prose it produced is clean: the long SLO label 'Confident: Shows self-assurance' is ABSENT, bare clause keys (GROUNDED:/ROUNDED:/UNBOUNDED: / 'clauses GROUNDED') are ABSENT, provenance reads 'the school's mission and vision clauses', and 'Confident' appears as a plain word (long-form count 0). Adversarial audit found + this work fixed a regression (the grounding shape change broke _freetext_audit.py's anchor admission; restored to admit via clause.label; masking test rebuilt + a guard test added; live probe: GROUNDED/ROUNDED/UNBOUNDED admitted). Parity 14/14; full gate green (mypy . 323/0, pytest 2044, make test-js 48/0). Information preserved (description after the em-dash; clause prose after the label). NOTE: that re-run HALTED at spec 5 (call_decompose_action_steps: 'output schema but no valid JSON output' — a WF-13-class agent-output-capture flake, logged separately; NOT a prose regression — the prior full run completed all 14 and the FGAP-019 edit to snippet 05 was a context-block render, not the output schema).",
+  "timestamp": "2026-06-07T11:40:00Z",
+  "criteria_results": [
+    {
+      "criterion": "In the generated prose, a learner outcome is referenced by its short label only; the description is not pasted into prose.",
+      "status": "passed"
+    },
+    {
+      "criterion": "In the generated prose, a mission/vision clause is referenced by its substance, never as the bare GROUNDED:/ROUNDED:/UNBOUNDED: key.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The agent still sees each SLO's description and each clause's full meaning as context.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Workshop snippet<->substrate render parity stays 14/14 and the change is non-destructive to tenant data.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

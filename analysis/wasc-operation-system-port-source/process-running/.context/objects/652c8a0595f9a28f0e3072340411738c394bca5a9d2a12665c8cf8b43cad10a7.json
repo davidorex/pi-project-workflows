@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL A2: audit_prefill returns flags for catalogue-survivors instead of raising; structural/FK/invariant stay hard-reject",
+  "status": "closed",
+  "package": "planner",
+  "description": "audit_prefill (planner/_freetext_audit.py:1320-1338) currently raises ValueError on the first non-empty free-text survivors list, which the parsers propagate as a hard reject (apply exits non-zero, workflow halts). The three-valued model needs this single class - free-text proper-name survivors from the catalogue gate - to become a FLAG (admit-with-annotation) rather than a hard reject. audit_prefill should return a flags list (path, span, verdict from A1, reason) instead of raising. This is the load-bearing HARD/SOFT PARTITION: ONLY free-text catalogue-survivors become flags; every structural failure (unparseable JSON, missing/extra keys, wrong types, gates), coded-FK failure (improvement_type/planning_method/division/position/standard/frequency/timing/kind/enum), index/range check, and cross-field invariant (type-method, per-kind date rules, target-iff-kind, verbatim statement match) STAYS a hard reject (data unmergeable). FREETEXT_SELECTORS_BY_SPEC (:1301) already scopes which 12 of 14 specs/fields are free-text (flag-eligible); B2/F2 have none. Atomic gap; depends on A1.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/_freetext_audit.py",
+      "reference": "school-improvement-plans/planner/_freetext_audit.py:1301-1338"
+    }
+  ],
+  "impact": "audit_prefill raises on the first free-text survivor, so a single catalogue-survivor hard-halts the whole apply/sequence instead of becoming a reviewable flag.",
+  "proposed_resolution": "audit_prefill returns a flags list (path, span, verdict, reason) for free-text catalogue-survivors; structural/FK/invariant/index failures stay hard-reject. FREETEXT_SELECTORS_BY_SPEC scopes the 12 flag-eligible specs."
+}

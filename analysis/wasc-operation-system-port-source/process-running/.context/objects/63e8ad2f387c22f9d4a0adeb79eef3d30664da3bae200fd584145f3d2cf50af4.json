@@ -1,0 +1,38 @@
+{
+  "title": "Distillation production recipe — how the POC distilled renders were actually executed (dispatched-agent one-off transform)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "historical",
+  "question": "How were the four distilled POC renders (web/chiway-slo-plan-distilled-{POC,v3-wasc,v4-enriched,v5}.html) actually produced, and what is the replicable recipe to distill a new maximalist draft the same way?",
+  "method": "Forensic reconstruction via claude-history (session d7310007, 2026-06-07) of the sidechain file-writes + their orchestrator directives that produced the four renders; corroborated against the on-disk renders + reference docs.",
+  "findings_summary": "EXECUTED METHOD (not distill.py, not a script, not orchestrator-hand-authored): one DISPATCHED sub-agent per render, each a one-off manual transform from a self-contained directive (session d7310007, 2026-06-07; sidechain writes POC 11:38, v3 12:16, v4 12:29, v5 21:12). INPUT (all four): /tmp/final-complete-draft.json = a copy of the maximalist draft-after-propose-review-loop.json (the 14-spec generation output). ITERATION: POC = compress to the Sample-doc shape (6-15-word steps; verbatim labels; no invention). v3-wasc = reshape to the authoritative ACS WASC structure (per-Goal HEADER block + 6-col grid) per R-0008/R-0009. v4-enriched = +EXTRAPOLATION LICENSE (R-0009): elaborate/restructure WITHIN catalogued entities (NOT fabrication) to fix 3 reproduced gaps — SAO owns an explicit out-of-class step, bilingual dual-purpose framing, ownership redistributed off PO+Curriculum. v5 = re-targeted to web/plan-template-blank.html (canonical-derived, after v4 drifted) in Sample-2's 1-2-sentence register; distributed ownership a hard constraint. REFERENCE ARTIFACTS the directives leaned on: web/plan-template-blank.html (target template), data/Sample-Schoolwide-Action-Plan{,-2}.extracted.md, R-0008 (docs/wasc-authoritative-sources-research-2026-06-07.md), R-0009 (docs/plan-generation-heuristics.md, the extrapolation license). FIDELITY RULES: verbatim catalogue labels (never contract/rename, DEC-40); no fabrication; numbers only where a `target` success-criterion exists. COVERAGE FLOORS were POC-SURFACED (not a pre-spec): the POC compressed away SAO + stakeholder breadth the source carried, so floors were added as a verify clause — SAO owns >=1 explicit out-of-class step; >=1 bilingual dual-purpose action; >2 distinct owners with none overloaded; in-class + out-of-class both visible; measure->data->revise present. REPLICABLE RECIPE (any new draft, incl. the T6 draft): copy the draft JSON to a stable path -> dispatch ONE sub-agent with a self-contained directive carrying {the JSON path + key map; target template web/plan-template-blank.html, filled as-is; the Sample-2 1-2-sentence register; the fidelity rules; the bounded extrapolation license; the coverage floors as a verify clause} -> agent writes ONE new static file://-openable HTML, house style web/canonical.html, plain plan title (no process/AI/meta language) -> agent runs the verify clause (HTML parses; owner-distribution / SAO-out-of-class / bilingual counts). RELATION TO R-0005: R-0005 is the DESIGN of a FUTURE automated distiller (distill.py; prose-only, structured-arrays-byte-identical base + the section-5c extrapolation relaxation) — design-only, NOT implemented, and an identified future-automation route (the orchestration-trio's pre-promotion pass, DEC-41). THIS recipe is the EXECUTED method that produced the renders; v4's extrapolation restructured arrays, going beyond R-0005's conservative arrays-byte-identical base. The label 'R-0005' was NOT live in the production directives — they cited R-0008/R-0009.",
+  "findings_document": "",
+  "citations": [
+    {
+      "label": "the production session (claude-history)",
+      "path": "session d7310007-aef3-4e05-a651-d218d1cfd12f, 2026-06-07"
+    },
+    {
+      "label": "the four executed renders",
+      "path": "web/chiway-slo-plan-distilled-{POC,v3-wasc,v4-enriched,v5}.html"
+    },
+    {
+      "label": "target template + concision exemplar",
+      "path": "web/plan-template-blank.html + data/Sample-Schoolwide-Action-Plan-2.extracted.md"
+    },
+    {
+      "label": "authoritative WASC sources + heuristics/extrapolation-license",
+      "path": "docs/wasc-authoritative-sources-research-2026-06-07.md (R-0008) + docs/plan-generation-heuristics.md (R-0009)"
+    },
+    {
+      "label": "the future-automation design this recipe is distinct from",
+      "path": "R-0005 / docs/distillation-transform-design-2026-06-07.md"
+    }
+  ],
+  "grounded_at": "2026-06-19",
+  "stale_conditions": [
+    "an automated distiller (distill.py per R-0005) is built and becomes the production distillation route, demoting this manual dispatched-agent recipe to a fallback",
+    "the target template web/plan-template-blank.html or the Sample-2 register changes",
+    "the coverage floors or the extrapolation license (R-0009) are revised"
+  ]
+}

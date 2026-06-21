@@ -1,0 +1,10 @@
+{
+  "status": "in-progress",
+  "description": "Story B. R5 spec-specific half -- quarterly review loop + spiral focus in snippet 14-propose-review-loop. Add the four-quarter cadence (first checkpoint before December; measure->diagnose->adjust; Q4 re-measure->report->seed) and the monthly-focus-retaining-priors. Mirror + re-stamp + parity.",
+  "acceptance_criteria": [
+    "A generated review loop has at least four evaluate-and-adjust checkpoints and the earliest checkpoint date falls before 1 December -- both machine-checked over the review events.",
+    "An adversarial reviewer confirms each checkpoint carries a measure-then-diagnose-then-adjust shape and that earlier focuses are re-checked rather than dropped, with zero checkpoints failing.",
+    "Revision language is framed as course-correction not failure -- zero failure-framed instances.",
+    "The output parses clean, names only catalogued divisions/stakeholders/frequencies (zero fabrication flags), and the parity check passes."
+  ]
+}

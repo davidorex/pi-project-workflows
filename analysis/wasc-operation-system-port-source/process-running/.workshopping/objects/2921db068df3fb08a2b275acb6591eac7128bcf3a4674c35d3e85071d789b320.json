@@ -1,0 +1,30 @@
+{
+  "spec_key": "bind-measurement-channels",
+  "order": 12,
+  "target_step": "criteria",
+  "preview_mode": "bindings",
+  "grounding_sections": [
+    "school",
+    "draft_state"
+  ],
+  "deps": [
+    "draft-success-criteria",
+    "suggest-feedback-channels"
+  ],
+  "fragment_refs": [
+    "FRAG-intro-bind-measurement-channels-0",
+    "FRAG-preamble",
+    "FRAG-intro-bind-measurement-channels-1",
+    "FRAG-gb-school",
+    "FRAG-intro-bind-measurement-channels-2",
+    "FRAG-gb-seed-bindings",
+    "FRAG-intro-bind-measurement-channels-3",
+    "FRAG-gb-draft-state-criteria-channels",
+    "FRAG-intro-bind-measurement-channels-4",
+    "FRAG-output-contract-header",
+    "FRAG-contract-bind-measurement-channels"
+  ],
+  "parser": "parse_bind_measurement_channels",
+  "source_migration": "ai/migrations/0008_seed_bind_measurement_channels_template.py",
+  "output_schema": "shared/schemas/bind-measurement-channels.schema.json"
+}

@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if cycle %}Accreditation cycle: {{ cycle.label }} ({{ cycle.starts_on }} to {{ cycle.ends_on }}).{% endif %}",
+  "section": "cycle"
+}

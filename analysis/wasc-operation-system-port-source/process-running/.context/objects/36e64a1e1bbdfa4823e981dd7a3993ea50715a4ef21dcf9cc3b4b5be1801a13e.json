@@ -1,0 +1,5 @@
+{
+  "description": "Never edit phases/discoveries.md rows other than appending new rows or filling `resolved_by` (or analogous closure-state) cells. Rows are immutable history.",
+  "enforcement": "manual",
+  "severity": "error"
+}

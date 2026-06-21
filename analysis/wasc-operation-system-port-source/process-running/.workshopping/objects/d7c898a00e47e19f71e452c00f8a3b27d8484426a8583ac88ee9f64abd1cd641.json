@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if prior_plans %}Prior plans at this school (for continuity, not to copy):\n{% for plan in prior_plans %}- {{ plan.title }}: {{ plan.current_state }} -> {{ plan.desired_state }}\n{% endfor %}{% endif %}",
+  "section": "prior_plans"
+}

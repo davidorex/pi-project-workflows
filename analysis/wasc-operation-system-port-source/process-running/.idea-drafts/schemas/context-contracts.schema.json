@@ -1,0 +1,104 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/context-contracts",
+  "version": "1.0.1",
+  "title": "Context contracts",
+  "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
+  "type": "object",
+  "required": [
+    "contracts"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "unit_kind",
+          "bundle_relation_types",
+          "created_by",
+          "created_at"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^CTX-\\d{3,}$"
+          },
+          "unit_kind": {
+            "type": "string",
+            "description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (type tags are a carve-out from the edges-only constraint on inter-item relationships)."
+          },
+          "bundle_relation_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "relation_type",
+                "direction",
+                "max_depth"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "relation_type": {
+                  "type": "string"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "in",
+                    "out",
+                    "both"
+                  ]
+                },
+                "max_depth": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "applicability_predicate": {
+                  "type": "string",
+                  "description": "Optional relevance-scoping predicate; reserved for a future scoping language."
+                }
+              }
+            }
+          },
+          "description": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_by": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    }
+  }
+}

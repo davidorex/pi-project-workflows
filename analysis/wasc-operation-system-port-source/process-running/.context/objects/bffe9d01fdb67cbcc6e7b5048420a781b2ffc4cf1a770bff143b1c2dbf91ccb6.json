@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Minimal trigger (FEAT-010, TASK-072): the run_trio management command. Branch trio-command @ 7f30659. New planner/management/commands/run_trio.py (+ planner/management package __init__.py files) -- a thin BaseCommand mirroring import_responsibility_atoms.py: --school-slug (default chiway-repton-xiamen, School.objects.get(slug)), --author-email (else a superuser; CommandError if none), --seed, --max-rounds, --dry-run; handle mints uuid4, calls run_trio_to_proposed_plan inside transaction.atomic (set_rollback on dry-run), catches the no-active-cycle ValidationError -> CommandError, and reports the Plan pk/title/lifecycle + residual gate-failures + MUST_FIX plan.flags. Reuses run_trio_to_proposed_plan verbatim; no new orchestration/gate/promote/Flag logic; no lifecycle flip; no view/admin. Verified through the verify-gated loop: plan-mode (EnterPlanMode -> Explore -> corroborated School.slug + get_llm_logged(user optional) + the command house-pattern + planner has no mgmt dir -> plan -> ExitPlanMode approval) -> IMPL 7f30659 (8 gate-first tests, LLM mocked via patching planner.orchestration.get_llm_logged to the trio-finalize _FinalizeProvider) -> orch-independent gate 'all blocking checks passed' (8 passed, 3341 deselected) -> SEPARATE adversarial audit (adf5613) Total findings 0: scope = exactly the 4 new files (grep confirms no _check_promotion_gates/advance_plan_status/lifecycle=/Flag(/direct trio-internal calls/view/admin); all 4 precondition failures empirically raise CommandError with Plan.count unchanged; the no-active-cycle message is clear not a traceback; --dry-run probed HARD -- no Plan AND no Flag AND no PlanDraftState survive the outer set_rollback discarding the nested-committed savepoints, while a non-dry run with the same inputs DOES write (dry-run non-vacuous); criterion-1 stdout captured + asserts the real Plan identity/residual/flags. Two NON-blocking observations recorded: (1) the except ValidationError comment understates its scope (it also catches a cap-exhausted-path form-validation VE -> still a clean CommandError, no partial; behavior sound); (2) superuser .first() is non-deterministic with >1 superuser (acceptable for a dev trigger, overridable via --author-email). Done = gate blocking-pass AND audit findings 0 (DEC-58).",
+  "criteria_results": [
+    {
+      "criterion": "Invoking the command for a school with an active cycle + an author runs the trio end-to-end and persists a Plan(lifecycle=PROPOSED) owned by that school+author; reports the Plan identity, residual gate-failures, and MUST_FIX flags.",
+      "status": "passed",
+      "evidence": "clean-run test asserts Plan PROPOSED + school + author + stdout contains pk/title/PROPOSED; degraded-run test asserts the residual message + flag.element_path + flag.message in stdout (real returned values, not hardcoded)."
+    },
+    {
+      "criterion": "A precondition failure (missing/unknown school, unresolvable author, no active cycle) exits with a clear CommandError and persists NO Plan.",
+      "status": "passed",
+      "evidence": "audit empirically ran all four -> CommandError each, Plan.objects.count() unchanged; no-active-cycle ValidationError caught before any write -> clear CommandError message, not a traceback."
+    },
+    {
+      "criterion": "--dry-run runs the trio but persists no Plan (rolled back); still reports.",
+      "status": "passed",
+      "evidence": "audit probe: under --dry-run no Plan/Flag/PlanDraftState survive (outer atomic set_rollback discards the nested savepoints; no commit/on_commit/connection escape exists); a non-dry run with same inputs DOES write -> non-vacuous."
+    },
+    {
+      "criterion": "The command is a thin trigger: no orchestration/gate/promote/Flag logic of its own; reuses run_trio_to_proposed_plan; no lifecycle flip; no view/admin; no trio-internal change.",
+      "status": "passed",
+      "evidence": "git diff = exactly the 4 new files; grep of run_trio.py finds none of _check_promotion_gates/advance_plan_status/.lifecycle=/Flag(/run_trio_pass/run_gate_closure_loop/save_draft_state_as_plan/register/admin/urlpatterns; imports only run_trio_to_proposed_plan (+ the cap constant); reads plan.flags/plan.lifecycle read-only."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates.",
+      "status": "passed",
+      "evidence": "orch-independent make verify-slice SLICE=trio_command exit 0 (ruff/mypy/8 slice tests/full pytest/test-js); pi-context context-validate 0 error-severity."
+    }
+  ]
+}

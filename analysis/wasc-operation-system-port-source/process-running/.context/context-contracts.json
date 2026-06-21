@@ -1,0 +1,126 @@
+{
+  "contracts": [
+    {
+      "id": "CTX-001",
+      "unit_kind": "task",
+      "description": "Execution bundle for a task: its containing story (in), its phase (out), the gap/feature/decision it addresses (out), its verifications (in), and its prerequisite chain (in, depth 2). Single-hop per relation_type (no chaining); max_depth recorded-only in this build. Directions corroborated against live edges; matches R-0012 section IV.B.",
+      "bundle_relation_types": [
+        {
+          "relation_type": "story_contains_task",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "task_positioned_in_phase",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "task_addresses_gap",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "task_addresses_feature",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "task_governed_by_decision",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "verification_verifies_item",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "task_depends_on_task",
+          "direction": "in",
+          "max_depth": 2
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-16",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-15T22:54:24.933Z",
+      "oid": "c58f46447c6e63eb5268fab4ee909768",
+      "content_hash": "dbc54bb1ad5f593f89bbab08e38c88af3fa5b3d5f72090f04384fda9530f27d0"
+    },
+    {
+      "id": "CTX-002",
+      "unit_kind": "verification",
+      "description": "Execution bundle for a verification: the items it verifies (out). verification_verifies_item stores parent=verification -> child=item, so the verified items resolve as descendants.",
+      "bundle_relation_types": [
+        {
+          "relation_type": "verification_verifies_item",
+          "direction": "out",
+          "max_depth": 1
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-16",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-15T22:54:38.856Z",
+      "oid": "38d8f43a7533e1b6fb322db73b1774b8",
+      "content_hash": "b20b4b6e754cbe2a556c46f297da990ca4b3f67c68fdece3533bf72524c293bf"
+    },
+    {
+      "id": "CTX-003",
+      "unit_kind": "feature",
+      "description": "Execution bundle for a feature: its contained stories (out), its dependencies (out), and its gates (out). All stored parent=feature -> child, so they resolve as descendants. The zero-edge feature_governed_by_decision is omitted (feature_gated_by_item already reaches gating decisions); add it if/when such edges exist.",
+      "bundle_relation_types": [
+        {
+          "relation_type": "feature_contains_story",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "feature_depends_on_item",
+          "direction": "out",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "feature_gated_by_item",
+          "direction": "out",
+          "max_depth": 1
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-16",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-15T22:54:51.910Z",
+      "oid": "54d0761d28ad6701f9d9a02c88d306be",
+      "content_hash": "ec08d56b5c2402a5066985cb68ceee32e5b03a1dd4612877154f3b95cb14a5b0"
+    },
+    {
+      "id": "CTX-004",
+      "unit_kind": "framework-gap",
+      "description": "Execution bundle for a framework-gap: the tasks (in), decisions (in), and verifications (in) that address/verify it. Each is stored parent=addresser -> child=gap, so they resolve as ancestors of the gap. The zero-edge gap_addressed_by_feature is omitted; add it if/when features address gaps directly.",
+      "bundle_relation_types": [
+        {
+          "relation_type": "task_addresses_gap",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "decision_addresses_gap",
+          "direction": "in",
+          "max_depth": 1
+        },
+        {
+          "relation_type": "verification_verifies_item",
+          "direction": "in",
+          "max_depth": 1
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-16",
+      "modified_by": "agent/orchestrator",
+      "modified_at": "2026-06-15T22:55:04.889Z",
+      "oid": "4b6191cd1659efde62a9de11a1eac2f4",
+      "content_hash": "a4de4da42edde260dfda008a5ab0ee11d4b2f87180c6f13566e386d211c3b804"
+    }
+  ]
+}

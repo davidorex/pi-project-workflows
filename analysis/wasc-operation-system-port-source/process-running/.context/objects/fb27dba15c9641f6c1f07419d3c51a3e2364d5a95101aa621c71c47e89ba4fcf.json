@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "The 14-spec workflow ran to completion headless against the Chiway dev-DB (run workshop-run-plan-sequence-20260607-092307-0c56: status completed, all 42 steps render->call->apply). Each spec's response applied + merged, accumulating into one whole-plan draft (narrative + 4 milestones + 6 criteria + 6 action steps + 6 channels + 11 standards + 18 communications + 7 review events + 8 revision rules). Soft-flagged responses recorded + the run continued (24 soft-flags in the draft); the hard-reject-halts behavior was proven across the FGAP-013/014/015 iterations (each halted with the prior draft intact). Run captured at an inspectable run dir (state.json + per-spec outputs + the draft-after chain) + the out_dir draft versions. Resume proven across the earlier iterations (the runner skips completed steps from the last good draft). Full gate green (ruff+format, mypy . 322/0, pytest 2025, make test-js 48/0, verify-render-parity 14/14).",
+  "timestamp": "2026-06-07T09:46:00Z",
+  "criteria_results": [
+    {
+      "criterion": "The 14-spec sequence runs to completion headless against the Chiway dev-DB, its preconditions met.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each spec's response is applied and merged, accumulating into a whole-plan draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A hard rejection halts at that spec with the prior draft intact; a soft-flagged response is recorded and the run continues.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The run is captured at an inspectable location holding each spec's draft and a completion or failure record.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Re-running a partially-completed run resumes from the last good draft without redoing completed specs.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

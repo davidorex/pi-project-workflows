@@ -1,0 +1,8 @@
+{
+  "status": "completed",
+  "description": "Story A (shared preamble). R5 cross-cutting half -- growth-mindset planning register. Add to the preamble plan-register rules. Mirror + re-stamp + parity.",
+  "acceptance_criteria": [
+    "Wherever a generated plan describes revising/adjusting, an adversarial reviewer finds it framed as evidence-driven course-correction, with zero instances framed as failure or deficit.",
+    "The framing scans to zero process-method terms; the dispatched output parses clean."
+  ]
+}

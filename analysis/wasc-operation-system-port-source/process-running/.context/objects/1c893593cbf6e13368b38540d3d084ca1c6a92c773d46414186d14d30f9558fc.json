@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Implement the flag envelope (--cwd/--json/--yes/--writer) + bin exit-code shim + auth gate."
+}

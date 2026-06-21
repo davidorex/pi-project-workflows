@@ -1,0 +1,9 @@
+{
+  "status": "planned",
+  "description": "T6 -- Re-verify and close: a fresh full 14-spec run produces an assembled draft that passes whole-draft coverage by construction (closing TASK-034), and re-assess TASK-026's distribution premise against the corrected pipeline (FGAP-033 closure). RUN PROCEDURE: prompt-workshop/RUNBOOK-T6-14spec-run.md -- source-verified command (node prompt-workshop/dispatch/run_workflow.mjs run workshop-run-plan-sequence --fresh --yes) + env (DATABASE_URL dev DSN + venv python on PATH + pi/backend) + preconditions (verify-render-parity 14/14) + the result evaluation (check_draft.py --strict on draft-after-propose-review-loop.json = the structural gate). CONFIRM-ON-FIRST-RUN flags: pi-workflows live 0.31.0 vs 0.29.0-contract; exact venv-launch wrapper not previously recorded.",
+  "acceptance_criteria": [
+    "A fresh full sequence run produces an assembled draft on which the whole-draft coverage check passes (every learner outcome and improvement area targeted or recorded as an explicit gap).",
+    "The same run's assembled distribution check passes (more than one owner, no owner more than 50%), and TASK-026's status is updated to record whether its distribution premise is superseded, with the run's evidence.",
+    "The run completes end-to-end; outputs parse; the catalogue-gate raises no new rejection; the snippet-substrate parity gate passes 14/14; the project gate is green; and no structural check (coverage, distribution, cadence) is failing."
+  ]
+}

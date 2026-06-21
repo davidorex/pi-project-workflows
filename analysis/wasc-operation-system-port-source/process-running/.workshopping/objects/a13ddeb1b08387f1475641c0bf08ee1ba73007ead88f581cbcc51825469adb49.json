@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if seed %}Author refinement (an optional steer for which standards to propose): {{ seed }}{% endif %}",
+  "section": "seed"
+}

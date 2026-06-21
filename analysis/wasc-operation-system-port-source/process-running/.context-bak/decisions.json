@@ -1,0 +1,46 @@
+{
+  "decisions": [
+    {
+      "id": "DEC-0001",
+      "title": "Runner home: wasc-local driver vs new monorepo sibling package",
+      "status": "enacted",
+      "context": "Runner home: wasc-local driver in prompt-workshop/dispatch/ (file:// deep imports) vs a new monorepo sibling package pi-workflows-cli. Both constraint-compliant (no pi-workflows change); pick before runner impl.",
+      "decision": "Wasc-local driver in prompt-workshop/dispatch/ using absolute file:// deep imports of the pi-workflows dist/ engine functions. Sibling package rejected: it adds a package in another repo for no functional gain (only createAgentLoader gains a bare import) and is ecosystem scope the task does not need; the workshop tooling and substrate live in the wasc repo and absolute file:// is the established ESM-loader pattern here.",
+      "consequences": [
+        "Determines where FEAT-001 runner code lives and how the engine is imported."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z"
+    },
+    {
+      "id": "DEC-0002",
+      "title": "Runner ctx.cwd value: project root vs substrate root",
+      "status": "enacted",
+      "context": "Runner ctx.cwd value: the project root vs the substrate root — fix per where the run blocks/paths resolve.",
+      "decision": "ctx.cwd is the wasc project root. The workflow .workflows discovery and run-dirs/artifacts belong in the project, not a substrate dir; the workflow uses no native block steps; command steps handle their own Django cd, uv, and DATABASE_URL.",
+      "consequences": [
+        "Determines path/block resolution semantics for every workflow step."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z"
+    },
+    {
+      "id": "DEC-0003",
+      "title": "Runner v1 agent-step scope: agent steps in v1 vs command/transform/gate-only first",
+      "status": "enacted",
+      "context": "Runner v1 agent-step scope: support agent steps in v1 (requires the pi-on-PATH + model-backend pre-flight) vs ship command/transform/gate-only first and add agent support later.",
+      "decision": "Agent steps in v1. The workflow call leg is an agent step (14 across the sequence); a command/transform/gate-only runner cannot run the workshop. TASK-007 (pi-on-PATH plus model-backend pre-flight) is in scope. Agent dispatch is runtime-verified (A6).",
+      "consequences": [
+        "Gates whether the agent-step pre-flight task is in v1 scope (the conditional task)."
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-04",
+      "enacted_by": "human:davidryan@gmail.com",
+      "enacted_at": "2026-06-04T22:30:00Z"
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-10T06:30:00Z",
+  "evidence": "TASK-036 deterministic verification harness (prompt-workshop/dispatch/check_draft.py + planner/tests/test_workshop_check_draft.py) built + iterated to zero via the canonical pipeline. IMPL (dee39c3) -> adversarial audit returned 11 findings (false-negative holes: spacing/hyphen variants escaped the term scan; inline/comma/paren scaffolding escaped; missing/malformed input silently passed; --json stdout polluted by Django axes; coverage 'mentioned' a substring fluke) -> fix (fc43d85) -> re-audit found 3 NEW false-positives from the F8 over-correction (front-load self-contradiction; bare weave/refraction/fractal hard-failing plain English; all-caps OPEN/CORE plain words) -> fix (4850382, resolved policy: only coined MULTI-WORD phrases hard-fail; bare ambiguous singles are WARN; scaffolding label requires a structural marker OR >=2 distinct labels) -> final confirming audit returned Total findings: 0 (3 closed; no new false-negative; no regression). Gate green: ruff + ruff format --check + mypy on check_draft.py clean; 34 harness tests pass; pytest planner/tests 970 pass (no regression). Real-draft run exits 1 correctly (3 genuine GROUNDED/ROUNDED/UNBOUNDED strand-prefix leaks in plan.provenance -- the harness working). --json round-trips through json.load. Scope: only the two files; no parser/grounding/snippet/preamble/.workshopping/migration change.",
+  "criteria_results": [
+    {
+      "criterion": "Given a generated plan draft, the check produces a structured pass/fail report covering: any enumerated process-method term present (with the offending spans); any step-scaffolding label present; the distinct action-step-owner count and the largest single-owner percentage; each learner outcome and improvement area present-or-listed-as-gap; and the review-checkpoint count plus the earliest checkpoint date.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The enumerated process-method-term list and the scaffolding-label list are version-controlled and reviewed, and cover the method terms surfaced in sim-land.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The check exits nonzero on any banned-term or scaffolding-label hit, passes a unit test over both a clean fixture draft and a deliberately-violating fixture draft, and runs unchanged on a real dispatched draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The check adds no parser or grounding-model change (workshop dispatch tooling only).",
+      "status": "passed"
+    }
+  ]
+}

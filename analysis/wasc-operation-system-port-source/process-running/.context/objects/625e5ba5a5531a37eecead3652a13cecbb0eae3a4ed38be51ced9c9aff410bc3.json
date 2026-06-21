@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "Build the per-slice hard gate: a single runnable command (`make verify-slice SLICE=<key>`, or an equivalent `bin/verify-slice`) that composes a slice's behavioral pytest selection + the project static gate (ruff, ruff format --check, mypy ., make test-js) + context-validate (jq-on-.output envelope, CTX-13) into ONE exit code, partitioned two-class per DEC-58/DEC-53: only the BLOCKING set (the slice's behavioral tests + this-slice-introduced soundness) determines the exit code; cosmetic/style, language-register WARNs, and pre-existing/unrelated/flaky failures are NON-BLOCKING and reported as structured warnings, never changing a passing exit code. Reuses the gate-before-commit.sh composition; does not weaken it. Addresses FEAT-009 / STORY-012. The autonomous loop driver + the first-slice proof are follow-on tasks that consume this gate.",
+  "acceptance_criteria": [
+    "Running the slice gate command for a given slice exits 0 if and only if every BLOCKING check passes: the slice's behavioral tests, and the soundness (types, project test suite) that the slice's own code is responsible for.",
+    "A purely cosmetic failure (style/formatting), a language-register warning, or a failure demonstrably pre-existing, unrelated to the slice, or flaky does NOT change a passing exit code, and each such item is emitted as a structured warning rather than silently dropped.",
+    "A failure of a behavioral acceptance test, or a type/soundness error introduced by the slice's own code, makes the command exit non-zero.",
+    "The command's exit code is the sole pass/fail verdict — no consumer needs to read prose to decide pass or fail.",
+    "The pre-existing whole-project gate (the `test` target and the commit hook's checks) remains green and is not weakened by adding this gate."
+  ]
+}

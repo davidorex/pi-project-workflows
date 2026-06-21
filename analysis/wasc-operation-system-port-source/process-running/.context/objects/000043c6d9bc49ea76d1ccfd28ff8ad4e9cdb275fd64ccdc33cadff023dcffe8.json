@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "decompose.py debt cleared (l->line at 3 sites; E501:190 wrapped by ruff format; behavior-preserving) and the lint-gate scope gap closed in all three gate definitions (.claude/hooks/gate-before-commit.sh, school-improvement-plans/Makefile lint target, school-improvement-plans/.github/workflows/test.yml) -- each now runs `ruff check . ../prompt-workshop/dispatch` + `ruff format --check . ../prompt-workshop/dispatch`. Adversarial audit Total findings: 0. Verified: ruff check + format over both trees clean; decompose.py E741/E501 clean + no revert remnants; verify-render-parity 14/14 + import smoke (dispatch still runs); scope-proof (a temp `l=1` in a dispatch file IS now reported, exit 1, then reverted); full gate green (mypy . 323/0, pytest 2044, make test-js 48/0). NOTES (expected, not defects): the hook is gitignored (.claude excluded) so its scope extension is local-only -- the DURABLE cross-machine enforcement is the tracked Makefile + CI test.yml, both extended; the mypy half of the gate gap is recorded as first-class open item FGAP-021.",
+  "timestamp": "2026-06-07T12:10:00Z",
+  "criteria_results": [
+    {
+      "criterion": "Linting the whole workshop dispatch tree for style + formatting reports clean (decompose.py debt cleared, no behavior change).",
+      "status": "passed"
+    },
+    {
+      "criterion": "The standing commit gate lints the whole dispatch tree every run, and the Makefile + CI enforce the same scope (the three agree); durable cross-machine enforcement via the tracked Makefile + CI.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The dispatch scripts still import and run unchanged.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The type-check-doesn't-cover-dispatch gap is recorded as a first-class open work item with its blocker named.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

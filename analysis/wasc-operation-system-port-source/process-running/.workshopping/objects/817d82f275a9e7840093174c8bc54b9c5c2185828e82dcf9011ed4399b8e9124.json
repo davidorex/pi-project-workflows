@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if divisions %}Divisions (with positions and responsibility atoms — the school's complete organizational roster; name actors only from this list):\n{% for d in divisions %}- {{ d.label }}{% if d.scope_summary %} — {{ d.scope_summary }}{% endif %}\n{% if d.responsibilities %}  Division responsibilities:\n{% for r in d.responsibilities %}    - {{ r.statement }}\n{% endfor %}{% endif %}{% if d.positions %}  Positions:\n{% for p in d.positions %}    - {{ p.label }} ({{ p.kind }}){% if p.scope_summary %} — {{ p.scope_summary }}{% endif %}\n{% if p.responsibilities %}{% for r in p.responsibilities %}      - {{ r.statement }}\n{% endfor %}{% endif %}{% endfor %}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "divisions"
+}

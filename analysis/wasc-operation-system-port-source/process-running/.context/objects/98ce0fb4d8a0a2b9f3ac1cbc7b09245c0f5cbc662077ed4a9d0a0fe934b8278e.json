@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Slice 8a-i (FEAT-010, TASK-069 / DEC-59): A1 narrative-draft emits a plan `title`. Branch trio-a1-title @ 327f651 (IMPL 88132b7 + doc-accuracy fix 327f651). Changes: `title` added to NARRATIVE_FIELDS (planner/specs.py:407, title first) + parse_narrative count language; `title` added to the _select_a1 free-text-audit selector (planner/_freetext_audit.py); new guarded byte-match migration ai/0027_add_title_to_plan_narrative_draft.py adding `title` to the PromptTemplate('plan-narrative-draft') output-key contract (guard byte-matches the live post-0026 body; forward applies only when OLD substrings present + NEW absent; backward restores byte-for-byte); fixtures updated (test_a1_narrative.py, test_slice_fold_form.py, test_slice_trio_pass.py); new gate-first test_slice_a1_title.py. Verified through the verify-gated loop: orchestrator independently ran `make verify-slice SLICE=a1_title` -> 'all blocking checks passed' (ruff/mypy/slice tests/full pytest/test-js + context-validate 0 error-severity). SEPARATE adversarial audit (af5abeed) probed live: criterion-1 non-vacuity proven by monkeypatching `title` out of NARRATIVE_FIELDS (the trio test would KeyError -> not a tautology); criterion-2 degrade probed (4-scalar/no-title parses partial, none-of-six raises 'none of the six narrative keys'); criterion-3 guard round-trip proven byte-for-byte on the real DB (0026->0027->0026 restores the pre-0027 body SHA; makemigrations --check clean; forward fails safe on absent OLD substrings); scope = exactly the 7 named files. Audit Total findings: 3 -- all NON-BLOCKING stale 'five'->'six' count-language in docstrings/comments (specs.py:11, services.py:20, test_grounding_completeness.py:54), since cleared by 327f651 (re-gated green). Done = gate blocking-checks-pass AND audit blocking-findings == 0 (DEC-58); the 3 cosmetic findings fixed rather than deferred (zero residual).",
+  "criteria_results": [
+    {
+      "criterion": "A trio run's accumulated draft_state carries a non-empty `title` (within the Plan.title 200-char limit) that binds to PlanForm.title, produced by A1's reasoning rather than a fixed/placeholder string.",
+      "status": "passed",
+      "evidence": "title first in NARRATIVE_FIELDS (specs.py:407) + PlanForm.Meta.fields (forms.py:293); live run_trio_pass (mocked LLM) lands a bare `title` in final draft_state; audit proved non-vacuous via monkeypatch (drop title -> trio test KeyErrors); no hardcoded title in production code (grep planner/ ai/services/ -> only test fixtures); the template instructs the model to produce it. 200-char hard enforcement is at PlanForm save (slice 8a-ii); the template instructs <=200."
+    },
+    {
+      "criterion": "A1's existing four narrative scalars still parse and fold unchanged; an A1 response lacking a title degrades gracefully to a partial prefill exactly as a missing scalar does today.",
+      "status": "passed",
+      "evidence": "audit probed live: a 4-scalar/no-title output parses to a partial prefill (title omitted, no raise); an empty-string title is omitted; a none-of-six output raises 'A1 output carried none of the six narrative keys'; the four prior scalars parse unchanged; other parsers untouched."
+    },
+    {
+      "criterion": "The production prompt-template change applies only to the expected prior template body (guarded, not a blind overwrite) and is reversible.",
+      "status": "passed",
+      "evidence": "audit round-trip on the real dev DB: post-0027 SHA captured; reverse to 0026 -> OLD guard substrings byte-match the genuine pre-0027 body (no 'title'); forward to 0027 -> SHA identical (byte-for-byte lossless); makemigrations --check clean; forward fails safe (no-op) when OLD substrings absent; migrated body internally consistent ('six' in all three contract spots)."
+    },
+    {
+      "criterion": "The whole-project gate stays green and the context cascade validates.",
+      "status": "passed",
+      "evidence": "orchestrator independently ran `make verify-slice SLICE=a1_title` at 327f651 -> 'all blocking checks passed (context-validate status=warnings)'; audit independently confirmed exit 0 + context-validate 0 error-severity (15 warnings pre-existing Phase-H/TASK-067, unrelated)."
+    }
+  ]
+}

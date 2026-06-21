@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if learner_outcomes %}Schoolwide learner outcomes (the school's enumerated SLOs; name learner outcomes only from this list):\n{% for o in learner_outcomes %}- {{ o.label }}{% if o.description %}: {{ o.description }}{% endif %}\n{% endfor %}{% endif %}",
+  "section": "learner_outcomes"
+}

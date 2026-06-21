@@ -1,0 +1,7 @@
+{
+  "timestamp": "2026-05-31T00:00:00+08:00",
+  "via": "pi",
+  "focus": "Added optional `via` field to session-notes schema (v1.0.0 → v1.1.0) to record writing context (e.g. 'pi' or 'claude-code').",
+  "current_status": "Schema replaced at .context/schemas/session-notes.schema.json; migration 1.0.0→1.1.0 declared (declarative-transform backfilling via='claude-code' on existing sessions).",
+  "next_steps": []
+}

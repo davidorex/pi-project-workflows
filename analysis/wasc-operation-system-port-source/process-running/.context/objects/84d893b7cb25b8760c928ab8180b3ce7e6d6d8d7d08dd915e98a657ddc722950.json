@@ -1,0 +1,26 @@
+{
+  "title": "Prose-grounding leaks: SLO long label + mission-clause keys pasted into generated prose",
+  "status": "closed",
+  "package": "prompt-workshop/snippets + shared/preamble + ai/services/grounding.py",
+  "description": "The generated draft's prose copies two grounding-presentation artifacts verbatim (DISC-26 quality, distinct from FGAP-014/015): (1) SLO LONG LABEL -- the agent writes 'Confident: Shows self-assurance...' (label+description) instead of 'Confident'; the SLO CONTEXT block renders '- {{o.label}}{% if o.description %}: {{o.description}}' (snippets 01:44, 03:38, 04:32, 05:41, 07:37, 13:32) and the agent copies the concatenated form into prose (the data is clean: grounding._learner_outcomes -> {code,label,description}). (2) MISSION-CLAUSE KEYS -- the agent writes 'the mission clauses GROUNDED, ROUNDED, and UNBOUNDED' (bare keys); GROUNDED/ROUNDED/UNBOUNDED are Chiway's real mission labels but the DEC-45 seed (migrations/0060) baked them into StatementClause.text ('GROUNDED: <prose>') leaving the model's dedicated label field empty; grounding._guiding_statements emits {text,order}, the render (01:59-61, 07:41-43, 10:30-32, 13:36-38) shows 'GROUNDED: <prose>', and the agent cites the prefix. (Vision clauses have no prefix.) The preamble's VERBATIM rule + the FGAP-014 quoted-choice convention do not cover prose references to SLOs/clauses.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/snippets/01-narrative-draft.md",
+      "reference": ":44 SLO context '- {{o.label}}: {{o.description}}'; :59-61 clause render '{{c.order}}. {{c.text}}'"
+    },
+    {
+      "file": "school-improvement-plans/ai/services/grounding.py",
+      "reference": "_learner_outcomes {code,label,description}; _guiding_statements ~:224-240 emits {text,order} (no label)"
+    },
+    {
+      "file": "school-improvement-plans/school/migrations/0060_dec45_seed_mission.py",
+      "reference": ":24-31 MISSION_CLAUSES bake 'GROUNDED: <prose>' into text; StatementClause.label (mvv.py) exists but empty"
+    },
+    {
+      "file": "prompt-workshop/outputs/current-draft.json",
+      "reference": "plan.provenance 'mission clauses GROUNDED, ROUNDED, and UNBOUNDED'; a label 'Confident: Shows self-assurance...'"
+    }
+  ],
+  "impact": "The generated whole-plan prose reads with grounding artifacts (long SLO labels; bare clause keys), degrading the WASC-committee voice and driving several of the 24 soft-flags. Blocks promotion-readiness on prose quality.",
+  "proposed_resolution": "(A) Preamble prose-reference rule: in prose, reference an SLO by its short label only (description is context), and a mission/vision clause by its substance/label, never the bare prefix. (B) SLO context render: quote the label (mirror FGAP-014) '- \"{{o.label}}\"{% if o.description %} - {{o.description}}{% endif %}' across the 6 snippets + substrate fragments (lockstep). (C) Clause separation: grounding._guiding_statements parses a leading 'PREFIX: rest' (short ALL-CAPS prefix) into {label, text} (non-destructive, no data migration; vision clauses unaffected); the clause render (4 snippets + fragments) shows the label distinct from the prose. Keep parity 14/14; production PromptTemplate mirror + an optional StatementClause.label data migration are later DEC-41/DEC-45 follow-ons."
+}

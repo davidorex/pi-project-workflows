@@ -1,0 +1,30 @@
+{
+  "title": "Workshop run halts on the heaviest spec: pi stdout (52MB) overflows the 10MB dispatch cap, dropping the agent's output (WF-13 x atom-laden prompt)",
+  "status": "closed",
+  "package": "school-improvement-plans/ai/services/grounding.py + .workshopping/prompt-spec.json + .workflows/workshop-run-plan-sequence.workflow.yaml",
+  "description": "The 14-spec run reliably halts at call_decompose_action_steps (spec 5, the heaviest). pi --mode json emits ~52MB stdout for that call; dispatch caps stdout at 10MB (dist/dispatch.js:18) and on overflow does NOT kill but DROPS the tail (dist/dispatch.js:202-220), so the agent's final JSON + the schema disk-read's <runDir>/outputs/<step>.json never land -> step-agent raises 'has output schema but no valid JSON output was produced' (step state: truncated:true, '...truncated at 52649648 bytes', usage.turns:0, no output file). The TRIGGER is prompt bulk: decompose's 84KB prompt is ~63% (~52KB) the 444-atom responsibility inventory. The grounding is already per-spec (grounding_sections in .workshopping/prompt-spec.json -> render_from_substrate.py:105; _divisions dumps every atom, grounding.py:187-222). Verified: ONLY propose-responsibilities (07) consumes atom STATEMENTS (selects a statement verbatim; parser exact-matches). Every other spec -- incl. the failing decompose (05, task line 68 needs Division/Position LABELS verbatim), narrative (01), success-criteria (04), accreditation (13), and the label-only 06/09/10/11/14 -- carries the atoms as dead weight (the {{r.statement}} is the shared divisions render block, not a task requirement). Systematic (2/2 post-seed runs), not transient; retry alone would not fix it.",
+  "evidence": [
+    {
+      "file": "workflowsPiExtension/packages/pi-workflows/dist/dispatch.js",
+      "reference": ":18 MAX_STDOUT_BYTES=10MB; :202-220 overflow drops the tail (no kill); --mode json hardcoded :41-88"
+    },
+    {
+      "file": "workflowsPiExtension/packages/pi-workflows/dist/step-agent.js",
+      "reference": ":166-184 schema path: file-missing -> parse truncated textOutput -> fail 'no valid JSON output'"
+    },
+    {
+      "file": "school-improvement-plans/ai/services/grounding.py",
+      "reference": ":187-222 _divisions emits all responsibility atoms; build_grounding per-section :307-369"
+    },
+    {
+      "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+      "reference": ":53-59 divisions render block dumps atoms; :68 task needs Division/Position LABELS verbatim (not statements)"
+    },
+    {
+      "file": "run state",
+      "reference": "runs .../112811 + .../120301 both failed at call_decompose_action_steps; .../092307 (pre-FGAP-019, but also pre this analysis) completed"
+    }
+  ],
+  "impact": "The 14-spec workshop cannot complete a full draft when the tenant's responsibility inventory is large -- the heaviest spec overflows the stdout cap and aborts the run. Blocks a complete promotion-ready draft (DEC-29) for any tenant with a substantial atom inventory.",
+  "proposed_resolution": "(A root fix) Scope the 444-atom inventory to propose-responsibilities (07) only -- a labels-only divisions render (labels + scope_summary + position kind, NO statements) for all other specs, via the existing per-spec grounding_sections (add a labels-only section / atom-section split in grounding.py + SECTION_KEYS; repoint .workshopping/prompt-spec.json; edit the snippet divisions render block + substrate fragments in lockstep). Drops decompose ~84KB->~30KB, under the stdout trigger. (B defense) retry on the 14 call steps (engine-confirmed: agent steps retryable, prior errors steered). (C) record the upstream cap pathology (raise/remove MAX_STDOUT_BYTES; quieter pi mode; disk-read independent of the dropped tail) in PI-WORKFLOWS-FINDINGS. Engine NOT modified."
+}

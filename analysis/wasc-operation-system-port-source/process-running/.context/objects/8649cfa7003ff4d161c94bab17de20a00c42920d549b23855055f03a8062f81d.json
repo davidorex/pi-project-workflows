@@ -1,0 +1,22 @@
+{
+  "title": "Ownership distribution concentrates at the ASSIGNMENT layer because the chosen method's templates are single-purview (one-step-per-template x one-best-fit-assignment)",
+  "status": "closed",
+  "package": "prompt-workshop/snippets/05-decompose-action-steps.md + 06-propose-assignments.md (the decompose->assign model)",
+  "description": "ROOT CAUSE (verified, see DEC-50): action concentration is architectural. Spec 05 generates the action set by SELECTING ONE planning method and EXPANDING its templates (one-per-template); all 4 catalogued methods are single-purview process cycles; spec 05 does not even receive division_responsibility_atoms; spec 07 only ANNOTATES the method-derived steps. So the responsibility map is downstream annotation, never the upstream driver of actions -> the plan talks school-wide but acts one-division. NOT an assignment-logic miss (spec 06) and NOT fixable by FEAT-006 (can not invent un-generated actions). Original symptom framing (best-fit concentrates for single-purview methods) was the surface; DEC-50 carries the root + the responsibility-map-driven-generation fix path.",
+  "evidence": [
+    {
+      "file": "/tmp/slice-a-draft.json",
+      "reference": "assignments: 5/6 steps -> Curriculum and Teaching, 1 -> Principal's Office (PO); leads = Director of Teaching and Curriculum Center / IHS Principal / PD Leader"
+    },
+    {
+      "file": "prompt-workshop/snippets/05-decompose-action-steps.md",
+      "reference": "one step per the chosen method's templates, in template order -> if the method is single-purview, steps cluster"
+    },
+    {
+      "file": "prompt-workshop/snippets/06-propose-assignments.md",
+      "reference": "one best-fit responsible division per step -> best-fit governs when clustered (the Slice-A F5 wording)"
+    }
+  ],
+  "impact": "FEAT-005 criterion 1 (distributed ownership) is satisfied at the responsibility/standards/evidence layers but NOT at the assignment layer when the chosen planning method's templates are single-purview. A reviewer scanning 'Person(s) Responsible' sees Curriculum and Teaching on nearly every step despite the plan being school-wide elsewhere. Prompt-only Slice A cannot fix this without either (a) the method-selection producing a more cross-divisional template set, or (b) the decompose model allowing multi-owner / cross-divisional steps, or (c) accepting that assignment concentrates while responsibilities distribute.",
+  "proposed_resolution": "Per DEC-50: make action generation RESPONSIBILITY-MAP-driven -- spec 05 (or a new action-generation stage) reads the division/position responsibility atoms and produces distinct substantive actions per division purview toward the plan goal; planning methods become optional process-shapers; likely a model touch. Design via the canonical pipeline as the next FEAT-005 / governing-feature slice."
+}

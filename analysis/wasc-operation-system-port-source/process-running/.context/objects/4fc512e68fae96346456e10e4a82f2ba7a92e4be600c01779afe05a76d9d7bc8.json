@@ -1,0 +1,9 @@
+{
+  "status": "completed",
+  "description": "FGAP-038: add a per-spec in-execution self-check for the quarterly review-cadence discipline at the review-loop step, reusing the existing cadence logic, mirroring T3/T4; the discipline already has a generation contract + a post-hoc check but no in-execution gate.",
+  "acceptance_criteria": [
+    "During generation of the review-loop step, the step's self-check fails when the review loop has fewer than four evaluate-and-adjust checkpoints or its earliest checkpoint is not before 1 December, and passes otherwise; demonstrated on a deficient input.",
+    "Over a full assembled draft, the review loop has at least four checkpoints with the earliest before 1 December, confirmed by a whole-draft check.",
+    "No previously-passing check moves from passing to failing: outputs parse, the catalogue-gate raises no new rejection, the parity gate passes 14/14, the project gate is green, and every existing in-execution and whole-draft check stays passing."
+  ]
+}

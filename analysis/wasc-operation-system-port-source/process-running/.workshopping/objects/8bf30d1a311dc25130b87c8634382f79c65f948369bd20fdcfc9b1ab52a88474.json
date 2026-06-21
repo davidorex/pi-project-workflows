@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY these two keys:\n- \"method\": the exact name of the single chosen method, copied verbatim from one of the provided method names above.\n- \"steps\": a non-empty JSON array, one element per the chosen method's step templates, in template order. Each element is an object with EXACTLY two string keys:\n  - \"description\": the concrete action step for this plan.\n  - \"assessment\": how completion of this step is checked (may be an empty string).\n\nNo nested objects beyond this shape, no extra keys, no markdown.\n"
+}

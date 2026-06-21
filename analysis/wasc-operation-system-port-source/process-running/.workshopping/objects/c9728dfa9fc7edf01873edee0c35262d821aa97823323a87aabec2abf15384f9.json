@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if draft_state %}The plan draft's action steps (each line is \"<step_index>: <description>\"; step_index is the 0-based position you must use):\n{% for key, value in draft_state.items %}{% if value %}{% if \"-description\" in key and \"steps-\" in key and \"_zh_hans\" not in key %}- {{ key }} = {{ value }}\n{% endif %}{% endif %}{% endfor %}{% endif %}",
+  "section": "draft_state"
+}

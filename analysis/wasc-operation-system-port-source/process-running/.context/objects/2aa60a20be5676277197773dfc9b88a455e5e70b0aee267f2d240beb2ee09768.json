@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL A3: AssistResult gains a flags field; the 12 free-text parsers populate it",
+  "status": "closed",
+  "package": "planner",
+  "description": "AssistResult (planner/assist.py:33-57) carries only prefill + optional note. Add an optional flags field (list of {path, span, verdict, severity, message}). The 12 free-text parsers in planner/specs.py (all except B2 bind-measurement-channels and F2 propose-assignments, per FREETEXT_SELECTORS_BY_SPEC) currently call audit_prefill expecting it to raise; they must instead collect the flags it returns (A2) and attach them to the returned AssistResult, while still raising on the hard-reject classes. parse_narrative (A1) returns a bare dict today, so the narrative parser also needs the AssistResult(+flags) shape or an equivalent carrier. Bare-return parsers normalize through views.py / apply, so a flags channel must thread there too (see C2/B2). Atomic gap; depends on A2.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/planner/assist.py",
+      "reference": "school-improvement-plans/planner/assist.py:33-57; planner/specs.py (12 audit_prefill call sites)"
+    }
+  ],
+  "impact": "AssistResult cannot carry flags, so the parsers have nowhere to return soft-flag annotations to the apply / UX layers.",
+  "proposed_resolution": "Add an optional flags field to AssistResult; the 12 free-text parsers collect audit_prefill flags and attach them (raising only on hard-reject classes); the bare-return narrative parser gains the same carrier."
+}

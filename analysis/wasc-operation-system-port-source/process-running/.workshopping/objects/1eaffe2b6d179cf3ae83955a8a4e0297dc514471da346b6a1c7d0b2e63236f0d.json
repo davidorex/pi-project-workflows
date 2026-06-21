@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if accreditation_standards %}WASC accreditation standards (the global standards catalogue; cite standards only by code from this list):\n{% for s in accreditation_standards %}- {{ s.code }} ({{ s.category }}): {{ s.text }}\n{% endfor %}{% endif %}",
+  "section": "accreditation_standards"
+}

@@ -1,0 +1,4 @@
+{
+  "kind": "spec-intro",
+  "body": "\nPropose 2 to 4 milestones in the order they would be reached. For EACH milestone:\n- Write a concise \"label\" describing the checkpoint (English only).\n- Choose an \"improvement_type\" — exactly one of the CODES listed above.\n- Set a \"target_date\" as a \"YYYY-MM-DD\" string within the accreditation cycle window; if you have no basis for a date, set it to null.\n- Include a \"planning_method\" — one of the method NAMES above — ONLY when the chosen improvement type REQUIRES a planning method, AND only a method that applies to that type (a method linked to that type, or one that applies to any type). When the chosen type does NOT require a planning method, OMIT \"planning_method\" (or set it to null).\n\nOUTPUT CONTRACT (follow exactly):"
+}

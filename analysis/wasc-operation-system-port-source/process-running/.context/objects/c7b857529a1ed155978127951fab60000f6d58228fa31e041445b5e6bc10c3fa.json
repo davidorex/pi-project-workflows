@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "Story C (verification harness). Build a deterministic checker over a generated/assembled plan draft that makes the other tasks' criteria runnable: it scans for enumerated process-method terms + step-scaffolding labels (with offending spans), counts action-step owner distribution (distinct owners + largest single-owner share), checks learner-outcome + improvement-area coverage (each present or listed as a gap), and checks review-checkpoint count + earliest-checkpoint date. Lives in the workshop dispatch tooling; version-controls the term/label lists; unit-tested on fixture drafts (clean + deliberately-violating). No parser/grounding change. Prerequisite for the runnable criteria of TASK-027/031/032/033/034.",
+  "acceptance_criteria": [
+    "Given a generated plan draft, the check produces a structured pass/fail report covering: any enumerated process-method term present (with the offending spans); any step-scaffolding label present; the distinct action-step-owner count and the largest single-owner percentage; each learner outcome and improvement area present-or-listed-as-gap; and the review-checkpoint count plus the earliest checkpoint date.",
+    "The enumerated process-method-term list and the scaffolding-label list are version-controlled and reviewed, and cover the method terms surfaced in sim-land.",
+    "The check exits nonzero on any banned-term or scaffolding-label hit, passes a unit test over both a clean fixture draft and a deliberately-violating fixture draft, and runs unchanged on a real dispatched draft.",
+    "The check adds no parser or grounding-model change (workshop dispatch tooling only)."
+  ]
+}

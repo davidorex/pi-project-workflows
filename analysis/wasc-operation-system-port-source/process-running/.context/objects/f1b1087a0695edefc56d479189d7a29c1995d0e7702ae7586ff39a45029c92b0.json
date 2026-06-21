@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "Global catalogue-gate fix gate green + separate-agent adversarial audit converged to zero (0 code defects; its 2 test-coverage findings closed by an added 4-token-production-name prefix-boundary test, verified present + passing). pytest planner/tests/test_freetext_audit.py 71 passed; mypy planner/_freetext_audit.py + test clean; ruff clean. Live admit probe against the real Chiway grounding: every enumerated section's labels admit (divisions/positions/stakeholder_groups/policies/accreditation_standards/learner_outcomes/areas_for_improvement/frequencies/improvement_types/planning_methods/year_groups/school/mvv + the newly-unioned framing_vocabularies + priority_tiers; 0 not-admitted of 177 labels), formatting variants (hyphen/underscore/case) admit, the school short/brand form admits, and fabrications (Springfield Academy of Excellence, Director-of-Innovation) + single tokens + non-prefix subsequences (Repton School / Repton Xiamen) reject. Captured 2026-05-29 response rejection list went ['Chiway-Repton's','Caring'] -> ['Caring'] (school short-form closed end-to-end; 'Caring' correctly rejected, not enumerated post-DEC-45). Collapse merges no two distinct labels (only case-variant dupes). union_casefold + exact/plural paths unregressed.",
+  "timestamp": "2026-06-05T07:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "COMPLETENESS: framing_vocabularies + priority_tiers pulled into the union (+ PhraseMatcher); every enumerated DB label admits",
+      "status": "passed"
+    },
+    {
+      "criterion": "VARIANT TOLERANCE: hyphen/underscore/whitespace/case variant of any enumerated entity admits via union_collapsed",
+      "status": "passed"
+    },
+    {
+      "criterion": "SCHOOL SHORT FORM: >=2-token contiguous prefix of name/slug admits; single tokens + non-prefix subsequences reject",
+      "status": "passed"
+    },
+    {
+      "criterion": "ANTI-FABRICATION: a name matching no entry/prefix collapse still rejects; no distinct-label collapse collision",
+      "status": "passed"
+    },
+    {
+      "criterion": "NO REGRESSION: union_casefold exact-match + -es/-s plural-strip paths unchanged; full suite 71 passed; mypy/ruff clean",
+      "status": "passed"
+    }
+  ]
+}

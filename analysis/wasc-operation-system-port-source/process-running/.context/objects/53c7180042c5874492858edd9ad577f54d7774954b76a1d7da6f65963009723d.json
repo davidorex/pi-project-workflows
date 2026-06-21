@@ -1,0 +1,29 @@
+{
+  "title": "Concision tuning ('temperature for verbosity') — design + canonical comparison",
+  "status": "complete",
+  "layer": "L3",
+  "type": "comparative",
+  "question": "How does the generated draft compare to the canonical exemplar (web/canonical.html) in concision, and how do we build a single tunable knob — like an LLM temperature — to dial output concision toward the canonical?",
+  "method": "agent comparison of /tmp/final-complete-draft.json vs web/canonical.html + web/data/plan-data.js (quantified per field); design grounded in the prompt-corpus assembly (FRAG-preamble single-reach, render_from_substrate Context, .workshopping config).",
+  "findings_summary": "Full body: docs/concision-tuning-design-2026-06-07.md. GAP: canonical ~5x tighter in prose, ~12-15x in action-step descriptions (current_state 350c vs 1934c; step desc 40-75c vs ~848c). DEEPEST INSIGHT: concision is STRUCTURAL not stylistic -- canonical states each fact ONCE in its home structured field and DERIVES actor summaries (assignments[] -> 'leads 4 / participates 2'), never reciting the roster in prose; ours roll-calls all 16 divisions inline in current_state+desired_state+provenance (3x) because the every-division coverage mandate (preamble criterion 5) over-fires into prose. 6 verbosity drivers: exhaustive division enumeration; cross-field roster/WASC-code restatement; action-step descriptions carrying the whole sub-procedure; per-linkage rationale essays; coverage-mandate over-firing into prose; long chained compound sentences. MECHANISM (the temperature analog): a single concision level (terse|standard|expansive) in .workshopping/config.json, injected via the shared preamble (FRAG-preamble -- the one fragment reaching all 14 specs, same lever as FGAP-019) as a templated conditional on the render Context; controls enforceable rules (represent actors representatively not exhaustively + redirect coverage to structured fields; state-once-in-home-field; imperative step descriptions; rationale caps; clause ceiling); bands differ only in numeric ceilings; MEASURABLE via a distance-to-canonical scorer (chars/field, named-actors/prose-field, roster-repetition count) with canonical's vector as target -- which is also R-0003's C7 quality rubric + the measurable closure of DISC-26. Guardrail: never override verbatim-label fidelity (FGAP-014/019/DEC-40). Reuses the preamble single-reach lever + the render Context + aligns with FGAP-022 grounding-scoping; parity (preamble.md + FRAG-preamble lockstep) constrains edits. NOT implemented -- design only.",
+  "findings_document": "docs/concision-tuning-design-2026-06-07.md",
+  "citations": [
+    {
+      "label": "canonical exemplar + data",
+      "path": "web/canonical.html + web/data/plan-data.js"
+    },
+    {
+      "label": "generated draft",
+      "path": "/tmp/final-complete-draft.json (run 42/42)"
+    },
+    {
+      "label": "single-reach preamble lever",
+      "path": "prompt-workshop/shared/preamble.md + .workshopping FRAG-preamble; render_from_substrate.py:109"
+    },
+    {
+      "label": "refinements roadmap (A1, C7)",
+      "path": "R-0003 / docs/workshop-refinements-2026-06-07.md"
+    }
+  ],
+  "grounded_at": "2026-06-07"
+}

@@ -1,0 +1,5 @@
+{
+  "description": "Parse user directives at the narrowest reading. Touch only artifacts explicitly named. No editorial commentary on adjacent items. Authorization for X is not authorization for adjacent-to-X.",
+  "enforcement": "manual",
+  "severity": "error"
+}

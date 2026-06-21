@@ -1,0 +1,26 @@
+{
+  "title": "Lint-gate scope gap: the standing gate does not lint prompt-workshop/dispatch (uncaught decompose.py ruff debt)",
+  "status": "closed",
+  "package": ".claude/hooks/gate-before-commit.sh + Makefile + .github/workflows/test.yml + prompt-workshop/dispatch/decompose.py",
+  "description": "The standing commit gate (.claude/hooks/gate-before-commit.sh) runs `uv run ruff check` / `ruff format --check` / `mypy .` from school-improvement-plans/, whose cwd-default scope EXCLUDES prompt-workshop/dispatch/ (outside the project root; no ruff config in prompt-workshop). So lint debt accumulates with a green local gate: dispatch/decompose.py has 4 uncaught ruff errors -- E501:190 (long _segment_body signature) + E741 ambiguous 'l' at :267,:348,:349. The Makefile `lint` target + .github/workflows/test.yml lint dispatch only via ad-hoc explicit file paths (_workshop.py, apply.py, apply_from_substrate.py -- incomplete, and not what the commit hook runs). `mypy .` likewise never checks dispatch. RECORDED SUB-GAP (open, not this fix): mypy does not cover dispatch; `mypy ../prompt-workshop/dispatch` fails on a duplicate-module ambiguity (_workshop.py under two qualified names; dispatch has no __init__.py), and package-izing risks the scripts' top-level imports + run_workflow.mjs -- its own focused pass.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/decompose.py",
+      "reference": "E501:190; E741:267,348,349 (uv run ruff check ../prompt-workshop/ from school-improvement-plans)"
+    },
+    {
+      "file": ".claude/hooks/gate-before-commit.sh",
+      "reference": ":29-38 runs `uv run ruff check` (no path -> cwd school-improvement-plans only)"
+    },
+    {
+      "file": "school-improvement-plans/Makefile",
+      "reference": "lint target :63-67 ad-hoc explicit dispatch file paths (3 files, not the tree)"
+    },
+    {
+      "file": ".github/workflows/test.yml",
+      "reference": ":42-47 same ad-hoc explicit dispatch paths"
+    }
+  ],
+  "impact": "Style/format debt in the workshop dispatch python accumulates undetected by the blocking local gate (green while dispatch is dirty); local gate and CI diverge; future dispatch files inherit the same uncaught class. Surfaced when FGAP-019's audit noted decompose.py errors that the gate had never flagged.",
+  "proposed_resolution": "(A) Clear the debt: rename l->line (267/348/349); resolve E501:190 (ruff format / type alias / wrap); ruff format decompose.py -- no behavior change. (B) Extend ruff+format scope to the whole dispatch tree in ALL THREE gate definitions (hook + Makefile lint + CI), same target `. ../prompt-workshop/dispatch` run from school-improvement-plans (inherits its [tool.ruff]). (C) Record the mypy-dispatch sub-gap as open (above). Verify: ruff check/format over both trees clean; dispatch still imports/runs (verify-render-parity 14/14); the gate now goes red on a temp dispatch ruff error."
+}

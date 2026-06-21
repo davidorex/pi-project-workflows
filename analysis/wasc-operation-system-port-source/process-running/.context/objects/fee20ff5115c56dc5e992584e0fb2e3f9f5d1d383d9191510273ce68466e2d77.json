@@ -1,0 +1,14 @@
+{
+  "title": "FLAG-MODEL B1: workshop draft gains a flags channel (preserved across the chain, skipped by flatten)",
+  "status": "closed",
+  "package": "prompt-workshop",
+  "description": "The workshop draft (_EMPTY_DRAFT, prompt-workshop/dispatch/_workshop.py:215-243) has 15 top-level keys (meta/plan/milestones/.../responsibilities) and NO annotation channel. Add a top-level flags channel. Two threading requirements: (1) the 14 MERGE_RULES (apply.py:51-215) each mutate one draft section and none touch flags - they must PRESERVE accumulated flags across the immutable draft-after-<spec>.json chain (e.g. a setdefault(flags,[]) guard at the apply entry, or per-rule preservation); (2) flatten_draft_for_grounding (_workshop.py:466-584) must SKIP flags from the production draft_state projection exactly as it already skips meta (:577-582) - flags are workshop/review annotation, not a form field collectDraftState emits. Atomic gap; pairs with B2.",
+  "evidence": [
+    {
+      "file": "school-improvement-plans/prompt-workshop/dispatch/_workshop.py",
+      "reference": "school-improvement-plans/prompt-workshop/dispatch/_workshop.py:215-243,466-584; apply.py:51-215"
+    }
+  ],
+  "impact": "The workshop draft has no annotation channel, so flags cannot accumulate across the 14-spec draft-after chain.",
+  "proposed_resolution": "Add a top-level flags channel to _EMPTY_DRAFT; MERGE_RULES preserve it across the chain; flatten_draft_for_grounding skips it (as it skips meta)."
+}

@@ -1,0 +1,37 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Trio per-spec server-side loop (FEAT-010 slice 3, TASK-066): planner/orchestration.run_trio_pass + planner/tests/test_slice_trio_pass.py (5 tests), branch trio-per-spec-loop @ 1666094. Verified through the verify-gated loop: IMPL (a933a9a7) built run_trio_pass (14 specs in the order A1,B1,D1,C1,B2,F1,F2,F3,F4,F5,US-LLM-27,A2,A3,G1; per spec build_grounding -> render -> get_llm_logged.complete -> parse -> resolve (replace .prefill, mirrors views.py:572-580) -> route to the seam fold -> save_version; happy-path only). Orchestrator ran make verify-slice SLICE=trio_pass exit 0. SEPARATE adversarial audit (a7d5ca5c): verified ORDER against every parse-time draft_state read (B2 after B1+C1; F1 after D1; F2-F5/US-LLM-27 after F1; G1 after D1+C1) + empirically via a D1<->C1 swap perturbation that raises; ROUTING for all 14 (prefixes==target_step; F4 resources/substeps; US-LLM-27 division/position responsibilities; A3 5 sections+2 ack keys) cross-checked vs the parsers + segment-specific test assertions (a mis-route raises KeyError); resolve handling byte-identical to AssistStreamView; the LLM mock drives all 14 with parser-valid canned JSON, non-vacuous; happy-path scope (no save/gate/promote leaked); 14 versions append -> Total findings: 0. Done = gate exit 0 AND audit 0 (DEC-58), orchestrator-observed. Full gate: ruff clean; mypy 337; pytest 3307 passed; make test-js 48/0; context-validate 0 errors. NON-BLOCKING (auditor declined to raise, recorded for transparency): test-1's spec_key-order assertion is tautological (spec_key recorded from the provider's own position index) -- redundant, but the order is genuinely verified by the other tests' parser/fold coupling + the perturbation probe; and the final_version==14 doc claim holds only for a fresh draft_id (no caller exists yet).",
+  "criteria_results": [
+    {
+      "criterion": "run_trio_pass runs all 14 specs in order; per spec grounding->render->LLM->parse->resolve->route to fold->append version.",
+      "status": "passed",
+      "evidence": "5 slice tests + audit; the loop reuses AssistStreamView's single-spec sequence non-HTTP."
+    },
+    {
+      "criterion": "Order satisfies every parse-time draft_state read (no spurious range-check failure).",
+      "status": "passed",
+      "evidence": "audit verified vs specs.py:840/1765-66/1941..2652/3805-06 + a D1<->C1 swap perturbation raises (the order is load-bearing, enforced)."
+    },
+    {
+      "criterion": "Each spec routes to the correct fold with correct kwargs; final draft_state has all 14 specs' folded keys.",
+      "status": "passed",
+      "evidence": "routing cross-checked vs the parsers; segment/prefix-specific test assertions (a mis-route raises KeyError); F4/US-LLM-27 nested_keys + A3 sections confirmed."
+    },
+    {
+      "criterion": "Versions append per spec (walkable); final holds full accumulation; grounding for spec N sees N-1.",
+      "status": "passed",
+      "evidence": "versions==range(1,15) test; v1-vs-final superset + cross-reference accumulation tests (would raise if prior rows absent from grounding)."
+    },
+    {
+      "criterion": "LLM via get_llm_logged; tests drive all 14 with FakeLLMProvider canned outputs, no real API.",
+      "status": "passed",
+      "evidence": "per-call dispatch stub patched at planner.orchestration.get_llm_logged; parser-valid canned JSON; perturbation probe proves non-vacuous."
+    },
+    {
+      "criterion": "Happy-path scope only (no retry/gate/save/promote); whole-project gate green; context cascade validates.",
+      "status": "passed",
+      "evidence": "audit confirmed no save_nested/Plan/promote/gate/lifecycle; failures propagate; make verify-slice SLICE=trio_pass exit 0; ruff/mypy 337/pytest 3307/test-js 48/context-validate 0 errors; diff scoped; gate unweakened."
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "title": "14-spec pi-workflow YAML (per WORKSHOPPING-WORKFLOW-SPEC)",
+  "status": "complete",
+  "layer": "L3",
+  "description": "Per WORKSHOPPING-WORKFLOW-SPEC: per-spec render->call->apply with draft_path threading.",
+  "acceptance_criteria": [
+    "YAML drives all 14 specs in dependency order",
+    "commands emit JSON; agent input is an object {prompt:…}"
+  ]
+}

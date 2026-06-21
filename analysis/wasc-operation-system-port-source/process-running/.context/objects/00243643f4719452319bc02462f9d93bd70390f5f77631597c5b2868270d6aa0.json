@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "Story C. R8 DECISION (no corpus edit) -- record that the options posture lives at the orchestration / create-plan-UX layer, not per-spec snippets (per-spec stays decide-one, honoring the preamble's no-options-instead-of-decisions rule).",
+  "acceptance_criteria": [
+    "A decision record exists in the project decision log capturing the options-posture / human-decision-surface placement, confirmed by reading the decision block.",
+    "The record places genuine human-set value-forks (options-posture) at the orchestration / create-plan-UX layer, giving the reason that per-spec generation stays decide-one (preserving the no-options-instead-of-decisions rule).",
+    "The record places unowned-precursor decision-requests as authored content within the plan draft itself -- the same account-for-every-item-or-flag-it class as coverage -- not as an orchestration-layer overlay.",
+    "The record justifies both placements by derivation from the app's stated purpose (the AI renders a complete deliverable draft; the human fine-tunes it through the create-plan UX), rather than as an open selection among alternatives.",
+    "A diff of the corpus shows zero changes to any snippet or preamble attributable to this record -- machine-checked."
+  ]
+}

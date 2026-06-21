@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if draft_state %}The plan draft (the prose the author has written so far):\n{% for key, value in draft_state.items %}{% if value %}{% if key == \"current_state\" or key == \"desired_state\" or key == \"rationale\" %}- {{ key }} = {{ value }}\n{% endif %}{% endif %}{% endfor %}{% endif %}",
+  "section": "draft_state"
+}

@@ -1,0 +1,4 @@
+{
+  "kind": "spec-contract",
+  "body": "\nThe object MUST have EXACTLY one key:\n- \"bindings\": a JSON array. Each element is an object binding one criterion to its measuring channel(s):\n  - \"criterion_index\": a 0-based integer index of a success criterion listed above (required).\n  - \"channel_indices\": a non-empty JSON array of 0-based integer indices of the feedback channels that measure that criterion (required; at least one).\n\nUse only indices that exist in the draft. No extra keys, no nested objects beyond this shape, no markdown.\n"
+}

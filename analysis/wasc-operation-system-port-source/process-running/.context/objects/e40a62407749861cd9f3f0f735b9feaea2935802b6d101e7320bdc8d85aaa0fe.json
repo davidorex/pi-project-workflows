@@ -1,0 +1,4 @@
+{
+  "status": "completed",
+  "description": "Implement render_from_substrate.py (read .workshopping, resolve fragment_refs, build_grounding + PromptSanitizer + Django Template, emit JSON; per SPEC §5)."
+}

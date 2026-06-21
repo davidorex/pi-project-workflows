@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-018 / FGAP-004 (A3, parser-layer flag population) gate green + round-2 separate-agent adversarial audit Total findings: 0. AssistResult gained flags (TYPE_CHECKING import, no cycle); the 12 free-text parsers switched from raising audit_prefill to audit_prefill_flags + attach flags; parse_narrative returns AssistResult (was bare dict); dead audit_prefill removed; views.py result-frame omits note when None (preserves the documented A1 no-note contract; F1+ unchanged; flags NOT surfaced = C2 deferred). Behaviour: exactly 3 specs flip (free-text fabrication -> flag: narrative-draft, draft-success-criteria, propose-step-resources), 11 still hard-raise (FK/coded/index/invariant), 0 silent-admit. Gate: mypy . Success (0 errors / 313 files, the project typecheck gate), pytest planner 893 passed, ruff clean. Iterate-to-zero: round-1 audit reported 3 -> verified against source = 2 real (mypy test-prefill-union narrowing + stale WORKSHOPPING-WORKFLOW-SPEC.md:313 audit_prefill ref) + 1 false (the A1 note-contract IS tested at test_f1_decompose.py:357); the 2 real fixed (assert isinstance(prefill,dict) x2 + doc rename) and re-audited clean. Closes the parser layer A1+A2+A3.",
+  "timestamp": "2026-06-06T11:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "AssistResult.flags added (frozen, default None, TYPE_CHECKING import -> no cycle/spacy pull)",
+      "status": "passed"
+    },
+    {
+      "criterion": "12 parsers populate flags via audit_prefill_flags; parse_narrative -> AssistResult; consumers (views isinstance, apply.py duck-type) intact",
+      "status": "passed"
+    },
+    {
+      "criterion": "hard/soft partition exact: 3 flip to flags, 11 hard-raise, 0 silent-admit; no over-flag of realistic prose",
+      "status": "passed"
+    },
+    {
+      "criterion": "dead audit_prefill removed (no live caller/doc); views.py omits note when None (A1 contract) + does not surface flags (C2 deferred)",
+      "status": "passed"
+    },
+    {
+      "criterion": "project gate mypy . (313 files) Success + pytest planner 893 + ruff clean; round-2 adversarial audit 0 findings",
+      "status": "passed"
+    }
+  ]
+}

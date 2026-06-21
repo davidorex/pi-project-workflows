@@ -1,0 +1,36 @@
+{
+  "title": "Prompt-vs-parser citability gap: a spec can render context values (scope_summary/kind) as copy-targets the parser rejects, aborting the run",
+  "status": "identified",
+  "priority": "P2",
+  "package": "prompt-workshop spec rendering (snippet 'copy from this list' inventories) vs planner/specs.py parser admission; surfaced at spec 07 (US-LLM-27); design DEC-56",
+  "description": "The grounding emits contextual fields (scope_summary, kind, category, prose) beside the citable identity fields (label, statement, code). A spec's prompt can render that superset inside a 'copy exactly from this list' inventory, while the parser admits only the exact identity field at the exact owner/grain. So the model can copy a presented-but-non-admitted value, and the hard catalogue-gate (apply_from_substrate.py parse -> ValueError -> return 1) aborts the whole 42-step run. Spec 07 (propose-responsibilities) is the lone current violator: it renders division/position scope_summary and kind inline with the labels in the citable inventory (snippet lines 26-34), so they read as copyable. The other 13 specs render context but never as copy-targets (spec 13's 'code (category): text', only code cited, is the clean pattern). Three confirming runs aborted at spec 07 on instances of this one class (a scope_summary cited as a division responsibility; a cross-grain atom cited at the position grain).",
+  "evidence": [
+    {
+      "file": "prompt-workshop/snippets/07-propose-responsibilities.md",
+      "lines": "26-34",
+      "reference": "renders division/position scope_summary (and kind) inline with the labels inside the citable responsibility inventory the model is told to copy from"
+    },
+    {
+      "file": "school-improvement-plans/planner/specs.py",
+      "lines": "483-507, 547-606, 2702-2770",
+      "reference": "_check_in_catalogue + _responsibility_statements_under_division/_under_position admit only the exact responsibility statements at the exact owner/grain; scope_summary and kind are never admitted"
+    },
+    {
+      "file": "prompt-workshop/dispatch/apply_from_substrate.py",
+      "lines": "127-135",
+      "reference": "parse ValueError -> return 1; a single mis-slotted citation aborts the whole run; a mis-slotted real value is treated identically to a fabrication"
+    },
+    {
+      "file": "prompt-workshop/snippets/13-propose-accreditation-standards.md",
+      "lines": "49-51",
+      "reference": "the clean exemplar: renders 'code (category): text' and the contract cites only code, so rendered-citable == parser-admissible"
+    }
+  ],
+  "impact": "Spec 07 aborts a full workshop generation non-deterministically whenever the model copies a rendered context value; each run can hit a different element of the gap (scope_summary, kind, cross-grain). It blocks every promotion-ready run and the TASK-055 + TASK-056 confirming runs. The hard catalogue-gate kills all 42 steps on one mis-pick.",
+  "proposed_resolution": "Per DEC-56: establish the invariant rendered-citable == parser-admissible and enforce it with a deterministic guard across all 14 specs; correct spec 07's render so only the responsibility statements are copy-targets (scope_summary/kind non-citable). No change to the parser, the resolve raise-on-miss, the apply hard-abort, or the DEC-40/DEC-53 gate posture (apply-layer graceful-drop is rejected -- it would breach DEC-40). TASK-057 addresses this gap.",
+  "related_decisions": [
+    "DEC-56",
+    "DEC-40",
+    "DEC-53"
+  ]
+}

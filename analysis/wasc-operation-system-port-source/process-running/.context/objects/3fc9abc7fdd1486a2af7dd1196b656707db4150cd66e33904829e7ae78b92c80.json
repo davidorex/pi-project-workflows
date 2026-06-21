@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "apply.py's 3 broken MERGE_RULES rewritten as transforms producing the canonical step child-collection lists (assignments -> [{kind:responsible, division}]; timeline -> [{kind, date|from_date|to_date, note?}]; evidence -> evidence_artifacts list), overlaid onto action_steps[step_index]; + a fail-loud guard in _set_indexed_field_on_steps (non-empty row copying zero fields raises). 18 new tests (test_workshop_apply_step_children.py) incl. a round-trip asserting flatten_draft_for_grounding emits steps-0-assignment-0-division / steps-0-timeline-0-kind / steps-0-evidence-0-label. Separate-agent adversarial audit: Total findings: 0 (transform correctness, round-trip to grounding, no cross-spec clobber, fail-loud + guard, no regression all verified live). Criterion 1 proven on the SAME evaluated content (no new LLM variance): re-threading the prior run's (...092307) 14 saved agent call outputs through the fixed apply yields a draft whose all 6 action steps now carry assignments + timeline + evidence_artifacts (step0: assignment {kind:responsible, division:'Principal's Office (PO)'}, timeline {single, 2025-08-18}, evidence {label, owner_division, location}) -- previously all empty. Full gate green: ruff + ruff format --check, mypy . 323/0, pytest 2042, make test-js 48/0, verify-render-parity 14/14 (merge change, parity unaffected). Parser + production JS/formsets + prompts untouched.",
+  "timestamp": "2026-06-07T10:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "After a run, every action step the assignments/timelines/evidence specs addressed carries its assignment, timeline, and evidence artifacts in the draft.",
+      "status": "passed"
+    },
+    {
+      "criterion": "Those step fields are in the shape the grounding flattener + the production apply expect.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A merge that copies nothing from a non-empty prefill row fails loud (no silent no-op).",
+      "status": "passed"
+    },
+    {
+      "criterion": "No previously-working merge regresses.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

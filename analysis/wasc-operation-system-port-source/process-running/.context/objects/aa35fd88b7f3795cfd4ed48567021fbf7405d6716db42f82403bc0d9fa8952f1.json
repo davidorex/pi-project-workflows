@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "PRODUCTION FLAGGING C2 - assist response surfaces flags + client UX (combines gap FGAP-008 / C2). (1) views.py result frame (AssistStreamView ~:506) includes the parser flags (A3) alongside prefill/note; (2) ai-assist.js routes a flags payload to per-element annotations on .planner-fs-row rows (_formset.html data-row index) - badge/highlight; (3) a per-flag resolution affordance: accept / replace (catalogued value) / request-catalogue-addition. DISC-30/DISC-31 UX-layer closure (admin sees an actionable signal, not event:error). Depends on A3 (TASK-018, AssistResult.flags) + C1 (TASK-019, if resolution persists to the Flag model). Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "When an assist response carries flags, those flags are delivered to the client (not dropped from the response).",
+    "Each flagged element is marked in the UI on the specific element it concerns, so the user sees which element is flagged.",
+    "For each flag, the user can accept it, replace the flagged value with a catalogued one, or request that the value be added to the catalogue.",
+    "A flagged element presents an actionable signal to the admin, not a generic error.",
+    "The full project gate stays green."
+  ]
+}

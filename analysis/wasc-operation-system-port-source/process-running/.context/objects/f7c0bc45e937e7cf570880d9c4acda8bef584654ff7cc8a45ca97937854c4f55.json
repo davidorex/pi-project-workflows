@@ -1,0 +1,17 @@
+{
+  "title": "Prompt-level: bake plan-quality heuristics + authoritative WASC structure into generation",
+  "status": "in-progress",
+  "layer": "L3",
+  "description": "Govern the 14 spec snippets + shared preamble so the generated draft natively satisfies the binding heuristics (R-0009), the authoritative reviewer feedback (R-0007), the authoritative ACS-WASC structure (R-0008), and the role model (DEC-48). Decomposed into slices: A (prompt-only register+content), B (in/out-of-class grounding), C (grounding-leanness), D (measurement-binding gate). Criterion 7 (per-Goal header) RELOCATED to FEAT-007 (net-new model/parser, not a prompt bake). Sources: docs/prompt-workflow-refinement-governing-options-2026-06-08.md (R-0011).",
+  "acceptance_criteria": [
+    "Generated action steps distribute ownership across the divisions/positions whose responsibilities justify them; no single-department overload.",
+    "The plan covers both in-class and out-of-class contexts, using the seeded SAO + HRT/YGL/Dormitory Teacher out-of-lesson roles.",
+    "Relevant actions carry bilingual (Chinese-English) dual-purpose framing.",
+    "Each action step states its mechanism (HOW) and its frequency/cadence.",
+    "Action steps span diverse focus areas (school-wide), not concentrated.",
+    "Each success criterion binds a concrete measurement instrument + cadence; KPI exclusion held (numbers only inside a target criterion).",
+    "Descriptions never meta-invoke WASC certification/accreditation risk; a standard is given as key + name; Theme is the title, not success-criteria narrative.",
+    "Verbatim catalogue-label fidelity is preserved (no contraction/rename).",
+    "Each spec's grounding carries only what its task consumes (grounding-leanness)."
+  ]
+}

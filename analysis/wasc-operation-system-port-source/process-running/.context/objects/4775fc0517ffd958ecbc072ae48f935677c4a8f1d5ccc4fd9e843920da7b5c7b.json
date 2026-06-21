@@ -1,0 +1,10 @@
+{
+  "status": "cancelled",
+  "description": "Per-spec quality evaluation toward a promotion-ready whole-plan draft (the substantive DISC-26 work). [CANCELLED 2026-06-21 per DEC-57: the byzantine prompt-workshop runner is retired; this goal (DISC-26 -- a promotion-ready whole-plan draft that passes the production promotion gate, is catalogue-clean, carries no unresolved must-fix flags) now flows through the production orchestration trio (FEAT-010 / US-LLM-25 gate-closure), not a workshop run. 7 of the 8 gaps it addressed were closed by the workshop iterations and remain closed. FGAP-024 -- a PRODUCTION PromptTemplate.render injection-sanitizer evasion gap (NOT a workshop-quality gap; the trio render path is equally exposed) -- is NOT closed by this cancellation: it remains identified/open as standalone production-security debt awaiting its own canonical-pipeline pass (FGAP-024 identified status is the source of truth; its legacy task_addresses_gap edge to this cancelled task is a stale refname-as-oid edge that remove-relation cannot target -- logged as a pi-context friction).]",
+  "acceptance_criteria": [
+    "The assembled whole-plan draft would pass the production promotion gate.",
+    "The draft is catalogue-clean — it contains no fabricated values.",
+    "No unresolved must-fix flags remain on the draft.",
+    "The full project gate stays green."
+  ]
+}

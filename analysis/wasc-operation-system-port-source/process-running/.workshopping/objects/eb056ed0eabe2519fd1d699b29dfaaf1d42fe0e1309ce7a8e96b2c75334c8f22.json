@@ -1,0 +1,5 @@
+{
+  "kind": "grounding-block",
+  "body": "{% if seed %}Author refinement (an optional steer for the resources & sub-steps): {{ seed }}{% endif %}",
+  "section": "seed"
+}

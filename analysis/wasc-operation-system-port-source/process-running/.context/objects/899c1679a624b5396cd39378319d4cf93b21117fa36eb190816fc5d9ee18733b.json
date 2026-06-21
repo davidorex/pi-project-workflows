@@ -1,0 +1,40 @@
+{
+  "title": "Human-decision-surface placement: options-posture at the orchestration/UX layer; unowned-precursor decision-requests as in-draft plan content",
+  "status": "enacted",
+  "context": "C3/R8 (options-posture) and FGAP-040 (upward decision-requests for unowned precursors) both ask WHERE human-decides surfaces live, given per-spec generation stays decide-one (preamble l.29, the no-options-instead-of-decisions rule). Originally framed as an open decision; on inspection the placement is DERIVABLE from the app's stated purpose, not a free choice. Stated purpose: DEC-29 north-star + the US-DRAFT frame (00-preamble) -- the AI renders a COMPLETE deliverable draft from full DB context, the school admin then fine-tunes it via the create-plan UX (versioned saves), and the admin alone flips draft->active. DEC-41 consequence 4 + its UX clause -- the orchestration trio US-LLM-23/24/25 is the production realization, and its UX surfaces decide-points to admins as actionable items. The plan is also a real deliverable document (TASK-037 .docx, Sample Schoolwide Action Plan shape) whose content includes the decisions/dependencies a real action plan records.",
+  "decision": "Two human-decision kinds, two placements, each DERIVED from the stated purpose (not selected among alternatives). (1) OPTIONS-POSTURE (R8) -- genuine value/scope forks a leader must set (e.g. the target increment) -> resolved at the ORCHESTRATION / create-plan-UX layer, realized with the US-LLM-23/24/25 trio. Derivation: a leader setting a value IS 'the human fine-tunes the rendered draft', which US-DRAFT + DEC-41 locate at the UX/orchestration surface; per-spec generation stays decide-one (commits a best default), preserving the no-options-instead-of-decisions rule. (2) DECISION-REQUESTS (FGAP-040) -- an action-step precursor no division owns -> authored as IN-DRAFT plan content, the SAME account-for-every-item-or-flag-it class as coverage (FGAP-037/041 pattern: assign an owner, OR record an explicit unowned decision-request with a reason). Derivation: an unowned precursor is a planning finding the COMPLETE draft must account for, and a deliverable action plan carries decisions/dependencies-to-resolve as body content; buildable now on the coverage pattern, independent of the trio. No corpus body changed by this record (decision only).",
+  "consequences": [
+    "FGAP-040 placement is settled: an in-draft authored discipline on the FGAP-037/041 coverage pattern (snippet contract + parser-recognized element + per-spec in-execution self-check), buildable independent of the trio; its build is a future task the human scopes.",
+    "R8 options-posture remains an orchestration/UX concern realized when US-LLM-23/24/25 is built; no per-spec snippet emits option menus.",
+    "Per-spec generation invariant (decide-one) reaffirmed: snippets commit a best default and never emit options-instead-of-decisions.",
+    "Placement decision only -- zero changes to any snippet, preamble, or parser body attributable to this record (corpus diff = zero)."
+  ],
+  "references": [
+    {
+      "label": "DEC-29 north-star: render complete draft -> admin fine-tunes/flips; US-LLM-23/24/25 orchestration",
+      "path": "context-migration/decomposed/seed-round-plan.json"
+    },
+    {
+      "label": "US-DRAFT frame: renders draft -> user fine-tunes; versioned saves",
+      "path": "phases/00-preamble.md"
+    },
+    {
+      "label": "DEC-41 consequence 4 + UX clause: trio = production realization; UX surfaces decide-points to admins",
+      "path": "context-migration/decomposed/seed-round-plan.json"
+    },
+    {
+      "label": "FGAP-037/041 coverage pattern (account-for-every-item-or-flag-it) reused by FGAP-040",
+      "path": ".context/framework-gaps.json"
+    },
+    {
+      "label": "FGAP-040 decision-requests gap (placement settled here)",
+      "path": ".context/framework-gaps.json"
+    },
+    {
+      "label": "preamble decide-one / no-options-instead-of-decisions rule",
+      "path": "prompt-workshop/shared/preamble.md"
+    }
+  ],
+  "enacted_by": "human:davidryan@gmail.com",
+  "enacted_at": "2026-06-13T12:00:00Z"
+}

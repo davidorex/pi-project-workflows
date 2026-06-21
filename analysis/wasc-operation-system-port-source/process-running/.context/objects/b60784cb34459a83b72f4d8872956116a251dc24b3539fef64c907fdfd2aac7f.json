@@ -1,0 +1,52 @@
+{
+  "title": "Per-action-step parallel decomposition of the step-iterating specs (functionality + build delta)",
+  "status": "complete",
+  "layer": "L3",
+  "type": "investigative",
+  "question": "Can the per-action-step specs (propose-responsibilities et al.) be decomposed into PARALLEL per-step agent calls, and what exact pi-workflows / bridge / parser functionality supports it versus must be built?",
+  "method": "code-inspection of the pi-workflows engine (src + dist), the wasc bridges (render_from_substrate.py, apply_from_substrate.py, run_workflow.mjs, apply.py), and the parsers (planner/specs.py); corroborated against the live 14-spec run (propose-responsibilities was the long pole: ~78KB rendered prompt now carrying the 444-atom inventory).",
+  "scope": [
+    "workflowsPiExtension/packages/pi-workflows/src",
+    "prompt-workshop/dispatch",
+    "school-improvement-plans/planner/specs.py"
+  ],
+  "findings_summary": "DECOMPOSABLE axis = per action step. The 5 step-iterating specs -- propose-responsibilities, propose-assignments, propose-timelines, propose-step-resources, propose-evidence -- apply via per-step OVERLAY (_set_indexed_field_on_steps, apply.py:83-150: each spec's MERGE_RULE overlays its fields onto action_steps[idx], not list-replace), so per-step PARTIAL results merge cleanly by step_index; each step's mapping is independent. NOT decomposable: bind-measurement-channels (criterion_index<->channel_indices cross-refs the drafted criteria/channels) and propose-review-loop (trigger_index references G1's OWN emitted review_events) -- intra-spec coherence requires one call. The remaining specs are single-output (not step-iterating). ENGINE: forEach (step-foreach.ts) runs SEQUENTIALLY (a for-loop collecting outputs[]; MAX_FOREACH_ITERATIONS=500), so it does NOT itself parallelize; BUT the engine HAS parallel execution -- executeParallelLayer + executeParallelStep (step-parallel.ts:44,84,107,141 via Promise.allSettled + a shared AbortController cancelling siblings on failure). So fan-out is achievable via explicit parallel steps/layers, or by refactoring executeForEach to Promise.all. BRIDGE GAP: render_from_substrate.py renders the WHOLE spec prompt (argv --spec-key/--seed/--draft-path, no step scoping; :43-64,:109) -- per-step needs a --step-index + template scoping. The per-step APPLY merge already supports partials (reuse). COHERENCE: the shared preamble's all-divisions mandate (every division must have a role) is a WHOLE-PLAN constraint no single per-step call sees -> a post-merge coverage/synthesis pass is required. CACHING: dispatch.ts sets up none (cacheRead/Write are populated from pi output, no --cache-key); each parallel call re-sends the full preamble + inventory. BUILD DELTA: (a) per-step render variant (--step-index + snippet section scoping); (b) a fan-out+merge workflow shape (explicit parallel steps or a parallelForEach refactor); (c) a coverage/synthesis pass for the all-divisions constraint; (d) optional prompt caching. EXISTS to reuse: engine parallel-step execution, the per-step overlay merges, state/resume. Most valuable for the production orchestration trio (DEC-29 north-star); a wall-clock optimization for the workshop (not blocking -- the full sequential run completed).",
+  "citations": [
+    {
+      "label": "forEach sequential (for-loop, outputs[], MAX 500)",
+      "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-foreach.ts",
+      "lines": "12,44,113-154"
+    },
+    {
+      "label": "engine parallel execution (Promise.allSettled + AbortController)",
+      "path": "/Users/david/Projects/workflowsPiExtension/packages/pi-workflows/src/step-parallel.ts",
+      "lines": "44,84,107,141"
+    },
+    {
+      "label": "per-step overlay merge used by the 5 step-iterating specs",
+      "path": "prompt-workshop/dispatch/apply.py",
+      "lines": "83-150"
+    },
+    {
+      "label": "whole-spec render (no step scoping)",
+      "path": "prompt-workshop/dispatch/render_from_substrate.py",
+      "lines": "43-64,109"
+    },
+    {
+      "label": "non-decomposable cross-refs (B2 criterion/channel; G1 trigger_index)",
+      "path": "school-improvement-plans/planner/specs.py",
+      "lines": "1534-1621 (B2); 3338-3371 (G1 revision_rule trigger_index)"
+    },
+    {
+      "label": "all-divisions whole-plan constraint",
+      "path": "prompt-workshop/shared/preamble.md"
+    }
+  ],
+  "stale_conditions": [
+    "pi-workflows changes forEach to parallel, or changes the parallel-step primitives",
+    "apply.py MERGE_RULES stop using per-step overlay for the step-iterating specs",
+    "a step-iterating spec's parser gains intra-spec cross-references",
+    "render_from_substrate gains native step scoping"
+  ],
+  "grounded_at": "2026-06-07"
+}

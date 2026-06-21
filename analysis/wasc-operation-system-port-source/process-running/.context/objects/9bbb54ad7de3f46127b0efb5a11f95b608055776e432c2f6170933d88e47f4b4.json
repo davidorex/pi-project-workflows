@@ -1,0 +1,10 @@
+{
+  "status": "completed",
+  "description": "Story B. R3 -- ideation coheres with mission/vision/SLOs. Add guiding_statements to grounding_sections + a body render block + an ideate-from-and-cohere directive in snippets 03-propose-milestones, 04-draft-success-criteria, 05-decompose-action-steps; add the grounding-block fragment + fragment_refs in .workshopping; re-stamp + parity. Emitter already exists; no grounding.py / parser change.",
+  "acceptance_criteria": [
+    "Each of the three ideation outputs cites at least one guiding statement and at least one learner outcome by catalogued identity (machine-checked present), and an adversarial reviewer confirms the citation is substantive (the output advances them) for all three.",
+    "The scan finds zero bare strand-prefix references and zero long verbatim guiding-statement quotes.",
+    "All three outputs parse clean with no new fabrication flags.",
+    "The parity check passes after the grounding section is added to these specs."
+  ]
+}

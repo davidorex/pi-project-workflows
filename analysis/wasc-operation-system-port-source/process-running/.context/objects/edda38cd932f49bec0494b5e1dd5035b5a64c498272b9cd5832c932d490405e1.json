@@ -1,0 +1,10 @@
+{
+  "title": "Claude-Code pi-workflows runner",
+  "status": "complete",
+  "layer": "L3",
+  "description": "Drives executeWorkflow headless per PI-WORKFLOWS-RUNNER-SURFACE.md.",
+  "acceptance_criteria": [
+    "executeWorkflow / parseWorkflowSpec / findIncompleteRun / createAgentLoader reachable via file:// loader from dist/",
+    "CLI surface run/resume/status/list functions headless"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "status": "completed",
+  "description": "PRODUCTION FLAGGING C3 - promotion-gate predicate (combines gap FGAP-009 / C3). _check_promotion_gates (plans/services.py:98-203, invoked by advance_plan_status on proposed->active) gains a predicate: any Plan Flag with severity=must_fix and is_resolved=False appends a failure (block promotion until resolved/accepted). The contract shift: enforcement moves from generation-time hard-reject to promotion-time flag-resolution (DEC-29 promotion-ready becomes zero-unresolved-must-fix-flags). Depends on C1 (TASK-019, Flag model). Part of the three-valued flagging model, production layer. Build via the canonical pipeline.",
+  "acceptance_criteria": [
+    "A plan with an unresolved must-fix flag cannot be promoted from proposed to active.",
+    "Once every must-fix flag on the plan is resolved, the plan can be promoted.",
+    "A flag whose severity is not must-fix never blocks promotion, and a resolved must-fix flag never blocks promotion.",
+    "The block applies only at the proposed-to-active promotion, not at other lifecycle transitions.",
+    "The full project gate stays green."
+  ]
+}

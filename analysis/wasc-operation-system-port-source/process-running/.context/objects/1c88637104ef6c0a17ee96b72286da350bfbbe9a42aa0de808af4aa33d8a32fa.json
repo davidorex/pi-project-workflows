@@ -1,0 +1,22 @@
+{
+  "title": "apply.py mypy debt (un-suppressed): get_parse_function's Callable type omits school/grounding kwargs -> 2 call-arg + 1 unused-ignore; gate RED",
+  "status": "closed",
+  "package": "prompt-workshop",
+  "description": "The B1 negligence-suppression (pyproject [[tool.mypy.overrides]] module=['dispatch.apply'] ignore_errors=true) has been REMOVED, re-exposing apply.py's real mypy errors to the standing `mypy .`: (1) apply.py:294 `parse_fn(response_text, school=school, grounding=grounding)` produces 2 `call-arg` errors (Unexpected keyword argument 'school' / 'grounding') because `parse_fn = get_parse_function(args.spec_key)` (prompt-workshop/dispatch) returns a Callable whose type does NOT declare the school/grounding keyword params -- although every concrete parser accepts `*, school=None, grounding=None` and it works at runtime (a typing imprecision, not a runtime bug); (2) apply.py:268 carries an unused `# type: ignore`. With the override gone, `mypy .` is RED (3 errors / 314 files), so the standing gate + the PreToolUse commit hook BLOCK all commits until apply.py is fixed. This is the apply.py slice of FGAP-010 (whole-dispatch-dir gate), now un-suppressed and ACTIVE (a blocker, not deferred debt). apply.py + apply_from_substrate.py are ruff-clean.",
+  "evidence": [
+    {
+      "file": "prompt-workshop/dispatch/apply.py",
+      "reference": ":294 call-arg (school/grounding); :268 unused-ignore (mypy)"
+    },
+    {
+      "file": "prompt-workshop/dispatch/(get_parse_function definition)",
+      "reference": "return Callable type omits the school/grounding kwargs the concrete parsers accept"
+    },
+    {
+      "file": "school-improvement-plans/pyproject.toml",
+      "reference": "[[tool.mypy.overrides]] dispatch.apply override removed (un-suppression)"
+    }
+  ],
+  "impact": "mypy . RED -> the standing gate + the commit hook block ALL commits (main + subagent) until resolved. Surfaced by undoing a negligent B1 suppression of known, trivially-fixable typing debt.",
+  "proposed_resolution": "Widen get_parse_function's return type (e.g. a Protocol or precise Callable declaring __call__(self, text: str, *, school=..., grounding=...)) so apply.py:294 type-checks; remove the unused # type: ignore at apply.py:268. Then mypy . green; apply.py genuinely gated. Add ruff check of apply.py/apply_from_substrate.py to the Makefile/CI gate. Run via the canonical pipeline."
+}

@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "C2 assist flags surfacing + client resolution UX. views.py: result frame carries flags (dataclasses.asdict) + serialized catalogue when AssistResult has flags; PlanCreateView.post persists request-catalogue-addition entries as Flag rows (is_resolved=False) in the plan-save transaction. ai-assist.js: applyFlags maps each flag to its DOM row by reusing the existing prefill->row navigation (parsing the spec-prose field), marks it, and renders accept / replace-from-catalogue / request-addition; wired into the 11 run*Assist result handlers + a submit hook serializing flag_requests_json. New tests: test_assist_stream (frame carries/omits flags+catalogue), test_create_view (request-addition persists + oversize skipped), jstests/flag-surfacing (addressing top-level+nested, the 3 affordances, replace-substitutes, accept-clears). Iterate-to-zero loop 1: the first audit found _save_flag_requests could 500 on a valid-JSON oversize entry (DataError uncaught, and a bare full_clean would fail the whole create at the post-level except); fixed by per-entry full_clean inside a LOCAL try/except ValidationError:continue (skip the entry, create proceeds) -- restores no-500 on both DBs. Hardening side effect: entries lacking spec_key are skipped (no live flow produces them; server always sets spec_key). Re-audit Total findings: 0. Full gate GREEN: ruff check + ruff format --check (project + the 3 dispatch files), mypy . 317/0, pytest 1997, make test-js 48/0, verify-render-parity 14/14. No model/migration/parser change; reuses C1 Flag.",
+  "timestamp": "2026-06-06T23:30:00Z",
+  "criteria_results": [
+    {
+      "criterion": "When an assist response carries flags, those flags are delivered to the client (not dropped from the response).",
+      "status": "passed"
+    },
+    {
+      "criterion": "Each flagged element is marked in the UI on the specific element it concerns, so the user sees which element is flagged.",
+      "status": "passed"
+    },
+    {
+      "criterion": "For each flag, the user can accept it, replace the flagged value with a catalogued one, or request that the value be added to the catalogue.",
+      "status": "passed"
+    },
+    {
+      "criterion": "A flagged element presents an actionable signal to the admin, not a generic error.",
+      "status": "passed"
+    },
+    {
+      "criterion": "The full project gate stays green.",
+      "status": "passed"
+    }
+  ]
+}

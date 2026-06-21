@@ -1,0 +1,14 @@
+{
+  "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
+    "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
+    "Both the version-gap subset and the no-version-delta invalidity are recoverable.",
+    "The repair is a `force`/`repair` mode of the existing amend-config op — the same config write, mirroring its existing dryRun opt (context.ts:1229): it skips the pre-load validation (context.ts:1251) and relies on amend-config's existing pre-write result-validation (block-api.ts:892-895). It is an opt on amend-config, not a separate recover op: config-repair is a validation-skip mode of an existing write, not a missing library capability, so the opt is derived from the existing amend-config surface."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts"
+  ],
+  "notes": "Repair mechanism is DERIVED from the existing op surface, not deferred to a DECISION. Derivation: amend-config already mutates config and validates the RESULT before write (block-api.ts:892-895); the only thing blocking repair is its pre-load validation (context.ts:1251); and amend-config already carries an opt (dryRun, context.ts:1229). So config-repair is a validation-skip mode of amend-config — an opt on the existing op, not a separate recover op (which would duplicate amend-config's mutate+validate flow for a capability that is not missing). No DEC and no task_governed_by_decision edge; the choice is determined by the existing amend-config surface (derive-decisions 1b — an existing surface/convention)."
+}

@@ -1396,18 +1396,18 @@
         "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
         "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
         "Both the version-gap subset and the no-version-delta invalidity are recoverable.",
-        "The repair is a `force`/`repair` opt on amend-config that skips the pre-load validation at context.ts:1251 and relies on the result-validation already present in writeTypedFile (block-api.ts:892-895); it is the minimal in-grain extension of the existing dryRun opt (context.ts:1229), not a new validation discipline (result-validation already exists). A separate recover op is a heavier alternative, not required."
+        "The repair is a `force`/`repair` mode of the existing amend-config op — the same config write, mirroring its existing dryRun opt (context.ts:1229): it skips the pre-load validation (context.ts:1251) and relies on amend-config's existing pre-write result-validation (block-api.ts:892-895). It is an opt on amend-config, not a separate recover op: config-repair is a validation-skip mode of an existing write, not a missing library capability, so the opt is derived from the existing amend-config surface."
       ],
       "files": [
         "packages/pi-context/src/context.ts"
       ],
-      "notes": "Repair mechanism is DERIVED, not deferred to a DECISION: a `force`/`repair` opt on amend-config that skips the pre-load validation (context.ts:1251 loadConfigForDir) and relies on the result-validation already present on the write path (block-api.ts:892-895). No DEC and no task_governed_by_decision edge. Derivation: result-validation already universal on config writes (block-api.ts:892); the only blocker is the pre-load validation (context.ts:1251); amend already extends by opt (context.ts:1229, dryRun), so the force/repair opt is the minimal in-grain extension. A separate recover op is a heavier alternative, not required — a minimal-surface preference, not a DEC-mandated exclusion.",
+      "notes": "Repair mechanism is DERIVED from the existing op surface, not deferred to a DECISION. Derivation: amend-config already mutates config and validates the RESULT before write (block-api.ts:892-895); the only thing blocking repair is its pre-load validation (context.ts:1251); and amend-config already carries an opt (dryRun, context.ts:1229). So config-repair is a validation-skip mode of amend-config — an opt on the existing op, not a separate recover op (which would duplicate amend-config's mutate+validate flow for a capability that is not missing). No DEC and no task_governed_by_decision edge; the choice is determined by the existing amend-config surface (derive-decisions 1b — an existing surface/convention).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-071",
       "oid": "9997db7b2791579a7095031fcb1fd7bb",
-      "content_hash": "1f889416bbd20f7fcde9a9fecb567fa7d008a00c942196157eb18a38ebe2aefa",
-      "content_parent": "c78badb4d5ed673da7000c489d13c3c0fe708f5f8cf25ba3ab709fe9ca930f79"
+      "content_hash": "f77f06a4e36af6d9d70178182d4f52245009c59b4122e624fc6b66d37c5e5967",
+      "content_parent": "1f889416bbd20f7fcde9a9fecb567fa7d008a00c942196157eb18a38ebe2aefa"
     },
     {
       "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",

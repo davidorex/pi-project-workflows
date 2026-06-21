@@ -6,16 +6,21 @@
       "layer": "L1",
       "description": "A dual-surface command (library cloneSubstrate + Pi tool + CLI + orchestrator script) that copies a source substrate's content (config vocabulary + all blocks + relations.json + objects/) into a destination dir, mints a fresh substrate_id, records a substrate_derived_from_substrate edge to the source, and writes a provenance-bearing registry entry. Fork semantics preserve the one-id<->one-dir invariant. Per DEC-0002.",
       "acceptance_criteria": [
-        "to be derived"
+        "cloneSubstrate copies config + all blocks + relations.json + objects/ into the destination dir",
+        "the destination receives a freshly minted substrate_id distinct from the source",
+        "a substrate_derived_from_substrate edge records destination-derived-from-source lineage",
+        "the destination registry entry carries origin/provenance (derived-from source id + imported_at)",
+        "no substrate_id is duplicated across dirs (one-id<->one-dir SoT invariant holds)",
+        "surfaced as pi-context clone <source> <dest-dir> across library + Pi tool + CLI + orchestrator script",
+        "context-validate is clean on the cloned substrate"
       ],
       "id": "FEAT-001",
       "created_at": "2026-06-03T22:35:01.320Z",
       "created_by": "human/davidryan@gmail.com",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:49.821Z",
+      "modified_at": "2026-06-03T22:35:01.321Z",
       "oid": "05a2355c5f56b279baba80f12b2cc6d8",
-      "content_hash": "45336f14769f1f3800308463c3651a08dc8d6dbf47ddcc7f264f8b3b6a267ccc",
-      "content_parent": "36e90dbddf2a586a3414047022272777863f73e1246f4749774714aacb407a51"
+      "content_hash": "36e90dbddf2a586a3414047022272777863f73e1246f4749774714aacb407a51"
     },
     {
       "title": "pi-context git merge driver (+ post-merge integrity pass) — structure-aware 3-way merge of substrate files under git",
@@ -23,16 +28,21 @@
       "layer": "L1",
       "description": "A custom git merge driver (registered via .gitattributes + a [merge \"pi-context\"] driver entry) that performs structure-aware per-file 3-way merge of substrate files (<block>.json, relations.json, config, schemas) from git's %O/%A/%B — items by stable id/oid, edges as a set, ordered ref-fields via the convergent sequence field-type, config/schema — writing a data-model-valid result; plus a post-merge hook / merge-finalize command for cross-block referential integrity + invariant/lens revalidation. Git keeps branches, merge-base, refs, cherry-pick. Per DEC-0004.",
       "acceptance_criteria": [
-        "to be derived"
+        "Registered as a git merge driver via .gitattributes; on a same-repo branch merge git invokes it per substrate file with ancestor (%O) / ours (%A) / theirs (%B)",
+        "Items merge by stable id/oid not array index; a concurrent reorder or edit on both sides yields a data-model-valid result rather than line-mangled JSON",
+        "Edges merge by 3-way set semantics; objects/ union via git's directory merge (distinct hashes don't collide)",
+        "Ordered ref-fields merge via the convergent sequence field-type (FEAT-003) on the field's three versions",
+        "The post-merge pass enforces cross-block referential integrity and the full invariant + lens-validator pass; failures surface as a typed conflict set",
+        "Merge-base, branches, and cherry-pick remain git's; the driver only makes git's per-file result valid"
       ],
       "id": "FEAT-002",
       "created_at": "2026-06-03T22:42:14.885Z",
       "created_by": "human/davidryan@gmail.com",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:49.943Z",
+      "modified_at": "2026-06-03T22:42:14.887Z",
       "oid": "7b5e661a77cebf5f7a1c0fec20879fbb",
-      "content_hash": "8d81391250a7942444a461b80af7eef92142c26f36f27286b5c02bd1f2f54ada",
-      "content_parent": "771754b21649d6a96533a393eea68199e6ea8067612778c04eccc9dc75a632e0"
+      "content_hash": "771754b21649d6a96533a393eea68199e6ea8067612778c04eccc9dc75a632e0",
+      "content_parent": "b9da77b5e092f407806718ee6c0a61b4b589987f653dea3c4c60e34552d70956"
     },
     {
       "title": "Convergent ordered-sequence field-kind — CRDT-backed ordered item-refs that merge deterministically under concurrent insert/delete/move",
@@ -40,16 +50,18 @@
       "layer": "L1",
       "description": "A declared sequence-field kind over item-refs: a non-interleaving Fugue-class sequence CRDT (dense, immutable per-element position identifiers) plus a Kleppmann move-CRDT position register resolved by hybrid logical clock, with a sort-on-read projection to a plain ordered ref-array and array-position hand-edits translated to CRDT ops. CRDT state lives in the owning <block>.json; projection + field-aware merge live in block-api. One field-kind plugin into the substrate merge driver (FEAT-002). Per DEC-0005.",
       "acceptance_criteria": [
-        "to be derived"
+        "Two divergent versions each insert, delete, and/or move elements in the same collection; the merge yields one replica-independent sequence containing all inserts, with no element duplicated or lost and no interleaving of concurrently-inserted runs",
+        "Insert mints one position identifier and mutates no neighbor",
+        "Move rewrites one element's position register; concurrent moves of the same element resolve deterministically by hybrid logical clock",
+        "The sort-on-read projection reproduces single-writer authoring order identically to a plain array, and accepts array-position hand-edits translated to CRDT operations"
       ],
       "id": "FEAT-003",
       "created_at": "2026-06-03T22:43:24.250Z",
       "created_by": "human/davidryan@gmail.com",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.061Z",
+      "modified_at": "2026-06-03T22:43:24.251Z",
       "oid": "eca74a81f90cd7540aadb2154adb965d",
-      "content_hash": "c3059135ffbce1662e7af75e45dfc91b21bb0ee8247ad6e98d4d10f9a470e2a9",
-      "content_parent": "8ca848f0322cf8f558217d7e30250342f3dcb6a3acf9ecb26949f3357c3629f7"
+      "content_hash": "8ca848f0322cf8f558217d7e30250342f3dcb6a3acf9ecb26949f3357c3629f7"
     },
     {
       "id": "FEAT-004",
@@ -59,15 +71,17 @@
       "description": "Today these ops hardwire their derivation to the stock kinds — focus / in-flight / ranked-next are computed from `framework-gaps` + `tasks`. On a custom-vocabulary substrate (e.g. `.workshopping` with `prompt-fragment` + `prompt-spec`) they return empty/inert: the substrate has a real \"where are we / what's next,\" but the op can't see it because it's looking for kinds that aren't there.\n\nProposal: derive the derivation from active substrate's `config.json`, not from hardcoded kind names. The substrate declares its state-bearing vocabulary — which kind+predicate yields *focus*, which field gives *order/ranking*, which field+values mark *open/blocked/done*. Stock substrates declare `framework-gaps`+`tasks` (today's behavior preserved exactly); a custom substrate declares its own (e.g. `prompt-spec` ranked by `order`, blocked by unmet `deps`). With no declaration the op is a truthful \"not configured,\" not a silent empty.\n\n\"where are we / what's next\" becomes a capability *any* substrate opts into by declaring its own state fields, instead of a privilege of the stock project-management vocabulary.",
       "motivation": "context-current-state is fully inert on a custom-vocabulary substrate (confirmed: returns empty focus/inFlight/nextActions/blocked against .context-jit-spec-v2 whose state-bearing kinds are axioms/concepts/dispatch-modes, not tasks/framework-gaps), because currentState() hardcodes the stock kinds + the task_depends_on_task blocked-by relation + a P0-P3 rank. The where-are-we/what-next capability is thus a privilege of the stock PM vocabulary rather than something any substrate can opt into.",
       "acceptance_criteria": [
-        "to be derived"
+        "Stock substrates (declaring framework-gaps + tasks) produce byte-identical context-current-state / context-status to today (behavior preserved exactly via the shipped conception declaring the stock state vocabulary).",
+        "A custom-vocabulary substrate that declares its own state-bearing vocabulary (which kind+predicate yields focus, which field gives order/ranking, which field+values mark open/blocked/done, which relation_type is blocked-by) gets focus / in-flight / ranked-next / blocked derived from ITS kinds.",
+        "With no state-derivation declaration, the ops return a truthful not-configured signal, not a silent empty result.",
+        "The derivation reads the active substrate config.json, with no hardcoded stock kind names / fields / status values / relation_types in the derivation path."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.182Z",
+      "modified_at": "2026-06-04T21:41:43.079Z",
       "oid": "b5428784e8fbdb7524f7f5780c65dd69",
-      "content_hash": "ee253a1e4f7f54922ee2022237a51198284f61e94eaf336b697cf0e1760247fa",
-      "content_parent": "8cca0f40e52ab550aad58cc6d26b2f0434b07de844b31b6c50abeb7b40aff9ff"
+      "content_hash": "8cca0f40e52ab550aad58cc6d26b2f0434b07de844b31b6c50abeb7b40aff9ff"
     },
     {
       "id": "FEAT-005",
@@ -77,15 +91,17 @@
       "description": "A globally-runnable `pi-context pi-bound` command launches an interactive pi session restricted to the composed extension tool surface — the static SKILL.md tool union plus the config-declared per-target composites — reproducing scripts/launch-constrained-pi.sh as a first-class CLI command and subsuming it.",
       "motivation": "The constrained-launch capability exists only as an out-of-tree shell script that needs the repo checkout. As a command on a globally installed pi-context, it runs from any project with the published packages present.",
       "acceptance_criteria": [
-        "to be derived"
+        "[orchestrator] From a cwd outside the repo with the packages installed, `pi-context pi-bound` launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh.",
+        "[orchestrator] In that session the agent can invoke the extension tools in the union and cannot invoke tools outside it.",
+        "[subagent] `--grant <id>` extends the union for that launch; passthrough arguments reach pi unchanged."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.303Z",
+      "modified_at": "2026-06-07T12:01:02.223Z",
       "oid": "e209f40b550d60427fed1289852cf2a3",
-      "content_hash": "db74ab15cb38f9f6f7e49a297ab9be5fecaf5f8b4939edcafea6a03fad072e9e",
-      "content_parent": "dc763c3ab46e255c2689ba70e7b3cf0f3c87a408062c0b60306e44e3f2cfbbca"
+      "content_hash": "dc763c3ab46e255c2689ba70e7b3cf0f3c87a408062c0b60306e44e3f2cfbbca",
+      "content_parent": "1e330781d4898667945cd513cd957dde9c5fb9c98204cc177b681c81f01d2cb1"
     },
     {
       "id": "FEAT-006",
@@ -95,15 +111,18 @@
       "description": "A single `pi-context update` command brings an installed substrate's model (schemas + catalog-origin blocks) to a newer pi-context release while preserving the user's customizations: it consults the checkStatus drift classification, preserves or merges locally-modified schemas instead of overwriting (FGAP-046), surfaces every mutation it makes, and with --dry-run previews the full change set without writing. It supersedes the bare `/context install --update` flag as the user-facing update path, and states the guarantee that config registries, populated blocks, and user-added elements are never clobbered.",
       "motivation": "The framework exists to be customized; an update must not punish customization. Today update is a flag on install that overwrites locally-modified schemas, side-writes migration declarations unsurfaced, and never consults the drift detector that already exists. A unified command with a dry-run preview makes update safe and legible.",
       "acceptance_criteria": [
-        "to be derived"
+        "[orchestrator] pi-context update --dry-run reports the full set of schema/block/migration changes it would make (per the checkStatus drift classification) and writes nothing.",
+        "[orchestrator] pi-context update preserves or merges locally-modified schemas (per FGAP-046's chosen route) rather than overwriting them; config registries, populated blocks, and user-added elements are untouched.",
+        "[orchestrator] Every mutation the command performs — schema re-syncs, migration-declaration registrations, block starters — is enumerated in its output.",
+        "[subagent] The command is exposed on the globally-installed pi-context (gated on the CLI grounding)."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.424Z",
+      "modified_at": "2026-06-07T22:24:25.068Z",
       "oid": "150b653168eb04fa40ea004ef9e64324",
-      "content_hash": "564bac7245bd1b3d44a98dae0ba0baef3ad2c9dbf8f0b8445a778154bc481769",
-      "content_parent": "dad4ab79f3b3a2241a5e821959e2417617894a3c97c8a7a57e11835940f1b0dc"
+      "content_hash": "dad4ab79f3b3a2241a5e821959e2417617894a3c97c8a7a57e11835940f1b0dc",
+      "content_parent": "38a8d08909123042090e8507158b75a4ce19e5bcd2aaee6187c8655565c6cded"
     },
     {
       "id": "FEAT-007",
@@ -113,15 +132,18 @@
       "description": "context-validate requires every decision, feature, and task to articulate its governance: an item_governed_by_convention edge to a convention, OR an item_acknowledges_missing_convention edge to a 'no convention governs X' framework-gap. A planning artifact filed with neither is a validation violation, so conventions cannot be silently skipped and a missing convention surfaces as tracked debt rather than a silent opt-out.",
       "motivation": "Conventions govern planning before implementation, but their composition into context relies on the LLM reading and heeding them. Enforcing articulation at validation makes governance a checked precondition, not an aspiration.",
       "acceptance_criteria": [
-        "to be derived"
+        "[orchestrator] A decision/feature/task with neither an item_governed_by_convention nor an item_acknowledges_missing_convention edge is flagged by context-validate.",
+        "[orchestrator] An item edged to a convention, or to a missing-convention gap, passes.",
+        "[subagent] The mechanism is config-only — two relation_types + three requires-edge invariants — with no validator code change.",
+        "[orchestrator] .context enforces at severity error (clean after backfill); the shipped catalog enforces at severity warning for fresh substrates."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.546Z",
+      "modified_at": "2026-06-14T00:01:54.906Z",
       "oid": "8b2fa6d1d8433d8658eb2e69ba13866c",
-      "content_hash": "16de1e22f60a36b4e21adfb2322ebccd5c5a08614e72e0cd5b742d29eac60fa4",
-      "content_parent": "15a1c261cbbd69282e6dcb2c166d9228dbd183dd65314edd0404cee17b878d8f"
+      "content_hash": "15a1c261cbbd69282e6dcb2c166d9228dbd183dd65314edd0404cee17b878d8f",
+      "content_parent": "11821ddc340aeaafc183d44ca014ae0949f9e7a663e5915e457696454acd9fed"
     },
     {
       "title": "pi-context-cli best-of-breed surface — script-parity input/output, discoverability, and write-safety to a superior CLI UX",
@@ -132,14 +154,20 @@
       "description": "The reflecting pi-context CLI is both the dogfooding surface and the new-user entry point; today it lags its op-twin orchestrator scripts on input ergonomics, human output, discoverability, error UX, and write-safety. This feature brings the CLI to best-of-breed parity additively. INVARIANT (every task preserves it): the reflecting CLI is additive — every currently-working invocation keeps working, and every in-pi op's behavior plus the --json data envelope are byte-unchanged; new affordances (kebab/alias flags, input shorthands, render modes, previews, granular exit codes, help/version) are layers over the canonical op surface, never replacements. The sole authorized in-pi op change is the read-schema addressed-node correction (FGAP-027), paired with its CLI-side twin so read-schema is coherent across both surfaces. A behavioral parity gate locks the input/output parity classes at commit so the regression class is caught-at-commit, not found-by-dogfooding.",
       "motivation": "The CLI is the surface the project is built and demonstrated on; every parity/discoverability/safety gap degrades both dogfooding and first-run UX. The standard is best-of-breed with a superior user experience, sequenced by priority, nothing tiered as ship-after.",
       "acceptance_criteria": [
-        "to be derived"
+        "Input parity: the CLI accepts conventional flag forms (kebab-case, --id aliasing the op's single id-param, the scripts' --writer kind:id / --where field:op:value / CSV shorthands) and derives arrayKey from config — without changing any in-pi op.",
+        "Output + error parity: the CLI renders human output (--format) and field-named validation guidance with granular exit codes distinguishing error classes.",
+        "Discoverability: --help is scannable and grouped and surfaces every command including process modes (e.g. pi-bound); --version reports the package version; and each <op> --help renders a best-of-breed template (synopsis + typed flags + examples + related + footer) with machine-readable --help --format json.",
+        "Write-safety: --show-schema previews a block contract and append-block-item --dry-run validates the prospective whole file, each before any write, with no op change.",
+        "Read coherence: an addressed read returns the full subtree on BOTH the CLI and the in-pi read-schema op (the one authorized op change), 50KB cap retained.",
+        "Durability: a behavioral parity gate (parity-check.ts) FAILs at commit on a reintroduced required-but-derivable param or an in-pi-op vs reflecting-CLI output-shape divergence — the op<->CLI parity classes (the orchestrator scripts are not a parity reference; this criterion was reframed from the original op<->script wording when scripts were taken off the table in TASK-019).",
+        "Every in-pi op is byte-unchanged except the authorized read-schema correction; the CLI is an additive layer over the canonical op surface (the per-op help examples[] metadata added in TASK-042 is invisible to the in-pi tool surface — registerAll does not project it)."
       ],
       "id": "FEAT-008",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.667Z",
+      "modified_at": "2026-06-09T09:00:19.181Z",
       "oid": "e460e331ed4de4200a6d09a86138fb14",
-      "content_hash": "6694b06e220025388092a736ae0658ec7ec43c2a16153a93f533f7338560f8c3",
-      "content_parent": "ab53b7f8e727904ddb3b9e41ae36a17a5c57f118744cc5d570da0a01d385a685"
+      "content_hash": "ab53b7f8e727904ddb3b9e41ae36a17a5c57f118744cc5d570da0a01d385a685",
+      "content_parent": "63bdc1a3db6455bc240c07163ff8c588985d78e6d99132dda3b36105b1abe5cb"
     },
     {
       "title": "update blocked-diagnostic + resolution loop — story-driven",
@@ -148,16 +176,16 @@
       "description": "Bring pi-context update's blocked outcome from an opaque dead-end to a diagnosed, resolvable state, and make the dry-run predict the live outcome. The work container for the update-arc gap set: FGAP-066 (dry/live outcome parity), FGAP-077 (per-item validation diagnostic), FGAP-030+FGAP-078 (check-status exposed as a CLI op + version-gap reporting), FGAP-079 (catalog schema locally diffable), FGAP-080 (pending-blocked state + resolve-blocked / update --continue), FGAP-081 (in-file failure markers, object-store recoverable). INVARIANT (every task preserves it): the per-schema byte-exact rollback and per-component application (DEC-0018) are preserved; no data loss on any blocked path; the only blocked-path write is the explicitly-declared marker-mode of FGAP-081, with the pre-marker block recoverable from the object store; in-pi op behavior changes only where a gap names it. The feature's success criteria are the user stories it advances — STORY-001..014, filed verbatim from the operator's in-pi reports — not embedded criteria text.",
       "motivation": "An operator hit blocked on a live update the dry-run had predicted safe, with no diagnostic naming the failing item/field and no resolution path — the inciting incident the 14 user stories articulate. The standard is best-of-breed: diagnose, fix, retry, with the dry-run telling the truth.",
       "acceptance_criteria": [
-        "to be derived"
+        "Every user story this feature advances (the feature_advances_story edges -> STORY-001..014) is met — a story is met when a task or feature advancing it has met its success criteria. The stories carry the criteria; this entry references them without duplication."
       ],
       "id": "FEAT-009",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:32:59.402Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.791Z",
+      "modified_at": "2026-06-13T03:21:37.895Z",
       "oid": "c684c0759facd27fc53946c6ea299e60",
-      "content_hash": "fb5051b924d185b7121383d92bb371f57f17050ec4a3c1ad0a34520ae5e9d9e6",
-      "content_parent": "0ea6d6761fff25486bf30dedfe845c1ff1e0cf207c0e4873a700817b7fa53257"
+      "content_hash": "0ea6d6761fff25486bf30dedfe845c1ff1e0cf207c0e4873a700817b7fa53257",
+      "content_parent": "b0c209762ffd9bb16e9d03ba750889d8e2bfbcbf5492858024aed1ca3abb3cf9"
     },
     {
       "title": "Substrate evolution safety + currency — catalog/config/schema evolution and substrate read/repair/materialize never brick or silently corrupt an installed substrate",
@@ -165,16 +193,19 @@
       "layer": "L1",
       "description": "Catalog, config, and schema evolution, and every read / repair / materialize of an already-installed substrate, preserve its loadability, the integrity of its install/validity signals, and its recoverability through sanctioned ops. Config carries a versioned envelope and migrates on load across a version gap; an invalid config is recoverable through a sanctioned repair that validates the result, not the pre-existing state; a non-additive config-schema diff is flagged at build time unless paired with a migration; block data carries schema_version so read-time validation and migration are active; a block kind declared after install is materialized into the existing substrate. Invariant: no evolution, read, repair, or materialize leaves the substrate bricked, silently corrupted, or unrecoverable through sanctioned ops.",
       "acceptance_criteria": [
-        "to be derived"
+        "A config whose schema_version lags the bundled config schema is migrated forward on load and loads valid: loadConfigForDir migrates-then-validates via the schema-name-keyed config migration chain.",
+        "An invalid config.json is restored to validity through a sanctioned CLI repair path that validates the corrected result rather than refusing on the pre-existing invalid state; recovery needs no forbidden direct edit.",
+        "A non-additive config-schema diff (a removed/renamed key or a new required field) is flagged at build time unless paired with a registered migration.",
+        "Block data carries schema_version; the read-time validation hook and the version-mismatch migration branch fire for blocks, so a version-bump migration applies to existing block data on read.",
+        "A block kind declared in config after a substrate was installed is materialized into that substrate by a sanctioned op; context-bootstrap-state then reports ready and the block is writable."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "FEAT-010",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-21T01:31:50.914Z",
+      "modified_at": "2026-06-20T04:10:00.110Z",
       "oid": "f60e2e7c4b018b21c766bd482fb780b4",
-      "content_hash": "c86853fff54e1ff569473524af7372764d8f9a50c8a2d21d528b5a03ccae8e40",
-      "content_parent": "97689dacb5ccc9dc0a3124dd7c5c8e863b1a76d72656851ca07bd0de87c143b1"
+      "content_hash": "97689dacb5ccc9dc0a3124dd7c5c8e863b1a76d72656851ca07bd0de87c143b1"
     }
   ]
 }

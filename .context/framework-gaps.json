@@ -33,15 +33,15 @@
         }
       ],
       "impact": "Custom-vocabulary substrate creation is impossible through the tool surface; a dogfooded /context switch -c lands the user on a config-less substrate that no op can advance (accept-all would impose the whole catalog; amend-config refuses without a config).",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "init + switch -c write a minimal schema-valid skeleton config (schema_version + empty block_kinds + minted substrate_id) via a shared never-clobber writeSkeletonConfig helper; accept-all becomes skeleton-aware (overwrite when absent OR isSkeletonConfig, never-clobber a populated config); deriveBootstrapState gains a 'skeleton' state ordered no-pointer -> no-config -> skeleton -> not-installed -> ready; onward-guidance messages name the two paths (accept-all OR amend/edit).",
       "id": "FGAP-001",
       "created_at": "2026-06-03T21:22:40.700Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "068f9d8fd481ef5cfcdb70c02163024e",
-      "content_hash": "ba4f0d25599390632df5b2f08baaadadc2b4b26d8016bf7b4c48680fb1cb32d3",
+      "content_hash": "651178770909f1ac9d6e5a9aad9f211646e3604b6934adbf8d8da0434e99511e",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-03T22:01:57.907Z",
-      "content_parent": "651178770909f1ac9d6e5a9aad9f211646e3604b6934adbf8d8da0434e99511e"
+      "content_parent": "5bfd7659545f8bcc68a84b0faed8b9f3bb4879333e688ea4881eac4b56d9220e"
     },
     {
       "title": "No substrate clone/import: cross-project substrate reuse has no op-driven path and substrate identity carries no provenance",
@@ -69,13 +69,12 @@
         }
       ],
       "impact": "No tool-driven cross-project substrate reuse; imported substrates carry no lineage to their origin; the SoT-drift invariant false-positives on legitimate imports; and the local switch-register reconciliation fix cannot tell a native-lost-registry substrate from a foreign import, so registering blindly on switch would silently absorb a foreign or colliding id.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Lift substrate identity to the content-addressed + lineage model items already use: a substrate-level substrate_derived_from_substrate relation, provenance-bearing registry entries (minted-here vs derived-from), and a cloneSubstrate op (fork semantics: copy content into a new dir, mint a fresh substrate_id, record the derived-from edge + origin) surfaced as a dual-surface pi-context clone (library + Pi tool + CLI + orchestrator script). Preserves the one-id<->one-dir SoT invariant. See DEC-0002.",
       "id": "FGAP-002",
       "created_at": "2026-06-03T22:15:05.522Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "02be67a9f744e7e13a28a24c382a3cbb",
-      "content_hash": "79d85f683b8889433c6feec982b68d372102a118ee94d48412fda72dc8a1018b",
-      "content_parent": "2423f10217466a921cde8849b12a51b37023453b409e0ff6065b346c3c46de10"
+      "content_hash": "2423f10217466a921cde8849b12a51b37023453b409e0ff6065b346c3c46de10"
     },
     {
       "title": "switch / switch -c do not reconcile the active substrate's identity into the registry, yielding a false substrate_id_unregistered",
@@ -99,15 +98,15 @@
         }
       ],
       "impact": "A valid switch to an unregistered substrate (copied-in, hand-authored, or surviving a registry reset) fails context-validate with a false error; the remedy today is a manual registerSubstrate or a clobber-guarded accept-all.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "switch paths register config.substrate_id -> active dir when the id is absent from the registry (functionally safe: absent => no collision; a present-but-different-dir entry remains the substrate_id_registry_mismatch error). Origin/provenance recording for imported substrates defers to DEC-0002. See DEC-0003.",
       "id": "FGAP-003",
       "created_at": "2026-06-03T22:34:15.863Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "6fa0827c377ece5df7de98d7d0595989",
-      "content_hash": "a0d566a595725a71cdc791c997f1bacae32f1aa4ee4940d94b80189f0404efc7",
+      "content_hash": "93306bfbb59dc5e6b082a26c2f80971fda8524d368e50d0a9dc6d2a74467535d",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T02:31:44.268Z",
-      "content_parent": "93306bfbb59dc5e6b082a26c2f80971fda8524d368e50d0a9dc6d2a74467535d"
+      "content_parent": "bfc774c16bf6287893e48e273f6bb88b313ebe542dd748e61b11c1fb63c9b81e"
     },
     {
       "title": "pi-context has no structure-aware git merge driver — substrate files fall through to git's line-based merge, which mangles them",
@@ -129,13 +128,13 @@
         }
       ],
       "impact": "Merging two branches that both edited the same substrate corrupts it: concurrent array reorders / inserts produce invalid or wrong JSON, and cross-block referential integrity + declared invariants are never re-checked after a merge. Same-repo collaborative editing on a pi-context substrate is unsafe under normal git workflows.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Ship a git merge driver (.gitattributes merge=pi-context + a [merge \"pi-context\"] driver entry) performing per-file structure-aware 3-way merge of substrate files from git's %O/%A/%B (items by id/oid, edge-set merge, ordered ref-fields via FGAP-005, config/schema), writing a data-model-valid result; plus a post-merge finalize/validate hook (git post-merge or a merge-finalize command) for cross-block referential integrity + invariant/lens revalidation, emitting a typed conflict set for what cannot auto-resolve. Branches, merge-base, commit lineage, refs, and cherry-pick stay git's. See DEC-0004.",
       "id": "FGAP-004",
       "created_at": "2026-06-03T22:41:38.989Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
-      "content_hash": "ded14b2faa219ad385032aa5b1d7a59923c9d484c5bd219df3874f6641edf1d8",
-      "content_parent": "f9ba8469bdc9264d162bd071c51b3b3cb9daf0091be007915862ed4ce88d160f"
+      "content_hash": "f9ba8469bdc9264d162bd071c51b3b3cb9daf0091be007915862ed4ce88d160f",
+      "content_parent": "1bf2875a86b41fbedcd4452e43c88da117d0ffd51178c09962a935c5c189a19b"
     },
     {
       "title": "Ordered collections of item-refs need a convergent sequence field-kind — an array index cannot merge concurrent insert / delete / move",
@@ -153,13 +152,13 @@
         }
       ],
       "impact": "Ordered collections of item-refs (roadmaps, milestone sequences, fragment composition, step lists) in substrates branched and merged across operators / sessions / branches cannot converge: concurrent reordering on divergent versions conflicts or silently drops an ordering.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A declared sequence-field kind whose elements carry unique, densely-orderable, immutable position identifiers minted relative to neighbors at insert time (non-interleaving Fugue-class sequence CRDT); move as a first-class op via a position register resolved by hybrid logical clock (Kleppmann move-CRDT) with stable element identity; HLC for replica-independent same-gap ordering + move resolution; a field-aware merge driver composing the per-field CRDT op-sets/states; a sort-on-read projection emitting a plain ordered ref-array (and translating array-position hand-edits back to CRDT ops); authoritative CRDT state in the owning <block>.json, projection + merge driver in block-api. Plugs into the substrate merge driver (FGAP-004) as a field-kind. See DEC-0005.",
       "id": "FGAP-005",
       "created_at": "2026-06-03T22:42:55.244Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "6a415ca3c4c82e4dc5ce77924500952c",
-      "content_hash": "45d848a883a8fe815f6d7d614fa9bcffd01ec9e2bbd0f62080bf01048b818b1b",
-      "content_parent": "0721ee767e758f3fc14545c42c66eb270aa9f6b8f7e84d0a29a072a246093e84"
+      "content_hash": "0721ee767e758f3fc14545c42c66eb270aa9f6b8f7e84d0a29a072a246093e84",
+      "content_parent": "e866db4d8c7ba5cf3eb5cb7a8b7954ed95604041ad1bcc519b061d4b91e97bdb"
     },
     {
       "title": "relations.json has no scoped remove/replace edge op — edge hygiene is append-only through the tool surface",
@@ -181,15 +180,15 @@
         }
       ],
       "impact": "Edges are append-only through tools; mis-directions, typos, and superseded edges accumulate uncorrectably for cli-only and harness-confined consumers, who would need privileged library access to fix them — breaking the dual-surface symmetry append-relation otherwise has.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A scoped remove-relation (and replace-relation) as a dual-surface unit mirroring append-relation: library removeRelation(cwd, {parent, child, relation_type}) (idempotent whole-file rewrite minus the matched edge) + Pi tool + CLI op + orchestrator script; run context-validate after for referential integrity. replace-relation = remove+append in one call for direction/type corrections.",
       "id": "FGAP-006",
       "created_at": "2026-06-03T23:03:57.951Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "675c130c286a10a6b213ae99157e29f0",
-      "content_hash": "ae6b6ea14f4042f0572f20305cbb664df5962ceab31c7e6eacf3d451560f4ae2",
+      "content_hash": "b3d695df7d998555ea950f460f1a7b14ef4719033e6caf12b6d39aff6cf2fd8f",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T10:06:36.145Z",
-      "content_parent": "b3d695df7d998555ea950f460f1a7b14ef4719033e6caf12b6d39aff6cf2fd8f"
+      "content_parent": "ded073bf03ee0ce1273ce106f6711c32d895222228193573e45b225911105d6f"
     },
     {
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
@@ -212,13 +211,12 @@
         }
       ],
       "impact": "Any ordering relation whose verb implies the parent is the actor while the deriver treats parent as the prerequisite is easy to mis-direct; append-time silence means the error is invisible until topo/blocked derivation. Affects dependency-ordering correctness across tasks and any similarly-shaped ordering relation (e.g. phase_depends_on).",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Carry explicit endpoint-role metadata on the relation_type (which endpoint is the prerequisite vs the dependent) and have appendRelation / append-relation validate or normalize an ordering edge's direction against it at write time, so name and stored direction cannot diverge and a backwards edge is rejected (or auto-oriented) at append rather than discovered in derived state. Extends the existing relation-type endpoint-kind metadata; the deriver already consumes the contract, so the fix makes the WRITE path enforce the same contract.",
       "id": "FGAP-007",
       "created_at": "2026-06-03T23:04:22.642Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
-      "content_hash": "d48cbb4e7b4d0d98608df71b021322cc198ddfa152f53f1f4eff0fc574c901a9",
-      "content_parent": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
+      "content_hash": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
     },
     {
       "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",
@@ -253,15 +251,15 @@
         }
       ],
       "impact": "Every cli- or workflow-written item is unattested; the DispatchContext attestation model (created_by stamping; human/agent/monitor/workflow writer kinds) is silently bypassed; attested-required schemas reject cli filings. This is why filing has gone through the orchestrator scripts (which thread ctx), not the cli.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Thread a writer/DispatchContext through the op-execution contract itself (a ctx/writer channel on OpDefinition.run + registerAll + the cli writer-injection) so every write op stamps uniformly — rather than per-op schema smuggling (the channel only promote-item / write-schema-migration / context-switch use today, and which context-archive declares-but-ignores). See DEC-0006.",
       "id": "FGAP-008",
       "created_at": "2026-06-03T23:28:56.582Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "2893d93b28870d600d726711866fd426",
-      "content_hash": "ee82009eabdbf58f65b771442e293bacff8eae23cfe2a28e18a3d2fa8250018b",
+      "content_hash": "8e405ef1b63afbe9dcd011666422fb53e7405f267dc9dddb3248186da897ab17",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T06:29:27.100Z",
-      "content_parent": "8e405ef1b63afbe9dcd011666422fb53e7405f267dc9dddb3248186da897ab17"
+      "content_parent": "f6a0fa916faa4a08588730fbcec041a5019cd3812bfdb0f269a8120d367da6dd"
     },
     {
       "title": "Op-registry does not cover the library write surface — whole capabilities unreachable from the cli / out-of-pi",
@@ -296,15 +294,15 @@
         }
       ],
       "impact": "The cli is not a faithful interface to the library write surface; whole categories of substrate operation are out-of-pi-unreachable. FGAP-006 (no edge-removal op) is a specific instance, with the sub-layer that the removeRelation library primitive is itself missing.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A systematic op per library write capability as a dual-surface unit (library + Pi tool/op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema / registerSubstrate / bootstrap-pointer writers / bulk appendRelations as the surface warrants. See DEC-0006.",
       "id": "FGAP-009",
       "created_at": "2026-06-03T23:29:15.313Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "fffddbb27a8284308c6df49ecef6c46b",
-      "content_hash": "a84adc29f2d7f98d500b42eb26baf930bf86b1258e0a05e1659edd6f6126329b",
+      "content_hash": "35d31ae515b026fa963d05347c7f6102feef74e9f81b9bcb176854de52d60de3",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T10:06:36.145Z",
-      "content_parent": "35d31ae515b026fa963d05347c7f6102feef74e9f81b9bcb176854de52d60de3"
+      "content_parent": "7cb27ad46508318cf6735f34bf4e016c525436b51a6272b4ec4a66a5d3ffac65"
     },
     {
       "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",
@@ -328,15 +326,15 @@
         }
       ],
       "impact": "FGAP-008 and FGAP-009 recur on every new library writer or op without a guard; the three surfaces silently diverge; attestation correctness and cli completeness can regress undetected.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "CLOSED at dc7f514 by scripts/parity-check.ts — the source-intrinsic build gate (husky pre-commit + CI) that AST-enumerates library writers, classifies each against OP_COVERAGE_RULE, fails fatally on an unclassified writer or a silent ctx drop, and reports dual-surface optional-param mismatches non-fatally. The dual-surface unit is now self-policing: a new library writer or op that drops ctx fails the build. The 5 non-fatal dryRun script/op asymmetries the gate now surfaces are tracked as FGAP-012.",
       "id": "FGAP-010",
       "created_at": "2026-06-03T23:29:28.118Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "b2eeed1692053af8f84133e21707c0a4",
-      "content_hash": "575f66e70c03b75ce4f3e24369cbbe431bac1b3bbe5a27e208ef9d564bc0d944",
+      "content_hash": "6a2db45e3ba2cdc9cf26524583d6e7bd845af1260d69c6328c57c0bdc7bb28e2",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z",
-      "content_parent": "6a2db45e3ba2cdc9cf26524583d6e7bd845af1260d69c6328c57c0bdc7bb28e2"
+      "content_parent": "44e67cd86ecb2823b60739f97afb869c40ec18b144e1c169b1f4067e3d8bede2"
     },
     {
       "title": "No release/version vocabulary — releases and changelog grouping cannot be planned or tracked as first-class substrate items",
@@ -362,13 +360,12 @@
         }
       ],
       "impact": "Releases are planned and tracked ad-hoc (overloaded phase/story or a loose DEC); there is no first-class binding of version -> completed dev-items -> changelog lines, so the project risks losing the thread between organized dev work done and what shipped in which release.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A release/version vocabulary: a 'release' block kind (id, version, target/date, status planned|released, summary) + a relation binding closed dev-items to a release (e.g. release_contains_item / task_shipped_in_release / gap_closed_in_release) + optionally a milestone/roadmap instantiation; the release item carries or references the changelog lines for its items, so a release is the organized set of done dev-items with their changelog text — planned in advance and verifiable. Dual-surface (schema + conception registration + ops).",
       "id": "FGAP-011",
       "created_at": "2026-06-04T01:47:12.392Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
-      "content_hash": "1200eddb3cd625f361c190d02347aeeb041033ba907900116fba48c4b9b44002",
-      "content_parent": "5a690e82dbdb8f3f2226a8f0dca34fab63824b72449a0beedba4a53b65f943a0"
+      "content_hash": "5a690e82dbdb8f3f2226a8f0dca34fab63824b72449a0beedba4a53b65f943a0"
     },
     {
       "id": "FGAP-012",
@@ -400,14 +397,14 @@
         }
       ],
       "impact": "Dry-run preview asymmetry between the in-pi op / CLI surface and the out-of-pi orchestrator scripts for edge mutation and atomic upsert: an in-pi caller cannot preview these five mutations the way the scripts can. Minor and advisory rather than a correctness defect, but it is exactly the dual-surface drift the parity gate exists to surface, so leaving it unaddressed lets the surfaces diverge further.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "CLOSED across TASK-010 (8fcf02d, the 4 relation ops) + TASK-011 (4b72b86, upsert-block-item). The 5 relation/upsert ops now share ONE dryRun preview with their orchestrator scripts (the byRef/upsert library fns gained opts?:{dryRun} that validate the prospective + return without writing; ops declare/thread dryRun; scripts delegate). The parity-check gate's dual-surface divergence report is now at ZERO. Also tracked from this arc: FGAP-016 (pre-existing truncateHead measurement nuance, P3, non-leak).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "687d105852ff67bd9e56446eb678f78d",
-      "content_hash": "6108279f586aa54d42ae5c04ac1dde1a77c6a678d913a2fc106b2cc1fab8f161",
+      "content_hash": "e82317fee2bdeeed2ab85c42394d96b4f4c83e19c0b65d9d7c3d2499e8962180",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z",
-      "content_parent": "e82317fee2bdeeed2ab85c42394d96b4f4c83e19c0b65d9d7c3d2499e8962180"
+      "content_parent": "c637524fdff63734a87ee9346bd305ef441d2712ba8d2a1b30f1305f16084757"
     },
     {
       "id": "FGAP-013",
@@ -428,12 +425,12 @@
         }
       ],
       "impact": "A machine consumer of --json must double-parse every structured op, which defeats the point of --json as machine-parseable output. The CLI surface the cli arc built is harder to consume programmatically and the inconsistency is silent (no test locks the shape).",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "CLOSED at 75f2611 (TASK-012). Data ops return a structured OpResult (string | {json} | {read}); the CLI --json envelope emits output as a JSON value, not a stringified-JSON string. Default + in-pi Pi-tool text route through renderOpResultText, byte-identical to each op prior run() text. Verified by contract tests + runtime demo (resolve-item-by-id --json output is an object, single-parse). The deeper cap-bypass the fix exposed is closed by FGAP-015 (same commit).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d639295dcb8ac399df8f0e4d21ab860",
-      "content_hash": "2d52022b84aeb45053f9b24e4f5c57861b77ba63739484ff2d3c27263f596eff",
-      "content_parent": "1594b2524f6d774c0834343c9761e9d2eb85d59810f6f5992888d9574c2cd7db",
+      "content_hash": "1594b2524f6d774c0834343c9761e9d2eb85d59810f6f5992888d9574c2cd7db",
+      "content_parent": "da9b0443706ab9576125a5e74e8e19dd2171c04f6fe47a74cf96c228dbf8edba",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z"
     },
@@ -468,12 +465,12 @@
         }
       ],
       "impact": "The gated task-completion path (verification-before-complete) is non-functional framework-wide; task completion silently degrades to ungated update-block-item with no verification gate. The masking tests give false confidence the gate works. Architectural debt: the edge-based verification design (verification_verifies_item) is declared but unconsumed by completeTask.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "CLOSED at d0ab83d (TASK-014). completeTask migrated from the removed verification.target/target_type fields to a pure verification_verifies_item edge-gate (parent=verification, child=task) + status===passed; task set completed with no verification field embed (the edge is the linkage); ctx threaded. Test suite rewritten to the edge flow (no field smuggling) + a no-edge-bypass case; the legacy defaults/ field-gate test migrated to a canonical schema. Runtime-demoed on real .context (dogfooded: TASK-014 itself completed via the fixed op) + fresh adversarial audit found no bypass. Backfilled the verification_verifies_item edges for the session completions (TASK-008/009/012/013) that update-block-item had left edgeless.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "baf3754f16b1076610852345a624b60e",
-      "content_hash": "3fca1684dc3f83e96f814c4c2438cad89ed08a32917ed81bb9ffa9bbd712d2e7",
-      "content_parent": "ed8ac6c3f4537f3cde4d5db63d8b8b2f27213f8ce18ec9302f796f783e3994fb",
+      "content_hash": "ed8ac6c3f4537f3cde4d5db63d8b8b2f27213f8ce18ec9302f796f783e3994fb",
+      "content_parent": "fea292fd56a94b9957b1dfe95caa8a5108af7aa9bf182fbf9d3b11db0b206db8",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z"
     },
@@ -511,14 +508,14 @@
         }
       ],
       "impact": "Any op emitting substrate content via {json} leaks it unbounded on both the CLI --json surface and the in-pi agent context, defeating the FGAP-089 fail-closed read cap. Per-op patching is whack-a-mole; the next {json} content-emitter (existing or future) re-opens it.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "CLOSED at 75f2611 (TASK-013), per DEC-0009. The read cap is now enforced at the output boundary for every channel: a runtime boundary cap (boundedJsonOutput + cap-applying renderOpResultText) fail-closes any over-cap {json}/prose on all three emit sites (CLI --json, CLI text, in-pi Pi-tool); resolve-item-by-id + promote-item route through {read} for graceful degradation; a parity-check gate (checkJsonContentCap) FAILS an op directly returning {json} of a content-reading call, with the runtime cap as the backstop for helper-chain misses. Adversarial re-audit confirmed the recurrence ended — no read/query op ships unbounded data on either surface. Pre-existing truncateHead pretty-vs-compact/line-cap over-refusal tracked as FGAP-016 (non-leak).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "bbc9dfeee30d0619adc92a7d1481c785",
-      "content_hash": "51737fc91a3d401442647532809490389b623fcca4549a04f2b07317f323daa0",
+      "content_hash": "bba3cc1a512c9b11696e7226ddbc026973e3837ef721150b4c8b8685bbcc96e2",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z",
-      "content_parent": "bba3cc1a512c9b11696e7226ddbc026973e3837ef721150b4c8b8685bbcc96e2"
+      "content_parent": "5e4271fde78f4586bae777eb0fc10dce3856465a58a730a3160cce6f4685abfa"
     },
     {
       "id": "FGAP-016",
@@ -542,12 +539,11 @@
         }
       ],
       "impact": "A legitimate read whose compact --json payload would fit under the cap can be refused (functional over-restriction for machine --json consumers); the refusal message can misstate bytes-vs-lines as the trigger. Safe (never leaks), low severity, but a real ergonomic imprecision spanning the cap primitive and both output channels.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Decide the cap's measurement basis per surface: for --json, measure the EMITTED compact form (so the cap reflects what actually ships); for text/Pi-tool, the pretty form is what the agent reads, so measuring pretty is right there. Surface the firing dimension (bytes vs lines) in the REFUSAL message. Its own canonical-pipeline arc; distinct from FGAP-015's channel-bypass.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d35361e9bdb0c0892a860ebff318bc1",
-      "content_hash": "ecab521992616b110e9e4a2d40362ebd31135374c040737ac5477e4fa98ce10c",
-      "content_parent": "0893d5de34ba679c550f18f52da99e3d7743a7325da42a1956dd4e723722bd29"
+      "content_hash": "0893d5de34ba679c550f18f52da99e3d7743a7325da42a1956dd4e723722bd29"
     },
     {
       "id": "FGAP-017",
@@ -599,12 +595,12 @@
         }
       ],
       "impact": "where-are-we/what-next is a privilege of the stock PM vocabulary; a custom-vocabulary substrate with a real focus/next-state gets a silent empty result, not its own derivation. The op cannot serve any substrate that does not use framework-gaps + tasks.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a config-declared state-derivation registry (which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type SET (task_depends_on_task + task_gated_by_item), a rollup spec (rollup kind + membership relation + derived status, generalizing the milestone phase-rollup), the next-actions head-size (cap), field+values -> open/blocked/done leveraging the existing status_buckets); rewire currentState() to read it instead of all hardcoded literals; the shipped conception declares framework-gaps + tasks + the gate + the milestone rollup + cap so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "oid": "8585502a1289ac63e708d521f94b7ab6",
-      "content_hash": "9a4eeba845d5d8970ef9d561c2e5b92dd6761cedb4caaa5024627e729e1c68f7",
-      "content_parent": "33f63c002f3f4c7ce29c1ffdf79156caaf1ac738305d286317ec40d0987f41c2",
+      "content_hash": "33f63c002f3f4c7ce29c1ffdf79156caaf1ac738305d286317ec40d0987f41c2",
+      "content_parent": "ffaf39f0620d0950675fa9d7205215574ac21a03aee78f34a1497964d28a9ab5",
       "closed_by": "VER-057 / TASK-020 — a config-declared state_derivation registry replaces the hardcoded currentState couplings (focus-eligible/next-ranked kinds, ranking field, blocked-by relation SET, milestone-style rollup, and head-size); a custom-vocabulary substrate returns a truthful not-configured signal instead of a silent empty result; the next-actions head-size is config-declared (no NEXT_ACTIONS_CAP literal) and next_ranked is ordered tasks-first in the shipped conception and the live config, so ready tasks surface in the ranked head rather than being truncated below open gaps.",
       "closed_at": "2026-06-20T00:00:00.000Z"
     },
@@ -633,12 +629,11 @@
         }
       ],
       "impact": "the lifecycle/planning projection in context-status is stock-vocabulary-specific; a custom substrate's lifecycle (its own phase/verification-equivalent kinds + status values) is not surfaced as structured metrics — only counted generically.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Make the lifecycle metrics config-declared (which kinds + which status values yield the lifecycle/metrics projection), keeping the generic per-kind summary as the default. Pairs with FGAP-017's state-derivation registry. Advances FEAT-004.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "oid": "9a2bcfaf30cf57acf84e7183261ca7c8",
-      "content_hash": "50e27a20ab8508b4ac1417844bb2a5c5982269e0bf3be48c25c959534d4ccfc6",
-      "content_parent": "adc6a77c904021192d3d09e35cd0f210eab67e3b7e43b5fd0729622a4a487ac1"
+      "content_hash": "adc6a77c904021192d3d09e35cd0f210eab67e3b7e43b5fd0729622a4a487ac1"
     },
     {
       "title": "Block-mutation ops require `arrayKey` though it is derivable from config (CLASS: 7 ops)",
@@ -712,14 +707,14 @@
         }
       ],
       "impact": "Every block-mutation call (CLI op, orchestrator-script consumer, and in-pi tool dispatch) must restate a config-declared value — redundant friction on the highest-traffic write path, multiplied across 7 ops. Because the orchestrator script already derives array_key while the ops do not, the dual surface is asymmetric — a parity gap the parity-check gate does not currently catch (it tracks optional-param flag divergence, not required-params-that-should-be-derived). Recurring papercut for any agent or human driving the CLI directly.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "In each of the 7 affected op run() bodies, derive the top-level array_key from params.block via loadConfig(cwd) -> config.block_kinds.find(bk => bk.canonical_id === block).array_key, and demote the arrayKey parameter from required Type.String to Type.Optional(Type.String(...)) serving as an explicit override (override honored when present; derived when omitted) — backward-compatible for callers still passing --arrayKey. Nested ops keep nestedKey required (not config-derivable); only their parent arrayKey is demoted/derived. Re-confirm via the canonical pipeline (plan -> coding subagent -> adversarial audit). Add/extend a parity-check assertion so required-but-config-derivable params are caught as a class, closing the op<->orchestrator-script asymmetry and preventing regression. Class closure requires exhaustive re-enumeration: grep all OpDefinitions for a required arrayKey to zero after the fix, not just the seed op.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-019",
       "oid": "433ae156e4ce1a04ca4c220c85339ad7",
-      "content_hash": "401964aaa3fc62481b9997e8a0f1d6e06030c34e2a865724e358a9c1274075c9",
+      "content_hash": "4083438f692babf9f6266d4eda91a5ac803cff809c17db2f9a7e78536944d873",
       "priority": "P2",
-      "content_parent": "4083438f692babf9f6266d4eda91a5ac803cff809c17db2f9a7e78536944d873",
+      "content_parent": "3589cc9c05df0b535a7fcc15d46ec9561ed72c06395144d8e22a010fc2f0d30c",
       "closed_by": "VER-029 / TASK-015 — block-mutation ops accept --block without --arrayKey; the CLI derives array_key from config.block_kinds[].array_key (injectArrayKey) and supplies it pre-call, the op schema unchanged.",
       "closed_at": "2026-06-08T00:00:00.000Z"
     },
@@ -764,14 +759,14 @@
         }
       ],
       "impact": "Addressing an object node to inspect its shape returns only field names, hiding types/required/enum — the caller believes they read the schema when they did not. This session it directly caused a downstream filing failure (evidence-must-be-array discovered only at write time) and drove wasteful per-field probing. Any agent using read-schema --path to navigate into an object node is misled. The dual-surface asymmetry (op/CLI project; orchestrator script does not) means the two surfaces disagree on the same query.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Carve schema/object nodes out of the collection-paging path: when read-schema addresses a node (or structureForRead is handed an object that is not a genuine paginated collection) return the full subtree — e.g. a whole:true path through structureForRead at ops-registry.ts:1166, or guard discoverArrayKey/resolveCollection (read-element.ts:39-48/202-227) so an object carrying both `properties` and `required` is not paged on `required`. Align the op output with the orchestrator script (read-schema.ts:181) so the dual surface agrees. Add read-element tests for schema-node path addressing + a CLI-vs-op output-parity assertion. Re-confirm via the canonical pipeline (plan -> coding subagent -> adversarial audit). Class check: ensure no OTHER read op routing through structureForRead projects object nodes carrying a single array property.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-020",
       "oid": "8ecb24b45db69607db7b05d0fb95e678",
-      "content_hash": "7e8328ba7c6f67acab337d448d822af400d40978febc282e9ce1ca08982895b1",
+      "content_hash": "e5310ecf70f626c6b5f93ce46a1a7771a2d5e8eb0359735a53871a512c9dbdba",
       "priority": "P2",
-      "content_parent": "e5310ecf70f626c6b5f93ce46a1a7771a2d5e8eb0359735a53871a512c9dbdba",
+      "content_parent": "d2d285c4b2c26c767f6f75be8ab50e51a2d895ab60a891c7b35997f6d5b9134c",
       "closed_by": "VER-030 / TASK-016 — a CLI-side addressedReadOverride recomputes the addressed value from source (addressInto + readSchema/loadConfig) and re-structures it whole (structureForRead whole:true, 50KB-capped) for read-schema --path and read-config --registry [--id], so an addressed object node returns the full subtree; the op is untouched.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -796,14 +791,14 @@
         }
       ],
       "impact": "Direct CLI/dogfooding users (human or agent) get no human-readable rendering for the 15+ ops whose script twins do — a capability asymmetry between the two surfaces over the same data.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a --format global flag parsed in parseOpArgs (cli.ts:199) selecting text|json|table, plus a CLI render module dispatching per-op/per-shape (lifting the scripts' renderTable/renderTerse bodies into a CLI-shared render/ module) before the emit sites (cli.ts:504/508). Op behavior frozen. Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-021",
       "oid": "a23d5835258e1b607bfa3e3f59f87e88",
-      "content_hash": "a6d819b3b046e8a1dc598749db6311d68f33c7a776f34d5a6a76acf62e95c832",
+      "content_hash": "7962432256133c739ad395260cfc372040aaa36bb6d2855826b92b1c5d4012e4",
       "priority": "P2",
-      "content_parent": "7962432256133c739ad395260cfc372040aaa36bb6d2855826b92b1c5d4012e4",
+      "content_parent": "818c56ed77ebf8343714802d1208748ca2cccd719a77cec306746b9813ce1ef6",
       "closed_by": "VER-030 / TASK-016 — --format text|json|table render dispatch in cli.ts backed by a new render.ts renderTable (lifted from the script twin); --json is sugar for --format json; table gracefully falls back to text for non-tabular/over-cap/empty results.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -828,14 +823,14 @@
         }
       ],
       "impact": "A CLI user filing into an unfamiliar block cannot preview the contract from the CLI, raising write-time validation failures (the failure mode that surfaced FGAP-020).",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a --show-schema global in parseOpArgs; on a block-mutation op, call the lifted loadBlockSchema/resolveBlockItemSchema path, print the preview, return 0, in an early branch in main mirroring the parsed.help branch (cli.ts:464-467). Op frozen. Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-022",
       "oid": "ba04c442d72fcaa8655338fba491263e",
-      "content_hash": "1691dc1286b287562e2c2bfce1fe2da0bf83cc2ea5a6f9837365ec81360881c4",
+      "content_hash": "24481bda4220161eb154bacd99d238df871b87c76d0907f0a7a2471f8591bbda",
       "priority": "P2",
-      "content_parent": "24481bda4220161eb154bacd99d238df871b87c76d0907f0a7a2471f8591bbda",
+      "content_parent": "877193dddb7d72efd107f97d8bfe6d4048a23cdc3fe01393d9d27fb63987a327",
       "closed_by": "VER-031 / TASK-017 — --show-schema previews the block contract (array_key/required/fields/id-pattern via readSchema + resolveBlockItemSchema) and exits 0 before any write; schema-absent -> exit 3.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -861,14 +856,14 @@
         }
       ],
       "impact": "Validation errors are harder to act on from the CLI than from the script, slowing the dogfooding write loop.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "In the cli.ts catch (:511-518), when err is an AJV ValidationError (.errors[]), run a lifted formatAjvError over each entry using the op's parameters/block schema for field context. Op throws unchanged; the CLI shapes the message. Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-023",
       "oid": "bf32be6013fbaa95a52e337fd5f3413c",
-      "content_hash": "079a6039899b9e143cdd221be995a71aba9c3db4bcd99d7197c22802096f2c11",
+      "content_hash": "4c2c075877d889c39232037669e0786947a73632e5b6eb0719b55ff2fe82fdc2",
       "priority": "P2",
-      "content_parent": "4c2c075877d889c39232037669e0786947a73632e5b6eb0719b55ff2fe82fdc2",
+      "content_parent": "003e2e861ac92ae0d26a397b1ed7d923f7b1bf57cad361a9a0b8d0db81beced7",
       "closed_by": "VER-030 / TASK-016 — render.ts formatAjvError translates ValidationError.errors[] to field-named guidance in the cli.ts op-run catch (both --json envelope + stderr); a structural isValidationError guard handles the cross-package-boundary class-identity issue with instanceof.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -894,14 +889,14 @@
         }
       ],
       "impact": "A CLI user cannot preview an append without writing, unlike the script and unlike upsert — an ergonomic and safety gap on the highest-traffic write path.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a cli.ts pre-call branch for append-block-item --dry-run that runs the lifted file-block-item.ts:247-255 validation (read block + build prospective + validateFromFile) and returns WITHOUT invoking appendToBlock. No op change (avoids adding dryRun to the frozen op). Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-024",
       "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
-      "content_hash": "b8d90aa835955205e56e9aa441866582ddca654d00c0c52e6675016da0c7e68d",
+      "content_hash": "a9ae20e020d085ddee476c1b4224524192471605077a06defcefcc31cf0986ce",
       "priority": "P2",
-      "content_parent": "a9ae20e020d085ddee476c1b4224524192471605077a06defcefcc31cf0986ce",
+      "content_parent": "68a918700fd7b0948e5c56d23d1401bc545b3884c2c3fcbf20e60fbb78579dee",
       "closed_by": "VER-031 / TASK-017 — append-block-item --dry-run is a CLI-only flag whose early branch does prospective-whole-block validation (validateFromFile) and returns before op.run, writing nothing; PASS exit 0, validation exit 5. Op byte-unchanged. The swallow is op-scoped to append-block-item so other no-dryRun ops reject --dryRun (exit 2), not silently run (fix 41b8326).",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -927,14 +922,14 @@
         }
       ],
       "impact": "CLI invocations are more verbose and error-prone than the equivalent script invocations for the same ops (e.g. the --writer JSON object vs kind:id) — friction on every authored call.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "In parseOpArgs per-flag handling (cli.ts:227-268), accept --writer kind:id (lifted parseWriter), --where field:op:value (split into whereField/whereOp/whereValue), and --op in CSV (split to array). Each normalizes shorthand into the op's declared param shape before invocation. Op frozen. Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-025",
       "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
-      "content_hash": "f8c66131cb40663dadb165f923a93fe998b483795f92685f02c72ca2a3143948",
+      "content_hash": "2039076b8fa8c53483463c00e3faa0c88090152f0150db376584d9f1d81bff94",
       "priority": "P2",
-      "content_parent": "2039076b8fa8c53483463c00e3faa0c88090152f0150db376584d9f1d81bff94",
+      "content_parent": "ae2ca276fdf87ae6054a24f3038ead482628e88f4b1d107287946b66c7af4385",
       "closed_by": "VER-029 / TASK-015 — the CLI accepts the scripts input shorthands: --writer kind:id, --where field:op:value, and CSV --op in, each a pre-call transform in parseOpArgs.",
       "closed_at": "2026-06-08T00:00:00.000Z"
     },
@@ -959,14 +954,14 @@
         }
       ],
       "impact": "Scripted/CI consumers of the CLI cannot branch on error class (arg vs not-initialized vs schema-absent vs validation), below the scripts' diagnostic resolution.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Map error classes to codes (arg/usage -> 2, not-initialized/BootstrapNotFoundError -> 1, schema-absent -> 3, validation -> 5) at the cli.ts catch + UsageError sites (:456-462, :511-518). The op never sees it. Re-confirm via the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-026",
       "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
-      "content_hash": "603325c65a59f239c6a1c9f251c21bbc3e9aaa0573d46af13cafa1fc4d8f70ce",
+      "content_hash": "8e1e9cac33fde1be2b5d189175ad82faa1c2405382a67c58ffc6d2f951785ce1",
       "priority": "P2",
-      "content_parent": "8e1e9cac33fde1be2b5d189175ad82faa1c2405382a67c58ffc6d2f951785ce1",
+      "content_parent": "1b5a2504954b58471dfba4f799cd0ecb66fbcc05307db48331ed63dcd3a931b1",
       "closed_by": "VER-031 / TASK-017 — a name/message-based exit-code classifier maps error classes 1-5 (validation 5, id-allocation 4, schema-absent 3, usage 2, bootstrap/runtime 1) at the cli.ts catch + UsageError sites; schema-absent is tested ahead of id-allocation (fix 41b8326).",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -997,14 +992,14 @@
         }
       ],
       "impact": "In-pi agents (not only the CLI) reading an object schema node via read-schema --path receive the field-name list, not the schema subtree — the same defect class as FGAP-020 but on the in-pi surface, which the CLI-side fix does not reach.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the in-pi op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), while retaining the 50KB cap. This deliberately changes in-pi op behavior (user-authorized). Re-confirm via the canonical pipeline; class-check other read ops routing addressed object nodes through structureForRead.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-027",
       "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
-      "content_hash": "4ab64a82bf9613172db03ea73619caa1518af0ebdc1a880f2fdf69851351a79a",
+      "content_hash": "bea9a5e60c7f04612e22f834bccc4a813029b6fbac0eb4b94dcf9df36a341244",
       "priority": "P2",
-      "content_parent": "bea9a5e60c7f04612e22f834bccc4a813029b6fbac0eb4b94dcf9df36a341244",
+      "content_parent": "36f7e6f5d5bfb8243cb81d08524c5a92c17997b1206cca949f893e434396383a",
       "closed_by": "VER-032 / TASK-018 — the in-pi op-registry addressed-single-node reads (read-schema --path, read-config --registry/--id, list-tools name=, read-samples-catalog kind=) pass whole:true, returning the whole subtree (50KB cap retained); the redundant CLI addressedReadOverride is retired so the op is the single source on both surfaces.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -1056,15 +1051,15 @@
         }
       ],
       "impact": "Any /context install (or a future export) carries this repo's package names + Muni + .project/ + in-pi into the installing project's schema descriptions — the model presents itself as project-agnostic but is not. Repeats across every consuming project; the leak is the catalog's, so it propagates by design.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Genericize the 8 leaking description substrings in samples/schemas/ per a from->to strip-list (package names -> placeholder/'your agent layer'; 'in-pi' -> dropped; '.project/' -> 'substrate storage'; project layer-model proper noun -> 'layered architecture model'/'architecture layer'); preserve the model's intrinsic vocabulary (relations.json, L1-L5 mapping, substrate); produce a portable disinfect markdown; adversarial re-grep to zero residual named-term leaks. RESOLVED at b1cdccc: the 8 substrings genericized across issues/work-orders/framework-gaps/layer-plans/research; zero residual named-term leaks (grep); read-samples-catalog parses all 16 kinds; check + test green; portable strip-list at analysis/2026-06-05-disinfect-schema-descriptions.md. An adversarial re-audit additionally flagged model-intrinsic vocabulary (relations.json / L1-L5 / substrate / feature-story-task) as 'leakage' — dismissed as scope over-reach (that vocabulary describes what the shipped model IS, not which project authored it). Follow-ons NOT part of this closure: .context/schemas/ installed copies carry the same leaks (re-sync via /context install --update); .context/schemas/layer-plans.schema.json is version-skewed (1.0.0, missing layers[]/migration_phases[]).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-028",
       "oid": "93ee78687c71e6d609695e4919f9a4ac",
-      "content_hash": "376da290813d53f809114cd3ff5be001a424c64e448b7cadf1e961124d404817",
+      "content_hash": "dedec7c29a8b75dcca9ba4904686017e368d007b17ae8afdc74c8025d5539dc1",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z",
-      "content_parent": "dedec7c29a8b75dcca9ba4904686017e368d007b17ae8afdc74c8025d5539dc1"
+      "content_parent": "f953058039ef3f4a5177fd06f053a3864f48cd0c8de9a6625c0a90d7515f3f2f"
     },
     {
       "title": "/context install --update overwrites block DATA with empty starters (substrate-wiping); stale installed schemas have no safe re-sync; undocumented",
@@ -1098,15 +1093,15 @@
         }
       ],
       "impact": "A user who runs /context install --update to refresh schemas (the documented re-sync action) silently destroys every filed item in every block — total substrate data loss. Conversely, stale installed schemas have NO safe re-sync at all, since the only re-sync mechanism is the destructive one. The never-clobber default also means installed copies drift from the catalog indefinitely with no surfaced signal. High-severity footgun on a routine-sounding flag.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Separate schema/asset re-sync from block-data: never overwrite a POPULATED block (write a starter only when the block is absent); route installed-schema evolution through the EXISTING migration registry (migrations.json / validateBlockWithMigration) rather than blind copyFileSync, so items migrate forward instead of being orphaned; surface a dry-run / diff preview (what would change) before any overwrite; detect + report installed-vs-catalog version skew so staleness is visible; document the never-clobber default + the destructive scope. The specific mechanism to be chosen from prior-art in similarly-situated functionality (template-update reconcilers like copier/cruft 3-way merge; DB schema-migration frameworks Flyway/Alembic/Prisma/Rails; declarative reconcilers with plan/apply like kubectl apply / Terraform) — minimal, correct, best-of-breed. Run through the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-029",
       "oid": "53ac7027782b8996d06334fe0ae12e1a",
-      "content_hash": "90260d67fcfe643032216412fc1b73dea076328ced579ca4d68c6ec3f5c829af",
+      "content_hash": "ce54e64007de2fdaef01f9c6f14a6c249c88aad9c9d543991bb519839a4acac4",
       "closed_by": "human/davidryan@gmail.com — closed by fa8a0cc (skipIdentityStamp excision, DEC-0012) + c6434db (re-sync promoted to live .context); verified by VER-014. Core safe re-sync resolved: install --update routes installed-schema evolution through the migration registry, never blind-overwrites a populated block (S1), records a baseline (S2), previews drift (S3 check-status), and forward-migrates-or-refuses (S4). Pre-identity-substrate re-sync deferred to FGAP-033.",
       "closed_at": "2026-06-06T00:00:00.000Z",
-      "content_parent": "ce54e64007de2fdaef01f9c6f14a6c249c88aad9c9d543991bb519839a4acac4"
+      "content_parent": "d724d13ade5f1be169243e0f614ef1e2073b6b6502959c69ba4e4e499db4dc38"
     },
     {
       "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",
@@ -1130,13 +1125,13 @@
         }
       ],
       "impact": "The drift report is in-pi-only; the reflecting pi-context-cli (and orchestrator-script consumers) cannot invoke check-status, undercutting the CLI-parity direction. Same family as the FGAP-021..026 CLI-parity gaps.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a context-check-status OpDefinition (surface:\"use\", empty parameters, run(cwd) -> { json: checkStatus(cwd) } — pure-read, boundedJsonOutput-capped) so the reflecting pi-context-cli surfaces it automatically. OP-ONLY — NO orchestrator-script twin (per DEC-0011: new ops are op-only; the reflecting CLI is the shell surface; hand-writing a script twin would be a born-obsolete artifact). Pure-read, so no writer-classification/allowlist needed. Run through the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-030",
       "oid": "78ac46a06f4b91e021f3b0a7ba0e1533",
-      "content_hash": "54d65b2af283b8d71053852a2d956508999028cc8268cd685ce0e31bfe74b61d",
-      "content_parent": "a6b04e43b5c10a2d6b3d2e1c9eb49062accb3cecfe51d7616ca5147abd81323b",
+      "content_hash": "a6b04e43b5c10a2d6b3d2e1c9eb49062accb3cecfe51d7616ca5147abd81323b",
+      "content_parent": "46b60576f92717a1205365485664b06e794ff1f3e430c3197f836cc94b3664ed",
       "closed_by": "VER-043 / TASK-049 — the drift report is the reflected context-check-status op (zero params, the context-status template): per installed schema the drift state, baseline and catalog versions, and for behind schemas the version delta or content-only basis; slotted in Read & query with an example; --json carries the structured report.",
       "closed_at": "2026-06-12T10:00:00.000Z"
     },
@@ -1163,15 +1158,15 @@
         }
       ],
       "impact": "Every CLI invocation (docs, dogfooding, scripts, other-agent shell access) carries the path-to-bin wart; the CLI does not present as a first-rate installed command, which is friction, non-portable, and a poorer dogfooding/UX signal than a real `pi-context <op>` command.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Make `pi-context` reachable in the dev monorepo (npm link, or the npm-workspaces node_modules/.bin symlink via `npx pi-context` / .bin on PATH) and switch the docs (CLAUDE.md + READMEs + skill-narrative) and dogfooding/orchestration invocations to `pi-context <op>`; the published package already gives end users the global command. Confirm the linked/installed entrypoint resolves and runs identically to the in-repo bin. Run through the canonical pipeline.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "id": "FGAP-031",
       "oid": "82fa1ecb70845e5f7e862dd369bd9676",
-      "content_hash": "e7f4b5333d01c5c7c25ae89409182a9820a0d6ded9317297e5bb94f88da21a61",
+      "content_hash": "0240f88adee1c2727bc6c5a2cde273ac1d859c849770b7a9e252fe1b0928d883",
       "closed_by": "TASK-028 (VER-017) made pi-context globally installable (chmod +x dist/bin.js + the published bin) and the project docs + dogfooding switched to the global `pi-context <op>` command, retiring `node …/dist/bin.js`; `which pi-context` resolves the published bin. The load-bearing asks (first-class command on PATH + doc/dogfooding switch) are met.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "0240f88adee1c2727bc6c5a2cde273ac1d859c849770b7a9e252fe1b0928d883"
+      "content_parent": "3785d0a2497367320e5a329efa614f7f4943e1a9a70405ca03d9ef32b4e32ecd"
     },
     {
       "id": "FGAP-032",
@@ -1223,14 +1218,14 @@
         }
       ],
       "impact": "Usability/dogfooding footgun, not a correctness defect. Each id-taking op works once the correct flag is supplied; the cost is wrong-flag guesses and failed invocations (exit 2) when driving the CLI directly. The most common single-item-id spelling is --id (read-block-item, resolve-item-by-id), so --id is the natural guess and the ops that diverge from it (find-references, walk-ancestors as --itemId; context-walk-descendants as --parentId) reliably mis-fire. Because the CLI auto-reflects op-registry property names, every future id-taking op inherits whatever spelling its author chose, so the divergence grows unless a convention is established.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Establish a single canonical convention for the single-item-id argument across id-taking ops; the mechanism is to be chosen canonically. Options: (a) normalize the op-registry property names so every single-item-id parameter is the same key (rename --itemId/--parentId/--unitId/--taskId to a shared spelling at the schema source, accepting that this changes the op input-schema property name as seen by both the Pi tool surface and the CLI); (b) add an id-flag alias layer in pi-context-cli parseOpArgs (packages/pi-context-cli/src/cli.ts) that accepts a canonical --id alongside each op's native id-property flag, leaving op-registry schemas untouched (CLI-only ergonomic, no Pi-tool surface change); or (c) introduce a per-op-registry-entry declarative alias map the CLI consumes. Whichever is chosen, also assess relation/match-predicate ops (--parent/--child, --match) for whether a consistent id-selection idiom is warranted. Add a parity/lint check that flags new id-taking ops whose item-id property deviates from the convention.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7d987f8421ac209f9efc57b81adc1f6d",
-      "content_hash": "61ce44fdc9612a7372bfdb97c499a0d77dedd0699c477c4f231a1c435fb23fb0",
+      "content_hash": "ffa80a9d97233a20acdb2dfd80d9e998a0ea3f22c2ed937f287ac328e5dc5fff",
       "closed_by": "VER-029 / TASK-015 — --id aliases the op single string-typed id-param (the same normalization layer as FGAP-064); ambiguous-reject when >=2, unknown-flag when 0; boolean autoId is excluded by the string-type guard (f1aef2b).",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "ffa80a9d97233a20acdb2dfd80d9e998a0ea3f22c2ed937f287ac328e5dc5fff"
+      "content_parent": "1a2666a12e38d1cf1c61628e18f8bf72451098d8efb557732d5601d6abb1a4bd"
     },
     {
       "id": "FGAP-033",
@@ -1254,12 +1249,11 @@
         }
       ],
       "impact": "A pre-identity substrate (no substrate_id) cannot use /context install --update to forward-migrate a populated block — the re-sync silently refuses (blocked) rather than migrating. No data loss (schema + block byte-unchanged), but the operation is unavailable for pre-identity substrates and the two skipped tests leave that path without green coverage. Identity-established substrates (the normal case; live .context carries a substrate_id) are unaffected.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Design via canonical process (a dedicated DEC + scoped plan) how schema re-sync should behave for a pre-identity substrate — e.g. whether resync should establish/require identity first, persist items under an explicit pre-identity contract, or remain refused-by-design. Once decided, re-green (or replace per the chosen contract) the two skipped tests.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
-      "content_hash": "17ba1fdaad6e50e5ef0cdf329dbf44d592efe258ae2b0620ab056270b386d6b4",
-      "content_parent": "74fcaa25d62dd5b5a3b65337139179fb607e91a72b55c5867b3f6a12b3258250"
+      "content_hash": "74fcaa25d62dd5b5a3b65337139179fb607e91a72b55c5867b3f6a12b3258250"
     },
     {
       "id": "FGAP-034",
@@ -1275,12 +1269,12 @@
         }
       ],
       "impact": "Phase schema declares an optional success_criteria field the model forbids; composite-level criteria duplicate the child rollup.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Remove success_criteria from the phase schema; phase completeness derives from its tasks.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "d1b88e8546dffdba6ac17b1ecde6707f",
-      "content_hash": "7f9f62a0059cede232a024d8eba94a93128f2eff5651380a0ad4a5c3c0ee148f",
-      "content_parent": "6b6f0ac33c95aafc01907b350daf66c9ddcdaf9648a2e5d2089e24d025a93240"
+      "content_hash": "6b6f0ac33c95aafc01907b350daf66c9ddcdaf9648a2e5d2089e24d025a93240",
+      "content_parent": "0b0cb87da92c08a9ff734a1dece7c030ea33380586e1d9a9dccb172635f13107"
     },
     {
       "id": "FGAP-035",
@@ -1296,12 +1290,12 @@
         }
       ],
       "impact": "Task schema declares acceptance_criteria as a string array; strings carry no status or proof, so done-ness and verification are not machine-checkable from the criterion.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Rename acceptance_criteria to success_criteria and change each item from string to the criterion object.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7b6e4b4aeb6fbe795e883daf85000d2f",
-      "content_hash": "fde894f3fd309c863bfac21d07332220d94e3be16f71cc223b98a45f4d1a90d7",
-      "content_parent": "2d28e470d7106362df13a0a73e78349a8d1e5ef7d9ca20bad82e4d9f75608c0d"
+      "content_hash": "2d28e470d7106362df13a0a73e78349a8d1e5ef7d9ca20bad82e4d9f75608c0d",
+      "content_parent": "b2de63bc0181a2d2a61637b6d78383c811355e481d3e68106e89cc6f46c2b1af"
     },
     {
       "id": "FGAP-036",
@@ -1321,12 +1315,11 @@
         }
       ],
       "impact": "Criteria at both levels can be non-binary or non-outcome-based.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Constrain phase and task success_criteria so each criterion must be binary and outcome-based, or it is invalid.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "8d71055d9de89506bbaafe2eb946260e",
-      "content_hash": "98d6b196e4d1480accaaf102cc73e03a361591d91797824062996da0ef6dd7bf",
-      "content_parent": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98"
+      "content_hash": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98"
     },
     {
       "id": "FGAP-037",
@@ -1350,12 +1343,12 @@
         }
       ],
       "impact": "Phases and stories reference milestones as edge targets with nothing to point at, and there is no block to roll gaps/issues/tasks/phases into a release — milestones cannot be represented in the substrate.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a milestone block kind with id (MILE-NNN), name, status (planned|reached), optional release; no intent; reached derived from placed phases (FGAP-039); organized by stories via FGAP-041. Land it in both the samples catalog and the active .context.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "eb340f2333abb437c6cff7e8036499a1",
-      "content_hash": "e1fb2b3b9b99549339d26ac9fbe0adb473fcb780ae7f7c00725c9b30f486c4e3",
-      "content_parent": "279263801462ca96b7d385c821f20ec273b3b08ddf7153fc371382afbf602d58",
+      "content_hash": "279263801462ca96b7d385c821f20ec273b3b08ddf7153fc371382afbf602d58",
+      "content_parent": "053667287c83c068919eb0a25e8f0640ba9ffca6334d1df23ac3a6fa87f645a6",
       "closed_by": "Milestone block kind + schema + derived reached phase-rollup + reached-milestone-phases-complete invariant shipped; VER-052; merged 18cca3d (direction-corrected 96d37ee)",
       "closed_at": "2026-06-17T00:00:00.000Z"
     },
@@ -1377,12 +1370,11 @@
         }
       ],
       "impact": "Two constructs assert the same done-ness: the criterion's pass and a separate verification item.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Delete the verification block kind and the verification_verifies_item relation; migrate each verification onto the task criterion it attests.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "d20b20e4c30b2ce12911c902fb5c0aed",
-      "content_hash": "318a26560700c97e4093ffcf81209c401d422a5a579553f63e5c956d2ff5a345",
-      "content_parent": "6ee28a5086bd011b0108cfc5a60e9d5a2c947b80616648aaa573b59fd65500fe"
+      "content_hash": "6ee28a5086bd011b0108cfc5a60e9d5a2c947b80616648aaa573b59fd65500fe"
     },
     {
       "id": "FGAP-039",
@@ -1398,14 +1390,14 @@
         }
       ],
       "impact": "Milestone rollup has no edge to read; phases cannot be grouped under a milestone.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Register a phase-in-milestone placement relation_type; milestone done-ness reads up it.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "fa867fd3ebbc861862763db310c92f63",
-      "content_hash": "240ac44589b5e718a39f5839d588e049b643e7791c6ddd6ce20e6c77232d93b2",
+      "content_hash": "61373cd2b04bbc0aea4b0d32bdae8742055324f87f572c43ae43aff7af96c9a3",
       "closed_by": "phase_positioned_in_milestone placement relation (phase->milestone) registered + consumed by the reached phase-rollup deriver; VER-052; merged 18cca3d",
       "closed_at": "2026-06-17T00:00:00.000Z",
-      "content_parent": "61373cd2b04bbc0aea4b0d32bdae8742055324f87f572c43ae43aff7af96c9a3"
+      "content_parent": "34b0092734ce0efa5a1052a696dc8622fc0004f43a674d05a684340eb55cab39"
     },
     {
       "id": "FGAP-040",
@@ -1421,12 +1413,12 @@
         }
       ],
       "impact": "Story schema carries criteria and a multi-state lifecycle; the model treats a story as a theme with no done-ness of its own.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Set story fields to id + description + status(draft|set) + type, where type is a free-form string (not an enum) admitting values like user or llm-user; drop title, acceptance_criteria, and the surplus status values proposed/ready/in-progress/in-review/complete/blocked.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5fb8c651598f008d8526a291a7806673",
-      "content_hash": "e193ba5b59b55f44fd81539f108ec7ed9949a8070e273261e221984cf0833e35",
-      "content_parent": "7088e439ebf55580b5bf98bbec1c32d8e4da561d8bf1cbd8ace45a6bfe8ce7d7"
+      "content_hash": "7088e439ebf55580b5bf98bbec1c32d8e4da561d8bf1cbd8ace45a6bfe8ce7d7",
+      "content_parent": "21be52cd27953738bf614fb3a6f86839e18e893896e5a400025c55224c69a79b"
     },
     {
       "id": "FGAP-041",
@@ -1442,14 +1434,14 @@
         }
       ],
       "impact": "Stories can only link to tasks; the model needs a story to span any level.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Register story_includes_item with source_kinds=[story], target_kinds=[*].",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "89bf9b62592f4e56cb963332b58272df",
-      "content_hash": "ea197de2b3a7da4b50c81f6d2f0d293b7804115b1705e701eccef098995fd8e5",
+      "content_hash": "8a754f0cce5de4104e1ff2f20006c2be6b7b9aab47d295ec5c436fd94d93100e",
       "closed_by": "story_includes_item (story->any) registered and story_contains_task retired; VER-052; merged 18cca3d",
       "closed_at": "2026-06-17T00:00:00.000Z",
-      "content_parent": "8a754f0cce5de4104e1ff2f20006c2be6b7b9aab47d295ec5c436fd94d93100e"
+      "content_parent": "ff00edf762c4f0784be4c7faf11cc7ecb65c172469b8bf9d1dcdc13a10618213"
     },
     {
       "id": "FGAP-042",
@@ -1465,12 +1457,12 @@
         }
       ],
       "impact": "The roadmap has no live source and milestone sequence is unrepresented.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Register relation_type milestone_precedes_milestone (category ordering, source milestone, target milestone), modeled on the existing decision_supersedes_decision. Roadmap order is the precedes-chain: start at the milestone with no predecessor and follow precedes to the end. Render the roadmap as a view over that chain; add no block.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "99dd98ebd606aa911c245f6c1967c8a3",
-      "content_hash": "977395a452c61113e2d48ad4525f52006f658fe9de2dc37f4cff96a7178869fb",
-      "content_parent": "aec9e606826116d80bb11df392df0bbc96962ddd015af6b71fdec9691b19ce27"
+      "content_hash": "aec9e606826116d80bb11df392df0bbc96962ddd015af6b71fdec9691b19ce27",
+      "content_parent": "7570c12931f1f35e40a6cae6ac684c49a24b029f4c7e71571fc0ddfd882f9354"
     },
     {
       "id": "FGAP-043",
@@ -1491,12 +1483,12 @@
       ],
       "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
       "canonical_vocabulary": "write-time authoring-contract validation",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Resolution not yet determined; to be filed as a separate decision.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "82962dc195575410d654df4d9f8ccacf2f1fba8eb7f1f7359d50988e74b23623",
-      "content_parent": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a"
+      "content_hash": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a",
+      "content_parent": "353ba16afaf5ef4e3923ffdb354df025f9dabcab41596ddd3bb04b9e3e5c47bf"
     },
     {
       "id": "FGAP-044",
@@ -1518,12 +1510,11 @@
       ],
       "impact": "A one-field schema change carries whole-document blast radius: an unrelated edit in the replaced JSON lands silently, and the error surface grows as the PM-model arc evolves many schemas through repeated full-document replaces.",
       "canonical_vocabulary": "partial schema update (field-granular schema mutation)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a field-granular schema-edit op mirroring update-block-item's match+updates shape: add/replace/remove a single schema property and bump version in one call, meta-validated, leaving untouched properties byte-stable.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "a5de06b93ccd6dc5f6e4494a96db4c7f",
-      "content_hash": "86f75f83e3c6fbe80d14cab6848bd4d252728033444cae56c8f7a3987c696385",
-      "content_parent": "096731b17e269bd4c53c2814b9fac4a8e3678ec49437d971f5283badf995ee6b"
+      "content_hash": "096731b17e269bd4c53c2814b9fac4a8e3678ec49437d971f5283badf995ee6b"
     },
     {
       "title": "No one-step block-kind rename tool",
@@ -1542,13 +1533,12 @@
         }
       ],
       "impact": "Renaming a block kind is high-friction and error-prone inside the pi harness: operators must sequence multiple config/schema/block writes by hand, old physical files can remain orphaned, and partial failure can leave config, relations, schemas, and data out of sync.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a first-class block-kind rename operation that performs the full cascade transactionally: create/rename schema and data surfaces, update block_kinds and installed registries, migrate block data, update relation_type source_kinds/target_kinds and hierarchy/lens references, optionally rename relation_type ids by policy, validate the resulting substrate, and report or clean orphaned old files.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "id": "FGAP-045",
       "oid": "591956318b5a91326cce5454e152f58d",
-      "content_hash": "b94cf8b429bdac8cc80657bd9ff27d9b84521866bfad5cd65d44de15ea10d7af",
-      "content_parent": "53aae3c041db28e2738531ba6802da80d84b187b02312b69dd34b49cf35435d5"
+      "content_hash": "53aae3c041db28e2738531ba6802da80d84b187b02312b69dd34b49cf35435d5"
     },
     {
       "id": "FGAP-046",
@@ -1565,12 +1555,12 @@
       ],
       "impact": "A non-developer user who tailors a shipped schema must choose: take the update and lose the customization, or run plain install (never-clobber) and forgo the update. Tailoring a catalog schema is fragile against the next --update.",
       "canonical_vocabulary": "three-way merge on update (customization-preserving upgrade)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Two candidate routes. (1) Deterministic three-way merge on install --update: reconcile the catalog schema change against the user's local edits (base = the previously-installed catalog version), preserving non-conflicting edits and surfacing conflicts instead of overwriting; or an overlay that re-applies recorded customizations after the catalog refresh. (2) Agent-mediated update in pi: for users tracking the samples, a mechanism by which the pi agent reconciles the user's local schema against the updated samples — applying the catalog change while preserving the user's customizations by judgement rather than a deterministic merge.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "1f84b7e0e7fe232c0838dd01a6492765",
-      "content_hash": "02707d94fb63109d05410fa6ca1ce6fb892b939821e176cd4acee356a7da8ead",
-      "content_parent": "4e18c89ace912ee548742f5ede69d9d9fa5ba9eb978a210b2357c45d1744cebc",
+      "content_hash": "4e18c89ace912ee548742f5ede69d9d9fa5ba9eb978a210b2357c45d1744cebc",
+      "content_parent": "1429baf7a2b1c030bca69e8a4923206a4479876cc39659dacb9102534b400382",
       "closed_by": "VER-023 / TASK-037 — FEAT-006 hybrid complete (refuse T1 -> base-stamp T2 -> 3-way merge T3 -> resolver T4): pi-context update merges a locally-edited schema with the catalog preserving non-conflicting edits, and routes conflicts to an interactive pi-bound mergetool or a conflict report; a customization is never silently clobbered",
       "closed_at": "2026-06-07T00:00:00.000Z"
     },
@@ -1594,14 +1584,14 @@
       ],
       "impact": "pi-context is invokable only as `node packages/pi-context-cli/dist/bin.js` from the repo; there is no PATH `pi-context` command for users, and pi-context --pi-bound (FEAT-005) has no global entrypoint.",
       "canonical_vocabulary": "executable bin bit (global command installability)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH; the published artifact carries the bit unconditionally.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "61cb108b1659ffae0891557c6d591e85",
-      "content_hash": "d8a025ba4fbbc715748db2cdf62d4a1eefbad6723bfea96ad4cc1f9bbb08fc80",
+      "content_hash": "94657ffaf881ca7ba9bcd6c73a8211b87d26bb0db834cf5bf59e7754129a196f",
       "closed_by": "human/davidryan@gmail.com — closed by a5055ad (chmod +x dist/bin.js in the pi-context-cli build); verified by VER-017 (dist/bin.js -rwxr-xr-x; npm link exposed pi-context on PATH; ran an op from outside the repo). Published npm i -g smoke deferred (release-gated), not blocking closure of the exec-bit gap.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "94657ffaf881ca7ba9bcd6c73a8211b87d26bb0db834cf5bf59e7754129a196f"
+      "content_parent": "0a293211340f032e2bdad0489bb8d5910864f271a1abdf70846435f317179ac0"
     },
     {
       "id": "FGAP-048",
@@ -1623,14 +1613,14 @@
       ],
       "impact": "From a registry or global install, --pi-bound's meta-path resolution and the downstream pi install -l + SKILL.md tool-union glob fail; the capability works only in-repo via the workspace symlink.",
       "canonical_vocabulary": "declared dependency for runtime module resolution",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Declare @davidorex/pi-project-workflows at the lockstep version range in pi-context-cli dependencies so require.resolve succeeds from an installed CLI; verify against a published-package smoke test.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "371e3a81b13ab6db63959580a0962ab9",
-      "content_hash": "7b581ed951a539b71e368e3e723953da3c77ee872b1b4b156e4f5a28a6311606",
+      "content_hash": "9b3814fe45783c1916e8fb583635b8283202f02e5bba0e5e71b247dd27f72a13",
       "closed_by": "human/davidryan@gmail.com — closed by dafa2c6 (declared @davidorex/pi-project-workflows ^0.30.0 in pi-context-cli); verified by VER-018 (require.resolve resolves; no cycle; build/check/test green). The registry-install resolution smoke is deferred (release-gated) and does not block closing the declaration gap.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "9b3814fe45783c1916e8fb583635b8283202f02e5bba0e5e71b247dd27f72a13"
+      "content_parent": "48b45497709705e1057f61d421afe57852f6f989a01b11cde728cedf8dc70ba7"
     },
     {
       "id": "FGAP-049",
@@ -1651,14 +1641,14 @@
       ],
       "impact": "User schema edits are destroyed silently on update; the drift signal needed to prevent it exists but is not consulted in the write path.",
       "canonical_vocabulary": "drift-aware update (detect locally-modified before overwrite)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "The update path consults checkStatus before re-syncing each schema and refuses-or-merges (per FGAP-046) any locally-modified schema instead of overwriting it; delivered within the unified update command (FEAT-006).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "ad54150945add17479f99d15cee3619b",
-      "content_hash": "5aab3aa2f3779422f287142a1be94bbfd164906cd979c819acac3901e83bc5c6",
+      "content_hash": "c84dacda2728ff2e4acbc7e3241d6d7e6eb5399d3aec4e9506b1b719469dbf84",
       "closed_by": "FEAT-006 unified update command — VER-020 (TASK-034) delivered the consult-checkStatus routing: updateContext reads the checkStatus drift state per installed schema and routes locally-modified/both-diverged to refuse (T1) / merge (T3, VER-022) / resolve (T4, VER-023) instead of overwriting; the drift classification is consulted before any write",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "c84dacda2728ff2e4acbc7e3241d6d7e6eb5399d3aec4e9506b1b719469dbf84"
+      "content_parent": "c304e37ab3246ecf06d39c068d825100f42337dff58f1e5bb765d96df47a9a21"
     },
     {
       "id": "FGAP-050",
@@ -1675,14 +1665,14 @@
       ],
       "impact": "A user cannot see, from the update output, which migration declarations were written into their migrations.json; the mutation is silent.",
       "canonical_vocabulary": "surfaced mutation reporting",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "The update output enumerates every migration declaration registered into migrations.json; --dry-run lists them without writing; delivered within the unified update command (FEAT-006).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "3ddeff09fe364adbd381ecd321493064",
-      "content_hash": "965a6b75f53d42904558422859df66fdc33de0ae99a0dd14a141d961d3913ebc",
+      "content_hash": "9ed3a74ca9e1f5dc2a80687711a08f5af740b3ad9f7f5f5ae8e05df333f32998",
       "closed_by": "VER-026 / TASK-039 — pi-context update enumerates the migration declarations it registers into migrations.json under UpdateResult.migrationsRegistered; --dryRun lists the would-register set read-only (computeWouldRegisterMigrations), writing nothing.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "9ed3a74ca9e1f5dc2a80687711a08f5af740b3ad9f7f5f5ae8e05df333f32998"
+      "content_parent": "bc8f88f7d3c029f35dc1959f8821ae259dcc7a8915a19f1484cf4220afcab7aa"
     },
     {
       "id": "FGAP-051",
@@ -1699,14 +1689,14 @@
       ],
       "impact": "Benign today (no item data lost). Filed for completeness of the update path's clobber semantics and to make the update idempotent at the file level — an unguarded rewrite of an on-disk file is a latent surface for loss if empty blocks ever carry non-item content.",
       "canonical_vocabulary": "idempotent skip of an unchanged on-disk block",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Skip rewriting an existing catalog-origin block whose content already equals the starter; delivered within the unified update command (FEAT-006).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "136d4b378729d6ac5a4891b0d79d416c",
-      "content_hash": "cc608a8f8520ca06603848ed6cf12383468f59dff6c8e69f3fa1801297abe9e1",
+      "content_hash": "745a2ba911096d56162a9527ddfcdaa81123f320186531f0d351f63e8e36288f",
       "closed_by": "VER-026 / TASK-039 — installContext skips rewriting an existing catalog-origin block whose content already equals the starter (computeFileContentHash equality guard before the empty-block overwrite), reporting it skipped not updated.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "745a2ba911096d56162a9527ddfcdaa81123f320186531f0d351f63e8e36288f"
+      "content_parent": "0be5d9d549c0866e0ab6c16204744e75a9c8875b86b36475a06f1adab0903f32"
     },
     {
       "id": "FGAP-052",
@@ -1722,12 +1712,11 @@
         }
       ],
       "impact": "Bootstrap/identity-lifecycle decisions are ungoverned — no checked rule constrains future decisions of this kind.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing substrate bootstrap-state + identity reconciliation; re-point DEC-0001/DEC-0003 from item_acknowledges_missing_convention to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "195bbb09301a60a50dbf0d6e1e0f5a07",
-      "content_hash": "4f66c2ba2882fb741aa10bf4b0ab8a73e0a1a333a209672b1fedaa030e597f33",
-      "content_parent": "da73d8613a63546bf54ed1d15497812f7b432e06f319adb452ccca77a83fa67d"
+      "content_hash": "da73d8613a63546bf54ed1d15497812f7b432e06f319adb452ccca77a83fa67d"
     },
     {
       "id": "FGAP-053",
@@ -1743,12 +1732,11 @@
         }
       ],
       "impact": "Data-model/merge-semantics decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing data-model representation + merge field-kind semantics; re-point DEC-0005 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "75adcc0cf5548792ed2e8461eda23eed",
-      "content_hash": "47dfabc019529077dfc07a2176488d476228a1f57feb1834e1fc1861b7d13156",
-      "content_parent": "cc3ff45c6c0c953d83e97132d5bc86765a75519ecd545fd8f5e566ddf605b615"
+      "content_hash": "cc3ff45c6c0c953d83e97132d5bc86765a75519ecd545fd8f5e566ddf605b615"
     },
     {
       "id": "FGAP-054",
@@ -1764,12 +1752,11 @@
         }
       ],
       "impact": "Release/changelog-process decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing release cadence + changelog discipline; re-point DEC-0007 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "b130b65831617391423f4ae404e38f8e",
-      "content_hash": "9c75af4275251e2346f7f3ac0f81bdf129ef15a595a2def9976894472a9c6674",
-      "content_parent": "bb1327915c62e06a48f6f3475c2587887ab41d33e463dad7150c49e28472e220"
+      "content_hash": "bb1327915c62e06a48f6f3475c2587887ab41d33e463dad7150c49e28472e220"
     },
     {
       "id": "FGAP-055",
@@ -1785,12 +1772,11 @@
         }
       ],
       "impact": "Output-safety-invariant-placement decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing output-safety invariant placement; re-point DEC-0009 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "c60ad8e5d1ed92abd165049afbf1ff42",
-      "content_hash": "eb2a1e68081c65c555c40fd9ce8da8ec8d5d07bf7fd032857ac8ee9e92bff3d5",
-      "content_parent": "a3c6b67c110d18cb67036837a5ad529928f8feb05099612184e24d46bfc85222"
+      "content_hash": "a3c6b67c110d18cb67036837a5ad529928f8feb05099612184e24d46bfc85222"
     },
     {
       "id": "FGAP-056",
@@ -1806,12 +1792,11 @@
         }
       ],
       "impact": "Surface-topology decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing op/script/CLI surface topology; re-point DEC-0011 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "c15929f59b0bb4c5d259c83a7c6a62b8",
-      "content_hash": "cadf777149577a50f5b2e5ae3e13c17d1066ce37547afa11301eadb0a06f6f1a",
-      "content_parent": "a2e47852930baa49a68ac998b827cd9f14e118b95fd2eafbf509ad8157fd0a77"
+      "content_hash": "a2e47852930baa49a68ac998b827cd9f14e118b95fd2eafbf509ad8157fd0a77"
     },
     {
       "id": "FGAP-057",
@@ -1827,12 +1812,11 @@
         }
       ],
       "impact": "Process-governance decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing canonical-process + governance-enforcement; re-point DEC-0012/DEC-0016 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "c6f790e02a2343f55f510b7e749032d3",
-      "content_hash": "b1c1a3957adbc9a21545c49b95475dcfcd46d68b8b26bc49c224d6c301651931",
-      "content_parent": "b3b0b38958ee81c03c384d2666dac387e3727cfb55cd55fa50a9072e8dd5f202"
+      "content_hash": "b3b0b38958ee81c03c384d2666dac387e3727cfb55cd55fa50a9072e8dd5f202"
     },
     {
       "id": "FGAP-058",
@@ -1848,12 +1832,11 @@
         }
       ],
       "impact": "Packaging/publish-topology decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing publish-unit / package topology; re-point DEC-0013 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "1f5bac32a78214bc307b48d333a22b49",
-      "content_hash": "8569eee618b79e0a421d24a1f8503b32848cdb39edbb9b0590c9b7138d402b96",
-      "content_parent": "ec156b917467b628537b8480d4037c808c291c0f2e4a7fc410df64883028e263"
+      "content_hash": "ec156b917467b628537b8480d4037c808c291c0f2e4a7fc410df64883028e263"
     },
     {
       "id": "FGAP-059",
@@ -1869,12 +1852,11 @@
         }
       ],
       "impact": "Implementation-mechanism decisions are ungoverned.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Author a convention governing implementation-mechanism choice; re-point DEC-0015 to item_governed_by_convention; close this gap.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "2f661948acf59b47bd5344c9238d0811",
-      "content_hash": "fb6e24f2ab56c03ab78d9ca888a408d86e55e7a646191822ec9d72ddaa08bcc5",
-      "content_parent": "f3b54bfaccd337d84278ebb42301c217c00158997723a0cad8013a3ae96ec943"
+      "content_hash": "f3b54bfaccd337d84278ebb42301c217c00158997723a0cad8013a3ae96ec943"
     },
     {
       "id": "FGAP-060",
@@ -1896,14 +1878,14 @@
       ],
       "impact": "Any catalog vocabulary/invariant addition is delivered only to fresh installs; existing users must hand-amend-config to receive it — capping the value of every catalog release for the installed base.",
       "canonical_vocabulary": "catalog config-registry propagation on update",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "The unified update command (FEAT-006) merges catalog config-registry additions into an existing substrate's config (additive, customization-preserving), so new relation_types/invariants/block_kinds reach existing substrates; surface what is added, and --dry-run previews.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "9d20eeedb0616d8c8f7f7aa614da5985",
-      "content_hash": "752767f86c8c51438bd083bf347d040ba2dfbbb667c913510cb4e94a4f9f2863",
+      "content_hash": "d50fe02e54bf0b5c73a80461d465c6a2e7291abb5130a7f392870a6022aa6f27",
       "closed_by": "VER-025 / TASK-038 — pi-context update additively merges catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) absent from an existing substrate config, preserving user entries; --dryRun previews. mergeCatalogRegistries (additive, REGISTRY_DESCRIPTORS-driven) wired into updateContext after the baseline-refresh loop.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "d50fe02e54bf0b5c73a80461d465c6a2e7291abb5130a7f392870a6022aa6f27"
+      "content_parent": "dd60745e1789913a34f40d8941570f862a9e48d40c4b773b6a8774311257b272"
     },
     {
       "id": "FGAP-061",
@@ -1931,12 +1913,11 @@
       ],
       "impact": "Orderings expressed as gates (task_gated_by_item; feature/story_gated_by_item) are invisible to 'what is ready': a gated task surfaces as a next-action, and feature/story gates have no derivation. Cross-arc orderings recorded as gates are documentation-only (carried in a tracker md), not derived.",
       "canonical_vocabulary": "gate-aware readiness derivation",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "NOW (task level): extend currentState's depParentsOf (context-sdk.ts:727-730) to also fold in task_gated_by_item parents, treating a task gated by an incomplete/unclosed item as blocked (resolving non-task gate targets to a complete/closed bucket), so blocked + the nextActions topo order honor gates. FORWARD (the proper home, FEAT-004): FEAT-004's config-declared blocked-by relation_type must be a SET including the gating relations (task_/feature_/story_gated_by_item) alongside the *_depends_on relations, and FEAT-004 must add feature/story-level readiness derivation — so gate-awareness is config-declared and covers all kinds, not hardcoded to tasks. Until FEAT-004, the currentState extension closes only the task-level case.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "aeffe68d922894375b46f7f0f1121056",
-      "content_hash": "5d84389fca7d7ab231f9962bbbd3a4b5f2d31d4ab4baac450dea3f842032c5f3",
-      "content_parent": "c906c8d12611cf578948689b30dc154ece52e4f9a0a5b48cc613465d7940705b"
+      "content_hash": "c906c8d12611cf578948689b30dc154ece52e4f9a0a5b48cc613465d7940705b"
     },
     {
       "id": "FGAP-062",
@@ -1969,14 +1950,14 @@
       ],
       "impact": "The reflecting CLI is the dogfooding surface and the new-user entry point; its top-level --help is unscannable (49 paragraph-wide lines), buries the everyday ops (read-block-item / append-block-item / update-block-item / append-relation / context-validate), and hides pi-bound. Both new users and dogfooding hit a wall at the first command run.",
       "canonical_vocabulary": "scannable grouped CLI help",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Confined to cli.ts deriveTopHelp; data-driven from existing OpDefinition fields (no ops-package change; zero risk to the in-pi LLM tool surface, which projects op.description via registerAll, not deriveTopHelp): (1) source each command line from op.promptSnippet ?? op.description (the existing short summary, not the paragraph); (2) group ops into sections by name-prefix (reads / writes / relations / schema / roadmap / substrate-lifecycle), sorted within section; (3) add a process-modes section listing pi-bound so it is discoverable; optionally flag authGated ops. Do NOT shorten op.description in place — it is the load-bearing LLM tool description.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "6e97fee15ea7746c3535e2ce37a4b16e",
-      "content_hash": "8af7e7c4a7a9b5c12257148bb925f095db4e8662fc8db1d2908d3b1a243b0b4c",
+      "content_hash": "003031c7011a5a83b8df264520b4413454b6cf28dd819475a5956a78fd09bbe6",
       "closed_by": "VER-034 / TASK-040 — deriveTopHelp rewritten as a grouped scannable listing (7 read-before-mutate groups via an exhaustive+disjoint groupForOp classifier over all 50 use-ops, alphabetical within group), one-liner sourced from promptSnippet (truncated at a 72-char word boundary, not the full op.description), pi-bound surfaced under a Process modes section. Additive dispatch-layer in cli.ts; ops frozen.",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "003031c7011a5a83b8df264520b4413454b6cf28dd819475a5956a78fd09bbe6"
+      "content_parent": "a657ba5d13e703c56e12545f1bb1aed0e80d823d4740ecef0aff73805a692dab"
     },
     {
       "title": "pi-context CLI has no --version / -v command — a globally-installed CLI cannot report its own version",
@@ -1998,15 +1979,15 @@
       ],
       "impact": "A user verifying an install or filing a bug cannot state which pi-context version they run; --version is a baseline expectation of any installed CLI. A first-run and support deficiency on the global command.",
       "canonical_vocabulary": "CLI version command",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a --version/-v branch in main() (beside the -h/--help branch, before resolveOp) that prints the pi-context-cli package version (read from package.json) and returns 0.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-063",
       "oid": "8ce58a2be65cf437b2c58bc5b4986c14",
-      "content_hash": "f32eac1349c21e041023511d8c1cc1e843cd82cc0853a4a50e99961d7bff4977",
+      "content_hash": "c0c3c3d574ffabfdee08b1cdfcfe546ce848fe49ba5930baf89ac7c6bac5bf83",
       "closed_by": "VER-034 / TASK-040 — a --version/-v branch in main() before resolveOp prints pi-context <version> to stdout exit 0; the version is read build-safe at module load from the shipped package.json via fileURLToPath(new URL(../package.json, import.meta.url)), resolving from dist/cli.js (matches package.json 0.30.0, not hardcoded).",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "c0c3c3d574ffabfdee08b1cdfcfe546ce848fe49ba5930baf89ac7c6bac5bf83"
+      "content_parent": "aa7d93cc533eff304124f834fed5525ae40202d3208992b07cbd18297a7a0437"
     },
     {
       "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",
@@ -2031,15 +2012,15 @@
       ],
       "impact": "The headline update feature's safety-preview flag fails when typed in the conventional kebab form documented across the substrate; every camelCase op parameter inherits the same footgun. A first-run and dogfooding UX defect on the highest-visibility surface.",
       "canonical_vocabulary": "kebab-case CLI flag normalization",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Normalize flag matching in parseOpArgs so a kebab-case flag maps to its camelCase op-schema key (accept --dry-run for dryRun, etc.), accepting both forms. Resolve as one flag-normalization layer together with FGAP-032 (the id-flag-specific instance). No op-schema change.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-064",
       "oid": "f91a7b90ad64bb551a6804035241ca20",
-      "content_hash": "3f47f9c8f695c145bd35a6b7bdcc927bdff0d2ffc203c68fe690c1844d9d225e",
+      "content_hash": "b41d499ddfa5c2ebb84afd99bd33b928af95e867109941fed2842d63bb07f53d",
       "closed_by": "VER-029 / TASK-015 — a kebab->camel alias layer in parseOpArgs resolves conventional kebab-case flags (e.g. update --dry-run) to the camelCase op-schema key; the camelCase form still works.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "b41d499ddfa5c2ebb84afd99bd33b928af95e867109941fed2842d63bb07f53d"
+      "content_parent": "f7208f4a1fefd88c4057857a6493cfe1d25033adbd472980e72b0b831297a4ad"
     },
     {
       "title": "No op materializes a newly-declared block's data file into an already-installed substrate — neither update nor the install-ceremony write that declared it (a dangling block_kind declaration)",
@@ -2079,13 +2060,13 @@
       ],
       "impact": "Any catalog-added block kind silently bricks the bootstrap signal of every pre-existing substrate: context-bootstrap-state reports not-installed though the substrate is fully usable for its existing blocks, and the new block kind cannot be filed to (its data file does not exist). The canonical 'is this substrate installed' signal lies to every consumer — operator, CI gate, fresh-checkout bootstrap check, readiness-verifying agent. Live on .context since 2026-06-16 (the milestone declaration).",
       "canonical_vocabulary": "block_kind data-file materialization into an already-installed substrate (declaration + schema + starter, on any post-install currency op, not only update)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Provide a sanctioned op that materializes any declared-but-absent block data file into an existing substrate (the missing.blocks[] set from findUnmaterializedAssets), copying the catalog starter via the install path — invoked by update for catalog-added block kinds AND available standalone as a repair/materialize op; surfaced + previewed by --dryRun. Scope is broader than update: the milestone live state was produced by the install-ceremony declaration write, not by update, so the fix is to materialize missing block files on any post-install currency op, not only on update. Verification: a substrate whose config declares a block kind with no data file reports not-installed, the op materializes <kind>.json, and context-bootstrap-state then reports ready.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-065",
       "oid": "6c909103e3127305ce4e68a7cbbfd727",
-      "content_hash": "2fe095d6e1611d058bd4a934b168e1f2cee9a31ee57b6628332b0471ec17f831",
-      "content_parent": "85f724cb1528c9dfff45ede1755abf3220cacf34dc9b53dd643331b06c1ce04f"
+      "content_hash": "85f724cb1528c9dfff45ede1755abf3220cacf34dc9b53dd643331b06c1ce04f",
+      "content_parent": "96c16d1cd614adbb87c5e433910ac42333d9d3f09e06663f6a27bc8766787c5e"
     },
     {
       "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",
@@ -2101,15 +2082,15 @@
       ],
       "impact": "A user previewing an update sees `resynced` for a schema a live run would actually migrate or refuse (block), and migrationsRegistered may list decls a blocked live run would roll back — the dry-run preview can over-state what an update would do, exactly for the schemas most at risk.",
       "canonical_vocabulary": "exact dry-run outcome preview",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Under --dryRun compute the precise per-schema version-bump outcome READ-ONLY (find the catalog migration chain, forward-migrate the populated block in memory, AJV-validate against the new schema) and classify resynced vs migrated vs blocked — reporting migrationsRegistered only for non-blocked outcomes — without writing, so the preview matches a live run.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-066",
       "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
-      "content_hash": "e17ac0779c241cde2be0f18e124e238a71b2aef35055de6ca835551f1fdfec6a",
+      "content_hash": "36e047af1270c23dccc0c7118fd8050c06afe1d739373a46171b0c21086b2423",
       "closed_by": "VER-038 / TASK-046 — update --dryRun predicts the precise catalog-ahead outcome (resynced/migrated/blocked) via simulateResyncOutcome: an in-memory forward-migration + AJV re-validation against the catalog schema, classifying by the live resyncSchema logic, writing nothing; a dry-blocked schema reports no would-register migration declarations. resyncSchema and the live arm byte-unchanged.",
       "closed_at": "2026-06-10T12:00:00.000Z",
-      "content_parent": "36e047af1270c23dccc0c7118fd8050c06afe1d739373a46171b0c21086b2423"
+      "content_parent": "a62cfe70c7e9d0bf5936e19281c618ba519845d4a591e8877bb5bafe9675ba46"
     },
     {
       "title": "pi-context update does not reconcile a catalog registry entry whose body changed against a user-modified entry of the same id (additive-only) — the config-registry analog of the schema 3-way merge",
@@ -2125,13 +2106,12 @@
       ],
       "impact": "A user who tailors a catalog registry entry (e.g. a relation_type display_name/category, an invariant severity, a lens body) is frozen against future catalog changes to that entry — the value of a catalog registry update is capped for any customized entry, mirroring FGAP-046 for schemas but for config registries.",
       "canonical_vocabulary": "config-registry 3-way merge (divergent-body reconciliation)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Extend update to reconcile a divergent catalog body against a user-modified registry entry of the same id via a 3-way merge (base = the as-installed catalog entry, ours = the substrate entry, theirs = the catalog entry), preserving non-conflicting customizations and surfacing conflicts — the registry analog of the FGAP-046 schema merge. Requires recording a per-registry-entry base (the registry equivalent of base-stamping).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-067",
       "oid": "b08ca852bf0eba2255dc47a5b5e7d641",
-      "content_hash": "06f5a3ff8b60c3e35ca00ee44c1e612ead485db08226eb1080e918d6192be5a3",
-      "content_parent": "4f74f3dc354576a40941f24ae4ad9acb2c23cafc8f2a741927f636dfa4b9ed7f"
+      "content_hash": "4f74f3dc354576a40941f24ae4ad9acb2c23cafc8f2a741927f636dfa4b9ed7f"
     },
     {
       "title": "the update conflict resolver spawns a subordinate `pi -p` mergetool instead of returning the conflict to the calling agent — the spawned agent's write-schema is auth-gate-refused (hasUI=false)",
@@ -2157,15 +2137,15 @@
       ],
       "impact": "The agent-mergetool resolver never auto-applies a reconciliation. It degrades to: the agent prints the reconciled schema + the operator manually runs write-schema in an interactive pi. The conflict is surfaced and resolvable (never-clobber holds), but the one-command resolver UX is broken for its target case; and for the dominant agent-invoked usage the subordinate spawn is redundant — the calling agent should reconcile + apply.",
       "canonical_vocabulary": "caller-as-reconciler (no subordinate-agent spawn for an agent-invoked CLI)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Drop the pi-bound subordinate spawn from the resolver. update returns the typed conflict set (the rendered report + the structured `conflicts`); the calling agent (Claude Code / a shell-LLM) reconciles and applies the result via write-schema under the operator's confirm. Net-simpler code. Amends DEC-0017's resolver route. Re-verify with the live smoke (the calling agent applies the reconciliation end-to-end).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-068",
       "oid": "6b5814e3842aab14d6006e1a7280f180",
-      "content_hash": "6d2f6ad6bdd6b4cefcc59f9e2f9c6d896fae1fdd82b87b28c249962d153fbd90",
+      "content_hash": "53d77803609aff0d6772d146019ddbbdd2c9305bbfb59c75d0568083987444af",
       "closed_by": "VER-028 / TASK-037 — the update conflict resolver no longer spawns a subordinate pi-bound mergetool; pi-context update surfaces the conflict set (structured under --json + a renderConflicts report) to the calling agent, which reconciles via read-schema/write-schema/resolve-conflict.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "53d77803609aff0d6772d146019ddbbdd2c9305bbfb59c75d0568083987444af"
+      "content_parent": "091c556959274a95b6ef8e937085173ffe188ca1a75238ce29d1e06e03584bd7"
     },
     {
       "title": "a calling agent cannot resolve an update conflict — write-schema does not advance the merge base, so update re-flags a reconciled schema forever",
@@ -2190,15 +2170,15 @@
       ],
       "impact": "The caller-as-reconciler model surfaces conflicts but provides no way to resolve them — a reconciled schema is re-flagged on every update unless the agent happens to pick the catalog's exact value. The conflict-handling guarantee of FEAT-006/update is not met end-to-end without a reconciliation-commit.",
       "canonical_vocabulary": "reconciliation-commit (advance merge base to catalog on conflict resolution)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a reflected, auth-gated commit op `resolve-conflict --schemaName <name> [--schema <R>]` that (i) writes R via writeSchemaCheckedForDir if provided, then (ii) advances installed_from.assets[name] (+ object-store stamp) to the CATALOG body (resolveCatalog -> samples/<schema_path>) via a stampBaselineFromBody helper factored from refreshBaselineForSchema. The conflict report's guidance names it. Then update auto-merges the reconciled schema (base==theirs->ours), zero conflicts.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-069",
       "oid": "30fd821860903b50e4d6356a0f8d4fcf",
-      "content_hash": "8f99bd69f04b13915603dc015ba24b72473cdfe9c49b80d9073e1415e4882896",
+      "content_hash": "c5d85ba7f322eb799697c117ae0f5f21d2f27eb7e07735458911b40ef1e96df8",
       "closed_by": "VER-028 / TASK-037 — the reflected auth-gated resolve-conflict op writes the reconciled schema AND advances the merge base to the catalog (stampBaselineFromBody), so a subsequent update converges instead of re-deriving the conflict; verified live end-to-end.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "c5d85ba7f322eb799697c117ae0f5f21d2f27eb7e07735458911b40ef1e96df8"
+      "content_parent": "714d188a6bc8024860217047ec562f568d0d6474a97f3d8d248618ecb3d14d66"
     },
     {
       "title": "update re-baselines an auto-merged schema to the merged body, not the catalog — so a kept-local divergence is resynced to catalog (clobbered) on the NEXT update",
@@ -2230,15 +2210,15 @@
       ],
       "impact": "update's never-clobber guarantee fails on the SECOND update: both a reconciled conflict value and a plain disjoint local edit are silently overwritten by the catalog on the next update. The merge 'both survive' / reconciliation 'preserved' guarantees are only-one-update-durable.",
       "canonical_vocabulary": "post-merge baseline := catalog (theirs), not the merged body",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "In updateContext's merge arm, on the conflict-free branch, stamp base := the CATALOG (theirs) body via stampBaselineFromBody (theirs + sourceFile already in scope), !dryRun-guarded; remove result.merged from the post-loop on-disk refreshBaselineForSchema set (resynced/migrated keep it — their on-disk body IS catalog). Then checkStatus reads locally-modified, the next merge takes base==theirs->ours=R, fixed point installed=R/base=catalog stable across updates. Correct tests (h)/(i)/(d)/(j) to assert locally-modified + catalog baseline + multi-update durability.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-070",
       "oid": "6ea2b21f2d3253e27cda91f02a8c30bd",
-      "content_hash": "dd1416a8187004596a4b168781c00a7edf0f06acc2701cac458ed459eeccb5ff",
+      "content_hash": "5905482c6eb46f949b2bcb2615a8811bc036488070123a0a91eea4019659f3c8",
       "closed_by": "VER-028 / TASK-037 — updateContext stamps the merge base := the catalog (theirs) body and excludes merged from the on-disk baseline refresh, so a kept-local divergence (reconciled conflict OR disjoint auto-merge) stays locally-modified and survives subsequent updates; live 3x-update + adversarial 4+-update harness confirm a stable fixed point (no resync clobber).",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "5905482c6eb46f949b2bcb2615a8811bc036488070123a0a91eea4019659f3c8"
+      "content_parent": "215f5e68f433663619f37f2d4e9aef5fd562702547310aeff052a6f1b93755c4"
     },
     {
       "title": "gap-arc-coherence is a review convention but unenforced — no invariant catches an unbound gap, so flat-list drift recurs silently",
@@ -2262,13 +2242,12 @@
       ],
       "impact": "Governance of gap organization depends on a human noticing, not on the validator. Same-surface gaps can accrete unbound indefinitely (item counts only grow), so the substrate drifts back to a flat, mixed-vintage list between audits — the failure gap-arc-coherence was written to end, left unguarded.",
       "canonical_vocabulary": "gap-arc-binding invariant (a gap is feature-bound, task-addressed, or explicitly standalone)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add the enforcement as a config-only invariant set, modeled on FEAT-007: (1) a relation_type for an explicit standalone acknowledgment (e.g. gap_acknowledged_standalone, source framework-gaps), so a gap that is intentionally unbound is marked rather than silently orphaned; (2) a requires-edge invariant requiring every NON-closed framework-gap to carry at least one of gap_addressed_by_feature / task_addresses_gap / gap_acknowledged_standalone; (3) severity warning initially (.context has legitimately-unbound gaps today — a backfill pass binds or standalone-marks them before raising to error, mirroring FEAT-007's clean-after-backfill approach). Decide the severity-raise gate + run the backfill as part of landing it. No validator code change — invariants are config-declared. File under the governance arc adjacent to FEAT-007.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-071",
       "oid": "87eaf6bf5da8e7658c818203f9ce701e",
-      "content_hash": "7af41507d35c58e4ebd784465344cb82ad44f9c878a5e8d21d5f1e59b53b9d3b",
-      "content_parent": "06287d59e85c2dbdad068866b0a4a9df8c31aeef1e78d6346b325974cac57455"
+      "content_hash": "06287d59e85c2dbdad068866b0a4a9df8c31aeef1e78d6346b325974cac57455"
     },
     {
       "title": "pi-context per-op <op> --help lacks the best-of-breed template — no EXAMPLES, SYNOPSIS, RELATED/see-also, or footer; and structured help bypasses --format",
@@ -2299,15 +2278,15 @@
       ],
       "impact": "The reflecting CLI is agent-invoked and --help is the agent caller's primary documentation surface. The per-op page gives flags but no examples, no call-shape synopsis, and no related ops, so an agent driving an unfamiliar op cannot see a copy-pasteable invocation, the synopsis, or what to call next — forcing trial-and-error and --help round-trips, and forcing prose-scraping where a structured --format json help would be parseable. FEAT-008 (the best-of-breed CLI) is not best-of-breed until the per-op help page carries examples + synopsis + related; per the standing best-of-breed/no-deferral mandate this is required work, not a deferrable separate decision.",
       "canonical_vocabulary": "per-op help template (synopsis + examples + related + footer + machine help via --format)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A per-op help-template render layer, ADDITIVE (in-pi op behavior frozen — run/parameters/description unchanged; the FEAT-008 byte-unchanged invariant is about op BEHAVIOR, and the parity gate TASK-019 asserts op<->CLI behavioral parity, which additive help-metadata does not touch): (1) add an examples[] (and optionally related[]/synopsis-override) help-metadata field to OpDefinition in ops-registry.ts, authoring examples[] for all ~48 use-ops from the CLAUDE.md canonical filing patterns; (2) in deriveHelp (cli.ts:554) render a fixed template — SYNOPSIS (derived from typed params, docopt notation) -> summary -> Flags (existing) -> EXAMPLES -> RELATED -> footer; (3) derive RELATED within the op's name-prefix group and surface pi-bound; (4) route a structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) through the existing --format json so --help participates in --format. Fold into FEAT-008 as a SIBLING task to TASK-040 (different code location per the feature-decomposition rule), decompose per feature-decomposition, verify via the canonical pipeline; the parity gate stays green (additive).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "FGAP-072",
       "oid": "16665161ef645c304de0152cd4d2237f",
-      "content_hash": "d8c10784ba613e4d7cbb91d7038b6f2052006b95318988621cec998a4e0d1dad",
+      "content_hash": "370a1b4a23f9411e81cedded8917e400704968d542d8d66a118a57cedf7dc7e1",
       "closed_by": "VER-035 / TASK-042 — per-op <op> --help now renders the best-of-breed template (SYNOPSIS + Flags + EXAMPLES + RELATED + footer) via a pure buildHelpModel; OpDefinition gained an additive examples? field authored for all ~50 use-ops; --help --format json emits the structured help model; RELATED derives from the single groupForOp source; the auto-supplied set is single-sourced to AUTO_SUPPLIED (Flags annotate (required; auto-derived/auto-injected)) and the TASK-019 parity gate migrated to read its keys. Additive: in-pi ops frozen, parity gate green.",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "370a1b4a23f9411e81cedded8917e400704968d542d8d66a118a57cedf7dc7e1"
+      "content_parent": "d4c531d8d037d425e9b8b8168119da355a856ba908087599d028465b46a919c6"
     },
     {
       "title": "The reflecting pi-context CLI has no op to project a config-declared target-lens as a binned item-view (the lens-view primitive exists but is reachable only inside a roadmap)",
@@ -2343,13 +2322,13 @@
       ],
       "impact": "The substrate declares a lens vocabulary and ships the binning/render primitives, but the reflecting CLI — the dogfooding and new-user surface — cannot render a block grouped by status/priority for any declared lens. Seeing open gaps (or tasks/features by status) requires hand-running filter-block-items one bin and one status-value at a time, against a framework-gaps block that exceeds the 50KB read cap. Every declared lens inherits the gap.",
       "canonical_vocabulary": "config-declared lens projected as a binned item-view via a reflected op",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a reflected op context-lens-view keyed by --lensId that calls loadLensView (lens-view.ts:43) and returns the binned item-view, with renderLensView (lens-view.ts:105) for the text surface. Serve every config.lenses[] kind (target, composition, hand-curated). Modes: a bin summary (counts, within the cap) and, under --bin, that bin's items paged via pageArray (read-element.ts:188). Route through the boundary read-cap. Additive: a new op; all other in-pi ops byte-unchanged. The op<->CLI parity gate and the per-op help template cover it.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "FGAP-073",
       "oid": "204bd4df63719f6f0f23fb86c95fbd08",
-      "content_hash": "394dccd368dcdfd4d912ac2526372acaf59c3037a8787b380236b37388f23c79",
-      "content_parent": "2ee21ceddb02b7a249d23ea0f4ce8b7059788b7343796c5d27e61adf3509d9ac",
+      "content_hash": "2ee21ceddb02b7a249d23ea0f4ce8b7059788b7343796c5d27e61adf3509d9ac",
+      "content_parent": "e7accfb54fb132c1b24066f01a0dea9eb762676826d0a3159d248e2feaedb3d3",
       "closed_by": "VER-037 / TASK-043 — the additive context-lens-view op projects any config-declared lens as a binned item-view (bin->count summary + per-bin paging via pageArray, routed through structureForRead), reusing loadLensView/renderLensView; serves target/composition/hand-curated lenses; slotted in groupForOp; ops frozen, parity green.",
       "closed_at": "2026-06-10T00:00:00.000Z"
     },
@@ -2387,13 +2366,12 @@
       ],
       "impact": "Block bodies compose verbatim into subagent contexts — the substrate's stated purpose — so provenance/process/git narration is injected as operating context: noise that dilutes the atomic instruction and can mislead a downstream consumer. The violations concentrate in outcome/closure fields, the fields a consumer reads to learn current state.",
       "canonical_vocabulary": "rhetorical-register compliance across filed context atoms",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Broaden the register checkpoint guard to the write-heavy blocks (tasks, verification, decisions, issues, research, features; exclude session-notes per rule 6), covering append AND closure/update writes, and clean every existing violating body to declarative current-truth with no signal loss. Tracked by the broadening + remediation task.",
       "id": "FGAP-074",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T10:47:57.307Z",
       "oid": "93f4e2eb7f52c8ea4c9f12735fd1a7af",
-      "content_hash": "85ffe71e01ad2f8f99aa242e598e3bad53d810eacfec15f0f000bd467b475efb",
-      "content_parent": "759ecc91228fff086f5a37c785616293e92bb113cc0da996ef095dc66628f24b"
+      "content_hash": "759ecc91228fff086f5a37c785616293e92bb113cc0da996ef095dc66628f24b"
     },
     {
       "title": "check-changelog watched-surface derivation over-includes non-shipping files — build-excluded *.test.ts and monitor examples/*.patterns.json learned-pattern stores",
@@ -2423,15 +2401,15 @@
       ],
       "impact": "A change confined to non-shipping test files or to a monitor learned-pattern store cannot be committed without adding a spurious [Unreleased] line for a change that does not ship. The gate's published-surface model is broader than the shipped dist/ artifact.",
       "canonical_vocabulary": "published-surface derivation matching the shipped artifact",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a subtractive isExemptSurface(path) predicate in check-changelog.ts exempting /\\.test\\.[cm]?tsx?$/ and packages/pi-behavior-monitors/examples/ paths ending in .patterns.json; filter changedPaths through it at the top of changedPackages, before classification. Subtractive and orthogonal — watchDirsFromFiles/pathInWatchSet/unreleasedGrew unchanged; a genuine src/*.ts (non-test) and a real examples/*.monitor.json still flag. Extend check-changelog.test.ts with the exempt-passes and the real-surface-still-flags cases.",
       "id": "FGAP-075",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T16:02:20.407Z",
       "oid": "cc70d9e9aa6271bc6a565563cd641e8f",
-      "content_hash": "042cc8021e1888d1d91c42baeaa7eb12632fbdd73c636c1454ffee29e90e2f14",
+      "content_hash": "8baa14cbf42d5d08731387b03a2997432b2a58661b529eb901650a562a690de8",
       "closed_by": "VER-036 / TASK-045 — check-changelog exempts non-shipping surface via a subtractive isExemptSurface predicate (build-excluded *.test.ts + monitor examples/*.patterns.json) filtered in changedPackages before classification; watch-set derivation and matching unchanged; a genuine src/*.ts and examples/*.monitor.json still flag.",
       "closed_at": "2026-06-10T00:00:00.000Z",
-      "content_parent": "8baa14cbf42d5d08731387b03a2997432b2a58661b529eb901650a562a690de8"
+      "content_parent": "9c052f84eab6169026f45c74030a1343b1b1e7c0f0bd23dc8851cb3d3eaca891"
     },
     {
       "title": "pi-context update result does not make partial application legible — a blocked run can read as a no-op while config.json was mutated",
@@ -2457,13 +2435,12 @@
       ],
       "impact": "A user or agent reading a `blocked` update result can assume the substrate was left unchanged and skip reconciling a config.json that did change — silent partial application. The risk is legibility, not data loss (the additive write is safe); it undermines trust in the result as a faithful account of what update did.",
       "canonical_vocabulary": "legible partial-application reporting",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "update's result surfaces its partial application explicitly: when any schema is `blocked` (or refused/conflicted) AND registry additions or other-schema resyncs were applied, the result reports the partiality in one place — what was applied (registryAdditions, resynced/migrated schemas) alongside what was refused and why (the blocked schema + its AJV/validation error) — so a `blocked` run never reads as a no-op. Covers both the CLI text surface and the structured result object. Premised on DEC-0018 (per-component affirmed); pairs with FGAP-066 (dry/live outcome parity).",
       "id": "FGAP-076",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:20:35.633Z",
       "oid": "ce550805023c174d4626b03da56911a7",
-      "content_hash": "5f4640936f1deef86a1c6c7a04a6d18b4e9fa2cd1280b954c02c42f5f5625eba",
-      "content_parent": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
+      "content_hash": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
     },
     {
       "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
@@ -2488,15 +2465,15 @@
       ],
       "impact": "A blocked schema is opaque: the operator cannot see which item or field failed, cannot distinguish a real invalid item from a migrate/validate fault, and must reverse-engineer the failure by hand-validating the block.",
       "canonical_vocabulary": "per-item schema-validation diagnostic",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A returns-not-throws per-item validator — block items against a target schema version yielding per-item {item id, field, keyword, params} — surfaced both as a standalone op and within update's blocked output, mapping instancePath /<arrayKey>/N to the item id. Reuses the AJV errors validate/validateBlockWithMigrationForDir already produce; shares the in-memory migrate+validate primitive with FGAP-066/TASK-046. Distinct from FGAP-076 (partial-application legibility).",
       "id": "FGAP-077",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:37.461Z",
       "oid": "5c221bb7122f1ee3f7905a2557ebefc4",
-      "content_hash": "0e29661095f92dbc455d24d22a4b15d897b2168eba6507a2a7c3748cb4fe3b16",
+      "content_hash": "6a6122192b53270dcf7ae94b5f4e054de202449614056c25ac06a08462784479",
       "closed_by": "VER-039 / TASK-048 — update blocked entries carry the per-item validation diagnostic (UpdateResult.blockedDetail: reason no-migration-chain | validation-failed, the version pair, and per failing item the id/field/constraint, dry and live identically); the standalone validate-block-items op validates a named block against the catalog schema version and returns the per-item failure list without writing; renderBlocked surfaces the detail on the CLI text surface. blocked: string[] and the rollback contract unchanged.",
       "closed_at": "2026-06-10T14:00:00.000Z",
-      "content_parent": "6a6122192b53270dcf7ae94b5f4e054de202449614056c25ac06a08462784479"
+      "content_parent": "d9508776afb7c3b787f8482dffa46b8546d61ed29a89555aaaf7ed6a958d71a9"
     },
     {
       "title": "check-status reports no version gap — which schemas are behind the catalog, and by how much, is not surfaced",
@@ -2520,15 +2497,15 @@
       ],
       "impact": "From check-status the operator cannot see which schemas are behind the catalog or by how much — only the raw drift state, and only from inside pi.",
       "canonical_vocabulary": "version-gap drift reporting",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "check-status reports, per behind schema, the baseline->catalog version delta, and handles content-only drift (behind with no version-number change). Depends on FGAP-030 (expose check-status as a CLI op).",
       "id": "FGAP-078",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:44.761Z",
       "oid": "dcc2f8ed71723eb06e5c2f887faafa6b",
-      "content_hash": "2adc7a4f02d26e615659451321ea32bf2a16e1ad6ca1b45e19b12099acd86a13",
+      "content_hash": "969e232797f46394bc5929a6cf29e3e269e3ac2561c9c925af28cc382bb85bb3",
       "closed_by": "VER-043 / TASK-049 — checkStatus reports the version gap: additive per-asset behind + version_delta fields (basis version-bump or content-only — catalog-ahead is a hash comparison, so behind at equal versions states the content basis), and renderCheckStatus annotates behind names inline with the delta; the classification arm byte-unchanged.",
       "closed_at": "2026-06-12T10:00:00.000Z",
-      "content_parent": "969e232797f46394bc5929a6cf29e3e269e3ac2561c9c925af28cc382bb85bb3"
+      "content_parent": "cab803e0081cb9972f406347cf338a0be95a8851de782795971bcf627002364d"
     },
     {
       "title": "Catalog schema is not locally diffable — no surface yields the schema body, only a projection",
@@ -2552,13 +2529,13 @@
       ],
       "impact": "To diff an installed schema against the catalog, the operator must open the package's samples/schemas/ inside node_modules; the reflecting CLI exposes no catalog schema body.",
       "canonical_vocabulary": "catalog schema local access",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A fetch op emitting the catalog body (path.join(samplesRoot, kind.schema_path), or the object-store base body via getObject). No sidecar.",
       "id": "FGAP-079",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:51.179Z",
       "oid": "2c068661ac0880a6df03ba5014d63df3",
-      "content_hash": "6fe3d4e55c941e839c056899458f4cbea979925c979deec1d0cb4036c2b70756",
-      "content_parent": "d0b626cf2044bf7155fa50f7930b39268c320606034e9c15a31fe7ecb111dae1",
+      "content_hash": "d0b626cf2044bf7155fa50f7930b39268c320606034e9c15a31fe7ecb111dae1",
+      "content_parent": "433b8873a0034bd88601abff182ff3a1aac317e999db728208fcebf5ce983853",
       "closed_by": "VER-044 / TASK-050 — the read-catalog-schema op emits the verbatim catalog *.schema.json body for a named kind (raw JSON Schema: properties/definitions/$id), byte-exact and locally diffable against the installed <substrate>/schemas/<name>.schema.json without touching node_modules; no sidecar.",
       "closed_at": "2026-06-13T00:00:00.000Z"
     },
@@ -2586,15 +2563,15 @@
       ],
       "impact": "A blocked schema cannot be resolved through the tool: after fixing the items or local schema the operator re-runs full update, with no convergence affordance and no record of what to fix.",
       "canonical_vocabulary": "blocked resolution loop",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "A persisted pending-blocked state (target schema body/version, migration chain, per-item failure set) plus a resolve-blocked / update --continue commit op that re-validates the corrected block against the target schema, advances the merge base via stampBaselineFromBody, and writes the schema — mirroring resolve-conflict. Reuses the object store, stampBaselineFromBody, and validateBlockWithMigrationForDir. Pairs with the in-file markers gap.",
       "id": "FGAP-080",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:57.608Z",
       "oid": "fe716b9c5318124ccbd923252daeb47d",
-      "content_hash": "60526a53b38c7e173f7e2174548481907b062e9f32517aff40a2c8b2d08c197a",
+      "content_hash": "8d57870cf93fb8d2f7058155340ecf2a0b5ff6893ef935e06289aa3df5938885",
       "closed_by": "VER-040 / TASK-051 — a blocked update persists a pending-blocked record (pending-blocked.json + the target schema body pinned in the object store: name/reason/version pair/chain/failures) and the authGated resolve-blocked op commits the resolution: re-validates the corrected block against the pinned target, on pass registers the chain, writes the target schema, advances the merge base (base := target), and clears the entry — a re-run update reports in-sync; on fail it reports the remaining per-item failures and writes nothing. The blocked byte-unchanged contract and per-component application unchanged.",
       "closed_at": "2026-06-11T10:00:00.000Z",
-      "content_parent": "8d57870cf93fb8d2f7058155340ecf2a0b5ff6893ef935e06289aa3df5938885"
+      "content_parent": "1c5db89ce82811630dca8629b7f7f354720a042647a57d9059a3878075d21f43"
     },
     {
       "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
@@ -2619,15 +2596,15 @@
       ],
       "impact": "A blocked schema's failures are not visible at the point of fix — in the block file — only in a separate report the operator must cross-reference by hand.",
       "canonical_vocabulary": "in-file failure markers",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "git-merge-style failure markers written into the block at the offending items/fields, with the pre-marker block recoverable from the object store. This supersedes the byte-unchanged blocked contract with a marker-mode (the operator's git model: markers in-file, fix, resolve via the blocked resolution loop). Pairs with the blocked resolution loop and DEC-0018.",
       "id": "FGAP-081",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:03:03.956Z",
       "oid": "c51cb146f1a01db985597d4b70a6a2e4",
-      "content_hash": "a9383f479d20cf4f4841c82f5a00b519ad9249a106fcafd6c8cdb22a92a67d72",
+      "content_hash": "c3294895f241552f629fd32977c2ee3b2fbd0e107b9a4f758b737a715c67504d",
       "closed_by": "VER-041 / TASK-052 — git-style in-file failure markers are the default behavior of a live validation-failed block: full-line sentinels at the offending items/fields (string-aware placement), the pre-marker block pinned to the object store and restored byte-exact, resolve-blocked strips on a passing resolution and refuses while the named violations persist, item identity preserved across the round-trip; dry and no-chain runs write nothing; schema and migrations.json byte-unchanged on every path.",
       "closed_at": "2026-06-11T16:00:00.000Z",
-      "content_parent": "c3294895f241552f629fd32977c2ee3b2fbd0e107b9a4f758b737a715c67504d"
+      "content_parent": "0c32aae353632de0d43ccc06e3b5aa508158a2969413ef54b74c03757be4cfc6"
     },
     {
       "title": "Invariant engine cannot express exists-a-complete-advancer rules — no aggregate-over-incoming-edges invariant class",
@@ -2648,13 +2625,12 @@
       ],
       "impact": "The user-stories completion rule — and any future aggregate-over-incoming-edges invariant — cannot be declared; the rule is unenforced until the engine gains the class.",
       "canonical_vocabulary": "advancer-completion invariant class",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a config-declarable invariant class (advancer-completion: for a source item entering when_bucket, every target via the declared relation_types must have at least one incoming advancer edge whose endpoint is in met_bucket, with self_satisfies counting the completing item). Config data, not a hardcoded check, per the existing direction (the analogs are declarations). Binds at context-validate as severity error.",
       "id": "FGAP-082",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:31:32.921Z",
       "oid": "ce05514b1831f35b27cd8fa9c485c153",
-      "content_hash": "948c6fe58e5569eee86fcc05b0d3025bd5405563fcf321baa0dd7590f7ba3ebf",
-      "content_parent": "fb025faa767f3302f7e0f220941a350bc7e6b2bc179c92e1803acc2015f7488f"
+      "content_hash": "fb025faa767f3302f7e0f220941a350bc7e6b2bc179c92e1803acc2015f7488f"
     },
     {
       "title": "--block-taking ops ignore the config-declared prefix->block mapping — neither input normalization nor error enrichment",
@@ -2680,13 +2656,12 @@
       ],
       "impact": "A natural-but-wrong block name costs a failed invocation and a help round-trip on every --block-taking op, although the substrate already holds the data to resolve or explain it.",
       "canonical_vocabulary": "prefix-aware block-name resolution",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Leverage the existing prefix->block mapping at the --block resolution layer: enrich the not-found error with the derivable block name (and accept an id-derived block where the op also receives an id). CLI/dispatch-layer change; ops' canonical semantics unchanged. Verification per the investigation's CLI-provable conditions.",
       "id": "FGAP-083",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:08:27.528Z",
       "oid": "0166694b1cc10e80c96530c1c46f5df3",
-      "content_hash": "4f1db15690a97aa4ece2d8f3ecee11eb78289b553c50be06ede41401b4c92f5d",
-      "content_parent": "c979ee8a25db7dc04d92486c33f0318eb41c464419912d44bc69e9a13797ca0a"
+      "content_hash": "c979ee8a25db7dc04d92486c33f0318eb41c464419912d44bc69e9a13797ca0a"
     },
     {
       "title": "CSV shorthand is a one-param special case, not a type-driven normalization for string-array params",
@@ -2717,13 +2692,12 @@
       ],
       "impact": "The natural CSV form fails on string-array params with a JSON-parse error; every future string-array param inherits the footgun unless normalization is type-driven.",
       "canonical_vocabulary": "type-driven string-array CSV shorthand",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "In parseOpArgs, when a param's schema is an array of strings and the value is not valid JSON, split CSV to a string array — type-driven, covering --ids and future string-array params; object-array params and the JSON form unchanged. Verification per the investigation's CLI-provable conditions.",
       "id": "FGAP-084",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:08:40.127Z",
       "oid": "62dd9448dac29b7f842781f77cd2c4dc",
-      "content_hash": "9399201a69b7d01e07ae0a78519e2ad5af9ef806fa3e94b1ce9896b8d471b7df",
-      "content_parent": "00e912a3fbf6a609413471e31ee8a84cdc7752d8991dd526dc50b725f1e3e860"
+      "content_hash": "00e912a3fbf6a609413471e31ee8a84cdc7752d8991dd526dc50b725f1e3e860"
     },
     {
       "title": "update-block-item cannot delete a field — a null update sets the key to null instead of removing it",
@@ -2739,13 +2713,12 @@
       ],
       "impact": "A filed item cannot be cleaned of a stray field through the merge-update surface; the only route is a full-shape replacement, which re-states the whole item to remove one key.",
       "canonical_vocabulary": "field deletion on item update",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "To be determined by the investigation (Experience-Gap Handling): root cause in the update merge semantics, the class across the update/merge ops, and the canonical deletion affordance.",
       "id": "FGAP-085",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:13:56.098Z",
       "oid": "cf5414d2d870289cb0c761344c3a585d",
-      "content_hash": "5c076fcc0199cfeef940af629be7b2ec926af61859deab92ee26312cfdff9b1d",
-      "content_parent": "61f851ceb34beb316a96d2ad9657838edf6b5576f1c3096dd641c42469b1dc3d"
+      "content_hash": "61f851ceb34beb316a96d2ad9657838edf6b5576f1c3096dd641c42469b1dc3d"
     },
     {
       "title": "AJV validator cache keyed by unversioned $id — a long-lived process can validate against a stale compile when same-$id schema bodies evolve",
@@ -2766,13 +2739,12 @@
       ],
       "impact": "In a single long-lived process validating different bodies under one $id, validation verdicts can reflect the first-compiled body — a wrong pass or wrong fail with no error. No supported CLI/op flow currently hits it; the exposure is future in-pi long-running consumers.",
       "canonical_vocabulary": "version-aware validator caching",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Key the compile cache by content (the schema's content hash or $id+version) or compile uncached when a body is supplied explicitly — determined by the investigating/implementing pass; verification: one process validating two different same-$id bodies returns body-correct verdicts for each.",
       "id": "FGAP-086",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T22:20:41.734Z",
       "oid": "bde73d76c6af1ea31a585e00bfa17674",
-      "content_hash": "885a65ae37e09ce84730cc66706f649d26453f423737555a7517394a5a0270bf",
-      "content_parent": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2"
+      "content_hash": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2"
     },
     {
       "title": "A block whose array key holds a non-array value takes the no-items resync path and migrates without validation",
@@ -2788,13 +2760,12 @@
       ],
       "impact": "A malformed block silently passes a version bump unvalidated; the blocked/marker diagnostic surface never engages for it.",
       "canonical_vocabulary": "non-array block content on resync",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "To be determined by the investigation (Experience-Gap Handling): whether the no-items arm must distinguish absent/empty arrays from malformed non-array content, and the class across every consumer of the hasItems probe.",
       "id": "FGAP-087",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-11T12:10:45.615Z",
       "oid": "9630b64f2a71eafa06e2534a003662e7",
-      "content_hash": "cc568a3fdebc2a3754e08adf0412f605c98fa1c64d084a713bd4bdd10644ae17",
-      "content_parent": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7"
+      "content_hash": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7"
     },
     {
       "id": "FGAP-088",
@@ -2826,12 +2797,12 @@
       ],
       "impact": "A CLI-driven or agent-driven (non-pi) consumer cannot bootstrap a substrate to a usable state: init + accept-all leave schemas/ empty and no block files, and a subsequent append-block-item --autoId throws 'nextId: schema not found' (block-api.ts:2311). The capability is reachable only via an interactive pi session's slash command — no scriptable / non-interactive path exists (pi -p prompt-mode does not slash-dispatch, and install is not a registered tool an agent could call).",
       "canonical_vocabulary": "CLI bootstrap completability / lifecycle-op reflection parity",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Determined by the implementing pass (Experience-Gap Handling): reflect install as a context-install OpDefinition like its lifecycle siblings (writer-classified via the DEC-0006 ctx/writer channel that context-init/context-accept-all already carry), revisiting the INTENTIONALLY_UNEXPOSED_WRITERS entry. Verification: a pure-CLI context-init -> context-accept-all -> context-install bootstrap materializes schemas + block files with no pi -p subprocess. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:11.027Z",
       "oid": "077caf30c88f6c44cbf996ec5aa361f0",
-      "content_hash": "58dd5ef0f6713e3407bb14e9e5830f04e3e9fd61a7cd5425b6cf4a1e53b8fe5c",
-      "content_parent": "3526b36f9fcc669f1f1dac42df9e43dd9358df51b1fa5e157073f34bf9a8d537",
+      "content_hash": "3526b36f9fcc669f1f1dac42df9e43dd9358df51b1fa5e157073f34bf9a8d537",
+      "content_parent": "2a2cc86d0c70dfa98140bac9fe51365e59ad52ea677fe7f5ce66de3800f6ffab",
       "closed_by": "VER-045 / TASK-059 — the reflected context-install op completes the CLI bootstrap triad (init -> accept-all -> install); installContext is op-backed (removed from INTENTIONALLY_UNEXPOSED_WRITERS) with no behavior fork; a pure-CLI bootstrap materializes schemas + blocks + baseline and a subsequent append succeeds.",
       "closed_at": "2026-06-13T00:00:00.000Z"
     },
@@ -2860,12 +2831,11 @@
       ],
       "impact": "Every runtime demo or test that must seed a planning block into a throwaway --cwd substrate, or drive the CLI against one, hits the active-substrate guards — blocking legitimate non-active-substrate work. It blocked the TASK-033 runtime-demo seed against /tmp.",
       "canonical_vocabulary": "target-substrate-scoped hook enforcement",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Determined by the implementing pass (Experience-Gap Handling): scope the hooks to the active substrate — parse --cwd from the command string (default to the project cwd when absent), resolve .pi-context.json contextDir at that cwd, and guard only writes/invocations targeting the active substrate; or a coarser approximation (guard only when --cwd is absent or names a .context* dir). The not-installed block-substrate-cli-bypass.sh spec's resource-scoped recognizer is the available pattern. Subtlety to honor: the hook input carries the --cwd text but no structured active-substrate resolution. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:18.108Z",
       "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
-      "content_hash": "05bbdebe13fb20474138af2d84e3ba8ed538a03c363d0d2f7a9ffe7d02617f00",
-      "content_parent": "e6af966270fded2a8d2263a5b8e20e7025a0aca90983ad6e4c467f0b168d33e0"
+      "content_hash": "e6af966270fded2a8d2263a5b8e20e7025a0aca90983ad6e4c467f0b168d33e0"
     },
     {
       "title": "relation_type registry coverage is incomplete and edge direction is unenforced: a decision raising a gap, a decision gated by an item, and a gap related to a gap are all unexpressible, and raise-edges are mistyped as the resolve-direction decision_addresses_gap",
@@ -2900,15 +2870,15 @@
         }
       ],
       "impact": "A gate-aware deriver (FGAP-061) cannot compute a decision's open-because-blocked-on-gap state: the only decision->gap edge is data_flow (inert to ordering/readiness derivation), and consuming decision_addresses_gap as a gate would read the dependency backwards (treat the gap as resolved by the decision rather than blocking it). Decision enactment-dependencies are invisible to status/readiness derivation. Sibling and related gaps cannot be typed-linked, fragmenting the gap graph and pushing those cross-references into prose. Raise-vs-resolve and other misdirected edges accumulate substrate-wide with no write-time guard to catch them.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add three relation_types: a data_flow decision->framework-gaps raise type (decision_raises_gap); a decisions-source ordering gate type (decision_gated_by_item, target *) that FGAP-061's deriver consumes; and a framework-gaps->framework-gaps relation type (gap_relates_to_gap) for sibling/related-gap cross-reference. Retype the DEC-0018->FGAP-076 edge from decision_addresses_gap to decision_raises_gap, add a decision_gated_by_item edge from DEC-0018 to FGAP-076, and add gap_relates_to_gap edges from this gap to FGAP-007 and FGAP-061. Add a write-time check validating a written edge's source/target kinds and category against the relation_type definition so a misdirected edge is rejected at write. Precondition for FGAP-061 (gate-aware derivation) to gate decisions correctly; pairs with FGAP-007 (ordering-edge endpoint-role metadata + write-time direction enforcement).",
       "id": "FGAP-090",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T01:25:55.291Z",
       "oid": "89c4e44ff0668ae999b544ac9426a111",
-      "content_hash": "67dde3e0d4ecdd28ee6ab624dd4ebc5efe9de4d49e85936e4a3c906abcd4bfb3",
+      "content_hash": "a122c93b7d2a0a0a170c0821ba428517b9ca6ed31c387b6a60afd0421383b351",
       "closed_by": "VER-047/048/049 / TASK-061/062/063 — the three relation_types (decision_raises_gap, decision_gated_by_item, gap_relates_to_gap) added to active config + the packaged catalog (TASK-061); the write-time edge kind/registration validator hoisting the validateContext check to appendRelationByRef/appendRelationsByRef, distinct from TASK-027 (TASK-062); the edge corrections (TASK-063) — FGAP-092 filed and cited as DEC-0018's forcing artifact, DEC-0018->FGAP-076 retyped from decision_addresses_gap to decision_raises_gap, decision_gated_by_item DEC-0018->FGAP-076 and gap_relates_to_gap FGAP-090->FGAP-007/FGAP-061 added. All three tasks verified (passing verifications); context-validate warnings-only baseline with no decision-cites-forcing-artifact error.",
       "closed_at": "2026-06-14T00:00:00.000Z",
-      "content_parent": "a122c93b7d2a0a0a170c0821ba428517b9ca6ed31c387b6a60afd0421383b351"
+      "content_parent": "eafa0983e7114c5ee5dd3e3a5c44d5f7426bed07c3417f4a90fbebff2d67c5d7"
     },
     {
       "title": "no forcing function for warranted non-invariant closure-table edges: edge presence is enforced only for requires-edge-backed relation_types, so warranted task_governed_by_decision / task_addresses_gap / research_informs_item edges are omitted with nothing to flag the absence",
@@ -2947,13 +2917,12 @@
         }
       ],
       "impact": "The closure-table graph is systematically incomplete for non-invariant relations: task_governed_by_decision, task_addresses_gap, research_informs_item are inconsistently populated. Any consumer reading the graph for provenance or derivation (gate-aware derivation FGAP-061, lineage walks, 'what addressed this gap') gets a partial answer, and the absences are invisible — no flag — so they accumulate silently as item counts grow; the flat-list-drift pattern FGAP-071 names for gaps, generalized to all warranted edges.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Generalize the TASK-041 / DEC-0016 pattern to the under-filed warranted relation_types. Per relation_type: where presence is universally entailed (a completed task that closed a gap; the enacting task of an enacted decision), add a requires-edge invariant making the edge unfileable-without, gated behind a backfill (the TASK-041 backfill-then-raise template, severity warning->error after backfill); where presence is conditional (not every task addresses a gap), add a validator check that flags an item whose body text names a closure or enactment ('closes FGAP-...', 'per DEC-...') without the corresponding edge — a text-entailment check rather than a blanket requirement. Whether any rule needs the FGAP-082 aggregate-over-edges invariant class is part of the mechanism choice. Relate to TASK-041 (per-type precedent), DEC-0016 (mechanism), FGAP-071 (contained instance), FGAP-082 (engine axis); the precise relates/informed-by relation types for gap->task, gap->decision, and gap->gap do not exist (intersects FGAP-090) and gap_addressed_by_decision would mistype the link as a resolution, so no typed relation edge to those relatives is written until those types land.",
       "id": "FGAP-091",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T02:08:01.945Z",
       "oid": "59e28b0f7b432759d5234348ebc6aca9",
-      "content_hash": "affb9f13bef02a2f11de98bfc57c9f49d6cf4ae2e8321adc71c897724f306939",
-      "content_parent": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
+      "content_hash": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
     },
     {
       "title": "pi-context update has no specified transactional boundary between the schema loop and the post-loop config-registry propagation: the registry write (index.ts:1391-1421) is ungated on the schema-loop outcome, so a run reporting a schema as blocked still mutates config.json",
@@ -2977,13 +2946,12 @@
         }
       ],
       "impact": "A caller of update cannot assume a run that reports a schema as blocked left config.json unchanged: the additive vocabulary lands regardless. Without a specified transactional boundary the run's effect on config is implicit and undocumented, and a blocked result reads as a no-op while config was mutated.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Specify update's transactional boundary across the schema loop and the config-registry propagation — atomic (any block rolls back the registry write and every schema together) vs per-component (each component applies independently: the blocked schema rolls back byte-exact, sibling schemas and the additive registry propagation proceed). Per-component extends DEC-0017's sibling-schema independence to the registry-propagation seam.",
       "id": "FGAP-092",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T05:13:16.413Z",
       "oid": "6feabcc9ecd0d77f19956178ae19c93d",
-      "content_hash": "c86b6837e09ed8585451dcab2802cb345bc00d8ece4f40a61320aeb416f06f8a",
-      "content_parent": "6ad38d6b536876a88dc1c874cf08d0514131b4e7042fcacd87d836eac0df6384"
+      "content_hash": "6ad38d6b536876a88dc1c874cf08d0514131b4e7042fcacd87d836eac0df6384"
     },
     {
       "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",
@@ -3037,13 +3005,12 @@
         }
       ],
       "impact": "A relation can be written and committed naming an endpoint that does not exist (a typo'd or premature id) or an unregistered cross-substrate alias, or closing a cycle, with no write-time signal — the porcelain returns appended: true. The defect surfaces only at a later context-validate pass (if one runs), divorced in time from the write that introduced it, so a CLI/op caller filing an edge gets no immediate feedback that the edge is broken. This is the precise inverse of the TASK-062-enforced kind check: a present-but-wrong-kind endpoint is rejected at write, but an absent endpoint (strictly more broken) is accepted — write-time rejection coverage is non-monotonic in edge brokenness. Broken edges accumulate substrate-wide between validate runs, and --dryRun previews (which run the same gate, 1528-1529) also fail to predict the dangling-edge defect.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Extend the write-time edge guard to full write-validate parity — reject at write everything validateContext rejects for an edge: the residual endpoint-existence (edge_endpoint_dangling), unregistered-alias (edge_endpoint_unregistered), and cycle (edge_cycle_detected) checks, in addition to the registration + present-endpoint-kind checks TASK-062 already hoisted. Mechanism: the write-time resolver already classifies each endpoint status (the same resolveRef validateContext uses, built by buildWriteTimeEdgeValidator, 1474-1483) — surface a dangling/unregistered status as a write-time rejection rather than a skip; add a prospective-cycle check against the existing edges (mirroring the validateRelations cycle pass). Reconcile structured-endpoints.test.ts:288-310 (currently asserts dangling-append succeeds) as part of the change — whether a legitimately forward-referencing append needs an explicit opt-out, or dangling is always a write error, is a genuine open implementation choice for the closing task. Pairs with FGAP-007/TASK-027 (sibling write-time edge-direction guard); the endpoint-existence residual of the closed FGAP-090.",
       "id": "FGAP-093",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T07:17:10.372Z",
       "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
-      "content_hash": "00d2847665e559e9e3360f1d65f6ebac9649ea50d9c33c72b811ef2b3cd5721c",
-      "content_parent": "c747800bc7d6e95df6058ae63a23dccec9539a9b98040354237034f7da14af00"
+      "content_hash": "c747800bc7d6e95df6058ae63a23dccec9539a9b98040354237034f7da14af00"
     },
     {
       "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
@@ -3075,13 +3042,12 @@
       ],
       "impact": "On every catalog-built substrate the gated_by pattern is incomplete at the task altitude (the most common gating level): a task gate is unwritable (hard write rejection) and gate-aware readiness is inert, while feature/story/decision gates ship. The 5 non-triggering live-only relations are latent debt that surfaces the same way as each is consumed. Filing only the task_gated_by_item symptom leaves the class unaddressed and invites duplicate sibling filings.",
       "canonical_vocabulary": "registry parity / drift detection (catalog ⊇ consumed vocabulary)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "NOW (symptom + class backfill): decide which of the 6 live-only relation_types are catalog-worthy vs intentionally substrate-local, and back-port the catalog-worthy set into samples/conception.json relation_types[] (at minimum task_gated_by_item, the relation a shipped derivation consumes). FORWARD (the class fix): add a build-time parity forcing-function asserting the catalog ⊇ the relation_types the shipped library/derivations consume — mirroring FGAP-010's scripts/parity-check.ts structural answer for the code-surface trio, here for the catalog↔config vocabulary surface — with an explicit record distinguishing intentionally-substrate-local from catalog-worthy vocabulary, so drift cannot recur silently.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-16T00:00:00.000Z",
       "id": "FGAP-094",
       "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
-      "content_hash": "4100c16c66bf566e6fe591fcbd7607d1ead41c007fb3ed6a7d6e0d971054012f",
-      "content_parent": "49bbb02262454c0e2809c773abbc9a9fb7aaad2175bb464bb33821c2034174ca"
+      "content_hash": "49bbb02262454c0e2809c773abbc9a9fb7aaad2175bb464bb33821c2034174ca"
     },
     {
       "title": "Config-schema evolution has no load-time migration path",
@@ -3107,13 +3073,13 @@
       ],
       "impact": "A breaking config-schema bump strands the live substrate: config.json fails validation against the rebuilt CLI and every config-loading op exits 5, with no sanctioned recovery (amend-config also validates-before-mutate). Reproduced in this project: the TASK-020 state_derivation.blocked_by shape change bricked the live .context until the change was reverted. Until a config-migration path exists, every future config-schema shape change carries the same live-substrate-bricking risk.",
       "canonical_vocabulary": "schema migration (forward migration / version-gated transform applied at load)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Add a load-time config-migration path mirroring validateBlockWithMigrationForDir: loadConfigForDir reads the config's schema_version and, on mismatch with the bundled schema version, walks the schema-name-keyed migration chain for \"config\" before validating. Requires a declarative-transform primitive able to map array elements (map_each) and a config migration registry entry. Verified design + corrected wiring: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (and the same-date feasibility/validation md's). File at the class level (schema-evolution safety: read-time validation + migration require a versioned-data envelope).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-095",
       "oid": "9a63822d8ac46e00f1527c96c790f66f",
-      "content_hash": "ed0e0f1de9cf79575257c6487e305540a6326dbfbfe85f6bc5a00509877cdf35",
-      "content_parent": "a3bdf158ebd33e687c467cb434b8fc7d70d3f6e959604807a23227e6bd33f82d",
+      "content_hash": "a3bdf158ebd33e687c467cb434b8fc7d70d3f6e959604807a23227e6bd33f82d",
+      "content_parent": "230fd21b01482fa433c21d5dd9970688622d44291960d0e87ca80998ebfb945e",
       "priority": "P2"
     },
     {
@@ -3140,14 +3106,14 @@
       ],
       "impact": "Once the stored config is invalid for any reason not covered by a registered migration, there is no sanctioned CLI path back to validity — the only recourse is the forbidden direct-edit of .context/config.json. This is the recovery-side root cause of the incident's unrecoverability: even setting aside the missing migration, validate-before-mutate means the CLI cannot dig the substrate out of an invalid state. Proven independent of FGAP-095 in the /tmp repro (a no-version-delta invalid config, both unmigratable and unrepairable).",
       "canonical_vocabulary": "recovery / repair path (validate-after-mutate, or a force-repair write that validates the result rather than the pre-existing state)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Provide a sanctioned recovery path that does not refuse on a pre-existing invalid config: a repair/force write (or a recover op) that applies the corrective mutation and validates the RESULT, rather than validating the stored config on load and throwing before the repair can be applied. Scope is distinct from the load-time migration (FGAP-095): migration carries a version-gap config forward; this restores any invalid config regardless of version. Sibling of FGAP-095 in the config-schema-lifecycle root-cause set.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-096",
       "oid": "ca82f3434231e4586e837a4d4feb5004",
-      "content_hash": "40d4c4623663b57b20ded95b0392dde674f2ac2ab00b2be3367f89e396391fb3",
+      "content_hash": "c2f3f00e1f74655f6d6ef792488a4ccf4ec3172cdde3736a703f380c579ef4e3",
       "priority": "P2",
-      "content_parent": "c2f3f00e1f74655f6d6ef792488a4ccf4ec3172cdde3736a703f380c579ef4e3"
+      "content_parent": "6aefd66203156bb15200c6460f40a35606465610f803aba38336a7a84dd14839"
     },
     {
       "title": "No additive / expand-contract discipline for config-schema changes",
@@ -3168,14 +3134,14 @@
       ],
       "impact": "A breaking config-schema change can ship unflagged; combined with FGAP-095/096 it bricks the live substrate (the incident this set documents). An additive/expand-contract discipline would make most config bumps non-bricking by construction, independent of migration code — the cheapest structural mitigation of the brick class.",
       "canonical_vocabulary": "expand-contract / parallel change (additive, backward-compatible schema evolution)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Adopt an additive/expand-contract discipline for config-schema evolution — new fields land optional; existing fields are not removed/renamed until a later contract release — enforced by a build-time breaking-diff gate on config.schema.json that flags a non-additive change absent a paired migration. Pairs with FGAP-095 (load-time migration) and FGAP-096 (recovery path); build-time-gate family with FGAP-094.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-097",
       "oid": "c515c2449f95a83c0fd2bbf477e60830",
-      "content_hash": "fc8e5b594c1429f582bbd03656bbdc81ed8824067326d2763387421a08c91c49",
+      "content_hash": "5c8b79bf9fcbb66e32ddd34ac474a9d54c628bfaa464b99bd751bb5d11813b03",
       "priority": "P2",
-      "content_parent": "5c8b79bf9fcbb66e32ddd34ac474a9d54c628bfaa464b99bd751bb5d11813b03"
+      "content_parent": "60e843356eeadd515553a41eb5cbdb997390e6fa0d1ddc1db0dfcef6183ae720"
     },
     {
       "title": "Issues are not a gap-sibling first-class open-work kind — a task cannot focus on / address an issue as it can a gap",
@@ -3212,13 +3178,12 @@
       ],
       "impact": "Issues are filed but invisible to the derived focus / what's-next surface and not closeable-by-task in the tracked model — they are second-class relative to gaps. issue-004 (and every issue) sits outside the task-driven close loop that gaps enjoy: no task can focus on or address it, and its resolution is not lifecycle-checked. Sibling parity is required for issues to participate in derivation, focus, and task-closure exactly as gaps do.",
       "canonical_vocabulary": "first-class sibling block-kind / open-work parity (kind-general PM derivation + relation/invariant parity)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Per the investigation, group the required set: (a) add relation_types task_addresses_issue + issue_relates_to_issue (the reverse issue_addressed_by_* and the decision_raises_issue / missing-convention / escalation analogs are NOT required — gaps are the escalation sink by design, an acceptable divergence); (b) add invariant task-completed-issue-resolved (mirror of task-completed-gap-closed, severity warning); (c) add a state_derivation.next_ranked issues entry (bucket todo, rank_field priority, rank_order critical->low) — no deriver code change, since issues.status open already buckets to todo; (d) two additive issue-schema fields resolved_at + an x-lifecycle block; (e) issues-by-status + issues-by-priority lenses, and catalog back-port (samples/conception.json) of every new relation_type / invariant / lens. The catalog back-port leg interacts with FGAP-094: a new live relation_type absent from the packaged catalog makes a fresh accept-all substrate reject its edge at write. Status-label / priority-scale / category-facet divergences between the two schemas are acceptable kind-specific differences and are NOT force-symmetrized.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-098",
       "oid": "3045be571ddb51cb25782d95ec0b4fe6",
-      "content_hash": "f630f89b04ada8bc6ebfe946dc08c7e0ce230e43a0d2aedcae3206f15fd20d1e",
-      "content_parent": "5f4b1db1ef2329b84e77a1c244fa2e2c0917e5267e33f9288038eada8e3dfea7"
+      "content_hash": "5f4b1db1ef2329b84e77a1c244fa2e2c0917e5267e33f9288038eada8e3dfea7"
     },
     {
       "title": "Block data carries no schema_version — read-time validation and migration are inert for all blocks",
@@ -3249,13 +3214,13 @@
       ],
       "impact": "Block data is validated at write (whole-block AJV) and by explicit context-validate, but never on read and never migrated on a version gap, because schema_version is absent. A schema-evolution change is invisible until the next write to that block, and a catalog-declared version-bump migration never applies to existing block data on read. Block schema evolution has no read-time safety.",
       "canonical_vocabulary": "versioned data envelope / schema_version stamping (read-time version-gated validation + forward migration)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Stamp the current schema version onto the block envelope (top-level schema_version) on the write path, and admit a single optional top-level schema_version property on each block schema envelope (a named relaxation of the envelope additionalProperties:false, not a wholesale opening; per-item objects are unchanged). The existing read-time AJV hook (block-api.ts:785-789) and the migration version-mismatch branch (schema-validator.ts:225-239) then become active for all blocks: on a version gap, a registered migration walks the whole block forward, and absent one the read/write gate throws. Per-item stamping is out of scope (per the block-api.ts:782-784 comment) — it is a distinct, larger task.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-099",
       "oid": "202f544f1f6eacb06c13b407e5bb4a20",
-      "content_hash": "0c61fdc6430d4c24d72a54ec9a103e8f910684d7b329eadc9f3f6c2b09344d24",
-      "content_parent": "ff92f49ba8577784de6a3e33771e1cecbaab709de8b5d9577f72cb05dbc5b900"
+      "content_hash": "ff92f49ba8577784de6a3e33771e1cecbaab709de8b5d9577f72cb05dbc5b900",
+      "content_parent": "57df49135f92a35fc2543fd49116f7423f9b28c34a66baebee70a4f006a266db"
     },
     {
       "title": "A sub-element of a substrate item has no identity — meaningful parts held in a nested array cannot be referenced, related, verified, or tracked across content edits",
@@ -3279,13 +3244,12 @@
         }
       ],
       "impact": "Per-criterion verification is not durable across the iterate-to-zero edits the canonical process requires: when a criterion's text changes, its criteria_results entry can no longer be matched to it, because nothing establishes same-criterion identity across the edit. Generally, no nested-array part can be the stable target of a reference, relation, or verification across content edits.",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Resolution not yet determined; to be filed as a separate decision.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-100",
       "oid": "702672901cff779f38aac4fc2a64d419",
-      "content_hash": "5baff23fbb83bdb4c44abf7c2fd326dcd35d2c103f2549eb563fc868971f2c74",
-      "content_parent": "9d394546e596e1670a454724f3616bd8c986600a536e23107f475ac5149fcbca"
+      "content_hash": "9d394546e596e1670a454724f3616bd8c986600a536e23107f475ac5149fcbca"
     },
     {
       "title": "validateRelations conflates content relations with lens-axis relations: a hand-curated edge-materialization lens (derived_from_field null, bins []) over a content relation_type yields spurious edge_parent_not_in_bins on every real advancer edge, forcing context-validate-relations to invalid",
@@ -3329,13 +3293,12 @@
       ],
       "impact": "context-validate-relations returns invalid on a substrate whose edges are all structurally correct, so the integrity gate is unusable as a green/red signal: every real advancer edge added (each task/feature->story) increases the false count (29 live, was 1 on 2026-06-14). For ~6 days the invalid verdict has been routed around as a 'pre-existing backlog' in every session that ran the gate, masking any genuine relation defect that the same op would surface. Any consumer trusting context-validate-relations status (closure gate, CI, the canonical pipeline's integrity step) gets a false negative on the substrate's health. The pattern recurs for every hand-curated edge-materialization lens declared over a content relation_type.",
       "canonical_vocabulary": "content-relation vs lens-axis-relation conflation in validateRelations (edge-materialization lens)",
-      "proposed_resolution": "To be determined exactly from live codebase.",
+      "proposed_resolution": "Make validateRelations distinguish a content relation from a lens projection axis so an edge-materialization lens does not impose the parent-in-bins contract on content edges. Two candidate mechanisms (the closing task decides): (a) skip the parent-in-bins check for a lens with derived_from_field:null AND bins:[] (an explicit edge-materialization lens), treating its edges as content edges validated on kind/endpoint-existence only; or (b) preferred for precision: only treat an edge as a lens-bin edge when its parent is structurally a lens_bin endpoint (endpointBin non-null), so a structured item parent never enters the bins check regardless of lens kind, and add an explicit lens flag/kind marking edge-materialization lenses. Either way: re-derive the correct status for the 29 live story-advancer edges (they become clean), and add a test fixture: a hand-curated lens over a content relation_type with item-parent edges must validate clean. Relate to FGAP-093 (sibling write/validate edge-guard parity axis), FGAP-073 (the context-lens-view surface that serves edge-materialization lenses), FGAP-082 (same relation_types, invariant-engine axis).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "FGAP-101",
       "oid": "de2d3cfdaf6ec50e07575e812c8ce37b",
-      "content_hash": "68fcde7b4593db0a2692feeaecdc807fd0fab5a117c0b63fce7653101a948391",
-      "content_parent": "4de46dd3d9f8a9782cb0a74d91b97120ed8e0246bbd1b3cefc5317a246336745"
+      "content_hash": "4de46dd3d9f8a9782cb0a74d91b97120ed8e0246bbd1b3cefc5317a246336745"
     }
   ]
 }

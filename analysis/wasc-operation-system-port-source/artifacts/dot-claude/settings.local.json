@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/david/Projects/digitalocean/django-llm-template/template/**)",
+      "Bash(uv run *)",
+      "Read(//tmp/**)",
+      "Bash(git -C /Users/david/Projects/wasc-school-wide-improvement-plan/.claude/worktrees/wizardly-bose-1f49b1 status --short --branch)",
+      "Bash(git -C /Users/david/Projects/wasc-school-wide-improvement-plan/.claude/worktrees/wizardly-bose-1f49b1 log --oneline -5)",
+      "Bash(git *)",
+      "Bash(bin/render-phase-prompt.sh impl *)",
+      "Bash(uv --version)",
+      "Bash(mkdir -p /Users/david/Projects/wasc-school-wide-improvement-plan/school-improvement-plans)",
+      "Bash(uv init *)",
+      "Bash(uv add *)",
+      "Bash(uv sync *)",
+      "Bash(docker compose *)",
+      "Bash(DATABASE_URL=\"postgres://x:x@localhost:5433/x\" DJANGO_SECRET_KEY=check-only uv run python manage.py check)",
+      "Bash(DATABASE_URL=\"postgres://x:x@localhost:5433/x\" uv run mypy .)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings.local uv run *)",
+      "Bash(uv remove *)",
+      "Bash(curl *)",
+      "Bash(uv pip *)",
+      "Bash(ls school-improvement-plans/.github)",
+      "Bash(ls -la .github)",
+      "Bash(docker run *)",
+      "Bash(sed -n '/class Membership/,/def __str__/p' school/models/person.py)",
+      "Bash(sed -n '/class Person/,/def __str__/p' school/models/person.py)",
+      "WebFetch(domain:deps.dev)"
+    ]
+  }
+}

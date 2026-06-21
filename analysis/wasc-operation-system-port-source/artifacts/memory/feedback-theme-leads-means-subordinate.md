@@ -1,0 +1,18 @@
+---
+name: feedback-theme-leads-means-subordinate
+description: When summarizing a plan/artifact, the THEME (the end/substance) leads; a design discipline or process applied to it is the means — never let the means eclipse the theme
+metadata:
+  node_type: memory
+  type: feedback
+  originSessionId: d7310007-aef3-4e05-a651-d218d1cfd12f
+---
+
+When describing a plan, draft, or artifact, lead with its THEME / substance / end — not with the process or design discipline applied to it. A method (e.g. the science-of-learning "contact-type structure," a distillation transform, a framework) is the MEANS by which the artifact is made good; it is subordinate to what the artifact is ABOUT.
+
+Concrete: the run-008 plan's theme is **SLO embedding** (the school-wide learner outcomes lived in daily practice, with durable measured growth); the contact-type structure (open/retrieve → generative task → evidence → reflect) is HOW the embedding actions are made durable. The correct summary is "the SLO-embedding plan whose actions are now built to work," NOT "a learning-science plan." I inverted it — foregrounding the means (learning-science process) and downplaying the theme.
+
+**Why:** the user flagged that the summary "downplays the theme in favor of the learning-science process." A reader must come away knowing what the plan is FOR first; the cleverness of the method is secondary and must not steal the frame. Applies to every plan summary across themes (run-006 = the learning-environment plan; run-007 = science-of-learning IS the theme there, so it leads there — but where SoL is only the design discipline, it stays subordinate). Relates to [[feedback-no-meta-commentary]], [[feedback-plain-diction]].
+
+**EMBODY, don't label (the rendered artifact).** Corollary the user drove next: a rendered plan/artifact must EMBODY its design method in plain plan prose — NOT label or explain it. A real school plan never contains methodology scaffolding. So in the rendered plan: no OPEN/CORE/EVIDENCE/CLOSE tags on steps, no "(why this task)" justifications, no how-to-read/methodology panel, no framework vocabulary in the meta rows ("talking-at %", "self-refutation guard", "durability-not-occurrence", "tracks") — write plain plan language instead ("how much of the time is active student work vs teacher-talk"; "confirmed by a later check, not by whether a session happened"). The method/framework reasoning is GENERATION-SIDE (how we author a good step); the artifact just shows the well-designed step. The user: "this is very meta and would never be in an actual plan." Persisted as the RENDER RULE in prompt-workshop/sim-revised-frame.md (option-design-discipline section).
+
+**The governing rule (sharpened by the user):** *framework/process language does not belong in a planning document at all.* The invented method terms — self-refutation guard, refraction, fractal, weave, front-load, contact-type structure, "talking-at %", durability-not-occurrence, behavior-change-primary, options posture, evaluate-and-revise cadence, growth-mindset loop, keystone, precursor, cross-track — live ONLY in the sim-land process records (run-NNN.md, the frame, R-0009); they must never appear in a rendered plan artifact. This is DISTINCT from plain-diction: ordinary descriptive English is fine even when vivid — **"talking at students" is fine** (it plainly describes a real thing; do not scrub it). Only the coined framework vocabulary is banned. And "self-refutation guard" was the AI's OWN coinage, NOT the user's — never attribute invented method names to the user. Use plain equivalents in the artifact ("how much of the time the adult is talking versus students working"; "leadership holds its own meetings to the same standard").

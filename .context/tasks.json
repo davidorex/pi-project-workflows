@@ -1366,39 +1366,48 @@
       "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:564-581): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242). Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
       "status": "planned",
       "acceptance_criteria": [
-        "loadConfigForDir reads schema_version and, on mismatch with the bundled config schema version, walks the schema-name-keyed config migration chain before validating.",
-        "A config one version behind the bundled schema loads valid, carried forward in memory, with no exit-5 brick.",
-        "The map_each declarative-transform primitive maps array elements within a migration step.",
-        "A current-version config loads byte-unchanged: no migration applied when versions match."
+        "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on version match it does not consult the registry.",
+        "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
+        "A config whose schema_version lags the bundled config schema by the real on-disk gap (1.0.0 → current) loads valid through the migrated path, carried forward in memory, with zero exit-5 brick — demonstrated by runtime reproduction on a scratch substrate, not by a version-matched no-op.",
+        "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts), the migrations.schema.json oneOf, and applyOp (migration-registry-loader.ts), and maps array elements within a migration step; a migration step using it transforms array elements as declared.",
+        "A current-version config (schema_version equal to the bundled schema version) loads byte-unchanged: no migration applied, registry not consulted.",
+        "TASK-070 is recorded as the config instance of FEAT-010 and depends on TASK-073 (block-wide versioned envelope); its scope is the config instance, not the block-data class."
       ],
       "files": [
         "packages/pi-context/src/context.ts",
-        "packages/pi-context/src/schema-migrations.ts"
+        "packages/pi-context/src/migrations-store.ts",
+        "packages/pi-context/src/migration-registry-loader.ts",
+        "packages/pi-context/schemas/migrations.schema.json",
+        "packages/pi-context/samples/migrations.json",
+        "migrations.json"
       ],
       "notes": "Design: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (+ -design-feasibility, -proposal-validation).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-070",
       "oid": "dbf5c76b88715ea39a31807b0ea1076c",
-      "content_hash": "395a413b1957d223ec6ac245f3100a9280d3cb77726199330d27528702bd2a02"
+      "content_hash": "695a4bb354750fe1f4dbf864d1808c0d783ee750b92976af44586c4aafb76a62",
+      "content_parent": "395a413b1957d223ec6ac245f3100a9280d3cb77726199330d27528702bd2a02"
     },
     {
-      "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism — a force flag, a recover op, or validate-after-mutate — is resolved as a filed DECISION before implementation.",
+      "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
       "status": "planned",
       "acceptance_criteria": [
         "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
         "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
-        "Both the version-gap subset and the no-version-delta invalidity are recoverable."
+        "Both the version-gap subset and the no-version-delta invalidity are recoverable.",
+        "The repair is a `force`/`repair` opt on amend-config that skips the pre-load validation at context.ts:1251 and relies on the result-validation already present in writeTypedFile (block-api.ts:892-895); NOT a separate recover op (struck by DEC-0011 op-only / no-parallel-path) and NOT a new validation discipline (result-validation already exists). The opt is the in-grain sibling of the existing dryRun opt (context.ts:1229)."
       ],
       "files": [
         "packages/pi-context/src/context.ts"
       ],
-      "notes": "Design choice (repair mechanism) filed as a DECISION before implementation.",
+      "notes": "Repair mechanism is DERIVED, not deferred to a DECISION: a `force`/`repair` opt on amend-config that skips the pre-load validation (context.ts:1251 loadConfigForDir) and relies on the result-validation already present on the write path (block-api.ts:892-895). No DEC and no task_governed_by_decision edge — the existing op surface settles the mechanism. Derivation: result-validation already universal on config writes (block-api.ts:892); the only blocker is the pre-load validation (context.ts:1251); amend already extends by opt (context.ts:1229, dryRun); op-only / no-parallel-path (DEC-0011/0006) strike a separate recover op.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-071",
       "oid": "9997db7b2791579a7095031fcb1fd7bb",
-      "content_hash": "b184de2c326830d8b08eaacb951f7d901ca5a4df36f94fd6c17fca30002459c4"
+      "content_hash": "c78badb4d5ed673da7000c489d13c3c0fe708f5f8cf25ba3ab709fe9ca930f79",
+      "content_parent": "b184de2c326830d8b08eaacb951f7d901ca5a4df36f94fd6c17fca30002459c4"
     },
     {
       "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",
@@ -1419,31 +1428,35 @@
       "content_hash": "0d2a9579dadbe7b68acaebee49245ee3ec6587b43cd00f1d8814eeb87e5e26bb"
     },
     {
-      "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location — block envelope or per item — is resolved as a filed DECISION before implementation.",
+      "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
       "status": "planned",
       "acceptance_criteria": [
-        "Block data carries schema_version after write; block schema envelopes admit the top-level schema_version.",
-        "The read-time AJV hook fires for blocks, no longer gated off by an absent schema_version.",
-        "A version-bump migration applies to existing block data on read; a stale-version block is caught."
+        "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
+        "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
+        "Read hook fires on the envelope: with the envelope `schema_version` present, the read-time hook (block-api.ts:785-789) no longer short-circuits on its absence and routes the whole block through validateBlockWithMigrationForDir; demonstrated by a real read-block that exercises the hook, not a mocked assertion.",
+        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO registered migration the read/write gate throws (schema-validator.ts:234-236). Both branches are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
+        "The new field reaches already-installed substrates, not only the samples catalog: the envelope `schema_version` property is added to the installed schema bodies of existing substrates via the install/update path, not only to samples/schemas/; an already-installed substrate's blocks carry and validate the version after update."
       ],
       "files": [
         "packages/pi-context/src/block-api.ts",
         "packages/pi-context/samples/schemas/"
       ],
-      "notes": "Design choice (stamp location: envelope vs items) filed as a DECISION before implementation.",
+      "notes": "Stamp location is the block envelope (top-level schema_version), derived: the read/write hooks already key on envelope.schema_version (block-api.ts:785-789, 1758-1767). Not a deferred DECISION.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-073",
       "oid": "939639ac37a9d806ae06b1940a5eba13",
-      "content_hash": "45130a8d17d5aab7d6c480098170d421f7b60b6463015fb66b1c9967a657c1cf"
+      "content_hash": "b9648b574e99975b90bf8912d3c1537ab6d0c1d8555ec08d0019d533cbaa2c06",
+      "content_parent": "45130a8d17d5aab7d6c480098170d421f7b60b6463015fb66b1c9967a657c1cf"
     },
     {
       "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",
       "status": "planned",
       "acceptance_criteria": [
-        "A substrate whose config declares a block kind with no data file reports not-installed; the op materializes the block's data file; context-bootstrap-state then reports ready.",
-        "The op runs both standalone and on update for a catalog-added block kind; --dryRun previews without writing.",
-        "The materialized block is writable: append-block-item --autoId succeeds against it."
+        "A substrate whose config declares a block kind with no data file reports not-installed (context-bootstrap-state → not-installed, missing.blocks:[<kind>]); the op materializes the block's <kind>.json data file via the install starter-copy path; context-bootstrap-state then reports ready.",
+        "Missing block data files are materialized on any post-install currency op, not only update: (a) a standalone materialize/repair op materializes the findUnmaterializedAssets missing.blocks[] set for an already-installed substrate; (b) update materializes a catalog-added block kind's data file (closing update's current schemas+registries-only gap, updateContext index.ts:1818-2151); (c) the install/re-install path materializes a declared-but-absent block (installContext index.ts:1299-1357 — the install-ceremony surface that produced the live milestone not-installed state, commit 038c2dc). --dryRun previews each without writing.",
+        "The materialized block is writable: append-block-item --autoId succeeds against the newly created <kind>.json.",
+        "The materialize op routes every block-data write through the install path's FGAP-029 preservation guard (installContext index.ts:1313-1336) — a populated block is preserved, a block that cannot be read or confirmed empty is treated as populated and never overwritten, and only a genuinely absent <kind>.json is created; the op writes via no path that bypasses this guard. Demonstrated: running the op against a substrate with a populated block reports it preserved and leaves its items byte-unchanged."
       ],
       "files": [
         "packages/pi-context/src/index.ts"
@@ -1453,7 +1466,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-074",
       "oid": "ce4303169c9cd7665f108909671f0f89",
-      "content_hash": "9a29a5d46955077e7057cf5d6973fec747cddbe6bead19db5a55be94391635be"
+      "content_hash": "5bb2db3ca15d18573c6f64ec3c3c57b95db7b8dd77edc5bff17ed227035f5a17",
+      "content_parent": "9a29a5d46955077e7057cf5d6973fec747cddbe6bead19db5a55be94391635be"
     }
   ]
 }

@@ -3214,12 +3214,13 @@
       ],
       "impact": "Block data is validated at write (whole-block AJV) and by explicit context-validate, but never on read and never migrated on a version gap, because schema_version is absent. A schema-evolution change is invisible until the next write to that block, and a catalog-declared version-bump migration never applies to existing block data on read. Block schema evolution has no read-time safety.",
       "canonical_vocabulary": "versioned data envelope / schema_version stamping (read-time version-gated validation + forward migration)",
-      "proposed_resolution": "Stamp schema_version onto block data so the read-time AJV hook and the migration version-mismatch branch become active: the write path stamps the current schema version onto the block envelope (or items), and block schemas admit a top-level schema_version (relax the envelope additionalProperties:false for it). Then a version-bump migration applies on read and a stale-version block is caught.",
+      "proposed_resolution": "Stamp the current schema version onto the block envelope (top-level schema_version) on the write path, and admit a single optional top-level schema_version property on each block schema envelope (a named relaxation of the envelope additionalProperties:false, not a wholesale opening; per-item objects are unchanged). The existing read-time AJV hook (block-api.ts:785-789) and the migration version-mismatch branch (schema-validator.ts:225-239) then become active for all blocks: on a version gap, a registered migration walks the whole block forward, and absent one the read/write gate throws. Per-item stamping is out of scope (per the block-api.ts:782-784 comment) — it is a distinct, larger task.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-099",
       "oid": "202f544f1f6eacb06c13b407e5bb4a20",
-      "content_hash": "57df49135f92a35fc2543fd49116f7423f9b28c34a66baebee70a4f006a266db"
+      "content_hash": "ff92f49ba8577784de6a3e33771e1cecbaab709de8b5d9577f72cb05dbc5b900",
+      "content_parent": "57df49135f92a35fc2543fd49116f7423f9b28c34a66baebee70a4f006a266db"
     },
     {
       "title": "A sub-element of a substrate item has no identity — meaningful parts held in a nested array cannot be referenced, related, verified, or tracked across content edits",

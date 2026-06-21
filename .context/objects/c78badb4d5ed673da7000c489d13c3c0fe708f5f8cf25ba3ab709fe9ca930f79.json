@@ -1,0 +1,14 @@
+{
+  "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
+    "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
+    "Both the version-gap subset and the no-version-delta invalidity are recoverable.",
+    "The repair is a `force`/`repair` opt on amend-config that skips the pre-load validation at context.ts:1251 and relies on the result-validation already present in writeTypedFile (block-api.ts:892-895); NOT a separate recover op (struck by DEC-0011 op-only / no-parallel-path) and NOT a new validation discipline (result-validation already exists). The opt is the in-grain sibling of the existing dryRun opt (context.ts:1229)."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts"
+  ],
+  "notes": "Repair mechanism is DERIVED, not deferred to a DECISION: a `force`/`repair` opt on amend-config that skips the pre-load validation (context.ts:1251 loadConfigForDir) and relies on the result-validation already present on the write path (block-api.ts:892-895). No DEC and no task_governed_by_decision edge — the existing op surface settles the mechanism. Derivation: result-validation already universal on config writes (block-api.ts:892); the only blocker is the pre-load validation (context.ts:1251); amend already extends by opt (context.ts:1229, dryRun); op-only / no-parallel-path (DEC-0011/0006) strike a separate recover op."
+}

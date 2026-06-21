@@ -1439,6 +1439,7 @@
       ],
       "files": [
         "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/index.ts",
         "packages/pi-context/samples/schemas/"
       ],
       "notes": "Stamp location is the block envelope (top-level schema_version), derived: the read/write hooks already key on envelope.schema_version (block-api.ts:785-789, 1758-1767). Not a deferred DECISION.",
@@ -1446,8 +1447,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-073",
       "oid": "939639ac37a9d806ae06b1940a5eba13",
-      "content_hash": "b9648b574e99975b90bf8912d3c1537ab6d0c1d8555ec08d0019d533cbaa2c06",
-      "content_parent": "45130a8d17d5aab7d6c480098170d421f7b60b6463015fb66b1c9967a657c1cf"
+      "content_hash": "78096484a31ebc34bd94bafb36755ad3eb0221372be9c23e08a8be3cc9e99461",
+      "content_parent": "b9648b574e99975b90bf8912d3c1537ab6d0c1d8555ec08d0019d533cbaa2c06"
     },
     {
       "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",

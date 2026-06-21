@@ -29,14 +29,17 @@ import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-PLACEHOLDER = "To be determined exactly from live codebase."
+CRITERIA = "to be derived"                                   # acceptance_criteria
+RESOLUTION = "To be determined exactly from live codebase."  # proposed_resolution
 
 # block, array_key, field, replacement value (typed to the field's shape)
 TARGETS = [
     {"block": "tasks", "file": "tasks.json", "array_key": "tasks",
-     "field": "acceptance_criteria", "replacement": [PLACEHOLDER]},
+     "field": "acceptance_criteria", "replacement": [CRITERIA]},
+    {"block": "features", "file": "features.json", "array_key": "features",
+     "field": "acceptance_criteria", "replacement": [CRITERIA]},
     {"block": "framework-gaps", "file": "framework-gaps.json", "array_key": "gaps",
-     "field": "proposed_resolution", "replacement": PLACEHOLDER},
+     "field": "proposed_resolution", "replacement": RESOLUTION},
 ]
 
 
@@ -81,8 +84,9 @@ def main() -> int:
 
     substrate = active_substrate_dir()
     print(f"active substrate: {substrate}")
-    print(f"placeholder:      {PLACEHOLDER!r}")
-    print(f"mode:             {'DRY-RUN (no writes)' if dry_run else 'APPLY (writes via update-block-item)'}\n")
+    print(f"criteria   -> {CRITERIA!r}")
+    print(f"resolution -> {RESOLUTION!r}")
+    print(f"mode:         {'DRY-RUN (no writes)' if dry_run else 'APPLY (writes via update-block-item)'}\n")
 
     total = 0
     failed = 0
@@ -93,9 +97,12 @@ def main() -> int:
             continue
         items = json.loads(path.read_text()).get(t["array_key"], [])
         field = t["field"]
+        # carry the field, non-empty, and not already at the target placeholder
         hits = [it for it in items
-                if field in it and it[field] not in (None, "", [], {})]
-        print(f"[{t['block']}] field '{field}' — {len(hits)} of {len(items)} items carry it")
+                if field in it and it[field] not in (None, "", [], {})
+                and it[field] != t["replacement"]]
+        print(f"[{t['block']}] field '{field}' — {len(hits)} to change "
+              f"(of {len(items)} items; already-at-placeholder skipped)")
         for it in hits:
             iid = it.get("id", "<no-id>")
             print(f"    {iid}: {value_summary(it[field])} -> {t['replacement']!r}")

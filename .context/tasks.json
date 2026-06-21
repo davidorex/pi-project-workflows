@@ -1369,7 +1369,7 @@
         "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on version match it does not consult the registry.",
         "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
         "A config whose schema_version lags the bundled config schema by the real on-disk gap (1.0.0 → current) loads valid through the migrated path, carried forward in memory, with zero exit-5 brick — demonstrated by runtime reproduction on a scratch substrate, not by a version-matched no-op.",
-        "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts), the migrations.schema.json oneOf, and applyOp (migration-registry-loader.ts), and maps array elements within a migration step; a migration step using it transforms array elements as declared.",
+        "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts:64-68), the migrations.schema.json TransformOp oneOf, and applyOp (migration-registry-loader.ts), with two declared modes: table mode (`path` + `table` [+ `fallback`]) replaces each string element of the array at `path` by table[element], or by {relation_type: element, item_endpoint: fallback} when unmatched, with non-string elements passing through unchanged; and set-on-each mode (`path` + `field` + `value`) sets element[field]=value on each object element of the array at `path`. A migration step exercising each mode transforms the array elements at `path` accordingly, verified against a fixture.",
         "A current-version config (schema_version equal to the bundled schema version) loads byte-unchanged: no migration applied, registry not consulted.",
         "TASK-070 is recorded as the config instance of FEAT-010; its scope is the config instance, not the block-data class."
       ],
@@ -1386,8 +1386,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-070",
       "oid": "dbf5c76b88715ea39a31807b0ea1076c",
-      "content_hash": "7d70f0eaf2f192fd341984f23a7f3eb3226715ca3a3fb9c3406b444735d5869d",
-      "content_parent": "695a4bb354750fe1f4dbf864d1808c0d783ee750b92976af44586c4aafb76a62"
+      "content_hash": "05bd6d48e2931f1afb53712c45e3c2e3c7938248835bf7174ce56078c433f5a4",
+      "content_parent": "7d70f0eaf2f192fd341984f23a7f3eb3226715ca3a3fb9c3406b444735d5869d"
     },
     {
       "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
@@ -1434,7 +1434,7 @@
         "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
         "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
         "Read hook fires on the envelope: with the envelope `schema_version` present, the read-time hook (block-api.ts:785-789) no longer short-circuits on its absence and routes the whole block through validateBlockWithMigrationForDir; demonstrated by a real read-block that exercises the hook, not a mocked assertion.",
-        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO registered migration the read/write gate throws (schema-validator.ts:234-236). Both branches are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
+        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO registered migration the gate throws (schema-validator.ts:234-236) — a read-gate throw fails the read, and a write-gate throw rejects the write leaving the block file byte-unchanged (no partial write). Both branches, with their per-gate post-state, are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
         "The new field reaches already-installed substrates, not only the samples catalog: the envelope `schema_version` property is added to the installed schema bodies of existing substrates via the install/update path, not only to samples/schemas/; an already-installed substrate's blocks carry and validate the version after update."
       ],
       "files": [
@@ -1447,8 +1447,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-073",
       "oid": "939639ac37a9d806ae06b1940a5eba13",
-      "content_hash": "78096484a31ebc34bd94bafb36755ad3eb0221372be9c23e08a8be3cc9e99461",
-      "content_parent": "b9648b574e99975b90bf8912d3c1537ab6d0c1d8555ec08d0019d533cbaa2c06"
+      "content_hash": "3d840df424a579930d134f3eac5731cacd204fe60f7cf89f9a4364381cc8dceb",
+      "content_parent": "78096484a31ebc34bd94bafb36755ad3eb0221372be9c23e08a8be3cc9e99461"
     },
     {
       "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",

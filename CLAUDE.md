@@ -59,6 +59,8 @@ This file records NO project status. Position, focus, open work, counts, arc nar
 
 Anything that must persist beyond a session is filed in the substrate (gaps / tasks / decisions / verifications / research) and read there — not cached in this file. Releases are HELD: no `release:*` and no push/publish without explicit per-release authorization.
 
+**Verify, don't narrate (binding).** Never assert any substrate / project / file / code-behavior fact from working memory or recollection — read it from its source (the relevant `pi-context` CLI op, `git`, the actual file) at the moment you claim it, and report what the read returns, not what you remember. After any substrate write, read it back and confirm it reconstructs what you intended. State recalled across turns or a context compaction is stale by default; a remembered claim is not a verified one. This is the read-don't-recall complement to derive-don't-cache above.
+
 ## Conventions
 
 - ESM, TypeScript compiled via `tsc` to `dist/`. Pi loads `dist/index.js` from each package — runtime needs the build, not source.
@@ -141,8 +143,6 @@ After writing an analysis markdown (`analysis/*.md`), propose to the user surfac
 `packages/pi-context/src/context-sdk.ts` is the single queryable surface for project state, block discovery, schema vocabulary, and cross-block validation (it re-exports the lens-view / closure-table / PM-lens / write / schema-write / migration / dir-resolution / execution-context primitives). Read its `src/index.ts` exports for the function set; use `/context status` for derived state in conversation.
 
 ## Project Blocks (the active substrate)
-
-Task `acceptance_criteria` and gap `proposed_resolution` are being stripped (replaced with `"To be determined exactly from live codebase."`) as LLM-negligent/unverified bullshit; if ever directed to recover one, its pre-strip version is in git.
 
 **The active substrate IS the project-management system (binding):** all development work — milestones, phases, tasks, gaps, issues, decisions, verifications, and their relations — is planned, tracked, and closed in `.context`, not in side documents or memory, and project state / position / open work are derived from it. This PM model is itself being refined through use: its block kinds, fields, status vocabularies, and relations evolve as the work exercises them, and that refinement is filed in the substrate (as gaps and decisions), not assumed fixed.
 

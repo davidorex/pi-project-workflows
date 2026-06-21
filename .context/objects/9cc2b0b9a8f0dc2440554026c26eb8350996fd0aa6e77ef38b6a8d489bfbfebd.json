@@ -1,0 +1,15 @@
+{
+  "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A substrate whose config declares a block kind with no data file reports not-installed (context-bootstrap-state → not-installed, missing.blocks:[<kind>]); the op materializes the block's <kind>.json data file via the install starter-copy path; context-bootstrap-state then reports ready.",
+    "Missing block data files are materialized on any post-install currency op, not only update: (a) a standalone materialize/repair op materializes the findUnmaterializedAssets missing.blocks[] set for an already-installed substrate; (b) update materializes a catalog-added block kind's data file (closing update's current schemas+registries-only gap, updateContext index.ts:1818-2151); (c) the install/re-install path materializes a declared-but-absent block (installContext index.ts:1299-1357 — the install-ceremony surface that produced the live milestone not-installed state, commit 038c2dc). --dryRun previews each without writing.",
+    "The materialized block is writable: append-block-item --autoId succeeds against the newly created <kind>.json.",
+    "The materialize op routes every block-data write through the install path's FGAP-029 preservation guard (installContext index.ts:1313-1336) — a populated block is preserved, a block that cannot be read or confirmed empty is treated as populated and never overwritten, and only a genuinely absent <kind>.json is created; the op writes via no path that bypasses this guard. Demonstrated: running the op against a substrate with a populated block reports it preserved and leaves its items byte-unchanged."
+  ],
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "notes": "Unblocks milestone activation."
+}

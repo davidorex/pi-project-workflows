@@ -1418,14 +1418,20 @@
         "New config fields land optional; a field removal or rename is gated to a contract release."
       ],
       "files": [
-        "scripts/"
+        "scripts/parity-check.ts",
+        "scripts/parity-check.test.ts",
+        ".husky/pre-commit",
+        ".github/workflows/ci.yml",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/CHANGELOG.md"
       ],
       "notes": "Build-time-gate family with FGAP-094 (TASK-067).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-072",
       "oid": "ad21875be7c7e6360f2508db948c8b06",
-      "content_hash": "0d2a9579dadbe7b68acaebee49245ee3ec6587b43cd00f1d8814eeb87e5e26bb"
+      "content_hash": "59b79ac4dfb0dafeceaeb65f0bc47d7e107ef2f9fe19d83609779672cf3350c2",
+      "content_parent": "0d2a9579dadbe7b68acaebee49245ee3ec6587b43cd00f1d8814eeb87e5e26bb"
     },
     {
       "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
@@ -1460,15 +1466,16 @@
         "The materialize op routes every block-data write through the install path's FGAP-029 preservation guard (installContext index.ts:1313-1336) — a populated block is preserved, a block that cannot be read or confirmed empty is treated as populated and never overwritten, and only a genuinely absent <kind>.json is created; the op writes via no path that bypasses this guard. Demonstrated: running the op against a substrate with a populated block reports it preserved and leaves its items byte-unchanged."
       ],
       "files": [
-        "packages/pi-context/src/index.ts"
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
       ],
       "notes": "Unblocks milestone activation.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-074",
       "oid": "ce4303169c9cd7665f108909671f0f89",
-      "content_hash": "5bb2db3ca15d18573c6f64ec3c3c57b95db7b8dd77edc5bff17ed227035f5a17",
-      "content_parent": "9a29a5d46955077e7057cf5d6973fec747cddbe6bead19db5a55be94391635be"
+      "content_hash": "9cc2b0b9a8f0dc2440554026c26eb8350996fd0aa6e77ef38b6a8d489bfbfebd",
+      "content_parent": "5bb2db3ca15d18573c6f64ec3c3c57b95db7b8dd77edc5bff17ed227035f5a17"
     }
   ]
 }

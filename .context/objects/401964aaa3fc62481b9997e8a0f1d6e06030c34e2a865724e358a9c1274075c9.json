@@ -1,0 +1,75 @@
+{
+  "title": "Block-mutation ops require `arrayKey` though it is derivable from config (CLASS: 7 ops)",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "Seven block-mutation OpDefinitions in pi-context's op-registry declare `arrayKey` as a required parameter (bare `Type.String`), forcing every caller to restate a value the substrate already declares as `config.block_kinds[].array_key`. pi-context-cli faithfully reflects the op schema's `required` set, so the redundant required flag surfaces at the CLI (e.g. `append-block-item --block research` errors `missing required: --arrayKey` despite `research`'s array_key being knowable from config). The deficiency is in the OP SCHEMAS, one layer below the CLI — the CLI reflection is correct. CLASS, not single-op: append-block-item, update-block-item, upsert-block-item, remove-block-item (top-level array_key), plus the parent `arrayKey` of the 3 nested ops append-block-nested-item / update-block-nested-item / remove-block-nested-item. write-block + read-block are clean (no arrayKey param). For the nested ops, only the parent `arrayKey` is redundant; their `nestedKey` is legitimately caller-supplied (a property of the parent-array item schema, NOT derivable from block_kinds).",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/dist/bin.js",
+      "reference": "Origin: surfaced by USING the CLI to file research item R-0002 — append-block-item demanded --arrayKey research though array_key is config-declared. Repro (each errors `missing required: --arrayKey`): append-block-item --block research --item @x.json; update-block-item --block issues --match .. --updates ..; upsert-block-item --block decisions --item @x.json; remove-block-item --block .. --match .."
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "246-255",
+      "reference": "append-block-item parameters declare arrayKey as bare Type.String (required), not Type.Optional — the root-cause shape"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "278",
+      "reference": "append-block-item run() passes params.arrayKey straight to appendToBlock(cwd, block, arrayKey, item, ctx) without consulting config"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "40",
+      "reference": "loadConfig is imported into ops-registry but never called by these ops — the derivation primitive is present and unused"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "278-282",
+      "reference": "CLI computes required flags solely from schema.required; no per-command hardcoding (no 'append-block-item' literal in cli.ts) — confirms the CLI faithfully reflects the op, so the gap is the op schema"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "288-313",
+      "reference": "update-block-item: same redundant-required arrayKey shape (params + run pass-through)"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "548-572",
+      "reference": "upsert-block-item: same redundant-required arrayKey shape"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "748-761",
+      "reference": "remove-block-item: same redundant-required arrayKey shape"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "651-681",
+      "reference": "append-block-nested-item: parent arrayKey redundant-required; nestedKey is legitimately required (not config-derivable)"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "693-727",
+      "reference": "update-block-nested-item: same nested shape (parent arrayKey redundant, nestedKey legitimate)"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "772-799",
+      "reference": "remove-block-nested-item: same nested shape"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "436",
+      "reference": "loadConfig(cwd):ConfigBlock|null + BlockKindDecl.array_key is the derivation source for the fix"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "89-111",
+      "reference": "the orchestrator script ALREADY derives array_key from the block (loadBlockSchema/resolveBlockItemSchema) — the op layer is the laggard; the dual surface is therefore asymmetric"
+    }
+  ],
+  "impact": "Every block-mutation call (CLI op, orchestrator-script consumer, and in-pi tool dispatch) must restate a config-declared value — redundant friction on the highest-traffic write path, multiplied across 7 ops. Because the orchestrator script already derives array_key while the ops do not, the dual surface is asymmetric — a parity gap the parity-check gate does not currently catch (it tracks optional-param flag divergence, not required-params-that-should-be-derived). Recurring papercut for any agent or human driving the CLI directly.",
+  "proposed_resolution": "To be determined exactly from live codebase.",
+  "priority": "P2"
+}

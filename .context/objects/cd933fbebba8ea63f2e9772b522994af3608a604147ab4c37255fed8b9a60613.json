@@ -1,0 +1,13 @@
+{
+  "description": "Walk the migration chain incrementally (the `git bisect` analog): a read-only command (e.g. `walk-migration-chain --schemaName <name>`) that applies the schema's migration chain one step at a time in memory — apply migration 1, validate, apply migration 2, validate — to isolate which step breaks. Per step it reports the step's decl (from→to, kind) and which items' content changed; validation runs against the target schema on each cumulative prefix, attributing the first failure to the step whose application introduced it. Nothing is written — the walk is entirely in memory over the live block data and the resolved chain (the catalog chain, or the pinned pending-blocked chain when the schema is blocked). Limitation stated honestly: the catalog ships only the latest schema body per kind, so a step's output cannot be validated against an intermediate schema version (only against the final target, or an intermediate body that happens to be pinned in the object store); the op isolates the breaking transform step, which is the operator's ask.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Origin: the operator-story think-out — the G4 statement (\"As an operator, when I suspect a specific migration in the chain introduced a validation failure, I want to walk the chain incrementally — apply migration 1, validate, apply migration 2, validate — to isolate which step breaks. (git bisect analog.)\"). Reuses the existing chain machinery (fresh in-memory registry, step-ordered application, per-item failure mapping) — no new parallel machinery."
+}

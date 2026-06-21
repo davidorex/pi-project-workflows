@@ -1,0 +1,13 @@
+{
+  "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
+  "status": "planned",
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/samples/schemas/"
+  ],
+  "notes": "Stamp location is the block envelope (top-level schema_version), derived: the read/write hooks already key on envelope.schema_version (block-api.ts:785-789, 1758-1767). Not a deferred DECISION."
+}

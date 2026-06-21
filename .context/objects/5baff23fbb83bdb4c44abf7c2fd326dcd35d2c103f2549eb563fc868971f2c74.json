@@ -1,0 +1,24 @@
+{
+  "title": "A sub-element of a substrate item has no identity — meaningful parts held in a nested array cannot be referenced, related, verified, or tracked across content edits",
+  "status": "identified",
+  "package": "pi-context",
+  "canonical_vocabulary": "stable sub-element (intra-item) identity",
+  "description": "Items carry ids; the parts inside an item — entries in a nested array — do not. Nothing can point at one such part, bind to it, or recognize it as the same part after its content changes; its only handle is array position (moves on insert/delete/reorder) or prose (changes on rewording). Acute instance: a task's acceptance_criteria is a plain string array (no per-criterion id), and verification.criteria_results[] keys each result on the criterion's text ({criterion:string,status,evidence?}), so the sole criterion-to-result join is exact prose match. Class: any meaningful nested-array part lacking identity (evidence entries, options_considered, consequences, criteria_results), not the criteria instance alone.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2390-2428",
+      "reference": "findNestedIdBearingArrays flags only nested arrays whose items already carry an id (promote to a top-level entity + membership edge); acceptance_criteria and criteria_results carry no id, so the check does not cover them"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+      "reference": "acceptance_criteria is an array of string with no per-criterion id (CLI-verified 2026-06-19)"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/verification.schema.json",
+      "reference": "criteria_results.items = {criterion:string, status, evidence?} — the per-criterion result is keyed on the criterion's text, no id (CLI-verified 2026-06-19)"
+    }
+  ],
+  "impact": "Per-criterion verification is not durable across the iterate-to-zero edits the canonical process requires: when a criterion's text changes, its criteria_results entry can no longer be matched to it, because nothing establishes same-criterion identity across the edit. Generally, no nested-array part can be the stable target of a reference, relation, or verification across content edits.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

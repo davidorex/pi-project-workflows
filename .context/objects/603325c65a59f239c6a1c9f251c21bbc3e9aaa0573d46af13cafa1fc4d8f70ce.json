@@ -1,0 +1,24 @@
+{
+  "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
+  "status": "closed",
+  "package": "pi-context-cli",
+  "description": "The orchestrator scripts return granular exit codes (1-5: usage / not-initialized / schema-absent / validation / etc.); the CLI returns only 0/1/2, so callers and CI cannot distinguish error classes.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "456-518",
+      "reference": "CLI maps to 0/1/2 only (UsageError + generic catch)"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "reference": "scripts use 1-5 exit-code granularity (e.g. dry-run FAIL exits 5)"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-8 in the parity survey, categorized CLI-only-shared-helper"
+    }
+  ],
+  "impact": "Scripted/CI consumers of the CLI cannot branch on error class (arg vs not-initialized vs schema-absent vs validation), below the scripts' diagnostic resolution.",
+  "proposed_resolution": "To be determined exactly from live codebase.",
+  "priority": "P2"
+}

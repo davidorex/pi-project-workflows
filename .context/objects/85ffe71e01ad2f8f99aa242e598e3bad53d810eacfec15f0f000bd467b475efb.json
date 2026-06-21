@@ -1,0 +1,36 @@
+{
+  "title": "Past-filed context atoms violate rhetorical-register at scale — provenance/process/git narration in block bodies that compose verbatim into subagent contexts",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A substrate-wide audit of all 17 block kinds found ~197 rhetorical-register violations across ~118 items. Dominant class: rule 5 (provenance / process / git narration), with rule 1 (declarative-not-narration) co-firing. Three sub-classes by volume: closure/outcome fields used as a changelog (closed_by / resolved_by / notes-at-completion — the largest source); origin/discovery narration; assert-then-refute and in-body corrections. Hedging and first-person are near-absent. The register-guarded block (framework-gaps) has the cleanest bodies, with a recency gradient — post-guard items clean, legacy FGAP-001..033 violating; tasks show the same gradient; unguarded blocks show none. session-notes is excluded: narrative is its purpose (rule 6). Two enforcement gaps: the register checkpoint guard covers only framework-gaps, and no pass cleans the already-filed violating bodies.",
+  "evidence": [
+    {
+      "file": "analysis/2026-06-09-rhetorical-register-block-audit.md",
+      "reference": "Full audit: ~197 violations / ~118 items across 17 block kinds; per-block tallies (items audited, violating, by severity + by rule#), the violations table (block/id/field/rule/severity/offending quote), and the recency gradient."
+    },
+    {
+      "file": ".context/verification.json",
+      "reference": "35/35 verification items: the evidence field carries git-SHA + probe-loop process narration (rule 5)."
+    },
+    {
+      "file": ".context/decisions.json",
+      "reference": "~17/17 decisions: the context field carries origin narration (rule 5)."
+    },
+    {
+      "file": ".context/research.json",
+      "reference": "11/11 research items: findings_summary carries in-body corrections / assert-then-refute (rule 5)."
+    },
+    {
+      "file": ".context/issues.json",
+      "reference": "2/2 issues: body + resolved_by carry discovery + git narration (rule 5)."
+    },
+    {
+      "file": ".context/framework-gaps.json",
+      "reference": "closed_by on legacy gaps + bodies of FGAP-001..033 violate; post-guard gaps are clean — the gradient showing the checkpoint guard works where applied."
+    }
+  ],
+  "impact": "Block bodies compose verbatim into subagent contexts — the substrate's stated purpose — so provenance/process/git narration is injected as operating context: noise that dilutes the atomic instruction and can mislead a downstream consumer. The violations concentrate in outcome/closure fields, the fields a consumer reads to learn current state.",
+  "canonical_vocabulary": "rhetorical-register compliance across filed context atoms",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

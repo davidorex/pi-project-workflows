@@ -1,0 +1,16 @@
+{
+  "description": "FGAP-013 fix — CLI --json structured output (no double-encode). Introduce OpResult = string | {json:unknown} and widen OpDefinition.run. Split serializeForRead (read-element.ts) into structureForRead (data + cap/pagination metadata, un-stringified) + renderReadText (content + footer). 19 JSON.stringify ops return {json:result}; 16 serializeForRead ops return {json: structureForRead(...)}; 14 prose ops unchanged. Shared renderOpResultText used by registerAll (Pi-tool text byte-unchanged) and the CLI default branch; CLI --json emits typeof r===string ? r : r.json. Add a cli.test contract test locking --json output as a JSON value. Per the approved plan; one subsystem (op-output contract). Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/read-element.ts",
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/ops-edge-write.test.ts",
+    "packages/pi-context-cli/src/cli.test.ts",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context-cli/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

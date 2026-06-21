@@ -1,0 +1,27 @@
+{
+  "title": "Config repair is impossible once the stored config is invalid (validate-before-mutate)",
+  "status": "identified",
+  "package": "pi-context",
+  "description": "amendConfigEntryForDir loads the existing config (which validates it) before applying any mutation — only a dryRun option, no force/skip — so an already-invalid config cannot be repaired through the CLI: the write path refuses on the pre-existing invalid state before the corrective mutation runs. accept-all is not a recovery path either — it never-clobbers a populated config. Independent of the missing load-time migration (FGAP-095): a config whose schema_version equals the current schema version (no migration applies) but whose body is invalid (corruption, hand-edit, or a schema change with no registered migration) throws at BOTH loadConfigForDir and amendConfigEntryForDir — unmigratable AND unrepairable. Migrate-on-load resolves only the version-gap subset of the deadlock.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "~1250",
+      "reference": "amendConfigEntryForDir loads (validates) the config before mutating; only a dryRun option, no force/skip — an already-invalid config throws on load before the corrective write"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "~995",
+      "reference": "accept-all (adoptConception) never-clobbers a populated config, so it is not a recovery path for an invalid config"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "564-581",
+      "reference": "loadConfigForDir validates the raw config on every load, so any read of an invalid config also throws — the read path and the repair path share the same pre-validation"
+    }
+  ],
+  "impact": "Once the stored config is invalid for any reason not covered by a registered migration, there is no sanctioned CLI path back to validity — the only recourse is the forbidden direct-edit of .context/config.json. This is the recovery-side root cause of the incident's unrecoverability: even setting aside the missing migration, validate-before-mutate means the CLI cannot dig the substrate out of an invalid state. Proven independent of FGAP-095 in the /tmp repro (a no-version-delta invalid config, both unmigratable and unrepairable).",
+  "canonical_vocabulary": "recovery / repair path (validate-after-mutate, or a force-repair write that validates the result rather than the pre-existing state)",
+  "proposed_resolution": "To be determined exactly from live codebase.",
+  "priority": "P2"
+}

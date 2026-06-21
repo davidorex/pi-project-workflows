@@ -1,0 +1,19 @@
+{
+  "title": "No one-step block-kind rename tool",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Block-kind renames require a manual multi-op migration: create a new schema, register a new block_kind, register installed_schemas/installed_blocks entries, write migrated block data, replace relation_type endpoint kinds, optionally rename relation_type ids, remove old config entries, and validate. rename-canonical-id explicitly does not support block_kind, and no harness op performs the filesystem/config/schema/data/relation cascade as one validated transaction.",
+  "evidence": [
+    {
+      "file": "pi-context tool surface",
+      "reference": "rename-canonical-id supports kind item | relation_type | lens | layer, not block_kind"
+    },
+    {
+      "file": "active substrate config",
+      "reference": "story block_kind rename to user-stories requires coordinated changes across block_kinds, installed_schemas, installed_blocks, schemas, block data, and relation_type endpoint kinds"
+    }
+  ],
+  "impact": "Renaming a block kind is high-friction and error-prone inside the pi harness: operators must sequence multiple config/schema/block writes by hand, old physical files can remain orphaned, and partial failure can leave config, relations, schemas, and data out of sync.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

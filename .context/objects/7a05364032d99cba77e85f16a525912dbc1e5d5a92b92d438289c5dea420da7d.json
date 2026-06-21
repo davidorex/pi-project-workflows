@@ -1,0 +1,13 @@
+{
+  "description": "Back-port the relation_types consumed by shipped pi-context derivations but missing from the packaged catalog packages/pi-context/samples/conception.json relation_types[] (the single source of truth): `task_gated_by_item` (already in live .context/config.json — catalog-only add) and `phase_depends_on` (in NEITHER catalog nor live config — add to BOTH; the config add via amend-config). Before adding `phase_depends_on`, confirm roadmap-plan.ts (which consumes it at :329/:505/:528) is shipped/reachable, not dead code — if dead, surface that as the finding instead of registering the relation. Update the samples-catalog.test.ts relation_type count pin (mirror TASK-061's 31→34 bump). Entry shape per existing catalog entries: {canonical_id, display_name, category, source_kinds, target_kinds}. NOW back-port slice of FGAP-094; mirrors TASK-061/TASK-033 (ship vocabulary in the catalog).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/samples/conception.json",
+    ".context/config.json",
+    "packages/pi-context/src/samples-catalog.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

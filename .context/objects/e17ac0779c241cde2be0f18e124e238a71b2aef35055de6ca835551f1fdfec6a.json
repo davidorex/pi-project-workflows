@@ -1,0 +1,16 @@
+{
+  "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Under --dryRun, updateContext's catalog-ahead arm short-circuits BEFORE resyncSchema (no write) and reports the schema under `resynced` as the would-act set, because the concrete resynced/migrated/blocked outcome is unknowable without running the forward migration. So a version-bump schema that a live run would `migrate` (items forward-migrated) — or `block` (no safe chain, or migrated items fail revalidation) — is previewed as `resynced`. The would-register migration declarations (migrationsRegistered) are computed accurately read-only, but a live blocked run rolls those declarations back, so --dryRun can also list migrationsRegistered a live run would not keep. This undercuts FEAT-006's stated guarantee that --dry-run reports the full set of changes update would make: the per-schema OUTCOME under dryRun is optimistic, not exact, precisely when a schema is at risk of blocking.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "updateContext catalog-ahead dryRun branch pushes name onto result.resynced (the would-act set) and computes migrationsRegistered read-only; the live resynced/migrated/blocked classification and the block-path rollback of migrations.json are not modelled under dryRun"
+    }
+  ],
+  "impact": "A user previewing an update sees `resynced` for a schema a live run would actually migrate or refuse (block), and migrationsRegistered may list decls a blocked live run would roll back — the dry-run preview can over-state what an update would do, exactly for the schemas most at risk.",
+  "canonical_vocabulary": "exact dry-run outcome preview",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

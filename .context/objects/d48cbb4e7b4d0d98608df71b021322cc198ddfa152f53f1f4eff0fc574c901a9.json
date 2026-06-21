@@ -1,0 +1,23 @@
+{
+  "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:667-722). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "667-722",
+      "reference": "edge-direction contract: {parent: D, child: T} => T blocked until D completed (parent=prerequisite, child=dependent) — opposite to the source_verb_target name reading"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_type task_depends_on_task display_name 'depends on task', category ordering — name reads 'parent depends on child' while the deriver treats parent as prerequisite"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "the corrected dependency edge (5621c2a): original parent=TASK-005/child=TASK-004 was filed per the name, wrong per the deriver"
+    }
+  ],
+  "impact": "Any ordering relation whose verb implies the parent is the actor while the deriver treats parent as the prerequisite is easy to mis-direct; append-time silence means the error is invisible until topo/blocked derivation. Affects dependency-ordering correctness across tasks and any similarly-shaped ordering relation (e.g. phase_depends_on).",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

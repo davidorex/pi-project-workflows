@@ -1,0 +1,14 @@
+{
+  "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/ops-registry.test.ts",
+    "packages/pi-context-cli/src/cli.test.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased]."
+}

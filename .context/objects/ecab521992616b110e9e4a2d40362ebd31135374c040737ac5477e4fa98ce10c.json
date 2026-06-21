@@ -1,0 +1,23 @@
+{
+  "title": "Read cap measures the pretty/line-counted form while --json emits compact — conservative over-refusal + byte-vs-line message imprecision (pre-existing, cross-channel)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Surfaced by the FGAP-015 re-audit (NOT introduced by it). truncateHead measures the pretty JSON.stringify(x, null, 2) byte size AND a 2000-line dimension; the CLI --json envelope emits the COMPACT JSON.stringify(x). So a value whose compact emitted form is well under 50KB but whose pretty form exceeds 50KB, or which exceeds 2000 lines, fails closed under --json even though the emitted compact payload would fit. This is conservative — it over-refuses, never under-protects (cannot leak) — and is inherited truncateHead behavior the {read} channel already exhibits; FGAP-015 applied the same primitive to the {json} boundary cap consistently. Secondary: the REFUSAL message reads 'N bytes, over the 50KB cap' even when the actual trigger is the 2000-line dimension, so the stated reason can be cosmetically inaccurate.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/truncate.ts",
+      "reference": "truncateHead measures pretty-serialized bytes + DEFAULT_MAX_LINES=2000; the cap dimension that fires is not surfaced in the refusal text"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "reference": "--json envelope emits compact JSON.stringify({ok,op,output}); boundedJsonOutput measures the pretty form -> measurement form != emission form"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "reference": "structureForRead/renderReadText measure the pretty content the same way — the {read} channel has the same pre-existing over-refusal"
+    }
+  ],
+  "impact": "A legitimate read whose compact --json payload would fit under the cap can be refused (functional over-restriction for machine --json consumers); the refusal message can misstate bytes-vs-lines as the trigger. Safe (never leaks), low severity, but a real ergonomic imprecision spanning the cap primitive and both output channels.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs op/script/CLI surface topology + duplication",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs which surfaces a capability lives on (op/script/CLI topology + duplication). DEC-0011 (retire op-twin scripts; ops op-only, CLI as reflected shell) was decided in this domain without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering surface topology / duplication"
+    }
+  ],
+  "impact": "Surface-topology decisions are ungoverned.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

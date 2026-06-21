@@ -1,0 +1,16 @@
+{
+  "title": "update-block-item cannot delete a field — a null update sets the key to null instead of removing it",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "update-block-item --updates '{\"field\":null}' sets the field to null on the item rather than removing the key; no op surface deletes a field from an item. The observed workaround is upsert-block-item full-shape replacement. Hit removing a stray status field from the de-ephemeralize-at-source conventions rule: the null landed on disk ({\"status\":null}) and only an upsert replace dropped the key. Uninvestigated — root cause, shape, class (is field-deletion missing across the whole update/merge surface?), and prior-art are for the investigating agent.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "the triggering instance: update-block-item --match '{\"id\":\"de-ephemeralize-at-source\"}' --updates '{\"status\":null}' produced status:null on the item; upsert-block-item full-replace removed it"
+    }
+  ],
+  "impact": "A filed item cannot be cleaned of a stray field through the merge-update surface; the only route is a full-shape replacement, which re-states the whole item to remove one key.",
+  "canonical_vocabulary": "field deletion on item update",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

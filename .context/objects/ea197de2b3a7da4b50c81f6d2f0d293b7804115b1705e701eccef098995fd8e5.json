@@ -1,0 +1,15 @@
+{
+  "title": "Stories attach to any item via one wildcard relation",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "One relation story_includes_item (source story, target any kind) links a story to any task, phase, or milestone. A story's scope is its outbound story_includes_item edges.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types has story_contains_task (story->tasks) only; no story->any relation"
+    }
+  ],
+  "impact": "Stories can only link to tasks; the model needs a story to span any level.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

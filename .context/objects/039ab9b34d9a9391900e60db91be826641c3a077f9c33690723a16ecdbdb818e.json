@@ -1,0 +1,15 @@
+{
+  "description": "Slice S3 (FGAP-029): a read-only --plan / drift detector. From the S2 baseline, report installed-vs-catalog skew per asset (version + content_hash) and what a re-sync WOULD change; mutate nothing (survey Option C as Option B's preview; cruft-check / terraform-plan flavor). Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context/README.md",
+    "README.md",
+    "packages/pi-context/skills/pi-context/skill-narrative.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Slice S3/4 of DEC-0010 | depends on S2 (needs the baseline)"
+}

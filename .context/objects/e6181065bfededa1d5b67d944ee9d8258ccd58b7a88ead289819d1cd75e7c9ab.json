@@ -1,0 +1,12 @@
+{
+  "description": "Add the advancer-completion invariant class to the validator — closes FGAP-082. Extend InvariantDecl (context.ts:202-214) and validateContext's invariant executor with a third config-declarable class: for a source item entering when_bucket (complete), every target reached via the declared relation_types (task_advances_story / feature_advances_story) must be met — met = at least one incoming advancer edge whose endpoint item is in met_bucket (complete) — with self_satisfies so the completing item counts as its own stories' advancer (the single-advancer case must not deadlock). Severity error at context-validate. Code change: full canonical pipeline.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/context-sdk.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Closes FGAP-082. Enables enforcement of the user-stories completion rule (analysis/2026-06-10-user-stories-block-DRAFT.md); the rule's config declaration lands with this task. Engine grounding: analysis/2026-06-10-story-completion-invariant-engine-audit.md. Write-time blocking (a completeTask/write-path hook) is out of scope — context-validate error only."
+}

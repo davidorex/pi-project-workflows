@@ -1,0 +1,25 @@
+{
+  "title": "Target state: invoke pi-context-cli as the first-class `pi-context` command, not `node .../dist/bin.js`",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context-cli",
+  "description": "packages/pi-context-cli/package.json already declares `bin: { \"pi-context\": \"./dist/bin.js\" }` and dist/bin.js carries a `#!/usr/bin/env node` shebang — so installing or linking the package puts a first-class `pi-context` command on PATH. But the dev workflow, the docs (CLAUDE.md, READMEs), the dogfooding invocations, and orchestration all call `node packages/pi-context-cli/dist/bin.js <op>` — the developer-mode path-to-bin wart, not a real CLI. TARGET STATE: pi-context is a first-rate command invoked as `pi-context <op> --...` everywhere; no `node /path/to/bin` ceremony.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/package.json",
+      "lines": "22-24",
+      "reference": "bin: { pi-context: ./dist/bin.js } — the first-class command is already declared"
+    },
+    {
+      "file": "packages/pi-context-cli/dist/bin.js",
+      "lines": "1",
+      "reference": "#!/usr/bin/env node shebang present — directly executable once on PATH"
+    },
+    {
+      "file": "CLAUDE.md",
+      "reference": "the canonical filing patterns + dogfooding all show `node packages/pi-context-cli/dist/bin.js <op>` rather than `pi-context <op>`"
+    }
+  ],
+  "impact": "Every CLI invocation (docs, dogfooding, scripts, other-agent shell access) carries the path-to-bin wart; the CLI does not present as a first-rate installed command, which is friction, non-portable, and a poorer dogfooding/UX signal than a real `pi-context <op>` command.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

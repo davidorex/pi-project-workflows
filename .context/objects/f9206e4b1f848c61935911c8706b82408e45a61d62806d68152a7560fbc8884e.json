@@ -1,0 +1,20 @@
+{
+  "description": "FGAP-015 fix — enforce the read cap at the output boundary (per DEC-0009). Three coordinated parts: (1) runtime boundary cap boundOpResult applied at the 3 emit sites (cli.ts --json :492, cli.ts text :497, registerAll Pi-tool :1927) — {read} passes through, {json}/prose serialized + byte-checked via truncateHead, over-cap fail-closes (structured {data:null,truncated:true,totalBytes,note} for --json; REFUSAL prose for text/Pi-tool); (2) route resolve-item-by-id + promote-item through structureForRead/{read} for graceful degradation; (3) parity-check gate rejecting an op that directly returns {json} of a content-reading lib call (readBlock/readBlockItem/resolveItemById/filterBlockItems/joinBlocks/resolveItemsByIds/buildIdIndex/resolveRef). Add Pi-tool over-cap test (uncovered surface). Lands with held TASK-012 as the complete --json contract; closes FGAP-013 + FGAP-015. Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer + re-audit.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/read-element.ts",
+    "packages/pi-context/src/truncate.ts",
+    "scripts/parity-check.ts",
+    "packages/pi-context-cli/src/cli.test.ts",
+    "packages/pi-context/src/read-element.test.ts",
+    "packages/pi-context/src/index.test.ts",
+    "scripts/parity-check.test.ts",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context-cli/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

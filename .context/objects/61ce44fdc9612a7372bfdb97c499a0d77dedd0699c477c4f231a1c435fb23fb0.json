@@ -1,0 +1,51 @@
+{
+  "title": "pi-context-cli id-flag naming diverges across id-taking ops (--id vs --itemId vs --taskId vs --parentId vs --unitId), with no normalized convention",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "The reflecting pi-context-cli derives each op's CLI flag names verbatim from that op's typebox parameters-schema property keys (packages/pi-context-cli/src/cli.ts parseOpArgs reads props[field] off objectSchema(op).properties; an unknown key throws 'unknown flag'). Because the op-registry authored those property names ad hoc per op, the single-item-id argument is spelled differently across ops with no shared convention: read-block-item and resolve-item-by-id use --id; find-references and walk-ancestors use --itemId; context-walk-descendants uses --parentId; complete-task uses --taskId; gather-execution-context uses --unitId; promote-item uses --source. update-block-item / remove-block-item / nested-item ops select the id inside a --match JSON predicate; relation ops use --parent / --child. Driving the CLI, the natural guess --id fails on find-references with 'unknown flag: --id' (exit 2), forcing a re-read of --help to discover --itemId. The divergence is purely a property-name authoring inconsistency in the op-registry surfaced 1:1 by the flag-derivation, not a behavioral defect: each op works once the right flag is supplied. Impact is dogfooding friction (wrong-flag guesses, failed invocations, help round-trips) rather than data correctness.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1481",
+      "reference": "resolve-item-by-id parameters declare 'id: Type.String' — id-flag spelled --id"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1507",
+      "reference": "read-block-item parameters declare 'id: Type.String' — id-flag spelled --id"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1690",
+      "reference": "walk-ancestors parameters declare 'itemId: Type.String' — same single-item-id concept spelled --itemId, diverging from --id"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1707",
+      "reference": "find-references parameters declare 'itemId: Type.String' — id-flag spelled --itemId; calling with --id throws 'unknown flag: --id' (exit 2), the trigger of this gap"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1674",
+      "reference": "context-walk-descendants parameters declare 'parentId: Type.String' — id-flag spelled --parentId"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1627",
+      "reference": "complete-task parameters declare 'taskId: Type.String' — id-flag spelled --taskId"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1729",
+      "reference": "gather-execution-context parameters declare 'unitId: Type.String' — id-flag spelled --unitId"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "182-231",
+      "reference": "parseOpArgs derives flag names 1:1 from objectSchema(op).properties keys (props[field]); a token whose stripped name is absent from properties throws UsageError('unknown flag: ' + tok). The CLI has no id-flag aliasing/normalization layer, so each op's schema property-name spelling is the only accepted flag for that op's item-id argument."
+    }
+  ],
+  "impact": "Usability/dogfooding footgun, not a correctness defect. Each id-taking op works once the correct flag is supplied; the cost is wrong-flag guesses and failed invocations (exit 2) when driving the CLI directly. The most common single-item-id spelling is --id (read-block-item, resolve-item-by-id), so --id is the natural guess and the ops that diverge from it (find-references, walk-ancestors as --itemId; context-walk-descendants as --parentId) reliably mis-fire. Because the CLI auto-reflects op-registry property names, every future id-taking op inherits whatever spelling its author chose, so the divergence grows unless a convention is established.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

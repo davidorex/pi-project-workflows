@@ -1,0 +1,19 @@
+{
+  "title": "Verification block retired; proof lives on the task criterion",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The verification block kind and the verification_verifies_item relation are removed. A task success_criterion carries its own proof inline (verified_by, verified_at, evidence). Existing verification items fold into the criteria they attest, or are dropped.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "block_kinds registry includes 'verification'; relation_types registry includes 'verification_verifies_item'"
+    },
+    {
+      "file": ".context/verification.json",
+      "reference": "holds verification items that duplicate the pass/proof a criterion now carries"
+    }
+  ],
+  "impact": "Two constructs assert the same done-ness: the criterion's pass and a separate verification item.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

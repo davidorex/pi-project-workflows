@@ -1,0 +1,11 @@
+{
+  "description": "CLI pre-call input layer: normalize flag forms, derive arrayKey from config, and accept the scripts' input shorthands so the CLI reaches script-parity on INPUT without changing in-pi ops. All edits live in cli.ts's pre-call path (parseOpArgs ~:184-233 + the required-filter exemption ~:293-303). Closes FGAP-019 (arrayKey required-but-derivable across 7 block-mutation ops — derive from config.block_kinds[].array_key, demote --arrayKey to optional override by extending the required-filter exemption from {writer} to {writer,arrayKey} + an injectArrayKey helper mirroring injectWriter), FGAP-025 (--writer kind:id, --where field:op:value, CSV --op in shorthands, each a pre-call transform in parseOpArgs), FGAP-064 (kebab-case flag normalization — a kebab->camel alias layer in parseOpArgs so conventional --dry-run / --id forms resolve to the camelCase op-schema keys), and FGAP-032 (the id-flag instance of the same root — --id aliases to the op's single declared id-param: --itemId/--parentId/--taskId/--unitId — resolved in the SAME normalization layer as FGAP-064). The ops still receive + require their declared params; the CLI normalizes/supplies them. Additive per the FEAT-008 invariant: every currently-working flag form keeps working, the op surface is byte-unchanged.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Release-group: cli-parity (FEAT-008) | order 1/6 | addresses FGAP-019, FGAP-025, FGAP-064, FGAP-032 | category: CLI-pre-call (R-0003) | flag-normalization + shorthands + arrayKey all edit parseOpArgs -> one task per feature-decomposition rule 4"
+}

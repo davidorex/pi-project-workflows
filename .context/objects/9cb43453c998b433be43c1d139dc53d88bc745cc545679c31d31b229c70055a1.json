@@ -1,0 +1,12 @@
+{
+  "description": "Per-op <op> --help best-of-breed template + machine-readable help — closes FGAP-072. Sibling to TASK-040 under FEAT-008 (different code location: deriveHelp + OpDefinition help-metadata + the help-render-through-format path, vs TASK-040's deriveTopHelp + main). Additive: in-pi op behavior frozen (run/parameters/description unchanged; the parity gate TASK-019 stays green — additive help-metadata is not op behavior). Scope, per FGAP-072's proposed_resolution: (1) add an examples[] help-metadata field (and optionally related[]) to OpDefinition in ops-registry.ts, and AUTHOR examples[] for ALL ~48 use-ops from the CLAUDE.md canonical filing patterns (no synthetic floor — the no-deferral/best-of-breed mandate requires real copy-pasteable examples per op); (2) render a fixed template in deriveHelp (cli.ts:554): SYNOPSIS (derived from the op's typed params in docopt notation — required -> `--flag <type>`, optional -> `[--flag <type>]`, @file alternation) -> summary -> Flags (existing required-vs-optional typed list) -> EXAMPLES -> RELATED -> learn-more footer; (3) derive RELATED from the op's name-prefix group (the same pure classifier TASK-040 builds for the top-level listing) and surface the process-mode pi-bound; (4) route a structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) through the existing --format json (FGAP-021) so a per-op --help --format json is machine-parseable off the registry. Reuse TASK-040's name-prefix group classifier for RELATED so the two help surfaces share one grouping source (no drift; the parity gate guards it).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Release-group: cli-parity (FEAT-008) | order 7/7 | sibling to TASK-040 | addresses FGAP-072 | informed by R-0011 | folds the per-op help-template render layer into FEAT-008 so the CLI ships best-of-breed (the prior session left these elements parked; no-deferral requires folding, not deferring)"
+}

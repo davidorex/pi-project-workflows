@@ -1,0 +1,28 @@
+{
+  "title": "No substrate clone/import: cross-project substrate reuse has no op-driven path and substrate identity carries no provenance",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "substrate_id is content-addressed, but the project-root registry (.pi-context-registry.json) is a flat id -> { dir, aliases } map with no origin/provenance. Item-level cross-substrate import exists (promoteItem mints a fresh content-addressed identity + records item_derived_from_item lineage), but there is no substrate-level analogue. Bringing a pi-context substrate in from another project therefore requires manual file copy + a manual registry edit, and yields a false substrate_id_unregistered drift error because the SoT-drift invariant cannot distinguish a native substrate whose registry entry was lost from a legitimately imported foreign one.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-registry.ts",
+      "reference": "registry entry shape is { dir, aliases } only — no origin/provenance field"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1685-1714",
+      "reference": "SoT-drift invariant: an unregistered config.substrate_id is a single error code with no native-vs-foreign discrimination"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "promoteItem provides item-level cross-substrate import with item_derived_from_item lineage + fresh content-addressed identity; no substrate-level counterpart exists"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "759,822",
+      "reference": "the only registerSubstrate call sites record id+dir+aliases, no origin — so an imported substrate's lineage is unrecorded"
+    }
+  ],
+  "impact": "No tool-driven cross-project substrate reuse; imported substrates carry no lineage to their origin; the SoT-drift invariant false-positives on legitimate imports; and the local switch-register reconciliation fix cannot tell a native-lost-registry substrate from a foreign import, so registering blindly on switch would silently absorb a foreign or colliding id.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

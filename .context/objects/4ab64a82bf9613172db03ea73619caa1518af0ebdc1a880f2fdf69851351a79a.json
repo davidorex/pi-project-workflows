@@ -1,0 +1,30 @@
+{
+  "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "Distinct from FGAP-020's CLI-surface correction: the IN-PI read-schema op itself returns the paged `required` name-list for an addressed object node, because it wraps addr.value in structureForRead (ops-registry.ts:1166) which pages on the node's incidental array (read-element.ts:266-285). A CLI-only fix leaves in-pi agents still receiving the projection. Correcting BOTH surfaces requires passing whole:true at ops-registry.ts:1166 — a deliberate change to in-pi op behavior, which the parity survey's frozen-ops constraint explicitly carved out and the user has now authorized as a tracked gap.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1166",
+      "reference": "read-schema op wraps the addressed node in structureForRead WITHOUT whole:true — the in-pi op projection point; whole:true here forces full-subtree serialization while retaining the 50KB cap"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "147,268",
+      "reference": "whole:true forces whole-object serialization and skips collection discovery"
+    },
+    {
+      "file": "scripts/orchestrator/read-schema.ts",
+      "lines": "181",
+      "reference": "the orchestrator script already returns the full subtree (JSON.stringify(addr.value)) — the behavior the in-pi op should match"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "the GAP-2 residual / REQUIRES-OP-CHANGE branch in §D/§E of the parity survey"
+    }
+  ],
+  "impact": "In-pi agents (not only the CLI) reading an object schema node via read-schema --path receive the field-name list, not the schema subtree — the same defect class as FGAP-020 but on the in-pi surface, which the CLI-side fix does not reach.",
+  "proposed_resolution": "To be determined exactly from live codebase.",
+  "priority": "P2"
+}

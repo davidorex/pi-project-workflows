@@ -1,0 +1,7 @@
+{
+  "description": "Backfill the warranted-but-absent closure-table edges that early tasks' filed text entails but that were never written — the concrete instances of FGAP-091's under-filing. The relation-graph completeness audit (analysis/2026-06-14-substrate-relation-graph-completeness-audit.md) enumerated: TASK-010 task_governed_by_decision -> DEC-0008 and task_addresses_gap -> FGAP-012; TASK-012 task_governed_by_decision -> DEC-0009 and task_addresses_gap -> FGAP-015; TASK-014 task_addresses_gap -> FGAP-014. First re-confirm the complete warranted-but-absent set via find-references against the items' filed text (including any symmetric sibling such as TASK-011), then write each absent edge via append-relation — each kind-correct, accepted by the write-time validator. Pure data backfill, no code. Partial addressing of FGAP-091 (the concrete missing edges; the forcing-function invariant is FGAP-091's separate residual).",
+  "status": "completed",
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "title": "Ordered collections of item-refs need a convergent sequence field-kind — an array index cannot merge concurrent insert / delete / move",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "Order is a plain ordered array of refs on the owning item (e.g. a fragment_refs / phase-order / step-list field), authoritative by design. Single-writer insert/reorder works: splice the array, one atomic item write. But the array carries no merge semantics: two divergent versions that each reorder it 3-way-merge to a conflict (git) or whole-array last-writer-wins (item upsert), losing one side's ordering. The gap: when two divergent substrate versions each insert, delete, and/or move elements in the same ordered collection, the substrate must merge them into one deterministic, replica-independent sequence containing every insert, with each element retaining a single identity and a single position, and concurrently-inserted runs kept coherent rather than interleaved. An array index cannot carry this, because position is a value two branches generate independently and must reconcile. The capability is latent until the structure-aware git merge driver (FGAP-004) exists, which is the host that invokes this field-level merge on git's three versions of the owning block file.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "ordering today is a plain ordered array of refs on the owning item (authoritative by design); position is an array index two branches generate independently and cannot reconcile"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "item upsert is whole-array last-writer-wins and git line-merge mangles arrays; neither merges concurrent insert/delete/move on an ordered ref-array — one side's ordering is lost"
+    }
+  ],
+  "impact": "Ordered collections of item-refs (roadmaps, milestone sequences, fragment composition, step lists) in substrates branched and merged across operators / sessions / branches cannot converge: concurrent reordering on divergent versions conflicts or silently drops an ordering.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

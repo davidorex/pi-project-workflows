@@ -1,0 +1,13 @@
+{
+  "description": "FGAP-014 fix — migrate completeTask to the verification_verifies_item edge (per FGAP-014). completeTask (context-sdk.ts) currently reads verification.target/target_type, removed by c08f93b for the edge and never migrated, so it is unusable on any catalog substrate. Rewrite as a pure edge-gate: find verification (exists), assert status===passed, find task (exists, not completed/cancelled), ASSERT a verification_verifies_item edge (parent=verificationId, child=taskId) via findReferencesInRepo/walkAncestorsByLens (throw a clear edge-absent error if missing), set task status:completed via updateItemInBlock (DROP the verification field embed — the edge is the linkage), thread ctx for attestation. complete-task op: add ctx to run() + thread. Rewrite the 12-test suite to the edge-based flow (schema-valid verifications, no smuggled target/target_type; file the edge via appendRelationByRef; wrong-task -> no-edge; drop wrong-type; add a no-edge-bypass case). Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer + re-audit. Closes FGAP-014.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "title": "Substrate evolution safety + currency — catalog/config/schema evolution and substrate read/repair/materialize never brick or silently corrupt an installed substrate",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "Catalog, config, and schema evolution, and every read / repair / materialize of an already-installed substrate, preserve its loadability, the integrity of its install/validity signals, and its recoverability through sanctioned ops. Config carries a versioned envelope and migrates on load across a version gap; an invalid config is recoverable through a sanctioned repair that validates the result, not the pre-existing state; a non-additive config-schema diff is flagged at build time unless paired with a migration; block data carries schema_version so read-time validation and migration are active; a block kind declared after install is materialized into the existing substrate. Invariant: no evolution, read, repair, or materialize leaves the substrate bricked, silently corrupted, or unrecoverable through sanctioned ops.",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

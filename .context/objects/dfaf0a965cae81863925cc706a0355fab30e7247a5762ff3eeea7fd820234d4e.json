@@ -1,0 +1,15 @@
+{
+  "status": "completed",
+  "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "files": [
+    "package.json",
+    "scripts/promote-cli.mjs",
+    "packages/pi-context-cli/package.json",
+    "packages/pi-context-cli/README.md",
+    "README.md"
+  ],
+  "notes": "Addresses issue-004. Scope: the binary coupling only."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "pi-context-cli best-of-breed surface — script-parity input/output, discoverability, and write-safety to a superior CLI UX",
+  "status": "complete",
+  "layer": "L4",
+  "description": "The reflecting pi-context CLI is both the dogfooding surface and the new-user entry point; today it lags its op-twin orchestrator scripts on input ergonomics, human output, discoverability, error UX, and write-safety. This feature brings the CLI to best-of-breed parity additively. INVARIANT (every task preserves it): the reflecting CLI is additive — every currently-working invocation keeps working, and every in-pi op's behavior plus the --json data envelope are byte-unchanged; new affordances (kebab/alias flags, input shorthands, render modes, previews, granular exit codes, help/version) are layers over the canonical op surface, never replacements. The sole authorized in-pi op change is the read-schema addressed-node correction (FGAP-027), paired with its CLI-side twin so read-schema is coherent across both surfaces. A behavioral parity gate locks the input/output parity classes at commit so the regression class is caught-at-commit, not found-by-dogfooding.",
+  "motivation": "The CLI is the surface the project is built and demonstrated on; every parity/discoverability/safety gap degrades both dogfooding and first-run UX. The standard is best-of-breed with a superior user experience, sequenced by priority, nothing tiered as ship-after.",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

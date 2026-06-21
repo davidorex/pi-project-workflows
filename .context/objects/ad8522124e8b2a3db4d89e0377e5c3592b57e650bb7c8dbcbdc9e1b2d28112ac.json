@@ -1,0 +1,16 @@
+{
+  "description": "Slice S1 (FGAP-029 P0 safety): /context install --update must NEVER overwrite a populated block. In installContext's blocks loop (packages/pi-context/src/index.ts:396-416), when destExists && overwrite, read the existing block via readBlockForDir and test for items via forEachBlockArray; if any array is non-empty, push to a new InstallResult.preserved[] and skip the copyFileSync. Empty/absent blocks behave as today; the schemas loop is UNCHANGED (schemas still honor --update). Render preserved in the install handler (index.ts:910-942). Add a regression test (none exists today). Per DEC-0010: also add a CHANGELOG [Unreleased] entry + usage-only docs (pkg README, monorepo README, SKILL via skill-narrative.md). Reuse readBlockForDir + forEachBlockArray (block-api.ts); installContext is the sole block-writer.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/index.test.ts",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context/README.md",
+    "README.md",
+    "packages/pi-context/skills/pi-context/skill-narrative.md"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Slice S1/4 of DEC-0010 (FGAP-029 safe re-sync) | the P0 data-loss closure | NO release at slice boundary — single release after S1-S4"
+}

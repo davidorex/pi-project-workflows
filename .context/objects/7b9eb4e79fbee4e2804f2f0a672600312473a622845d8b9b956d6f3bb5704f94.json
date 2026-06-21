@@ -1,0 +1,12 @@
+{
+  "description": "Make the catalog schema locally diffable — closes FGAP-079. Provide the catalog schema BODY to the operator without hunting node_modules: a single read-only reflected op that fetches and prints the catalog schema verbatim (resolveCatalog samplesRoot + kind.schema_path; read-samples-catalog returns only a projection today). No sidecar.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Closes FGAP-079; advances STORY-010. Independent of the other slices. Grounding: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md is unrelated; the catalog-access grounding is the user-stories DRAFT + the explore that located resolveCatalog/samplesRoot."
+}

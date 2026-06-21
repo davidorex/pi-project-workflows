@@ -1,0 +1,11 @@
+{
+  "description": "Behavior-preserving refinement, the code-simplifier evaluation's finding #2 verbatim: Duplicated raw tmp+rename marker-write block (2 sites) — packages/pi-context/src/index.ts:2026-2028 (mark) and :2426-2428 (unmark). Identical three-line shape: const tmpPath = `${blockFile}.<verb>-${process.pid}.tmp`; fs.writeFileSync(tmpPath, text); fs.renameSync(tmpPath, blockFile);. A small local helper rawWriteBlockText(blockFile, text, verb) would DRY this and name why it bypasses writeTypedFile (the marker text / stripped text is written outside the AJV-validating writer deliberately). The writeTypedFile atomic writer at block-api.ts:870 cannot be reused (it validates), so a dedicated raw helper is the right level. Behavior-preserving: same tmp path scheme, same atomic rename. (Line numbers are as evaluated pre-TASK-053; relocate by content.)",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Surfaced by the post-TASK-052 code-simplifier evaluation (its optional finding #2); filed verbatim on user direction. Internal-only — no exported-surface, op, or schema change."
+}

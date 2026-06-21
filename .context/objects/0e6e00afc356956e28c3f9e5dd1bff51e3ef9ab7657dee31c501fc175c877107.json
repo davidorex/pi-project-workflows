@@ -1,0 +1,11 @@
+{
+  "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts"
+  ],
+  "notes": "Repair mechanism is DERIVED from the existing op surface, not deferred to a DECISION. Derivation: amend-config already mutates config and validates the RESULT before write (block-api.ts:892-895); the only thing blocking repair is its pre-load validation (context.ts:1251); and amend-config already carries an opt (dryRun, context.ts:1229). So config-repair is a validation-skip mode of amend-config — an opt on the existing op, not a separate recover op (which would duplicate amend-config's mutate+validate flow for a capability that is not missing). No DEC and no task_governed_by_decision edge; the choice is determined by the existing amend-config surface (derive-decisions 1b — an existing surface/convention)."
+}

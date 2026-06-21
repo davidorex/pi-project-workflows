@@ -1,0 +1,10 @@
+{
+  "description": "Declare @davidorex/pi-project-workflows in pi-context-cli dependencies at the lockstep version range so pi-context --pi-bound's require.resolve('@davidorex/pi-project-workflows/package.json') resolves from an installed CLI, not only via the in-repo workspace symlink.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/package.json"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

@@ -6938,5 +6938,70 @@
       "refname": "FGAP-010"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "725476a9d3697f024c4e0a174006250d",
+      "refname": "R-0020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "614b5f5965916f13da1c58e23f6ad6d1",
+      "refname": "R-0021"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b8b5c12640288e06f89983d33203bf45",
+      "refname": "R-0022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f7d78e008159c752631fb1922a85c68f",
+      "refname": "R-0023"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ab9a34722e19faae742eebf81c1a2fad",
+      "refname": "R-0024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

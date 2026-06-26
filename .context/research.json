@@ -1309,6 +1309,101 @@
       "modified_at": "2026-06-16T05:13:34.095Z",
       "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
       "content_hash": "1f876696f3eafb70660c9e6f4c74700a7f3d66600927735698c95de945a0e2e2"
+    },
+    {
+      "title": "WASC operation framework — the canonical run process",
+      "status": "complete",
+      "layer": "L4",
+      "type": "historical",
+      "question": "What is the exact step sequence and structure of the WASC operation framework's per-task run process?",
+      "method": "claude-history extraction of the last complete end-to-end run (session 6e98b2bc) and a loop run; verbatim tool-call and agent-dispatch sequencing; cross-checked against the operation-system bundle.",
+      "findings_summary": "The WASC operation framework runs a per-task canonical pipeline: EnterPlanMode, dispatch a read-only Explore agent, the orchestrator independently corroborates the Explore findings against source, write the plan, ExitPlanMode approval, file the task plus edges in .context, branch off main, dispatch a fresh gate-first IMPL agent, the orchestrator re-runs the deterministic gate itself (it does not inherit the IMPL's green), then a separate adversarial AUDIT agent verifies each acceptance criterion and ends with the literal token 'Total findings: N'. Done is two external binary signals: deterministic gate exit 0 AND audit findings 0 (DEC-58); the model may not self-declare done. On findings > 0 each finding re-enters the same pipeline (corroborate, fresh re-IMPL scoped to the finding's whole class, fresh re-audit both-directions) until a pass finds nothing. On done, the machine cascade files a verification item, adds the verification_verifies_item edge, completes the task, closes the gap, runs context-validate, then fast-forward merges to main and updates the spine. Three roles stay separate (Explore read-only, IMPL writes, AUDIT adversarial). The loop's terminator is external, not the model's judgment; that is why it completes. Derived from the last complete run (175 steps, session 6e98b2bc), which audited clean on the first pass.",
+      "findings_document": "analysis/2026-06-21-wasc-process-learned.md",
+      "citations": [
+        {
+          "label": "last complete run step sequence",
+          "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md"
+        },
+        {
+          "label": "loop run step sequence (iterate-to-zero)",
+          "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md"
+        }
+      ],
+      "created_by": "orchestrator",
+      "created_at": "2026-06-27",
+      "id": "R-0020",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-26T22:45:07.333Z",
+      "oid": "725476a9d3697f024c4e0a174006250d",
+      "content_hash": "bcadcd933a7ebd901e1030ba7f2e4d0086a73985acb8b0c038262488a3d026e0"
+    },
+    {
+      "title": "WASC out-of-scope STOP — firing rate across the record",
+      "status": "complete",
+      "layer": "L4",
+      "type": "empirical",
+      "question": "How often does the IMPL/fix brief's 'STOP and report if a fix reaches outside the slice' actually fire, and what percentage of full loop runs never encounter it?",
+      "method": "claude-history enumeration of every full loop run (an IMPL dispatch that reached an adversarial audit) across the 4 WASC sessions; verbatim agent-return search for the out-of-scope STOP; reconciled counts.",
+      "findings_summary": "The out-of-scope STOP fires rarely and is run-terminating. Across the WASC record there are 8 clean firings (plus 2 borderline), all in sessions d7310007 and bd501b6f; the canonical-pipeline session 6e98b2bc had zero. Of 70 full loop runs (an IMPL dispatch that reached an adversarial audit), 0 contained an out-of-scope STOP — 100% never encounter one — because every firing halts during implementation before auditable code exists (all returned no edits, clean tree, no commit), so the attempt never becomes a completed loop run. Across all 187 IMPL plus fix attempts the firing rate is 8/187 = 4.3% (5.3% including borderline), so about 95-96% of all attempts never hit it. The 36 audit-finding fix-re-entry loops contained zero scope STOPs — every re-fix completed in scope. The clearest firing: a translation removal blocked because the off-limits planner/forms.py referenced the translated field, so the agent stopped rather than touch a forbidden file.",
+      "findings_document": "analysis/2026-06-21-wasc-out-of-scope-stop-firing-rate.md",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-27",
+      "id": "R-0021",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-26T22:45:20.812Z",
+      "oid": "614b5f5965916f13da1c58e23f6ad6d1",
+      "content_hash": "aa837a10877641114e1bd7032f17d0503da65fb2fa749dc1c0d3f2d6c9786d60"
+    },
+    {
+      "title": "CLAUDE.md comparison — workflowsPiExtension vs WASC",
+      "status": "complete",
+      "layer": "L5",
+      "type": "comparative",
+      "question": "How do the two projects' CLAUDE.md operating docs compare, objectively, section by section?",
+      "method": "full read of both CLAUDE.md files; section inventory; topic-by-topic comparison with citations; present-in-both / only-A / only-B classification.",
+      "findings_summary": "A (workflowsPiExtension) = 16 top-level sections; B (WASC) = 14. Both encode two sequences (a canonical pipeline plus a second build/gate sequence). Both share the same governing disciplines: plan-mode plus Explore, written plan, file work in .context, implement via subagent, separate adversarial audit, verify and status-cascade, iterate-to-zero; context-validate as a gate; no-triviality-exemption; terse consumer-directed block writes; branch-per-unit merged only on explicit authority. Differences are surface, not discipline: A is the pi-context tooling monorepo (npm/Biome/husky gates, the monitor/SDK engine, the filing-provenance write guard, the experience-gap/FGAP discipline); B is a Django consumer (the decomposed-JSON spine plus state.mjs, NORTH-STAR, the 9 MANDATES injected every turn via a UserPromptSubmit hook, the phase/feature/story/task PM vocabulary, Working Modes A/B/C, the deterministic cat+sed+awk prompt renderer, DEC-58's deterministic-gate retry, per-task git switch -c). The one difference that bears on behavior: B explicitly states 'Verify, don't narrate — state is read back from the scripts, never asserted from working memory'; A had only partial analogs (since added this session).",
+      "findings_document": "analysis/2026-06-21-claudemd-comparison-wasc-vs-workflowspiextension.md",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-27",
+      "id": "R-0022",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-26T22:45:30.098Z",
+      "oid": "b8b5c12640288e06f89983d33203bf45",
+      "content_hash": "83e6a56cf49cebff8b412f43b37798f93c37bfb264a26bfe271827b906a4a2cc"
+    },
+    {
+      "title": "Memory-store comparison — workflowsPiExtension vs WASC",
+      "status": "complete",
+      "layer": "L5",
+      "type": "comparative",
+      "question": "How do the two projects' Claude memory stores compare, objectively, by inventory and discipline?",
+      "method": "full read of every memory file in both stores; substance mapping (common / only-A / only-B / near-match); index-integrity reconciliation.",
+      "findings_summary": "A (workflowsPiExtension) = 107 files (103 feedback + 2 reference + 1 appendix + MEMORY.md); B (WASC) = 48 (41 feedback + 6 project + MEMORY.md). Substance mapping: 33 disciplines common to both, 65 only in A, 13 only in B, 8 near-match pairs. Index integrity: A's MEMORY.md has 106 bullet lines for its 106 non-MEMORY files (1:1); B's has 46 bullets for 47 non-MEMORY files — feedback-agent-time-not-human-time.md is on disk in B but absent from its index, so that memory is unindexed. Both stores encode the same class of correction-derived behavioral discipline (directive-parsing and scope, decision-discipline, verification rigor, persistence discipline, agent-dispatch posture, git hygiene); the memory infrastructure is identical, the difference is contents and index currency.",
+      "findings_document": "analysis/2026-06-21-memory-stores-comparison-workflowspiextension-vs-wasc.md",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-27",
+      "id": "R-0023",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-26T22:45:40.051Z",
+      "oid": "f7d78e008159c752631fb1922a85c68f",
+      "content_hash": "82a3de4198147ee81a9d2c237e739dfb877f3fbdee2459a1e7c71f1dc690481f"
+    },
+    {
+      "title": "WASC operation framework — build sequence and transposition recipe",
+      "status": "complete",
+      "layer": "L4",
+      "type": "historical",
+      "question": "What exact sequence of steps built the WASC operation framework, and how is each step's output transposed to this project?",
+      "method": "claude-history recovery (file_operations / tool_executions across all WASC sessions) of every creating step; scope determined from claude-history, not the on-disk bundle; held to all-steps-recoverable (zero NOT-FOUND).",
+      "findings_summary": "113 chronological build steps, 2026-05-15 to 06-20, primary session d7310007, each cited by session/timestamp/op. Layers: A root docs (CLAUDE.md created 05-16 then twice rewritten; MANDATES 05-17; NORTH-STAR 06-20); B 17 phase specs (05-18, worktree session); C the .claude surface (canonical-pipeline.js 05-29; one-bash-per-turn first a temporal-lockfile .sh at 05-31T03:57 superseded ~26 min later by the transcript-counting .js after the TOCTOU realization; hooks.json/settings.json; gate-before-commit.sh 06-05; context-currency-auditor agent + audit-context-currency command 06-14; run-prompt-workshop/update-context/validate-context skills 06-19); D 43 feedback-*.md memory atoms; E1 the .context substrate scaffold created by the pi-context CLI install ceremony (not a transcript Write) plus E2 the context-migration decomposition pipeline (decompose-*.mjs, state.mjs, search.mjs, write-policies.json) on 05-31; F verify-slice.sh + test-verify-slice.sh 06-20. Transposition recipe: author A/B/C/D/F directly from the recovered files; for E run the pi-context install ceremony (the CLI lives in this repo) then adapt the decomposition pipeline; settings.local.json is harness-managed and is not authored.",
+      "findings_document": "analysis/2026-06-22-wasc-operation-framework-build-from-claude-history.md",
+      "created_by": "orchestrator",
+      "created_at": "2026-06-27",
+      "id": "R-0024",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-06-26T22:45:49.501Z",
+      "oid": "ab9a34722e19faae742eebf81c1a2fad",
+      "content_hash": "603407658064c14fbddc056f117b8cbfef966b7221a92c8489547cee32cb6a62"
     }
   ]
 }

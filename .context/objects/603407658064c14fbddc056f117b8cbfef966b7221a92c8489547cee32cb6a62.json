@@ -1,0 +1,10 @@
+{
+  "title": "WASC operation framework — build sequence and transposition recipe",
+  "status": "complete",
+  "layer": "L4",
+  "type": "historical",
+  "question": "What exact sequence of steps built the WASC operation framework, and how is each step's output transposed to this project?",
+  "method": "claude-history recovery (file_operations / tool_executions across all WASC sessions) of every creating step; scope determined from claude-history, not the on-disk bundle; held to all-steps-recoverable (zero NOT-FOUND).",
+  "findings_summary": "113 chronological build steps, 2026-05-15 to 06-20, primary session d7310007, each cited by session/timestamp/op. Layers: A root docs (CLAUDE.md created 05-16 then twice rewritten; MANDATES 05-17; NORTH-STAR 06-20); B 17 phase specs (05-18, worktree session); C the .claude surface (canonical-pipeline.js 05-29; one-bash-per-turn first a temporal-lockfile .sh at 05-31T03:57 superseded ~26 min later by the transcript-counting .js after the TOCTOU realization; hooks.json/settings.json; gate-before-commit.sh 06-05; context-currency-auditor agent + audit-context-currency command 06-14; run-prompt-workshop/update-context/validate-context skills 06-19); D 43 feedback-*.md memory atoms; E1 the .context substrate scaffold created by the pi-context CLI install ceremony (not a transcript Write) plus E2 the context-migration decomposition pipeline (decompose-*.mjs, state.mjs, search.mjs, write-policies.json) on 05-31; F verify-slice.sh + test-verify-slice.sh 06-20. Transposition recipe: author A/B/C/D/F directly from the recovered files; for E run the pi-context install ceremony (the CLI lives in this repo) then adapt the decomposition pipeline; settings.local.json is harness-managed and is not authored.",
+  "findings_document": "analysis/2026-06-22-wasc-operation-framework-build-from-claude-history.md"
+}

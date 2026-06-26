@@ -1,0 +1,10 @@
+{
+  "title": "WASC out-of-scope STOP — firing rate across the record",
+  "status": "complete",
+  "layer": "L4",
+  "type": "empirical",
+  "question": "How often does the IMPL/fix brief's 'STOP and report if a fix reaches outside the slice' actually fire, and what percentage of full loop runs never encounter it?",
+  "method": "claude-history enumeration of every full loop run (an IMPL dispatch that reached an adversarial audit) across the 4 WASC sessions; verbatim agent-return search for the out-of-scope STOP; reconciled counts.",
+  "findings_summary": "The out-of-scope STOP fires rarely and is run-terminating. Across the WASC record there are 8 clean firings (plus 2 borderline), all in sessions d7310007 and bd501b6f; the canonical-pipeline session 6e98b2bc had zero. Of 70 full loop runs (an IMPL dispatch that reached an adversarial audit), 0 contained an out-of-scope STOP — 100% never encounter one — because every firing halts during implementation before auditable code exists (all returned no edits, clean tree, no commit), so the attempt never becomes a completed loop run. Across all 187 IMPL plus fix attempts the firing rate is 8/187 = 4.3% (5.3% including borderline), so about 95-96% of all attempts never hit it. The 36 audit-finding fix-re-entry loops contained zero scope STOPs — every re-fix completed in scope. The clearest firing: a translation removal blocked because the off-limits planner/forms.py referenced the translated field, so the agent stopped rather than touch a forbidden file.",
+  "findings_document": "analysis/2026-06-21-wasc-out-of-scope-stop-firing-rate.md"
+}

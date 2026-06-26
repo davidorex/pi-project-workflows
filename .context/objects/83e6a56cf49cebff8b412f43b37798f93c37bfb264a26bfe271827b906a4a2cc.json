@@ -1,0 +1,10 @@
+{
+  "title": "CLAUDE.md comparison — workflowsPiExtension vs WASC",
+  "status": "complete",
+  "layer": "L5",
+  "type": "comparative",
+  "question": "How do the two projects' CLAUDE.md operating docs compare, objectively, section by section?",
+  "method": "full read of both CLAUDE.md files; section inventory; topic-by-topic comparison with citations; present-in-both / only-A / only-B classification.",
+  "findings_summary": "A (workflowsPiExtension) = 16 top-level sections; B (WASC) = 14. Both encode two sequences (a canonical pipeline plus a second build/gate sequence). Both share the same governing disciplines: plan-mode plus Explore, written plan, file work in .context, implement via subagent, separate adversarial audit, verify and status-cascade, iterate-to-zero; context-validate as a gate; no-triviality-exemption; terse consumer-directed block writes; branch-per-unit merged only on explicit authority. Differences are surface, not discipline: A is the pi-context tooling monorepo (npm/Biome/husky gates, the monitor/SDK engine, the filing-provenance write guard, the experience-gap/FGAP discipline); B is a Django consumer (the decomposed-JSON spine plus state.mjs, NORTH-STAR, the 9 MANDATES injected every turn via a UserPromptSubmit hook, the phase/feature/story/task PM vocabulary, Working Modes A/B/C, the deterministic cat+sed+awk prompt renderer, DEC-58's deterministic-gate retry, per-task git switch -c). The one difference that bears on behavior: B explicitly states 'Verify, don't narrate — state is read back from the scripts, never asserted from working memory'; A had only partial analogs (since added this session).",
+  "findings_document": "analysis/2026-06-21-claudemd-comparison-wasc-vs-workflowspiextension.md"
+}

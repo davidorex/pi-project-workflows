@@ -1,0 +1,10 @@
+{
+  "title": "Memory-store comparison — workflowsPiExtension vs WASC",
+  "status": "complete",
+  "layer": "L5",
+  "type": "comparative",
+  "question": "How do the two projects' Claude memory stores compare, objectively, by inventory and discipline?",
+  "method": "full read of every memory file in both stores; substance mapping (common / only-A / only-B / near-match); index-integrity reconciliation.",
+  "findings_summary": "A (workflowsPiExtension) = 107 files (103 feedback + 2 reference + 1 appendix + MEMORY.md); B (WASC) = 48 (41 feedback + 6 project + MEMORY.md). Substance mapping: 33 disciplines common to both, 65 only in A, 13 only in B, 8 near-match pairs. Index integrity: A's MEMORY.md has 106 bullet lines for its 106 non-MEMORY files (1:1); B's has 46 bullets for 47 non-MEMORY files — feedback-agent-time-not-human-time.md is on disk in B but absent from its index, so that memory is unindexed. Both stores encode the same class of correction-derived behavioral discipline (directive-parsing and scope, decision-discipline, verification rigor, persistence discipline, agent-dispatch posture, git hygiene); the memory infrastructure is identical, the difference is contents and index currency.",
+  "findings_document": "analysis/2026-06-21-memory-stores-comparison-workflowspiextension-vs-wasc.md"
+}

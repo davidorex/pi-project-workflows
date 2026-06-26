@@ -129,6 +129,19 @@
       "content_hash": "04a76f2727f3164ab7351828eb402add2bd4cc744f0dcd0eb728819d41320fd0",
       "resolved_by": "8d4bdc7 (iterate-3); verified VER-054 — post-install guard compares realpathSync(binPath) against REPO_ROOT_REAL + sep, matching validation",
       "content_parent": "02f01ec917d96661aa210e6cdf8161775f17206dc73a7a4374128b7bda39f6b9"
+    },
+    {
+      "title": "Active .context is the pi-context dev substrate, not a clean baseline for the operation-framework port",
+      "body": "The WASC operation-framework port (PHASE-PORT-OPS) needs a substrate baseline. The active .context is the pi-context development substrate, carrying its own 74 tasks / 101 gaps / 18 decisions / 14 stories and accumulated suboptimal content; it is not a clean baseline. Building the port on it co-mingles the port's PM state with the pi-context dev arc and inherits the suboptimal content.",
+      "location": ".context",
+      "status": "open",
+      "category": "composition",
+      "priority": "medium",
+      "package": "pi-context",
+      "source": "human",
+      "id": "issue-010",
+      "oid": "2fea91136efa95a1a219c57abf0646b5",
+      "content_hash": "f103c353d0196771b0c939acdfc6f159219468d29d884e30bbba43cbb8782436"
     }
   ]
 }

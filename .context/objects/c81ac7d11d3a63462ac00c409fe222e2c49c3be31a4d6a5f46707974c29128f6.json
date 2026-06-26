@@ -1,0 +1,22 @@
+{
+  "title": "Stand up a fresh context substrate for the port via curated carry-forward",
+  "status": "open",
+  "context": "The operation-framework port needs a substrate baseline; the active .context is the pi-context dev substrate and not a clean one. Substrate switching is non-destructive — the active pointer flips like a git branch and the parked substrate stays on disk (as .project / .context-jit-spec-v2 / .project-archived already coexist).",
+  "decision": "Stand up a wholly new context substrate and switch the active pointer to it (non-destructively; .context stays parked). Build the operation-framework port on the new substrate, transposing the operation system except the bifurcated context (which lives in .context blocks). Carry forward only verified-live items — a curated carry-forward, not a blind greenfield and not a wholesale copy.",
+  "consequences": [
+    "The port's PM state is modeled on a clean substrate, decoupled from the pi-context dev arc.",
+    "The existing .context is preserved (parked, queryable) until explicitly archived; no data loss.",
+    "The port's feature/task decomposition (PHASE-PORT-OPS) is filed on the new substrate, not the current one — so it is not filed here pending this decision's execution.",
+    "A curation triage is required: enumerate the live items and re-file only the verified-good keepers; the rest stay in the parked substrate."
+  ],
+  "references": [
+    {
+      "label": "memory-store comparison",
+      "path": "analysis/2026-06-21-memory-stores-comparison-workflowspiextension-vs-wasc.md"
+    },
+    {
+      "label": "operation-framework build and transposition recipe",
+      "path": "analysis/2026-06-22-wasc-operation-framework-build-from-claude-history.md"
+    }
+  ]
+}

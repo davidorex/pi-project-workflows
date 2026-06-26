@@ -7003,5 +7003,44 @@
       "refname": "PHASE-PORT-OPS"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
+      "refname": "DEC-0019"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fea91136efa95a1a219c57abf0646b5",
+      "refname": "issue-010"
+    },
+    "relation_type": "decision_addresses_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
+      "refname": "DEC-0019"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
+      "refname": "DEC-0019"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fea91136efa95a1a219c57abf0646b5",
+      "refname": "issue-010"
+    },
+    "relation_type": "decision_derived_from_item"
   }
 ]

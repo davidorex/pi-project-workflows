@@ -7042,5 +7042,109 @@
       "refname": "issue-010"
     },
     "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "refname": "PHASE-PORT-OPS"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
+      "refname": "DEC-0019"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2fea91136efa95a1a219c57abf0646b5",
+      "refname": "issue-010"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "725476a9d3697f024c4e0a174006250d",
+      "refname": "R-0020"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "614b5f5965916f13da1c58e23f6ad6d1",
+      "refname": "R-0021"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b8b5c12640288e06f89983d33203bf45",
+      "refname": "R-0022"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f7d78e008159c752631fb1922a85c68f",
+      "refname": "R-0023"
+    },
+    "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "refname": "SESSION-009"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ab9a34722e19faae742eebf81c1a2fad",
+      "refname": "R-0024"
+    },
+    "relation_type": "session_touches_item"
   }
 ]

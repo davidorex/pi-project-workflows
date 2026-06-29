@@ -648,14 +648,15 @@
     },
     {
       "title": "Stand up a fresh context substrate for the port via curated carry-forward",
-      "status": "open",
+      "status": "enacted",
       "context": "The operation-framework port needs a substrate baseline; the active .context is the pi-context dev substrate and not a clean one. Substrate switching is non-destructive — the active pointer flips like a git branch and the parked substrate stays on disk (as .project / .context-jit-spec-v2 / .project-archived already coexist).",
-      "decision": "Stand up a wholly new context substrate and switch the active pointer to it (non-destructively; .context stays parked). Build the operation-framework port on the new substrate, transposing the operation system except the bifurcated context (which lives in .context blocks). Carry forward only verified-live items — a curated carry-forward, not a blind greenfield and not a wholesale copy.",
+      "decision": "Rename the pi-context dev substrate from .context to .context-archived-2026-06-30, freeing the canonical .context name. Stand up a new substrate at .context for the operation-framework port. Curated carry-forward of verified-live items only — not blind greenfield, not wholesale copy. The archived substrate stays on disk, queryable, reactivable via context-switch.",
       "consequences": [
-        "The port's PM state is modeled on a clean substrate, decoupled from the pi-context dev arc.",
-        "The existing .context is preserved (parked, queryable) until explicitly archived; no data loss.",
-        "The port's feature/task decomposition (PHASE-PORT-OPS) is filed on the new substrate, not the current one — so it is not filed here pending this decision's execution.",
-        "A curation triage is required: enumerate the live items and re-file only the verified-good keepers; the rest stay in the parked substrate."
+        "The port's PM state lives at the canonical .context — no naming indirection; all conventions/defaults/tooling land on it.",
+        "The pi-context dev substrate is preserved at .context-archived-2026-06-30 (parked, queryable, not lost).",
+        "The port's feature/task decomposition (PHASE-PORT-OPS) is filed on the new .context, not the archived one.",
+        "A curation triage is required: enumerate live items from the archived substrate and re-file only verified-good keepers.",
+        "The archived substrate's config.json root and .pi-context.json pointer require fixup before reactivation (one-time, on-demand)."
       ],
       "references": [
         {
@@ -671,7 +672,8 @@
       "created_at": "2026-06-27",
       "id": "DEC-0019",
       "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
-      "content_hash": "c81ac7d11d3a63462ac00c409fe222e2c49c3be31a4d6a5f46707974c29128f6"
+      "content_hash": "72c2d8640b36d4978cb7b4dc8350da2395d269dfa77d5a041b2c93724747dab9",
+      "content_parent": "c81ac7d11d3a63462ac00c409fe222e2c49c3be31a4d6a5f46707974c29128f6"
     }
   ]
 }

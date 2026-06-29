@@ -1,0 +1,23 @@
+{
+  "title": "Stand up a fresh context substrate for the port via curated carry-forward",
+  "status": "enacted",
+  "context": "The operation-framework port needs a substrate baseline; the active .context is the pi-context dev substrate and not a clean one. Substrate switching is non-destructive — the active pointer flips like a git branch and the parked substrate stays on disk (as .project / .context-jit-spec-v2 / .project-archived already coexist).",
+  "decision": "Rename the pi-context dev substrate from .context to .context-archived-2026-06-30, freeing the canonical .context name. Stand up a new substrate at .context for the operation-framework port. Curated carry-forward of verified-live items only — not blind greenfield, not wholesale copy. The archived substrate stays on disk, queryable, reactivable via context-switch.",
+  "consequences": [
+    "The port's PM state lives at the canonical .context — no naming indirection; all conventions/defaults/tooling land on it.",
+    "The pi-context dev substrate is preserved at .context-archived-2026-06-30 (parked, queryable, not lost).",
+    "The port's feature/task decomposition (PHASE-PORT-OPS) is filed on the new .context, not the archived one.",
+    "A curation triage is required: enumerate live items from the archived substrate and re-file only verified-good keepers.",
+    "The archived substrate's config.json root and .pi-context.json pointer require fixup before reactivation (one-time, on-demand)."
+  ],
+  "references": [
+    {
+      "label": "memory-store comparison",
+      "path": "analysis/2026-06-21-memory-stores-comparison-workflowspiextension-vs-wasc.md"
+    },
+    {
+      "label": "operation-framework build and transposition recipe",
+      "path": "analysis/2026-06-22-wasc-operation-framework-build-from-claude-history.md"
+    }
+  ]
+}

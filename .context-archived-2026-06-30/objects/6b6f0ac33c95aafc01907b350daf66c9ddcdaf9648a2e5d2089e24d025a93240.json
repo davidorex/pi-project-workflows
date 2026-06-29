@@ -1,0 +1,15 @@
+{
+  "title": "Phase schema carries no success_criteria field",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Composite levels (phase, milestone) carry no success_criteria. A phase is done when its tasks are done. The phase schema's optional success_criteria field is removed.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/phase.schema.json",
+      "reference": "declares an optional success_criteria field; the model forbids composite-level criteria, so it is removed"
+    }
+  ],
+  "impact": "Phase schema declares an optional success_criteria field the model forbids; composite-level criteria duplicate the child rollup.",
+  "proposed_resolution": "Remove success_criteria from the phase schema; phase completeness derives from its tasks."
+}

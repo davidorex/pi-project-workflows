@@ -1,0 +1,1481 @@
+{
+  "tasks": [
+    {
+      "description": "Implement skeleton-config bootstrap per DEC-0001 / FGAP-001. In packages/pi-context/src/context.ts add writeSkeletonConfig (never-clobber, mints substrate_id, writes via writeConfigForDir) + isSkeletonConfig predicate, and change adoptConception's guard to if(existing && !isSkeletonConfig(existing)). In src/index.ts have initProject (248-298) and switchAndCreate (548-575) call writeSkeletonConfig after the dir-scaffold loop and update their completion/notify messages. In src/context-sdk.ts add the 'skeleton' state to the BootstrapStatus union and to deriveBootstrapState's ordered checks. In src/ops-registry.ts update the context-bootstrap-state (and context-init / context-accept-all as needed) description strings. Rework accept-all.test.ts idempotent + 'no defaults' tests, keep the no-config test in context-sdk.test.ts and add a skeleton-state test, add unit tests for isSkeletonConfig + init/switch-c skeleton writes + first amend-config add on a skeleton. Full completion sequence: build, check, test, runtime demo against a throwaway substrate, adversarial probe, regen skills. Implemented by a foreground coding subagent from the approved plan; orchestrator runs all npm and is sole git writer; per-step commit.",
+      "status": "completed",
+      "id": "TASK-001",
+      "oid": "d61eb9f853844ba5eeeb65ed1f7fcd15",
+      "content_hash": "7e16844d999d652761612a0f767a9d295084e524f4001ee3d36d1289cb249649",
+      "notes": "Implemented at ab05a0e (pi-context skeleton-config bootstrap). Build/check/test green; runtime-demoed via the cli (custom path without accept-all; init->accept-all id-preservation + idempotence); a fresh adversarial re-audit found the isSkeletonConfig registry-class fix complete with no new regression.",
+      "content_parent": "82b2103e8f566bcea7cb2d0cef016879e753cad5c43e93029225f3151aed56b5"
+    },
+    {
+      "description": "Implement switch identity reconciliation per DEC-0003 / FGAP-003: switchToExisting and switchAndCreate register config.substrate_id -> active dir via registerSubstrate when the id is absent from the project-root registry; a present-but-different-dir entry continues to raise substrate_id_registry_mismatch. Tests: switch to an unregistered-but-present-config substrate -> registered + context-validate clean; mismatch case preserved. Full completion sequence (build/check/test/runtime-demo/adversarial/skills). Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "completed",
+      "id": "TASK-002",
+      "oid": "81d745ab715f2ec99c2357af58019e98",
+      "content_hash": "8f6573bb7243465acba6df4fe64ca4c9a8ade2acbc1f11baf648c02e65e8902a",
+      "content_parent": "4bf35faca882ab704dec983c4d1ecf8fbeb83dd1c738361872dec3af994044f4",
+      "notes": "Implemented at 17d9a3b. reconcileActiveSubstrateRegistration wired into all three switch engine functions (switchToExisting, switchAndCreate, switchToPrevious). Build/check/test green; cli runtime demo across all three paths (register-if-absent, mismatch-preserved, switch- heals pruned-previous); a fresh adversarial re-audit (after the probe found switchToPrevious unwired) confirmed all three paths consistent + no-previous error path intact + no new defect. One of the two items in the 0.29.0 cut."
+    },
+    {
+      "description": "Implement the substrate clone/import arc per DEC-0002 / FGAP-002 / FEAT-001: cloneSubstrate library fn (copy config + all blocks + relations.json + objects/ into the destination dir; mint a fresh substrate_id; record a substrate_derived_from_substrate edge; write a provenance-bearing registry entry) + Pi tool + CLI + orchestrator script as one dual-surface unit; register the substrate_derived_from_substrate relation_type in config; extend the registry schema/type with origin/provenance fields; refine the SoT-drift invariant (context-sdk.ts:1685+) to distinguish native-lost-registry / foreign-import / genuine drift. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "planned",
+      "id": "TASK-003",
+      "oid": "62fa29ee28b79c5504c52a6021eda387",
+      "content_hash": "e8d4626f6b8fdb55fdba8bf9389d21b7c9478352b2152538f8967ba63295572c"
+    },
+    {
+      "description": "Implement the git merge driver + post-merge integrity pass per DEC-0004 / FGAP-004 / FEAT-002: .gitattributes registration (substrate files -> merge=pi-context) + a [merge \"pi-context\"] driver entry; the driver entrypoint consuming git's %O/%A/%B/%P and writing a data-model-valid 3-way merge (items matched by id/oid, field-kind dispatch incl. the convergent sequence field via TASK-005, edge-set merge on relations.json, config/schema merge); a post-merge hook / merge-finalize command doing cross-block referential integrity + full invariant + lens revalidation and emitting a typed conflict set. Driver + per-file merge logic live in block-api; the post-merge pass is a git hook / CLI command. Merge-base, branches, refs, cherry-pick are git's, not reimplemented. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "planned",
+      "id": "TASK-004",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "content_hash": "867d2df8f07cc56bc5845f6e38006cb1aabadb73b0779c557caf6b0b5a2b10bf",
+      "content_parent": "10756eb00786387f0c95014a3236c760890603989c12c6b8ef7251b42b60bad1"
+    },
+    {
+      "description": "Implement the convergent ordered-sequence field-kind per DEC-0005 / FGAP-005 / FEAT-003: non-interleaving Fugue-class sequence CRDT over item-refs (dense immutable per-element position identifiers, insert mints one id + mutates no neighbor); Kleppmann move-CRDT position register resolved by hybrid logical clock (stable element identity; concurrent same-element moves converge); HLC for replica-independent same-gap ordering + move resolution; sort-on-read projection to a plain ordered ref-array + translation of array-position hand-edits to CRDT ops, through block-api; declared sequence-field kind recognized by schema; CRDT state stored in the owning <block>.json. Plugs into the substrate merge driver's field-merge dispatch. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit. Depends on the substrate merge driver (TASK-004).",
+      "status": "planned",
+      "id": "TASK-005",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "content_hash": "6c9f9045f054dbadc75a55858ec4b48863eb6f20f634aae5d56f895239336857"
+    },
+    {
+      "description": "Implement DispatchContext threading through the op-execution contract per DEC-0006 / FGAP-008: add a ctx/writer channel to OpDefinition.run + registerAll (thread the pi ExtensionContext verified identity) + the pi-context-cli dispatch (build DispatchContext from --writer); forward ctx in all 10 ctx-dropping op handlers (append/update/remove-block-item, the nested trio, write-block, append-relation, amend-config, write-schema) and the pi-workflows step-block.ts writers; fix context-archive's declared-but-ignored writer. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "completed",
+      "id": "TASK-006",
+      "oid": "f39a7685ec8fea8c1a404254df15046d",
+      "content_hash": "5e323f75d458f5176389e85dc8c09fafaf49ddc81013c75d9e480178c0ea4303",
+      "content_parent": "b8771813e405c3565a0307c300a7b4cbf1ac71e0ded10c6d1d9c6e8cf33b90be",
+      "notes": "Implemented at f5b6bd5. Optional ctx?:DispatchContext on OpDefinition.run; cli builds it from --writer/resolveIdentity, in-pi registerAll from auth-gate params.writer else ctx.model agent; 10 write handlers forward it; pi-workflows step-block + artifact write stamp workflow-kind; promote-item/write-schema-migration converged; context-archive writer field removed; malformed --writer validated. build/check/test green; cli runtime demo (unstamped item onto attested-required schema now succeeds + stamps); adversarial probe confirmed all 10 ops stamp at correct arg position, dryRun preserved, no regression; two non-functional findings fixed + re-verified. cli arc alpha; beta (FGAP-009) + gamma (FGAP-010) remain."
+    },
+    {
+      "description": "Complete the op-registry coverage of the library write surface per DEC-0006 / FGAP-009 / FGAP-006 as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as the surface warrants; run context-validate after edge mutations. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "completed",
+      "id": "TASK-007",
+      "oid": "82be3beb7bf3da2ca59aa74936598d84",
+      "content_hash": "9379ed03a4de4213d0e51dd76d72c099cef57a79b7efe1a70f6bf5177a809f46",
+      "content_parent": "3b472b41f016a8198b0b6a7d72a592e8b3f6ca14070ecca62332464465ab044c",
+      "notes": "Implemented at 56b153d. removeRelation primitive + removeRelationByRef/replaceRelationByRef/appendRelationsByRef porcelain + ops remove-relation/replace-relation/append-relations/upsert-block-item (all attested via alpha); OP_COVERAGE_RULE + INTENTIONALLY_UNEXPOSED_WRITERS coverage contract; foldin OP3 emits structured endpoints; OP4 unresolved-detection class-closed on substrateHasItem + drop-persist gate fix. build/check/test green; cli runtime demo (remove/replace/bulk/upsert + full step-by-step custom-substrate creation); probe->fix->re-audit loop caught a proxy false-positive + sibling-path instance + drop-persist gate bug, final re-audit clean. Closes FGAP-006 + FGAP-009. gamma (FGAP-010, TASK-008) remains."
+    },
+    {
+      "description": "Add a library<->op-registry<->orchestrator-script parity/coverage test per DEC-0006 / FGAP-010: fail when a library write fn has no op, or an op drops the ctx / optional params (dryRun, ordinal, ...) its underlying library fn or orchestrator-script sibling forwards; wire into husky pre-commit + CI. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+      "status": "completed",
+      "id": "TASK-008",
+      "oid": "6e5a8303dc0a6271347a114835fc96ed",
+      "content_hash": "7a8d202e36e938dd3ddf45bb3d7ee4fd738b3200a36265c7fafa2d408e62b017",
+      "content_parent": "3406547b277b79b233f82f037bf3fee208aea4039d81dfda7b58d7c4793d575a"
+    },
+    {
+      "id": "TASK-009",
+      "description": "parity-check detector hardening (scripts/parity-check.ts only): add flattenSchemaProperties resolving object/.properties + allOf (Type.Intersect) + $ref ($defs/definitions, cycle-guarded, fail-open per branch) for opDeclaresParam; tighten scriptParsesFlag to arg-parse position (=== \"--flag\", kebab regex-escaped) so a print-only literal no longer false-matches; export opDeclaresParam + scriptParsesFlag + flattenSchemaProperties for edge tests. Gate still exits 0 (70 writers, 0 ctx-drops) and still prints the 5 dryRun divergences (robustness change, not result change). Per DEC-0008 / FGAP-012. Full completion sequence; coding subagent; orchestrator runs all npm + is sole git writer.",
+      "status": "completed",
+      "files": [
+        "scripts/parity-check.ts",
+        "scripts/parity-check.test.ts"
+      ],
+      "acceptance_criteria": [
+        "allOf/$ref op-schema params detected (no false divergence)",
+        "unresolvable/cyclic $ref yields no keys and no throw",
+        "print-only flag literal not matched; a === \"--flag\" matched (both quotes, value-bearing form)",
+        "all existing parity-check tests stay green",
+        "fresh adversarial probe confirms no false-negative in the tightened flag match against the 8 real parse lines"
+      ],
+      "oid": "fd56d00ef22c45e13409a06abf172221",
+      "content_hash": "42531440261280e53353574f1d08983e31b88409b4825567e6b8eba88421cdf8",
+      "content_parent": "80847173fd440741d1c70b90c345a7a831a1720b339beeef33c39d53deaa1a63"
+    },
+    {
+      "id": "TASK-010",
+      "description": "relations.json dry-run parity (the 4 relation ops). Library: add opts?:{dryRun?} to appendRelationByRef/removeRelationByRef/replaceRelationByRef/appendRelationsByRef (context-sdk.ts) threaded to their *ForDir cores; when dryRun, load + resolve selectors + build prospective Edge[] + run the same relations-schema validation and endpointIdentity dedup the write path uses (bulk: on-disk AND in-batch; replace: new-edge collision) and return without writeRelations (result gains dryRun:true). Ops (ops-registry.ts append/remove/replace/append-relations): declare dryRun + thread + would-message. Scripts: delete bespoke preview, call byRef with {dryRun:true}, print in [dry-run] PASS convention. CHANGELOG [Unreleased] bullet. Mirror the canonical amendConfigEntry(...,{dryRun}) pattern. Per DEC-0008 / FGAP-012.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "scripts/orchestrator/append-relation.ts",
+        "scripts/orchestrator/remove-relation.ts",
+        "scripts/orchestrator/replace-relation.ts",
+        "scripts/orchestrator/append-relations.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "each of the 4 ops accepts --dryRun; CLI --dryRun --json returns the preview and leaves relations.json byte-unchanged (hash before/after)",
+        "a would-fail (cycle/missing-endpoint/invalid) surfaces identically without writing",
+        "scripts call the shared library dry-run path; no bespoke preview remains",
+        "parity-check: the 4 relation dryRun divergences gone",
+        "fresh adversarial probe: no disk write in any dry-run path, validation parity with write path, real --writer write still persists + stamps"
+      ],
+      "oid": "63d1d6c7c1a87a58ea878d2f062706d2",
+      "content_hash": "292e56c94fc92a83db8b11bed308609dccc182ef05cf5b9e7bceefc70fb46707",
+      "content_parent": "f096a5b5338d0e9cdc8ff6327d0a9d94e9fb4899c8ac88d9d326105c0f3b72ba"
+    },
+    {
+      "id": "TASK-011",
+      "description": "block-api upsert dry-run parity (upsert-block-item). Library: add opts?:{dryRun?} to upsertItemInBlock (block-api.ts) -> *ForDir -> upsertItemInTypedFile; when dryRun, under the block lock read the array, compute the prospective whole block (append, or replace at matched idField index), AJV-validate it, and return {mode, dryRun:true} without writing. Op (ops-registry.ts upsert-block-item): declare dryRun + thread + would-message. Script: delete bespoke preview, call upsertItemInBlock with {dryRun:true}, print mode. CHANGELOG [Unreleased] bullet. Last of the five — parity-check reaches 0 divergences; FGAP-012 closes on this landing. Per DEC-0008 / FGAP-012.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "scripts/orchestrator/upsert-block-item.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "CLI upsert-block-item --dryRun --json returns {mode, dryRun:true} and leaves the block file byte-unchanged",
+        "a schema-violating prospective item fails the dry-run without writing",
+        "parity-check exits 0 with 0 divergences (all five gone)",
+        "fresh adversarial probe: no write, lock semantics correct, validation parity, real write still persists + stamps",
+        "FGAP-012 closed with the 4 closure fields"
+      ],
+      "oid": "2da2de9e36b6484b6278fea1a3d1f79b",
+      "content_hash": "ebb3538f92751eafb5fd754d755b08cf6a2f961e0a05188af2e6d29437f5d7e4",
+      "content_parent": "e6623d005e88a73b92245631392e7af7e0e687f4bb8d9c80b760bbd7b33dfc3f"
+    },
+    {
+      "id": "TASK-012",
+      "description": "FGAP-013 fix — CLI --json structured output (no double-encode). Introduce OpResult = string | {json:unknown} and widen OpDefinition.run. Split serializeForRead (read-element.ts) into structureForRead (data + cap/pagination metadata, un-stringified) + renderReadText (content + footer). 19 JSON.stringify ops return {json:result}; 16 serializeForRead ops return {json: structureForRead(...)}; 14 prose ops unchanged. Shared renderOpResultText used by registerAll (Pi-tool text byte-unchanged) and the CLI default branch; CLI --json emits typeof r===string ? r : r.json. Add a cli.test contract test locking --json output as a JSON value. Per the approved plan; one subsystem (op-output contract). Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/read-element.ts",
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/ops-edge-write.test.ts",
+        "packages/pi-context-cli/src/cli.test.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context-cli/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "--json output is a JSON value (object/array) for a read op and a JSON.stringify op; still a string for a prose op",
+        "CLI default (non-json) output and in-pi Pi-tool text output byte-unchanged",
+        "a read op past the cap emits truncated/hasMore/total as structured --json fields, no [read-element] footer inside the JSON value",
+        "new cli.test contract test locks the --json value shape",
+        "full suite green; fresh adversarial audit confirms no op left double-encoding, no prose misclassified, text surfaces unchanged",
+        "FGAP-013 closed with the 4 closure fields"
+      ],
+      "oid": "2d53607622e5d5e8e196e27680ca7909",
+      "content_hash": "7d5b6907d16245052cf45ffa527f454ca3d77551c756ea83d8cb8fb33bbbc329",
+      "content_parent": "5d5adf087204913182fc3b139da4f9c8811f3a63e8419fb6cd1b0e0433437891"
+    },
+    {
+      "id": "TASK-013",
+      "description": "FGAP-015 fix — enforce the read cap at the output boundary (per DEC-0009). Three coordinated parts: (1) runtime boundary cap boundOpResult applied at the 3 emit sites (cli.ts --json :492, cli.ts text :497, registerAll Pi-tool :1927) — {read} passes through, {json}/prose serialized + byte-checked via truncateHead, over-cap fail-closes (structured {data:null,truncated:true,totalBytes,note} for --json; REFUSAL prose for text/Pi-tool); (2) route resolve-item-by-id + promote-item through structureForRead/{read} for graceful degradation; (3) parity-check gate rejecting an op that directly returns {json} of a content-reading lib call (readBlock/readBlockItem/resolveItemById/filterBlockItems/joinBlocks/resolveItemsByIds/buildIdIndex/resolveRef). Add Pi-tool over-cap test (uncovered surface). Lands with held TASK-012 as the complete --json contract; closes FGAP-013 + FGAP-015. Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer + re-audit.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/read-element.ts",
+        "packages/pi-context/src/truncate.ts",
+        "scripts/parity-check.ts",
+        "packages/pi-context-cli/src/cli.test.ts",
+        "packages/pi-context/src/read-element.test.ts",
+        "packages/pi-context/src/index.test.ts",
+        "scripts/parity-check.test.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context-cli/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "over-cap {json}/prose output fail-closes on all 3 emit sites (CLI --json data:null+truncated:true no payload; CLI text + Pi-tool REFUSAL prose no payload)",
+        "resolve-item-by-id + promote-item route through {read}; over-cap degrades gracefully; under-cap full value",
+        "parity-check gate FAILS an op directly returning {json} of a content-read; passes a summary-{json} that reads a block but returns a projection (no false-positive); exits 0 on the real tree after routing",
+        "Pi-tool over-cap test added (registerAll handler bounded)",
+        "default text + Pi-tool text byte-identical for non-over-cap; under-cap unaffected",
+        "fresh adversarial re-audit: no op ships unbounded data on either surface; gate rejects an injected violator",
+        "FGAP-013 + FGAP-015 closed with the 4 closure fields"
+      ],
+      "oid": "ebe20277d0d790cf5d834909b2b51f1a",
+      "content_hash": "9aa7aedfe2d1a3156158929d2c3858b4b9d8e9beef6473d6d8ba8dd8b0267da7",
+      "content_parent": "e9111d3f6f4f9ec0a3d1b98f4e0f94334562058fc7eda574f1bdcbd7c48cbef8"
+    },
+    {
+      "id": "TASK-014",
+      "description": "FGAP-014 fix — migrate completeTask to the verification_verifies_item edge (per FGAP-014). completeTask (context-sdk.ts) currently reads verification.target/target_type, removed by c08f93b for the edge and never migrated, so it is unusable on any catalog substrate. Rewrite as a pure edge-gate: find verification (exists), assert status===passed, find task (exists, not completed/cancelled), ASSERT a verification_verifies_item edge (parent=verificationId, child=taskId) via findReferencesInRepo/walkAncestorsByLens (throw a clear edge-absent error if missing), set task status:completed via updateItemInBlock (DROP the verification field embed — the edge is the linkage), thread ctx for attestation. complete-task op: add ctx to run() + thread. Rewrite the 12-test suite to the edge-based flow (schema-valid verifications, no smuggled target/target_type; file the edge via appendRelationByRef; wrong-task -> no-edge; drop wrong-type; add a no-edge-bypass case). Full completion sequence; coding subagent; orchestrator runs all npm + sole git writer + re-audit. Closes FGAP-014.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "completeTask gates on a verification_verifies_item edge (parent=verification, child=task) + status===passed; no read of target/target_type",
+        "a passing verification with NO edge -> throws the edge-absent error (the FGAP-014 real-substrate scenario)",
+        "task set to completed without the verification field embed; ctx-attested",
+        "test suite rewritten to schema-valid verifications + real appendRelationByRef edges (no field smuggling); drop the wrong-type test; add the no-edge-bypass case",
+        "runtime demo on a real/throwaway substrate: complete-task completes with edge+passed, throws without edge; context-validate completed-task-has-verification invariant still passes",
+        "fresh adversarial audit: gate cannot be bypassed; result cap-bounded; no regression",
+        "FGAP-014 closed with the 4 closure fields"
+      ],
+      "oid": "893b6605d4bbfa54310290b82975dd25",
+      "content_hash": "6b26c7b89d23134c9e54dfe88cae6fe8936c62ba8d0db0e9b28bee99ade738a9",
+      "content_parent": "19bc8bf0b3b8ae7cae35e0dd77deab226b8a3b75c917151ee8546477f9651aaf"
+    },
+    {
+      "description": "CLI pre-call input layer: normalize flag forms, derive arrayKey from config, and accept the scripts' input shorthands so the CLI reaches script-parity on INPUT without changing in-pi ops. All edits live in cli.ts's pre-call path (parseOpArgs ~:184-233 + the required-filter exemption ~:293-303). Closes FGAP-019 (arrayKey required-but-derivable across 7 block-mutation ops — derive from config.block_kinds[].array_key, demote --arrayKey to optional override by extending the required-filter exemption from {writer} to {writer,arrayKey} + an injectArrayKey helper mirroring injectWriter), FGAP-025 (--writer kind:id, --where field:op:value, CSV --op in shorthands, each a pre-call transform in parseOpArgs), FGAP-064 (kebab-case flag normalization — a kebab->camel alias layer in parseOpArgs so conventional --dry-run / --id forms resolve to the camelCase op-schema keys), and FGAP-032 (the id-flag instance of the same root — --id aliases to the op's single declared id-param: --itemId/--parentId/--taskId/--unitId — resolved in the SAME normalization layer as FGAP-064). The ops still receive + require their declared params; the CLI normalizes/supplies them. Additive per the FEAT-008 invariant: every currently-working flag form keeps working, the op surface is byte-unchanged.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-019 closed: append/update/upsert/remove-block-item (+ nested parents) accept --block without --arrayKey; the op is byte-unchanged (still receives + requires arrayKey, the CLI supplies it)",
+        "FGAP-025 closed: --writer kind:id, --where field:op:value, and CSV --op in parse to the op's declared param shape before invocation",
+        "FGAP-064 closed: conventional kebab-case flags (e.g. update --dry-run) resolve to the camelCase op-schema key; the existing camelCase form still works",
+        "FGAP-032 closed: --id resolves to the op's single declared id-param across id-taking ops (find-references --id no longer mis-fires)",
+        "In-pi op behavior byte-unchanged (frozen-ops constraint honored)",
+        "Canonical pipeline: build/check/test + runtime demo (drive the CLI directly) + fresh adversarial audit before green"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 1/6 | addresses FGAP-019, FGAP-025, FGAP-064, FGAP-032 | category: CLI-pre-call (R-0003) | flag-normalization + shorthands + arrayKey all edit parseOpArgs -> one task per feature-decomposition rule 4",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-015",
+      "oid": "6ec5bfbcda7978934f0a949b21041a55",
+      "content_hash": "889927bd866924a6ed65f65088fdf3f78249d35816357fcbb3bc0c1ec5a48543",
+      "content_parent": "0a378ce0ae134ef54cc1f3504c4b3e69d90fcc5dfc93e78c130f89f59b0d627b"
+    },
+    {
+      "description": "CLI output + error-shaping layer. Closes FGAP-020 (addressed read returns the full subtree CLI-side via an addressedReadOverride helper that re-runs the read with structureForRead({whole:true}), bypassing collection-paging, still 50KB-capped — does NOT touch the op), FGAP-021 (--format text|json|table render dispatch, lifting the scripts' renderTable/renderTerse bodies into a CLI render module), and FGAP-023 (AJV ValidationError translation in the cli.ts catch via a lifted formatAjvError). All at the cli.ts emit/catch region (~:504-518) + a new CLI render/helper module in-pi dispatch never touches.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context-cli/src/render.ts (new CLI render/helper module)"
+      ],
+      "acceptance_criteria": [
+        "FGAP-020 closed: read-schema / read-config --path at an object node returns the full subtree from the CLI (matching the orchestrator script), op unchanged",
+        "FGAP-021 closed: --format selects a human render for ops whose script twins offer one",
+        "FGAP-023 closed: AJV validation errors surface field-named guidance, not the raw .message",
+        "In-pi ops byte-unchanged",
+        "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 2/5 | addresses FGAP-020, FGAP-021, FGAP-023 | categories: CLI-only-shared-helper + CLI-post-call (R-0003)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-016",
+      "oid": "f174211a3ca004db33530119e66d1ee1",
+      "content_hash": "44a79ca1dc44aef1a75ae1969a0f583983d99106c2a7e32b5a8e240a4739661c",
+      "content_parent": "b2e4dcbb91e58d34f154619af2760a1ec7eeb542ff1bca89c30bd0a2320c5571"
+    },
+    {
+      "description": "CLI ergonomic affordances. Closes FGAP-022 (--show-schema contract preview — an early branch printing array_key/required/types/id-pattern via the lifted loadBlockSchema/resolveBlockItemSchema path, return 0, mirroring the parsed.help branch at cli.ts:464-467), FGAP-024 (append-block-item --dry-run via client-side prospective-whole-file validation lifted from file-block-item.ts:247-255, never calling appendToBlock — no op change, avoids adding dryRun to the frozen op), and FGAP-026 (granular exit codes mapping arg/usage->2, not-initialized/BootstrapNotFoundError->1, schema-absent->3, validation->5 at the cli.ts catch + UsageError sites).",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-022 closed: --show-schema previews the block contract and exits 0 before any write",
+        "FGAP-024 closed: append-block-item --dry-run validates the prospective whole file and writes nothing, with no op change",
+        "FGAP-026 closed: exit codes distinguish error classes 1-5",
+        "In-pi ops byte-unchanged",
+        "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 3/5 | addresses FGAP-022, FGAP-024, FGAP-026 | category: CLI-only-shared-helper (R-0003)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-017",
+      "oid": "514efa463982fe36de6c9bc8139afcc0",
+      "content_hash": "7697b05dadfc7a70a804a15dcddcc937c40dddc65b5bbd96dd70cd6e76c0327c",
+      "content_parent": "718c7fbf03d784bbcc072e5ac3ad96758ed301beb4a5f8e1d453523c30744668"
+    },
+    {
+      "description": "In-pi read-schema correction — the one authorized in-pi op change in this release. Closes FGAP-027: pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the IN-PI read-schema op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), retaining the 50KB cap. Completes read-schema across BOTH surfaces (pairs with the order-2 task's FGAP-020 CLI-side fix). Class-check other read ops routing addressed object nodes through structureForRead.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/read-element.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-027 closed: in-pi read-schema --path at an object node returns the full subtree",
+        "{read} cap behavior unchanged (50KB retained, no leak)",
+        "Class-check: no other read op silently projects an addressed object node",
+        "Canonical pipeline green (incl. runtime demo via pi -p tool dispatch + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (NEXT) | order 4/5 | addresses FGAP-027 | the SOLE in-pi op change in this release | depends on order-2 (read-schema coherence across both surfaces)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-018",
+      "oid": "e6c5d4e74cdfc3569b73d0185b9f5a06",
+      "content_hash": "a45da53360c9cd56fab77bd750a98654e6345b1c6f20349f50c05943c77b1f95",
+      "content_parent": "7e63a5e8ac35acb12b7d3152a380037ff2ba2e36df93f8870bef95b092f92eb5"
+    },
+    {
+      "description": "Behavioral parity gate — the regression guard that locks in TASK-015/016/017/018. Asserts in-pi op <-> reflecting-CLI parity: the CLI is a faithful ADDITIVE reflection of the op-registry. The orchestrator scripts are composers/launch-support, NOT a parity reference; the two canonical routes are the in-pi op and the reflecting CLI. Extends scripts/parity-check.ts AFTER its existing hard static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) with two new HARD op<->CLI checks, and RETIRES the soft op<->orchestrator-script comparison (checkDualSurfaceParity + its scriptsDir/DUAL_SURFACE machinery). Check 1 (required-but-derivable, FGAP-019 class): parse the CLI required-filter exemptions from cli.ts source and assert every config-derivable required op param (arrayKey, derived by injectArrayKey) is exempted by the CLI — FAILs if arrayKey is dropped from the filter or a new config-derivable required param is added without an exemption. Check 2 (output-shape, FGAP-020/027 class): run read-schema --path at an object node via BOTH routes in-process (the op run() and the CLI main() --json) on a fixture substrate and assert the op's r.read.data equals the CLI's output.data (boundedJsonOutput unwraps {read} so output === r.read) — FAILs on any op/CLI output divergence. In-process harness (not a subprocess of dist/bin.js) because husky pre-commit does not build dist. Folds into the same violations[]/exit-1 aggregation; main() becomes async. Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; durability mechanism.",
+      "status": "completed",
+      "files": [
+        "scripts/parity-check.ts",
+        "test fixtures (new fixture substrate)"
+      ],
+      "acceptance_criteria": [
+        "The gate FAILs on a reintroduced required-but-derivable param (the CLI no longer exempts a config-derivable required op param) — FGAP-019 class",
+        "The gate FAILs on an in-pi-op vs reflecting-CLI output-shape divergence on the read-schema --path fixture — FGAP-020/027 class",
+        "The soft op<->orchestrator-script comparison (checkDualSurfaceParity) is retired; no op<->script parity reference remains (scripts off the table)",
+        "The gate's new checks are pure/unit-testable and PROVEN to bite via negative fixtures in parity-check.test.ts; the real-tree integration is green",
+        "Runs as the existing husky/CI parity-check phase after the static checks (same exit-1 aggregation); green on the current tree",
+        "Canonical pipeline green (incl. runtime demo of the gate + a bite demonstration + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 5/6 | regression guard (closes no gap) | depends on orders 1-4 (asserts their post-fix state) | REFRAMED from the 2026-06-05 op<->script premise (R-0003 cli-ops-scripts-parity-survey, now superseded) to op<->CLI: the orchestrator scripts are off the table as a parity reference",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-019",
+      "oid": "a68e51861de5dd7113768b3052d18661",
+      "content_hash": "5b6333377d21dd8b744009a7c1a91c2727ef89802526039f26d0d95ff5464ac1",
+      "content_parent": "aeaca5d4fb215deac92b413de57d8b6956c946c81937c05ae67717a7ce6407b0"
+    },
+    {
+      "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type SET (task_depends_on_task + task_gated_by_item), a rollup spec (rollup kind + membership relation + derived status, generalizing the milestone phase-rollup), the next-actions head-size (cap), and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~711-915) to read it instead of ALL hardcoded literals — the tasks/framework-gaps/phase/milestone kinds, P0-P3, the task_depends_on_task + task_gated_by_item + phase_positioned_in_milestone relation literals, the reached/planned milestone status strings, and the fixed NEXT_ACTIONS_CAP=15 slice (context-sdk.ts:864-865); the shipped conception declares the stock derivation (framework-gaps+tasks + gate + milestone rollup + cap) so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/schemas/config.schema.json"
+      ],
+      "acceptance_criteria": [
+        "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+        "Stock .context behavior byte-preserved",
+        "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+        "All derivation couplings are config-driven, not just the original set: the blocked-by relation SET (task_depends_on_task + task_gated_by_item gate) and the milestone phase-rollup (block milestone + relation phase_positioned_in_milestone + the reached/planned status) are declared in the registry; no hardcoded relation/kind/status literal survives in the rewired currentState (verified by grep of the deriver)",
+        "A truthful not-configured signal is returned when no state-derivation registry is declared, distinguishable from a configured-but-empty substrate",
+        "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-020",
+      "oid": "8efe7ef2b695613ea1eece89d83f3829",
+      "content_hash": "22f54f0ee16612e592883afea31dc474ca73b409c9fda0937a921ba7677a84c6",
+      "content_parent": "f9db25451a8489e2ca0fc888fcabcfe850834f8c18d20378a6f73455d2aa817e"
+    },
+    {
+      "description": "Config-declared lifecycle metrics in context-status. Closes FGAP-018 (P3): make the lifecycle/metrics projection — currently special-casing phase/requirements/tasks/domain/verification with hardcoded fields + status literals in contextState() ~577-654 — config-declared (which kinds + which status values yield the lifecycle metrics), keeping the generic per-kind status summary as the default fallback. Pairs with the order-6 state-derivation registry. Advances FEAT-004.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/samples/conception.json"
+      ],
+      "acceptance_criteria": [
+        "FGAP-018 closed: a custom-vocabulary substrate's declared lifecycle kinds get structured metrics; the generic per-kind summary remains the default",
+        "Stock .context behavior byte-preserved",
+        "Canonical pipeline green"
+      ],
+      "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 7 | addresses FGAP-018, FEAT-004 | depends on order 6",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-021",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "content_hash": "b858cfa27d396cfd59dc56df37215000a7de0dc33d129b8de3b16aca51af9fca"
+    },
+    {
+      "description": "Read-cap measurement basis per surface. Closes FGAP-016 (P3): for --json measure the EMITTED compact form (so the cap reflects what actually ships), for text/Pi-tool keep measuring the pretty form (what the agent reads); surface the firing dimension (bytes vs lines) in the REFUSAL message. Cross-channel: the truncate.ts cap primitive + cli.ts boundedJsonOutput + read-element.ts structureForRead/renderReadText.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/truncate.ts",
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/read-element.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-016 closed: a value whose compact --json form fits under the cap but whose pretty form exceeds it is no longer over-refused under --json",
+        "The refusal message states whether the bytes or the 2000-line dimension fired",
+        "No leak: the cap still fails closed",
+        "Canonical pipeline green"
+      ],
+      "notes": "Release-group: read-cap-measurement (R+2) | order 8 | addresses FGAP-016 | standalone P3, cross-channel",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-022",
+      "oid": "faefd3eb61329ef90eb1ca067733bfe7",
+      "content_hash": "51f2a5810bac6b1279b4d1296366897d878c35a3d783f276220c2cac95d89afa"
+    },
+    {
+      "description": "Slice S1 (FGAP-029 P0 safety): /context install --update must NEVER overwrite a populated block. In installContext's blocks loop (packages/pi-context/src/index.ts:396-416), when destExists && overwrite, read the existing block via readBlockForDir and test for items via forEachBlockArray; if any array is non-empty, push to a new InstallResult.preserved[] and skip the copyFileSync. Empty/absent blocks behave as today; the schemas loop is UNCHANGED (schemas still honor --update). Render preserved in the install handler (index.ts:910-942). Add a regression test (none exists today). Per DEC-0010: also add a CHANGELOG [Unreleased] entry + usage-only docs (pkg README, monorepo README, SKILL via skill-narrative.md). Reuse readBlockForDir + forEachBlockArray (block-api.ts); installContext is the sole block-writer.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/index.test.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "--update against a populated block: block file byte-identical + reported preserved (regression test + runtime demo on a .context backup/dup per the safety protocol, never live .context)",
+        "empty existing block still overwritten; a schema under --update still updated (no regression)",
+        "no other path overwrites a populated block (fresh adversarial audit; populated-detection correct for object-shape AND flat-array blocks)",
+        "CHANGELOG [Unreleased] entry added; usage-only docs updated (README pkg + monorepo + SKILL) with NO fix-reference",
+        "canonical pipeline green: build/check/test + runtime demo + fresh adversarial audit"
+      ],
+      "notes": "Slice S1/4 of DEC-0010 (FGAP-029 safe re-sync) | the P0 data-loss closure | NO release at slice boundary — single release after S1-S4",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-023",
+      "oid": "853bc69292962c1f61556111073909f4",
+      "content_hash": "407209563ab741d1a98aeb060d038095d7db77bb3ca5d86e2237544e57c6dfdd",
+      "content_parent": "154fc9886f0ab37dbddc91306546a736e8fa88c68270e8d77411fb22e5b36e44"
+    },
+    {
+      "description": "Slice S2 (FGAP-029): record an install BASELINE at install/accept-all — installed_from (catalog ref) + catalog_version + per-asset content_hash in config.json — the merge-base (git %O analog) primitive shared by catalog re-sync (S3/S4) and the git-merge engine (FGAP-004). No behavior change to existing reads. Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "install + accept-all record installed_from + catalog_version + per-asset content_hash; config.json validates against the (extended) config schema",
+        "substrates without a baseline still load (back-compat; baseline optional)",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green (build/check/test + runtime demo on a dup + fresh adversarial audit)"
+      ],
+      "notes": "Slice S2/4 of DEC-0010 | independent of S1 | the shared merge-base primitive",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-024",
+      "oid": "474c91b2e732d81829fedd0c6af9ef5d",
+      "content_hash": "de8c6ff8aab796cb4ce236d70cef16640fe4885fc44b63a169e5c12018b91a65",
+      "content_parent": "49c307e5de6fcb39c0daa921e7c228ade3b326baddb63e625f336a5400c3a9f5"
+    },
+    {
+      "description": "Slice S3 (FGAP-029): a read-only --plan / drift detector. From the S2 baseline, report installed-vs-catalog skew per asset (version + content_hash) and what a re-sync WOULD change; mutate nothing (survey Option C as Option B's preview; cruft-check / terraform-plan flavor). Per DEC-0010: CHANGELOG [Unreleased] + usage-only docs.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "--plan reports per-asset drift (version + content_hash) and the would-change set; writes nothing (verified on a dup, byte-unchanged)",
+        "output usable by a human and parseable by a script",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green"
+      ],
+      "notes": "Slice S3/4 of DEC-0010 | depends on S2 (needs the baseline)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-025",
+      "oid": "a3587c4629e8b928c2dcc788119b4e53",
+      "content_hash": "8828a777f921cc63df0ad03401d46805f99fb7645d60b41c4cc052e0176b00d0",
+      "content_parent": "849eef1f5102c3d85a3a03400f52d801cebbbed0bca06a80dacc8935121a1e3c"
+    },
+    {
+      "description": "Slice S4 (FGAP-029): schema re-sync via the existing migration registry (forward-migrate, NOT blind copy) + cleaning propagation. Refresh installed schemas through migrations.json / validateBlockWithMigration; identity-migration for shape-compatible / description-only bumps. Running it on this repo propagates the genericized catalog descriptions into .context/schemas/ (FGAP-028 residual) with ZERO data loss and resolves the layer-plans 1.0.0->1.0.1 skew. Closes FGAP-029 (data-loss closed at S1; safe schema re-sync closed here). Per DEC-0010: CHANGELOG + usage-only docs.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skills/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "installed schemas re-sync through the migration registry — never a blind copyFileSync over a versioned schema that has live items",
+        "runtime demo on a .context backup/dup: the genericized descriptions land in .context/schemas/ + the layer-plans skew resolves with zero data loss; promotion to .context is a separate user-approved step",
+        "FGAP-029 closed (status + closed_by + closed_at + closing-commit citation); FGAP-028 installed-dir residual addressed",
+        "CHANGELOG [Unreleased] + usage-only docs",
+        "canonical pipeline green"
+      ],
+      "notes": "Slice S4/4 of DEC-0010 | depends on S2 | closes FGAP-029 + addresses FGAP-028 residual",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "TASK-026",
+      "oid": "87339228a893c5e3cbc85249ea82e0fe",
+      "content_hash": "a054a73c54ce0b5c1ce979b896b089396a746f97cf76442e7c924486097721f7",
+      "content_parent": "89eeb5e6c53322c22e2888420762a0cea927dc09ea172c6a2d3215f1078505ae"
+    },
+    {
+      "id": "TASK-027",
+      "description": "Resolve FGAP-007: add endpoint-role metadata to ordering relation_types, enforce/normalize ordering-edge direction at write time in append-relation, reconcile relation_type name with the deriver contract, extend to the sibling ordering relations, and migrate any inverted edges.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts"
+      ],
+      "acceptance_criteria": [
+        "task_depends_on_task and the currentState deriver agree on parent/child direction: no surface where the name's implied direction is opposite the direction the deriver consumes (name reads prerequisite->dependent matching {parent=prerequisite, child=dependent}, or explicit endpoint-role metadata makes the depender/depended-upon endpoint unambiguous regardless of the verb).",
+        "The relation_type registry entry for task_depends_on_task carries explicit endpoint-role metadata identifying which endpoint is the prerequisite and which is the dependent (extending the existing source_kinds/target_kinds metadata).",
+        "append-relation validates or normalizes an ordering edge's parent/child direction against that endpoint-role metadata at write time: a direction-correct ordering edge is accepted; a backwards ordering edge is rejected or auto-oriented at append, not silently stored.",
+        "The rejection/normalization fires only for relation_types carrying the ordering endpoint-role metadata; ordering relation_types without it, and non-ordering relation_types, are unaffected (no new false-positive rejections).",
+        "Every existing task_depends_on_task edge in relations.json remains valid after the fix: none orphaned, dropped, or left inverted; any edge whose stored direction was backwards under the corrected contract is migrated to the correct orientation; any already-correct edge is unchanged.",
+        "context-validate (relations integrity) passes against the active substrate after the fix and after any edge migration, with no new integrity findings introduced.",
+        "The deriver's blocked/ready output for existing tasks is unchanged where edges were already correct, and corrected where an edge was inverted: the fix changes no correctly-derived dependency outcome and only repairs inverted ones.",
+        "The same direction enforcement applies to every sibling ordering relation_type sharing the inverted-name root (story_depends_on_story, feature_depends_on_item, feature_gated_by_item, phase_depends_on): each either carries the endpoint-role metadata and is enforced, or is demonstrably exempt because its name/derivation are already consistent; none is left with a name-vs-deriver inversion.",
+        "Tests assert the write-path direction enforcement: a backwards ordering edge is rejected/normalized, a forwards edge is accepted, the metadata-absent gate holds (no enforcement when role metadata is absent), and the deriver continues to treat {parent=prerequisite, child=dependent} correctly.",
+        "Build, check, and the full test suite pass at zero failures with the change in dist/."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "79693a3ed131eb2244eac2ab8f2d2940",
+      "content_hash": "bc6e492a167985551cae080a5dbb8f351c263e6f4ecdfd9c0e947b2cd154dfa7",
+      "content_parent": "4c4180d835f3192b7187cecc5fe7e728b49d5b70727b4293a7f71fec868864e3"
+    },
+    {
+      "id": "TASK-028",
+      "description": "Make pi-context a globally installable command: add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/package.json"
+      ],
+      "acceptance_criteria": [
+        "[subagent] The pi-context-cli build sets the exec bit on the bin entry (chmod +x dist/bin.js after tsc); dist/bin.js is -rwxr-xr-x after a clean build.",
+        "[orchestrator] npm link from packages/pi-context-cli places an executable pi-context on PATH.",
+        "[orchestrator] pi-context <op> --json runs from a cwd outside the repo, resolving @davidorex/pi-context through the linked dependency tree.",
+        "[orchestrator] build + check + full test suite pass at zero failures.",
+        "[orchestrator] published-package global install (npm i -g @davidorex/pi-context-cli) smoke-tested from a clean machine/dir — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "9437da385588fe3b4500b6acf6bf917f",
+      "content_hash": "c6054bdcbc36397687427a10e025633eb58c535adad77426b8bc5d133172c37b",
+      "content_parent": "689be248348dff794c49b60fc990de5183f189b0bd745cd7925943beb1cb2dd2"
+    },
+    {
+      "id": "TASK-029",
+      "description": "Declare @davidorex/pi-project-workflows in pi-context-cli dependencies at the lockstep version range so pi-context --pi-bound's require.resolve('@davidorex/pi-project-workflows/package.json') resolves from an installed CLI, not only via the in-repo workspace symlink.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/package.json"
+      ],
+      "acceptance_criteria": [
+        "[subagent] pi-context-cli declares @davidorex/pi-project-workflows at the lockstep version range in dependencies.",
+        "[orchestrator] require.resolve('@davidorex/pi-project-workflows/package.json') resolves under npm link from a cwd outside the repo.",
+        "[orchestrator] build + check + full test suite pass; lockstep version ranges across CLI -> pi-context -> meta remain internally consistent.",
+        "[orchestrator] registry-install resolution of the meta-package verified — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "eca4e8b70f2356fd42a71183bec24ac9",
+      "content_hash": "eeb19e830b265cded93c27db6d94e94145b6e108ba8150ea445198ddcf2ca3b3",
+      "content_parent": "6366a7a1b30bdc11deb2e512ed8f726f2e610b0d01b06f91447002c66a807c3c"
+    },
+    {
+      "id": "TASK-030",
+      "description": "Implement pi-context pi-bound per analysis/2026-06-07-pi-context-pi-bound-cli.md: a CLI process mode that launches an interactive pi session bound to the composed extension tool surface, reproducing scripts/launch-constrained-pi.sh.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context-cli/src/bin.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] pi-bound is routed in cli.ts main() before op resolution (dispatched when the first positional is 'pi-bound') and excluded from the reflected surface:use op set.",
+        "[subagent] The launched session's tool surface is the union of the two-package-root SKILL.md tool set (the script's 69 tools) plus the per-target composites from config.tool_operations[].",
+        "[subagent] The meta-package root is resolved via require.resolve('@davidorex/pi-project-workflows/package.json'); pi install -l <metaRoot> runs against it; the SKILL.md union globs that root.",
+        "[subagent] Context is composed in-process via loadContext (no tsx or python3 subprocess), per DEC-0015.",
+        "[subagent] --grant <id> extends the tool union; a trailing --grant with no value exits 2; passthrough arguments reach pi unchanged.",
+        "[subagent] pi is launched restricted to --tools <union>; the union is re-derived every launch (no stale reuse on resume).",
+        "[orchestrator] Runtime demo: pi-context pi-bound launches an interactive pi session whose available tools equal the composed union and exclude tools outside it — equivalent to scripts/launch-constrained-pi.sh.",
+        "[orchestrator] build + check + full test suite pass at zero failures; the change is built into dist/.",
+        "[orchestrator] published-package smoke test of the meta-path resolution + pi install -l from a registry install — deferred, release-gated."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "fade58e14f1eeb576a89663e7c2dcf0e",
+      "content_hash": "d2a2651e0217dff6690d7755b90ac771d110a09322308b60dbd8aac4d3fe5633",
+      "content_parent": "d91b15b70dd2fad914c504f5247c86ce58aef38311aa531ab4bd5ba7f9465538"
+    },
+    {
+      "id": "TASK-031",
+      "description": "Register the two governance relation_types in .context config and backfill all existing planning-artifact articulation: file the deduped missing-convention gaps and write the item_governed_by_convention / item_acknowledges_missing_convention edges for every existing decision/feature/task and for this initiative's own DEC/FEAT/TASK items, per analysis/2026-06-07-convention-articulation-backfill.md. Prerequisite to enabling the error invariant (TASK-032).",
+      "status": "completed",
+      "acceptance_criteria": [
+        "[orchestrator] item_governed_by_convention (source decisions/features/tasks -> target conventions) and item_acknowledges_missing_convention (source decisions/features/tasks -> target framework-gaps) are registered in .context config.relation_types.",
+        "[orchestrator] The deduped missing-convention gaps (one per theme) are filed.",
+        "[orchestrator] Every existing decision/feature/task, plus this initiative's own DEC-0016/FEAT-007/TASK-031/032/033, carries at least one articulation edge (governed-by-convention or acknowledges-missing-convention) per the backfill determination.",
+        "[orchestrator] context-validate shows no unregistered-relation_type or dangling-edge errors after the writes."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "e6f28db3c5e9a1f552389ff8c6772dfe",
+      "content_hash": "b87355648845e5661c03cc20bb16fb26943ca070e514078ad4cee73ed76455f6",
+      "content_parent": "ed95b9079d75fdd16922bb8ff775a4d548c98e9a18f2ee9f532676050f4f9460"
+    },
+    {
+      "id": "TASK-032",
+      "description": "Install the three requires-edge invariants (one per source block: decisions, features, tasks) in .context config at severity error, each requiring at least one item_governed_by_convention or item_acknowledges_missing_convention edge as_parent. Enact DEC-0016. Run only after the backfill (TASK-031) so the substrate validates clean.",
+      "status": "completed",
+      "acceptance_criteria": [
+        "[orchestrator] Three requires-edge invariants are added to .context config.invariants (block decisions / features / tasks; relation_types both governance types; direction as_parent; severity error).",
+        "[orchestrator] context-validate reports zero convention-articulation errors (the backfill made it clean).",
+        "[orchestrator] A new decision/feature/task filed without an articulation edge is rejected by context-validate as an error.",
+        "[orchestrator] DEC-0016 is enacted (status + enacted_by + enacted_at + closing-commit reference)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "6441f29277e8c7a6e22cdd71cb5bbc76",
+      "content_hash": "45bcef44d3fed0531c0d37dc0814da3a3aa827936e871ef02919d83a53117dfb",
+      "content_parent": "4689a851c3ac70932b8a0c74db75f0e56b7cc544b6888bb41fe0c02d2e0ef354"
+    },
+    {
+      "id": "TASK-033",
+      "description": "Ship the governance vocabulary in the samples catalog: add the two relation_types and three requires-edge invariants (severity warning, for fresh substrates) to packages/pi-context/samples/conception.json, with CHANGELOG + usage docs, then release. Fresh install/accept-all substrates then carry advisory convention-articulation.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "[subagent] samples/conception.json declares the two governance relation_types and three requires-edge invariants at severity warning.",
+        "[orchestrator] A fresh install/accept-all substrate carries the vocabulary; context-validate WARNS (does not error) on an unarticulated planning artifact.",
+        "[orchestrator] CHANGELOG [Unreleased] + usage docs updated; build + check + full test suite green.",
+        "[orchestrator] released via npm run release:* (authorization-gated)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "c435caaec915d903d4782a80cb42b307",
+      "content_hash": "71a00812717d2aa9ead319c853f94ef0c7fec52b4aed909c00162aa6cccc2243",
+      "content_parent": "d4295ea731ec60f2d29feac832e8d53e21df51c285e4e62ca89b4c809bc10a00"
+    },
+    {
+      "id": "TASK-034",
+      "description": "FEAT-006 T1 — the pi-context update command shell + drift routing. Add a bare-verb `pi-context update` (per cli-command-form) with a `--dry-run` verb flag, superseding `install --update` as the user-facing update path. Update consults checkStatus (index.ts:858) per installed schema and routes by drift state: in-sync / catalog-ahead -> the existing resync path; locally-modified / both-diverged -> refuse-and-report (do NOT overwrite) until T3 (TASK-036) upgrades that branch to merge. This slice delivers 'never silently clobber' immediately via refuse-and-report.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] pi-context update is a bare verb routed in cli.ts before op resolution, excluded from the surface:use reflection, with --dry-run a verb flag (per cli-command-form).",
+        "[subagent] update consults checkStatus per installed schema and branches on state: in-sync/catalog-ahead -> existing resync path; locally-modified/both-diverged -> refuse-and-report (schema left unmodified).",
+        "[orchestrator] a locally-modified schema is NOT overwritten by update; the user's edits survive (demonstrated against an edited installed schema).",
+        "[orchestrator] pi-context update --dry-run prints the per-schema drift state + intended action and writes nothing; in-pi ops byte-unchanged; build + check + full test pass; runtime demo on a fresh + an existing substrate."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "6bb089861ee847eed26b59e6927f0285",
+      "content_hash": "515845bb7e7d6d7abcc4781aecaf8efef8a69d9b7f81b6ded6e144cb3a076d0b",
+      "content_parent": "b365bd451548d5c808cc235eff8e8ec2953ff2bede4021c35b43dc5cd077948a"
+    },
+    {
+      "id": "TASK-035",
+      "description": "FEAT-006 T2 — base-stamping (the merge precondition). On every install/update, store the as-installed catalog schema BODY via the content-addressed object store: putObject(destRoot, asset.content_hash, schemaJson) at the baseline write (index.ts:738-754), keyed by the content_hash the asset already records (object-store.ts; content-hash.ts:82-84). Retrievable at merge time via getObject(destRoot, content_hash). This supplies the 3-way merge base that does not exist on disk today (checkStatus keeps only a SHA-256, context.ts:79). Depends on TASK-034.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/object-store.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] every install/update writes the as-installed schema body to the object store via putObject keyed by the asset's recorded content_hash; installed_from.assets shape is unchanged (no context.ts:79 type change).",
+        "[orchestrator] after install, getObject(destRoot, assets[name].content_hash) returns a body that JCS-canonicalizes back to that content_hash (round-trip).",
+        "[orchestrator] purely additive: checkStatus classifications are byte-identical to before base-stamping; build + check + full test pass; runtime demo (install -> base body present + retrievable)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "82ae89de6887e1db7ac53dd33c1bd97e",
+      "content_hash": "004e7b87e25e8437c79fd440fbc40fe16915fa58fb486a70ef4f1a4a80592ab0",
+      "content_parent": "f2a8ee0a91b16d870c272dc538fbdea61bd9e2c45a1ee29fd7a35adda343e279"
+    },
+    {
+      "id": "TASK-036",
+      "description": "FEAT-006 T3 — deterministic schema-merge. Add a key/path-level draft-07 3-way merge mergeSchema(base, ours, theirs) -> {merged, conflicts[]}: base = the base-stamped as-installed body (getObject), ours = the installed dest schema, theirs = the catalog source schema. Wire it into the update flow at the locally-modified / both-diverged branch (replacing TASK-034's refuse-and-report): auto-apply the merged schema when the conflict set is empty; on a non-empty conflict set leave the schema unmodified and hand the typed set to the resolver (TASK-037). Depends on TASK-035; governed by DEC-0017.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/schema-merge.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] mergeSchema(base, ours, theirs) returns {merged, conflicts[]}: disjoint key additions merge; required / enum / type-union arrays merge as sets; overlapping edits to the same node emit a typed conflict {path, base, ours, theirs}.",
+        "[subagent] the merged output passes AJV draft-07 meta-validation + assertNoNestedIdBearingArray before any write.",
+        "[orchestrator] a locally-modified schema with only disjoint edits: update auto-applies the merge and BOTH the user's edit and the catalog change survive (demo: add-field, widen-enum).",
+        "[orchestrator] an overlapping edit: the schema is left unmodified and the typed conflict set is produced (no clobber); checkStatus is consulted before merging (closes FGAP-049).",
+        "[orchestrator] deterministic — identical (base, ours, theirs) yield identical {merged, conflicts}; build + check + full test pass; runtime demo of a clean-merge and a conflict case."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "824230dad7d7ab467adbf4c4a8b36b0f",
+      "content_hash": "39a762cfc879585e76d0ce654a05eca3b3f1fc8440f7fee025f47eb768831ba8",
+      "content_parent": "6d01f92204ca7a612acf1a8143ee8099f0a72d70ce77649ad135d573d71238cd"
+    },
+    {
+      "id": "TASK-037",
+      "description": "FEAT-006 T4 — conflict resolver. Route the typed conflict set from TASK-036 to a resolver: a pi-bound agent mergetool — dispatch a bounded pi-bound session granted read-schema + write-schema, feeding (base, ours, theirs); the agent proposes a reconciled schema and writes it via write-schema, forced through the existing dryRun + auth-gate (non-interactive refuses) — with graceful fallback to a rendered conflict report {path, base, ours, theirs} when no interactive/credentialed pi is available. The schema is left unmodified on the report path; the rest of the update proceeds either way. No change to auth-gate or pi-bound internals (grant + dispatch only). Depends on TASK-036; governed by DEC-0017.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context-cli/src/pi-bound.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] on a non-empty conflict set, update dispatches a bounded pi-bound session granted read-schema + write-schema, feeding (base, ours, theirs); the agent's write passes through the existing write-schema dryRun + auth-gate (non-interactive refuses) with no change to auth-gate or pi-bound internals.",
+        "[subagent] with no interactive context, update falls back to a rendered conflict report {path, base, ours, theirs}, leaves the schema unmodified, and proceeds with the rest of the update (never hard-blocks).",
+        "[orchestrator] runtime demo: interactive -> an agent proposal previewed via --dry-run and applied on confirm; non-interactive -> a clear conflict report + schema unchanged + remaining schemas still updated.",
+        "[orchestrator] build + check + full test pass."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "1128ab4916e3ed16f901fa912a144cb5",
+      "content_hash": "df8433f08737ffa2b8a4486be2671680fd24c804837440fd76ffac8ec8354b9c",
+      "content_parent": "5a96dccd17254bf4bd488b219fbc4d4f88bede9640230f14c009d3f7f4621c4a"
+    },
+    {
+      "id": "TASK-038",
+      "description": "FEAT-006 T5 — config-registry propagation. On update, additively merge catalog-new config-registry entries (relation_types, invariants, block_kinds, lenses) that are ABSENT from the existing substrate config into it, preserving the user's existing/modified registries; surfaced in output and previewed by --dry-run. Independent of the schema-merge slices (disjoint seam: the installContext config spread, the FGAP-060 site). Closes FGAP-060.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] update additively merges catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) absent from the existing config; it never removes or overwrites a user-present entry.",
+        "[orchestrator] an existing substrate gains the new catalog vocabulary on update; user-added/-modified registry entries are untouched; --dry-run lists the additions and writes nothing (closes FGAP-060).",
+        "[orchestrator] build + check + full test pass; runtime demo (existing substrate + a catalog carrying new entries -> entries appear, customizations intact)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "0cee5fff85482ecb49018fd65f200da8",
+      "content_hash": "ec619d5fc6205a307e8844e7fa1adf649adb1e3e3b7637ceccb0c81272c65fde",
+      "content_parent": "cee3de94f1c5cb2666331cafeedc966b19c9a89d6f884108afd1d4b618844a78"
+    },
+    {
+      "id": "TASK-039",
+      "description": "FEAT-006 T6 — surfaced mutation reporting + idempotent skip. The update output enumerates every mutation it performs (schema re-syncs/merges, migration-declaration registrations into migrations.json); --dry-run lists them without writing. And update skips rewriting an existing catalog-origin block file whose content already equals the starter. Independent of the schema-merge slices (disjoint seam: the install summary + the block branch). Closes FGAP-050 + FGAP-051.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "[subagent] update output enumerates every schema re-sync/merge and every migration declaration registered into migrations.json; --dry-run lists them without writing (closes FGAP-050).",
+        "[subagent] update skips rewriting an existing catalog-origin block file whose content already equals the starter (closes FGAP-051).",
+        "[orchestrator] runtime demo: a version-bump update lists the registered migration declarations; an unchanged empty block is not rewritten; build + check + full test pass."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "7250cfb2c2d2552f4f7ab1c5ceb95d99",
+      "content_hash": "97c927dc1d4ef6ca0bd1b1742375baed970c453e2d8fa9dffea194fa827924e6",
+      "content_parent": "ce3b4cea667de7878c06f147ac54c3ea965ea4c7c9f8b72b420a72bce5adda3c"
+    },
+    {
+      "description": "CLI discovery surface: a scannable grouped --help and a --version command, so a globally-installed reflecting CLI is legible and self-identifying. Both edit cli.ts's top-level dispatch (deriveTopHelp ~:407-423 + a --version short-circuit in main). Closes FGAP-062 (--help top-level listing is an unscannable dump of full op.descriptions with no grouping/sort and promptSnippet unused, and pi-bound is undiscoverable as a process-mode branch outside the registry — data-driven fix in deriveTopHelp from existing OpDefinition fields: source promptSnippet, group by name-prefix, add a process-modes section) and FGAP-063 (no --version/-v — add a --version short-circuit in main printing the package version). Per cli-command-form: --version is a top-level one-shot flag, pi-bound stays a bare verb. Additive per the FEAT-008 invariant: no op behavior changes; help/version are dispatch-layer reads only.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-062 closed: --help / no-args prints a scannable, grouped listing sourcing promptSnippet (not the full op.description), and every command including process modes (pi-bound) is listed",
+        "FGAP-063 closed: --version and -v print the package version and exit 0 (no fall-through to unknown-command)",
+        "In-pi ops byte-unchanged; the change is confined to cli.ts dispatch",
+        "Canonical pipeline green (incl. runtime demo driving the CLI directly + fresh adversarial audit)"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 6/6 | addresses FGAP-062, FGAP-063 | category: CLI dispatch/discovery | independent — no build-order dependency on the input/output tasks",
+      "id": "TASK-040",
+      "oid": "9e43e32a0b1bd729a3259f1faff3972b",
+      "content_hash": "4ed796eb3618e4f6359d1ccf500af2b02f8609cb1e0482ea1b38e3b5d3b0452d",
+      "content_parent": "14eca0fdd8dcb0500aa368131219c97dfd90af93d4e9b3212fb44dec016430c3"
+    },
+    {
+      "description": "Backfill decision derivation edges, then raise decision-shows-derivation to error. The decision-shows-derivation requires-edge invariant (the dedicated structural bite for the derive-decisions-from-facts convention) is live at severity WARNING: every decision must carry a decision_derived_from_item edge (the fact its resolution derives from) OR a decision_escalates_underdetermined edge (a genuinely-underdetermined escalated choice -> a framework-gap). 17 existing decisions currently warn. This task: (1) for each warning decision, read its reasoning and either edge decision_derived_from_item -> the substrate fact its resolution derived from (a research / convention / gap / prior-decision / rationale item; file a rationale item to reify a code/mandate fact that has no existing item), or decision_escalates_underdetermined -> the framework-gap capturing a genuinely-underdetermined choice; (2) once context-validate shows zero decision-shows-derivation warnings, raise the invariant severity from warning to error via amend-config. This completes the convention-articulation clean-after-backfill pattern for decision derivation, making a fork-as-decision (a decision with no shown derivation basis) UNFILEABLE.",
+      "status": "planned",
+      "files": [],
+      "acceptance_criteria": [
+        "Every existing decision carries a decision_derived_from_item OR decision_escalates_underdetermined edge; context-validate shows zero decision-shows-derivation warnings",
+        "A rationale item is filed to reify any decision basis that is a code/mandate fact with no pre-existing substrate item (no fabricated/forced edges)",
+        "decision-shows-derivation severity is raised warning -> error via amend-config; context-validate is clean at error",
+        "A newly-filed decision lacking a derivation/escalation edge is REJECTED at error severity (the bite is blocking, demonstrated)"
+      ],
+      "notes": "governance enforcement | extends the FEAT-007 convention-articulation family to decision DERIVATION | the bite is already live at warning; this raises it to error after backfill",
+      "id": "TASK-041",
+      "oid": "9556ca047e5d0a0ff7c9ac7d7337c2f9",
+      "content_hash": "d825bcf57aa78a6054d4115b5c866c4dfc15143d8a1b1e9554e0837816d6d5b6"
+    },
+    {
+      "description": "Per-op <op> --help best-of-breed template + machine-readable help — closes FGAP-072. Sibling to TASK-040 under FEAT-008 (different code location: deriveHelp + OpDefinition help-metadata + the help-render-through-format path, vs TASK-040's deriveTopHelp + main). Additive: in-pi op behavior frozen (run/parameters/description unchanged; the parity gate TASK-019 stays green — additive help-metadata is not op behavior). Scope, per FGAP-072's proposed_resolution: (1) add an examples[] help-metadata field (and optionally related[]) to OpDefinition in ops-registry.ts, and AUTHOR examples[] for ALL ~48 use-ops from the CLAUDE.md canonical filing patterns (no synthetic floor — the no-deferral/best-of-breed mandate requires real copy-pasteable examples per op); (2) render a fixed template in deriveHelp (cli.ts:554): SYNOPSIS (derived from the op's typed params in docopt notation — required -> `--flag <type>`, optional -> `[--flag <type>]`, @file alternation) -> summary -> Flags (existing required-vs-optional typed list) -> EXAMPLES -> RELATED -> learn-more footer; (3) derive RELATED from the op's name-prefix group (the same pure classifier TASK-040 builds for the top-level listing) and surface the process-mode pi-bound; (4) route a structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) through the existing --format json (FGAP-021) so a per-op --help --format json is machine-parseable off the registry. Reuse TASK-040's name-prefix group classifier for RELATED so the two help surfaces share one grouping source (no drift; the parity gate guards it).",
+      "status": "completed",
+      "files": [
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "FGAP-072 closed: per-op <op> --help renders a SYNOPSIS line (docopt notation, derived from typed params), the existing Flags list, an EXAMPLES block, a RELATED/see-also hint, and a footer — for every use-op",
+        "OpDefinition carries an examples[] help-metadata field and every one of the ~48 use-ops has authored, copy-pasteable examples (no op left with an empty/synthetic-only examples list)",
+        "RELATED is derived from the op name-prefix group (reusing TASK-040's classifier, not a second hand-curated list) and surfaces pi-bound",
+        "Per-op --help participates in --format: --help --format json emits a structured {synopsis, summary, flags[], examples[], related[]} rendering off the registry; default --help stays human-scannable plain text to stdout",
+        "In-pi op behavior byte-unchanged (run/parameters/description); the op<->CLI parity gate (TASK-019) stays green; additive only",
+        "Canonical pipeline green (build/check/test + a CLI runtime demo driving <op> --help and --help --format json directly + a fresh adversarial probe)"
+      ],
+      "notes": "Release-group: cli-parity (FEAT-008) | order 7/7 | sibling to TASK-040 | addresses FGAP-072 | informed by R-0011 | folds the per-op help-template render layer into FEAT-008 so the CLI ships best-of-breed (the prior session left these elements parked; no-deferral requires folding, not deferring)",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T00:00:00.000Z",
+      "id": "TASK-042",
+      "oid": "f71ea44630dd877df746b9f885de1141",
+      "content_hash": "273416fe72fff2ab84fd7528e761efc78c64b54e9f2a6f181088fc3f53763fd1",
+      "content_parent": "185c4bf2acfbc1123e4fa94fc579b876fa01defd9d1a6bbcc173e34fcd05a4e2"
+    },
+    {
+      "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context-cli/src/cli.ts",
+        "packages/pi-context/src/ops-registry.test.ts",
+        "packages/pi-context-cli/src/cli.test.ts"
+      ],
+      "acceptance_criteria": [
+        "`pi-context context-lens-view --lensId gaps-by-status` returns a bin summary — every declared bin (identified, accepted, in-progress, closed, wontfix) with its item count plus an uncategorized count — always within the 50KB cap.",
+        "`pi-context context-lens-view --lensId gaps-by-status --bin identified [--offset N --limit M]` returns that bin's items (id, status, title), paged via pageArray (offset/limit/total/hasMore).",
+        "`--json` returns a single-parse structured object (summary bins->counts; per-bin paged items under --bin); `--format json` yields the same payload; the shape is distinct from context-edges-for-lens's flat Edge[].",
+        "The summary and per-bin paths work for gaps-by-status, gaps-by-priority, tasks-by-status, and features-by-status with no lensId-specific code; op-level tests cover kind=composition and hand-curated dispatch.",
+        "An unknown --lensId, or an unknown --bin for a valid lens, returns a field-named error and a non-zero exit code.",
+        "A per-bin page whose serialization exceeds 50KB fail-closes via structureForRead (data:null, complete:false, truncated:true) carrying the overCapDirective to narrow --limit.",
+        "`pi-context context-lens-view --help` renders the per-op template (synopsis; typed flags --lensId/--bin/--offset/--limit; examples; related; footer); `--help --format json` emits the structured help model; the op carries authored examples[]; the op appears in grouped `pi-context --help` under its name-prefix group.",
+        "`npx tsx scripts/parity-check.ts` exits 0; `npm run build` + `npm run check` + `npm test` report fail 0 with op-level tests for: summary within cap on a lens whose full view exceeds 50KB, per-bin paging, per-lens binning across the four lenses, composition dispatch, and the unknown-lens/unknown-bin errors.",
+        "FGAP-073 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased].",
+      "id": "TASK-043",
+      "oid": "418e56f7c6d4d87abbb80bf2405746a0",
+      "content_hash": "3ec77cb3a4b5d89246f25760e81a808b9276fd33e6b62c9f3f2cddea6635ccb8",
+      "content_parent": "3792a69f8fa1242c0eb6422c1291344a752bd44f0a0c9e6a1c345bd5f0ed15cd"
+    },
+    {
+      "description": "Broaden the rhetorical-register checkpoint guard and clean the existing violating context atoms. Closes FGAP-074. Two parts: (1) extend the register-checkpoint hook (.claude/hooks/, currently framework-gaps-only) to cover append AND update/closure writes for tasks, verification, decisions, issues, research, features, and framework-gaps; exclude session-notes. (2) Rewrite every existing violating block body (the ~118 items in the FGAP-074 audit) to declarative current-truth per rhetorical-register, preserving all load-bearing content.",
+      "status": "planned",
+      "files": [
+        ".claude/hooks/gap-register-guard.sh",
+        ".claude/settings.local.json"
+      ],
+      "acceptance_criteria": [
+        "The register checkpoint guard covers append AND update writes for tasks, verification, decisions, issues, research, features, and framework-gaps. Provable: for each block, an un-acknowledged pi-context append-block-item / update-block-item blocks (exit 2, register rules on stderr); the same write with the review sentinel passes (exit 0).",
+        "session-notes writes are NOT guarded (narrative is its purpose, rule 6). Provable: an un-acknowledged pi-context append to session-notes passes (exit 0).",
+        "The guard fires on closure/update writes, not only append. Provable: an un-acknowledged update-block-item setting closed_by / resolved_by / notes / status on a covered block blocks (exit 2).",
+        "A fresh substrate-wide re-audit against the six rhetorical-register rules reports ZERO violations in the covered blocks (session-notes excluded). Provable: re-run the audit; zero violations across tasks, verification, decisions, issues, research, features, framework-gaps.",
+        "No true signal loss: every cleaned item retains all load-bearing content — each fact, criterion, id, file:line reference, and relation the original carried. Provable: a fresh adversarial agent diffs original vs cleaned per item and confirms only register changed, not substance; context-validate clean; schema + closure invariants (closed_by/closed_at present, verification edges intact) still satisfied.",
+        "The broadened guard is tested in isolation per covered block: un-acknowledged append AND update -> block; acknowledged -> pass; session-notes append -> pass; reads and non-covered-block writes -> pass.",
+        "FGAP-074 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-074. The guard is a review-checkpoint forcing-function (@file-agnostic); broadening changes only the block/op match-set + adds update/closure coverage. Cleaning is a per-item declarative rewrite preserving substance; session-notes excluded (rule 6). Audit baseline: analysis/2026-06-09-rhetorical-register-block-audit.md.",
+      "id": "TASK-044",
+      "oid": "83b542ad005a85837f29afacd4818514",
+      "content_hash": "56690ad82064bef5d5b0e73e0782fc028e38fd3f42058f1a535dd53fe12167c5"
+    },
+    {
+      "description": "Fix the check-changelog watched-surface over-flag — closes FGAP-075. Add a subtractive isExemptSurface(path) predicate to scripts/check-changelog.ts and filter changedPaths through it at the top of changedPackages, so build-excluded *.test.ts and the monitor packages/pi-behavior-monitors/examples/*.patterns.json learned-pattern stores no longer count as published surface. Orthogonal to watchDirsFromFiles/pathInWatchSet/unreleasedGrew; a genuine src/*.ts or examples/*.monitor.json still flags.",
+      "status": "completed",
+      "files": [
+        "scripts/check-changelog.ts",
+        "scripts/check-changelog.test.ts"
+      ],
+      "acceptance_criteria": [
+        "isExemptSurface(path) returns true for a path matching /\\.test\\.[cm]?tsx?$/ and for a packages/pi-behavior-monitors/examples/ path ending in .patterns.json; false for src/*.ts and examples/*.monitor.json.",
+        "changedPackages filters exempt paths before classification: a change set of only *.test.ts and/or examples/*.patterns.json yields no flagged package; a change set including a real src/*.ts (non-test) still flags its package.",
+        "check-changelog.test.ts covers: (a) a *.test.ts-only set passes; (b) an examples/*.patterns.json set passes while an examples/*.monitor.json set still flags pi-behavior-monitors; (c) regression — a real src/*.ts set still flags; the existing block-api.ts case still passes; plus a direct isExemptSurface unit test.",
+        "Runtime: with the staged TASK-043 lens-view-op.test.ts + hedge.patterns.json, `npx tsx scripts/check-changelog.ts` exits 0 (no demand); staging a genuine src/*.ts with no [Unreleased] line still exits 1 (the gate still bites).",
+        "npm run build + npm run check (scripts/ is biome-scoped — tabs/format-clean) + npm test fail 0; the full husky pre-commit passes for the gate-fix commit.",
+        "FGAP-075 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-075. Subtractive predicate + filter only; no change to the watch-set derivation or matching. The gate fix lives in scripts/ (not a watched package surface), so committing it does not self-trip. Unblocks the TASK-043 composition-test + hedge.patterns.json commit. Separate, noted-not-fixed: a monitor test mutates the shipped hedge.patterns.json on each run (test-hygiene).",
+      "id": "TASK-045",
+      "oid": "ccd67db743977afcb388fe54f42b2e51",
+      "content_hash": "a4de9c092bd5a01f688602bd0c85da1c24725fb1a7b269091d612135c0093fec",
+      "content_parent": "c24c1f7142d5fe7de5630b36373a421785818f6720b9435287b2d816a1bd88e8"
+    },
+    {
+      "description": "Make pi-context update --dryRun predict the precise catalog-ahead outcome — closes FGAP-066. In updateContext's catalog-ahead dry branch (packages/pi-context/src/index.ts:1239-1262), replace the unconditional `resynced` push with a READ-ONLY simulation of the live resync: find the catalog migration chain, forward-migrate the populated block in memory, and AJV-validate the migrated items against the new schema, classifying the schema as resynced / migrated / blocked exactly as the live resyncSchema (:599-641) would — without writing. Report migrationsRegistered only for non-blocked outcomes (a live blocked run rolls the decls back). Dry and live outcomes must be identical for every catalog-ahead schema.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "The catalog-ahead dry branch forward-migrates the populated block in memory and AJV-validates against the new schema, classifying resynced/migrated/blocked by the same logic as the live resyncSchema, writing nothing (schema/block/migrations.json/config byte-unchanged after --dryRun).",
+        "Dry/live OUTCOME PARITY: for any catalog-ahead schema, `update --dryRun` reports the same per-schema bucket (resynced | migrated | blocked) that a subsequent live `update` produces. Demonstrated on a substrate where a 1.0.0->1.0.1 bump adds a required field the existing items lack: --dryRun reports `blocked` (not `resynced`), matching the live run.",
+        "migrationsRegistered under --dryRun lists decls only for non-blocked outcomes — a schema the dry run classifies `blocked` lists no would-register decls (parity with the live rollback).",
+        "A catalog-ahead schema whose items DO forward-migrate cleanly is reported `migrated` (or `resynced` when there are no items) under --dryRun, matching live.",
+        "build + check + full test pass; a runtime demo shows dry and live producing identical buckets on both a clean-migrate and a blocked substrate; FGAP-066 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-066. Scope is the dry-branch faithfulness only — the live path (resyncSchema) is already correct. Empirical grounding + reproduction: R-0012 / analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md. The registry-propagation-on-blocked transactional question is a SEPARATE finding (a decision + a legibility gap), not this task.",
+      "id": "TASK-046",
+      "oid": "fbd1807190db72fa85b2c2ca19e50cf1",
+      "content_hash": "e6a2b6effb4aca2cb0a0ddbf957ba0559071a7a04a95bc194031d587fab5af08",
+      "content_parent": "f4608f04460fbb97278e9759d1dccbd16c827dc2a6c7d7babe8b4a12ab49b98d"
+    },
+    {
+      "description": "Add the advancer-completion invariant class to the validator — closes FGAP-082. Extend InvariantDecl (context.ts:202-214) and validateContext's invariant executor with a third config-declarable class: for a source item entering when_bucket (complete), every target reached via the declared relation_types (task_advances_story / feature_advances_story) must be met — met = at least one incoming advancer edge whose endpoint item is in met_bucket (complete) — with self_satisfies so the completing item counts as its own stories' advancer (the single-advancer case must not deadlock). Severity error at context-validate. Code change: full canonical pipeline.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/src/context-sdk.ts"
+      ],
+      "acceptance_criteria": [
+        "InvariantDecl accepts class advancer-completion with relation_types, when_bucket, met_bucket, self_satisfies; existing requires-edge and status-consistency declarations behave byte-identically.",
+        "A feature in the complete bucket advancing 3 stories with 2 met -> context-validate reports an error naming the feature and the unmet story.",
+        "A task that is its sole story's only advancer completes without an error (self_satisfies — no deadlock).",
+        "A story with any complete advancer (task or feature) counts as met for every item advancing it.",
+        "A non-completing advancer is ungated (the invariant fires only on when_bucket sources).",
+        "CLI-provable: the four conditions above demonstrated via pi-context context-validate against a seeded substrate; build + check + full test green; fresh adversarial probe; FGAP-082 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-082. Enables enforcement of the user-stories completion rule (analysis/2026-06-10-user-stories-block-DRAFT.md); the rule's config declaration lands with this task. Engine grounding: analysis/2026-06-10-story-completion-invariant-engine-audit.md. Write-time blocking (a completeTask/write-path hook) is out of scope — context-validate error only.",
+      "id": "TASK-047",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "content_hash": "aaae3a75ce14f58084d3f87ad580594ecd414fb10a7b7336a83523e014009766"
+    },
+    {
+      "description": "Surface the per-item validation diagnostic on update's blocked path + as a standalone op — closes FGAP-077. Bind the ValidationError resyncSchema's unbound catch discards (index.ts:622): map each AJV error's instancePath (/<arrayKey>/N) to the item id, thread {item id, field, keyword, params, value} per failing item into the update result's blocked entry (structured + CLI text), distinguish the no-chain block from the validation block, and expose the same returns-not-throws per-item validator as a standalone op (validate a block's items against a target schema version -> per-item failures). Builds on TASK-046's in-memory migrate+validate helper.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "A blocked schema's update result names, per failing item: item id, field, violated constraint (keyword+params), and value — on both the structured result and the CLI text surface.",
+        "A no-chain block is reported distinctly from a validation block (the version gap + no chain, vs the per-item failures).",
+        "A standalone reflected op validates a named block's items against a target schema version and RETURNS the per-item failure list (no throw, no write); unknown block/version -> field-named error + non-zero exit.",
+        "resyncSchema's rollback behavior is byte-identical (the diagnostic is read-only reporting; schema/block/migrations.json untouched on blocked).",
+        "build + check + full test green; parity-check exit 0; runtime demo on a seeded blocked substrate; fresh adversarial probe.",
+        "FGAP-077 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-077; advances STORY-001/002/003/004/005/009. Depends on TASK-046 (the shared in-memory migrate+validate primitive). Grounding: analysis/2026-06-10-update-blocked-diagnostic-task-DRAFT.md user stories + R-0012.",
+      "id": "TASK-048",
+      "oid": "8f8c688fa6d7bcc189d8d1cd7df68b49",
+      "content_hash": "4d407495eb661f3cbdc9193a1584130073180fd35a482de5bac9802b0437df42",
+      "content_parent": "c59a00b6ef8ee0d25a3e1e238f293be652fce8dd7ddafd0c4f66b972f9a458ac"
+    },
+    {
+      "description": "Expose check-status as a reflected CLI op and report the version gap — closes FGAP-030 + FGAP-078. Add the context-check-status op (run -> checkStatus(cwd), the existing CheckStatusReport) so the drift report is reachable from the reflecting CLI, and extend the report/render to state, per behind schema, the baseline->catalog version delta — covering content-only drift (catalog-ahead is a hash comparison; a schema can be behind with no version-number change). One surface: the checkStatus report + its render + the op entry.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-context context-check-status --json returns the per-asset drift report (name, state, baseline_version, catalog_version) for every installed schema.",
+        "The report names which schemas are behind the catalog and the version delta (e.g. 1.0.0 -> 1.0.1); a content-only-drift schema (same version, different content) is reported behind with the basis stated.",
+        "The in-pi /context check-status render carries the same version-gap information (renderCheckStatus no longer drops the version fields).",
+        "checkStatus classification logic is unchanged (reporting only); build + check + full test green; parity-check exit 0; runtime demo against a catalog-ahead substrate; fresh adversarial probe.",
+        "FGAP-030 + FGAP-078 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-030 + FGAP-078 (same surface: the drift report + its exposure); advances STORY-007. Independent of the other slices.",
+      "id": "TASK-049",
+      "oid": "3916923de91f76c83e9d68fd624dd367",
+      "content_hash": "0d0cdad2af8ebaaee8d76efe68a2bddd23d23ed6086c11ce419ac4c114e8196b",
+      "content_parent": "36e6619e978dfb2817836efc48dbd36dbea97d108f44a65b680e75d1d2e1294e"
+    },
+    {
+      "description": "Make the catalog schema locally diffable — closes FGAP-079. Provide the catalog schema BODY to the operator without hunting node_modules: a single read-only reflected op that fetches and prints the catalog schema verbatim (resolveCatalog samplesRoot + kind.schema_path; read-samples-catalog returns only a projection today). No sidecar.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "The operator obtains the catalog schema body for a named kind via a single read-only CLI invocation that fetches and prints it — diffable locally against <substrate>/schemas/<name>.schema.json without touching node_modules.",
+        "The body is the verbatim catalog *.schema.json (raw JSON Schema: properties/definitions/$id), not the read-samples-catalog projection.",
+        "No installed schema, block, or config is mutated by the read path.",
+        "build + check + full test green; parity-check exit 0; runtime demo (fetch + local diff against a catalog-ahead substrate); fresh adversarial probe.",
+        "FGAP-079 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-079; advances STORY-010. Independent of the other slices. Grounding: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md is unrelated; the catalog-access grounding is the user-stories DRAFT + the explore that located resolveCatalog/samplesRoot.",
+      "id": "TASK-050",
+      "oid": "53a76d00da4a7a4345d9e1066fd73d24",
+      "content_hash": "c9bdfc5b25ecd592745744350ced3c85884d75c6947937048b015e435f36276c",
+      "content_parent": "5e19c41113b56a995997555ea42b07aa7109e482bdd0ec68adb6244f16e357cd"
+    },
+    {
+      "description": "Persist a pending-blocked state and add the resolve-blocked / update --continue commit op — closes FGAP-080. When resyncSchema blocks, persist what the rollback currently discards (target schema body/version, the migration chain, the per-item failure set from TASK-048's diagnostic), and add a commit op mirroring resolve-conflict: re-validate the corrected block against the target schema, on success write the new schema via writeSchemaCheckedForDir and advance the merge base via stampBaselineFromBody — so the schema converges and stops re-blocking. The diagnose -> fix -> retry loop, end-to-end, matching the conflicts/resolve-conflict model.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "acceptance_criteria": [
+        "A blocked update persists a pending-blocked record (target schema version/body reference, migration chain, per-item failure set); the schema/block/migrations.json byte-unchanged contract is preserved (the record lives outside them).",
+        "After the operator fixes the items or widens the local schema, ONE command (resolve-blocked or update --continue) re-validates the block against the target schema; on pass it writes the new schema and advances the merge base so a subsequent update reports in-sync (no re-block); on fail it reports the remaining per-item failures and writes nothing.",
+        "The flow mirrors resolve-conflict end-to-end: surfaced detail -> operator fix -> commit op -> base advance; demonstrated on a seeded blocked substrate through to convergence.",
+        "Per-schema rollback and per-component application (DEC-0018) unchanged for schemas not being resolved.",
+        "build + check + full test green; parity-check exit 0; fresh adversarial probe.",
+        "FGAP-080 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-080; advances STORY-006/011/012/014. Depends on TASK-048 (the persisted failure set is its diagnostic). Reuses stampBaselineFromBody, writeSchemaCheckedForDir, validateBlockWithMigrationForDir, the object store.",
+      "id": "TASK-051",
+      "oid": "8d6e1e91f0bc21d0f189fd6efede76ef",
+      "content_hash": "a4d374ae95fdcbd97c0e126e083bc956e4f44fcac68afb2e113a568d414eac70",
+      "content_parent": "f0b3f874a4b66c263c99ec8cd3d3ea99ffb87987eff9892ac89021b8a369541b"
+    },
+    {
+      "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. Markers are the DEFAULT behavior of a live validation-failed block (STORY-013: the operator expects them; no flag, no mode — the supersession of the byte-unchanged contract for the block file is user-decided); a dry run never writes, and a no-chain block has no failures to mark. Markers are stripped by the TASK-051 resolution commit (resolve-blocked), which refuses while the named violations persist. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/block-api.ts"
+      ],
+      "acceptance_criteria": [
+        "On a live validation-failed blocked schema, the block file carries failure markers at each offending item/field naming the violated constraint — the operator opens the block and sees the problem inline. Default behavior, no flag.",
+        "The pre-marker block is recoverable from the object store; recovery demonstrated (byte-exact restore).",
+        "The TASK-051 commit op strips the markers on a passing resolution; a block whose named violations persist cannot be committed.",
+        "A dry run writes no markers; a no-chain block (no failures) stays byte-unchanged; migrations.json and the schema file stay byte-unchanged in all cases.",
+        "Item identity survives the marker round-trip: oids preserved, content_parent lineage intact (no re-mint).",
+        "build + check + full test green; parity-check exit 0; runtime demo (block -> markers -> fix -> resolve -> markers gone, schema converged); fresh adversarial probe.",
+        "FGAP-081 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "Closes FGAP-081; advances STORY-013/014. Depends on TASK-051 (the resolution loop the markers feed). The contract supersession (in-file markers, object-store recoverability) is user-decided; pairs with DEC-0018.",
+      "id": "TASK-052",
+      "oid": "b014aeaada390c1a3d37b1467afdd81f",
+      "content_hash": "69f9a8bb42cc858ad199c996cfef46121a927a3b24752ab1ac3cda7780261a3f",
+      "content_parent": "fb4816e687585f846430813329e4ea352478f6ccf23a06915d6b55bf8e0863cd"
+    },
+    {
+      "description": "Behavior-preserving refinement of the update/marker machinery. (1) Extract the triplicated in-memory migration-registry seeding into one helper in migration-registry-loader.ts — buildFreshRegistryWithChain(substrateDir, chain): substrate on-disk decls + the extra chain decls, deduped on (schemaName, fromVersion) with the substrate decl winning, cache-untouched — and swap the three call sites (simulateResyncOutcome, validateBlockItemsAgainstCatalog, resolveBlocked). The on-disk appendMigrationDeclForDir loops and the live path's cache-warming getProjectMigrationRegistryForDir are a different operation and stay untouched. (2) Hoist the marker sentinel-line pattern (/^(<{7}|>{7})/, inlined at four detection/strip sites) into one named module constant kept in lockstep with the tokens composeMarkerText emits.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/migration-registry-loader.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "buildFreshRegistryWithChain lives in migration-registry-loader.ts beside buildRegistryFromSubstrateForDir; the three former seeding blocks in index.ts call it; no in-memory createRegistry + seed-merge block remains at a call site.",
+        "The helper preserves the exact semantics: existing substrate decls first (substrate wins on a key collision), dedup key `${schemaName} ${fromVersion}`, migrationFnFor per decl, no cache warming, no disk writes.",
+        "The on-disk register loops in resyncSchema and resolveBlocked and the live getProjectMigrationRegistryForDir call are byte-unchanged.",
+        "The marker sentinel pattern is defined once as a named constant used by every detection and strip site; composeMarkerText's emitted sentinel tokens and the constant cannot drift independently (one source).",
+        "Behavior-preserving: the full test suite passes UNCHANGED (no test edits needed); build + check + parity-check green; a runtime blocked -> markers -> fix -> resolve-blocked -> in-sync loop still converges.",
+        "Fresh adversarial probe confirms zero behavioral drift (the three registry paths, the marker detect/strip sites)."
+      ],
+      "notes": "Refinement debt surfaced by the post-TASK-052 code-simplifier evaluation and confirmed by investigation: the three seeding blocks are behaviorally identical (same dedup, same substrate-wins precedence, same error posture; the loop-vs-spread spelling is cosmetic); the sentinel regex is the invariant most likely to break silently under future edits. Internal-only — no exported-surface, op, or schema change.",
+      "id": "TASK-053",
+      "oid": "1d9d2ff832fac03de7650caef78d8d96",
+      "content_hash": "4aef3038e20fcbfe0e07bf75b720ede24c56250f86693bc91ef3461ab9e4f32e",
+      "content_parent": "84d4e0289e1fb180e9e4b2ddfc2515be7757542960a87d658d988b0286324a23"
+    },
+    {
+      "description": "Behavior-preserving refinement, the code-simplifier evaluation's finding #2 verbatim: Duplicated raw tmp+rename marker-write block (2 sites) — packages/pi-context/src/index.ts:2026-2028 (mark) and :2426-2428 (unmark). Identical three-line shape: const tmpPath = `${blockFile}.<verb>-${process.pid}.tmp`; fs.writeFileSync(tmpPath, text); fs.renameSync(tmpPath, blockFile);. A small local helper rawWriteBlockText(blockFile, text, verb) would DRY this and name why it bypasses writeTypedFile (the marker text / stripped text is written outside the AJV-validating writer deliberately). The writeTypedFile atomic writer at block-api.ts:870 cannot be reused (it validates), so a dedicated raw helper is the right level. Behavior-preserving: same tmp path scheme, same atomic rename. (Line numbers are as evaluated pre-TASK-053; relocate by content.)",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "A rawWriteBlockText(blockFile, text, verb) helper replaces both raw tmp+rename sites; its comment states why it bypasses the AJV-validating writer.",
+        "Same tmp path scheme, same atomic rename — behavior-preserving: the full test suite passes UNCHANGED (zero test edits).",
+        "build + check + full test + parity-check green; the blocked -> markers -> fix -> resolve-blocked -> in-sync runtime loop converges."
+      ],
+      "notes": "Surfaced by the post-TASK-052 code-simplifier evaluation (its optional finding #2); filed verbatim on user direction. Internal-only — no exported-surface, op, or schema change.",
+      "id": "TASK-054",
+      "oid": "eb7d80d82c66f39ac1409303e90e7932",
+      "content_hash": "15014af3a00acdc5557c918472e6a05901cd5980cc0e86ab65640d0862e16027"
+    },
+    {
+      "description": "Add a pre-flight committed-substrate check to update — warn or refuse on a dirty substrate — with guidance text naming `git tag` as the restore-point workflow, visible in three places: (1) the runtime dirty-substrate message printed by update says \"commit or git tag first to keep a restore point\" — the operator sees it at exactly the moment it matters; (2) the update op's description/promptSnippet in ops-registry, which is also what reflection and SKILL.md render; (3) SKILL.md + READMEs via skill-narrative.md regen and the package/root README update sections, per the normal docs-surface-sync pass. No new doc artifact — the text rides the op's existing strings and the new warning. No substrate-tag op: per DEC-0004 (enacted) git owns refs/snapshots; the substrate including objects/ is git-tracked, so `git tag` before update + `git checkout <tag> -- <substrate-dir>` is the restore workflow.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/README.md",
+        "README.md"
+      ],
+      "acceptance_criteria": [
+        "update performs a pre-flight check that the substrate is committed; on a dirty substrate it warns or refuses, and the runtime message says \"commit or git tag first to keep a restore point.\"",
+        "The update op's description/promptSnippet in ops-registry carry the git-tag restore-point guidance (rendered by --help, reflection, and SKILL.md).",
+        "SKILL.md + the package and root READMEs carry the guidance via skill-narrative.md regen and the README update sections, per docs-surface-sync.",
+        "No new doc artifact; no substrate-tag op."
+      ],
+      "notes": "User-granted G1-derived filing (the operator-story think-out): the safety gap (update mutates with no committed-baseline pre-flight) + the knowledge gap (no surface names the git-tag restore workflow) closed in one item. Prior-art sweep found no existing item covering snapshot/restore or an update pre-flight.",
+      "id": "TASK-055",
+      "oid": "90f33ed68bc91d4eb4901cdf588e8660",
+      "content_hash": "8d8ee9b756f940bc99eec1af3894710d5ddbca3decf31bb73d7e12a1768dfe76"
+    },
+    {
+      "description": "Enrich resolve-blocked's success report: running resolve-blocked exactly as today prints a summary that reads the way `git show --stat` reads after a merge — what was written, what changed, from-state → to-state. The command surface itself is untouched: no new op, no new flag. The report carries the old vs new schema version, which items were forward-migrated (or left unchanged), and the merge-base advance from→to — facts already computed in memory at the success point and currently discarded (today's output is effectively `resolved: true` plus one hash, and `registeredMigrations` is empty in the normal case because the blocking update run already registered the chain).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "resolve-blocked's success output shows what changed: the old vs new schema version, which items were forward-migrated (or left unchanged), and the merge-base advance from→to — not just `resolved: true` or \"0 remaining failures.\"",
+        "The text surface prints a summary that reads the way `git show --stat` reads after a merge: what was written, what changed, from-state → to-state.",
+        "The command surface is untouched — no new op, no new flag.",
+        "Canonical pipeline green (build + check + full test, parity-check, runtime demo of the blocked → fix → resolve-blocked loop showing the summary, fresh adversarial probe); docs-surface-sync pass for the changed op strings."
+      ],
+      "notes": "Origin: the operator-story think-out — the D2 and G5 statements (confirmed duplicates; one filing). D2's proposed --diff flag spelling is not adopted: the command surface is untouched. Same legibility principle as FGAP-076 (update's partial-application report).",
+      "id": "TASK-056",
+      "oid": "8c47096771a1ded2d024dec89b232a1a",
+      "content_hash": "8b7aded9f1ffd779782e5c6edc18889fc78f36633322d768c9608c718e755d5a"
+    },
+    {
+      "description": "Schema version-history audit (the `git log <file>` analog): a read-only command (e.g. `read-schema-history --schemaName <name>`) that prints the schema's history — which migrations ran, when, and from what base — plus the two recording fixes that make the history complete: stamp an applied-at time when a migration runs, and keep a pointer from each new baseline to the one it replaced. Without those two, the command could only show a partial story and \"when\" would still require digging through git commits: today the only timestamp on a migration decl is its authoring time, and each baseline advance overwrites the prior {content_hash, version} with no parent pointer (the replaced bodies sit unreferenced in the object store). The command composes what the substrate records: the registered migration decls for the schema (from→to, kind, author, authored-at, applied-at), the baseline lineage, and the installed/catalog versions.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/migrations-store.ts",
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "A read-only command (e.g. `read-schema-history --schemaName <name>`) prints the schema's history — which migrations ran, when, and from what base; the read path mutates no substrate state.",
+        "An applied-at time is stamped when a migration runs against the substrate.",
+        "Each new baseline keeps a pointer to the baseline it replaced.",
+        "The printed history is complete from substrate data alone — \"when\" does not require digging through git commits.",
+        "Canonical pipeline green (build + check + full test, parity-check, runtime demo of a migrated substrate's history, fresh adversarial probe); docs-surface-sync pass for the new op's surfaces."
+      ],
+      "notes": "Origin: the operator-story think-out — the G2 statement (\"As an operator, after a migration has been applied, I want to see the version history of a schema — which migrations ran, when, and from what base — so I can audit how the schema reached its current state. (git log <file> analog.)\"). Scope corrected per the status-quo challenge: applied-at + baseline lineage are in-scope recording fixes, not flagged out — they are event metadata, not git refs/DAG machinery, so DEC-0004 does not speak to them.",
+      "id": "TASK-057",
+      "oid": "19ffa834c9d56173043cd05ca01129a5",
+      "content_hash": "668b276f0dbc35000d951e6416d29862c56b528ee4b88f879013efaf555d0148"
+    },
+    {
+      "description": "Walk the migration chain incrementally (the `git bisect` analog): a read-only command (e.g. `walk-migration-chain --schemaName <name>`) that applies the schema's migration chain one step at a time in memory — apply migration 1, validate, apply migration 2, validate — to isolate which step breaks. Per step it reports the step's decl (from→to, kind) and which items' content changed; validation runs against the target schema on each cumulative prefix, attributing the first failure to the step whose application introduced it. Nothing is written — the walk is entirely in memory over the live block data and the resolved chain (the catalog chain, or the pinned pending-blocked chain when the schema is blocked). Limitation stated honestly: the catalog ships only the latest schema body per kind, so a step's output cannot be validated against an intermediate schema version (only against the final target, or an intermediate body that happens to be pinned in the object store); the op isolates the breaking transform step, which is the operator's ask.",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context-cli/src/cli.ts"
+      ],
+      "acceptance_criteria": [
+        "A read-only command (e.g. `walk-migration-chain --schemaName <name>`) applies the migration chain incrementally — apply migration 1, validate, apply migration 2, validate — and isolates which step breaks; no substrate state is mutated.",
+        "Per step the output reports the step's decl (from→to, kind) and which items' content changed at that step.",
+        "The first validation failure is attributed to the step that introduced it (cumulative-prefix validation against the target schema).",
+        "When the schema is blocked, the walk uses the pinned pending-blocked chain; otherwise the catalog chain.",
+        "The intermediate-schema limitation is stated on the op's surface: per-step validation is against the final target schema, not intermediate schema versions (the catalog carries only the latest body per kind).",
+        "Canonical pipeline green (build + check + full test, parity-check, runtime demo isolating a seeded breaking step, fresh adversarial probe); docs-surface-sync pass for the new op's surfaces."
+      ],
+      "notes": "Origin: the operator-story think-out — the G4 statement (\"As an operator, when I suspect a specific migration in the chain introduced a validation failure, I want to walk the chain incrementally — apply migration 1, validate, apply migration 2, validate — to isolate which step breaks. (git bisect analog.)\"). Reuses the existing chain machinery (fresh in-memory registry, step-ordered application, per-item failure mapping) — no new parallel machinery.",
+      "id": "TASK-058",
+      "oid": "e9aa3e678507797950d994a75198a59f",
+      "content_hash": "207ed42888cdd6940c991326946d13da891cfe34ef2f513d07b222f75394e2da"
+    },
+    {
+      "id": "TASK-059",
+      "description": "Reflect the install ceremony as a context-install OpDefinition in ops-registry.ts, surfacing the existing installContext engine (index.ts:1211) on the CLI like its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive). No engine fork — the op calls installContext; writer-classified via the DEC-0006 ctx channel that context-init/context-accept-all already carry; remove or update its INTENTIONALLY_UNEXPOSED_WRITERS entry (ops-registry.ts:2171-2175). Makes the init -> accept-all -> install bootstrap fully scriptable from the CLI with no pi session. Closes FGAP-088.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "pi-context context-install appears in `pi-context --help` under Substrate lifecycle, and groupForOp does not throw for it.",
+        "Against a substrate after context-init + context-accept-all, `pi-context context-install --cwd <dir> --yes` creates <dir>/schemas/<name>.schema.json for every config.installed_schemas[] entry AND <dir>/<name>.json for every config.installed_blocks[] entry (each file exists on disk).",
+        "After that op, config.installed_from.assets is populated for every installed schema (install baseline recorded), byte-equivalent to what the /context install slash command produces (same installContext engine, no behavior fork).",
+        "A pure-CLI bootstrap context-init -> context-accept-all -> context-install (no pi session, no pi -p) yields a substrate where a subsequent `pi-context append-block-item --block tasks --cwd <dir>` succeeds — no 'nextId: schema not found' and no 'Block file not found'.",
+        "parity-check exits 0 with installContext reflected (its INTENTIONALLY_UNEXPOSED_WRITERS entry removed or updated to reflect the op); build + check + full test green.",
+        "docs-surface-sync done (the op description/promptSnippet + package & root README + SKILL regen); CHANGELOG [Unreleased] entry; FGAP-088 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "User-directed fix-task for FGAP-088 (the install ceremony has no reflected CLI op). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md; FGAP-030 is the resolution precedent (a command-only surface unreachable from the CLI resolved by adding the reflected op).",
+      "oid": "7892aea13d11264c22a417a0261a71bb",
+      "content_hash": "cf873f107074fe2ecdef7f4a82db716a8fd33afabcdcd73fb41d09f6220ea7c3",
+      "content_parent": "294a799ea4c79f2fee40c99c88378340278972921785cbf835110258b77b9042"
+    },
+    {
+      "id": "TASK-060",
+      "description": "Scope the PreToolUse enforcement hooks to the active substrate. Make .claude/hooks/gap-register-guard.sh and .claude/hooks/block-pi-context-glue.sh fire only when the write/invocation targets the active substrate — parse --cwd from the command string (default to the project cwd when absent), resolve .pi-context.json contextDir at that cwd, and guard only active-substrate targets; a write/invocation whose --cwd names a non-active/throwaway substrate passes. The not-installed block-substrate-cli-bypass.sh spec (analysis/2026-06-06-substrate-cli-bypass-prevention-hook-spec.md) is the resource-scoped recognizer pattern. Closes FGAP-089.",
+      "status": "cancelled",
+      "files": [
+        ".claude/hooks/gap-register-guard.sh",
+        ".claude/hooks/block-pi-context-glue.sh"
+      ],
+      "acceptance_criteria": [
+        "gap-register-guard.sh exits 2 (block) on an un-sentineled append-block-item --block tasks with no --cwd (active substrate).",
+        "gap-register-guard.sh exits 0 (pass) on the identical command with --cwd /tmp/<non-active> (a substrate whose .pi-context.json contextDir differs from the project's active contextDir).",
+        "block-pi-context-glue.sh exits 2 on a direct-drive violation (pipe to grep/jq/etc, redirect, or echo-$? glue) against the active substrate, AND exits 0 on the identical violation with --cwd /tmp/<non-active>.",
+        "Active-substrate behavior is unchanged: an un-sentineled active-substrate planning write still blocks; the same write with the `# provenance-reviewed` sentinel passes; reads and non-covered-block writes still pass (no regression).",
+        "End-to-end provable in the TASK-033 /tmp demo: `pi-context append-block-item --block tasks --cwd /tmp/<dir>` succeeds (no guard block), then `pi-context context-validate --cwd /tmp/<dir>` WARNS (not errors) on the unarticulated item.",
+        "FGAP-089 closed via verification_verifies_item + complete-task."
+      ],
+      "notes": "User-directed fix-task for FGAP-089 (enforcement hooks scoped by op-shape, not target-substrate). One of the two tasks that make the TASK-033 runtime demo completable as plain CLI. The hooks are local gitignored files; the criteria are testable by piping a synthetic tool_input JSON to each hook and checking the exit code. Grounding: analysis/2026-06-13-install-surface-and-guard-scope-gaps.md.",
+      "oid": "252e7091c59ee1f1c709c5454c8313b1",
+      "content_hash": "a45b41ac33b230edff95162217922eab72991d8032e1dcdda29ea50427852f22",
+      "content_parent": "ecccd9de154286da8d749280e382f41d8ee76e8fc7dfd4623810e8697c8d29c1"
+    },
+    {
+      "description": "Add three relation_types to the pi-context registry at BOTH loci (active .context config via amend-config --registry relation_types --operation add; and the packaged catalog packages/pi-context/samples/conception.json relation_types[] — the durable home, since mergeCatalogRegistries is additive catalog->config and a config-only add would not survive a fresh accept-all): decision_raises_gap (category data_flow, source_kinds [decisions], target_kinds [framework-gaps]); decision_gated_by_item (category ordering, source_kinds [decisions], target_kinds [*]); gap_relates_to_gap (category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]). Pure config/catalog addition, no .ts or schema change (the TASK-033 template: item_governed_by_convention was catalog-only). Resolves the expressibility half of FGAP-090. category is inert in code today (derivation selects edges by literal relation_type name, never reads category), so decision_gated_by_item:ordering is forward-looking vocabulary a future FGAP-061 deriver consumes by name; added now, valid, inert until that deriver lands.",
+      "status": "completed",
+      "acceptance_criteria": [
+        "read-config --registry relation_types lists all three with exactly: decision_raises_gap = {category data_flow, source_kinds [decisions], target_kinds [framework-gaps]}; decision_gated_by_item = {category ordering, source_kinds [decisions], target_kinds [*]}; gap_relates_to_gap = {category data_flow, source_kinds [framework-gaps], target_kinds [framework-gaps]}.",
+        "packages/pi-context/samples/conception.json relation_types[] contains the three entries with the same canonical_id/category/source_kinds/target_kinds; read-samples-catalog surfaces them.",
+        "A fresh /tmp substrate via context-init -> context-accept-all -> context-install carries all three relation_types.",
+        "context-validate on .context returns warnings-only with no new issue from the additions.",
+        "npm run build + check + full test pass with 0 failures."
+      ],
+      "id": "TASK-061",
+      "oid": "b5538a6800cd86ab6b94d2732b058a70",
+      "content_hash": "46fadfa0710db1bbef48a3c9722b0bb30a1bed5fb417c0a716b9e7dd0340b8eb",
+      "content_parent": "507e4a5ee43032fe8df84d184356d22da795b2b098453b9ce4a1a2353f099b2c"
+    },
+    {
+      "description": "Add a write-time edge kind/category validator. When an edge is written via appendRelationByRef (packages/pi-context/src/context-sdk.ts:1412) and appendRelationsByRef (:1549), check the parent item's kind against the relation_type's source_kinds and the child's against target_kinds (with the * wildcard) and the edge against the relation_type's category, and REJECT a mismatched edge at write with a clear error naming the offending endpoint kind and relation_type. This hoists the existing post-hoc kind check (validateContext, context-sdk.ts:1987-2021, FGAP-086/DEC-0037) to the write surface (the raw appendRelationsForDir, context.ts:649, cannot resolve endpoint kinds under the documented layering at context.ts:617-625). Presence-gate on source_kinds/target_kinds exactly as the validate-time check (context-sdk.ts:1990) so currently-passing writes are unaffected. Resolves the write-time-enforcement half of FGAP-090. Distinct from TASK-027 (ordering-edge endpoint-role DIRECTION, ordering-only; this checks source/target KIND + category across all relation_types).",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts"
+      ],
+      "acceptance_criteria": [
+        "A real append-relation CLI invocation writing an edge whose parent or child item kind is not in the relation_type's source_kinds/target_kinds is rejected at write with an error naming the offending endpoint kind + relation_type, and the edge is not persisted.",
+        "A kind-correct append-relation succeeds and persists the edge.",
+        "A relation_type with neither source_kinds nor target_kinds set is not rejected at write (the presence-gate at context-sdk.ts:1990 is preserved at the write surface).",
+        "Write-time and validate-time kind semantics agree: an edge the write rejects, validateContext (context-sdk.ts:1987-2021) would also flag; an edge the write accepts, validateContext does not flag for kind. The existing validateContext check is unchanged.",
+        "npm run build + check + full test pass with 0 failures; a fresh adversarial probe confirms no over-reject of presence-gated (unset-kinds) types and write/validate parity."
+      ],
+      "id": "TASK-062",
+      "oid": "d2774b32a86cec88a02c70b767ce5329",
+      "content_hash": "1fb21b4078e431b28d131aaccf453afbe2e03acd252faf5ebc137b14dd30b724",
+      "content_parent": "601f010d27a1abc25f1dedc875a9e5d0d0ba86084b614cb771cfbcc6d0a0f68d"
+    },
+    {
+      "description": "Apply FGAP-090's new vocabulary to correct the mistyped/absent edges (depends on TASK-A). In order: (1) File DEC-0018's true forcing artifact as a framework-gaps item — the problem that forced DEC-0018: pi-context update's post-loop registry propagation writes config.json even when a schema returns blocked, ungated on the schema-loop outcome (packages/pi-context/src/index.ts:1391-1421); this is the cause DEC-0018 ruled on (affirming per-component), distinct from FGAP-076 which is the legibility consequence DEC-0018 spawned. (2) Add a decision_addresses_gap edge DEC-0018 -> the new forcing gap, restoring genuine decision-cites-forcing-artifact satisfaction (cause, not consequence). (3) Retype the DEC-0018 -> FGAP-076 edge from decision_addresses_gap to decision_raises_gap via replace-relation — non-breaking once step 2 is in place. (4) Add a decision_gated_by_item edge DEC-0018 -> FGAP-076 (gated thing = parent, gate = child). (5) Add gap_relates_to_gap edges FGAP-090 -> FGAP-007 and FGAP-090 -> FGAP-061. Resolves the edge-correction half of FGAP-090 and repairs DEC-0018's backwards forcing-artifact citation. The step-1 forcing-artifact filing is its own provenance-stopped write.",
+      "status": "completed",
+      "acceptance_criteria": [
+        "A framework-gaps item is filed for DEC-0018's forcing problem (the ungated registry-write-on-blocked behavior, index.ts:1391-1421), distinct from FGAP-076; read-back-verified.",
+        "find-references DEC-0018 shows: decision_addresses_gap -> the new forcing gap; decision_raises_gap -> FGAP-076 (no longer decision_addresses_gap); decision_gated_by_item -> FGAP-076.",
+        "find-references FGAP-090 shows gap_relates_to_gap edges FGAP-090 -> FGAP-007 and FGAP-090 -> FGAP-061.",
+        "context-validate emits no decision-cites-forcing-artifact error for DEC-0018 and no new issue beyond the pre-existing baseline.",
+        "Every new edge is kind-correct under the relation_types' source/target_kinds and passes TASK-B's write-time validator where in place."
+      ],
+      "id": "TASK-063",
+      "oid": "8951f7d27ac9c6c539b24e8077bf0252",
+      "content_hash": "bdb26ed78266d986b2f25c75716942d444438312038468e35342212a1243cee0",
+      "content_parent": "ac3555f38494a8674fe9ca70e6d2c131ef010672425cf5423d28a06159e6ada1"
+    },
+    {
+      "description": "Backfill the warranted-but-absent closure-table edges that early tasks' filed text entails but that were never written — the concrete instances of FGAP-091's under-filing. The relation-graph completeness audit (analysis/2026-06-14-substrate-relation-graph-completeness-audit.md) enumerated: TASK-010 task_governed_by_decision -> DEC-0008 and task_addresses_gap -> FGAP-012; TASK-012 task_governed_by_decision -> DEC-0009 and task_addresses_gap -> FGAP-015; TASK-014 task_addresses_gap -> FGAP-014. First re-confirm the complete warranted-but-absent set via find-references against the items' filed text (including any symmetric sibling such as TASK-011), then write each absent edge via append-relation — each kind-correct, accepted by the write-time validator. Pure data backfill, no code. Partial addressing of FGAP-091 (the concrete missing edges; the forcing-function invariant is FGAP-091's separate residual).",
+      "status": "completed",
+      "acceptance_criteria": [
+        "The complete warranted-but-absent edge set is re-confirmed via find-references against the early tasks' filed text — the five audit-enumerated edges plus any symmetric sibling (e.g. TASK-011) — and every confirmed absent-but-entailed edge is included.",
+        "Each absent edge is written via append-relation and accepted as kind-correct: TASK-010->DEC-0008 (task_governed_by_decision), TASK-010->FGAP-012 (task_addresses_gap), TASK-012->DEC-0009 (task_governed_by_decision), TASK-012->FGAP-015 (task_addresses_gap), TASK-014->FGAP-014 (task_addresses_gap), plus any sibling confirmed in criterion 1.",
+        "find-references on each affected task shows the new edge(s); context-validate is warnings-only with no new issue beyond the pre-existing baseline."
+      ],
+      "id": "TASK-064",
+      "oid": "c841bd71e28725ff8d11ea2023957b30",
+      "content_hash": "7f8d8892130423cd1d3b6634df09a17a5d5239734fbb8692c84b82dc6d596199",
+      "content_parent": "edbb2e7c270cebd35a01b9ebbfcdaf450096c19f052f98adb061388784f4fbb9"
+    },
+    {
+      "description": "Extend `currentState` (packages/pi-context/src/context-sdk.ts:682-825) — the derivation behind context-current-state / `/context status` — so task readiness honors `task_gated_by_item` gates, not only `task_depends_on_task`. A planned task carrying a `task_gated_by_item` edge to a target NOT in the `complete` bucket must be reported blocked (target id in `blockedBy`) and excluded from `nextActions`; a gate target reaching the `complete` bucket releases the gate. Gate satisfaction reuses `bucket(target) === \"complete\"` via resolveStatusVocabulary (status-vocab.ts) — kind-general, the same mechanism the status-consistency invariant engine uses (context-sdk.ts:2186-2227); NOT a net-new completeness check. Both consumption sites fold gate parents: `blocked` (incompleteDeps→depParentsOf, :727-730/:742-751) and the `nextActions` topo predecessor function (:790). Scope is strictly the literal relation_type `task_gated_by_item`; `decision_gated_by_item` and non-task `*_gated_by_item` are inert (currentState buckets only tasks) and OUT of scope — the config-driven generalization is FEAT-004. NOW slice of FGAP-061.",
+      "status": "completed",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/skills/pi-context/SKILL.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "A planned (non-`complete`-bucket) task with a `task_gated_by_item` edge to a target NOT in the `complete` bucket is reported in `currentState().blocked` with that target id present in its `blockedBy`, and is absent from `nextActions`.",
+        "When the gate target reaches the `complete` bucket (gap→`closed`, decision→`enacted`, feature→`complete`, task→`completed`), the same task is reported ready (in `nextActions`, absent from `blocked`). Gate satisfaction is implemented as `bucket(target) === \"complete\"` via resolveStatusVocabulary — no kind-special-casing.",
+        "A task with BOTH `task_depends_on_task` and `task_gated_by_item`: `blockedBy` is the UNION of unsatisfied dep-parents and unsatisfied gate-targets; with no gate edges present, `currentState` output is byte-identical to current behavior (no regression to dependency derivation).",
+        "`nextActions` topo ordering excludes gate-blocked tasks — the topo predecessor function folds gate parents alongside dep parents (:790), so a gate-blocked task is never emitted as a next action.",
+        "A dangling `task_gated_by_item` target (id resolves to no item) is treated as satisfied (non-blocking), mirroring the dangling-dep guard (:732) — no throw, no block.",
+        "Scope confinement: `decision_gated_by_item` and any non-`task_gated_by_item` edge do NOT alter `currentState` output; the gate filter matches the literal `task_gated_by_item`.",
+        "A gate target in a terminal-abandoned status (`wontfix`/`superseded`/`cancelled`) keeps the gated task blocked (per criterion 2's `=== \"complete\"` rule); the `currentState` JSDoc (:674-680) documents this as the FEAT-004 refinement boundary.",
+        "New tests in `context-sdk.test.ts` (the `currentState` describe, :2604-2745, cloning the `task_depends_on_task` template at :2633-2678) cover: gate-blocked, gate-released-on-completion, cross-kind gate targets, dep+gate union, dangling gate target, terminal-abandoned gate target.",
+        "Gates green with full output (no pipe-to-tail): `npm run build`, `npm run check`, `npm test`. Runtime demo: real `context-current-state` (CLI) against a /tmp substrate showing a gated task as blocked, then ready after the gate target is completed — not a mocked assertion. Fresh-context adversarial probe on the gate logic (over-block, under-block, kind-leak into non-task gates, topo/`blocked` parity).",
+        "docs-surface-sync: extend the `currentState` JSDoc (:674-680) and the `context-current-state` op `description`/`promptSnippet` (ops-registry.ts:1154-1167) to state gate-aware readiness (usage-only, what it does); regen SKILL.md if the op string changed; add a CHANGELOG `[Unreleased]` entry.",
+        "`blockersOf` de-duplicates the dep+gate union, preserving discovery order (deps before gates): a target appearing in both the unsatisfied-dependency and unsatisfied-gate sets, or a redundant exact-duplicate `task_depends_on_task` edge, is listed once in `blockedBy`. Exact-duplicate edges are not producible through the write API (`appendRelations` skips an existing `(parent, child, relation_type)` triple, context.ts:649-663), so on every API-produced substrate this dedup is invisible and the single-edge no-gate path stays byte-identical to the prior derivation; on a hand-duplicated-edge substrate it collapses the redundant blocker to a single entry — a strict improvement, not a dependency-derivation regression."
+      ],
+      "id": "TASK-065",
+      "oid": "1e4bc7a01f1ffdce3e2cdacb812af97d",
+      "content_hash": "3b35f49dc4cc74625684b1419e456ce4ad5fa1699837530d5c60b535747ef926",
+      "content_parent": "c67106e074ef5fbc96df335a5a18bc6633bb5daa6508ed0b8fbbdd2e01596fdc"
+    },
+    {
+      "description": "Back-port the relation_types consumed by shipped pi-context derivations but missing from the packaged catalog packages/pi-context/samples/conception.json relation_types[] (the single source of truth): `task_gated_by_item` (already in live .context/config.json — catalog-only add) and `phase_depends_on` (in NEITHER catalog nor live config — add to BOTH; the config add via amend-config). Before adding `phase_depends_on`, confirm roadmap-plan.ts (which consumes it at :329/:505/:528) is shipped/reachable, not dead code — if dead, surface that as the finding instead of registering the relation. Update the samples-catalog.test.ts relation_type count pin (mirror TASK-061's 31→34 bump). Entry shape per existing catalog entries: {canonical_id, display_name, category, source_kinds, target_kinds}. NOW back-port slice of FGAP-094; mirrors TASK-061/TASK-033 (ship vocabulary in the catalog).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/samples/conception.json",
+        ".context/config.json",
+        "packages/pi-context/src/samples-catalog.test.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "read-samples-catalog lists `task_gated_by_item` and `phase_depends_on` in relation_types[] with the exact {canonical_id, display_name, category, source_kinds, target_kinds} shape (task_gated_by_item: ordering, tasks→*; phase_depends_on: per its roadmap-plan usage).",
+        "A fresh /tmp substrate (context-init → context-accept-all → context-install) carries both relation_types — the original FGAP-094 symptom resolved: a `task_gated_by_item` edge is writable on a fresh substrate (no write-time rejection).",
+        "Live `.context/config.json` carries `phase_depends_on` (added via amend-config); `task_gated_by_item` already present there is unchanged.",
+        "samples-catalog.test.ts relation_type count pin updated to the new total; build/check/test green; context-validate clean.",
+        "Edges: task_addresses_gap → FGAP-094; item_governed_by_convention → feature-branch-workflow."
+      ],
+      "id": "TASK-066",
+      "oid": "a67c8c765d626abab530ac88f14b33b8",
+      "content_hash": "1a6f8d342b6cb922c041246912a4b0b1ba6c567406a75f9a5824d66bdeb4ca7c"
+    },
+    {
+      "description": "Build-time forcing-function preventing recurrence of FGAP-094's catalog↔config vocabulary drift: a gate that mechanically enumerates the relation_types consumed by literal string in shipped packages/pi-context/src/** derivations (the AST-reading pattern scripts/parity-check.ts already uses) and asserts the catalog packages/pi-context/samples/conception.json relation_types[] ⊇ that consumed set; a non-empty difference exits non-zero naming the missing relation_types. Wire into .husky/pre-commit AND .github/workflows/ci.yml sequenced alongside the existing parity-check.ts / check-changelog.ts gates, with a unit test mirroring parity-check.test.ts. At that task's plan step, derive whether to extend parity-check.ts with an added check-category or add a sibling scripts/catalog-vocab-parity.ts (parity-check.ts is an extensible gate aggregator). Include the explicit record classifying each live-only relation_type substrate-local-vs-catalog-worthy with its derivation (endpoint blocks shipped? consumed by a shipped derivation?). FORWARD class-fix slice of FGAP-094; mirrors FGAP-010's scripts/parity-check.ts structural answer for the catalog↔config vocabulary surface. Depends on TASK-066 (the gate goes green once the back-port lands).",
+      "status": "planned",
+      "files": [
+        "scripts/parity-check.ts",
+        "scripts/parity-check.test.ts",
+        ".husky/pre-commit",
+        ".github/workflows/ci.yml",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "The gate enumerates the relation_types consumed by literal string across shipped packages/pi-context/src/** (at minimum the known sites context-sdk.ts:750/766/2457, roadmap-plan.ts:329/505/528, promote-item.ts:236) and asserts the catalog relation_types[] is a superset.",
+        "The gate FAILS (non-zero, naming the missing relation_type) on a catalog with a consumed relation_type removed (proven via a throwaway), and PASSES on the TASK-066-corrected catalog.",
+        "Wired into .husky/pre-commit and .github/workflows/ci.yml alongside the existing gates, with a unit test mirroring scripts/parity-check.test.ts.",
+        "An explicit substrate-local-vs-catalog-worthy classification record for each live-only relation_type is present, with the derivation; the relations not consumed by shipped src (session_touches_item, task_advances_story, feature_advances_story, decision_derived_from_item, decision_escalates_underdetermined) are documented as intentionally substrate-local.",
+        "build/check/test green; the new gate green; fresh-context adversarial probe confirming no false-negative (a consumed literal the enumeration misses) and no false-positive (flagging an intentionally-substrate-local relation).",
+        "Edges: task_addresses_gap → FGAP-094; task_depends_on_task → TASK-066; item_governed_by_convention → feature-branch-workflow."
+      ],
+      "id": "TASK-067",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "content_hash": "329214c5142297974efe6d087eed3f331885ef0881dcc33a0aa6f92ee2cbe1a5"
+    },
+    {
+      "status": "in-progress",
+      "description": "Make issues a gap-sibling first-class open-work kind: a task addresses an issue as it addresses a framework-gap; an open issue ranks and focuses in currentState as an open gap does; a completed task addressing an unresolved issue is invariant-flagged. Add the parity vocabulary in live .context config and the packaged catalog, plus two additive issue-schema fields. The deriver and lens-view are kind-general — change no deriver code. Preserve the divergences in criterion 7. Prerequisite for addressing issue-004 by a task.",
+      "acceptance_criteria": [
+        "relation_types task_addresses_issue (source tasks, target issues, data_flow) and issue_relates_to_issue (source/target issues, data_flow) registered in live config and samples/conception.json. A task_addresses_issue edge writes and passes context-validate-relations. A fresh accept-all substrate accepts the same edge.",
+        "Invariant task-completed-issue-resolved (severity warning) registered in live config and catalog. context-validate raises it for a completed task that task_addresses_issue an issue with status != resolved; silent when resolved.",
+        "state_derivation.next_ranked has an issues entry: kind issues, label issue, bucket todo, rank_field priority, rank_order [critical, high, medium, low], reason_template — in live config and catalog. currentState ranks an open issue in nextActions, ordered as an open gap. No deriver code change.",
+        "schemas/issues.schema.json gains additive optional resolved_at and an x-lifecycle block, in the live schema and catalog. Existing issue items validate unchanged.",
+        "Lenses issues-by-status and issues-by-priority registered in live config and catalog; bins project correctly.",
+        "A fresh init -> accept-all -> install substrate carries every new relation_type, invariant, lens, and schema field. No live-only vocabulary.",
+        "Unchanged: issues status labels (open/resolved/deferred), priority scale (low..critical), category facet, and the escalation-sink asymmetry (no decision_raises_issue or issue->missing-convention analogs).",
+        "build, check, test: 0 failures. Cross-substrate runtime demo on live .context and a fresh catalog substrate: a task addresses an issue; an open issue ranks and focuses in currentState as a gap; completing the task resolves the issue and the invariant is satisfied. Fresh adversarial probe: no live-only vocabulary, no deriver code change, additive-only schema, divergences intact."
+      ],
+      "files": [
+        ".context/config.json",
+        "packages/pi-context/schemas/issues.schema.json",
+        "packages/pi-context/samples/conception.json"
+      ],
+      "notes": "Addresses FGAP-098. Prerequisite for addressing issue-004 by a task. Catalog back-port interacts with FGAP-094, TASK-066, TASK-067.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "TASK-068",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "content_hash": "fa656149af7cf77c2b5a1061a3c8cf5b1939bd1692ce298d3dddc130fa35f86b",
+      "content_parent": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
+    },
+    {
+      "status": "completed",
+      "description": "Make the operator pi-context binary a publish-free local copy of the working tree, immune to dev builds. Today /opt/homebrew/bin/pi-context is an npm link symlink into packages/pi-context-cli/dist/, so npm run build (rm -rf dist && tsc) repoints and transiently removes the live operator binary. Retire the link; install the operator binary as a packed copy of the working-tree CLI + its @davidorex dependency set (current code, not the stale registry 0.31.0); add a promote:cli root npm-task fronting scripts/promote-cli.mjs (build, pack the set, install into the global prefix, verify a non-symlink copy), fitting the version:* / release:* composer convention. Scope: the binary coupling only — not the proving-ground harness, a CI gate, or schema-evolution work.",
+      "acceptance_criteria": [
+        "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+        "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+        "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+        "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+        "After a repo npm run build, pi-context --version exits 0.",
+        "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+        "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+        "No file under the repo instructs npm link for the operator binary.",
+        "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+        "The real-global prefix is resolved non-poisonably: an inherited npm_config_prefix (which `npm run promote:cli`, the documented invocation, always injects as the true global) does NOT divert the resolved or installed target — the `npm prefix -g` probe and the `npm i -g` install both run under an env with every npm_config_* scrubbed, so the resolved prefix reflects the true global regardless of any inherited value. The inherited prefix is NOT refused: refusing it would break the tool's own documented path and provide no protection the scrub does not, since npm's legitimate injection and a hostile override are indistinguishable at the env-var level.",
+        "Every global install or removal the promote performs acts only on the validated target prefix.",
+        "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+        "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+        "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context."
+      ],
+      "files": [
+        "package.json",
+        "scripts/promote-cli.mjs",
+        "packages/pi-context-cli/package.json",
+        "packages/pi-context-cli/README.md",
+        "README.md"
+      ],
+      "notes": "Addresses issue-004. Scope: the binary coupling only.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-19T00:00:00.000Z",
+      "id": "TASK-069",
+      "oid": "ff628bd9b604a36ace94cb5051df5fa8",
+      "content_hash": "9821d2c7073e228b4cf51ec6c552204b28d5acb776b22296e12ed93291267a59",
+      "content_parent": "2f6cb006b4aa1a3de505d904157cad44127f66147cde66b2a0eec6f148bc5bf2"
+    },
+    {
+      "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:564-581): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242). Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on version match it does not consult the registry.",
+        "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
+        "A config whose schema_version lags the bundled config schema by the real on-disk gap (1.0.0 → current) loads valid through the migrated path, carried forward in memory, with zero exit-5 brick — demonstrated by runtime reproduction on a scratch substrate, not by a version-matched no-op.",
+        "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts:64-68), the migrations.schema.json TransformOp oneOf, and applyOp (migration-registry-loader.ts), with two declared modes: table mode (`path` + `table` [+ `fallback`]) replaces each string element of the array at `path` by table[element], or by {relation_type: element, item_endpoint: fallback} when unmatched, with non-string elements passing through unchanged; and set-on-each mode (`path` + `field` + `value`) sets element[field]=value on each object element of the array at `path`. A migration step exercising each mode transforms the array elements at `path` accordingly, verified against a fixture.",
+        "A current-version config (schema_version equal to the bundled schema version) loads byte-unchanged: no migration applied, registry not consulted.",
+        "TASK-070 is recorded as the config instance of FEAT-010; its scope is the config instance, not the block-data class."
+      ],
+      "files": [
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/src/migrations-store.ts",
+        "packages/pi-context/src/migration-registry-loader.ts",
+        "packages/pi-context/schemas/migrations.schema.json",
+        "packages/pi-context/samples/migrations.json",
+        ".context/migrations.json"
+      ],
+      "notes": "Design: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (+ -design-feasibility, -proposal-validation).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "TASK-070",
+      "oid": "dbf5c76b88715ea39a31807b0ea1076c",
+      "content_hash": "05bd6d48e2931f1afb53712c45e3c2e3c7938248835bf7174ce56078c433f5a4",
+      "content_parent": "7d70f0eaf2f192fd341984f23a7f3eb3226715ca3a3fb9c3406b444735d5869d"
+    },
+    {
+      "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
+        "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
+        "Both the version-gap subset and the no-version-delta invalidity are recoverable.",
+        "The repair is a `force`/`repair` mode of the existing amend-config op — the same config write, mirroring its existing dryRun opt (context.ts:1229): it skips the pre-load validation (context.ts:1251) and relies on amend-config's existing pre-write result-validation (block-api.ts:892-895). It is an opt on amend-config, not a separate recover op: config-repair is a validation-skip mode of an existing write, not a missing library capability, so the opt is derived from the existing amend-config surface."
+      ],
+      "files": [
+        "packages/pi-context/src/context.ts"
+      ],
+      "notes": "Repair mechanism is DERIVED from the existing op surface, not deferred to a DECISION. Derivation: amend-config already mutates config and validates the RESULT before write (block-api.ts:892-895); the only thing blocking repair is its pre-load validation (context.ts:1251); and amend-config already carries an opt (dryRun, context.ts:1229). So config-repair is a validation-skip mode of amend-config — an opt on the existing op, not a separate recover op (which would duplicate amend-config's mutate+validate flow for a capability that is not missing). No DEC and no task_governed_by_decision edge; the choice is determined by the existing amend-config surface (derive-decisions 1b — an existing surface/convention).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "TASK-071",
+      "oid": "9997db7b2791579a7095031fcb1fd7bb",
+      "content_hash": "f77f06a4e36af6d9d70178182d4f52245009c59b4122e624fc6b66d37c5e5967",
+      "content_parent": "1f889416bbd20f7fcde9a9fecb567fa7d008a00c942196157eb18a38ebe2aefa"
+    },
+    {
+      "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A non-additive config.schema.json diff absent a paired migration fails the build-time gate.",
+        "An additive diff (a new optional field) passes the gate.",
+        "New config fields land optional; a field removal or rename is gated to a contract release."
+      ],
+      "files": [
+        "scripts/parity-check.ts",
+        "scripts/parity-check.test.ts",
+        ".husky/pre-commit",
+        ".github/workflows/ci.yml",
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "notes": "Build-time-gate family with FGAP-094 (TASK-067).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "TASK-072",
+      "oid": "ad21875be7c7e6360f2508db948c8b06",
+      "content_hash": "59b79ac4dfb0dafeceaeb65f0bc47d7e107ef2f9fe19d83609779672cf3350c2",
+      "content_parent": "0d2a9579dadbe7b68acaebee49245ee3ec6587b43cd00f1d8814eeb87e5e26bb"
+    },
+    {
+      "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
+      "status": "planned",
+      "acceptance_criteria": [
+        "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
+        "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
+        "Read hook fires on the envelope: with the envelope `schema_version` present, the read-time hook (block-api.ts:785-789) no longer short-circuits on its absence and routes the whole block through validateBlockWithMigrationForDir; demonstrated by a real read-block that exercises the hook, not a mocked assertion.",
+        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO registered migration the gate throws (schema-validator.ts:234-236) — a read-gate throw fails the read, and a write-gate throw rejects the write leaving the block file byte-unchanged (no partial write). Both branches, with their per-gate post-state, are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
+        "The new field reaches already-installed substrates, not only the samples catalog: the envelope `schema_version` property is added to the installed schema bodies of existing substrates via the install/update path, not only to samples/schemas/; an already-installed substrate's blocks carry and validate the version after update."
+      ],
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/samples/schemas/"
+      ],
+      "notes": "Stamp location is the block envelope (top-level schema_version), derived: the read/write hooks already key on envelope.schema_version (block-api.ts:785-789, 1758-1767). Not a deferred DECISION.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "TASK-073",
+      "oid": "939639ac37a9d806ae06b1940a5eba13",
+      "content_hash": "3d840df424a579930d134f3eac5731cacd204fe60f7cf89f9a4364381cc8dceb",
+      "content_parent": "78096484a31ebc34bd94bafb36755ad3eb0221372be9c23e08a8be3cc9e99461"
+    },
+    {
+      "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A substrate whose config declares a block kind with no data file reports not-installed (context-bootstrap-state → not-installed, missing.blocks:[<kind>]); the op materializes the block's <kind>.json data file via the install starter-copy path; context-bootstrap-state then reports ready.",
+        "Missing block data files are materialized on any post-install currency op, not only update: (a) a standalone materialize/repair op materializes the findUnmaterializedAssets missing.blocks[] set for an already-installed substrate; (b) update materializes a catalog-added block kind's data file (closing update's current schemas+registries-only gap, updateContext index.ts:1818-2151); (c) the install/re-install path materializes a declared-but-absent block (installContext index.ts:1299-1357 — the install-ceremony surface that produced the live milestone not-installed state, commit 038c2dc). --dryRun previews each without writing.",
+        "The materialized block is writable: append-block-item --autoId succeeds against the newly created <kind>.json.",
+        "The materialize op routes every block-data write through the install path's FGAP-029 preservation guard (installContext index.ts:1313-1336) — a populated block is preserved, a block that cannot be read or confirmed empty is treated as populated and never overwritten, and only a genuinely absent <kind>.json is created; the op writes via no path that bypasses this guard. Demonstrated: running the op against a substrate with a populated block reports it preserved and leaves its items byte-unchanged."
+      ],
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts"
+      ],
+      "notes": "Unblocks milestone activation.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "TASK-074",
+      "oid": "ce4303169c9cd7665f108909671f0f89",
+      "content_hash": "9cc2b0b9a8f0dc2440554026c26eb8350996fd0aa6e77ef38b6a8d489bfbfebd",
+      "content_parent": "5bb2db3ca15d18573c6f64ec3c3c57b95db7b8dd77edc5bff17ed227035f5a17"
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "title": "No op materializes a newly-declared block's data file into an already-installed substrate — neither update nor the install-ceremony write that declared it (a dangling block_kind declaration)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A block_kind added to the catalog after a substrate was installed leaves that substrate with a dangling declaration: config declares the kind and its schema may be present, but its data file is never created, and no op materializes it. updateContext propagates schemas + config-registries only and contains zero block-data-file operations (index.ts:1818-2151; mergeCatalogRegistries scope is the four keyed-array registries relation_types/invariants/block_kinds/lenses, while installed_schemas/installed_blocks are out of scope). installContext materializes block data files only for the install-time installed_blocks set (index.ts:1299-1357). No materialize/ensure/repair-blocks op exists. context-bootstrap-state defines installed as every installed_blocks entry having its data file on disk (context-sdk.ts:397-413; findUnmaterializedAssets context.ts:612-620), so a declared-but-unmaterialized block forces state not-installed. Live triggering instance: the milestone block_kind is in config.block_kinds + installed_blocks and .context/schemas/milestone.schema.json is present, but .context/milestone.json was never created (the install-ceremony closure commit 038c2dc wrote config + schema + object-store only), so context-bootstrap-state reports not-installed with missing.blocks:[milestone] and the milestone kind is unusable (append-block-item --autoId throws on the absent data file). General class: catalog evolution (a new block_kind / schema / vocabulary) has no propagation path to bring an already-installed substrate current — sibling of FGAP-094 (relation_type drift) and FGAP-095/096/097/099 (config/block schema-evolution: load-time migration, repair path, expand-contract discipline, schema_version envelope).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "397-413",
+      "reference": "deriveBootstrapState: state not-installed iff missing.blocks non-empty"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "612-620",
+      "reference": "findUnmaterializedAssets: a block is missing iff <root>/<name>.json absent (installedBlockDestPath 599-602)"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1299-1357",
+      "reference": "installContext materializes block data files only over the install-time installed_blocks set"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1818-2151",
+      "reference": "updateContext: schemas + config-registries only (mergeCatalogRegistries 2118-2148); zero block-data-file operations"
+    },
+    {
+      "file": ".context (git 038c2dc)",
+      "reference": "the install-ceremony closure wrote .context/config.json + schemas/milestone.schema.json + object store; NOT .context/milestone.json — the live not-installed origin"
+    },
+    {
+      "file": "analysis/2026-06-20-active-substrate-not-installed-rootcause.md",
+      "reference": "full investigation: detector trace, install/update source, live repro, prior-art + class"
+    }
+  ],
+  "impact": "Any catalog-added block kind silently bricks the bootstrap signal of every pre-existing substrate: context-bootstrap-state reports not-installed though the substrate is fully usable for its existing blocks, and the new block kind cannot be filed to (its data file does not exist). The canonical 'is this substrate installed' signal lies to every consumer — operator, CI gate, fresh-checkout bootstrap check, readiness-verifying agent. Live on .context since 2026-06-16 (the milestone declaration).",
+  "canonical_vocabulary": "block_kind materialization on update (schema + starter, not just declaration)",
+  "proposed_resolution": "Provide a sanctioned op that materializes any declared-but-absent block data file into an existing substrate (the missing.blocks[] set from findUnmaterializedAssets), copying the catalog starter via the install path — invoked by update for catalog-added block kinds AND available standalone as a repair/materialize op; surfaced + previewed by --dryRun. Scope is broader than update: the milestone live state was produced by the install-ceremony declaration write, not by update, so the fix is to materialize missing block files on any post-install currency op, not only on update. Verification: a substrate whose config declares a block kind with no data file reports not-installed, the op materializes <kind>.json, and context-bootstrap-state then reports ready."
+}

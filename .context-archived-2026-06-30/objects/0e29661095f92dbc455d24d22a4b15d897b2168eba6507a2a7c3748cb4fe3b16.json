@@ -1,0 +1,25 @@
+{
+  "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "No surface reports which item id, field, and constraint cause a block's items to fail a schema. update's resyncSchema discards the AJV error at an unbound catch (index.ts:622), returning a bare {status:blocked}. context-validate runs referential-integrity + invariant checks only, not per-item schema validation. No op validates a block's items against a target schema and returns the failures. The AJV detail is fully present at the throw site (allErrors:true; instancePath, keyword, params, message) and dropped. An operator facing a blocked schema must hand-validate the block against the catalog schema to learn what failed.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "622",
+      "reference": "resyncSchema's catch is unbound — the thrown ValidationError carrying errors[] is discarded; returns {status:blocked, registeredMigrations:[]}"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "reference": "validate compiles with allErrors:true and throws ValidationError holding the full per-item AJV errors[] (instancePath/keyword/params/message)"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "validateContext checks edge referential integrity + config-declared invariants only; it never AJV-validates block items against their schemas"
+    }
+  ],
+  "impact": "A blocked schema is opaque: the operator cannot see which item or field failed, cannot distinguish a real invalid item from a migrate/validate fault, and must reverse-engineer the failure by hand-validating the block.",
+  "canonical_vocabulary": "per-item schema-validation diagnostic",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

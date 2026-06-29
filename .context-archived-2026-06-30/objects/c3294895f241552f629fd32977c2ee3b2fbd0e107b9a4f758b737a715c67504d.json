@@ -1,0 +1,25 @@
+{
+  "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "On a blocked schema update writes nothing into the block: the failure is visible only in a CLI report, and the blocked contract leaves the block byte-unchanged (index.ts:491-508). The operator opens the block and sees no marking of the offending items or fields.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "491-508",
+      "reference": "the byte-unchanged blocked contract — the block is never written on the blocked path"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "writeBlockForDir is the whole-block writer; identity-stamping recomputes content_hash and pre-write AJV rejects non-schema marker fields, so in-file markers are not free"
+    },
+    {
+      "file": "packages/pi-context/src/object-store.ts",
+      "reference": "putObject/getObject — the as-installed block/schema body is recoverable, so 'no damage' can hold without 'never written'"
+    }
+  ],
+  "impact": "A blocked schema's failures are not visible at the point of fix — in the block file — only in a separate report the operator must cross-reference by hand.",
+  "canonical_vocabulary": "in-file failure markers",
+  "proposed_resolution": "git-merge-style failure markers written into the block at the offending items/fields, with the pre-marker block recoverable from the object store. This supersedes the byte-unchanged blocked contract with a marker-mode (the operator's git model: markers in-file, fix, resolve via the blocked resolution loop). Pairs with the blocked resolution loop and DEC-0018."
+}

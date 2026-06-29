@@ -1,0 +1,13 @@
+{
+  "description": "FEAT-006 T5 — config-registry propagation. On update, additively merge catalog-new config-registry entries (relation_types, invariants, block_kinds, lenses) that are ABSENT from the existing substrate config into it, preserving the user's existing/modified registries; surfaced in output and previewed by --dry-run. Independent of the schema-merge slices (disjoint seam: the installContext config spread, the FGAP-060 site). Closes FGAP-060.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/context.ts"
+  ],
+  "acceptance_criteria": [
+    "[subagent] update additively merges catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) absent from the existing config; it never removes or overwrites a user-present entry.",
+    "[orchestrator] an existing substrate gains the new catalog vocabulary on update; user-added/-modified registry entries are untouched; --dry-run lists the additions and writes nothing (closes FGAP-060).",
+    "[orchestrator] build + check + full test pass; runtime demo (existing substrate + a catalog carrying new entries -> entries appear, customizations intact)."
+  ]
+}

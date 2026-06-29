@@ -1,0 +1,17 @@
+{
+  "description": "Surface the per-item validation diagnostic on update's blocked path + as a standalone op — closes FGAP-077. Bind the ValidationError resyncSchema's unbound catch discards (index.ts:622): map each AJV error's instancePath (/<arrayKey>/N) to the item id, thread {item id, field, keyword, params, value} per failing item into the update result's blocked entry (structured + CLI text), distinguish the no-chain block from the validation block, and expose the same returns-not-throws per-item validator as a standalone op (validate a block's items against a target schema version -> per-item failures). Builds on TASK-046's in-memory migrate+validate helper.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "acceptance_criteria": [
+    "A blocked schema's update result names, per failing item: item id, field, violated constraint (keyword+params), and value — on both the structured result and the CLI text surface.",
+    "A no-chain block is reported distinctly from a validation block (the version gap + no chain, vs the per-item failures).",
+    "A standalone reflected op validates a named block's items against a target schema version and RETURNS the per-item failure list (no throw, no write); unknown block/version -> field-named error + non-zero exit.",
+    "resyncSchema's rollback behavior is byte-identical (the diagnostic is read-only reporting; schema/block/migrations.json untouched on blocked).",
+    "build + check + full test green; parity-check exit 0; runtime demo on a seeded blocked substrate; fresh adversarial probe.",
+    "FGAP-077 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-077; advances STORY-001/002/003/004/005/009. Depends on TASK-046 (the shared in-memory migrate+validate primitive). Grounding: analysis/2026-06-10-update-blocked-diagnostic-task-DRAFT.md user stories + R-0012."
+}

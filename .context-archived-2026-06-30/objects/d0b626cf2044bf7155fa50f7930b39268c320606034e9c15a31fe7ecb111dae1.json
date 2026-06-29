@@ -1,0 +1,24 @@
+{
+  "title": "Catalog schema is not locally diffable — no surface yields the schema body, only a projection",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No surface yields the catalog schema body for local diff against an installed schema. read-samples-catalog returns a projection (title, item-shape, relations, invariants, lenses), not the raw JSON Schema (no properties/definitions/$id). The catalog lives under the package at samples/schemas/*.schema.json, i.e. node_modules/@davidorex/pi-context/samples/schemas/ when installed as a dependency.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/samples-catalog.ts",
+      "reference": "buildSampleKind re-projects each schema to title + item-shape; the raw schema body (properties/definitions/$id) is not emitted"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resolveCatalog resolves samplesRoot one dir up from the compiled module — node_modules/@davidorex/pi-context/samples/ when installed as a dependency"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "installedSchemaDestPath writes the installed schema at <substrate>/schemas/<name>.schema.json — the local diff target"
+    }
+  ],
+  "impact": "To diff an installed schema against the catalog, the operator must open the package's samples/schemas/ inside node_modules; the reflecting CLI exposes no catalog schema body.",
+  "canonical_vocabulary": "catalog schema local access",
+  "proposed_resolution": "A fetch op emitting the catalog body (path.join(samplesRoot, kind.schema_path), or the object-store base body via getObject). No sidecar."
+}

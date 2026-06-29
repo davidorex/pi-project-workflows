@@ -1,0 +1,12 @@
+{
+  "description": "Broaden the rhetorical-register checkpoint guard and clean the existing violating context atoms. Closes FGAP-074. Two parts: (1) extend the register-checkpoint hook (.claude/hooks/, currently framework-gaps-only) to cover append AND update/closure writes for tasks, verification, decisions, issues, research, features, and framework-gaps; exclude session-notes. (2) Rewrite every existing violating block body (the ~118 items in the FGAP-074 audit) to declarative current-truth per rhetorical-register, preserving all load-bearing content.",
+  "status": "planned",
+  "files": [
+    ".claude/hooks/gap-register-guard.sh",
+    ".claude/settings.local.json"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Closes FGAP-074. The guard is a review-checkpoint forcing-function (@file-agnostic); broadening changes only the block/op match-set + adds update/closure coverage. Cleaning is a per-item declarative rewrite preserving substance; session-notes excluded (rule 6). Audit baseline: analysis/2026-06-09-rhetorical-register-block-audit.md."
+}

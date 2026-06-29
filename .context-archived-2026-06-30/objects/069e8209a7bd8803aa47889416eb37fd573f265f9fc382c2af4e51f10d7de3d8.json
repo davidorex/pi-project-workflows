@@ -1,0 +1,11 @@
+{
+  "description": "FEAT-006 T4 — conflict resolver. Route the typed conflict set from TASK-036 to a resolver: a pi-bound agent mergetool — dispatch a bounded pi-bound session granted read-schema + write-schema, feeding (base, ours, theirs); the agent proposes a reconciled schema and writes it via write-schema, forced through the existing dryRun + auth-gate (non-interactive refuses) — with graceful fallback to a rendered conflict report {path, base, ours, theirs} when no interactive/credentialed pi is available. The schema is left unmodified on the report path; the rest of the update proceeds either way. No change to auth-gate or pi-bound internals (grant + dispatch only). Depends on TASK-036; governed by DEC-0017.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context-cli/src/pi-bound.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

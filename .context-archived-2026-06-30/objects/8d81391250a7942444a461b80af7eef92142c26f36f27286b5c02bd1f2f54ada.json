@@ -1,0 +1,9 @@
+{
+  "title": "pi-context git merge driver (+ post-merge integrity pass) — structure-aware 3-way merge of substrate files under git",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "A custom git merge driver (registered via .gitattributes + a [merge \"pi-context\"] driver entry) that performs structure-aware per-file 3-way merge of substrate files (<block>.json, relations.json, config, schemas) from git's %O/%A/%B — items by stable id/oid, edges as a set, ordered ref-fields via the convergent sequence field-type, config/schema — writing a data-model-valid result; plus a post-merge hook / merge-finalize command for cross-block referential integrity + invariant/lens revalidation. Git keeps branches, merge-base, refs, cherry-pick. Per DEC-0004.",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

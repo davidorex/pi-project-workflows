@@ -1,0 +1,16 @@
+{
+  "description": "CLI output + error-shaping layer. Closes FGAP-020 (addressed read returns the full subtree CLI-side via an addressedReadOverride helper that re-runs the read with structureForRead({whole:true}), bypassing collection-paging, still 50KB-capped — does NOT touch the op), FGAP-021 (--format text|json|table render dispatch, lifting the scripts' renderTable/renderTerse bodies into a CLI render module), and FGAP-023 (AJV ValidationError translation in the cli.ts catch via a lifted formatAjvError). All at the cli.ts emit/catch region (~:504-518) + a new CLI render/helper module in-pi dispatch never touches.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context-cli/src/render.ts (new CLI render/helper module)"
+  ],
+  "acceptance_criteria": [
+    "FGAP-020 closed: read-schema / read-config --path at an object node returns the full subtree from the CLI (matching the orchestrator script), op unchanged",
+    "FGAP-021 closed: --format selects a human render for ops whose script twins offer one",
+    "FGAP-023 closed: AJV validation errors surface field-named guidance, not the raw .message",
+    "In-pi ops byte-unchanged",
+    "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: cli-parity (NEXT) | order 2/5 | addresses FGAP-020, FGAP-021, FGAP-023 | categories: CLI-only-shared-helper + CLI-post-call (R-0003)"
+}

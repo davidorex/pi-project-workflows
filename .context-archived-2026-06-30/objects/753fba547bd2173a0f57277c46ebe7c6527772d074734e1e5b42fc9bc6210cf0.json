@@ -1,0 +1,11 @@
+{
+  "description": "Implement pi-context pi-bound per analysis/2026-06-07-pi-context-pi-bound-cli.md: a CLI process mode that launches an interactive pi session bound to the composed extension tool surface, reproducing scripts/launch-constrained-pi.sh.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context-cli/src/bin.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

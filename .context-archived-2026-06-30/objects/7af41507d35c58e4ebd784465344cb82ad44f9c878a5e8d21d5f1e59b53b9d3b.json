@@ -1,0 +1,24 @@
+{
+  "title": "gap-arc-coherence is a review convention but unenforced — no invariant catches an unbound gap, so flat-list drift recurs silently",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The gap-arc-coherence convention (conventions.rules) mandates that every framework-gap is bound to a feature-arc or explicitly standalone, but it is enforcement:review only — nothing in context-validate catches an identified gap that shares a surface with sibling gaps yet carries no feature/task binding. The flat-list drift the convention exists to prevent (a cluster of same-surface gaps accreting unbound, half lacking priority, the arc tracked only in prose) therefore recurs silently until a human audit notices. The framework already has the enforcement machinery: FEAT-007's convention-articulation invariants are config-only requires-edge checks (item_governed_by_convention / item_acknowledges_missing_convention on decisions/features/tasks, three requires-edge invariants, no validator code change). The same pattern can enforce gap-arc-coherence's rule 1 for framework-gaps. This is the durability mechanism FEAT-007's governance-enforcement arc is missing for gaps specifically — adjacent to FEAT-007, not covered by it (FEAT-007 enforces item->convention citation; this enforces gap->feature binding).",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "gap-arc-coherence rule 1 ('a gap is bound to an arc or explicitly standalone — never an unbound member of a cluster') is enforcement:review, severity:error — a review aspiration, not a checked precondition"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "FEAT-007's working pattern: relation_types item_governed_by_convention + item_acknowledges_missing_convention (source decisions/features/tasks) + three requires-edge invariants enforce convention articulation config-only; the same shape can require a framework-gap to carry gap_addressed_by_feature / task_addresses_gap OR an explicit standalone-acknowledgment edge"
+    },
+    {
+      "file": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md",
+      "reference": "the FEAT-008 reconciliation episode is the worked example: ten same-surface gaps accreted unbound across two vintages, half lacking priority, the arc tracked only in an audit MD + a CLAUDE.md note — exactly what an enforced rule 1 would have caught at filing"
+    }
+  ],
+  "impact": "Governance of gap organization depends on a human noticing, not on the validator. Same-surface gaps can accrete unbound indefinitely (item counts only grow), so the substrate drifts back to a flat, mixed-vintage list between audits — the failure gap-arc-coherence was written to end, left unguarded.",
+  "canonical_vocabulary": "gap-arc-binding invariant (a gap is feature-bound, task-addressed, or explicitly standalone)",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

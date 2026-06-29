@@ -1,0 +1,21 @@
+{
+  "title": "pi-context-cli does not declare @davidorex/pi-project-workflows; --pi-bound meta-resolution fails from a registry install",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "pi-context --pi-bound resolves the meta-package install root via require.resolve('@davidorex/pi-project-workflows/package.json') to run pi install -l <root> and read its bundled skills/*/SKILL.md. pi-context-cli's dependencies are @davidorex/pi-context and typebox only, so the meta-package resolves only via the in-repo workspace symlink, not from a globally or registry-installed CLI.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/package.json",
+      "lines": "35-38",
+      "reference": "dependencies are @davidorex/pi-context + typebox; @davidorex/pi-project-workflows is absent"
+    },
+    {
+      "file": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
+      "reference": "--pi-bound resolves the meta root via require.resolve('@davidorex/pi-project-workflows/package.json')"
+    }
+  ],
+  "impact": "From a registry or global install, --pi-bound's meta-path resolution and the downstream pi install -l + SKILL.md tool-union glob fail; the capability works only in-repo via the workspace symlink.",
+  "canonical_vocabulary": "declared dependency for runtime module resolution",
+  "proposed_resolution": "Declare @davidorex/pi-project-workflows at the lockstep version range in pi-context-cli dependencies so require.resolve succeeds from an installed CLI; verify against a published-package smoke test."
+}

@@ -1,0 +1,6 @@
+{
+  "title": "resolve-blocked / update --continue re-validates + advances",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, when I've fixed the in-file markers for a blocked schema, I expect a single command — resolve-blocked or update --continue — that re-validates the block against the target schema, advances the merge base, and writes the new schema file. The git model: fix conflicts → git add → git merge --continue."
+}

@@ -1,0 +1,11 @@
+{
+  "description": "Make pi-context update --dryRun predict the precise catalog-ahead outcome — closes FGAP-066. In updateContext's catalog-ahead dry branch (packages/pi-context/src/index.ts:1239-1262), replace the unconditional `resynced` push with a READ-ONLY simulation of the live resync: find the catalog migration chain, forward-migrate the populated block in memory, and AJV-validate the migrated items against the new schema, classifying the schema as resynced / migrated / blocked exactly as the live resyncSchema (:599-641) would — without writing. Report migrationsRegistered only for non-blocked outcomes (a live blocked run rolls the decls back). Dry and live outcomes must be identical for every catalog-ahead schema.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Closes FGAP-066. Scope is the dry-branch faithfulness only — the live path (resyncSchema) is already correct. Empirical grounding + reproduction: R-0012 / analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md. The registry-propagation-on-blocked transactional question is a SEPARATE finding (a decision + a legibility gap), not this task."
+}

@@ -1,0 +1,6 @@
+{
+  "title": "Per-blocked-schema: item id, field, constraint",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want update to report, per blocked schema, which item id failed, on which field, against which constraint — so I can act without diffing schemas and hand-auditing the block."
+}

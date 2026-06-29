@@ -1,0 +1,61 @@
+{
+  "title": "Safe catalog re-sync (FGAP-029): structure-aware reconciliation reusing the migration registry + content_hash, sliced; unified with the git-merge engine (FGAP-004/005)",
+  "status": "enacted",
+  "context": "FGAP-029 (P0): /context install --update copyFileSync-overwrites installed_blocks[] with empty catalog starters, deleting all filed items; and stale installed schemas have no safe re-sync because the only mechanism (--update) is the destructive one. A web-cited prior-art survey (analysis/2026-06-05-install-update-resync-prior-art.md) compared template reconcilers (copier/cruft), DB migration frameworks (Flyway/Alembic/Django), declarative reconcilers (kubectl SSA/Terraform/Helm), and config managers (dpkg/npm). Best-of-breed pattern: separate model-resync from user-data; record a version baseline + detect drift; forward-migrate rather than copy-overwrite; always preview, never overwrite user-owned content without consent. pi-context already ships the two hard pieces — a migration registry (migrations.json / validateBlockWithMigration) AND a content fingerprint (content_hash); the only missing primitive is a recorded install baseline. The same structure-aware 3-way merge is also the unimplemented git-merge driver (FGAP-004 + FGAP-005, DEC-0004/0005): branch-merge reconciles git %O/%A/%B; catalog-resync reconciles install-baseline / installed / catalog — the same engine on different inputs.",
+  "decision": "Adopt the structure-aware reconciliation (survey Option B) reusing the existing migration registry + content_hash, implemented as targeted well-scoped ASCENDING slices, each through the full canonical pipeline, with ONE release after the whole plan completes (not per slice): S1 stop-the-bleeding (--update never overwrites a populated block; only schemas honor overwrite); S2 install baseline (installed_from + catalog_version + per-asset content_hash = the merge-base primitive); S3 --plan/drift detector (read-only preview); S4 schema re-sync via the migration registry (forward-migrate, not copy) which also propagates the genericized catalog descriptions into installed dirs (cleaning this repo's .context/schemas/ FGAP-028 residual safely and resolving the layer-plans 1.0.0->1.0.1 skew). The full 3-way merge engine (S5-S7) IS FGAP-004 + FGAP-005 — designed and built as ONE engine serving both catalog-resync and git-merge, deliberately not over-decomposed up front (avoids a likely-to-fail monolith). Mandatory substrate safety protocol for any runtime demo touching real state: back up live .context, work on a duplicate, promote to .context only via a separate user-approved rename. Docs (package + monorepo README, SKILL via skill-narrative.md) are usage-only; bug/fix framing lives only in the CHANGELOG; every slice carries its own [Unreleased] entry.",
+  "options_considered": [
+    {
+      "label": "A — migration-driven schema re-sync + never-overwrite-populated-blocks + --plan",
+      "description": "Reuse the migration registry for schema evolution; blocks are user-data, never overwritten when populated; a --plan/--check preview. Highest reuse, smallest new surface (one baseline field + a plan/refuse pass).",
+      "tradeoffs": "Does not do block-item-level catalog<->user reconciliation (not needed for the stated problem).",
+      "rejected_reason": "Not rejected — adopted as the near-slice basis (S1-S4); A IS the minimal correct core."
+    },
+    {
+      "label": "B — full content_hash 3-way merge engine",
+      "description": "content_hash/oid 3-way merge over baseline/installed/catalog (and the same engine over git %O/%A/%B for FGAP-004).",
+      "tradeoffs": "Most powerful; the engine is the big effort and unifies with FGAP-004/005.",
+      "rejected_reason": "Not rejected — chosen as the unifying engine (S5-S7 = FGAP-004/005), built once after the A-flavored near-slices de-risk it."
+    },
+    {
+      "label": "C — version-skew detector only",
+      "description": "Record a baseline and warn on drift; no auto-fix.",
+      "tradeoffs": "Safest, smallest; but does not actually re-sync.",
+      "rejected_reason": "Folded into A as the S3 --plan/--check preview rather than shipped as a standalone half-measure."
+    }
+  ],
+  "consequences": [
+    "S1: /context install --update never overwrites a populated block; only schemas honor --update; empty/absent blocks unchanged. Kills the P0 data-loss.",
+    "S2: install/accept-all record an install baseline (installed_from + catalog_version + per-asset content_hash) in config.json — the merge-base both catalog-resync and FGAP-004 consume.",
+    "S3: a read-only --plan reports installed-vs-catalog drift and what a re-sync would change.",
+    "S4: installed schemas re-sync through the migration registry (forward-migrate items), not blind copy; running it on this repo cleans .context/schemas/ of the FGAP-028 leaked descriptions with zero data loss and resolves the layer-plans version skew.",
+    "S5-S7 = FGAP-004 + FGAP-005: one structure-aware 3-way merge engine serves both git-branch merge and full catalog reconciliation — build the merge core once.",
+    "FGAP-029 closes after S4 (it covers BOTH the data-loss and the no-safe-schema-resync), not after S1.",
+    "Release is a single release after the whole plan (S1-S4); each slice is independently pipelined + committed but not released.",
+    "Any substrate-mutating runtime demo uses the backup / duplicate / user-approved-promotion protocol; the live .context is never the test target."
+  ],
+  "references": [
+    {
+      "label": "prior-art survey (the analysis behind this decision)",
+      "path": "analysis/2026-06-05-install-update-resync-prior-art.md"
+    },
+    {
+      "label": "the data-loss gap this decides",
+      "path": ".context/framework-gaps.json (FGAP-029)"
+    },
+    {
+      "label": "the git-merge engine this unifies with",
+      "path": ".context/framework-gaps.json (FGAP-004, FGAP-005)"
+    },
+    {
+      "label": "installContext — the S1 change site",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "334-419"
+    },
+    {
+      "label": "the migration registry reused by S4",
+      "path": "packages/pi-context/src/"
+    }
+  ],
+  "enacted_by": "human/davidryan@gmail.com",
+  "enacted_at": "2026-06-05T00:00:00.000Z"
+}

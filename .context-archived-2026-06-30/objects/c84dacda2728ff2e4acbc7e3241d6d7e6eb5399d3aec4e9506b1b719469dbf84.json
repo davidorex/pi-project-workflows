@@ -1,0 +1,20 @@
+{
+  "title": "install --update overwrites a locally-modified schema without consulting the checkStatus drift classification",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The update path overwrites installed schemas (resyncSchema) without first consulting the checkStatus drift detector, which already classifies each installed schema as in-sync / catalog-ahead / locally-modified / both-diverged. A locally-modified (user-edited) schema is clobbered with no detection or warning, even though the classification that would flag it is computable and shipped.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resyncSchema overwrites the installed schema (verbatim same-version, migrate-or-refuse on bump) without reading the checkStatus locally-modified classification"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "checkStatus computes the drift classification but the --update write path never calls it before clobbering"
+    }
+  ],
+  "impact": "User schema edits are destroyed silently on update; the drift signal needed to prevent it exists but is not consulted in the write path.",
+  "canonical_vocabulary": "drift-aware update (detect locally-modified before overwrite)",
+  "proposed_resolution": "The update path consults checkStatus before re-syncing each schema and refuses-or-merges (per FGAP-046) any locally-modified schema instead of overwriting it; delivered within the unified update command (FEAT-006)."
+}

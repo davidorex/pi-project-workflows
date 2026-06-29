@@ -1,0 +1,90 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/conventions",
+  "version": "1.0.1",
+  "title": "Conventions",
+  "description": "Code and process conventions the project follows. Rules with enforcement methods (lint, review, test) that agents must comply with when writing code. Injected into agent prompts as constraints.",
+  "type": "object",
+  "required": [
+    "rules"
+  ],
+  "properties": {
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "description",
+          "enforcement",
+          "severity"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "enforcement": {
+            "type": "string",
+            "enum": [
+              "lint",
+              "test",
+              "review",
+              "manual"
+            ]
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning",
+              "info"
+            ]
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    },
+    "test_conventions": {
+      "type": "object",
+      "required": [
+        "runner_command",
+        "file_pattern"
+      ],
+      "properties": {
+        "runner_command": {
+          "type": "string"
+        },
+        "file_pattern": {
+          "type": "string"
+        }
+      }
+    },
+    "lint_command": {
+      "type": "string"
+    },
+    "lint_scope": {
+      "type": "string"
+    }
+  }
+}

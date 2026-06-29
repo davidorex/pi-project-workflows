@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs substrate bootstrap-state provisioning + substrate-identity reconciliation",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs how substrate bootstrap-state is provisioned and how substrate-identity is reconciled on init/switch. Decisions in this domain (DEC-0001 skeleton-config bootstrap, DEC-0003 switch register-if-absent reconciliation) were made without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering substrate bootstrap-state / identity-lifecycle"
+    }
+  ],
+  "impact": "Bootstrap/identity-lifecycle decisions are ungoverned — no checked rule constrains future decisions of this kind.",
+  "proposed_resolution": "Author a convention governing substrate bootstrap-state + identity reconciliation; re-point DEC-0001/DEC-0003 from item_acknowledges_missing_convention to item_governed_by_convention; close this gap."
+}

@@ -1,0 +1,16 @@
+{
+  "title": "install --update appends catalog migration declarations into the user's migrations.json without surfacing them",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "On a schema version bump, the update path registers the shipped catalog migration chain into the substrate's migrations.json before forward-validating the block, but the install summary does not report which declarations were added. The user's migrations.json is mutated with no surfaced record of the additions.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resyncSchema registers each shipped migration declaration into migrations.json on a version bump; the install summary does not enumerate the registered declarations"
+    }
+  ],
+  "impact": "A user cannot see, from the update output, which migration declarations were written into their migrations.json; the mutation is silent.",
+  "canonical_vocabulary": "surfaced mutation reporting",
+  "proposed_resolution": "The update output enumerates every migration declaration registered into migrations.json; --dry-run lists them without writing; delivered within the unified update command (FEAT-006)."
+}

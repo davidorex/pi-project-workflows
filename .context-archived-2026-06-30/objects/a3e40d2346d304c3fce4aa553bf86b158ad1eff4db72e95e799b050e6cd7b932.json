@@ -1,0 +1,22 @@
+{
+  "title": "The pi-context command ships as its own publish unit (@davidorex/pi-context-cli carries the bin)",
+  "status": "open",
+  "context": "The global pi-context command (FGAP-047) and --pi-bound (FEAT-005) need a publish unit that hosts the CLI bin. Two shapes compete: the CLI as its own published package depending on @davidorex/pi-context (and, for --pi-bound, the meta-package), versus folding the bin into the meta-package @davidorex/pi-project-workflows. The meta-package ships only *.ts/*.md/skills/ with no dist/ or built CLI entry.",
+  "decision": "Keep the bin in @davidorex/pi-context-cli as its own publish unit; npm i -g @davidorex/pi-context-cli pulls the dependency tree, mirroring how pi ships its CLI. Do not relocate the CLI build into the meta-package.",
+  "consequences": [
+    "pi-context-cli remains the single bin host; the meta-package stays a non-built TS/skills bundle.",
+    "Global install is the lowest-delta path — no CLI-build relocation into the meta-package.",
+    "--pi-bound's access to the meta-package is via a declared dependency (FGAP-048), not co-location."
+  ],
+  "references": [
+    {
+      "label": "global-install analysis — publish-unit question",
+      "path": "analysis/2026-06-07-pi-context-global-install-pattern.md"
+    },
+    {
+      "label": "meta-package ships only ts/md/skills, no dist/bin",
+      "path": "packages/pi-project-workflows/package.json",
+      "lines": "19-23"
+    }
+  ]
+}

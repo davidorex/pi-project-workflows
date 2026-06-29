@@ -1,0 +1,7 @@
+{
+  "description": "Apply FGAP-090's new vocabulary to correct the mistyped/absent edges (depends on TASK-A). In order: (1) File DEC-0018's true forcing artifact as a framework-gaps item — the problem that forced DEC-0018: pi-context update's post-loop registry propagation writes config.json even when a schema returns blocked, ungated on the schema-loop outcome (packages/pi-context/src/index.ts:1391-1421); this is the cause DEC-0018 ruled on (affirming per-component), distinct from FGAP-076 which is the legibility consequence DEC-0018 spawned. (2) Add a decision_addresses_gap edge DEC-0018 -> the new forcing gap, restoring genuine decision-cites-forcing-artifact satisfaction (cause, not consequence). (3) Retype the DEC-0018 -> FGAP-076 edge from decision_addresses_gap to decision_raises_gap via replace-relation — non-breaking once step 2 is in place. (4) Add a decision_gated_by_item edge DEC-0018 -> FGAP-076 (gated thing = parent, gate = child). (5) Add gap_relates_to_gap edges FGAP-090 -> FGAP-007 and FGAP-090 -> FGAP-061. Resolves the edge-correction half of FGAP-090 and repairs DEC-0018's backwards forcing-artifact citation. The step-1 forcing-artifact filing is its own provenance-stopped write.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "description": "Declare @davidorex/pi-project-workflows in pi-context-cli dependencies at the lockstep version range so pi-context --pi-bound's require.resolve('@davidorex/pi-project-workflows/package.json') resolves from an installed CLI, not only via the in-repo workspace symlink.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/package.json"
+  ],
+  "acceptance_criteria": [
+    "[subagent] pi-context-cli declares @davidorex/pi-project-workflows at the lockstep version range in dependencies.",
+    "[orchestrator] require.resolve('@davidorex/pi-project-workflows/package.json') resolves under npm link from a cwd outside the repo.",
+    "[orchestrator] build + check + full test suite pass; lockstep version ranges across CLI -> pi-context -> meta remain internally consistent.",
+    "[orchestrator] registry-install resolution of the meta-package verified — deferred, release-gated."
+  ]
+}

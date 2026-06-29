@@ -1,0 +1,13 @@
+{
+  "title": "Substrate-derived state — config-driven context-current-state / context-status",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "Today these ops hardwire their derivation to the stock kinds — focus / in-flight / ranked-next are computed from `framework-gaps` + `tasks`. On a custom-vocabulary substrate (e.g. `.workshopping` with `prompt-fragment` + `prompt-spec`) they return empty/inert: the substrate has a real \"where are we / what's next,\" but the op can't see it because it's looking for kinds that aren't there.\n\nProposal: derive the derivation from active substrate's `config.json`, not from hardcoded kind names. The substrate declares its state-bearing vocabulary — which kind+predicate yields *focus*, which field gives *order/ranking*, which field+values mark *open/blocked/done*. Stock substrates declare `framework-gaps`+`tasks` (today's behavior preserved exactly); a custom substrate declares its own (e.g. `prompt-spec` ranked by `order`, blocked by unmet `deps`). With no declaration the op is a truthful \"not configured,\" not a silent empty.\n\n\"where are we / what's next\" becomes a capability *any* substrate opts into by declaring its own state fields, instead of a privilege of the stock project-management vocabulary.",
+  "motivation": "context-current-state is fully inert on a custom-vocabulary substrate (confirmed: returns empty focus/inFlight/nextActions/blocked against .context-jit-spec-v2 whose state-bearing kinds are axioms/concepts/dispatch-modes, not tasks/framework-gaps), because currentState() hardcodes the stock kinds + the task_depends_on_task blocked-by relation + a P0-P3 rank. The where-are-we/what-next capability is thus a privilege of the stock PM vocabulary rather than something any substrate can opt into.",
+  "acceptance_criteria": [
+    "Stock substrates (declaring framework-gaps + tasks) produce byte-identical context-current-state / context-status to today (behavior preserved exactly via the shipped conception declaring the stock state vocabulary).",
+    "A custom-vocabulary substrate that declares its own state-bearing vocabulary (which kind+predicate yields focus, which field gives order/ranking, which field+values mark open/blocked/done, which relation_type is blocked-by) gets focus / in-flight / ranked-next / blocked derived from ITS kinds.",
+    "With no state-derivation declaration, the ops return a truthful not-configured signal, not a silent empty result.",
+    "The derivation reads the active substrate config.json, with no hardcoded stock kind names / fields / status values / relation_types in the derivation path."
+  ]
+}

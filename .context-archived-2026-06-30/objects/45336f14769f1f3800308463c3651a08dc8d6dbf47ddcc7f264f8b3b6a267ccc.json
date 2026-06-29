@@ -1,0 +1,9 @@
+{
+  "title": "pi-context clone — import a substrate from another project as a content-addressed fork",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "A dual-surface command (library cloneSubstrate + Pi tool + CLI + orchestrator script) that copies a source substrate's content (config vocabulary + all blocks + relations.json + objects/) into a destination dir, mints a fresh substrate_id, records a substrate_derived_from_substrate edge to the source, and writes a provenance-bearing registry entry. Fork semantics preserve the one-id<->one-dir invariant. Per DEC-0002.",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/story",
+  "version": "1.0.1",
+  "title": "User Stories",
+  "description": "Top-level user-story array-block. A user story is a desideratum in the form 'As a <user_kind>, I want/expect …, so that …' (the statement lives in description; user_kind names the kind of user, free text). Stories function two ways, both via relations.json closure-table edges — NOT as inline arrays on the story: (1) as a beginning point for research, exploration, or gap/issue filing (downstream item -> item_derived_from_item -> story); (2) as mandatory verifiable success criteria for work (task_advances_story / feature_advances_story). A story is met when the task or feature advancing it has met its success criteria; a task or feature can't be complete until every story it advances is met. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item) also live in relations.json edges.",
+  "type": "object",
+  "required": [
+    "stories"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^STORY-\\d{3,}$",
+            "description": "Stable canonical id; STORY-NNN (3+ digits)."
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "ready",
+              "in-progress",
+              "in-review",
+              "complete",
+              "blocked"
+            ],
+            "description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation deferred to a future status-schema unification."
+          },
+          "user_kind": {
+            "type": "string",
+            "description": "The kind of user the story speaks for — free text, no enum (e.g. cli-user, in-pi-llm-user, in-pi-human-user)."
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_by": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        }
+      }
+    }
+  }
+}

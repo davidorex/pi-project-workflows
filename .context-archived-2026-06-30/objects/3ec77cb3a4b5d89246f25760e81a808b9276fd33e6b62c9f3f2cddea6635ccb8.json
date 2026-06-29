@@ -1,0 +1,22 @@
+{
+  "description": "Add a reflected op `context-lens-view` keyed by --lensId that projects a config-declared lens as a binned item-view. Reuses loadLensView (packages/pi-context/src/lens-view.ts:43), renderLensView (lens-view.ts:105), and pageArray (read-element.ts:188). Serves every config.lenses[] entry — kind target, composition, and hand-curated. Modes: a bin SUMMARY (each declared bin with its item count) and, under --bin, that bin's items paged by --offset/--limit. Additive: a new op; all other in-pi ops byte-unchanged. Slotted into the cli.ts groupForOp classifier. Closes FGAP-073.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/ops-registry.test.ts",
+    "packages/pi-context-cli/src/cli.test.ts"
+  ],
+  "acceptance_criteria": [
+    "`pi-context context-lens-view --lensId gaps-by-status` returns a bin summary — every declared bin (identified, accepted, in-progress, closed, wontfix) with its item count plus an uncategorized count — always within the 50KB cap.",
+    "`pi-context context-lens-view --lensId gaps-by-status --bin identified [--offset N --limit M]` returns that bin's items (id, status, title), paged via pageArray (offset/limit/total/hasMore).",
+    "`--json` returns a single-parse structured object (summary bins->counts; per-bin paged items under --bin); `--format json` yields the same payload; the shape is distinct from context-edges-for-lens's flat Edge[].",
+    "The summary and per-bin paths work for gaps-by-status, gaps-by-priority, tasks-by-status, and features-by-status with no lensId-specific code; op-level tests cover kind=composition and hand-curated dispatch.",
+    "An unknown --lensId, or an unknown --bin for a valid lens, returns a field-named error and a non-zero exit code.",
+    "A per-bin page whose serialization exceeds 50KB fail-closes via structureForRead (data:null, complete:false, truncated:true) carrying the overCapDirective to narrow --limit.",
+    "`pi-context context-lens-view --help` renders the per-op template (synopsis; typed flags --lensId/--bin/--offset/--limit; examples; related; footer); `--help --format json` emits the structured help model; the op carries authored examples[]; the op appears in grouped `pi-context --help` under its name-prefix group.",
+    "`npx tsx scripts/parity-check.ts` exits 0; `npm run build` + `npm run check` + `npm test` report fail 0 with op-level tests for: summary within cap on a lens whose full view exceeds 50KB, per-bin paging, per-lens binning across the four lenses, composition dispatch, and the unknown-lens/unknown-bin errors.",
+    "FGAP-073 closed via verification_verifies_item + complete-task."
+  ],
+  "notes": "Closes FGAP-073 (all four target-lenses + composition/hand-curated). Reuses loadLensView / renderLensView / pageArray. Adjacent to FEAT-004 (config-driven state-derivation), distinct. docs-surface-sync: op description/promptSnippet/examples + README/SKILL audit + CHANGELOG [Unreleased]."
+}

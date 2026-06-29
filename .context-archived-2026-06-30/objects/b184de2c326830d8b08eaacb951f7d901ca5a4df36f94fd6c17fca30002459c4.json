@@ -1,0 +1,13 @@
+{
+  "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism — a force flag, a recover op, or validate-after-mutate — is resolved as a filed DECISION before implementation.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "An invalid config, including schema_version equal to current with an invalid body, is restored to validity through a sanctioned CLI op without a forbidden direct edit of config.json.",
+    "The repair validates the corrected result, not the pre-existing stored config; it does not throw on load before the mutation applies.",
+    "Both the version-gap subset and the no-version-delta invalidity are recoverable."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts"
+  ],
+  "notes": "Design choice (repair mechanism) filed as a DECISION before implementation."
+}

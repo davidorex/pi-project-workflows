@@ -1,0 +1,4 @@
+{
+  "description": "Implement switch identity reconciliation per DEC-0003 / FGAP-003: switchToExisting and switchAndCreate register config.substrate_id -> active dir via registerSubstrate when the id is absent from the project-root registry; a present-but-different-dir entry continues to raise substrate_id_registry_mismatch. Tests: switch to an unregistered-but-present-config substrate -> registered + context-validate clean; mismatch case preserved. Full completion sequence (build/check/test/runtime-demo/adversarial/skills). Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+  "status": "in-progress"
+}

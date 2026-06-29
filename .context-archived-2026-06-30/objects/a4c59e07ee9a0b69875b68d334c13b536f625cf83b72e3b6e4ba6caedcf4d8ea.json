@@ -1,0 +1,20 @@
+{
+  "description": "relations.json dry-run parity (the 4 relation ops). Library: add opts?:{dryRun?} to appendRelationByRef/removeRelationByRef/replaceRelationByRef/appendRelationsByRef (context-sdk.ts) threaded to their *ForDir cores; when dryRun, load + resolve selectors + build prospective Edge[] + run the same relations-schema validation and endpointIdentity dedup the write path uses (bulk: on-disk AND in-batch; replace: new-edge collision) and return without writeRelations (result gains dryRun:true). Ops (ops-registry.ts append/remove/replace/append-relations): declare dryRun + thread + would-message. Scripts: delete bespoke preview, call byRef with {dryRun:true}, print in [dry-run] PASS convention. CHANGELOG [Unreleased] bullet. Mirror the canonical amendConfigEntry(...,{dryRun}) pattern. Per DEC-0008 / FGAP-012.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "scripts/orchestrator/append-relation.ts",
+    "scripts/orchestrator/remove-relation.ts",
+    "scripts/orchestrator/replace-relation.ts",
+    "scripts/orchestrator/append-relations.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "each of the 4 ops accepts --dryRun; CLI --dryRun --json returns the preview and leaves relations.json byte-unchanged (hash before/after)",
+    "a would-fail (cycle/missing-endpoint/invalid) surfaces identically without writing",
+    "scripts call the shared library dry-run path; no bespoke preview remains",
+    "parity-check: the 4 relation dryRun divergences gone",
+    "fresh adversarial probe: no disk write in any dry-run path, validation parity with write path, real --writer write still persists + stamps"
+  ]
+}

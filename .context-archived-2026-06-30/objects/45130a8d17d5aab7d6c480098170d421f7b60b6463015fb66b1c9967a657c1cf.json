@@ -1,0 +1,14 @@
+{
+  "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location — block envelope or per item — is resolved as a filed DECISION before implementation.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "Block data carries schema_version after write; block schema envelopes admit the top-level schema_version.",
+    "The read-time AJV hook fires for blocks, no longer gated off by an absent schema_version.",
+    "A version-bump migration applies to existing block data on read; a stale-version block is caught."
+  ],
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/samples/schemas/"
+  ],
+  "notes": "Design choice (stamp location: envelope vs items) filed as a DECISION before implementation."
+}

@@ -1,0 +1,11 @@
+{
+  "title": "resyncSchema refuse path leaves stray migration decls in migrations.json",
+  "body": "Found by the S4 adversarial audit (TASK-026 / FGAP-029) before commit. On a version-bump re-sync, resyncSchema appends the shipped migration declarations into the substrate's migrations.json before it forward-validates the block. When the migrated items would fail the new schema, validation throws and the outcome is 'blocked'; the catch block restores the schema file bytes and invalidates the in-process registry cache, but it does not undo the decls already written to migrations.json. A refused re-sync therefore leaves stray migration entries on disk, contradicting the function docstring's claim that a 'blocked' outcome leaves files byte-identical to their pre-call state. Latent in current project state (the idempotency guard prevents a collision crash on re-run, and no live re-sync currently reaches the failing-items path), but a real correctness bug in the refuse path. Planned fix: capture migrations.json raw bytes before the decl-append loop and restore them (or unlink if the file did not exist pre-call) in the existing catch, mirroring the originalSchemaBytes capture/restore already in the same function; add a migrations.json-byte-unchanged assertion to the two 'blocked' tests. Fixed and closed within TASK-026 (an S4 sub-defect, not a separate arc).",
+  "location": "packages/pi-context/src/index.ts:549",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "medium",
+  "package": "pi-context",
+  "source": "agent",
+  "resolved_by": "0fcba9c — resyncSchema captures migrations.json raw bytes before the decl-append loop and, on the blocked refuse path, restores them (or unlinks the file if it did not exist pre-call) in the catch, so a refused re-sync leaves migrations.json byte-unchanged; the two blocked-path tests in install-subcommand.test.ts assert migrations.json byte-identity after a blocked outcome."
+}

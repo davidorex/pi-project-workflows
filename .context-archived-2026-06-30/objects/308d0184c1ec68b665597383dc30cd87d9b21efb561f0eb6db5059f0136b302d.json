@@ -1,0 +1,15 @@
+{
+  "description": "Add a pre-flight committed-substrate check to update — warn or refuse on a dirty substrate — with guidance text naming `git tag` as the restore-point workflow, visible in three places: (1) the runtime dirty-substrate message printed by update says \"commit or git tag first to keep a restore point\" — the operator sees it at exactly the moment it matters; (2) the update op's description/promptSnippet in ops-registry, which is also what reflection and SKILL.md render; (3) SKILL.md + READMEs via skill-narrative.md regen and the package/root README update sections, per the normal docs-surface-sync pass. No new doc artifact — the text rides the op's existing strings and the new warning. No substrate-tag op: per DEC-0004 (enacted) git owns refs/snapshots; the substrate including objects/ is git-tracked, so `git tag` before update + `git checkout <tag> -- <substrate-dir>` is the restore workflow.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/README.md",
+    "README.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "User-granted G1-derived filing (the operator-story think-out): the safety gap (update mutates with no committed-baseline pre-flight) + the knowledge gap (no surface names the git-tag restore workflow) closed in one item. Prior-art sweep found no existing item covering snapshot/restore or an update pre-flight."
+}

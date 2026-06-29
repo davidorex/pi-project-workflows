@@ -1,0 +1,14 @@
+{
+  "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type SET (task_depends_on_task + task_gated_by_item), a rollup spec (rollup kind + membership relation + derived status, generalizing the milestone phase-rollup), the next-actions head-size (cap), and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~711-915) to read it instead of ALL hardcoded literals — the tasks/framework-gaps/phase/milestone kinds, P0-P3, the task_depends_on_task + task_gated_by_item + phase_positioned_in_milestone relation literals, the reached/planned milestone status strings, and the fixed NEXT_ACTIONS_CAP=15 slice (context-sdk.ts:864-865); the shipped conception declares the stock derivation (framework-gaps+tasks + gate + milestone rollup + cap) so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/schemas/config.schema.json"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004"
+}

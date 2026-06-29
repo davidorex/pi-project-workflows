@@ -1,0 +1,10 @@
+{
+  "description": "Add a write-time edge kind/category validator. When an edge is written via appendRelationByRef (packages/pi-context/src/context-sdk.ts:1412) and appendRelationsByRef (:1549), check the parent item's kind against the relation_type's source_kinds and the child's against target_kinds (with the * wildcard) and the edge against the relation_type's category, and REJECT a mismatched edge at write with a clear error naming the offending endpoint kind and relation_type. This hoists the existing post-hoc kind check (validateContext, context-sdk.ts:1987-2021, FGAP-086/DEC-0037) to the write surface (the raw appendRelationsForDir, context.ts:649, cannot resolve endpoint kinds under the documented layering at context.ts:617-625). Presence-gate on source_kinds/target_kinds exactly as the validate-time check (context-sdk.ts:1990) so currently-passing writes are unaffected. Resolves the write-time-enforcement half of FGAP-090. Distinct from TASK-027 (ordering-edge endpoint-role DIRECTION, ordering-only; this checks source/target KIND + category across all relation_types).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

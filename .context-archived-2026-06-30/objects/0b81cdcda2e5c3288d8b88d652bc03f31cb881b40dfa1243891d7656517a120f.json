@@ -1,0 +1,12 @@
+{
+  "description": "In-pi read-schema correction — the one authorized in-pi op change in this release. Closes FGAP-027: pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the IN-PI read-schema op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), retaining the 50KB cap. Completes read-schema across BOTH surfaces (pairs with the order-2 task's FGAP-020 CLI-side fix). Class-check other read ops routing addressed object nodes through structureForRead.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/read-element.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Release-group: cli-parity (NEXT) | order 4/5 | addresses FGAP-027 | the SOLE in-pi op change in this release | depends on order-2 (read-schema coherence across both surfaces)"
+}

@@ -1,0 +1,5 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "TASK-007 (cli-arc beta, op-surface coverage, landed 56b153d): npm build/check/test green. Runtime-demoed via the built cli on throwaway substrates: remove-relation surgical (only the exact edge), replace-relation atomic re-orient, append-relations bulk+dedup, upsert-block-item append->update with created_by preserved + modified_by updated (attested); full step-by-step custom-vocabulary substrate creation entirely via the cli (init -> write-schema -> amend-config -> write-block -> append-block-item). The probe->fix->re-audit loop caught and fixed: the foldin string-endpoint writer (now structured), an oid-gated proxy that wrongly dropped resolvable-but-unbackfilled edges (now authoritative substrateHasItem on all three detection paths), and a write-gate that didn't persist a drop-only change. A clean final adversarial re-audit found nothing new across the write-gate scenarios, the 3-path class closure, and the beta ops. OP_COVERAGE_RULE + the 7-entry allowlist establish the FGAP-009 contract gamma will enforce."
+}

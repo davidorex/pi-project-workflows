@@ -1,0 +1,23 @@
+{
+  "title": "No milestones block — add a milestone block kind (samples catalog + active .context)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "There is no milestone block kind, yet phases need a checkpoint to roll up into. Add a milestone block. Fields: id (MILE-NNN), name, status (planned | reached, no missed), optional release to group gaps/issues/tasks/phases into a release (e.g. 0.30.1). No intent field. No evidence_block/evidence_query. reached is derived: a milestone is reached when its placed phases are done (placement relation, FGAP-039); stories attach to it via the wildcard relation (FGAP-041). Lands in both the packaged samples catalog (via the pi-context update CLI) and the active .context substrate.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "block_kinds registry lists 17 kinds (decisions, framework-gaps, tasks, verification, issues, features, research, rationale, spec-reviews, layer-plans, requirements, conventions, context-contracts, phase, story, work-orders, session-notes) — none is 'milestone'"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/phase.schema.json",
+      "reference": "phase description references story -> milestone/phase/project-goal edges, but no milestone block kind exists"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/story.schema.json",
+      "reference": "story description names milestone as a cross-altitude edge target; no milestone block backs it"
+    }
+  ],
+  "impact": "Phases and stories reference milestones as edge targets with nothing to point at, and there is no block to roll gaps/issues/tasks/phases into a release — milestones cannot be represented in the substrate.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

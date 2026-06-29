@@ -1,0 +1,16 @@
+{
+  "description": "Config-driven state-derivation registry + currentState rewire. Closes FGAP-017 (P2): add a config registry declaring which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, the blocked-by relation_type, and field+values -> open/blocked/done (leveraging the existing status_buckets); rewire currentState() (context-sdk.ts ~682-825) to read it instead of the hardcoded tasks/framework-gaps/phase + P0-P3 + task_depends_on_task literals; the shipped conception declares framework-gaps+tasks so stock behavior is byte-preserved; with no declaration return a truthful not-configured signal (not silent empty). Advances FEAT-004.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/schemas/config.schema.json"
+  ],
+  "acceptance_criteria": [
+    "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+    "Stock .context behavior byte-preserved",
+    "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: config-driven-state / FEAT-004 (R+1) | order 6 | addresses FGAP-017, FEAT-004"
+}

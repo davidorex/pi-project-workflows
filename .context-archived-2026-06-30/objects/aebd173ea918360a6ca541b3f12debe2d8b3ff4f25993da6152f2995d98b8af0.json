@@ -1,0 +1,26 @@
+{
+  "title": "pi-context update result does not make partial application legible — a blocked run can read as a no-op while config.json was mutated",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "update applies per-component (a blocked schema rolls back only itself; the additive config-registry propagation writes regardless — affirmed by DEC-0018), but the result does not make that partiality legible. A live run that returns a schema under `blocked` still mutated config.json with the catalog-new registry vocabulary (relation_types/block_kinds/invariants/lenses), yet nothing in the result ties the two together: `blocked` and `registryAdditions` are independent channels, so a caller reading `blocked` can reasonably conclude nothing was applied while config.json in fact changed. General class: update's result reporting does not surface its per-component partial application across the independent seams (schema-loop outcomes + registry propagation); the registry-write-while-a-schema-blocked case is the triggering instance.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1391-1421",
+      "reference": "post-loop registry propagation computes registryAdditions and calls writeConfig when !dryRun, ungated on schema-loop outcome — runs even when a sibling schema is in result.blocked"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1282-1293",
+      "reference": "the schema-loop result buckets (resynced/migrated/blocked) are reported independently of registryAdditions; no field ties a blocked outcome to the config mutation that still occurred"
+    },
+    {
+      "file": ".context/research.json",
+      "reference": "R-0012 — live reproduction: conventions blocked, registryAdditions (incl. item_derived_from_item) written to config.json in the same run"
+    }
+  ],
+  "impact": "A user or agent reading a `blocked` update result can assume the substrate was left unchanged and skip reconciling a config.json that did change — silent partial application. The risk is legibility, not data loss (the additive write is safe); it undermines trust in the result as a faithful account of what update did.",
+  "canonical_vocabulary": "legible partial-application reporting",
+  "proposed_resolution": "update's result surfaces its partial application explicitly: when any schema is `blocked` (or refused/conflicted) AND registry additions or other-schema resyncs were applied, the result reports the partiality in one place — what was applied (registryAdditions, resynced/migrated schemas) alongside what was refused and why (the blocked schema + its AJV/validation error) — so a `blocked` run never reads as a no-op. Covers both the CLI text surface and the structured result object. Premised on DEC-0018 (per-component affirmed); pairs with FGAP-066 (dry/live outcome parity)."
+}

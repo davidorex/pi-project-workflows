@@ -1,0 +1,12 @@
+{
+  "title": "Release & changelog discipline: changelog entries accrue at dev-item closure; a release is a planned decision grouping closed dev-items",
+  "status": "enacted",
+  "context": "FGAP-011: no first-class release/version vocabulary, so release + changelog tracking risks drifting from the organized dev-item lifecycle (closed tasks/gaps) — the 'we haven't kept track of changelogs/releases vs done items' failure. Until the vocabulary lands, this decision fixes the manual practice so the thread is not lost. It is the interim discipline; FGAP-011's release vocabulary is the eventual structural fix.",
+  "decision": "1) A changelog [Unreleased] entry is authored in the SAME code commit that completes a dev-item's published-surface work — not deferred to release time. The commit-time changelog guard already enforces that an entry exists; this binds the entry's CONTENT to the closing task/gap. 2) A release is an explicit DECISION: when we decide to release, we record it (a release decision, or — once FGAP-011 lands — a first-class release item) naming the target version and the set of closed dev-items it ships, grouped via a phase or story (task_positioned_in_phase / story_contains_task). 3) The release's changelog is the accrued [Unreleased] entries of those closed items; the version bump (release.mjs) stamps [Unreleased] -> [version]. So a release reflects the organized set of done dev-items, traceable item -> changelog line -> version. 4) This binding is practice-enforced until FGAP-011 provides a release block kind + a dev-item<->release relation that makes it structural.",
+  "consequences": [
+    "Each task/gap closure that changes a package's published surface carries its changelog line in the closing code commit, not a batch write at release time.",
+    "A release is planned by an explicit decision (version + grouped closed items), not assembled ad-hoc.",
+    "The risk of changelog/release drift from the dev-item lifecycle is mitigated by practice now and is slated to become structural via FGAP-011.",
+    "Substrate status-cascade commits (.context) do not trigger the changelog guard; the discipline applies to the published-surface code commits that close items."
+  ]
+}

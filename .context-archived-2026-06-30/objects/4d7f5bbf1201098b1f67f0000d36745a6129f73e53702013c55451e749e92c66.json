@@ -1,0 +1,13 @@
+{
+  "status": "in-progress",
+  "description": "Make issues a gap-sibling first-class open-work kind: a task addresses an issue as it addresses a framework-gap; an open issue ranks and focuses in currentState as an open gap does; a completed task addressing an unresolved issue is invariant-flagged. Add the parity vocabulary in live .context config and the packaged catalog, plus two additive issue-schema fields. The deriver and lens-view are kind-general — change no deriver code. Preserve the divergences in criterion 7. Prerequisite for addressing issue-004 by a task.",
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "files": [
+    ".context/config.json",
+    "packages/pi-context/schemas/issues.schema.json",
+    "packages/pi-context/samples/conception.json"
+  ],
+  "notes": "Addresses FGAP-098. Prerequisite for addressing issue-004 by a task. Catalog back-port interacts with FGAP-094, TASK-066, TASK-067."
+}

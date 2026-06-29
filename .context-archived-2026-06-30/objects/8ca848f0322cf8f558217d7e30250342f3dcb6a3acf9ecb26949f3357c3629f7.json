@@ -1,0 +1,12 @@
+{
+  "title": "Convergent ordered-sequence field-kind — CRDT-backed ordered item-refs that merge deterministically under concurrent insert/delete/move",
+  "status": "proposed",
+  "layer": "L1",
+  "description": "A declared sequence-field kind over item-refs: a non-interleaving Fugue-class sequence CRDT (dense, immutable per-element position identifiers) plus a Kleppmann move-CRDT position register resolved by hybrid logical clock, with a sort-on-read projection to a plain ordered ref-array and array-position hand-edits translated to CRDT ops. CRDT state lives in the owning <block>.json; projection + field-aware merge live in block-api. One field-kind plugin into the substrate merge driver (FEAT-002). Per DEC-0005.",
+  "acceptance_criteria": [
+    "Two divergent versions each insert, delete, and/or move elements in the same collection; the merge yields one replica-independent sequence containing all inserts, with no element duplicated or lost and no interleaving of concurrently-inserted runs",
+    "Insert mints one position identifier and mutates no neighbor",
+    "Move rewrites one element's position register; concurrent moves of the same element resolve deterministically by hybrid logical clock",
+    "The sort-on-read projection reproduces single-writer authoring order identically to a plain array, and accepts array-position hand-edits translated to CRDT operations"
+  ]
+}

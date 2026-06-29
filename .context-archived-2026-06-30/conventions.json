@@ -1,0 +1,104 @@
+{
+  "rules": [
+    {
+      "id": "cli-command-form",
+      "description": "CLI command-form rule (follows pi's own convention; grounded in R-0006). Decide bare-subcommand vs flag by the nature of the capability, first match wins: (1) a distinct self-completing action that runs and exits — interactive or not (pi's `config` is a bare verb, never `--config`) -> BARE SUBCOMMAND; (2) the object/target a verb acts on -> POSITIONAL (e.g. `update <source|self|pi>`); (3) a modifier of HOW a verb runs (a toggle or target-mode of that verb) -> FLAG ON THAT VERB (e.g. `update --dry-run`); (4) a modifier, mode-selector, or one-shot short-circuit of the DEFAULT run -> TOP-LEVEL FLAG (e.g. `--model`, `--export`). Litmus: is it its own run-and-exit action, or an option/mode of an existing action? This governs every pi-context command form: reflected ops and `pi-context update` are bare verbs; `update --dry-run` is a verb flag; an alternate run-and-exit mode such as launching a bounded pi session is a bare verb (`pi-context pi-bound`), not a `--flag`. Apply it when adding any pi-context command; do not decide command form ad hoc.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "6cb0179a4968a2022406c5eb47114b38",
+      "content_hash": "69c7c3d4918229732cac26e512e32f0ce8ecb65daaa9a83b0d054f8350befc08"
+    },
+    {
+      "id": "feature-branch-workflow",
+      "description": "Feature implementation happens on a branch off the active integration branch and merges back to it. The integration branch is whatever the current arc is based on — context-jit-spec-v2 now, main or a dev branch later; the rule is general, not tied to a specific branch name. Split: CODE goes on the feature branch (packages/**; dist is gitignored, so rebuild on switch). The .context SUBSTRATE stays single-writer on the integration branch — file the gap/task/criteria there BEFORE branching, and run the closure cascade (verification + complete-task + close-gap) there AFTER the code merges and re-verifies, never on the feature branch — so JSON-array block merges never conflict and a rejected feature simply leaves its task planned. Accept: checkout the integration branch, merge the feature branch, npm run build, then file the closure. Reject: checkout the integration branch and delete the feature branch — no reverts, no dirty state. Establish a clean tree before branching; implement via a foreground coding subagent. Pure substrate/planning work (filing gaps/decisions/research) is done directly on the integration branch and needs no feature branch.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "content_hash": "91527a0e04493205b85ceff8aef0adc87dccbc202a2a08bf712ece9d7192ca8e"
+    },
+    {
+      "id": "feature-decomposition",
+      "description": "Decompose a feature into tasks by these rules. Do not decompose ad hoc.\n1. The tasks come from the gaps the feature addresses. Start from that gap set.\n2. State the invariant the feature must never violate (e.g. \"never overwrite a user's customizations\"). Every task must preserve it.\n3. For each gap, name the single code location its fix edits.\n4. Gaps whose fixes edit the same code location become one task.\n5. Gaps whose fixes edit different code locations become separate tasks.\n6. A task is one change that one coding-agent brief implements and one runtime demo plus one adversarial audit proves. If a candidate task needs two briefs, split it. If two candidate tasks edit the same location, merge them.\n7. If a fix needs a design choice that is not yet made, file the choice as a decision first. The task that depends on it stays unwritten until that decision is filed.\n8. If a fix cannot preserve the invariant in rule 2, it is its own task.\n9. Order the tasks: a task others build on comes first — the command before the behaviors it carries. Record order with task_depends_on_task edges.\n10. Wire every task: task_addresses_feature, task_addresses_gap for each gap it closes, item_governed_by_convention, and task_governed_by_decision when a decision gates it.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "content_hash": "94ba9f079bebc1ace77eb90ab4eb3fe9d68806305baaa2f91e982fa3734c3fdf"
+    },
+    {
+      "id": "rhetorical-register",
+      "description": "Every block write follows this register; it also governs communications.\n1. Write declarative statements. Not prose, not narration.\n2. Be terse and signal-dense. No perambulation, ceremony, recap, or hedging.\n3. Make each entry self-contained — the literal instruction a downstream consumer acts on, standing alone.\n4. Be exact and concrete. Not opaque, not abstract for its own sake.\n5. State current truth only. No provenance, git, or prior-state narration in block bodies; never assert-then-refute — edit to current truth on correction.\n6. Write for the consumer and the purpose — no more, no less; appropriate to the block type and its downstream use.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "8fc525b0bfba94c6ffb55ceebc87fc63",
+      "content_hash": "cef5d2fc4cf3b89fcb27b92ea16e316a1cb5c9e4d7d37da13b3c66ebed0cc603"
+    },
+    {
+      "id": "correctness-over-cost",
+      "description": "Design and route decisions are decided by correctness for the user — the done-correctly outcome — not by build cost. Build cost is a sequencing input (what to build first), never a reason to choose a less-correct route. When one route is correct and the others leave a known failure for the user, the correct route is the decision; decompose it into independently-shippable slices ordered so the user gets the correctness incrementally.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "content_hash": "6e365fe5f4ef27b492b438d33c634626c9239c1295fd51b271d2872049818827"
+    },
+    {
+      "id": "docs-surface-sync",
+      "description": "Every change to a user-facing surface updates that surface's documentation in the same change set, and the docs are CHECKED for staleness — not merely extended.\n1. Documented surfaces: the package README (packages/<pkg>/README.md), the monorepo root README.md, the surfaced strings of any changed reflected op (description/promptSnippet in ops-registry.ts), and the generated SKILL.md (regenerate via `npm run skills`; never hand-edit).\n2. Check before write: audit the existing docs for statements the change makes false and correct them. A behavior change leaves stale text exactly where users read it; adding new prose is not enough.\n3. Docs are usage-only — what the surface does and how to use it. Never what it fixes or how it behaved before.\n4. The CHANGELOG [Unreleased] entry carries the change and is the ONLY place correction/fix framing appears; every published-surface change grows [Unreleased] (gate-enforced by check-changelog).\n5. This is a step of every change's completion and the object of a periodic surface-staleness audit (READMEs + op strings + SKILL.md + CLAUDE.md op-surface notes).\n6. Brief-level enforcement: every implementation brief for a user-facing surface change NAMES this audit explicitly — the rule-1 surface list enumerated as the agent's deliverable, monorepo + relevant package README(s) included. A brief that lacks it is incomplete; an adversarial probe that finds stale docs is an unconverged iterate-to-zero loop, not an acceptable residue.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "2d6e6a73d7f6020aebec30c9cd28a5ef",
+      "content_hash": "553caf2c1da763b967c6cf960e29b6484ff7c3753d79fb43626b89fe5d5e43a9",
+      "content_parent": "ca1a75473c68f0280c68fdeeb08aec7633b5ded88b297f5344ab99952c5f36f1"
+    },
+    {
+      "id": "gap-arc-coherence",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "Keep framework-gaps organized as arcs, not a flat list. Apply at every gap filing and every arc revisit.\n1. A gap is bound to an arc or explicitly standalone — never an unbound member of a cluster. An arc is the gaps sharing a surface (same package / component / code-region) or one user-facing capability.\n2. Bind at the threshold: when a SECOND gap on the same surface is filed, bind both under a feature per feature-decomposition, or record why they stay standalone. A coherent cluster never accretes unbound.\n3. Explore-the-arc extends explore-before-file: before filing a gap, search for the feature/arc it belongs under and the existing decomposition that may already cover or neighbor it; bind or extend that arc, never start a parallel one.\n4. One surface, one feature, one decomposition. A pre-existing decomposition is EXTENDED — absorb the new gap into the task at its code location (feature-decomposition rule 4), or add one task — never shadowed by a free-floating set.\n5. Every gap carries a priority at filing; gaps under one arc share one priority scale. No half-missing, no mixed vintage.\n6. Reconcile edges on every revisit: a gap's task/feature edges are adopted, superseded, or removed in the same write — never left dangling.\n7. The arc is derivable: binding makes 'where are we on arc X' a substrate query (feature -> tasks -> gaps). An arc tracked only in an analysis MD or an operating-context note signals missing structure — file the feature.",
+      "oid": "3800735d17d3ecc01a2312fa3f4a827f",
+      "content_hash": "06a1f3f76f5cf0e022dde219a665051b8f52d5a7bf3dc4fef35d28b2eddeea84"
+    },
+    {
+      "id": "derive-decisions-from-facts",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "A design or routing choice determinable from the system's own facts is a decision to DERIVE, RESOLVE, and FILE — never a fork surfaced to the user. Apply when authoring any plan, decision, or report.\n1. Before surfacing any 'your call' / 'fork' / 'decide between', run the derivation test: can the choice be determined from (a) the registry / code / data structure, (b) an existing surface or convention, or (c) a standing mandate (best-of-breed / no-deferral / agent-primary)? If yes to ANY, it is a decision to make and state with its derivation shown — not a question to ask.\n2. Escalate to the user ONLY a choice genuinely underdetermined by the facts — irreducible taste, or information the system does not contain — and name WHY it is underdetermined; capture it as a framework-gap and mark the decision decision_escalates_underdetermined -> that gap.\n3. For grouping / classification / ordering, prefer a pure function over the system's own structure (a reflecting surface derives from its registry); never a hand-curated parallel list that drifts.\n4. Surfacing a derivable choice as an open menu is options-proliferation and hedging — the same defect as listing inferior options or deferring known work. Resolve it; do not present it.\nEnforcement is STRUCTURAL AT FILING. A decision committed to the substrate cannot be a punt — the decisions schema requires decision/context/consequences; decision-cites-forcing-artifact requires a forcing issue/feature/gap edge; decision-articulates-convention requires a governing-convention edge (this one applies); and decision-shows-derivation (the dedicated bite for THIS convention) requires EITHER a decision_derived_from_item edge to the fact its resolution derives from, OR a decision_escalates_underdetermined edge to the framework-gap capturing a genuinely-underdetermined escalated choice — there is no silent-fork third state. decision-shows-derivation is severity warning until the existing decisions are backfilled, then raised to error (the convention-articulation clean-after-backfill pattern). The only residual the review + behavior-monitor layer covers is the PRE-filing surface — a plan/report/message that surfaces a derivable fork to the user instead of resolving it and filing the decision.",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "content_hash": "a35eae9032f980e8b328612af26c352d508522e4f8d9a323b56482783675e974",
+      "content_parent": "12c22d5c69decace1b26aa07799dbea00473f99d0637cb04b0dd658543d510de"
+    },
+    {
+      "id": "gap-explore-surfaces-class",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "When exploring/investigating a gap (an experience gap, defect, or any FGAP candidate), the investigation MUST identify and surface whether the specific gap is an INSTANCE of a more general class — and if so, characterize that class. Apply during the explore step of the canonical pipeline, alongside root-cause / shape / reproducible-conditions / prior-art-search.\n1. The investigating agent's brief asks explicitly: 'is the gap being explored a class of a more general thing?' The agent answers it with evidence (the sibling instances the general gap would also cover), not silence.\n2. File the gap at the level the class warrants: the GENERAL gap, with the specific symptom named as its triggering instance — not the narrow symptom alone. Filing the symptom leaves the class unaddressed (architectural debt) and invites duplicate filings for sibling instances.\n3. If the explore concludes the gap is genuinely atomic (no broader class), state that conclusion explicitly with the reasoning — the surfacing is mandatory, the generalization is not assumed.\n4. This generalizes the iterate-to-zero 'fix the class, not the one symptom' rule UP to the gap-identification step: recognize that the gap ITSELF may be a narrow instance of a broader gap, and frame/file at the right altitude.\nWorked example: 'the CLI cannot render gaps-by-status as a binned view' is an instance of the general 'the reflecting CLI has no op to project ANY config-declared target-lens (gaps/tasks/features by status/priority) as a view' — file the general gap, cite the gaps-view as the trigger.\nEnforcement: at review of the explore output + the FGAP filing; structurally, a filed gap whose body does not address the class question is incomplete.",
+      "oid": "c6b4ddf46743609c19104c07ff334c37",
+      "content_hash": "d8a12e921526e7114f7868c186382d0bc65e719abadc8f3d8ba5f53dbf323046"
+    },
+    {
+      "id": "de-ephemeralize-at-source",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "Intel and context are captured durably by the agent that produces them, at the moment of production — never left in the ephemeral transient-output state for the orchestrator to re-render to file (a re-rendering step that risks signal loss).\n1. An investigating/exploring agent WRITES ITS OWN report file (analysis/<date>-<slug>.md) as part of its task — the durable artifact is the agent's output, not a summary the orchestrator transcribes afterward.\n2. A gap-exploring agent (Experience-Gap Handling) writes the investigation file AND, when the investigation is research-grade (grounded root cause / repro / class verdict), files the rhetorical-register-compliant research item itself (findings_document pointing at its md, findings_summary self-contained) — so the substrate filing carries the investigator's full signal verbatim.\n3. The agent's transient return to the orchestrator is a pointer + verdict (path, 2-3 sentence conclusion), not the content: the content already persists.\n4. The orchestrator verifies (reads back the file/filing, spot-checks claims) and commits — it does not author the artifact from the agent's summary.\nEnforcement: at review of agent briefs (a brief for investigation work that lacks the write-your-own-report instruction is incomplete) and of the resulting artifacts (an investigation whose only trace is the agent's transient return violates this).",
+      "oid": "23ac69c2f0e850e02f76caa6875dfab2",
+      "content_hash": "f1fe8c2115a8e121d14241841dd79370c014a478eb05ad031fcd40ef7cca9b77",
+      "content_parent": "ec96358bbfceb1451b1353f031c245d748d0a9a2e56c02bc561da9087df705a9"
+    },
+    {
+      "id": "filing-provenance",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "Every semantic element of a planning-block filing (criterion, qualifier, mode, flag, scope word, default, tier) carries one of three provenances: user-VERBATIM, user-DIRECTED, or DERIVABLE from a cited fact/convention/decision. Anything else is augmentation and does not go in.\n1. A qualifier that narrows or conditions what the user said — a mode, an opt-in, a flag, a tier, a deferral — is never derivable: it is either the user's recorded decision (cited) or absent.\n2. An item bound to user stories (task_advances_story / feature_advances_story / item_derived_from_item -> STORY-*) is DIFFED against the stories' verbatim statements at filing: every delta is a cited user decision or a defect in the draft.\n3. Updates inherit the test: every element carried forward is re-checked; inherited augmentation is augmentation.\n4. Brief-level enforcement: every explore / plan / probe brief for a story-bound item includes the verbatim-delta check — 'do the filed criteria narrow, qualify, or add to the stories' statements? any delta is a filing defect to surface, not a requirement to implement.' A brief that lacks it is incomplete; downstream work that executes an un-cited qualifier is built on a filing defect and does not stand as authority.\n5. Write-time enforcement: the planning-block write guard STOPS the write; the model ends its turn presenting the user a per-element provenance table (element -> provenance class -> evidence); the provenance-reviewed sentinel attests the USER's granted permission for that payload, never self-review.\n6. Filing permission comes only from the user: re-issuing a guarded write without the user's grant — in the same turn or otherwise — is a violation, not a review.\nFilings are composed verbatim into downstream contexts — an augmentation at filing becomes the requirement everywhere it is consumed.",
+      "oid": "e64797960f71731836f82ce007359026",
+      "content_hash": "cbe3b248c080e6d50f486927232869c49552d0fb3fc6f0cbc5e8b7396875b850",
+      "content_parent": "462f243c998d82c2a47d56738ee2a3e5be334b3d0ebd93fe5b13f347b6af322b"
+    },
+    {
+      "id": "subagent-dispatch-fit",
+      "enforcement": "review",
+      "severity": "error",
+      "description": "Scope: Claude Code only — not the in-pi context. Match the subagent type to the work, and make every empirical step in a brief a non-inferrable deliverable. 1. Explore is a read-only search/trace agent — fan-out reading, locating, and enumerating code, not running experiments. Dispatch Explore ONLY for read / trace / enumerate work. Any task whose decisive step RUNS code or WRITES — a runtime experiment, a validated write, building or executing a fixture — goes to an executing agent (general-purpose) or the orchestrator runs it; never Explore. 2. Every empirical step a brief requires is a non-inferrable deliverable: the brief demands the actual observed output (the pasted command result) and instructs — 'if you cannot run it, STOP and report exactly what blocked; never infer or reason about what the result would be.' A reasoned-but-unrun conclusion is not a finding and must not be reported as one. 3. The orchestrator independently re-runs or verifies the load-bearing empirical claim before relaying it: an agent's brief and process are invisible to the user, so an unverified inferred claim reaches the user as fact unless caught.",
+      "oid": "ffdf4b07456e67643703a231a31b8ab4",
+      "content_hash": "d041f7ece998695a082198e1f2ae10c72b719488ff96ab9f6b95275f25f94371"
+    }
+  ]
+}

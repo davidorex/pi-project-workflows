@@ -1,0 +1,12 @@
+{
+  "description": "Fix the check-changelog watched-surface over-flag — closes FGAP-075. Add a subtractive isExemptSurface(path) predicate to scripts/check-changelog.ts and filter changedPaths through it at the top of changedPackages, so build-excluded *.test.ts and the monitor packages/pi-behavior-monitors/examples/*.patterns.json learned-pattern stores no longer count as published surface. Orthogonal to watchDirsFromFiles/pathInWatchSet/unreleasedGrew; a genuine src/*.ts or examples/*.monitor.json still flags.",
+  "status": "completed",
+  "files": [
+    "scripts/check-changelog.ts",
+    "scripts/check-changelog.test.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Closes FGAP-075. Subtractive predicate + filter only; no change to the watch-set derivation or matching. The gate fix lives in scripts/ (not a watched package surface), so committing it does not self-trip. Unblocks the TASK-043 composition-test + hedge.patterns.json commit. Separate, noted-not-fixed: a monitor test mutates the shipped hedge.patterns.json on each run (test-hygiene)."
+}

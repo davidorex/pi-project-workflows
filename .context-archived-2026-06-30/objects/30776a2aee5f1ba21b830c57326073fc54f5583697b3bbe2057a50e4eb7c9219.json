@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-05-30T11:00:00-06:00",
+  "focus": "Cutover via /context switch -c .context. Accept-all + install populated .context to packaged baseline. Pi-side agent landed session-notes block + schema + config-additions (kind + session_touches_item relation_type). FGAP-180 (orchestrator portability gap) + TASK-095 (CLI elevation under FEAT-001) filed in .project via temporary /context switch -c flip continuing pre-cutover sequence. Real-problems-only filter applied to customization framing.",
+  "discoveries": [
+    "switched_by stamps as verified-identity bare email per the contract",
+    ".context starts fresh with FGAP/TASK sequence at 001 per substrate-routing canon (sequence-continuity across substrates is operator-judgment via /context switch flips)",
+    "Switch surface enables temporary substrate navigation pattern (.context → .project → .context for sequence-continuing filings)",
+    "Only session-notes block kind qualifies as immediate-need per real-problems-now filter; speculative custom kinds prune away",
+    "Orchestrator-script-portability gap: 39 scripts/orchestrator/*.ts not installable by downstream Claude Code sessions — full dual-surface canon enforced in-monorepo only"
+  ],
+  "decisions_made": [
+    "Real-problems-only filter as customization framing — substrate shape added only when active observable problem demands it",
+    "FGAP-180 + TASK-095 filed in .project via temporary pointer flip (eat-own-dog-food validation of /context switch family during week one)",
+    "Session-notes block adopted from clock-menu-app schema unchanged (5 required + 3 optional fields); session_touches_item edges carry cross-references"
+  ],
+  "current_status": ".context substrate canonical: 17 block kinds (16 packaged + session-notes) + 29 relation_types (28 packaged + session_touches_item) + 2 lenses + 0 status_buckets + 0 layers; pointer at .context. .project frozen at FGAP-180 + TASK-095 as last entries (179 FGAPs + 95 TASKs + 66 VERs + 138 edges). Active open arcs: (1) FGAP-169 jit-agents canon-alignment — multi-tool dispatch loop in executeAgent pending implementation; jit-agents-spec.md v2 rewrite pending (load-bearing for substrate-coherence path); (2) FGAP-180 + TASK-095 — CLI elevation under FEAT-001; package name TBD; neither blocked. Working tree dirty: .pi-context.json + .context/ + archive/.config/ (cutover-commit cluster pending) + pre-existing M CLAUDE.md (held all session). Branch main at 79d9cc5. Release HELD per session constraint. Push HELD per session constraint.",
+  "next_steps": [
+    "Cutover commit cluster: .pi-context.json + .context/ (17 kinds + 29 relation_types + session-notes scaffold) + archive/.config/ — single commit closes the cutover trail",
+    "Operator scope-decision between resuming FGAP-169 jit-agents canon-alignment (load-bearing for substrate-coherence) vs TASK-095 CLI elevation (enables downstream operator-experience parity) — both pending, neither blocked",
+    "Cross-substrate consultation tool when first .context item cites .project archaeology (sentinel resolution via references_cross_substrate_item edges)",
+    "CLAUDE.md mod held all session — operator-decision on commit vs discard",
+    "jit-agents-spec.md v2 rewrite — committed-to per SESSION-002 but not yet authored; substrate-coherence Phase 1"
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "title": "In-file git-style failure markers at offending items/fields",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, when update blocks a schema, I expect failure markers written INTO the block file at the offending items and fields — the way git merge writes conflict markers into source files — so I open the block and see the problem inline, not only in a CLI report."
+}

@@ -1,0 +1,6 @@
+{
+  "title": "dryRun runs real forward-migration + re-validation",
+  "status": "proposed",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want update --dryRun to prospectively run the actual forward-migration + re-validation against the block items, so it never predicts resynced when the live run will hit blocked."
+}

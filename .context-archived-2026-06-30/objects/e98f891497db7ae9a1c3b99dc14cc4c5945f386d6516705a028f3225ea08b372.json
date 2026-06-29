@@ -1,0 +1,10 @@
+{
+  "description": "Make pi-context a globally installable command: add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/package.json"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

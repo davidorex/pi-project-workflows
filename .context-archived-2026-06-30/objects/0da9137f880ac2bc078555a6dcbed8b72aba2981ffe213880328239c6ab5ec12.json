@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T18:00:00.000Z",
+  "evidence": "TASK-053 verified; behavior-preserving refinement complete. buildFreshRegistryWithChain(substrateDir, chain) lives in migration-registry-loader.ts beside buildRegistryFromSubstrateForDir — substrate on-disk decls first (the substrate decl wins a (schemaName, fromVersion) collision), the chain's absent edges merged, migrationFnFor per decl, cache-untouched, no disk writes — and the three former in-memory seeding blocks (simulateResyncOutcome, validateBlockItemsAgainstCatalog, resolveBlocked) call it; createRegistry no longer appears in index.ts. The marker sentinel contract has one source: MARKER_OPEN/MARKER_CLOSE token constants with MARKER_LINE_RE (+ the /m twin) derived from them; composeMarkerText builds its lines from the tokens and every detection/strip site uses the derived regex — the seven-character literals remain only in the constants and user-facing display text. The on-disk appendMigrationDeclForDir loops and the live cache-warming getProjectMigrationRegistryForDir call are byte-unchanged. Behavior preservation: the full test suite passed with ZERO test-file edits (the diff is exactly migration-registry-loader.ts + index.ts + one CHANGELOG line); build + check + parity-check green; the runtime blocked -> markers -> byte-exact restore -> fix -> resolve-blocked -> in-sync loop converges on the refactored dist. Re-audit greps confirm no residual seeding block, the literal placement, and the untouched out-of-scope paths.",
+  "criteria_results": [
+    {
+      "criterion": "buildFreshRegistryWithChain in migration-registry-loader.ts; the three former seeding blocks call it; no in-memory createRegistry seed block remains at a call site",
+      "status": "passed",
+      "evidence": "the helper beside buildRegistryFromSubstrateForDir; three swaps; rg shows createRegistry absent from index.ts"
+    },
+    {
+      "criterion": "exact semantics preserved: existing-first substrate-wins dedup, migrationFnFor per decl, no cache warming, no disk writes",
+      "status": "passed",
+      "evidence": "the helper body is the investigated common shape verbatim; suite green unchanged"
+    },
+    {
+      "criterion": "the on-disk register loops and the live cache-warming call byte-unchanged",
+      "status": "passed",
+      "evidence": "absent from the diff; rg confirms both present and untouched"
+    },
+    {
+      "criterion": "the sentinel pattern defined once; composer tokens and detection regex share one source",
+      "status": "passed",
+      "evidence": "MARKER_OPEN/MARKER_CLOSE + derived MARKER_LINE_RE(+m); literals only in constants + display text"
+    },
+    {
+      "criterion": "behavior-preserving: full suite passes unchanged; build/check/parity green; the runtime loop converges",
+      "status": "passed",
+      "evidence": "zero test edits; all gates 0; the driver loop blocked->restore->resolve->in-sync on the refactored dist"
+    },
+    {
+      "criterion": "fresh adversarial re-audit confirms zero behavioral drift",
+      "status": "passed",
+      "evidence": "grep-sufficient re-audit per plan: seeding sites, sentinel placement, out-of-scope paths, diff scope — all clean; the unchanged suite + runtime loop attest behavior"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A non-additive config.schema.json diff absent a paired migration fails the build-time gate.",
+    "An additive diff (a new optional field) passes the gate.",
+    "New config fields land optional; a field removal or rename is gated to a contract release."
+  ],
+  "files": [
+    "scripts/"
+  ],
+  "notes": "Build-time-gate family with FGAP-094 (TASK-067)."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Convention-articulation enforcement — the validator requires planning artifacts to cite a governing convention or a missing-convention gap",
+  "status": "complete",
+  "layer": "L2",
+  "description": "context-validate requires every decision, feature, and task to articulate its governance: an item_governed_by_convention edge to a convention, OR an item_acknowledges_missing_convention edge to a 'no convention governs X' framework-gap. A planning artifact filed with neither is a validation violation, so conventions cannot be silently skipped and a missing convention surfaces as tracked debt rather than a silent opt-out.",
+  "motivation": "Conventions govern planning before implementation, but their composition into context relies on the LLM reading and heeding them. Enforcing articulation at validation makes governance a checked precondition, not an aspiration.",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

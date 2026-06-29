@@ -1,0 +1,11 @@
+{
+  "description": "FEAT-006 T3 — deterministic schema-merge. Add a key/path-level draft-07 3-way merge mergeSchema(base, ours, theirs) -> {merged, conflicts[]}: base = the base-stamped as-installed body (getObject), ours = the installed dest schema, theirs = the catalog source schema. Wire it into the update flow at the locally-modified / both-diverged branch (replacing TASK-034's refuse-and-report): auto-apply the merged schema when the conflict set is empty; on a non-empty conflict set leave the schema unmodified and hand the typed set to the resolver (TASK-037). Depends on TASK-035; governed by DEC-0017.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/schema-merge.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

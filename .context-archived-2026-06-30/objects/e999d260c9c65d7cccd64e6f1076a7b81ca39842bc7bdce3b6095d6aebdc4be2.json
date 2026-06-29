@@ -1,0 +1,15 @@
+{
+  "description": "Extend `currentState` (packages/pi-context/src/context-sdk.ts:682-825) — the derivation behind context-current-state / `/context status` — so task readiness honors `task_gated_by_item` gates, not only `task_depends_on_task`. A planned task carrying a `task_gated_by_item` edge to a target NOT in the `complete` bucket must be reported blocked (target id in `blockedBy`) and excluded from `nextActions`; a gate target reaching the `complete` bucket releases the gate. Gate satisfaction reuses `bucket(target) === \"complete\"` via resolveStatusVocabulary (status-vocab.ts) — kind-general, the same mechanism the status-consistency invariant engine uses (context-sdk.ts:2186-2227); NOT a net-new completeness check. Both consumption sites fold gate parents: `blocked` (incompleteDeps→depParentsOf, :727-730/:742-751) and the `nextActions` topo predecessor function (:790). Scope is strictly the literal relation_type `task_gated_by_item`; `decision_gated_by_item` and non-task `*_gated_by_item` are inert (currentState buckets only tasks) and OUT of scope — the config-driven generalization is FEAT-004. NOW slice of FGAP-061.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/skills/pi-context/SKILL.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

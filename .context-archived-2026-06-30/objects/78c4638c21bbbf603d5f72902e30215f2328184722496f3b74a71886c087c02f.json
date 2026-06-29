@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Criterion 3 met by reordering state_derivation.next_ranked to [tasks, issues, framework-gaps] in the packaged conception (233b48f) and the live .context config (b8eea4f via amend-config) — config only; the deriver is unchanged. pi-context context-current-state on .context returns a 15-entry ranked head of 13 ready planned tasks then 2 open issues (hasTask true); the same substrate's open-gap count exceeds head_size. Full suite green: 2538 tests across all workspaces + migration, 0 fail, with the stock-head test expectations and the STOCK_STATE_DERIVATION fixture reconciled to tasks-first. context-validate reports only pre-existing decision/gap/layer warnings, none from this change. Criteria 1, 2, 4, 5 stand from VER-056 (the config-derivation rewire); the reorder changes the stock head composition by design (criterion 3), superseding criterion 2's mechanism-stage byte-preservation rather than regressing it.",
+  "criteria_results": [
+    {
+      "criterion": "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+      "status": "passed",
+      "evidence": "head_size is config-declared (read-config state_derivation.head_size=15; no NEXT_ACTIONS_CAP literal in source). With next_ranked reordered tasks-first in the shipped conception and the live .context config, context-current-state on .context returns 13 ready tasks + 2 issues in the 15-slot head (hasTask true), where the prior order returned 15 framework-gaps and zero tasks. The shipped conception and the live substrate carry the same order."
+    }
+  ]
+}

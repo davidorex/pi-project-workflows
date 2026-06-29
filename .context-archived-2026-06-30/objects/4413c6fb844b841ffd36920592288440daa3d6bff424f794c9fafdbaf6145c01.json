@@ -1,0 +1,13 @@
+{
+  "description": "block-api upsert dry-run parity (upsert-block-item). Library: add opts?:{dryRun?} to upsertItemInBlock (block-api.ts) -> *ForDir -> upsertItemInTypedFile; when dryRun, under the block lock read the array, compute the prospective whole block (append, or replace at matched idField index), AJV-validate it, and return {mode, dryRun:true} without writing. Op (ops-registry.ts upsert-block-item): declare dryRun + thread + would-message. Script: delete bespoke preview, call upsertItemInBlock with {dryRun:true}, print mode. CHANGELOG [Unreleased] bullet. Last of the five — parity-check reaches 0 divergences; FGAP-012 closes on this landing. Per DEC-0008 / FGAP-012.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "scripts/orchestrator/upsert-block-item.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

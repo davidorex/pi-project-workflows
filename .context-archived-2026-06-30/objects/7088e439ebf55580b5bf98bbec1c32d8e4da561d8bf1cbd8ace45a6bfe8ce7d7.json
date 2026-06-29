@@ -1,0 +1,15 @@
+{
+  "title": "Story schema: id, description, status (draft|set), type (open string)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A story holds id, a one-sentence description, status draft|set, and a type. type is a free-form string (not an enum) so values such as user or llm-user are admitted without a schema change. title and acceptance_criteria are not present; stories carry no criteria.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/story.schema.json",
+      "reference": "declares title, description, acceptance_criteria, and status enum proposed/ready/in-progress/in-review/complete/blocked"
+    }
+  ],
+  "impact": "Story schema carries criteria and a multi-state lifecycle; the model treats a story as a theme with no done-ness of its own.",
+  "proposed_resolution": "Set story fields to id + description + status(draft|set) + type, where type is a free-form string (not an enum) admitting values like user or llm-user; drop title, acceptance_criteria, and the surplus status values proposed/ready/in-progress/in-review/complete/blocked."
+}

@@ -1,0 +1,10 @@
+{
+  "title": "layer-plans schema nests id-bearing arrays (plans.layers, plans.migration_phases) instead of top-level entities + membership edges",
+  "body": "plans[].layers[] and plans[].migration_phases[] are nested id-bearing arrays; id-bearing items must be top-level entities joined by membership edges (edges-not-inline). context-validate flags both (code nested_id_bearing_array). Fix (schema-only; layer-plans has 0 items, no data migration): promote layers and migration_phases to top-level entity kinds, link each to its parent plan via a membership relation_type, drop the nested arrays from the layer-plans item schema; apply to the samples catalog and the live installed copy.",
+  "location": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+  "status": "open",
+  "category": "cleanup",
+  "priority": "low",
+  "package": "pi-context",
+  "source": "agent"
+}

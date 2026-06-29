@@ -1,0 +1,223 @@
+{
+  "schema_version": "1.0.0",
+  "sessions": [
+    {
+      "id": "SESSION-001",
+      "timestamp": "2026-05-30T07:00:00-06:00",
+      "focus": "Investigated 18 FB items from clock-menu-app's usage-feedback via 4 parallel Explore agents (authoring / model-resolution / dispatch-runtime / substrate-surfaces); batch-filed 24 FGAPs (FGAP-153 through 176) covering jit-agents incoherence territory plus 2 from FB-014 split (FGAP-151/152 for run-work-order-loop documentation + alternative entry point).",
+      "discoveries": [
+        "tools[] in agent specs is declarative-only — executeAgent strips at grant-clamp boundary (jit-runtime.ts:488), never wires to LLM (line 568 delivers phantom-tool only when outputSchema set)",
+        "jit-agents-spec.md is outlier text vs canonical body (FEAT-005/006/DEC-0047/TASK-091/JI-029)",
+        "Capability-grant infrastructure (FEAT-004/005/DEC-0047/TASK-089/092) dormant at agent-dispatch tier; operates correctly at orchestrator-tier only",
+        "Fixing author-agent-spec kills 5 FBs (FB-001/002/003/005/006); kill-map identified across the 4 buckets"
+      ],
+      "decisions_made": [
+        "4-bucket partition for FB triage (authoring / model-resolution / dispatch-runtime / substrate-surfaces)",
+        "Mandate-007 applied: bundled-sample staleness folded in-scope as sub-step 1d during FEAT-001 template-relocation arc",
+        "Lazy-migration discipline established: .project frozen; .context content moves only on first canonical need"
+      ],
+      "current_status": "26 jit-agents FGAPs filed in .project (FGAP-151..178); per-FB kill-map mapped to surfaces; substrate-coherence territory mapped but not yet decided",
+      "next_steps": [
+        "Substrate-contradiction audit to verify the 22 contradictions catalogued",
+        "Articulate path to substrate consistency for jit-agents canon",
+        "Sharpen any FGAP-bodies that carry LLM-credulous framing"
+      ],
+      "oid": "d21589d09f77d8b0370c5dfdc6f2a928",
+      "content_hash": "aed2da9f7c2f6f2a0fb3811d164d814c4bcacfd0d36fefa0bac6ba0d16e07862"
+    },
+    {
+      "id": "SESSION-002",
+      "timestamp": "2026-05-30T08:30:00-06:00",
+      "focus": "Operator-authored 22-contradiction audit verified 17/22 CONFIRMED by fresh-context Explore probe. Sharpened FGAP-169 with line 488/568 verbatim evidence (compiled.tools structurally unreachable from LLM). Amended FGAP-169/177/178 to declarative implementation-gap framing.",
+      "discoveries": [
+        "Path to substrate consistency is implementation + spec-rewrite, not scope-decision — the canonical body (FEAT-005/006/DEC-0047/TASK-091/JI-029) already declares jit-agents as tool-using; the implementation has hedged",
+        "jit-agents-spec.md is the outlier substrate text; rewriting as v2 preserves canon-source integrity vs amend-in-place which produces Frankenstein document",
+        "Multi-tool dispatch loop in executeAgent is the implementation work that closes FGAP-169; ExtensionContext tool-execution surface interlocks with FGAP-115"
+      ],
+      "decisions_made": [
+        "jit-agents-spec.md gets rewritten as v2; old spec doc retained with supersession banner",
+        "Performative-dismissal-as-anti-pattern filed as feedback memory (feedback_no_performative_dismissal)",
+        "Substrate-coherence path: Phase 0 decided + Phase 1 spec rewrite + Phase 2-5 impl + cascade + verification"
+      ],
+      "current_status": "22 contradictions catalogued + verified at 81% accuracy; substrate-coherence path defined; FGAP-169/177/178 carry declarative framing; awaiting cutover surface to enable .context greenfield re-derivation per DEC-0036",
+      "next_steps": [
+        "Cutover surface for DEC-0036 (canonical pointer-flip operation)",
+        "Resume jit-agents impl arc with surface available",
+        "Author jit-agents-spec-v2.md per the canonical body"
+      ],
+      "oid": "0ca4406f6fad4a9f8cf9d3a15dbb481a",
+      "content_hash": "77c78344f983df91895f20bcaa672c8713a6c74f002a892e49c465415121631e"
+    },
+    {
+      "id": "SESSION-003",
+      "timestamp": "2026-05-30T10:00:00-06:00",
+      "focus": "FGAP-179 filed for /context init silent-drop bug. Designed /context switch family parallel to git switch (5 commands: switch existing / switch -c new / switch - / list / archive). TASK-094 implemented end-to-end via canonical pipeline (plan-mode → explore → write plan → coding subagent → orchestrator → adversarial audit → status cascade → merge).",
+      "discoveries": [
+        "Pointer-shape v1.1.0 carries previous_contextDir + switched_at + switched_by stamps",
+        "Auth-gate routing per FGAP-134/138 fires per switch (context-switch + context-archive in AUTH_REQUIRED_TOOLS; context-list stays read-only)",
+        "Bidirectional flip enables transitional-A/B + experimental substrate trees + frozen-substrate consultation patterns",
+        "Single-slot previous_contextDir tracks chain not flat stack (switch - returns to immediate prior, not to original)"
+      ],
+      "decisions_made": [
+        "Switch family modeled on git switch verbatim",
+        "New relation_type references_cross_substrate_item for sentinel-form cross-substrate edges",
+        "Consultation tool for cross-substrate sentinel resolution deferred until first .context item cites .project archaeology"
+      ],
+      "current_status": "TASK-094 completed via 12 commits (merge 7b40e7f); VER-066 attests; 4/4 adversarial probe PASS; DEC-0036 cutover surface live + canonical at packages/pi-context/src/index.ts (3 handlers + 3 Pi tools)",
+      "next_steps": [
+        "Perform DEC-0036 cutover via /context switch -c .context",
+        "Resume jit-agents canon-alignment work in newly-canonical .context substrate",
+        "Lazy-customization framing for what .context blocks need beyond packaged baseline"
+      ],
+      "oid": "85435d980e2adf391f75094fcdbcddec",
+      "content_hash": "3a9944eca7e7ee7dbf3f31d9a0dc45c3fe9007aa8add140b419ed5960f1b899f"
+    },
+    {
+      "id": "SESSION-004",
+      "timestamp": "2026-05-30T11:00:00-06:00",
+      "focus": "Cutover via /context switch -c .context. Accept-all + install populated .context to packaged baseline. Pi-side agent landed session-notes block + schema + config-additions (kind + session_touches_item relation_type). FGAP-180 (orchestrator portability gap) + TASK-095 (CLI elevation under FEAT-001) filed in .project via temporary /context switch -c flip continuing pre-cutover sequence. Real-problems-only filter applied to customization framing.",
+      "discoveries": [
+        "switched_by stamps as verified-identity bare email per the contract",
+        ".context starts fresh with FGAP/TASK sequence at 001 per substrate-routing canon (sequence-continuity across substrates is operator-judgment via /context switch flips)",
+        "Switch surface enables temporary substrate navigation pattern (.context → .project → .context for sequence-continuing filings)",
+        "Only session-notes block kind qualifies as immediate-need per real-problems-now filter; speculative custom kinds prune away",
+        "Orchestrator-script-portability gap: 39 scripts/orchestrator/*.ts not installable by downstream Claude Code sessions — full dual-surface canon enforced in-monorepo only"
+      ],
+      "decisions_made": [
+        "Real-problems-only filter as customization framing — substrate shape added only when active observable problem demands it",
+        "FGAP-180 + TASK-095 filed in .project via temporary pointer flip (eat-own-dog-food validation of /context switch family during week one)",
+        "Session-notes block adopted from clock-menu-app schema unchanged (5 required + 3 optional fields); session_touches_item edges carry cross-references"
+      ],
+      "current_status": ".context substrate canonical: 17 block kinds (16 packaged + session-notes) + 29 relation_types (28 packaged + session_touches_item) + 2 lenses + 0 status_buckets + 0 layers; pointer at .context. .project frozen at FGAP-180 + TASK-095 as last entries (179 FGAPs + 95 TASKs + 66 VERs + 138 edges). Active open arcs: (1) FGAP-169 jit-agents canon-alignment — multi-tool dispatch loop in executeAgent pending implementation; jit-agents-spec.md v2 rewrite pending (load-bearing for substrate-coherence path); (2) FGAP-180 + TASK-095 — CLI elevation under FEAT-001; package name TBD; neither blocked. Working tree dirty: .pi-context.json + .context/ + archive/.config/ (cutover-commit cluster pending) + pre-existing M CLAUDE.md (held all session). Branch main at 79d9cc5. Release HELD per session constraint. Push HELD per session constraint.",
+      "next_steps": [
+        "Cutover commit cluster: .pi-context.json + .context/ (17 kinds + 29 relation_types + session-notes scaffold) + archive/.config/ — single commit closes the cutover trail",
+        "Operator scope-decision between resuming FGAP-169 jit-agents canon-alignment (load-bearing for substrate-coherence) vs TASK-095 CLI elevation (enables downstream operator-experience parity) — both pending, neither blocked",
+        "Cross-substrate consultation tool when first .context item cites .project archaeology (sentinel resolution via references_cross_substrate_item edges)",
+        "CLAUDE.md mod held all session — operator-decision on commit vs discard",
+        "jit-agents-spec.md v2 rewrite — committed-to per SESSION-002 but not yet authored; substrate-coherence Phase 1"
+      ],
+      "oid": "46a9229f944964a297a9f37a554b7018",
+      "content_hash": "30776a2aee5f1ba21b830c57326073fc54f5583697b3bbe2057a50e4eb7c9219"
+    },
+    {
+      "id": "SESSION-005",
+      "timestamp": "2026-05-30T12:15:00-06:00",
+      "focus": "Filed FGAP-181 (per-script --help discoverability) + FGAP-182 (framework-use discoverability via self-documenting substrate) completing the 3-layer orchestrator-surface-discoverability territory map (Layer 1 FGAP-180 / Layer 2 FGAP-181 / Layer 3 FGAP-182). Committed pre-existing CLAUDE.md substrate-id strips (16 edits removing DEC/FGAP/F-NNN provenance citations per invariant-rules-only discipline). Authored 400-line interim how-to doc at analysis/2026-05-30-pi-context-claude-code-howto.md as Layer 3 bridge until self-documenting substrate lands.",
+      "discoveries": [
+        "3-layer discoverability territory needs all three layers closed for fresh-Claude productivity: Layer 1 (CLI installability) + Layer 2 (per-script --help) + Layer 3 (canonical framework-use surface) — each insufficient alone",
+        "Without Layer 3 closure, a fresh Claude landing in this project tomorrow would not find /context switch how-to anywhere natural; interim how-to in analysis/ bridges until FGAP-182 substrate-typed guides arrive",
+        "Pointer-flip pattern used 3x this session for sequence-continuing .project filings — validated by repetition as the canonical cross-substrate-write surface",
+        "Pre-existing CLAUDE.md hold was operator-invented (mine), not operator-declared; same anti-pattern as performative-dismissal — treating something as exception when no exception was declared"
+      ],
+      "decisions_made": [
+        "File Layer 2 + Layer 3 as separate FGAPs (181 + 182) rather than fold into FGAP-180 — distinct scopes; each layer independently filable + addressable",
+        "Interim how-to doc lives in analysis/ until FGAP-182 substrate-typed guides land; maintenance contract documented in-document",
+        "feedback_commit_proactively memory filed to stop the recurring babysit-on-commits slip pattern this session demonstrated"
+      ],
+      "current_status": ".context substrate canonical: 17 block kinds + 29 relation_types + 4 SESSION entries (about to be 5) + 35 edges (about to be 37 after this filing). .project frozen at FGAP-182 + TASK-095 as latest entries (181 FGAPs + 95 TASKs + 66 VERs + 138 edges). Tree clean. Branch main at 83458e6. Active open arcs unchanged from SESSION-004: (1) FGAP-169 jit-agents canon-alignment — multi-tool dispatch loop in executeAgent pending; jit-agents-spec.md v2 rewrite pending; (2) FGAP-180 + TASK-095 — CLI elevation Layer 1; now framed in 3-layer territory with FGAP-181 Layer 2 + FGAP-182 Layer 3 also pending. Release HELD per session constraint. Push HELD per session constraint.",
+      "next_steps": [
+        "File SESSION-005 entry (this snapshot)",
+        "Operator scope-decision between resuming FGAP-169 jit-agents canon-alignment vs beginning TASK-095 CLI elevation — both pending, neither blocked; CLI elevation when undertaken should bundle Layer 2 (FGAP-181 --help convention) since they share the same code surface",
+        "Self-documenting substrate per FGAP-182 (operator scope-decision on single-omnibus vs split block-kinds — 7 candidates: commands / tools / runbooks / patterns / concepts / errors / axioms)",
+        "Maintain the how-to doc per its in-document maintenance contract until FGAP-182 lands"
+      ],
+      "oid": "9a049f74f87f7a096f0568469de1c0e0",
+      "content_hash": "b2f06ed302c9697e8d679b9a73a3c1b81ab00be3402be7e38065e1cdb350feec"
+    },
+    {
+      "id": "SESSION-006",
+      "timestamp": "2026-05-30T13:30:00-06:00",
+      "focus": "Persisted jit-agents-spec-v2 at analysis/2026-05-30-jit-agents-spec-v2.md (305 lines; commit 4fc05e8). Engagement pattern for substantial arcs recognized: each undertaking gets its own per-arc substrate via /context switch -c, with block kinds + relations + lenses + invariants + conventions shaped to the arc's natural entity-graph.",
+      "discoveries": [
+        "/context switch -c enables per-arc substrate dirs explicitly shaped for one undertaking start-to-finish — substrate as workspace + plan + tracking + completion artifact, not just storage",
+        "Citation-rot scanner enforces no-substrate-ID-citations in shipped-package text (packages/*/SPEC.md scoped); analysis/ is committable + outside that scope; matches the pattern of other authored canonical-content this session",
+        "Spec content with substrate-ID traceability anchors lives in analysis/; substrate-decomposition into axioms + decisions + concepts + open-questions lives in per-arc substrate; lens projection renders the document"
+      ],
+      "decisions_made": [
+        "jit-agents-spec-v2 markdown lives at analysis/2026-05-30-jit-agents-spec-v2.md",
+        "Spec-v2 substrate-decomposition work happens in per-arc substrate .context-jit-spec-v2 (not in canonical .context)",
+        "Per-arc substrate as the canonical engagement unit for substantial undertakings going forward"
+      ],
+      "current_status": "Branch main at 4fc05e8. Tree clean. Pointer at .context. Spec-v2 markdown persisted (305 lines; D1-D10; classifier-mode + agentic-mode duality; implementation arc tracked by FGAP-169 + FGAP-178 + FGAP-115 + FEAT-001 + TASK-082/083). Active open arcs unchanged: FGAP-169 jit-agents canon-alignment implementation + FGAP-180/181/182 + TASK-095 3-layer discoverability. Release HELD per session constraint. Push HELD per session constraint.",
+      "next_steps": [
+        "/context switch -c .context-jit-spec-v2 — bootstrap per-arc substrate for spec-v2 work",
+        "Design custom block kinds for spec-v2 entity-graph (axioms + decisions + concepts + open-questions + dispatch-modes + v1-supersessions + impl-tasks + verifications)",
+        "Design relations (axiom_grounds_decision + concept_referenced_in_decision + spec_includes_* + v1_section_superseded_by_v2_item + impl_task_implements_decision + verification_attests_decision)",
+        "Design lenses (full-spec-render + decisions-only + open-questions + coverage-vs-v1 + impl-progress)",
+        "Design invariants + conventions + context-contracts encoding spec-v2 operational patterns",
+        "File initial spec items decomposed from the markdown"
+      ],
+      "oid": "a83aff9e1a0ca4d4980d733a8cea2765",
+      "content_hash": "2cf30a8063d7f1657bd7e7c8048ab4541c52fa34938398ea413b12de5838e163"
+    },
+    {
+      "id": "SESSION-007",
+      "timestamp": "2026-05-30T14:00:00-06:00",
+      "focus": "Per-arc substrate .context-jit-spec-v2 bootstrapped + populated with spec-v2 entity-graph. 4 custom block kinds (axioms / concepts / dispatch-modes / v1-supersessions) + 7 custom relation_types registered. 3 axioms + 10 decisions + 2 dispatch-modes + 6 v1-supersessions + 29 inter-entity edges filed. Markdown spec at analysis/2026-05-30-jit-agents-spec-v2.md is source-of-content; substrate is source-of-structure + cross-references.",
+      "discoveries": [
+        "Per-arc substrate engagement: 4 phase boundaries fit naturally (1 bootstrap; 2a vocabulary register; 2b lens design pending; 3 item filing). Each phase commits independently per per-step discipline",
+        "Packaged decisions schema accommodates spec-v2 D1-D10 cleanly; v1_origin stashed in references[] field since packaged schema lacks dedicated v1-origin slot",
+        "amendConfigEntry import path is @davidorex/pi-context/context (not block-api); both exports valid, different surfaces"
+      ],
+      "decisions_made": [
+        "Spec-v2 entity-graph: 4 custom kinds + packaged decisions/framework-gaps/tasks/verification covers the spec's natural structure",
+        "29 inter-entity edges authored across axiom_grounds_decision + dispatch_mode_realizes_decision + v1_section_superseded_by_v2_item — substrate-canonical cross-reference shape, not denormalized arrays in item bodies"
+      ],
+      "current_status": ".context-jit-spec-v2 substrate populated: 20 block_kinds (16 packaged + 4 custom) + 35 relation_types (28 packaged + 7 custom) + 2 lenses (unchanged); 3 AX + 10 DEC + 2 MODE + 6 VSUP + 29 edges. Markdown spec at analysis/2026-05-30-jit-agents-spec-v2.md (commit 4fc05e8) is the source-of-content; substrate is queryable structure. Pointer flipped back to .context for this session-notes filing; .context-jit-spec-v2 stays as the per-arc workspace for spec-v2 evolution. Branch main at 0f26306. Tree clean.",
+      "next_steps": [
+        "Remaining phase 3 (when prioritized): concepts items (boundary contract + agent signature + scope ownership as ~5 CONCEPT-NNN items) + any v1 Q-OPEN still-open → FGAPs in spec substrate + composition lens (full-spec-render walking the kinds in spec-section order)",
+        "Implementation arc per FGAP-169 multi-tool dispatch loop in executeAgent — load-bearing for realizing DEC-0004/0008/0009/0010 at runtime; interlocks with FGAP-115 ExtensionContext gap",
+        "Spec-v2 entity-graph is substantively-wired-enough that work resuming on the implementation arc can substrate-cite spec decisions canonically rather than markdown-cite"
+      ],
+      "oid": "c4c3c3e2224910a21fd8ca1126a7449c",
+      "content_hash": "5a5458c9f5abab6abeac6f0ee512a18ba200d87880f4988e6720e5946539e4c8"
+    },
+    {
+      "id": "SESSION-008",
+      "timestamp": "2026-05-30T16:00:00-06:00",
+      "focus": "Spec-v2 substrate phase 3 finalized (5 concepts + 1 open-question FGAP + 10 edges + full-spec-render composition lens). Orientation surfaces refreshed (MEMORY.md 37.3KB → 19.3KB under cap; HANDOFF.md re-set to current; README.md to 4-extension shape + /context switch family + per-arc engagement pattern). FGAP-183 filed in .project (MigrationRegistry doesn't honor readBlock contextDir override; P1; discovered + reproduced this turn). Spec-v2 substrate extended with authority + friction layer: 2 new schemas (friction-items + authority-docs) + 2 new block_kinds + 6 new relation_types + 18 FB items verbatim from clock-menu-app/.context/usage-feedback.json + 2 REF docs (REF-001 LLM Perspective JIT Agent UX + REF-002 Pi-Context May 29 LLM Perspective) + 52 edges (18 FB→cross-substrate FGAP via sentinel form + FB→DEC + FB→CONCEPT + REF→DEC + REF→CONCEPT + REF→MODE). Spec-v2 substrate PM decomposition landed: 5 FEAT + 6 TASK + 37 edges wiring features to decisions + modes + friction items; tasks to features + cross-substrate FGAPs + ordering.",
+      "discoveries": [
+        "MEMORY.md cap is 24.4KB bytes (system load truncation); inline FGAP-closure narratives in 'Current Focus' section consumed ~20KB duplicating substrate (status=closed FGAPs + VER entries); stripping to thin pointer-only index fits cap with room to spare",
+        "config.json block_kinds requires display_name + rejects description; relation_types category enum is ordering|data_flow|membership only (cross_substrate/grounding/authority not accepted; data_flow is the existing canonical category for grounding-class relations per axiom_grounds_decision precedent)",
+        "Block files need empty-shell seed (echo '{\"items\":[]}' > foo.json) before first appendToBlock; appendToBlock calls readBlock pre-write which throws on absent file",
+        "Upstream-authored FB severity enum includes 'friction' + 'observation' (not just blocking/major/minor/cosmetic); upstream status includes 'resolved' (not just open/addressed/wontfix/duplicate); initial-fit schema widened in-place at v1.0.0 since no items existed yet",
+        "MigrationRegistry caches per-cwd, not per-resolved-substrate-dir; readBlock's contextDir override flows to the file read but not to the registry lookup; cross-substrate reads of versioned-schema blocks throw — filed as FGAP-183 (P1)"
+      ],
+      "decisions_made": [
+        "Per-arc substrate engagement pattern extends to authority + friction layer: REF authority-docs + FB friction-items are first-class block kinds in the per-arc substrate, not external analysis/ pointers. Walking from FB → FGAP → DEC → CONCEPT → MODE renders friction-to-implementation trace as queryable canon.",
+        "Cross-substrate FB↔FGAP references use sentinel form 'project:FGAP-NNN' in the child field (no programmatic cross-substrate resolution tool yet; manual /context switch traversal works today)",
+        "PM decomposition (FEAT + TASK) uses packaged relation_types (feature_depends_on_item + task_depends_on_task) per canonical purpose; no new relation_type needed for the work-management layer",
+        "Schema-widening at v1.0.0 (no version bump) when initial-fit pass surfaces upstream enum values not anticipated; documented in commit body; future ingest passes from upstream remain shape-compatible"
+      ],
+      "current_status": ".context-jit-spec-v2 substrate now carries: 22 block_kinds (16 packaged + 6 custom: axioms / concepts / dispatch-modes / v1-supersessions / friction-items / authority-docs) + 41 relation_types (28 packaged + 13 custom) + 3 lenses (full-spec-render composition unchanged from SESSION-007) + 58 substrate items (3 AX + 10 DEC + 5 CONCEPT + 2 MODE + 6 VSUP + 1 FGAP + 18 FB + 2 REF + 5 FEAT + 6 TASK) + 128 inter-entity edges. 14 of 22 block kinds carry content; 8 standard PM blocks remain seeded-empty (verification / issues / research / rationale / spec-reviews / layer-plans / requirements / conventions / context-contracts / phase / story / work-orders — operator-scope to fill as the arc progresses). Branch main at 9ee4db2 (with FGAP-183 filing at e835c80 + spec-v2 authority/friction layer at b8a0422 + spec-v2 PM decomposition at 9ee4db2 + README refresh at 87afbbd + MEMORY/HANDOFF refresh at user-memory-dir non-git surfaces). Tree clean. Pointer at .context (round-tripped from .context-jit-spec-v2 post each filing pass). Release HELD. Push HELD.",
+      "next_steps": [
+        "TASK-001 (in .context-jit-spec-v2/tasks.json) is the precondition: resolve FGAP-115 (ExtensionContext currentModel/currentProvider gap) — collapse a/b/c options to canonical choice. Then TASK-002 (agentic-mode dispatch loop in jit-runtime.ts:432-738 realizing MODE-002 per DEC-0004/0008/0010) becomes unblocked.",
+        "TASK-003 (list-dispatch-models) and TASK-005 (introspection surface) are parallel-eligible — no dep on TASK-002.",
+        "FGAP-183 closure (MigrationRegistry contextDir override) is independent of the spec-v2 arc; landing it unblocks programmatic cross-substrate consultation, which in turn enables a future cross-substrate-tool that replaces the manual /context switch round-trips this session uses for cross-substrate filing."
+      ],
+      "oid": "0f46433ed38ed39eb23675204865f951",
+      "content_hash": "856f4c8c5fa7d88899211139da053cc108c8e168b073888c55b71b894816c414"
+    },
+    {
+      "timestamp": "2026-06-27T12:00:00-07:00",
+      "focus": "Reverse-engineered the WASC operation framework from claude-history (its run process, enforcement hooks, scripts, and 113-step build sequence) and began porting it into this project on the operations-constraint branch; closed this session's context-currency gaps in .context and memory.",
+      "current_status": "On branch operations-constraint (ahead of main). The active arc PHASE-PORT-OPS (in-progress) is the port of the WASC operation framework into this project, except the bifurcated context (transposed to .context), including memory and CLAUDE.md elements; the pi-context dev arc (TASK-068 in-progress, 44 open gaps) is parked behind it. The WASC operation-system investigation is persisted verbatim under analysis/wasc-operation-system-port-source/ and analysis/wasc-process-record/ and surfaced as research R-0020..R-0024. DEC-0019 (open) chooses a fresh curated-carry-forward substrate for the port (forcing issue-010); the port's feature/task decomposition is deferred to that new substrate per DEC-0019. CLAUDE.md gained the 'Verify, don't narrate' rule; the memory store was restored to 110 files, re-indexed, and gained 4 session-refinement feedback rules; the milestone block was materialized and the stripped task/feature criteria and gap proposed_resolutions were restored from git.",
+      "discoveries": [
+        "The WASC iterate-to-zero loop terminates on two external binary signals — deterministic gate exit 0 AND a separate audit's literal 'Total findings: 0' (DEC-58); the model never self-declares done (research R-0020, build recipe R-0024).",
+        "The out-of-scope STOP fires in 0 of 70 full loop runs (it is run-terminating; research R-0021).",
+        "A meta operating-regime feature has no faithful L1-L5 layer, and a strategic operating decision has no faithful issue/feature/gap forcing artifact, in the current PM model — modeling friction that itself argues for the fresh substrate (DEC-0019)."
+      ],
+      "decisions_made": [
+        "DEC-0019: stand up a fresh context substrate for the port via curated carry-forward (non-destructive switch; .context parked)."
+      ],
+      "next_steps": [
+        "Execute DEC-0019: stand up the new curated substrate, switch the active pointer, then decompose and file the PHASE-PORT-OPS feature and tasks on it.",
+        "Run the curation triage: enumerate the live items in .context and carry forward only the verified-good keepers; the rest stay in the parked substrate.",
+        "Execute the port itself per the transposition recipe (research R-0024): author the hooks / CLAUDE.md discipline / memory / gate elements directly; run the pi-context install ceremony for the substrate; re-point the deterministic gate to npm run check && npm test."
+      ],
+      "id": "SESSION-009",
+      "oid": "f022efa5b705179c7b8ac8fbdef0c6c0",
+      "content_hash": "dca7873aa445627fadd7b53d0bedb95c03c9dc6506e1c74a93b3902fe24d77b3"
+    }
+  ]
+}

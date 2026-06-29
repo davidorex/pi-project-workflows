@@ -1,0 +1,11 @@
+{
+  "description": "parity-check detector hardening (scripts/parity-check.ts only): add flattenSchemaProperties resolving object/.properties + allOf (Type.Intersect) + $ref ($defs/definitions, cycle-guarded, fail-open per branch) for opDeclaresParam; tighten scriptParsesFlag to arg-parse position (=== \"--flag\", kebab regex-escaped) so a print-only literal no longer false-matches; export opDeclaresParam + scriptParsesFlag + flattenSchemaProperties for edge tests. Gate still exits 0 (70 writers, 0 ctx-drops) and still prints the 5 dryRun divergences (robustness change, not result change). Per DEC-0008 / FGAP-012. Full completion sequence; coding subagent; orchestrator runs all npm + is sole git writer.",
+  "status": "completed",
+  "files": [
+    "scripts/parity-check.ts",
+    "scripts/parity-check.test.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

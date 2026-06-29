@@ -1,0 +1,7 @@
+{
+  "description": "Install the three requires-edge invariants (one per source block: decisions, features, tasks) in .context config at severity error, each requiring at least one item_governed_by_convention or item_acknowledges_missing_convention edge as_parent. Enact DEC-0016. Run only after the backfill (TASK-031) so the substrate validates clean.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "to be derived"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "description": "FEAT-006 T1 — the pi-context update command shell + drift routing. Add a bare-verb `pi-context update` (per cli-command-form) with a `--dry-run` verb flag, superseding `install --update` as the user-facing update path. Update consults checkStatus (index.ts:858) per installed schema and routes by drift state: in-sync / catalog-ahead -> the existing resync path; locally-modified / both-diverged -> refuse-and-report (do NOT overwrite) until T3 (TASK-036) upgrades that branch to merge. This slice delivers 'never silently clobber' immediately via refuse-and-report.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context-cli/src/cli.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

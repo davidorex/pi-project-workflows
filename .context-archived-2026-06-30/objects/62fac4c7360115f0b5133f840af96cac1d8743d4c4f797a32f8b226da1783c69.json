@@ -1,0 +1,10 @@
+{
+  "title": "promote-cli resolveTargetPrefix detects --prefix only in space-separated form; the glued --prefix=<dir> falls through to the real-global arm",
+  "body": "resolveTargetPrefix detects the --prefix argument via argv.indexOf('--prefix'), matching only the space-separated form. npm's glued form --prefix=<dir> is a single argv token, so indexOf returns -1, resolution falls past the PROMOTE_PREFIX arm, and the run takes the real-global arm. A promote invoked as --prefix=/tmp/x targets the real global prefix (e.g. /opt/homebrew) instead of the intended throwaway target. The real-global arm is itself validated, so the safety invariant holds; the defect defeats the caller's chosen target. Class: an input form accepted in one spelling and mis-routed in another.",
+  "location": "scripts/promote-cli.mjs:133",
+  "status": "open",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-context-cli",
+  "source": "agent"
+}

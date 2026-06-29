@@ -1,0 +1,679 @@
+{
+  "decisions": [
+    {
+      "title": "Bootstrap writes a skeleton config; accept-all overwrites a skeleton but never-clobbers a populated config",
+      "status": "enacted",
+      "context": "FGAP-001: init / switch -c leave the substrate config-less, and the only config-originating op (accept-all) is whole-catalog all-or-nothing, so the custom-vocabulary path has no tool surface.",
+      "decision": "1) initProject and switchAndCreate write a minimal schema-valid skeleton config { schema_version: '1.0.0', block_kinds: [], root, substrate_id } after dir scaffolding, via a never-clobber writeSkeletonConfig (no-op when a config already exists). writeSkeletonConfig mints AND registers the substrate_id (registerSubstrate into the project-root registry), so identity exists and is registered from the first bootstrap action. 2) Skeleton-vs-populated is decided by content: isSkeletonConfig returns true only when EVERY addressable config registry is empty/absent. The registry set is derived by iterating REGISTRY_DESCRIPTORS (all 13 registries: block_kinds, relation_types, lenses, layers, invariants, hierarchy, installed_schemas, installed_blocks, tool_operations, tool_operations_forbidden, status_buckets, naming, display_strings), with a per-kind emptiness test (map -> no keys; array kinds -> zero length). Only schema_version / root / substrate_id are skeleton-permitted; content in ANY registry makes it non-skeleton. No config-schema change and no marker field. 3) adoptConception's guard is if(existing && !isSkeletonConfig(existing)) -- accept-all overwrites a skeleton but never-clobbers a populated config; over a skeleton it reads the existing on-disk substrate_id and preserves it (re-upserting the same registry entry), so init->accept-all keeps one stable, registered identity. 4) deriveBootstrapState gains a 'skeleton' state ordered no-pointer -> no-config -> skeleton -> not-installed -> ready; no-config is retained for a deleted-config substrate; a non-empty-block_kinds config with nothing to install is 'ready'. 5) A shared never-clobber writeSkeletonConfig(cwd, ctx?) writes the skeleton only when config.json is absent, via writeConfigForDir (AJV-validated atomic). 6) context-init / accept-all / switch-create op descriptions name the two onward paths: accept-all (adopt the catalog) or amend-config/edit (build custom).",
+      "consequences": [
+        "accept-all.test.ts idempotent test reworked to skeleton semantics: first adopt on a skeleton => adopted:true (overwrite), second => adopted:false (now populated); add a populated-config never-clobber case.",
+        "accept-all.test.ts 'init scaffolds dirs only, no defaults' retargeted: init now writes config.json; assert exactly ['config.json'] present, no block data files.",
+        "context-sdk.test.ts keeps the genuine config-absent no-config test and adds a skeleton-state test.",
+        "The custom-vocabulary substrate path becomes fully tool-driven (skeleton -> amend-config add block_kinds -> write-schema -> append-block-item, no accept-all).",
+        "Substrate identity (substrate_id) is stable from the first bootstrap action rather than first appearing at accept-all."
+      ],
+      "id": "DEC-0001",
+      "created_at": "2026-06-03T21:22:57.678Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "62f10bb0fb2ae8fb81a41fa3d104686f",
+      "content_hash": "be9d6c39016ca3b80a3573de511c04a0f45dcb50ea8ef1620993932b73f07e33",
+      "content_parent": "7aeca1724e4d7c8b3a0924b39591a88ba8b7da84c61ce68b8d14fdab87aef7e0"
+    },
+    {
+      "title": "Substrate clone is a fork: fresh substrate_id + substrate_derived_from_substrate lineage; registry becomes a provenance-bearing identity ledger",
+      "status": "enacted",
+      "context": "FGAP-002: no substrate-level import path and substrate identity without provenance. Surfaced by the switch-register gap — switching onto a foreign config cannot be distinguished from registry drift, and a blind register-on-switch cannot tell native-lost-registry from foreign-import.",
+      "decision": "Clone uses FORK semantics, not mirror. cloneSubstrate copies the source substrate's content (config vocabulary + all blocks + relations.json + objects/) into a destination dir and MINTS A FRESH substrate_id in the destination, recording a substrate_derived_from_substrate edge to the source id — the substrate-level parallel to promoteItem's fresh-oid + item_derived_from_item. No substrate_id is duplicated across dirs, preserving the one-id<->one-dir SoT invariant. The project-root registry entry gains origin/provenance (minted-here vs derived-from <source id>, plus imported_at), turning it from a flat dir-map into an identity ledger. The SoT-drift invariant (context-sdk.ts:1685+) is refined to distinguish native-lost-registry / foreign-import / genuine drift rather than emitting one substrate_id_unregistered code. pi-context clone <source-substrate> <dest-dir> is the dual-surface command (library + Pi tool + CLI + orchestrator script). Mirror semantics (the same substrate_id live in two dirs) are rejected: they break one-id<->one-dir and the content-addressed uniqueness model.",
+      "consequences": [
+        "Registry schema/type gains provenance fields (origin kind + source substrate_id + imported_at); registerSubstrate call sites updated to record origin.",
+        "New relation_type substrate_derived_from_substrate registered in config (substrate-level parallel to item_derived_from_item).",
+        "New cloneSubstrate library fn + Pi tool + CLI + orchestrator script, landed as one dual-surface unit.",
+        "The SoT-drift invariant is refined to provenance-aware states, eliminating the false substrate_id_unregistered on legitimate imports.",
+        "The local switch-register fix is constrained: switch auto-registers only a native (minted-here) substrate; a foreign unregistered id routes to clone/import instead of being silently absorbed.",
+        "The existing registry aliases field composes with provenance to name an imported substrate."
+      ],
+      "id": "DEC-0002",
+      "created_at": "2026-06-03T22:15:20.339Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "904b15bc21bc5c7103ad8835b713f998",
+      "content_hash": "23354776eb130e5c61e34ddac9ed603b1c335c76f68321e3363c015b03b4fca9"
+    },
+    {
+      "title": "Switch reconciles a native identity: register config.substrate_id -> dir when absent; mismatch still errors",
+      "status": "enacted",
+      "context": "FGAP-003: neither switch path records the active substrate's identity, so a valid switch to an unregistered substrate false-fails context-validate with substrate_id_unregistered.",
+      "decision": "All three switch engine functions — switchToExisting, switchAndCreate, AND switchToPrevious — register config.substrate_id -> active dir when the id is ABSENT from the project-root registry, via a shared reconcileActiveSubstrateRegistration(cwd) helper called after the pointer flip. Register-if-absent is functionally safe: an absent id cannot collide, so registering it in this project's local namespace is harmless; a present-but-different-dir entry is the substrate_id_registry_mismatch case and is LEFT untouched so genuine drift still surfaces. The helper is best-effort: a config that cannot load/validate is caught and skipped so a switch never breaks (a user may switch TO a substrate to repair it); a pre-identity substrate (no substrate_id) is skipped. This decision records only NATIVE re-registration; origin/provenance for imported (foreign) substrates is out of scope here and handled by the provenance ledger in DEC-0002 — a foreign substrate is brought in via clone, not silently absorbed by switch. DEC-0003 is the native-only case of DEC-0002's model.",
+      "consequences": [
+        "All three switch engine functions (switchToExisting, switchAndCreate, switchToPrevious) gain a register-if-absent step after the pointer flip, via the shared reconcileActiveSubstrateRegistration helper.",
+        "Eliminates the false substrate_id_unregistered on a valid switch, switch -c, or switch - .",
+        "Does NOT record origin/provenance — that enrichment lands with DEC-0002; until then a switched-in id is registered without lineage.",
+        "Best-effort: an unloadable/invalid target config is skipped (switch still flips); context-validate surfaces the config problem separately.",
+        "Tests: switch / switch-c / switch- to an unregistered-but-config-bearing substrate -> registered + context-validate clean; a wrong-dir entry -> substrate_id_registry_mismatch preserved; pre-identity + invalid-config -> no-op skip."
+      ],
+      "id": "DEC-0003",
+      "created_at": "2026-06-03T22:34:29.172Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "cdbcac620c6153ee85aa8990a2b4ef36",
+      "content_hash": "9abdebf27088123aab1f19f5928372cb45e0d80901b60c0cb33c7918a5b3ce01",
+      "content_parent": "2a4ecb1998f333fd05fd7621095f6f2a759b98db9ce46b69343e8a2bd5addac4"
+    },
+    {
+      "title": "Structure-aware git merge driver + post-merge integrity pass — pi-context plugs into git's 3-way merge so substrate files merge data-model-valid, not line-mangled",
+      "status": "enacted",
+      "context": "FGAP-004: substrate files fall through to git's line-based merge and get mangled. Git owns branches, commits, merge-base, refs, and invocation; pi-context supplies only the structure-aware per-file reconcile plus a whole-substrate post-merge pass. No native version DAG, snapshot roots, or branch-pinning — git provides all of that.",
+      "decision": "1) Register a git merge driver: .gitattributes maps substrate files (<block>.json, relations.json, config.json, schemas) to merge=pi-context, with a [merge \"pi-context\"] driver entry. Git computes the merge base and invokes the driver per file with %O (ancestor) / %A (ours) / %B (theirs) / %P (path). 2) Per-file structure-aware 3-way: parse the three versions; match items by stable id/oid (never array index) — added-on-one -> include; removed-on-one & untouched-on-other -> remove; modified-on-one -> take; modified-on-both -> field-level merge; removed-on-one & modified-on-other -> conflict. 3) Field-kind-dispatched field merge: scalar/object -> the side changed vs base (both-identical -> take; both-different -> declared deterministic policy or conflict); SEQUENCE fields -> the convergent ordered-sequence field-type (FGAP-005) run on the field's three versions. 4) Edges (relations.json) merge by 3-way set ops on (parent, child, relation_type) triples. 5) objects/: distinct content-hash-named files don't collide; git's directory merge unions them (equal hash == equal content) — no driver needed. 6) config/schema 3-way; divergent redefinition of the same block_kind / relation_type / schema -> surfaced conflict. 7) Post-merge pass (git post-merge hook OR a pi-context merge-finalize command — a per-file driver cannot see across files): cross-block referential integrity (drop or conflict edges whose endpoints were deleted in another file) + full declared-invariant + lens-validator revalidation (branch-valid states can merge to globally invalid). 8) Typed structured conflict set ({item_id, field, base, ours, theirs} + edge/schema analogues), surfaced by the post-merge pass, not inline text markers. 9) Branches, merge-base, commit lineage, refs, and cherry-pick remain git's — not reimplemented; the driver only makes git's per-file result data-model-valid.",
+      "consequences": [
+        "No native version DAG, snapshot roots, branch refs, or merge-base finder — git supplies all of them. Branch-pinning is not needed and is not filed.",
+        "content_parent / content_hash keep their existing content-addressing + drift roles; merge does NOT use them for base-finding (git's %O is the base). Item-matching inside the driver uses the stable id/oid.",
+        "The merge driver + per-file merge logic + field-kind dispatch live in block-api; the cross-block-integrity + invariant revalidation pass is a git post-merge hook / merge-finalize command.",
+        "The convergent ordered-sequence field-type (FGAP-005) is the field-kind invoked inside the driver on %O/%A/%B — this is its host.",
+        "Scope is same-repo, shared-history branch merges; cross-project, no-shared-history import is clone (DEC-0002), an orthogonal axis git cannot merge."
+      ],
+      "id": "DEC-0004",
+      "created_at": "2026-06-03T22:41:58.720Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "805e3b668f8af9960db896897bceca3e",
+      "content_hash": "a7deedfc104698f92ecf3f0497e8250968b20b2fe7412bcaa4670385f002e5a5",
+      "content_parent": "020f14919ced56d66a04c432481c887951ac481e06338ea35015a2a308628c62"
+    },
+    {
+      "title": "Convergent ordered-sequence field-kind: non-interleaving Fugue-class CRDT over item-refs + move-CRDT position register, projected as a plain array",
+      "status": "enacted",
+      "context": "FGAP-005: ordered ref-collections need a sequence field that merges deterministically under concurrent insert/delete/move. This field-kind is one plugin into the substrate merge driver's field-merge dispatch (FGAP-004 / DEC-0004).",
+      "decision": "1) Authoritative representation: a non-interleaving sequence CRDT (Fugue-class) over item-refs; each element holds a unique, immutable position identifier minted relative to its neighbors at insert time; identifiers are densely orderable so an insert mints one identifier and mutates no neighbor; concurrent inserts into the same gap resolve to a deterministic order with no interleaving of distinct actors' runs. 2) Move as a first-class op via a position register (Kleppmann move-CRDT): an element's position is a register rewritten on move, resolved by hybrid logical clock; element identity is stable so a move never duplicates or drops the element, and two concurrent moves of the same element converge to one deterministic position. 3) Deterministic, causally-consistent resolution: the hybrid logical clock gives a replica-independent total order for same-gap insert ordering and move resolution; the same op-set in any arrival order yields the same sequence. 4) Field-aware merge driver: the substrate merge composes the CRDT op-sets / states for this field, at the field level. 5) Human-facing array projection: a sort-on-read helper emits the resolved sequence as a plain ordered ref-array for reading/editing; a hand-edit expressed as an array-position change is translated into CRDT ops through the block-api. Convergence lives in the stored representation; legibility lives in the projection. 6) Location: a declared sequence-field kind on the owning item; authoritative CRDT state carried in the owning <block>.json; the projection helper + field-aware merge driver live in the block-api.",
+      "consequences": [
+        "A new declared field-kind (sequence-of-refs) recognized by schema + block-api, distinct from a plain ref-array.",
+        "CRDT state (position identifiers + position registers + HLC stamps) is stored in the owning <block>.json; the plain array becomes a read/edit projection, not the source of truth.",
+        "Plugs into the git merge driver (DEC-0004) field-merge dispatch as the sequence field-kind, invoked on git's %O/%A/%B of the owning block file; the driver is the host, this is the field-kind plugin.",
+        "Single-writer authoring order is reproduced identically to a plain array via sort-on-read, so existing read/edit ergonomics are preserved.",
+        "Latent until the structure-aware git merge driver (FGAP-004) exists; until then it degrades to the current single-writer array behavior."
+      ],
+      "id": "DEC-0005",
+      "created_at": "2026-06-03T22:43:12.755Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "e38284caf9da048ba825e9b500210d11",
+      "content_hash": "2c1a6f3c999f3ccc7f6c56ea2f3613e650bce28ed66a4aa7f603bc3881984447",
+      "content_parent": "eea80793691ccff6a663cc8a677c5ad840c8bb55e6b964fc8df1dbd930f96d64"
+    },
+    {
+      "title": "Make the op-registry a faithful, attested, complete projection of the library: ctx through the op contract + full write-surface coverage + a parity test",
+      "status": "enacted",
+      "context": "FGAP-008/009/010 (and FGAP-006 as an instance): the op run(cwd, params) contract carries no DispatchContext, so cli/in-pi writes are attestation-blind (alpha); the registry omits library write capabilities (beta); nothing enforces parity across the library/op/script surfaces (gamma). The class is documented in analysis/2026-06-04-cli-op-registry-lossy-projection.md.",
+      "decision": "(alpha) Add an OPTIONAL DispatchContext channel to the op-execution contract: OpDefinition.run gains a ctx?: DispatchContext parameter (optional, so read-op handlers that implement run(cwd, params) are unaffected); write handlers forward ctx to their library call. Identity is sourced PER BOUNDARY because ExtensionContext exposes no verified-identity field (only model): the cli builds the ctx from resolveIdentity() (git email -> $USER -> 'operator', kind=human) and passes it for every op — making all cli writes attested; in-pi, registerAll builds the ctx from the auth-gate-stamped params.writer when present (verified human, authGated ops) else an agent-kind identity derived from ctx.model (kind=agent). The pi-workflows step-block writers stamp a workflow-kind identity (workflow_step_id). The promote-item and write-schema-migration smuggle-ops converge onto the contract ctx; context-switch keeps its writerIdentity-string pointer-flip mechanism (not block attestation); context-archive's declared-but-ignored writer field is removed (archiveSubstrate writes no block, needs no attestation). (beta) Complete the op surface against the library write set as dual-surface units (library + op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema+updateSchema / registerSubstrate+writeRegistry / writeBootstrapPointer+flipBootstrapPointer / bulk appendRelations as warranted. (gamma) Add a parity/coverage test that fails when a library write fn has no op or an op drops the ctx / optional params (dryRun, ordinal) its library fn or orchestrator-script sibling forwards; wire into husky + CI. The unified aim: the cli is a faithful, attested interface to everything one can do with pi-context out-of-pi.",
+      "consequences": [
+        "The OpDefinition contract change ripples to all op handlers + registerAll + the cli dispatch + pi-workflows step-block (which must also thread ctx).",
+        "A new library primitive removeRelation + a batch of new ops; the op count grows toward library-write-surface parity.",
+        "The parity test becomes a standing guard: a new library writer without an op, or a ctx-dropping handler, fails the build.",
+        "FGAP-006 closes as part of beta; the append-block-item attestation instance closes as part of alpha.",
+        "Until landed, filing continues via the orchestrator scripts (which attest), not the cli."
+      ],
+      "id": "DEC-0006",
+      "created_at": "2026-06-03T23:29:49.518Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "0f31a821a3e8ce60ba2a9ccca98a00db",
+      "content_hash": "8b291882cb29c87b0a2627ff0e0edc24bfdbdd69245b2438635dd5ab2a11ce72",
+      "content_parent": "dff566944cb5f10b9b23e883b8b1d4327e945eb38e020ecc011d653e089b9434"
+    },
+    {
+      "title": "Release & changelog discipline: changelog entries accrue at dev-item closure; a release is a planned decision grouping closed dev-items",
+      "status": "enacted",
+      "context": "FGAP-011: no first-class release/version vocabulary, so release + changelog tracking risks drifting from the organized dev-item lifecycle (closed tasks/gaps) — the 'we haven't kept track of changelogs/releases vs done items' failure. Until the vocabulary lands, this decision fixes the manual practice so the thread is not lost. It is the interim discipline; FGAP-011's release vocabulary is the eventual structural fix.",
+      "decision": "1) A changelog [Unreleased] entry is authored in the SAME code commit that completes a dev-item's published-surface work — not deferred to release time. The commit-time changelog guard already enforces that an entry exists; this binds the entry's CONTENT to the closing task/gap. 2) A release is an explicit DECISION: when we decide to release, we record it (a release decision, or — once FGAP-011 lands — a first-class release item) naming the target version and the set of closed dev-items it ships, grouped via a phase or story (task_positioned_in_phase / story_contains_task). 3) The release's changelog is the accrued [Unreleased] entries of those closed items; the version bump (release.mjs) stamps [Unreleased] -> [version]. So a release reflects the organized set of done dev-items, traceable item -> changelog line -> version. 4) This binding is practice-enforced until FGAP-011 provides a release block kind + a dev-item<->release relation that makes it structural.",
+      "consequences": [
+        "Each task/gap closure that changes a package's published surface carries its changelog line in the closing code commit, not a batch write at release time.",
+        "A release is planned by an explicit decision (version + grouped closed items), not assembled ad-hoc.",
+        "The risk of changelog/release drift from the dev-item lifecycle is mitigated by practice now and is slated to become structural via FGAP-011.",
+        "Substrate status-cascade commits (.context) do not trigger the changelog guard; the discipline applies to the published-surface code commits that close items."
+      ],
+      "id": "DEC-0007",
+      "created_at": "2026-06-04T01:48:51.271Z",
+      "created_by": "human/davidryan@gmail.com",
+      "oid": "2f0529e03768b1ba07d34e3ef138af00",
+      "content_hash": "72fefa1c020e1ead62b2b67c183dd4a379dbb5294a839978cef5681786cf38f9"
+    },
+    {
+      "id": "DEC-0008",
+      "title": "Dry-run preview lives once in the library; ops and scripts both consume it (complete-up, one subsystem per TASK)",
+      "status": "enacted",
+      "context": "FGAP-012 (surfaced by the gamma parity gate, dc7f514) shows 5 ops — append-relation, remove-relation, replace-relation, append-relations, upsert-block-item — whose orchestrator scripts offer --dry-run via bespoke per-script preview logic, while the ops/CLI cannot preview and the underlying library write fns have no dry-run path. The gate prints these as standing non-fatal divergences on every commit.",
+      "decision": "Complete the dual-surface unit UP: add a dry-run path to the relation/upsert LIBRARY write fns (mirroring the canonical amendConfigEntry(cwd,...,ctx,{dryRun}) / writeSchemaCheckedForDir / promoteItem pattern — branch before the write primitive, run the same validation the write path uses, write nothing), thread it through the ops, and refactor the scripts to call that one shared library path (deleting their bespoke preview). Do NOT strip --dry-run from the scripts (that would reduce capability). Decompose the work into three tightly-scoped single-subsystem TASKs — TASK-009 (parity-check detector hardening), TASK-010 (relations.json write path: the 4 relation ops), TASK-011 (block-api upsert path) — and never bundle two subsystems in one implementation brief.",
+      "options_considered": [
+        {
+          "label": "Strip --dry-run from the 5 scripts",
+          "description": "Delete the scripts' --dry-run so the gate goes clean with no library work.",
+          "rejected_reason": "Removes a real preview capability — completing down, the wrong direction."
+        },
+        {
+          "label": "One pass over all 5 ops, both subsystems",
+          "description": "Single implementation brief covering relations + upsert write paths together.",
+          "rejected_reason": "Over-scoped brief is the chaos risk the operator flagged."
+        },
+        {
+          "label": "Library-shared preview, decomposed per subsystem (chosen)",
+          "description": "Add the dry-run path to the library per subsystem, ops + scripts consume it; detector hardened first; one subsystem per TASK."
+        }
+      ],
+      "consequences": [
+        "One preview implementation per subsystem, shared by op and script.",
+        "The parity gate reaches zero divergences once all three TASKs land.",
+        "The over-broad-brief chaos risk is avoided by one-subsystem-per-TASK dispatch.",
+        "TASK-009 first hardens the detector itself (allOf/$ref schema resolution, arg-parse-position flag match) so the gate stays trustworthy before any surface churn.",
+        "FGAP-012 closes only when all three TASKs land."
+      ],
+      "references": [
+        {
+          "label": "FGAP-012 (the gap this resolves)"
+        },
+        {
+          "label": "gamma parity gate",
+          "commit": "dc7f514"
+        },
+        {
+          "label": "canonical dryRun pattern",
+          "path": "packages/pi-context/src/ops-registry.ts"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "oid": "f9054ab5211214db0e95f1b56ebfdfc0",
+      "content_hash": "344c9fec9e3e4af7ff1cc72954bf02e18f6f47c693ead22399582e700365ba6f"
+    },
+    {
+      "id": "DEC-0009",
+      "title": "The read cap is an invariant of the output boundary, not of one return-path renderer",
+      "status": "enacted",
+      "context": "The 50KB read cap plus the FGAP-089 fail-closed REFUSAL (the agent-context-safety guard) was implemented inside structureForRead, which only the OpResult {read} channel uses. The {json} channel returns a raw value with no cap, so it bypasses the guard on BOTH emission surfaces — the CLI --json envelope and the in-pi Pi-tool tool-result text. Which channel an op uses was an incidental author choice uncorrelated with whether the payload can be unbounded, so unbounded leaks were found one op at a time by audit (read-block, then resolve-item-by-id, then promote-item) — the signature of a missing invariant.",
+      "decision": "Enforce the cap where output is EMITTED, as an invariant over every payload regardless of channel. Three coordinated parts: (1) a runtime boundary cap applied at all three emit sites (CLI --json, CLI default text, registerAll Pi-tool text) that fail-closes any over-cap {json}/prose output — the unbypassable guarantee; (2) route the content-emitting {json} ops (resolve-item-by-id, promote-item) through structureForRead/{read} so they degrade gracefully with metadata plus a narrowing directive rather than a blunt boundary refusal; (3) a parity-check gate rejecting an op that directly returns {json} of a content-reading lib call, so the drift cannot recur silently. {read} is the graceful path, the boundary cap is the guarantee, the gate is the drift-guard.",
+      "options_considered": [
+        {
+          "label": "Patch each leaking op individually",
+          "description": "Route resolve-item-by-id (and the next one found) through structureForRead, one at a time.",
+          "rejected_reason": "Whack-a-mole — never resolves, because the next unbounded {json} op re-opens it. Treats the symptom, not the missing invariant."
+        },
+        {
+          "label": "Boundary cap only",
+          "description": "A runtime size-check at the emit sites; no per-op routing, no gate.",
+          "rejected_reason": "Guarantees safety but degrades the two known content ops bluntly (refusal instead of paginable metadata) and lets new {json} content-emitters drift in silently (caught only at runtime, never at build)."
+        },
+        {
+          "label": "Boundary cap + graceful routing + gate (chosen)",
+          "description": "Runtime guarantee at the boundary, graceful {read} for known content ops, and a build-time gate preventing the channel drift."
+        }
+      ],
+      "consequences": [
+        "No emission on any surface (CLI --json, CLI text, in-pi Pi-tool) can exceed the cap, regardless of return channel.",
+        "The two known content-{json} ops degrade gracefully like their {read} siblings.",
+        "A future op that returns content via {json} fails the parity-check gate at build, with the runtime cap as the guaranteed backstop for any heuristic miss.",
+        "Builds on the held TASK-012 work (OpResult + {read} .data cap-bound + double-encode fix); the two land together as the complete --json contract.",
+        "FGAP-013 (double-encode) and FGAP-015 (cap-coverage) both close when this lands."
+      ],
+      "references": [
+        {
+          "label": "FGAP-015 (the root gap this resolves)"
+        },
+        {
+          "label": "FGAP-089 fail-closed read cap (the bypassed guard)"
+        },
+        {
+          "label": "boundary emit sites",
+          "path": "packages/pi-context-cli/src/cli.ts"
+        },
+        {
+          "label": "Pi-tool emit site",
+          "path": "packages/pi-context/src/ops-registry.ts"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-04T00:00:00.000Z",
+      "oid": "7f1ce44ff7e89b1ff0ef7186f2d8ba7c",
+      "content_hash": "0368292ca35d8a6dcbe1f1503432c344cecedaba90e921d68e066a080c803f52"
+    },
+    {
+      "title": "Safe catalog re-sync (FGAP-029): structure-aware reconciliation reusing the migration registry + content_hash, sliced; unified with the git-merge engine (FGAP-004/005)",
+      "status": "enacted",
+      "context": "FGAP-029 (P0): /context install --update copyFileSync-overwrites installed_blocks[] with empty catalog starters, deleting all filed items; and stale installed schemas have no safe re-sync because the only mechanism (--update) is the destructive one. A web-cited prior-art survey (analysis/2026-06-05-install-update-resync-prior-art.md) compared template reconcilers (copier/cruft), DB migration frameworks (Flyway/Alembic/Django), declarative reconcilers (kubectl SSA/Terraform/Helm), and config managers (dpkg/npm). Best-of-breed pattern: separate model-resync from user-data; record a version baseline + detect drift; forward-migrate rather than copy-overwrite; always preview, never overwrite user-owned content without consent. pi-context already ships the two hard pieces — a migration registry (migrations.json / validateBlockWithMigration) AND a content fingerprint (content_hash); the only missing primitive is a recorded install baseline. The same structure-aware 3-way merge is also the unimplemented git-merge driver (FGAP-004 + FGAP-005, DEC-0004/0005): branch-merge reconciles git %O/%A/%B; catalog-resync reconciles install-baseline / installed / catalog — the same engine on different inputs.",
+      "decision": "Adopt the structure-aware reconciliation (survey Option B) reusing the existing migration registry + content_hash, implemented as targeted well-scoped ASCENDING slices, each through the full canonical pipeline, with ONE release after the whole plan completes (not per slice): S1 stop-the-bleeding (--update never overwrites a populated block; only schemas honor overwrite); S2 install baseline (installed_from + catalog_version + per-asset content_hash = the merge-base primitive); S3 --plan/drift detector (read-only preview); S4 schema re-sync via the migration registry (forward-migrate, not copy) which also propagates the genericized catalog descriptions into installed dirs (cleaning this repo's .context/schemas/ FGAP-028 residual safely and resolving the layer-plans 1.0.0->1.0.1 skew). The full 3-way merge engine (S5-S7) IS FGAP-004 + FGAP-005 — designed and built as ONE engine serving both catalog-resync and git-merge, deliberately not over-decomposed up front (avoids a likely-to-fail monolith). Mandatory substrate safety protocol for any runtime demo touching real state: back up live .context, work on a duplicate, promote to .context only via a separate user-approved rename. Docs (package + monorepo README, SKILL via skill-narrative.md) are usage-only; bug/fix framing lives only in the CHANGELOG; every slice carries its own [Unreleased] entry.",
+      "options_considered": [
+        {
+          "label": "A — migration-driven schema re-sync + never-overwrite-populated-blocks + --plan",
+          "description": "Reuse the migration registry for schema evolution; blocks are user-data, never overwritten when populated; a --plan/--check preview. Highest reuse, smallest new surface (one baseline field + a plan/refuse pass).",
+          "tradeoffs": "Does not do block-item-level catalog<->user reconciliation (not needed for the stated problem).",
+          "rejected_reason": "Not rejected — adopted as the near-slice basis (S1-S4); A IS the minimal correct core."
+        },
+        {
+          "label": "B — full content_hash 3-way merge engine",
+          "description": "content_hash/oid 3-way merge over baseline/installed/catalog (and the same engine over git %O/%A/%B for FGAP-004).",
+          "tradeoffs": "Most powerful; the engine is the big effort and unifies with FGAP-004/005.",
+          "rejected_reason": "Not rejected — chosen as the unifying engine (S5-S7 = FGAP-004/005), built once after the A-flavored near-slices de-risk it."
+        },
+        {
+          "label": "C — version-skew detector only",
+          "description": "Record a baseline and warn on drift; no auto-fix.",
+          "tradeoffs": "Safest, smallest; but does not actually re-sync.",
+          "rejected_reason": "Folded into A as the S3 --plan/--check preview rather than shipped as a standalone half-measure."
+        }
+      ],
+      "consequences": [
+        "S1: /context install --update never overwrites a populated block; only schemas honor --update; empty/absent blocks unchanged. Kills the P0 data-loss.",
+        "S2: install/accept-all record an install baseline (installed_from + catalog_version + per-asset content_hash) in config.json — the merge-base both catalog-resync and FGAP-004 consume.",
+        "S3: a read-only --plan reports installed-vs-catalog drift and what a re-sync would change.",
+        "S4: installed schemas re-sync through the migration registry (forward-migrate items), not blind copy; running it on this repo cleans .context/schemas/ of the FGAP-028 leaked descriptions with zero data loss and resolves the layer-plans version skew.",
+        "S5-S7 = FGAP-004 + FGAP-005: one structure-aware 3-way merge engine serves both git-branch merge and full catalog reconciliation — build the merge core once.",
+        "FGAP-029 closes after S4 (it covers BOTH the data-loss and the no-safe-schema-resync), not after S1.",
+        "Release is a single release after the whole plan (S1-S4); each slice is independently pipelined + committed but not released.",
+        "Any substrate-mutating runtime demo uses the backup / duplicate / user-approved-promotion protocol; the live .context is never the test target."
+      ],
+      "references": [
+        {
+          "label": "prior-art survey (the analysis behind this decision)",
+          "path": "analysis/2026-06-05-install-update-resync-prior-art.md"
+        },
+        {
+          "label": "the data-loss gap this decides",
+          "path": ".context/framework-gaps.json (FGAP-029)"
+        },
+        {
+          "label": "the git-merge engine this unifies with",
+          "path": ".context/framework-gaps.json (FGAP-004, FGAP-005)"
+        },
+        {
+          "label": "installContext — the S1 change site",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "334-419"
+        },
+        {
+          "label": "the migration registry reused by S4",
+          "path": "packages/pi-context/src/"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-05T00:00:00.000Z",
+      "id": "DEC-0010",
+      "oid": "ec10dda127c8463c2e841090275b6d0d",
+      "content_hash": "fe6fcd80a53495b707b23fcb056ec6911c951cca3aab14c7b7dc5de36f275c7c"
+    },
+    {
+      "title": "Retire op-twin orchestrator scripts in favor of the reflecting CLI; new ops are op-only",
+      "status": "enacted",
+      "context": "The op+script 'dual-surface' (a Pi op AND a hand-written scripts/orchestrator/<op>.ts twin over one library fn) predates pi-context-cli. The reflecting CLI now derives EVERY op as a shell command automatically, so a hand-authored script twin per op is redundant duplication — two shell surfaces to keep in sync instead of one reflected from the ops (the duplication R-0001/cli-core flagged). The op-twin scripts still retain ergonomics the CLI lacks (array_key derivation, --format render, --show-schema, AJV translation, shorthands, exit codes — FGAP-019..026) and historically doubled as a test surface + executable specs (DEC-0019). Surfaced while scoping FGAP-030 (adding a CLI surface for /context check-status): adding a born-obsolete orchestrator-script twin to a brand-new op is pure waste.",
+      "decision": "(1) NEW ops are op-ONLY — no orchestrator-script twin; the reflecting pi-context-cli IS the shell surface. (2) EXISTING op-twin orchestrator scripts retire once the CLI reaches script-parity (the cli-parity release closing FGAP-019..026); until then they stay because they carry ergonomics the CLI lacks. (3) NON-op scripts — composers (compile-*-context, inject-context-items, file-block-item's multi-step ergonomics), runtime-demos, launch-support (read-config-operations) — are NOT op-twins and REMAIN (or later fold into CLI flows). (4) The scripts-as-test-surface role (DEC-0019) transfers to CLI dogfooding, already the mandated test surface. (5) parity-check's dual-surface op<->script check INVERTS: an op no longer requires a same-named script twin; the CLI is the twin (updated as part of the retire work). (6) FGAP-030 (check-status) is therefore op-only.",
+      "options_considered": [
+        {
+          "label": "Keep the op+script dual-surface for every op",
+          "description": "Continue shipping a hand-written orchestrator script alongside each op.",
+          "tradeoffs": "Two shell surfaces over one library, kept in sync by parity-check; every new op carries a born-obsolete script.",
+          "rejected_reason": "Rejected — duplication the reflecting CLI eliminates; wastes effort on born-obsolete artifacts."
+        },
+        {
+          "label": "Op-only + CLI-as-shell-surface; retire op-twin scripts post-CLI-parity",
+          "description": "New ops op-only; existing op-twin scripts retire after the CLI gains their ergonomics; non-op scripts stay.",
+          "tradeoffs": "Requires the cli-parity release (FGAP-019..026) to land before retiring existing scripts, so capability is not lost.",
+          "rejected_reason": "Not rejected — adopted."
+        }
+      ],
+      "consequences": [
+        "No new orchestrator-script twins are authored from now; new ops are op-only (the CLI reflects them).",
+        "FGAP-030 (check-status CLI surface) is op-only — drop the orchestrator-script from its resolution.",
+        "Amends CLAUDE.md's 'Orchestrator scripts dual-surface' convention ('New substrate op = library + Pi tool + CLI script as a unit') and the feedback_orchestrator_scripts_dual_surface mandate.",
+        "Partially supersedes feedback_scripts_as_test_surface / DEC-0019: the test-surface role moves to CLI dogfooding (feedback_use_cli_directly_dogfooding).",
+        "Prerequisite for retiring EXISTING op-twin scripts: the cli-parity release (TASK-015..019 closing FGAP-019..026) must land first so the CLI carries the scripts' ergonomics.",
+        "TASK-019's behavioral parity gate reframes from op-vs-script-twin to op-vs-CLI (or is folded into the retire work); the actual script deletion + parity-check inversion is a post-cli-parity task, not done now.",
+        "Non-op scripts (composers / runtime-demos / launch-support) are explicitly retained."
+      ],
+      "references": [
+        {
+          "label": "the op-only follow-on this decision reshapes",
+          "path": ".context/framework-gaps.json (FGAP-030)"
+        },
+        {
+          "label": "cli-core / duplication finding",
+          "path": "analysis/2026-06-05-shared-cli-core-design.md"
+        },
+        {
+          "label": "CLI<->ops<->scripts parity survey",
+          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md"
+        },
+        {
+          "label": "CLAUDE.md convention amended",
+          "path": "CLAUDE.md",
+          "lines": "Conventions: Orchestrator scripts dual-surface"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-06T00:00:00.000Z",
+      "id": "DEC-0011",
+      "oid": "365db911e6b4a6769223eca788f9eed0",
+      "content_hash": "328bf7238cb28687e6e1f8b4c1b85e8676801f0583bf07ce569af31f0c40e3e4"
+    },
+    {
+      "id": "DEC-0012",
+      "title": "Revert the unplanned pre-identity-OID escape hatch (skipIdentityStamp / tryReadSubstrateIdForDir); any pre-identity re-sync support must be designed via canonical process",
+      "status": "enacted",
+      "context": "Commit 0fcba9c added three artifacts — tryReadSubstrateIdForDir (context-dir.ts), the skipIdentityStamp option on writeBlockForDir (block-api.ts), and its use in resyncSchema (index.ts:574-575) — to work around an identity-stamping throw when /context install --update's migration-aware schema re-sync runs against a substrate with no established substrate_id. It addressed a real migrate-path test failure in TASK-026 (S4 / FGAP-029). The change was made ad-hoc inside the TASK-026 work via an over-scoped sub-agent brief, with no declared gap, no DEC, and no scoped plan — the unplanned-entry pattern canonical process exists to prevent. Whether the change is technically correct is not the question; correctness does not authorize unplanned architectural surface.",
+      "decision": "Revert all three artifacts: remove tryReadSubstrateIdForDir from context-dir.ts, remove the skipIdentityStamp option and its gate from writeBlockForDir in block-api.ts, and remove the probe and flag usage from resyncSchema in index.ts. Restore mandatory identity-stamping on every write, including schema re-sync. The migrate-path test that the escape hatch satisfied will fail again; restoring it green is a separate, canonically-planned implementation. Any genuine requirement for resync to support a pre-identity substrate will be designed via canonical process — a declared gap, a dedicated DEC, and a scoped plan — not folded into another task's brief.",
+      "consequences": [
+        "The three artifacts are removed; identity stamping is again mandatory on every write, with a loud throw on a pre-identity substrate (guards against mis-provisioning).",
+        "TASK-026's migrate-path test fails again, re-surfacing the pre-identity schema-re-sync problem as an explicit, unmasked open problem.",
+        "Closing TASK-026 / S4 now requires a canonical decision on how (or whether) pre-identity re-sync is supported, governed by a future DEC and plan.",
+        "issue-001 (the migrations.json stray-decl rollback defect) is orthogonal and remains open; unaffected by this reversal."
+      ],
+      "references": [
+        {
+          "label": "the reverted commit",
+          "commit": "0fcba9c"
+        },
+        {
+          "label": "the enacting commit (excision)",
+          "commit": "fa8a0cc"
+        },
+        {
+          "label": "tryReadSubstrateIdForDir (removed)",
+          "path": "packages/pi-context/src/context-dir.ts"
+        },
+        {
+          "label": "skipIdentityStamp option on writeBlockForDir (removed)",
+          "path": "packages/pi-context/src/block-api.ts"
+        },
+        {
+          "label": "resyncSchema probe + flag usage (removed)",
+          "path": "packages/pi-context/src/index.ts"
+        },
+        {
+          "label": "the in-progress S4 task this decision governs",
+          "path": ".context/tasks.json (TASK-026)"
+        },
+        {
+          "label": "the canonically-derived issue this arc surfaced",
+          "path": ".context/issues.json (issue-001)"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-06T00:00:00.000Z",
+      "oid": "dc5a41c94719c9d97eb3213522574f78",
+      "content_hash": "fa4a552799a1a0265ff2be7273d83d671416ff878b2797710b0b7ee540c6845d",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-06T00:00:00.000Z",
+      "content_parent": "234e61066f053c6ceb29f4ad128dabd50ae7dc006c6606333cc580ac79dc26db"
+    },
+    {
+      "id": "DEC-0013",
+      "title": "The pi-context command ships as its own publish unit (@davidorex/pi-context-cli carries the bin)",
+      "status": "enacted",
+      "context": "The global pi-context command (FGAP-047) and --pi-bound (FEAT-005) need a publish unit that hosts the CLI bin. Two shapes compete: the CLI as its own published package depending on @davidorex/pi-context (and, for --pi-bound, the meta-package), versus folding the bin into the meta-package @davidorex/pi-project-workflows. The meta-package ships only *.ts/*.md/skills/ with no dist/ or built CLI entry.",
+      "decision": "Keep the bin in @davidorex/pi-context-cli as its own publish unit; npm i -g @davidorex/pi-context-cli pulls the dependency tree, mirroring how pi ships its CLI. Do not relocate the CLI build into the meta-package.",
+      "consequences": [
+        "pi-context-cli remains the single bin host; the meta-package stays a non-built TS/skills bundle.",
+        "Global install is the lowest-delta path — no CLI-build relocation into the meta-package.",
+        "--pi-bound's access to the meta-package is via a declared dependency (FGAP-048), not co-location."
+      ],
+      "references": [
+        {
+          "label": "global-install analysis — publish-unit question",
+          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md"
+        },
+        {
+          "label": "meta-package ships only ts/md/skills, no dist/bin",
+          "path": "packages/pi-project-workflows/package.json",
+          "lines": "19-23"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "18f1129016b8ea678c74a1a106a1fa50",
+      "content_hash": "d0c7bddb1e07347175fffa784a1dfb224cc7d5bdcb954beaf97dbb156448ad2f",
+      "content_parent": "a3e40d2346d304c3fce4aa553bf86b158ad1eff4db72e95e799b050e6cd7b932"
+    },
+    {
+      "id": "DEC-0014",
+      "title": "pi-context pi-bound is a CLI process mode routed before op resolution, not a substrate op",
+      "status": "enacted",
+      "context": "pi-bound launches an interactive pi subprocess; it is not a request->response substrate operation. It must not enter the reflected surface:use op set the CLI exposes, and it cannot run through the op-dispatch/auth path.",
+      "decision": "Expose pi-bound as a bare subcommand (per the cli-command-form convention: an alternate run-and-exit mode is a bare verb, not a flag). Route it inside the CLI main() before op resolution — main() dispatches when the first positional is 'pi-bound' — and exclude it from the reflected op surface. It is a process-launch mode of the pi-context bin, parallel to list-tools' process surface, not a registered op.",
+      "consequences": [
+        "pi-bound bypasses op dispatch and the op auth-gate; its contract is the CLI entry's, not an op's.",
+        "The reflected surface:use enumeration is unchanged by adding pi-bound.",
+        "Tests target the CLI entry mode (main() dispatch on the bare pi-bound verb), not an op definition."
+      ],
+      "references": [
+        {
+          "label": "pi-bound spec — routing before op resolution",
+          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
+        },
+        {
+          "label": "CLI reflects surface:use ops; process surface partitioned out",
+          "path": "packages/pi-context-cli/src/cli.ts",
+          "lines": "44"
+        },
+        {
+          "label": "command-form convention cli-command-form — bare verb for an alternate run-and-exit mode"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "3f12dad148043269e9efc4002eab0b15",
+      "content_hash": "a0f4b2a357e3da98922aa86765593f8b9c14e04e2a45198d84147eb14f69e01b",
+      "content_parent": "b37b2f31b0ce6a6b9aca2c3e6e20c0bf61b841f1ae2ecab5e8ad3f170028086b"
+    },
+    {
+      "id": "DEC-0015",
+      "title": "pi-context --pi-bound composes context in-process via loadContext, replacing the script's tsx+python3 pipeline",
+      "status": "enacted",
+      "context": "scripts/launch-constrained-pi.sh derives per-target context through a two-stage shell pipeline (a tsx JSON emit feeding a python3 JSON->CSV stage). Porting to the CLI can either shell the same pipeline or compose in-process.",
+      "decision": "Compose the context in-process via a single loadContext call in the CLI, replacing the tsx+python3 two-stage pipeline. This is a deliberate replacement, not a behavior-preserving port of the shell stages.",
+      "consequences": [
+        "No tsx or python3 subprocess dependency at launch.",
+        "The composition logic moves into typed CLI code, testable in-process.",
+        "Output equivalence to the script's pipeline must be demonstrated, since the mechanism differs."
+      ],
+      "references": [
+        {
+          "label": "pi-bound spec — in-process loadContext note",
+          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
+        },
+        {
+          "label": "script's two-stage context pipeline",
+          "path": "scripts/launch-constrained-pi.sh",
+          "lines": "104-109"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "2a280f513f2e006b0231459377931714",
+      "content_hash": "38a70bfb2cb7f67d904bc2c3332b797fd1988f3daabb26a3fdcd2502e90498a0",
+      "content_parent": "c5f3d92a0e66fa6a8082f6842c159bf6224e2ad96bc830dc67607dc7cb697ced"
+    },
+    {
+      "id": "DEC-0016",
+      "status": "enacted",
+      "title": "Enforce convention articulation on planning artifacts via requires-edge invariants; error in .context, warning in the shipped catalog",
+      "context": "Conventions govern decisions/features/tasks but are only passively composed into context, so an LLM can skip them. The validator's requires-edge engine (config.invariants[], the vocabulary-free loop at context-sdk.ts:2055-2078) already enforces edge-presence — decision-cites-forcing-artifact is the living template — so articulation can be enforced as config with no validator code.",
+      "decision": "Register two relation_types: item_governed_by_convention (decisions/features/tasks -> conventions) and item_acknowledges_missing_convention (decisions/features/tasks -> framework-gaps). Add three requires-edge invariants, one per source block (decisions, features, tasks), each requiring at least one edge of either relation_type. When no convention governs an artifact, file a 'no convention governs X' framework-gap and acknowledge it via the second relation_type, surfacing missing governance as tracked debt rather than a silent opt-out. Severity is error in .context (hard reject, installed only after the existing artifacts are backfilled) and warning in the shipped samples catalog so a fresh substrate — which has no conventions yet — is advised, not blocked.",
+      "consequences": [
+        "The .context error invariant is installed only AFTER backfilling every existing decision/feature/task, else the substrate is invalid.",
+        "No pi-context code change — pure config (relation_types + invariants) in .context now, and in samples/conception.json for the catalog.",
+        "A new planning artifact must articulate a convention or file a missing-convention gap to validate.",
+        "Missing-convention gaps drive authoring the missing conventions over time."
+      ],
+      "references": [
+        {
+          "label": "requires-edge invariant engine (vocabulary-free loop)",
+          "path": "packages/pi-context/src/context-sdk.ts",
+          "lines": "2055-2078"
+        },
+        {
+          "label": "decision-cites-forcing-artifact template",
+          "path": "packages/pi-context/samples/conception.json",
+          "lines": "419-431"
+        },
+        {
+          "label": "backfill determination",
+          "path": "analysis/2026-06-07-convention-articulation-backfill.md"
+        },
+        {
+          "label": "enacted — 3 articulation invariants installed at error in .context",
+          "commit": "68eac02"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "oid": "d0cc5578574b835b15bc0b6d4c8c48ef",
+      "content_hash": "e5b2c607c6f42012334b3b9e7d5b03f6c4dffcb077b5d4c11f7b8abe4e382e58",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-07T00:00:00.000Z",
+      "content_parent": "fc0a729090e534b530527c7f24ebaad1c380adb6f62af65a1fe147690b79569d"
+    },
+    {
+      "id": "DEC-0017",
+      "title": "pi-context update reconciles user schema edits by the hybrid route (deterministic merge + resolver on conflicts)",
+      "status": "enacted",
+      "context": "FGAP-046: install --update overwrites a user's edits to a catalog-shipped schema (resyncSchema, index.ts:464-583), and the 3-way merge base is not retained — checkStatus keeps a SHA-256 of the as-installed schema, not the body (context.ts:79). FEAT-006 must preserve customizations on update. Two candidate routes (FGAP-046 proposed_resolution): a deterministic 3-way merge, or agent-mediated reconciliation in pi. Reframed and grounded in R-0008.",
+      "decision": "On a locally-modified / both-diverged schema (per checkStatus), pi-context update runs a deterministic key/path-level draft-07 3-way merge (base = the base-stamped as-installed body; ours = installed; theirs = catalog) and auto-applies the merged schema when the typed conflict set is empty. On a non-empty conflict set it does NOT overwrite: it returns the typed conflict set — a rendered report plus the structured conflicts (path / base / ours / theirs). Because pi-context update is an agent-invoked CLI surface (run by Claude Code or another shell-LLM, which already holds the conflict set and the operator's authority and is interactive), the reconciler is the CALLING agent: it reconciles and applies the result via the existing write-schema auth-gate under the operator's confirm. update does NOT spawn a subordinate agent to reconcile. Update never silently clobbers a customization and never hard-blocks the remaining schemas.",
+      "consequences": [
+        "Decomposes into ordered, independently-shippable slices: base-stamping (store the as-installed schema body via the content-addressed object store) -> deterministic schema-merge (auto-apply clean, emit a typed conflict set) -> conflict resolution (return the typed conflict set to the calling agent + a rendered report). The user gets 'never silently clobbered' first, 'smart conflict help' via the calling agent.",
+        "Closes FGAP-046 (preserve schema customizations) + FGAP-049 (consult checkStatus before overwrite) across the base-stamping + merge + resolver tasks.",
+        "The merge engine is a new structure-aware key/path-level 3-way primitive: FEAT-002 (the substrate git merge driver) is proposed/unbuilt and DEC-0004 §6 names but does not author the schema-merge strategy; the primitive is designed so FEAT-002 later reuses the framework via its git %O base. FGAP-046 does not depend on FEAT-002 shipping.",
+        "Per correctness-over-cost: the hybrid is chosen on user-correctness; its higher build cost is sequencing (base-stamping -> merge -> resolver), not a tradeoff against correctness.",
+        "Resolver-route correction (FGAP-068): the resolver returns the conflict to the CALLING agent rather than spawning a subordinate pi-bound mergetool. The original subordinate-spawn route used `pi -p`, which runs the spawned session non-interactively (hasUI=false) so its write-schema was auth-gate-refused — the wrong abstraction for an agent-invoked CLI where the caller is already the interactive, credentialed reconciler. Surfaced by the live credentialed smoke (the structural fake-spawn verification missed it)."
+      ],
+      "options_considered": [
+        {
+          "label": "R1 — deterministic 3-way merge only",
+          "description": "Key/path-level draft-07 3-way merge; auto-merge disjoint edits; surface every semantic conflict as a typed report for the user to resolve.",
+          "tradeoffs": "Deterministic + offline; punts rename / type-change / overlapping-edit conflicts to the user.",
+          "rejected_reason": "Hands a JSON-Schema 3-way conflict to the non-developer FGAP-046 exists to protect — not done-correctly for the target user."
+        },
+        {
+          "label": "R2 — agent-mediated reconciliation only",
+          "description": "Route every locally-modified schema through a pi-bound agent that reconciles by judgement, gated by dry-run + auth-gate.",
+          "tradeoffs": "Lowest build (reuses pi-bound + write-schema + auth-gate); resolves semantics; but a credentialed pi call + interactive confirm on every modified schema, and cannot run unattended.",
+          "rejected_reason": "Taxes routine disjoint updates with a model call + prompt and hard-blocks unattended/CI updates (the auth-gate refuses non-interactive) — not done-correctly."
+        },
+        {
+          "label": "Hybrid — deterministic merge + resolver on conflicts",
+          "description": "Auto-merge clean/disjoint edits silently; route only the typed conflict set to an agent mergetool (or a conflict report when non-interactive).",
+          "tradeoffs": "Best coverage: silent for the common case, intelligent help for the rare conflict, never destructive, never hard-blocked; cost = the merge engine + a cheap resolver seam.",
+          "rejected_reason": ""
+        }
+      ],
+      "references": [
+        {
+          "label": "feasibility + git-3-way reframing research",
+          "path": "R-0008"
+        },
+        {
+          "label": "full findings",
+          "path": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md"
+        },
+        {
+          "label": "the forcing gap",
+          "path": "FGAP-046"
+        },
+        {
+          "label": "resyncSchema overwrite; base body not retained",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "464-583"
+        },
+        {
+          "label": "content-addressed object store (base-stamping vehicle)",
+          "path": "packages/pi-context/src/object-store.ts",
+          "lines": "59-110"
+        },
+        {
+          "label": "write-schema dryRun + auth-gate (resolver write path)",
+          "path": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1183-1201"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-07T00:00:00.000Z",
+      "enacted_by": "human/davidryan@gmail.com",
+      "enacted_at": "2026-06-07T00:00:00.000Z",
+      "oid": "0fb56e117810db8c6537afbf1361236e",
+      "content_hash": "368e8fa14466a993a4572e74f3e9114672e6268f943d58f5407cb2453365b331",
+      "content_parent": "bcf22354601aa11045aedc40e0ea9079ae43453eb1c6957cdcb3c631644fb035"
+    },
+    {
+      "title": "pi-context update transactional model: per-component, not whole-run-atomic",
+      "status": "enacted",
+      "context": "In-pi update usage surfaced that a live `update` reporting a schema as `blocked` had still mutated config.json — the post-loop config-registry propagation (packages/pi-context/src/index.ts:1391-1421) is not gated on the schema-loop outcome and calls writeConfig when !dryRun regardless of a blocked sibling schema (reproduced: R-0012). The substrate does not decide whether `update` is atomic across the schema loop and the registry propagation: DEC-0017 decides per-schema independence across sibling schemas ('never hard-blocks the remaining schemas') but not the registry-vs-blocked coupling; issue-001 scopes resyncSchema's byte-exact rollback to the single schema's file + migrations.json; VER-025 frames the propagation's try/catch as isolating the loop FROM the merge, never the inverse; FEAT-006's tasks leave the coupling, dry/live parity, and rollback scope unspecified, and TASK-038 framed the registry slice as a deliberate 'disjoint seam … Independent of the schema-merge slices'. So per-component application is true by construction but never decided. update does two things with opposite risk profiles: additive vocabulary propagation (new relation_types/block_kinds/invariants/lenses — non-destructive, independently useful, unusable if withheld) and schema version migration (touches block-item data, the only step that can block).",
+      "decision": "pi-context update applies PER-COMPONENT, not whole-run-atomic. A schema that returns `blocked` does not withhold the additive config-registry propagation, nor the other schemas' resyncs/merges. The safety boundary is the existing per-schema byte-exact rollback (resyncSchema restores the blocked schema's file and its migrations.json decls and leaves its block untouched); additive vocabulary propagation sits outside that boundary and proceeds. Rationale: additive vocabulary is non-destructive and independently useful, so withholding it because an unrelated schema's migration could not validate is all cost and no benefit — the literal extension of DEC-0017's 'never hard-blocks the remaining schemas' from sibling schemas to the registry step. update is NOT made atomic. This decision affirms the current registry-propagation-on-blocked behavior as intended; it carries the consequence that the partial application MUST be made legible (a blocked result must surface what applied and what blocked), tracked as a separate framework-gap.",
+      "options_considered": [
+        {
+          "label": "Per-component (proposed)",
+          "description": "Each component applies independently: a blocked schema rolls back only itself (byte-exact, per-schema); sibling schemas resync/merge; the additive registry propagation writes regardless. The report must make the partiality legible.",
+          "tradeoffs": "Maximizes delivered value (safe vocabulary always lands) and extends an already-enacted principle (DEC-0017). Cost: callers cannot assume a `blocked` run left config unchanged, so the result must report partiality clearly — a new legibility requirement."
+        },
+        {
+          "label": "Whole-run-atomic",
+          "description": "Any block anywhere in the run → nothing persists: config-registry additions and every schema resync/merge roll back together, leaving the substrate byte-identical to pre-call.",
+          "tradeoffs": "Simple mental model ('blocked means nothing happened'). Cost: withholds safe, wanted, non-destructive vocabulary because of an unrelated migration failure; requires a cross-file transaction (config + N schemas + migrations.json) the code does not have; contradicts DEC-0017's sibling-independence."
+        }
+      ],
+      "consequences": [
+        "The registry-propagation-despite-blocked behavior (index.ts:1391-1421) is affirmed as intended on enactment — not a defect to remove.",
+        "A dependent requirement follows: the partial application must be LEGIBLE — a `blocked` result must surface what applied (registryAdditions) and what was refused and why (the blocked schema + its AJV error) — filed as its own framework-gap so a blocked run never reads as a no-op.",
+        "Callers of update may not assume a `blocked` run left config.json unchanged; the transactional contract is per-component and must be documented on the update surface.",
+        "Extends DEC-0017 from sibling-schema independence to the schema-loop / registry-propagation seam."
+      ],
+      "references": [
+        {
+          "label": "DEC-0017 — never hard-blocks the remaining schemas (the precedent this extends)",
+          "path": ".context/decisions.json"
+        },
+        {
+          "label": "R-0012 — empirical reproduction + UX-intention grounding",
+          "path": ".context/research.json"
+        },
+        {
+          "label": "registry propagation ungated on schema outcome, !dryRun writeConfig",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "1391-1421"
+        },
+        {
+          "label": "resyncSchema per-schema byte-exact rollback (the safety boundary)",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "599-641"
+        }
+      ],
+      "id": "DEC-0018",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-09T22:20:00.556Z",
+      "oid": "f40089436a62d126722d662733a448cb",
+      "content_hash": "44b7561d51b67e2410b11e96be7b4ea0ef4e52d7271f8b86abbafc8e9bd78060",
+      "content_parent": "697ea5dee9c8564b174147ec8456237d9e9353d87563895bab9ba86e7ffa2f75"
+    },
+    {
+      "title": "Stand up a fresh context substrate for the port via curated carry-forward",
+      "status": "enacted",
+      "context": "The operation-framework port needs a substrate baseline; the active .context is the pi-context dev substrate and not a clean one. Substrate switching is non-destructive — the active pointer flips like a git branch and the parked substrate stays on disk (as .project / .context-jit-spec-v2 / .project-archived already coexist).",
+      "decision": "Rename the pi-context dev substrate from .context to .context-archived-2026-06-30, freeing the canonical .context name. Stand up a new substrate at .context for the operation-framework port. Curated carry-forward of verified-live items only — not blind greenfield, not wholesale copy. The archived substrate stays on disk, queryable, reactivable via context-switch.",
+      "consequences": [
+        "The port's PM state lives at the canonical .context — no naming indirection; all conventions/defaults/tooling land on it.",
+        "The pi-context dev substrate is preserved at .context-archived-2026-06-30 (parked, queryable, not lost).",
+        "The port's feature/task decomposition (PHASE-PORT-OPS) is filed on the new .context, not the archived one.",
+        "A curation triage is required: enumerate live items from the archived substrate and re-file only verified-good keepers.",
+        "The archived substrate's config.json root and .pi-context.json pointer require fixup before reactivation (one-time, on-demand)."
+      ],
+      "references": [
+        {
+          "label": "memory-store comparison",
+          "path": "analysis/2026-06-21-memory-stores-comparison-workflowspiextension-vs-wasc.md"
+        },
+        {
+          "label": "operation-framework build and transposition recipe",
+          "path": "analysis/2026-06-22-wasc-operation-framework-build-from-claude-history.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-27",
+      "id": "DEC-0019",
+      "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
+      "content_hash": "72c2d8640b36d4978cb7b4dc8350da2395d269dfa77d5a041b2c93724747dab9",
+      "content_parent": "c81ac7d11d3a63462ac00c409fe222e2c49c3be31a4d6a5f46707974c29128f6"
+    }
+  ]
+}

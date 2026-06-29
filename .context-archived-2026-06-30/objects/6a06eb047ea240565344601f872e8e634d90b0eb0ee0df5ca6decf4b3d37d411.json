@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-06-07T00:00:00.000Z",
+  "evidence": "TASK-031 backfill verified: registered relation_types item_governed_by_convention + item_acknowledges_missing_convention; filed 8 missing-convention gaps (FGAP-052..059); wrote 73 governance edges covering all 16 decisions + 7 features + 33 tasks (full coverage); context-validate clean (0 errors). Committed prior to the invariant install.",
+  "criteria_results": [
+    {
+      "criterion": "two governance relation_types registered in config.relation_types",
+      "status": "passed",
+      "evidence": "amend-config added item_governed_by_convention + item_acknowledges_missing_convention"
+    },
+    {
+      "criterion": "deduped missing-convention gaps filed",
+      "status": "passed",
+      "evidence": "FGAP-052..059 (8 themes)"
+    },
+    {
+      "criterion": "every existing decision/feature/task + this initiative's items carry an articulation edge",
+      "status": "passed",
+      "evidence": "73 edges, full coverage of 16 decisions / 7 features / 33 tasks"
+    },
+    {
+      "criterion": "context-validate shows no unregistered-relation_type/dangling-edge errors",
+      "status": "passed",
+      "evidence": "context-validate clean (0 errors)"
+    }
+  ]
+}

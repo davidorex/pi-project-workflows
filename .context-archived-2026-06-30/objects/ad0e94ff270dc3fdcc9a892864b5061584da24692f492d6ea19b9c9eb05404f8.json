@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "Slice S2 — /context install records an install baseline (config.installed_from) of the installed schemas. build + check + test green (pi-context 1032 tests, +5: baseline present / schemas-only / idempotent / back-compat / corrupt-schema-skipped; fail 0 all suites; parity-check clean after classifying installContext as intentionally-op-unexposed). Runtime demo on a DUPLICATE of .context (safety protocol; live untouched + backed up): 16 installed schemas -> 16 baseline assets each with 64-hex content_hash + version, catalog @davidorex/pi-context@0.30.0, catalog_version 1.0.0; idempotent byte-identical re-run (at preserved). Fresh adversarial audit: config round-trips losslessly (all 14 registries preserved via spread + validation), installed_from optional/back-compat, computeFileContentHash deterministic (canonical-JSON), blocks excluded, single-source classification; one latent severity-1 (corrupt schema file would crash install) HARDENED with a try/catch skip mirroring S1's safety default + a dedicated regression test, then re-verified. Committed e3a0491.",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "criteria_results": [
+    {
+      "criterion": "install records installed_from with per-schema content_hash + version; config validates",
+      "status": "passed",
+      "evidence": "demo: 16 assets, each 64-hex hash + version; config.schema.json 1.6.0 validates"
+    },
+    {
+      "criterion": "substrate without installed_from still loads (back-compat)",
+      "status": "passed",
+      "evidence": "optional field (not in required); back-compat unit test passes"
+    },
+    {
+      "criterion": "idempotent; corrupt schema does not crash install",
+      "status": "passed",
+      "evidence": "byte-identical re-run demo; corrupt-schema-skipped test passes"
+    },
+    {
+      "criterion": "CHANGELOG + usage-only docs",
+      "status": "passed",
+      "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL, usage-only"
+    },
+    {
+      "criterion": "canonical pipeline green",
+      "status": "passed",
+      "evidence": "build/check/test + runtime demo on dup + fresh adversarial audit (+ hardening re-verify)"
+    }
+  ]
+}

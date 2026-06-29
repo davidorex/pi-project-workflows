@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "evidence": "Slice S1 — /context install --update preserves populated blocks. build + check + test green (pi-context 1027 tests, +3 new regression tests: populated-preserved / empty-overwritten / schema-still-updated; fail 0 across all suites). Runtime demo on a DUPLICATE of .context (safety protocol; live .context untouched + backed up): all 6 populated blocks byte-identical + reported preserved, 16 schemas + 10 empty blocks refreshed under --update. Fresh adversarial audit: CLEAN (no populated block can reach copyFileSync under --update; 3 mutually-exclusive continue branches; detection correct for the object-shape blocks; safety-default preserves on read failure; schemas unaffected; tests non-tautological). Committed 0c444cf.",
+  "timestamp": "2026-06-05T00:00:00.000Z",
+  "criteria_results": [
+    {
+      "criterion": "--update against a populated block: byte-identical + reported preserved",
+      "status": "passed",
+      "evidence": "regression test + runtime demo on dup: 6 populated blocks unchanged, all in result.preserved"
+    },
+    {
+      "criterion": "empty block still overwritten; schema under --update still updated",
+      "status": "passed",
+      "evidence": "demo: 10 empty blocks + 16 schemas in result.updated; regression tests 2 + 3"
+    },
+    {
+      "criterion": "no other path overwrites a populated block; detection correct",
+      "status": "passed",
+      "evidence": "adversarial audit CLEAN; installContext sole block-writer; object-shape detection verified"
+    },
+    {
+      "criterion": "CHANGELOG + usage-only docs",
+      "status": "passed",
+      "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL regen, usage-only no fix-reference"
+    },
+    {
+      "criterion": "canonical pipeline green",
+      "status": "passed",
+      "evidence": "build/check/test + runtime demo + fresh adversarial audit all passed"
+    }
+  ]
+}

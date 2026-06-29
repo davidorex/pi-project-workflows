@@ -1,0 +1,25 @@
+{
+  "title": "pi-context pi-bound is a CLI process mode routed before op resolution, not a substrate op",
+  "status": "open",
+  "context": "pi-bound launches an interactive pi subprocess; it is not a request->response substrate operation. It must not enter the reflected surface:use op set the CLI exposes, and it cannot run through the op-dispatch/auth path.",
+  "decision": "Expose pi-bound as a bare subcommand (per the cli-command-form convention: an alternate run-and-exit mode is a bare verb, not a flag). Route it inside the CLI main() before op resolution — main() dispatches when the first positional is 'pi-bound' — and exclude it from the reflected op surface. It is a process-launch mode of the pi-context bin, parallel to list-tools' process surface, not a registered op.",
+  "consequences": [
+    "pi-bound bypasses op dispatch and the op auth-gate; its contract is the CLI entry's, not an op's.",
+    "The reflected surface:use enumeration is unchanged by adding pi-bound.",
+    "Tests target the CLI entry mode (main() dispatch on the bare pi-bound verb), not an op definition."
+  ],
+  "references": [
+    {
+      "label": "pi-bound spec — routing before op resolution",
+      "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
+    },
+    {
+      "label": "CLI reflects surface:use ops; process surface partitioned out",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "44"
+    },
+    {
+      "label": "command-form convention cli-command-form — bare verb for an alternate run-and-exit mode"
+    }
+  ]
+}

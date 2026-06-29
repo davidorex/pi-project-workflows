@@ -1,0 +1,11 @@
+{
+  "description": "Ship the governance vocabulary in the samples catalog: add the two relation_types and three requires-edge invariants (severity warning, for fresh substrates) to packages/pi-context/samples/conception.json, with CHANGELOG + usage docs, then release. Fresh install/accept-all substrates then carry advisory convention-articulation.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ]
+}

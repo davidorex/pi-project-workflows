@@ -1,0 +1,15 @@
+{
+  "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:564-581): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242). Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "loadConfigForDir reads schema_version and, on mismatch with the bundled config schema version, walks the schema-name-keyed config migration chain before validating.",
+    "A config one version behind the bundled schema loads valid, carried forward in memory, with no exit-5 brick.",
+    "The map_each declarative-transform primitive maps array elements within a migration step.",
+    "A current-version config loads byte-unchanged: no migration applied when versions match."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/schema-migrations.ts"
+  ],
+  "notes": "Design: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (+ -design-feasibility, -proposal-validation)."
+}

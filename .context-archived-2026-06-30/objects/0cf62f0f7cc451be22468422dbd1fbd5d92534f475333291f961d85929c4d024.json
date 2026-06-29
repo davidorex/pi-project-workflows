@@ -1,0 +1,14 @@
+{
+  "description": "Schema version-history audit (the `git log <file>` analog): a read-only command (e.g. `read-schema-history --schemaName <name>`) that prints the schema's history — which migrations ran, when, and from what base — plus the two recording fixes that make the history complete: stamp an applied-at time when a migration runs, and keep a pointer from each new baseline to the one it replaced. Without those two, the command could only show a partial story and \"when\" would still require digging through git commits: today the only timestamp on a migration decl is its authoring time, and each baseline advance overwrites the prior {content_hash, version} with no parent pointer (the replaced bodies sit unreferenced in the object store). The command composes what the substrate records: the registered migration decls for the schema (from→to, kind, author, authored-at, applied-at), the baseline lineage, and the installed/catalog versions.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/migrations-store.ts",
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "To be determined exactly from live codebase."
+  ],
+  "notes": "Origin: the operator-story think-out — the G2 statement (\"As an operator, after a migration has been applied, I want to see the version history of a schema — which migrations ran, when, and from what base — so I can audit how the schema reached its current state. (git log <file> analog.)\"). Scope corrected per the status-quo challenge: applied-at + baseline lineage are in-scope recording fixes, not flagged out — they are event metadata, not git refs/DAG machinery, so DEC-0004 does not speak to them."
+}

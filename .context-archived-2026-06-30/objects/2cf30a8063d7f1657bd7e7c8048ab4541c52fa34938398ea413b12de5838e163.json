@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-05-30T13:30:00-06:00",
+  "focus": "Persisted jit-agents-spec-v2 at analysis/2026-05-30-jit-agents-spec-v2.md (305 lines; commit 4fc05e8). Engagement pattern for substantial arcs recognized: each undertaking gets its own per-arc substrate via /context switch -c, with block kinds + relations + lenses + invariants + conventions shaped to the arc's natural entity-graph.",
+  "discoveries": [
+    "/context switch -c enables per-arc substrate dirs explicitly shaped for one undertaking start-to-finish — substrate as workspace + plan + tracking + completion artifact, not just storage",
+    "Citation-rot scanner enforces no-substrate-ID-citations in shipped-package text (packages/*/SPEC.md scoped); analysis/ is committable + outside that scope; matches the pattern of other authored canonical-content this session",
+    "Spec content with substrate-ID traceability anchors lives in analysis/; substrate-decomposition into axioms + decisions + concepts + open-questions lives in per-arc substrate; lens projection renders the document"
+  ],
+  "decisions_made": [
+    "jit-agents-spec-v2 markdown lives at analysis/2026-05-30-jit-agents-spec-v2.md",
+    "Spec-v2 substrate-decomposition work happens in per-arc substrate .context-jit-spec-v2 (not in canonical .context)",
+    "Per-arc substrate as the canonical engagement unit for substantial undertakings going forward"
+  ],
+  "current_status": "Branch main at 4fc05e8. Tree clean. Pointer at .context. Spec-v2 markdown persisted (305 lines; D1-D10; classifier-mode + agentic-mode duality; implementation arc tracked by FGAP-169 + FGAP-178 + FGAP-115 + FEAT-001 + TASK-082/083). Active open arcs unchanged: FGAP-169 jit-agents canon-alignment implementation + FGAP-180/181/182 + TASK-095 3-layer discoverability. Release HELD per session constraint. Push HELD per session constraint.",
+  "next_steps": [
+    "/context switch -c .context-jit-spec-v2 — bootstrap per-arc substrate for spec-v2 work",
+    "Design custom block kinds for spec-v2 entity-graph (axioms + decisions + concepts + open-questions + dispatch-modes + v1-supersessions + impl-tasks + verifications)",
+    "Design relations (axiom_grounds_decision + concept_referenced_in_decision + spec_includes_* + v1_section_superseded_by_v2_item + impl_task_implements_decision + verification_attests_decision)",
+    "Design lenses (full-spec-render + decisions-only + open-questions + coverage-vs-v1 + impl-progress)",
+    "Design invariants + conventions + context-contracts encoding spec-v2 operational patterns",
+    "File initial spec items decomposed from the markdown"
+  ]
+}

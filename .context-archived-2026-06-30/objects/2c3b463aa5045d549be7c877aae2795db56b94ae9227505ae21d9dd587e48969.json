@@ -1,0 +1,6 @@
+{
+  "title": "Fetch catalog schema for local diff",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, I want a command to fetch the catalog schema, so I can diff locally without hunting through node_modules."
+}

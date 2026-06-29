@@ -1,0 +1,17 @@
+{
+  "description": "Behavioral parity gate — the regression guard that locks in TASK-015/016/017/018. Asserts in-pi op <-> reflecting-CLI parity: the CLI is a faithful ADDITIVE reflection of the op-registry. The orchestrator scripts are composers/launch-support, NOT a parity reference; the two canonical routes are the in-pi op and the reflecting CLI. Extends scripts/parity-check.ts AFTER its existing hard static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) with two new HARD op<->CLI checks, and RETIRES the soft op<->orchestrator-script comparison (checkDualSurfaceParity + its scriptsDir/DUAL_SURFACE machinery). Check 1 (required-but-derivable, FGAP-019 class): parse the CLI required-filter exemptions from cli.ts source and assert every config-derivable required op param (arrayKey, derived by injectArrayKey) is exempted by the CLI — FAILs if arrayKey is dropped from the filter or a new config-derivable required param is added without an exemption. Check 2 (output-shape, FGAP-020/027 class): run read-schema --path at an object node via BOTH routes in-process (the op run() and the CLI main() --json) on a fixture substrate and assert the op's r.read.data equals the CLI's output.data (boundedJsonOutput unwraps {read} so output === r.read) — FAILs on any op/CLI output divergence. In-process harness (not a subprocess of dist/bin.js) because husky pre-commit does not build dist. Folds into the same violations[]/exit-1 aggregation; main() becomes async. Converts the parity class from found-one-at-a-time-by-dogfooding into caught-at-commit. Closes no gap directly; durability mechanism.",
+  "status": "in-progress",
+  "files": [
+    "scripts/parity-check.ts",
+    "test fixtures (new fixture substrate)"
+  ],
+  "acceptance_criteria": [
+    "The gate FAILs on a reintroduced required-but-derivable param (the CLI no longer exempts a config-derivable required op param) — FGAP-019 class",
+    "The gate FAILs on an in-pi-op vs reflecting-CLI output-shape divergence on the read-schema --path fixture — FGAP-020/027 class",
+    "The soft op<->orchestrator-script comparison (checkDualSurfaceParity) is retired; no op<->script parity reference remains (scripts off the table)",
+    "The gate's new checks are pure/unit-testable and PROVEN to bite via negative fixtures in parity-check.test.ts; the real-tree integration is green",
+    "Runs as the existing husky/CI parity-check phase after the static checks (same exit-1 aggregation); green on the current tree",
+    "Canonical pipeline green (incl. runtime demo of the gate + a bite demonstration + fresh adversarial audit)"
+  ],
+  "notes": "Release-group: cli-parity (FEAT-008) | order 5/6 | regression guard (closes no gap) | depends on orders 1-4 (asserts their post-fix state) | REFRAMED from the 2026-06-05 op<->script premise (R-0003 cli-ops-scripts-parity-survey, now superseded) to op<->CLI: the orchestrator scripts are off the table as a parity reference"
+}

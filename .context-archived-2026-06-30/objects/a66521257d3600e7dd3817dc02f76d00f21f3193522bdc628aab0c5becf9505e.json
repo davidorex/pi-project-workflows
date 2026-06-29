@@ -1,0 +1,13 @@
+{
+  "description": "Enrich resolve-blocked's success report: running resolve-blocked exactly as today prints a summary that reads the way `git show --stat` reads after a merge — what was written, what changed, from-state → to-state. The command surface itself is untouched: no new op, no new flag. The report carries the old vs new schema version, which items were forward-migrated (or left unchanged), and the merge-base advance from→to — facts already computed in memory at the success point and currently discarded (today's output is effectively `resolved: true` plus one hash, and `registeredMigrations` is empty in the normal case because the blocking update run already registered the chain).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/cli.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Origin: the operator-story think-out — the D2 and G5 statements (confirmed duplicates; one filing). D2's proposed --diff flag spelling is not adopted: the command surface is untouched. Same legibility principle as FGAP-076 (update's partial-application report)."
+}

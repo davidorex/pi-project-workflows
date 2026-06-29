@@ -1,0 +1,13 @@
+{
+  "title": "pi-context update — a unified, drift-aware, customization-preserving update command with --dry-run",
+  "status": "in-progress",
+  "layer": "L4",
+  "description": "A single `pi-context update` command brings an installed substrate's model (schemas + catalog-origin blocks) to a newer pi-context release while preserving the user's customizations: it consults the checkStatus drift classification, preserves or merges locally-modified schemas instead of overwriting (FGAP-046), surfaces every mutation it makes, and with --dry-run previews the full change set without writing. It supersedes the bare `/context install --update` flag as the user-facing update path, and states the guarantee that config registries, populated blocks, and user-added elements are never clobbered.",
+  "motivation": "The framework exists to be customized; an update must not punish customization. Today update is a flag on install that overwrites locally-modified schemas, side-writes migration declarations unsurfaced, and never consults the drift detector that already exists. A unified command with a dry-run preview makes update safe and legible.",
+  "acceptance_criteria": [
+    "[orchestrator] pi-context update --dry-run reports the full set of schema/block/migration changes it would make (per the checkStatus drift classification) and writes nothing.",
+    "[orchestrator] pi-context update preserves or merges locally-modified schemas (per FGAP-046's chosen route) rather than overwriting them; config registries, populated blocks, and user-added elements are untouched.",
+    "[orchestrator] Every mutation the command performs — schema re-syncs, migration-declaration registrations, block starters — is enumerated in its output.",
+    "[subagent] The command is exposed on the globally-installed pi-context (gated on the CLI grounding)."
+  ]
+}

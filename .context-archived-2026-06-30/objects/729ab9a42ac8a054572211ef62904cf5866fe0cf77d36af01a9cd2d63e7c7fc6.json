@@ -1,0 +1,12 @@
+{
+  "description": "Persist a pending-blocked state and add the resolve-blocked / update --continue commit op — closes FGAP-080. When resyncSchema blocks, persist what the rollback currently discards (target schema body/version, the migration chain, the per-item failure set from TASK-048's diagnostic), and add a commit op mirroring resolve-conflict: re-validate the corrected block against the target schema, on success write the new schema via writeSchemaCheckedForDir and advance the merge base via stampBaselineFromBody — so the schema converges and stops re-blocking. The diagnose -> fix -> retry loop, end-to-end, matching the conflicts/resolve-conflict model.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Closes FGAP-080; advances STORY-006/011/012/014. Depends on TASK-048 (the persisted failure set is its diagnostic). Reuses stampBaselineFromBody, writeSchemaCheckedForDir, validateBlockWithMigrationForDir, the object store."
+}

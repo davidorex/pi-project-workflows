@@ -1,0 +1,10 @@
+{
+  "description": "Register the two governance relation_types in .context config and backfill all existing planning-artifact articulation: file the deduped missing-convention gaps and write the item_governed_by_convention / item_acknowledges_missing_convention edges for every existing decision/feature/task and for this initiative's own DEC/FEAT/TASK items, per analysis/2026-06-07-convention-articulation-backfill.md. Prerequisite to enabling the error invariant (TASK-032).",
+  "status": "completed",
+  "acceptance_criteria": [
+    "[orchestrator] item_governed_by_convention (source decisions/features/tasks -> target conventions) and item_acknowledges_missing_convention (source decisions/features/tasks -> target framework-gaps) are registered in .context config.relation_types.",
+    "[orchestrator] The deduped missing-convention gaps (one per theme) are filed.",
+    "[orchestrator] Every existing decision/feature/task, plus this initiative's own DEC-0016/FEAT-007/TASK-031/032/033, carries at least one articulation edge (governed-by-convention or acknowledges-missing-convention) per the backfill determination.",
+    "[orchestrator] context-validate shows no unregistered-relation_type or dangling-edge errors after the writes."
+  ]
+}

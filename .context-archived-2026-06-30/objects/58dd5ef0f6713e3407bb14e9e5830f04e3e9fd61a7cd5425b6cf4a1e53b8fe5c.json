@@ -1,0 +1,31 @@
+{
+  "title": "The install ceremony has no reflected CLI op — a CLI-driven bootstrap reaches a config-complete-but-unmaterialized substrate with no CLI op to advance it",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "installContext is surfaced to the operator only as the /context install slash-command handler and is listed in INTENTIONALLY_UNEXPOSED_WRITERS, so the reflecting CLI has no context-install op while its five lifecycle siblings (context-init / context-accept-all / context-switch / context-list / context-archive) are reflected ops. A CLI-only operator runs context-init + context-accept-all to a config-complete substrate whose schemas/ is empty and whose block files do not exist, with no CLI op to materialize them. Install is reachable ONLY via an interactive pi session's slash command: pi -p \"/context install\" does NOT dispatch it — prompt-mode hands the text to an agent, and install is not a registered op/tool, so no agent can call it either. There is no non-interactive path to install. Class: substrate-lifecycle operations unevenly reflected to the CLI — the CLI-parity family FGAP-030 named (FGAP-021..026 + FGAP-030); install is the last unreflected member of the init -> accept-all -> install bootstrap triad, so the CLI bootstrap is structurally incompletable on its own surface. The INTENTIONALLY_UNEXPOSED_WRITERS rationale (install is operator-facing via the command handler, not the op-registry) is the assertion to revisit; FGAP-030 set the precedent that a command-only surface unreachable from the CLI is a gap resolved by adding the reflected op.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1211",
+      "reference": "installContext(cwd, {overwrite}) — the install engine: copies installed_schemas[] bodies into <substrate>/schemas/, installed_blocks[] starters into <substrate>/<name>.json, base-stamps install baselines"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "3098-3149",
+      "reference": "the install entry of CONTEXT_SUBCOMMANDS — installContext is surfaced ONLY as the /context install slash-command handler"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "2171-2175",
+      "reference": "installContext listed in INTENTIONALLY_UNEXPOSED_WRITERS with the rationale that it is operator-facing via the command handler, not the op-registry — the stale assertion this gap revisits"
+    },
+    {
+      "file": "analysis/2026-06-13-install-surface-and-guard-scope-gaps.md",
+      "reference": "the full investigation: root cause, the init+accept-all-then-empty-schemas/ repro, the pi -p seam, the FGAP-030 precedent, the class verdict"
+    }
+  ],
+  "impact": "A CLI-driven or agent-driven (non-pi) consumer cannot bootstrap a substrate to a usable state: init + accept-all leave schemas/ empty and no block files, and a subsequent append-block-item --autoId throws 'nextId: schema not found' (block-api.ts:2311). The capability is reachable only via an interactive pi session's slash command — no scriptable / non-interactive path exists (pi -p prompt-mode does not slash-dispatch, and install is not a registered tool an agent could call).",
+  "canonical_vocabulary": "CLI bootstrap completability / lifecycle-op reflection parity",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

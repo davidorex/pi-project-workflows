@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs canonical-process governance against unplanned architectural surface",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs the canonical-process gate (gap->DEC->plan before new surface) and convention-enforcement governance. DEC-0012 (revert the unplanned pre-identity escape hatch) and DEC-0016 (enforce convention articulation) were decided in this domain without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering canonical-process / governance-enforcement"
+    }
+  ],
+  "impact": "Process-governance decisions are ungoverned.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

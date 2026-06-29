@@ -1,0 +1,21 @@
+{
+  "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:564-581): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242). Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on version match it does not consult the registry.",
+    "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
+    "A config whose schema_version lags the bundled config schema by the real on-disk gap (1.0.0 → current) loads valid through the migrated path, carried forward in memory, with zero exit-5 brick — demonstrated by runtime reproduction on a scratch substrate, not by a version-matched no-op.",
+    "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts), the migrations.schema.json oneOf, and applyOp (migration-registry-loader.ts), and maps array elements within a migration step; a migration step using it transforms array elements as declared.",
+    "A current-version config (schema_version equal to the bundled schema version) loads byte-unchanged: no migration applied, registry not consulted.",
+    "TASK-070 is recorded as the config instance of FEAT-010; its scope is the config instance, not the block-data class."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/migrations-store.ts",
+    "packages/pi-context/src/migration-registry-loader.ts",
+    "packages/pi-context/schemas/migrations.schema.json",
+    "packages/pi-context/samples/migrations.json",
+    ".context/migrations.json"
+  ],
+  "notes": "Design: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (+ -design-feasibility, -proposal-validation)."
+}

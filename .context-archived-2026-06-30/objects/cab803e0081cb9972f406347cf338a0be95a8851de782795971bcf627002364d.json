@@ -1,0 +1,24 @@
+{
+  "title": "check-status reports no version gap — which schemas are behind the catalog, and by how much, is not surfaced",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "checkStatus computes baseline_version and catalog_version per asset (CheckStatusAsset), but renderCheckStatus prints only the per-state name buckets and drops the version fields, and check-status is reachable only as an in-pi command (no CLI op — FGAP-030). No surface reports which schemas are behind the catalog or the version delta. A behind-by-version readout must also cover content-only drift: catalog-ahead is a content-hash comparison, so a schema can be behind with no version-number change.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "CheckStatusAsset carries baseline_version + catalog_version per asset"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "renderCheckStatus groups schema names by state and omits the version fields"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "checkStatus classifies catalog-ahead by content-hash comparison (catalogHash !== baseline), not version arithmetic"
+    }
+  ],
+  "impact": "From check-status the operator cannot see which schemas are behind the catalog or by how much — only the raw drift state, and only from inside pi.",
+  "canonical_vocabulary": "version-gap drift reporting",
+  "proposed_resolution": "check-status reports, per behind schema, the baseline->catalog version delta, and handles content-only drift (behind with no version-number change). Depends on FGAP-030 (expose check-status as a CLI op)."
+}

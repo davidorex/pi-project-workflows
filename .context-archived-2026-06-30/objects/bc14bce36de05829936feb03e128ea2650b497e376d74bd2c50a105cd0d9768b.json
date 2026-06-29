@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-07T00:00:00.000Z",
+  "evidence": "TASK-034 (FEAT-006 T1) verified. Reflected surface:use op `update` (commit c125c33): updateContext(cwd,{dryRun}) consults checkStatus per installed schema and routes by drift — in-sync no-op; catalog-ahead resync via the existing resyncSchema (re-fingerprinting only resynced+migrated baselines, never on dryRun); locally-modified/both-diverged refuse-and-report (no overwrite); no-baseline/missing-* reported. installContext + /context install + cli.ts byte-unchanged. Runtime demo via the real CLI on a throwaway copy of .context with tasks.schema.json hand-edited to locally-modified: `pi-context update --dryRun` and `pi-context update` both reported refused:[tasks] + the other 15 inSync, and the tasks schema bytes were identical after the real run (no clobber); --dryRun snapshot showed every substrate file byte-identical (writes nothing). Fresh-context adversarial probe: PASS, no defects (both-diverged handled; baseline-refresh surgical + correct; dryRun writes nothing by independent byte-snapshot; op reflected, not in INTENTIONALLY_UNEXPOSED_WRITERS; build+check+test fail 0; new updateContext + resolveOp('update') + parseOpArgs --dryRun tests pass). The merged-of-locally-modified is deferred to TASK-036.",
+  "criteria_results": [
+    {
+      "criterion": "pi-context update is a reflected bare-verb op (name update, surface:use), --dryRun a boolean param",
+      "status": "passed",
+      "evidence": "op reflected + runs via the real CLI; not in INTENTIONALLY_UNEXPOSED_WRITERS"
+    },
+    {
+      "criterion": "update consults checkStatus per schema; in-sync/catalog-ahead resync; locally-modified/both-diverged refuse-and-report (left unmodified)",
+      "status": "passed",
+      "evidence": "updateContext routing re-derived + demo: refused:[tasks], inSync the rest; both-diverged falls to the same refused arm"
+    },
+    {
+      "criterion": "a locally-modified schema is NOT overwritten; the user's edits survive",
+      "status": "passed",
+      "evidence": "shasum of tasks.schema.json identical before/after the real (non-dryRun) update run"
+    },
+    {
+      "criterion": "--dry-run prints per-schema drift + action, writes nothing; in-pi ops byte-unchanged; build+check+test; demo on fresh + existing substrate",
+      "status": "passed",
+      "evidence": "dryRun output = the per-schema action plan; byte-snapshot unchanged; build/check/test fail 0; installContext + /context install byte-unchanged"
+    }
+  ]
+}

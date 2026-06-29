@@ -1,0 +1,12 @@
+{
+  "description": "Write in-file failure markers into a blocked block — closes FGAP-081. A blocked schema's failures appear at the point of fix: git-merge-style markers written INTO the block file at the offending items/fields (the per-item failure set from TASK-048), the pre-marker block recoverable from the object store. Markers are the DEFAULT behavior of a live validation-failed block (STORY-013: the operator expects them; no flag, no mode — the supersession of the byte-unchanged contract for the block file is user-decided); a dry run never writes, and a no-chain block has no failures to mark. Markers are stripped by the TASK-051 resolution commit (resolve-blocked), which refuses while the named violations persist. Implementation resolves the marker shape against identity-stamping (content_hash recompute) and pre-write validation — the two constraints writeBlockForDir imposes.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/block-api.ts"
+  ],
+  "acceptance_criteria": [
+    "to be derived"
+  ],
+  "notes": "Closes FGAP-081; advances STORY-013/014. Depends on TASK-051 (the resolution loop the markers feed). The contract supersession (in-file markers, object-store recoverability) is user-decided; pairs with DEC-0018."
+}

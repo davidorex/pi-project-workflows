@@ -1,0 +1,25 @@
+{
+  "title": "append-block-item has no dry-run; only the script validates the prospective whole file",
+  "status": "identified",
+  "package": "pi-context-cli",
+  "description": "file-block-item.ts builds the prospective whole block (on-disk items + new item) and validates it (dry-run PASS == write PASS). The append-block-item op has no dryRun param (the upsert-block-item op does, ops-registry.ts:553), so the CLI cannot offer append dry-run. Closable CLI-side without an op change via client-side prospective-validation.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "240-270",
+      "reference": "script builds + validates the prospective whole file for dry-run"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "553",
+      "reference": "upsert-block-item op declares dryRun; append-block-item op does not — the asymmetry"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-6 in the parity survey; recommended CLI-only-shared-helper (no op change)"
+    }
+  ],
+  "impact": "A CLI user cannot preview an append without writing, unlike the script and unlike upsert — an ergonomic and safety gap on the highest-traffic write path.",
+  "proposed_resolution": "Add a cli.ts pre-call branch for append-block-item --dry-run that runs the lifted file-block-item.ts:247-255 validation (read block + build prospective + validateFromFile) and returns WITHOUT invoking appendToBlock. No op change (avoids adding dryRun to the frozen op). Re-confirm via the canonical pipeline.",
+  "priority": "P2"
+}

@@ -1,0 +1,34 @@
+{
+  "title": "/context install --update overwrites block DATA with empty starters (substrate-wiping); stale installed schemas have no safe re-sync; undocumented",
+  "status": "closed",
+  "priority": "P0",
+  "package": "pi-context",
+  "description": "installContext (index.ts, behind /context install) copies catalog assets with fs.copyFileSync and, under --update (overwrite=true), overwrites BOTH installed_schemas[] AND installed_blocks[]. The block starters in samples/blocks/*.json are EMPTY ({\"<array_key>\": []}), so --update copies an empty file over the LIVE block, deleting every filed item. Verified: 'tasks' is in installed_blocks; .context/tasks.json holds 22 items; --update would zero it; all 16 installed blocks (decisions, framework-gaps, research, ...) are equally exposed. No migration, no version check, no warning, no backup. Root consequence: under the never-clobber (skip-if-exists) default, installed SCHEMAS silently drift stale from the evolving catalog (confirmed: .context/schemas/layer-plans.schema.json is 1.0.0 vs catalog 1.0.1, missing layers[]/migration_phases[]) — and the ONLY mechanism to re-sync them, --update, ALSO destroys all block data. So there is no safe path to refresh a stale installed schema.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "396-416",
+      "reference": "installContext blocks loop: if destExists && overwrite -> fs.copyFileSync(sourceFile, destFile) where destFile is <substrate>/<name>.json (the LIVE block) and sourceFile is the empty samples/blocks starter — blind full-file overwrite, no item preservation"
+    },
+    {
+      "file": "packages/pi-context/samples/blocks/tasks.json",
+      "reference": "starter is empty: {\"tasks\": []} — what --update copies over the live tasks.json"
+    },
+    {
+      "file": ".context/tasks.json",
+      "reference": "live block holds 22 items (TASK-001..022) that --update would silently delete; verified via grep item count"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "372-394",
+      "reference": "schemas loop: --update overwrites the installed schema via copyFileSync with NO migration / version-skew check, so a schema re-sync can desync from existing items' schema_version"
+    },
+    {
+      "file": "packages/pi-context/skills/pi-context/SKILL.md",
+      "lines": "717-721",
+      "reference": "docs say 'Default behavior is skip-if-exists (preserves user edits); pass --update to overwrite' — frames --update as safe edit re-sync, SILENT on block-data loss"
+    }
+  ],
+  "impact": "A user who runs /context install --update to refresh schemas (the documented re-sync action) silently destroys every filed item in every block — total substrate data loss. Conversely, stale installed schemas have NO safe re-sync at all, since the only re-sync mechanism is the destructive one. The never-clobber default also means installed copies drift from the catalog indefinitely with no surfaced signal. High-severity footgun on a routine-sounding flag.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

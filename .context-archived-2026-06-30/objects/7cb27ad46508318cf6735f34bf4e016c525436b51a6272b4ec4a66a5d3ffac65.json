@@ -1,0 +1,35 @@
+{
+  "title": "Op-registry does not cover the library write surface — whole capabilities unreachable from the cli / out-of-pi",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "Library write capabilities have no op-registry entry, so they are unreachable from pi-context-cli and in-pi tools: edge removal/replace (removeRelation does not exist in the library at all; writeRelations whole-replace has no op), upsertItemInBlock (atomic find-or-replace), writeConfig (whole-config), writeSkeletonConfig, writeSchema/updateSchema (unchecked write + mutator), registerSubstrate/writeRegistry (foreign-substrate registration), writeBootstrapPointer/flipBootstrapPointer (raw pointer), and bulk appendRelations. An operator restricted to the cli cannot correct a mis-filed edge, run an atomic upsert, or write a config/registry/pointer.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "562,613",
+      "reference": "writeRelations (whole-relations replace) + appendRelations (bulk) have no op; removeRelation does not exist — relations are append-only via ops"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "1968",
+      "reference": "upsertItemInBlock atomic find-or-replace — no op (used only by pi-behavior-monitors directly)"
+    },
+    {
+      "file": "packages/pi-context/src/schema-write.ts",
+      "lines": "393,509",
+      "reference": "writeSchema/updateSchema — no op (only write-schema -> writeSchemaChecked)"
+    },
+    {
+      "file": "packages/pi-context/src/context-registry.ts",
+      "lines": "157,194",
+      "reference": "writeRegistry/registerSubstrate — no op; foreign-substrate registration unreachable from cli"
+    },
+    {
+      "file": "packages/pi-context/src/context-dir.ts",
+      "lines": "213,283",
+      "reference": "writeBootstrapPointer/flipBootstrapPointer — no op"
+    }
+  ],
+  "impact": "The cli is not a faithful interface to the library write surface; whole categories of substrate operation are out-of-pi-unreachable. FGAP-006 (no edge-removal op) is a specific instance, with the sub-layer that the removeRelation library primitive is itself missing.",
+  "proposed_resolution": "A systematic op per library write capability as a dual-surface unit (library + Pi tool/op + CLI + orchestrator script): add the missing removeRelation library primitive + a remove-relation / replace-relation op (closing FGAP-006), and ops for writeRelations / upsertItemInBlock / writeConfig / writeSchema / registerSubstrate / bootstrap-pointer writers / bulk appendRelations as the surface warrants. See DEC-0006."
+}

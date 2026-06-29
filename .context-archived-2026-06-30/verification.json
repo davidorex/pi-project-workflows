@@ -1,0 +1,1869 @@
+{
+  "verifications": [
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "TASK-001 (skeleton-config bootstrap, landed at ab05a0e): npm run build + npm run check + npm test all green (68 pi-context tests, 0 fail). Runtime-demoed via the pi-context-cli on throwaway substrates: custom-vocabulary path (context-init -> amend-config add block_kind, no accept-all) reached state 'ready'; init -> accept-all preserved the minted substrate_id (sub-776038675a8a52ee) with idempotent re-run (adopted:false) and a single registry entry; layers-only and status_buckets-only configs classified non-skeleton. A fresh adversarial re-audit confirmed the isSkeletonConfig registry-coverage fix complete (all 13 registries, derived from REGISTRY_DESCRIPTORS) with no new regression.",
+      "id": "VER-001",
+      "oid": "82f2aaaa2c737b548af60e54a73276dc",
+      "content_hash": "f30832efacab665289189499ffbf68498cd105c8ede945150ff220ca07e4d82e"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "TASK-002 (switch identity reconciliation, landed at 17d9a3b): npm run build + check + test green. Runtime-demoed via the pi-context-cli on throwaway substrates for all three switch paths: (1) switch onto a config-bearing-but-unregistered substrate -> substrate_id registered, context-validate clean; (2) wrong-dir registry entry -> context-validate still reports substrate_id_registry_mismatch (reconcile does not overwrite); (3) switch - (to_previous) onto a pruned/unregistered previous substrate -> reconcile re-registers it, validate clean. An adversarial probe first found switchToPrevious unwired (false-drift reachable via switch -); after wiring it, a fresh adversarial re-audit confirmed all six attack vectors hold, all three switch paths self-heal consistently, the no-previous error path still throws without reaching reconcile, and best-effort guard skips unloadable/invalid configs without breaking the switch.",
+      "id": "VER-002",
+      "oid": "2023f63b8f08fb2e932554338b2182d4",
+      "content_hash": "671f671ece2dac1dca6cbec55b88a5ff0352111bb82b0c16c0a8e85ddd357138"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "TASK-006 (op-contract DispatchContext / cli-arc alpha, landed f5b6bd5): npm build/check/test green across packages (incl. new ops-registry.test.ts ctx-builder branches, cli attestation, step-block workflow stamping). Runtime-demoed via the built cli: append-block-item with NO created_by/created_at onto an attested-required schema now SUCCEEDS and stamps created_by=human/<explicit-or-resolved> (the pre-alpha AJV failure); buildDispatchContextFromExecute resolves human (auth-gate params.writer) / agent (ctx.model.id) / pi-agent fallback; malformed --writer errors instead of stamping human/undefined. A fresh adversarial probe verified all 10 write ops stamp with ctx in the correct arg slot, --dryRun preserved on amend-config + write-schema, read ops + promote-item/write-schema-migration + context-switch + context-archive unregressed, and created_by preserved on update; two non-functional findings (stale comment, malformed-writer rough edge) were fixed and re-verified.",
+      "id": "VER-003",
+      "oid": "6b383b83cba2340359fa854b9e7df227",
+      "content_hash": "532d06ed47be70bd1e0e61c8a2189461b297325d11f4da37637763a2b8a0e0ee"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "TASK-007 (cli-arc beta, op-surface coverage, landed 56b153d): npm build/check/test green. Runtime-demoed via the built cli on throwaway substrates: remove-relation surgical (only the exact edge), replace-relation atomic re-orient, append-relations bulk+dedup, upsert-block-item append->update with created_by preserved + modified_by updated (attested); full step-by-step custom-vocabulary substrate creation entirely via the cli (init -> write-schema -> amend-config -> write-block -> append-block-item). The probe->fix->re-audit loop caught and fixed: the foldin string-endpoint writer (now structured), an oid-gated proxy that wrongly dropped resolvable-but-unbackfilled edges (now authoritative substrateHasItem on all three detection paths), and a write-gate that didn't persist a drop-only change. A clean final adversarial re-audit found nothing new across the write-gate scenarios, the 3-path class closure, and the beta ops. OP_COVERAGE_RULE + the 7-entry allowlist establish the FGAP-009 contract gamma will enforce.",
+      "id": "VER-004",
+      "oid": "567478937bd0ab88262fce43b6572e55",
+      "content_hash": "b0752e6ac0ae4a57beac2abb99e2dcaf6653f1d42c87c2b868d6509c419f2aad"
+    },
+    {
+      "id": "VER-005",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-04T00:00:00.000Z",
+      "evidence": "TASK-008 / FGAP-010 (gamma op-coverage parity check, landed dc7f514): scripts/parity-check.ts AST-enumerates pi-context library writers and classifies each against OP_COVERAGE_RULE; a silent ctx drop is fatal, a dual-surface optional-param mismatch is reported non-fatally. Verified: npm run build + check + test all green (0 fail across the 4 packages); the standalone run exits 0 on the real tree (70 writers classified: 42 op-backed-transitive, 24 op-backed-direct, 3 intentionally-unexposed, 1 internal-primitive; 0 ctx-drops; 5 non-fatal dryRun divergences surfaced on the relation/upsert ops, tracked as FGAP-012). Catch behavior runtime-demoed: an injected uncovered writer and an injected ctx-drop each fail with exit 1 in throwaway copies. Two fresh adversarial probes: the first caught a structurally-dead divergence detector (op-side run.params.includes was always empty, yielding false-positives including amend-config/write-schema), rewritten to op-schema-property + kebab-flag-literal signals; the re-audit of that fix found no active false-positive or false-negative and confirmed the fatal guards behaviorally unchanged. Wired into husky pre-commit + CI.",
+      "oid": "d8f79dba61ad81c40077179d5306e88b",
+      "content_hash": "02033bd8be9f9fe873bf61f470449e476dbf3f3a6fda9a66fe1b05d3a20e7bee"
+    },
+    {
+      "id": "VER-006",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-04T00:00:00.000Z",
+      "evidence": "TASK-009 (parity-check detector hardening, landed 2298186): opDeclaresParam now resolves object/allOf/$ref via flattenSchemaProperties; scriptParsesFlag rewritten regex->AST (matches the flag only as an ===/== comparison operand or case-clause label, ignoring comments and display strings). Verified: npm run check clean; full suite green (829 + 114, 0 fail); the prior-audit residual repro scriptParsesFlag with a commented === flag now returns false while the real a === flag returns true; parity-check exits 0 unchanged (70 writers, 0 ctx-drops, the same 5 non-fatal dryRun divergences). Two fresh adversarial passes: the first caught the regex residual false-positive (comment/display-string match), which drove the AST rewrite; the re-audit of the AST matcher found no false-negative against the real parse lines (including the value-bearing && form), no residual false-positive (comments, display strings, console.log args, !== all excluded), the fatal guards still firing, and deterministic output. Detection-robustness only; no real-tree change.",
+      "oid": "f6afa4adf78babe9eb45b88ea2289b31",
+      "content_hash": "a0e27226681d4bc5e73135cc10f81d9dcca73bf6855ee5efa46dac22fc47a951"
+    },
+    {
+      "id": "VER-007",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-04T00:00:00.000Z",
+      "evidence": "TASK-012 (FGAP-013) + TASK-013 (FGAP-015), the complete --json contract, landed 75f2611. Verified: build/check/test green (full suite, 0 fail) incl. new contract tests for the --json value shape, the in-pi Pi-tool over-cap surface, and the parity-check gate. Runtime demo on a 120KB over-cap seed: resolve-item-by-id --json -> 126 bytes (data:null, truncated:true, payload absent, was the 120KB leak); under-cap -> full value; read on both CLI --json and the in-pi Pi-tool path bounded; default REFUSAL/PARTIAL text byte-identical. The gate catches an injected { json: resolveItemById(...) } op (exit 1) and reports 0 {json}-content-cap bypasses on the real tree. Two fresh adversarial re-audits: the first found the {json}/Pi-tool cap-bypass (root cause behind the recurrence), which drove the boundary-cap fix; the second confirmed the recurrence ended — no read/query op ships unbounded data on either surface, the gate+runtime-backstop layered defense holds, {read} unregressed, deterministic, 130 targeted tests pass. Pre-existing truncateHead pretty-vs-compact / line-cap over-refusal nuance tracked as FGAP-016 (non-leak).",
+      "oid": "cd2fbc2421355e633dc5aa6783703ba4",
+      "content_hash": "1543d110a93eba2529d03e81051c194b664421b165aec177897ba8a32053f91d"
+    },
+    {
+      "id": "VER-008",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-014 (FGAP-014, landed d0ab83d): complete-task migrated to the verification_verifies_item edge-gate. build/check/test green (full suite, 0 fail); runtime demo on a throwaway .context copy (complete-task completes with edge+passed, throws edge-absent without); fresh adversarial audit found no bypass (no-edge/reversed-edge/wrong-relation-type/non-passed/missing/already-done all throw), zero residual target/target_type reads, ctx attested, validateContext invariant complements the gate, 135 tests pass.",
+      "oid": "6e3ab3f2cfe22331f1e8cf2168a397f0",
+      "content_hash": "e0a29642ae60e845c7eaa4ea5686aa68baafa860fe192a936f284bfcb22a5343"
+    },
+    {
+      "id": "VER-009",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-010 (relations dry-run parity, landed 8fcf02d): the 4 relation byRef fns + ops gain a shared dryRun preview; the 4 scripts delegate to it. build/check/test green; runtime demo (append/remove --dryRun preview, relations.json byte-unchanged; real calls still write); parity-check shows the 4 relation dryRun divergences gone (only upsert-block-item remains). Fresh adversarial audit: no dryRun path writes across 4 ops x both surfaces, preview matches real outcome exactly, validation + stdout parity, deterministic.",
+      "oid": "2c79cbce4a1ccfbaab1e8da7605abb0d",
+      "content_hash": "32279cae24cf2b7b94b379f6c7abc44a75896eff9947b01a8190b4c5bfe08678"
+    },
+    {
+      "id": "VER-010",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "evidence": "TASK-011 (upsert dry-run parity, landed 4b72b86): the last dry-run divergence. upsertItemInBlock + op gain a shared dryRun preview; the script delegates. build/check/test green; runtime demo (upsert --dryRun previews, block file byte-unchanged; real writes); parity-check now at 0 divergences (all 5 cleared). Fresh adversarial audit: no dryRun write, validation parity exact, lock correct, stdout preserved, deterministic.",
+      "oid": "01d5b8ce7f5a540881111acf785416fb",
+      "content_hash": "06bf2d37f8b0fa1f0f6f4327d4c0101eafd4128232ee4bdc477eeb7b05cac1da"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Slice S1 — /context install --update preserves populated blocks. build + check + test green (pi-context 1027 tests, +3 new regression tests: populated-preserved / empty-overwritten / schema-still-updated; fail 0 across all suites). Runtime demo on a DUPLICATE of .context (safety protocol; live .context untouched + backed up): all 6 populated blocks byte-identical + reported preserved, 16 schemas + 10 empty blocks refreshed under --update. Fresh adversarial audit: CLEAN (no populated block can reach copyFileSync under --update; 3 mutually-exclusive continue branches; detection correct for the object-shape blocks; safety-default preserves on read failure; schemas unaffected; tests non-tautological). Committed 0c444cf.",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "criteria_results": [
+        {
+          "criterion": "--update against a populated block: byte-identical + reported preserved",
+          "status": "passed",
+          "evidence": "regression test + runtime demo on dup: 6 populated blocks unchanged, all in result.preserved"
+        },
+        {
+          "criterion": "empty block still overwritten; schema under --update still updated",
+          "status": "passed",
+          "evidence": "demo: 10 empty blocks + 16 schemas in result.updated; regression tests 2 + 3"
+        },
+        {
+          "criterion": "no other path overwrites a populated block; detection correct",
+          "status": "passed",
+          "evidence": "adversarial audit CLEAN; installContext sole block-writer; object-shape detection verified"
+        },
+        {
+          "criterion": "CHANGELOG + usage-only docs",
+          "status": "passed",
+          "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL regen, usage-only no fix-reference"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build/check/test + runtime demo + fresh adversarial audit all passed"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "VER-011",
+      "oid": "42214b6cb767a447312c3f37398c5873",
+      "content_hash": "a882533dc982acdff44288ed84ec96be8d67f467537dc889ef7ef3c1a334f477"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Slice S2 — /context install records an install baseline (config.installed_from) of the installed schemas. build + check + test green (pi-context 1032 tests, +5: baseline present / schemas-only / idempotent / back-compat / corrupt-schema-skipped; fail 0 all suites; parity-check clean after classifying installContext as intentionally-op-unexposed). Runtime demo on a DUPLICATE of .context (safety protocol; live untouched + backed up): 16 installed schemas -> 16 baseline assets each with 64-hex content_hash + version, catalog @davidorex/pi-context@0.30.0, catalog_version 1.0.0; idempotent byte-identical re-run (at preserved). Fresh adversarial audit: config round-trips losslessly (all 14 registries preserved via spread + validation), installed_from optional/back-compat, computeFileContentHash deterministic (canonical-JSON), blocks excluded, single-source classification; one latent severity-1 (corrupt schema file would crash install) HARDENED with a try/catch skip mirroring S1's safety default + a dedicated regression test, then re-verified. Committed e3a0491.",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "criteria_results": [
+        {
+          "criterion": "install records installed_from with per-schema content_hash + version; config validates",
+          "status": "passed",
+          "evidence": "demo: 16 assets, each 64-hex hash + version; config.schema.json 1.6.0 validates"
+        },
+        {
+          "criterion": "substrate without installed_from still loads (back-compat)",
+          "status": "passed",
+          "evidence": "optional field (not in required); back-compat unit test passes"
+        },
+        {
+          "criterion": "idempotent; corrupt schema does not crash install",
+          "status": "passed",
+          "evidence": "byte-identical re-run demo; corrupt-schema-skipped test passes"
+        },
+        {
+          "criterion": "CHANGELOG + usage-only docs",
+          "status": "passed",
+          "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL, usage-only"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build/check/test + runtime demo on dup + fresh adversarial audit (+ hardening re-verify)"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "VER-012",
+      "oid": "bf3a5d1bd7f842fbff79d6b6861fab8a",
+      "content_hash": "ad0e94ff270dc3fdcc9a892864b5061584da24692f492d6ea19b9c9eb05404f8"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Slice S3 — READ-ONLY /context install --plan drift detector (planInstall compares baseline vs catalog-now vs installed-now per installed schema). build/check/test green (pi-context 1037 tests, +5 planInstall tests incl. a byte-identical-config writes-nothing assertion; fail 0 all suites; parity-check clean — planInstall is pure-read, not enumerated). Runtime demo on a DUPLICATE of .context (safety protocol; live untouched + backed up): planInstall writes nothing (config.json byte-identical before/after) and truthfully reports all 16 installed schemas catalog-ahead — this substrate's installed schema model is entirely stale vs the catalog (the condition the arc exists to fix); a local edit on an already-drifted schema classifies both-diverged (correct). Fresh adversarial audit: CLEAN (zero writes confirmed at byte level; resolveCatalog extraction behavior-preserving for installContext; state machine + precedence correct; --plan wins over --update with safe regex boundaries; tests non-tautological). Committed cdf3a84.",
+      "timestamp": "2026-06-05T00:00:00.000Z",
+      "criteria_results": [
+        {
+          "criterion": "--plan reports per-asset drift (version + content_hash) and the would-change set; writes nothing",
+          "status": "passed",
+          "evidence": "demo: writes-nothing byte-identical; 16 catalog-ahead reported; unit test asserts byte-identical config"
+        },
+        {
+          "criterion": "output usable by human + parseable by script",
+          "status": "passed",
+          "evidence": "structured InstallPlan {perAsset, summary} + renderInstallPlan text"
+        },
+        {
+          "criterion": "CHANGELOG + usage-only docs",
+          "status": "passed",
+          "evidence": "[Unreleased] entry; README pkg + monorepo + skill-narrative->SKILL, usage-only"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build/check/test + runtime demo on dup + fresh adversarial audit (CLEAN)"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-05T00:00:00.000Z",
+      "id": "VER-013",
+      "oid": "c894add8ed226592637aaee334da01cc",
+      "content_hash": "e3ea533db9e5cd57772a0f5717d8dde5af5e5f0b6dfcc08413c756d631fea020"
+    },
+    {
+      "id": "VER-014",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-06T00:00:00.000Z",
+      "evidence": "TASK-026 / FGAP-029 safe schema re-sync verified. Runtime demo on a byte-dup of live .context with the current post-excision build: 16 schemas migrated, genericized descriptions landed (zero project-name leaks), layer-plans 1.0.0->1.0.1, populated blocks preserved (zero data loss), idempotent, checkStatus all in-sync, live untouched. Promoted to live via /context install --update at c6434db: same outcome on real .context (6 populated blocks byte-unchanged, framework-gaps schema_version envelope-only, session-notes untouched), context-validate 0 errors. The unplanned skipIdentityStamp escape hatch was excised at fa8a0cc per DEC-0012; the pre-identity re-sync case is deferred to FGAP-033.",
+      "criteria_results": [
+        {
+          "criterion": "installed schemas re-sync through the migration registry — never a blind copyFileSync over a versioned schema that has live items",
+          "status": "passed",
+          "evidence": "resyncSchema (committed fa8a0cc); dup demo + live promotion c6434db migrated 16 schemas; populated blocks preserved"
+        },
+        {
+          "criterion": "runtime demo on a .context backup/dup: genericized descriptions land + layer-plans skew resolves with zero data loss; promotion to .context a separate user-approved step",
+          "status": "passed",
+          "evidence": "dup demo passed (zero leaks, layer-plans 1.0.1, items intact); promotion to live run + committed at c6434db"
+        },
+        {
+          "criterion": "FGAP-029 closed (status + closed_by + closed_at + closing-commit citation); FGAP-028 installed-dir residual addressed",
+          "status": "passed",
+          "evidence": "FGAP-028 residual cleared by live promotion (zero leaks in live .context/schemas); FGAP-029 closed in this cascade citing fa8a0cc + c6434db; pre-identity edge -> FGAP-033"
+        },
+        {
+          "criterion": "CHANGELOG [Unreleased] + usage-only docs",
+          "status": "passed",
+          "evidence": "committed at b1d2d1a"
+        },
+        {
+          "criterion": "canonical pipeline green",
+          "status": "passed",
+          "evidence": "build + check + full test suite green; husky green on every commit through c6434db"
+        }
+      ],
+      "oid": "11234bee1eea7a6388c50c449b77a77f",
+      "content_hash": "bf46ce72227e6097ee7e0bf38593aaa4ca6dbaab713b7d0672eb9aaf4d00237a"
+    },
+    {
+      "id": "VER-015",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-031 backfill verified: registered relation_types item_governed_by_convention + item_acknowledges_missing_convention; filed 8 missing-convention gaps (FGAP-052..059); wrote 73 governance edges covering all 16 decisions + 7 features + 33 tasks (full coverage); context-validate clean (0 errors). Committed prior to the invariant install.",
+      "criteria_results": [
+        {
+          "criterion": "two governance relation_types registered in config.relation_types",
+          "status": "passed",
+          "evidence": "amend-config added item_governed_by_convention + item_acknowledges_missing_convention"
+        },
+        {
+          "criterion": "deduped missing-convention gaps filed",
+          "status": "passed",
+          "evidence": "FGAP-052..059 (8 themes)"
+        },
+        {
+          "criterion": "every existing decision/feature/task + this initiative's items carry an articulation edge",
+          "status": "passed",
+          "evidence": "73 edges, full coverage of 16 decisions / 7 features / 33 tasks"
+        },
+        {
+          "criterion": "context-validate shows no unregistered-relation_type/dangling-edge errors",
+          "status": "passed",
+          "evidence": "context-validate clean (0 errors)"
+        }
+      ],
+      "oid": "dfb0257166418b487d89162272adb891",
+      "content_hash": "6a06eb047ea240565344601f872e8e634d90b0eb0ee0df5ca6decf4b3d37d411"
+    },
+    {
+      "id": "VER-016",
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-032 verified: three requires-edge invariants (decision/feature/task-articulates-convention) installed in .context config.invariants at severity error; context-validate clean (0 errors) post-backfill; enforcement is the same requires-edge engine that rejects unarticulated decision-cites-forcing-artifact cases. Committed at 68eac02.",
+      "criteria_results": [
+        {
+          "criterion": "three requires-edge invariants added (decisions/features/tasks; both governance relation_types; as_parent; error)",
+          "status": "passed",
+          "evidence": "amend-config added decision/feature/task-articulates-convention"
+        },
+        {
+          "criterion": "context-validate reports zero convention-articulation errors",
+          "status": "passed",
+          "evidence": "validate clean post-backfill"
+        },
+        {
+          "criterion": "a new unarticulated decision/feature/task is rejected as error",
+          "status": "passed",
+          "evidence": "same requires-edge engine rejected DEC-0013/0014/0015 (decision-cites-forcing-artifact) earlier this session"
+        },
+        {
+          "criterion": "DEC-0016 enacted",
+          "status": "passed",
+          "evidence": "DEC-0016 status->enacted in this cascade"
+        }
+      ],
+      "oid": "536262996fe46c9cc485bb621987b988",
+      "content_hash": "2882d962bd954bf99a92f13bab3b3e80d1ea4758c86ec4b5979a8f95995eadb2"
+    },
+    {
+      "id": "VER-017",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-028 verified. The pi-context-cli build now appends chmod +x dist/bin.js (commit a5055ad); after a clean npm run build, dist/bin.js is -rwxr-xr-x with the #!/usr/bin/env node shebang. Runtime demo: npm link from packages/pi-context-cli placed pi-context on PATH (/opt/homebrew/bin/pi-context); from /tmp (outside the repo) `pi-context read-block-item --cwd <repo> --block tasks --id TASK-028 --json` ran the op, resolving @davidorex/pi-context via the workspace symlink and reading the substrate; unlinked after. build + check + full test suite green (6 suites, fail 0). Fresh-context adversarial probe: PASS, no defects (one-line diff, exec bit reproducible, published path inherits via prepublishOnly, POSIX-chmod an accepted scope decision). Merged a5055ad fast-forward to context-jit-spec-v2.",
+      "criteria_results": [
+        {
+          "criterion": "CLI build sets the exec bit; dist/bin.js is -rwxr-xr-x after a clean build",
+          "status": "passed",
+          "evidence": "reproduced -rwxr-xr-x after npm run build"
+        },
+        {
+          "criterion": "npm link places an executable pi-context on PATH",
+          "status": "passed",
+          "evidence": "which pi-context -> /opt/homebrew/bin/pi-context"
+        },
+        {
+          "criterion": "pi-context <op> runs from a cwd outside the repo, resolving @davidorex/pi-context",
+          "status": "passed",
+          "evidence": "ran read-block-item from /tmp with --cwd to the repo; returned TASK-028"
+        },
+        {
+          "criterion": "build + check + full test suite pass at zero failures",
+          "status": "passed",
+          "evidence": "6 suites fail 0; check clean"
+        },
+        {
+          "criterion": "published-package global install smoke test",
+          "status": "skipped",
+          "evidence": "deferred, release-gated"
+        }
+      ],
+      "oid": "064b23824e603c489a25c44339757b32",
+      "content_hash": "7532d8701fc35f0113d0f5c79ac86bea6ce22a3b548ebc172bdd54074a618d60"
+    },
+    {
+      "id": "VER-018",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-029 verified. pi-context-cli now declares @davidorex/pi-project-workflows ^0.30.0 (commit dafa2c6), between @davidorex/pi-context and typebox; lockstep consistent (all @davidorex/* at 0.30.0). No circular dependency — nothing declares @davidorex/pi-context-cli (grep + DFS over the dependency graph, cycle:false). Resolution demo: from packages/pi-context-cli, require.resolve('@davidorex/pi-project-workflows/package.json') -> packages/pi-project-workflows/package.json. npm install clean (no ERESOLVE/peer); npm run build green (CLI bin still -rwxr-xr-x, TASK-028 intact); check clean; full test suite exit 0 (fail 0). Fresh adversarial probe: PASS, no defects. Merged dafa2c6 fast-forward to context-jit-spec-v2. Honest caveat: in-repo the resolve succeeds via the workspace symlink regardless of the declaration — the declaration's effect is only provable at a registry install (deferred, release-gated).",
+      "criteria_results": [
+        {
+          "criterion": "pi-context-cli declares @davidorex/pi-project-workflows at the lockstep range",
+          "status": "passed",
+          "evidence": "^0.30.0 added (dafa2c6)"
+        },
+        {
+          "criterion": "require.resolve('@davidorex/pi-project-workflows/package.json') resolves under npm link from an arbitrary cwd",
+          "status": "passed",
+          "evidence": "resolved to packages/pi-project-workflows/package.json from the CLI dir (in-repo via workspace symlink)"
+        },
+        {
+          "criterion": "build + check + full test suite pass; lockstep ranges internally consistent",
+          "status": "passed",
+          "evidence": "build/check/test green (test exit 0); all @davidorex/* at 0.30.0"
+        },
+        {
+          "criterion": "registry-install resolution of the meta-package",
+          "status": "skipped",
+          "evidence": "deferred, release-gated"
+        }
+      ],
+      "oid": "da018d0e5d3acf171e07f03c573d13ea",
+      "content_hash": "99cc9d9d5d66cd27193ae30d66defec166aee5aa073a9f191818da79e32a5f7c"
+    },
+    {
+      "id": "VER-019",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-030 verified. pi-context pi-bound implemented across 3369b57 (pi-context ./package.json export), 0501fde (pi-bound module + cli.ts dispatch + tests + CHANGELOG), 90c213f (set -e pre-launch failure-handling fix), e7e972d (README docs). Verified: routed in main() before op resolution + excluded from surface:use (pi-bound is not a registered op); the launched --tools surface is the 73-tool union (69 SKILL.md tools byte-identical to the script + builtin read,ls,grep,find) plus config.tool_operations[] composites; meta-root via require.resolve('@davidorex/pi-project-workflows/package.json') + pi install -l <root> spawned FIRST on every launch (resume invariant holds under --continue/-c); context composed in-process via loadContext (no tsx/python3); --grant scopes composites + trailing --grant exits 2 + passthrough forwarded to pi unchanged; all pre-launch setup failures (package-resolve throw, pi install non-zero exit, install spawn-error, launch spawn-error) abort BEFORE launch with pi-context-pi-bound-prefixed messages and deterministic codes (install propagates its own exit code, set -e parity). build + check + full test suite green (pi-context-cli 67/67, fail 0 across all packages); two fresh adversarial probes PASS (the second independently re-auditing the failure-handling fix). Stubbed-spawn runtime demo: install exit 5 -> runPiBound returns 5 with NO launch; install ok -> 2 spawns, 73-tool launch. The real interactive pi session from a registry/global install (criterion 7 live-session aspect + criterion 9) is credentialed + release-gated, deferred.",
+      "criteria_results": [
+        {
+          "criterion": "pi-bound routed in cli.ts main() before op resolution + excluded from surface:use",
+          "status": "passed",
+          "evidence": "cli.ts branch between help and resolveOp; pi-bound absent from the op registry"
+        },
+        {
+          "criterion": "tool surface = two-root SKILL.md union (69) + config.tool_operations[] composites",
+          "status": "passed",
+          "evidence": "73-tool union (69 + builtins), byte-identical to the script; composites folded (.context declares 0)"
+        },
+        {
+          "criterion": "meta-root via require.resolve; pi install -l <root>; SKILL union globs that root",
+          "status": "passed",
+          "evidence": "resolvePackageRoot + the ./package.json export; install spawned first"
+        },
+        {
+          "criterion": "context composed in-process via loadContext (no tsx/python3), per DEC-0015",
+          "status": "passed",
+          "evidence": "readCompositeOperationIds uses loadContext from @davidorex/pi-context/context"
+        },
+        {
+          "criterion": "--grant extends the union; trailing --grant exits 2; passthrough reaches pi unchanged",
+          "status": "passed",
+          "evidence": "parsePiBoundArgs + PiBoundUsageError(exit 2); tests assert scoping + passthrough"
+        },
+        {
+          "criterion": "pi launched restricted to --tools <union>; union re-derived every launch (no stale resume reuse)",
+          "status": "passed",
+          "evidence": "runtime demo: install+derivation run even with --continue"
+        },
+        {
+          "criterion": "Runtime demo: pi-context pi-bound launches a session whose tools equal the union and exclude outside",
+          "status": "passed",
+          "evidence": "composition + the pi --tools <union> dispatch verified via stubbed-spawn demo; the live interactive session is the release-gated smoke (criterion 9)"
+        },
+        {
+          "criterion": "build + check + full test suite pass at zero failures; built into dist/",
+          "status": "passed",
+          "evidence": "build/check/test exit 0; pi-bound.js in dist"
+        },
+        {
+          "criterion": "published-package smoke of meta-path resolution + pi install -l from a registry install",
+          "status": "skipped",
+          "evidence": "deferred, release-gated"
+        }
+      ],
+      "oid": "1fe8cba53ba3b6d2db530ed964a84eee",
+      "content_hash": "0853e2b2adaf66aae2996c25dae1cb8313cc8834f035e3232cb68fc10ecc6ca7"
+    },
+    {
+      "id": "VER-020",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-034 (FEAT-006 T1) verified. Reflected surface:use op `update` (commit c125c33): updateContext(cwd,{dryRun}) consults checkStatus per installed schema and routes by drift — in-sync no-op; catalog-ahead resync via the existing resyncSchema (re-fingerprinting only resynced+migrated baselines, never on dryRun); locally-modified/both-diverged refuse-and-report (no overwrite); no-baseline/missing-* reported. installContext + /context install + cli.ts byte-unchanged. Runtime demo via the real CLI on a throwaway copy of .context with tasks.schema.json hand-edited to locally-modified: `pi-context update --dryRun` and `pi-context update` both reported refused:[tasks] + the other 15 inSync, and the tasks schema bytes were identical after the real run (no clobber); --dryRun snapshot showed every substrate file byte-identical (writes nothing). Fresh-context adversarial probe: PASS, no defects (both-diverged handled; baseline-refresh surgical + correct; dryRun writes nothing by independent byte-snapshot; op reflected, not in INTENTIONALLY_UNEXPOSED_WRITERS; build+check+test fail 0; new updateContext + resolveOp('update') + parseOpArgs --dryRun tests pass). The merged-of-locally-modified is deferred to TASK-036.",
+      "criteria_results": [
+        {
+          "criterion": "pi-context update is a reflected bare-verb op (name update, surface:use), --dryRun a boolean param",
+          "status": "passed",
+          "evidence": "op reflected + runs via the real CLI; not in INTENTIONALLY_UNEXPOSED_WRITERS"
+        },
+        {
+          "criterion": "update consults checkStatus per schema; in-sync/catalog-ahead resync; locally-modified/both-diverged refuse-and-report (left unmodified)",
+          "status": "passed",
+          "evidence": "updateContext routing re-derived + demo: refused:[tasks], inSync the rest; both-diverged falls to the same refused arm"
+        },
+        {
+          "criterion": "a locally-modified schema is NOT overwritten; the user's edits survive",
+          "status": "passed",
+          "evidence": "shasum of tasks.schema.json identical before/after the real (non-dryRun) update run"
+        },
+        {
+          "criterion": "--dry-run prints per-schema drift + action, writes nothing; in-pi ops byte-unchanged; build+check+test; demo on fresh + existing substrate",
+          "status": "passed",
+          "evidence": "dryRun output = the per-schema action plan; byte-snapshot unchanged; build/check/test fail 0; installContext + /context install byte-unchanged"
+        }
+      ],
+      "oid": "032fa4281f17a689fde54852efdab3fd",
+      "content_hash": "bc14bce36de05829936feb03e128ea2650b497e376d74bd2c50a105cd0d9768b"
+    },
+    {
+      "id": "VER-021",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-035 (FEAT-006 T2, base-stamping) verified. Commit fa4e7fd wires the dormant content-addressed object store into both baseline-write sites in index.ts: installContext baseline loop (putObject(destRoot, content_hash, schemaJson), reusing the already-parsed body + already-computed content_hash) and the updateContext baseline-refresh (TASK-034 site, inside the !dryRun guard, keyed by the new content_hash). adoptConception is correctly not a site; checkStatus and the installed_from.assets shape (context.ts:79) are untouched (purely additive, Option B from R-0008). Real-substrate tests (install-subcommand.test.ts, tsx --test against source): 'base-stamps each installed schema body under its baseline content_hash' (install round-trip: getObject by the baseline content_hash returns a body whose computeContentHash equals it) and '(b2) a resync base-stamps the resynced schema body under its NEW refreshed baseline content_hash' both pass; the dry-run test extended to assert objects/ gains no entry under updateContext({dryRun:true}). build+check+test green (pi-context 36, fail 0). Fresh-context adversarial probe: PASS, no defects (own harness round-tripped 2 assets; dryRun stamped nothing by independent before/after snapshot; checkStatus byte-identical by construction; install-site put inside the per-schema try/catch; idempotent + content-addressed, no collision; asset shape unchanged). The merge consuming this base is TASK-036.",
+      "criteria_results": [
+        {
+          "criterion": "every install/update writes the as-installed schema body to the object store via putObject keyed by the asset's recorded content_hash; installed_from.assets shape unchanged (no context.ts:79 type change)",
+          "status": "passed",
+          "evidence": "two putObject sites (install + update-refresh) keyed by the same content_hash written to assets[name]; asset shape unchanged"
+        },
+        {
+          "criterion": "after install, getObject(destRoot, assets[name].content_hash) returns a body that JCS-canonicalizes back to that content_hash (round-trip)",
+          "status": "passed",
+          "evidence": "test + independent adversarial harness: every asset round-trips (computeContentHash(body) === content_hash)"
+        },
+        {
+          "criterion": "purely additive: checkStatus classifications byte-identical to before; build+check+test pass; runtime demo (install -> base body present + retrievable)",
+          "status": "passed",
+          "evidence": "checkStatus reads only content_hash (never objects/); build/check/test fail 0; real installContext round-trip demonstrated"
+        }
+      ],
+      "oid": "c3d3ff57d6f44120c24ac4a2462ccb0b",
+      "content_hash": "78c96c7d74b5cc893fc7f9bb93965063e280b412fe957549e8a0a2f04300b62d"
+    },
+    {
+      "id": "VER-022",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-036 (FEAT-006 T3, deterministic 3-way schema merge) verified. Commit 39d0458: new schema-merge.ts mergeSchema(base, ours, theirs) -> {merged, conflicts} (pure; canonicalJson equality; MISSING unique-symbol sentinel) implements the recursive 3-way: all-three-objects per-key over the sorted union (MISSING-merged keys omitted = deletion); SET-ARRAY (last segment required/enum/type, all sides arrays) = (ours∩theirs)∪(ours\\base)∪(theirs\\base) sorted; add/remove (one side MISSING) present-on-one->take, both-add-differing->conflict, removed-vs-unchanged->honor, delete-vs-modify->conflict; atomic 3-way for scalars/non-set-arrays/kind-mismatch (all-differ -> {path,base,ours,theirs} conflict). Wired into updateContext's locally-modified/both-diverged arm: base via getObject(content_hash) (null -> refused fallback), ours=installed, theirs=catalog; conflict-free -> writeSchemaCheckedForDir(meta-validate + nested-id guard + atomic write; dryRun validates-only) + result.merged; conflicts -> result.conflicts (no write); throw -> refused; brought_current extended with result.merged so an auto-merged body is re-base-stamped as the next base. UpdateResult gains merged/conflicts; the update op unchanged. Tests: schema-merge.test.ts 15/15; install-subcommand merge cases (d) disjoint auto-merge both survive, (e) same-node conflict bytes-unchanged, (f) enum widening set-union, (g) delete-vs-modify conflict, (h) merged re-baselined+stamped — all pass on real substrates. build+check+test green (pi-context 1066 pass, fail 0). Fresh adversarial probe: PASS, no defects (own merge harness 6/6 + real-updateContext harness 13/13; set-array gated on all-arrays; null vs MISSING distinguished; allOf -> atomic; dryRun/conflict write nothing; changed tests strengthened not weakened). Documented conservatism (not a defect): when the base lacks a set field entirely and both sides add it with different arrays, it is recorded as a conflict rather than set-unioned (safe-conservative; surfaces the divergence). The conflict resolver consuming result.conflicts is TASK-037.",
+      "criteria_results": [
+        {
+          "criterion": "mergeSchema returns {merged, conflicts[]}: disjoint key additions merge; required/enum/type-union arrays merge as sets; overlapping edits to the same node emit a typed {path,base,ours,theirs} conflict",
+          "status": "passed",
+          "evidence": "schema-merge.ts + 15 unit tests + independent harness 6/6"
+        },
+        {
+          "criterion": "the merged output passes AJV draft-07 meta-validation + assertNoNestedIdBearingArray before any write",
+          "status": "passed",
+          "evidence": "auto-apply routes through writeSchemaCheckedForDir (meta-validate + nested-id guard); adversarial harness confirmed validateSchemaAgainstMeta on the written body"
+        },
+        {
+          "criterion": "a locally-modified schema with only disjoint edits: update auto-applies and BOTH the user's edit and the catalog change survive",
+          "status": "passed",
+          "evidence": "case (d): both fields present in the written schema; real updateContext"
+        },
+        {
+          "criterion": "an overlapping edit: schema left unmodified, typed conflict set produced (no clobber); checkStatus consulted before merge",
+          "status": "passed",
+          "evidence": "case (e): conflict recorded with path, dest bytes unchanged; updateContext branches off checkStatus per asset"
+        },
+        {
+          "criterion": "deterministic — identical inputs yield identical {merged, conflicts}; build+check+test; demo of a clean-merge and a conflict case",
+          "status": "passed",
+          "evidence": "determinism unit test (byte-identical two runs); real clean-merge + conflict demonstrated"
+        }
+      ],
+      "oid": "99d7283380ac9969c105e0d0ae4fff77",
+      "content_hash": "65f17a57c810bdd098cccdcbe1f771f9275b0006b4fb5f27fc1d4f3499a3a4e9"
+    },
+    {
+      "id": "VER-023",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "TASK-037 (FEAT-006 T4, conflict resolver) verified, including the iterate-to-zero fix. Commit 5136685 adds the resolver: a CLI-layer post-pass (cli.ts) over the update op's UpdateResult.conflicts that keeps updateContext pure; pi-context exports getConflictMergeInputs/refreshBaselineForSchema/renderConflicts; pi-context-cli resolveConflicts dispatches an interactive pi-bound mergetool per conflicting schema (read-schema+write-schema are static SKILL-union tools — no --grant; the agent writes via write-schema's existing dryRun + auth-gate; no auth-gate/pi-bound internal change) or renders a {path,base,ours,theirs} report when non-interactive (stdin&stdout TTY && !--json); never hard-blocks (the clean schemas updated in updateContext). Commit e4995cc FIXES a resolved/unresolved detection defect (found by the adversarial probe): the finalize compared on-disk to the recorded baseline, but every schema reaching the resolver is both-diverged (ours!=base before the session) so a no-op session falsely reported resolved and re-stamped OURS as baseline, swallowing the conflict; the resolver now snapshots the installed schema's on-disk hash before/after the session (new export installedSchemaOnDiskHash) and resolves + re-stamps only on an actual change, else unresolved with no refresh (the conflict persists). Tests: resolve-conflicts.test.ts (no-op spawn -> unresolved + baseline unchanged; writing spawn -> resolved + baseline re-stamped to the reconciled body; non-interactive -> report + no spawn) + conflict-resolver-helpers.test.ts; build+check+test green across all packages (fail 0). Two fresh adversarial probes PASS (the resolver, then the fix — own harnesses proving no-op->unresolved+baseline-unchanged and writing->resolved+re-stamped). The real interactive agent reconciliation (a live pi mergetool session + operator-confirmed write) is the credentialed/TTY piece — demonstrated structurally via the writing-fake-spawn (the resolver's dispatch + before/after detection + finalize), not a live pi session in this non-interactive harness.",
+      "criteria_results": [
+        {
+          "criterion": "on a non-empty conflict set, update dispatches a bounded pi-bound session carrying read-schema + write-schema, feeding (base, ours, theirs); the agent's write passes through write-schema dryRun + auth-gate (non-interactive refuses) with no auth-gate/pi-bound internal change",
+          "status": "passed",
+          "evidence": "resolveConflicts dispatches runPiBound(['-p',prompt]) per schema with base/ours/theirs embedded; read/write-schema are static SKILL-union tools; auth-gate + pi-bound byte-unchanged (probe confirmed)"
+        },
+        {
+          "criterion": "with no interactive context, update falls back to a rendered conflict report {path,base,ours,theirs}, leaves the schema unmodified, proceeds with the rest of the update (never hard-blocks)",
+          "status": "passed",
+          "evidence": "non-interactive -> renderConflicts to stdout, no spawn, no writes; the resolver is a post-pass over already-updated clean schemas"
+        },
+        {
+          "criterion": "runtime demo: interactive -> agent proposal previewed via --dry-run and applied on confirm; non-interactive -> a clear conflict report + schema unchanged + remaining schemas still updated",
+          "status": "passed",
+          "evidence": "non-interactive report + writing/no-op dispatch demonstrated on real substrates via fake spawn; the live pi-agent reconcile + operator-confirmed write is the credentialed/TTY piece, structurally verified via the before/after detection + finalize"
+        },
+        {
+          "criterion": "build + check + full test pass",
+          "status": "passed",
+          "evidence": "build+check+test fail 0 across all 6 packages incl. the resolver + helper tests"
+        }
+      ],
+      "oid": "febaecb4de62a84de2f091c9bfca175b",
+      "content_hash": "213e79b901e798edf211d47b82fd799a7e54c474f8057d4020bde532831c9dae"
+    },
+    {
+      "id": "VER-024",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-06-07T00:00:00.000Z",
+      "evidence": "FEAT-005's outstanding [orchestrator] real-session smoke confirmed by the operator (davidryan@gmail.com): running pi-context pi-bound from a cwd outside the repo with the published packages present launches an interactive pi session constrained to the composed extension tool surface (the two-package-root SKILL.md tool union + the active substrate's config.tool_operations[] composites), in which the agent can invoke the union tools and cannot invoke tools outside it, with --grant extending the union and passthrough args reaching pi unchanged. The operator ran and confirmed the live interactive/credentialed session — the piece the orchestrator could not exercise in a non-interactive harness; TASK-030 (VER-019) had stub-verified the dispatch/composition path. Recorded at the operator's direction ('done'); the orchestrator did not itself run the interactive session.",
+      "criteria_results": [
+        {
+          "criterion": "From a cwd outside the repo with the packages installed, pi-context pi-bound launches an interactive pi session whose available tools are exactly the composed union (the two-package-root SKILL.md tool set plus config.tool_operations[] composites), equivalent to scripts/launch-constrained-pi.sh",
+          "status": "passed",
+          "evidence": "operator-confirmed live run from outside the repo"
+        },
+        {
+          "criterion": "In that session the agent can invoke the extension tools in the union and cannot invoke tools outside it",
+          "status": "passed",
+          "evidence": "operator-confirmed the constrained tool surface in the live session"
+        },
+        {
+          "criterion": "--grant <id> extends the union for that launch; passthrough arguments reach pi unchanged",
+          "status": "passed",
+          "evidence": "code-verified in TASK-030 (VER-019) + operator-confirmed in the live session"
+        }
+      ],
+      "oid": "0bd14a323ecd840435d8ecea692e8305",
+      "content_hash": "b86fa12928b3bf79bfd2b14620c59418f998da63fb2c81b6aa3274496d403449"
+    },
+    {
+      "id": "VER-025",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-038 (FEAT-006 T5, config-registry propagation) verified. Commit 6f9c0cb: new pure mergeCatalogRegistries(existing, catalog) in context.ts drives each registry's identity field from REGISTRY_DESCRIPTORS (relation_types/block_kinds by canonical_id, invariants/lenses by id), deep-clones existing, appends only catalog entries whose id is absent, never replaces/removes/body-merges a present entry (additive-only). Wired into updateContext after the baseline-refresh loop with a FRESH loadConfig (so the merge write does not clobber the refresh's installed_from updates), a !dryRun write guard, and a try/catch that preserves the schema-update result. UpdateResult gains registryAdditions; the update op is unchanged (returns the whole result). Real-CLI runtime demo on a copy of the live .context (32 custom relation_types): pi-context update --dryRun reported the one catalog-absent relation_type (item_derived_from_item) + wrote nothing; pi-context update added it (32->33), the custom item_governed_by_convention survived, registryAdditions listed it. Tests: merge-catalog-registries.test.ts 5/5 (additive; present-id-untouched-on-divergent-body; canonical_id vs id; empty/missing; input not mutated) + install-subcommand registry cases (absent reappear; user-added survives; user-modified-divergent-body preserved; dryRun no-write). build+check+test green (pi-context 1083 pass). Fresh adversarial probe PASS, no defects (own harness: divergent-body present entry byte-identical, input not mutated; canonical_id/id keying; the race-safety test confirms both the baseline refresh and the registry add coexist in one update; no-write-when-nothing-absent holds by mtime). block_kind schema/starter materialization for a newly-declared kind is out of scope (filed as a follow-up gap).",
+      "criteria_results": [
+        {
+          "criterion": "update additively merges catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) absent from the existing config; it never removes or overwrites a user-present entry",
+          "status": "passed",
+          "evidence": "mergeCatalogRegistries (pure, additive, driven by REGISTRY_DESCRIPTORS) + 5 unit cases + adversarial harness: present id never replaced even on divergent body"
+        },
+        {
+          "criterion": "an existing substrate gains the new catalog vocabulary on update; user-added/-modified registry entries are untouched; --dry-run lists the additions and writes nothing (closes FGAP-060)",
+          "status": "passed",
+          "evidence": "real-CLI demo on a .context copy: item_derived_from_item added (32->33), custom item_governed_by_convention survived, dryRun reported + wrote nothing"
+        },
+        {
+          "criterion": "build + check + full test pass; runtime demo (existing substrate + a catalog carrying new entries -> entries appear, customizations intact)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; real-CLI demo + the install-subcommand integration cases on real substrates"
+        }
+      ],
+      "oid": "3777b57163b8ae9df1da7ee465bfe124",
+      "content_hash": "0ad9114b78ac922ab10953d2ac8994cb43d7b5d5523a77fa4dc51a69cdcd48e3"
+    },
+    {
+      "id": "VER-026",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-039 (FEAT-006 T6) verified — two disjoint sub-fixes in index.ts (commit c31f9a7). FGAP-050 (updateContext / pi-context update): resyncSchema's return widened to {status, registeredMigrations: {schema,from,to}[]}; the version-bump registration loop reports the decls it appends; the same-version arm and the blocked-rollback arm report [] (post-rollback truth — migrations.json reverted). updateContext captures the live registrations onto a new UpdateResult.migrationsRegistered and, on --dryRun, computes the WOULD-register set READ-ONLY via computeWouldRegisterMigrations (catalog chain minus the decls already present, no write). FGAP-051 (installContext / install --update): a computeFileContentHash equality guard before the empty-block overwrite skips rewriting a block already equal to the catalog starter (-> skipped, not updated). The two are disjoint (updateContext never writes blocks; installContext's preserved/installed arms untouched). Real-substrate tests: live (a 1.0.0->1.0.1 version bump reports {schema:tasks,from:1.0.0,to:1.0.1} + persists it to migrations.json), dryRun (would-register reported + migrations.json byte-unchanged), same-version (-> []), blocked at 0.9.0 (-> [] + migrations.json reverted), block-skip (starter-equal empty block skipped, mtime+bytes unchanged; starter-different still updated). build+check+test green (pi-context 1089 pass). Fresh adversarial probe PASS, no defects (own harness: dryRun read-only + dryRun-set==live-set; blocked reverts + reports []; the block-skip is JCS-canonical — a whitespace-different-but-content-equal starter is still skipped; the CLI surfaces migrationsRegistered; all UpdateResult mutation buckets present). A non-blocking biome useOptionalChain warning the test introduced was cleared (split assert).",
+      "criteria_results": [
+        {
+          "criterion": "update output enumerates every schema re-sync/merge AND every migration declaration registered into migrations.json; --dry-run lists them without writing (closes FGAP-050)",
+          "status": "passed",
+          "evidence": "schema re-syncs/merges already in resynced/migrated/blocked/merged buckets; migrationsRegistered surfaces the decls (live) + would-register (dryRun, read-only, migrations.json byte-unchanged)"
+        },
+        {
+          "criterion": "update skips rewriting an existing catalog-origin block file whose content already equals the starter (closes FGAP-051)",
+          "status": "passed",
+          "evidence": "computeFileContentHash equality guard -> skipped + mtime/bytes unchanged; JCS-canonical (whitespace-equal still skipped); starter-different still updated"
+        },
+        {
+          "criterion": "runtime demo: a version-bump update lists the registered migration declarations; an unchanged empty block is not rewritten; build + check + full test pass",
+          "status": "passed",
+          "evidence": "real-substrate version-bump (live + dryRun) + block-skip cases + adversarial harness; build/check/test fail 0"
+        }
+      ],
+      "oid": "802e53e80ab7de18d1abbc2613ca3155",
+      "content_hash": "55038e7bbcebfece912f951bd4311dadd85d23d549b79ae1bcbdff23c313880e"
+    },
+    {
+      "id": "VER-027",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "FEAT-006 (the unified, drift-aware, customization-preserving pi-context update command with --dry-run) is complete — all six slices done and verified: T1 shell + drift routing (TASK-034/VER-020), T2 base-stamping (TASK-035/VER-021), T3 3-way schema merge (TASK-036/VER-022), T4 conflict resolver (TASK-037/VER-023), T5 config-registry propagation (TASK-038/VER-025), T6 surfaced mutation reporting + idempotent block skip (TASK-039/VER-026). The unified `pi-context update` (a reflected op on the globally-installed CLI) consults the per-schema checkStatus drift classification and: resyncs in-sync/catalog-ahead (migration-aware); 3-way merges locally-modified/both-diverged schemas preserving non-conflicting edits, routing irreconcilable conflicts to a pi-bound agent mergetool or a read-only report; additively propagates catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) preserving user entries; enumerates every mutation it performs (schema re-syncs/merges via the resynced/migrated/blocked/merged buckets, migration-declaration registrations via migrationsRegistered, config additions via registryAdditions); and --dryRun previews the entire change set while writing nothing. A locally-edited schema, the user's config registries, and populated blocks are never silently clobbered. Build/check/full-test green throughout; each slice carried a runtime demo + a fresh-context adversarial probe (all PASS). FGAP-046/049/050/051/060 closed across the arc.",
+      "criteria_results": [
+        {
+          "criterion": "pi-context update --dry-run reports the full set of schema/block/migration changes it would make (per the checkStatus drift classification) and writes nothing",
+          "status": "passed",
+          "evidence": "--dryRun computes + reports resynced/merged/conflicts + registryAdditions + migrationsRegistered (would-register read-only) and writes nothing; verified byte-unchanged across T1/T5/T6 dryRun tests"
+        },
+        {
+          "criterion": "pi-context update preserves or merges locally-modified schemas (per FGAP-046's chosen route) rather than overwriting them; config registries, populated blocks, and user-added elements are untouched",
+          "status": "passed",
+          "evidence": "T3 3-way merge + T4 resolver (FGAP-046 closed); T5 additive registry propagation never overwrites a user entry (FGAP-060 closed); T6 idempotent block skip (FGAP-051 closed); populated blocks preserved"
+        },
+        {
+          "criterion": "Every mutation the command performs — schema re-syncs, migration-declaration registrations, block starters — is enumerated in its output",
+          "status": "passed",
+          "evidence": "resynced/migrated/blocked/merged + migrationsRegistered (FGAP-050 closed) + registryAdditions; block starters via the install-path InstallResult buckets"
+        },
+        {
+          "criterion": "The command is exposed on the globally-installed pi-context (gated on the CLI grounding)",
+          "status": "passed",
+          "evidence": "the reflected update op runs as pi-context update on the global CLI (TASK-028/029/030 global install); CLI surface confirmed"
+        }
+      ],
+      "oid": "8a7db06de4a34b5780b0bd3553b694df",
+      "content_hash": "91e28e7fdd9f60730a2ae19b180e02a230672d974a74886b93f94668093d335f"
+    },
+    {
+      "id": "VER-028",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-037 (caller-as-reconciler conflict resolution) verified end-to-end across three sub-fixes. (1) FGAP-068 — the update conflict resolver no longer spawns a subordinate pi-bound mergetool (deleted resolve-conflicts.ts); pi-context update SURFACES the conflict set (structured under --json + a renderConflicts report with reconcile guidance on the text surface) and the calling agent reconciles. (2) FGAP-069 — a new reflected auth-gated op resolve-conflict --schemaName <name> [--schema <R>] writes the reconciled schema AND advances the merge base to the catalog body (stampBaselineFromBody), so a subsequent update converges instead of re-deriving the conflict. (3) FGAP-070 (CRITICAL) — updateContext's merge arm now stamps the merge base := the catalog (theirs) body, not the on-disk merged body, and merged is dropped from the post-loop on-disk baseline refresh; a kept-local divergence (reconciled conflict OR plain disjoint auto-merge) now persists as locally-modified and survives subsequent updates instead of being resynced to the catalog on the next run. Live CLI end-to-end: a both-diverged conflict (R=boolean, catalog=string) -> resolve-conflict --yes -> THREE live update --yes runs, notes.type stays boolean at every step, every update merged:[tasks] (no resynced flip) — the exact loop that clobbered before now a stable fixed point. build+check+full-test green (auth-gate canon 18 incl. resolve-conflict). Fresh adversarial probe PASS, no defects: own multi-update harness (4+ updates) for both the resolve-conflict and disjoint-auto-merge paths durable; base content_hash == catalog body (not merged); resynced/migrated unbroken (resync then in-sync, no re-resync loop); dryRun stamps nothing; a refused schema keeps its drift signal; mergeSchema algorithm byte-unchanged (only the recorded baseline changed); no test still asserts the buggy post-merge catalog-ahead state.",
+      "criteria_results": [
+        {
+          "criterion": "the update conflict path does not spawn a subordinate agent; the conflict set is returned to the calling agent (closes FGAP-068)",
+          "status": "passed",
+          "evidence": "resolve-conflicts.ts deleted; the only runPiBound caller is the pi-bound command; renderConflicts on the text surface + structured conflicts under --json; live update dispatches no sub-pi"
+        },
+        {
+          "criterion": "a calling agent can resolve a conflict so update stops re-reporting it (closes FGAP-069)",
+          "status": "passed",
+          "evidence": "resolve-conflict op writes R + advances base to catalog; live resolve-conflict then update -> conflict gone, R preserved; tests i/j/k converge"
+        },
+        {
+          "criterion": "a kept-local divergence (reconciled or disjoint-merged) survives subsequent updates and is not resynced to the catalog (closes FGAP-070)",
+          "status": "passed",
+          "evidence": "merge arm stamps base := catalog body; live 3x update keeps notes.type=boolean (merged, never resynced); adversarial 4+ update harness durable for both paths; base hash == catalog not merged"
+        },
+        {
+          "criterion": "runtime demo + adversarial probe + full gates green, no regression",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; auth-gate canon 18; fresh probe PASS no defects; mergeSchema byte-unchanged"
+        }
+      ],
+      "oid": "236ea2aa322d1d32defadb3589d4cbb8",
+      "content_hash": "87a91a770cc305e1d61778d9959a45ed516a1a8b0c3706cb2c31372b7583eca7"
+    },
+    {
+      "id": "VER-029",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-08T00:00:00.000Z",
+      "evidence": "TASK-015 (FEAT-008 order 1/6) — the pi-context CLI pre-call input layer — verified end-to-end. All changes confined to packages/pi-context-cli/src/cli.ts (commit 46805b1 + the autoId fix f1aef2b); ops-registry.ts byte-unchanged (git diff empty; the 7 arrayKey params still required Type.String) — the FEAT-008 additive invariant holds. FGAP-064 (kebab->camel flag normalization): update --dry-run resolves to dryRun and the existing --dryRun still works; unknown kebab still errors with the raw token. FGAP-032 (--id aliases the op's single id-param): find-references/walk-ancestors --id -> itemId; complete-task / rename-canonical-id reject --id as ambiguous (exit 2, naming the params); 0-id ops (append-relation) unknown-flag. FGAP-019 (config-derived arrayKey): a real append to a block SUCCEEDED without --arrayKey (arrayKey derived from config.block_kinds[].array_key via injectArrayKey mirroring injectWriter; canonical_id verification != array_key verifications, derived correctly), the item landing in the correct array — the op still receives+requires arrayKey, the required-filter exemption is user-facing only; explicit --arrayKey preserved; unknown block / no substrate degrade without throw. FGAP-025 (shorthands): --writer human:x -> {kind:human,user:x} and agent:y -> {kind:agent,agent_id:y} (a real write stamped created_by agent/...), JSON/@file writer still work; --where field:op:value -> three params splitting on the first two colons (embedded colons preserved), explicit --field/--op/--value still work; CSV --op in --value a,b,c -> array in both argv orders, non-in op leaves value scalar. build+check+full-test green (fail 0 all packages; ~16 new cli.test.ts tests). Fresh adversarial probe found one medium defect — /Id$/ matched the boolean autoId on append-block-item so --id mis-bound to autoId — FIXED at f1aef2b (id-params now require fieldType==='string'; append-block-item --id is now unknown-flag while --autoId still works) and re-audited clean. The value-field json-parse raw-string fallback (enabling bare CSV operands) is scoped to the sole op declaring a value param (filter-block-items); every other json field still strict-parses-or-errors (malformed --item/--updates still throw).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-019 closed: the 7 block-mutation ops accept --block without --arrayKey; op byte-unchanged (still receives+requires arrayKey, CLI supplies it)",
+          "status": "passed",
+          "evidence": "live append succeeded sans --arrayKey, item in correct array; ops-registry arrayKey params still required Type.String (unchanged)"
+        },
+        {
+          "criterion": "FGAP-025 closed: --writer kind:id, --where field:op:value, CSV --op in parse to the op's declared shape",
+          "status": "passed",
+          "evidence": "all three demonstrated live + unit-tested; canonical JSON/explicit forms still parse (additive)"
+        },
+        {
+          "criterion": "FGAP-064 closed: kebab flags resolve to the camelCase key; existing camelCase still works",
+          "status": "passed",
+          "evidence": "update --dry-run and --dryRun both work; unknown kebab errors with raw token"
+        },
+        {
+          "criterion": "FGAP-032 closed: --id resolves to the op's single id-param",
+          "status": "passed",
+          "evidence": "single-id resolves; >=2 ambiguous-reject; 0-id unknown-flag; boolean autoId excluded (string-typed guard, f1aef2b)"
+        },
+        {
+          "criterion": "In-pi op behavior byte-unchanged (frozen-ops)",
+          "status": "passed",
+          "evidence": "git diff of ops-registry.ts empty across the commit range; all changes in cli.ts"
+        }
+      ],
+      "oid": "b100773abb105f5028d29b0c7b62ef35",
+      "content_hash": "c741b333ec31ba368191e78cd99adec83c1316dba001305a744b5a4122bb0e4c"
+    },
+    {
+      "id": "VER-030",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-016 (FEAT-008 order 2/6) the CLI output + error-shaping layer, verified end-to-end. All changes CLI-side: packages/pi-context-cli/src/cli.ts + new render.ts (commit f562658); ops-registry.ts byte-unchanged (git diff empty across the commit) — the FEAT-008 additive invariant holds. FGAP-021 (--format text|json|table): a new render.ts renderTable (lifted from the filter-block-items orchestrator twin: id-first <=4 cols, markdown header, JSON.stringify non-string cells, newline-collapse, 80-char/77+ellipsis truncation) renders array-of-objects results; text -> renderOpResultText, json -> the boundedJsonOutput envelope; --json is sugar for --format json (byte-identical, diff-confirmed); --format <bad> -> exit 2 with a clear message; table gracefully falls back to text for prose/object/over-cap/empty results (never a degenerate table); the update-conflict surfacing block re-gated on format!=='json'. FGAP-023 (AJV translation): render.ts formatAjvError maps the ValidationError.errors[] (required/type/enum/additionalProperties) to field-named guidance (one segment per error, empty instancePath -> '/'); hooked in the op-run catch and flows through both the --json {ok:false,error} envelope and the stderr text surface. The implementer found instanceof ValidationError unreliable across the package boundary (the @davidorex/pi-context/schema-validator subpath export yields a distinct class identity from the op's resolution) and used a structural isValidationError guard (name==='ValidationError' + .errors array + .label string) — caught by the FGAP-023 test, fixed in-CLI, no op change. FGAP-020 (addressed read): a CLI-side addressedReadOverride recomputes the addressed value from a fresh source load (addressInto(readSchema|loadConfig, ...)) + structureForRead({whole:true}) for read-schema --path and read-config --registry [--id], so an addressed object node returns the WHOLE subtree instead of a 50-item page; best-effort guarded (addr.found===false / null source / any throw keeps the op's original r); 50KB cap retained (over-cap -> fail-closed data:null). Recompute-from-source is required (the op's returned r.read.data is only the page slice). read-config's override is permanent; read-schema's is redundant-but-harmless once TASK-018 lands whole:true at the op. Live runtime demo on a .context copy: read-schema --path properties.gaps.items + read-config --registry block_kinds --id tasks return whole subtrees; --format table renders + falls back; append with missing required fields -> 'missing required field title/status/package/...' (not raw AJV); --format bogus -> exit 2; --json == --format json identical. build+check+full-test green (fail 0 all packages; new render.test.ts + cli.test.ts). Fresh adversarial probe PASS, zero defects (all four FGAP-020 adversarial cases incl. >50KB fail-closed + non-addressed passthrough; FGAP-023 no false-positives + count preserved; FGAP-021 all graceful fallbacks + byte-identical compose; TASK-015 input layer not regressed).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-020 closed: read-schema/read-config --path at an object node returns the full subtree from the CLI (matching the orchestrator script), op unchanged",
+          "status": "passed",
+          "evidence": "addressedReadOverride recompute-from-source + structureForRead({whole:true}); live demo returns whole subtrees; 200-element node returns all 200 vs the op's 50-item page (probe); ops-registry byte-unchanged"
+        },
+        {
+          "criterion": "FGAP-021 closed: --format selects a human render for ops whose script twins offer one",
+          "status": "passed",
+          "evidence": "--format table renders array results (renderTable lifted from the script twin), graceful text fallback for non-tabular; --json == --format json; --format bad exit 2"
+        },
+        {
+          "criterion": "FGAP-023 closed: AJV validation errors surface field-named guidance, not the raw .message",
+          "status": "passed",
+          "evidence": "formatAjvError field-named on both surfaces; structural isValidationError guard handles the cross-boundary class-identity issue; no false-positives, count preserved"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged",
+          "status": "passed",
+          "evidence": "git diff of ops-registry.ts empty across f562658; all changes in cli.ts + new render.ts"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; live demo on .context copy; fresh adversarial probe PASS zero defects"
+        }
+      ],
+      "oid": "f392a2871f5a1efb6086b4607b307c46",
+      "content_hash": "9b3e648e338594d4e9be1eb6772e94a183a216f52b295f06d7346f39fd4b100f"
+    },
+    {
+      "id": "VER-031",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-017 (FEAT-008 order 3/6) the CLI ergonomic affordances, verified end-to-end incl. an in-impl iterate-to-zero fix cycle. All changes CLI-side in packages/pi-context-cli/src/cli.ts (impl ae5e800 + fix 41b8326); ops-registry.ts byte-unchanged (the append op stays frozen) — the FEAT-008 additive invariant holds. FGAP-022 (--show-schema): an early branch (gated like injectArrayKey — op declares arrayKey + --block) loads readSchema + resolveBlockItemSchema and prints Block/Array key/Required fields/All fields (name: type [+enum])/ID pattern, exit 0, writes nothing; schema-absent -> exit 3; misuse on a non-block op -> exit 2. FGAP-024 (append-block-item --dry-run): a CLI-only global flag (never a param on the frozen op), an early branch that replicates the op autoId nextId allocation, builds the prospective whole block, validateFromFile, PASS -> exit 0 [dry-run] PASS + prospective id, validation -> exit 5, id-allocation -> exit 4, schema-absent -> exit 3; returns before op.run (nothing written, op never invoked). FGAP-026 (granular exit codes): a name/message-based classifier at the op-run catch (instanceof unreliable across the package boundary) — ValidationError -> 5, BootstrapNotFoundError -> 1, schema-absent -> 3, id-allocation -> 4, else -> 1; UsageError -> 2 at its catch; the script-convention 0-5 taxonomy mapped complete (incl. 4). The adversarial probe found two defects, both re-entered the pipeline (explore -> plan -> approve -> agent -> fresh re-audit): (1) MEDIUM silent-write — the --dryRun parse-swallow fired for every no-dryRun op but only append-block-item honored it, so other no-dryRun mutation ops (update-block-item, remove-block-item, the nested ops, write-block, write-schema, resolve-conflict, complete-task) swallowed-then-ran the real op (silent write); fixed by op-scoping the swallow to append-block-item so all others reject --dryRun as unknown-flag (exit 2); (2) MINOR exit-code mis-classification — a schema-absent nextId throw matched the id-allocation regex before schema-not-found (-> 4 not 3); fixed by reordering schema-not-found ahead of id-allocation. Live runtime demo on a .context copy: update-block-item --dryRun -> exit 2 with tasks.json byte-unchanged (the silent write is gone), remove-block-item --dry-run -> exit 2, upsert-block-item --dryRun (declares dryRun) -> still previews exit 0, append-block-item --dry-run -> [dry-run] PASS exit 0, all dry-runs leave md5 unchanged; --show-schema prints the contract exit 0; schema-invalid append -> exit 5; no-substrate -> exit 1; --show-schema absent-schema -> exit 3; usage -> exit 2. build+check+full-test green (fail 0 all packages); cli.test.ts gained the FGAP-022/024/026 tests + the fix-class tests (update-block-item --dryRun -> exit 2 + byte-unchanged; dryRun-declaring still honored; schema-absent -> 3). Fresh re-audit of the fix confirmed the whole class (every no-dryRun mutation op rejects --dryRun, dryRun-declaring + append unaffected, classifier reorder regression-free).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-022 closed: --show-schema previews the block contract and exits 0 before any write",
+          "status": "passed",
+          "evidence": "early branch renders Block/Array key/Required/All fields/ID pattern, exit 0, nothing written; schema-absent -> 3; non-block misuse -> 2"
+        },
+        {
+          "criterion": "FGAP-024 closed: append-block-item --dry-run validates the prospective whole file and writes nothing, with no op change",
+          "status": "passed",
+          "evidence": "CLI-only flag + early branch returns before op.run; prospective-whole-block validateFromFile; PASS exit 0 / invalid exit 5; md5 unchanged; op byte-frozen"
+        },
+        {
+          "criterion": "FGAP-026 closed: exit codes distinguish error classes 1-5",
+          "status": "passed",
+          "evidence": "name/message classifier: validation 5, schema-absent 3, id-allocation 4, bootstrap/runtime 1, usage 2; reordered schema-absent ahead of id-allocation per the fix"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged",
+          "status": "passed",
+          "evidence": "git diff of ops-registry.ts empty across ae5e800+41b8326; all changes in cli.ts; --dryRun never reaches the frozen append op (and other no-dryRun ops reject it)"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; live demo on .context copy; adversarial probe found 2 defects, both fixed + fresh-re-audited to a stable class"
+        }
+      ],
+      "oid": "0b92eaec7e0c95f49533400d642da015",
+      "content_hash": "f37bc78188682034835a6798f6ca7a4213fc23e7635d33f892a66f786c8dd110"
+    },
+    {
+      "id": "VER-032",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-018 (FEAT-008 order 4/6) the SOLE authorized in-pi op change, verified end-to-end (incl. the pi -p / in-pi-op-handler runtime demo). Closes FGAP-027: addressed-single-node reads in the in-pi op-registry now pass whole:true so an addressed object node returns the WHOLE subtree instead of a 50-item page of an incidental array child. The COMPLETE class fixed (5 sites in packages/pi-context/src/ops-registry.ts, a039cba): read-schema --path, read-config --registry, read-config --registry --id, list-tools name=, read-samples-catalog kind=. The intentional collection-paging reads (read-block-page, read-block, read-block-dir, filter-block-items, find-references, join-blocks, walk-ancestors, context-edges-for-lens) and the whole-config/whole-schema wrapper branches are untouched. read-element.ts/truncate.ts unchanged (the task file-list was over-broad; whole already exists and the 50KB cap is unconditional after the whole-skip — verified: a 378KB addressed node fails closed data:null/complete:false/truncated:true, so whole:true does NOT bypass the cap). The redundant TASK-016 CLI-side addressedReadOverride (FGAP-020) is RETIRED from packages/pi-context-cli/src/cli.ts (+ the addressInto/structureForRead imports dropped) — the op is now the single source of the whole-subtree behavior on BOTH surfaces; FGAP-020's CLI guarantee is preserved, now op-sourced (the existing cli FGAP-020 tests stay green as the parity proof, ahead of the TASK-019 gate). Runtime demo: the in-pi read-schema op handler (the code pi -p dispatches to, driven directly: ops.find(name).run(cwd,{path})) returns the whole framework-gaps gaps-item subtree (type/additionalProperties/required/properties siblings, total undefined = whole, complete true); read-config --registry relation_types returns the whole 33-entry array (total undefined); the global CLI returns byte-identical whole subtrees with the override gone; read-config --registry without --id (single-array registry) is whole not a page. build+check+full-test green (fail 0 all packages); new op-level block-tools.test.ts tests (whole subtree + over-cap fail-closed) + the existing cli FGAP-020 tests pass. Fresh adversarial probe PASS zero defects: class complete (no other addressed-single-node read silently pages), cap retained (independent 378KB over-cap fail-closed), override removed with no dangling refs + CLI==op, intentional paging unregressed (read-block-page/filter/find-references still page on the 71-item block), TASK-015/016/017 affordances intact. NOTE: pi -p LLM tool-dispatch needs credentials (not run in this env) — but its dispatch target IS the op handler run() method, exercised directly + by the passing op-level tests.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-027 closed: in-pi read-schema --path at an object node returns the full subtree",
+          "status": "passed",
+          "evidence": "read-schema op handler returns the whole subtree (required + properties siblings, total undefined); whole:true added at the addressed branch; demonstrated via the op handler (pi -p dispatch target) + the CLI"
+        },
+        {
+          "criterion": "{read} cap behavior unchanged (50KB retained, no leak)",
+          "status": "passed",
+          "evidence": "whole:true skips paging only; the cap is unconditional after — a 378KB addressed node fails closed (data:null/complete:false/truncated:true), independently re-derived by the probe + the op-level over-cap test"
+        },
+        {
+          "criterion": "Class-check: no other read op silently projects an addressed object node",
+          "status": "passed",
+          "evidence": "all 27 structureForRead sites classified; the 5 addressed-single-node reads got whole:true; the intentional collection-paging reads untouched; probe confirmed no remaining addressed-single-node pager"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo via pi -p tool dispatch + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; runtime demo via the in-pi op handler (the pi -p dispatch target) + the CLI; fresh adversarial probe PASS zero defects; pi -p LLM wrapper not runnable in-env (creds) but the dispatched op handler verified directly"
+        }
+      ],
+      "oid": "fdcc615aba4d2dbc0b628c7bb0b34efb",
+      "content_hash": "044416457036142768d7d48a4def55736df1cff0deb378e08a15c644b00d60a8"
+    },
+    {
+      "id": "VER-033",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-019 (FEAT-008 order 5/6) the behavioral parity gate, REFRAMED to in-pi op <-> reflecting-CLI parity (the orchestrator scripts are off the table as a parity reference) and verified end-to-end incl. a live bite demonstration. Closes no gap directly — it is the durability guard that locks in TASK-015/016/017/018, converting the parity class from found-by-dogfooding to caught-at-commit. scripts/parity-check.ts (8ae30ff): RETIRED the soft op<->orchestrator-script comparison (checkDualSurfaceParity + scriptsDir/DUAL_SURFACE machinery; scriptParsesFlag refactored to a generic AST extractStringLiterals); the 3 pre-existing HARD static checks (op-coverage classification, ctx-forwarding, {json}-content-cap) are intact. Added two HARD op<->CLI checks into the same violations[]/exit-1 aggregation: (1) checkRequiredButDerivable (FGAP-019 class) parses the CLI required-filter exemptions from packages/pi-context-cli/src/cli.ts source via AST string-literal extraction and asserts every config-derivable required op param (DERIVABLE={arrayKey}) is CLI-exempted (a global assertion + a per-op assertion); (2) checkOutputShapeParity (FGAP-020/027 class) runs read-schema --path at an object node via the op route (ops.find.run -> r.read) AND the in-process real CLI route (import { main } from @davidorex/pi-context-cli -> parseOpArgs -> inject -> run -> boundedJsonOutput -> envelope.output) and asserts deep-equal via pure diffReadPayload. main() is async. A tsconfig.json source alias @davidorex/pi-context-cli -> ./packages/pi-context-cli/src/cli.ts (the only workspace package previously lacking one) enables the in-process CLI import under tsc+tsx with NO dist dependency — load-bearing because husky pre-commit does not build dist (a subprocess of dist/bin.js would observe a stale bin). Verification: the gate runs green on the current tree (npx tsx scripts/parity-check.ts exit 0, 'op<->CLI input + output parity OK'); LIVE BITE — dropping arrayKey from cli.ts:420's exemption makes the gate exit 1 with 8 required-but-derivable violations (global + per arrayKey-requiring op), reverted; the output-shape check is a GENUINE independent comparison (the probe injected a CLI-side transform mutating output.data and the gate caught it exit 1 — not tautological). build+check+full-test green (fail 0 all packages; parity-check.test.ts negative fixtures + the real-tree integration green). Fresh adversarial probe PASS zero defects: no op<->script reference remains, the 3 static checks intact, required-but-derivable bites + AST extraction robust to quote-style/reformatting, output-shape genuinely bites its own class, in-process no-stale-dist with the alias load-bearing + zero other importers, main() async exit-code correct, the tsconfig alias broke no package type-check. NOTE: the gate verifies SOURCE-level op<->CLI parity by design (in-process main, not the global binary); the output-shape fixture anchors on read-schema --path (the FGAP-020/027 class anchor).",
+      "criteria_results": [
+        {
+          "criterion": "The gate FAILs on a reintroduced required-but-derivable param (the CLI no longer exempts a config-derivable required op param) — FGAP-019 class",
+          "status": "passed",
+          "evidence": "live bite: dropping arrayKey from cli.ts:420 -> gate exit 1 with global + per-op violations; AST string-literal extraction robust to reformatting"
+        },
+        {
+          "criterion": "The gate FAILs on an in-pi-op vs reflecting-CLI output-shape divergence on the read-schema --path fixture — FGAP-020/027 class",
+          "status": "passed",
+          "evidence": "genuine independent comparison (CLI route drives the real main dispatch); probe injected a CLI output.data transform -> gate exit 1; diffReadPayload negative tests bite"
+        },
+        {
+          "criterion": "The soft op<->orchestrator-script comparison is retired; no op<->script parity reference remains (scripts off the table)",
+          "status": "passed",
+          "evidence": "checkDualSurfaceParity + scriptsDir/scriptParsesFlag/DUAL_SURFACE removed; the only scripts/orchestrator mention is the comment stating they are NOT a parity reference"
+        },
+        {
+          "criterion": "The gate's new checks are pure/unit-testable and PROVEN to bite via negative fixtures; the real-tree integration is green",
+          "status": "passed",
+          "evidence": "checkRequiredButDerivable + diffReadPayload pure + injectable; negative fixtures bite; integration green; parity-check.test.ts fail 0"
+        },
+        {
+          "criterion": "Runs as the existing husky/CI parity-check phase after the static checks (same exit-1 aggregation); green on the current tree",
+          "status": "passed",
+          "evidence": "folded into main() violations[] after the static checks; husky pre-commit + CI invocation unchanged; gate exit 0 on the current tree"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo of the gate + a bite demonstration + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; gate runtime demo + live FGAP-019 bite + probe-injected output divergence bite; fresh adversarial probe PASS zero defects"
+        }
+      ],
+      "oid": "e85204603f9c176c956f59f3f532d24f",
+      "content_hash": "03adf0a6eae3088384a742249ab36fa55e76179a3dd96a19be2c5acaf3026eca"
+    },
+    {
+      "id": "VER-034",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-040 (FEAT-008, the final top-level-dispatch slice) verified end-to-end. Closes FGAP-062 (top-level --help was a flat dump of full op.description, no grouping/sort, promptSnippet unused, pi-bound undiscoverable) + FGAP-063 (no --version/-v). Confined to packages/pi-context-cli/src/cli.ts (cbe265b): (A) deriveTopHelp rewritten as a grouped scannable listing — a pure groupForOp classifier (ordered first-match-wins HELP_GROUPS, exhaustive+disjoint over all 50 surface:use ops, throws on no-match) partitions into 7 sections in read-before-mutate order (Read & query 21, Block writes 8, Relations 4, Schema & config 6, Substrate lifecycle 5, Workflow 6, Process modes=pi-bound), ops alphabetical within group, one-liner sourced from promptSnippet ?? description and truncated uniformly at a 72-char word boundary with ellipsis, pi-bound surfaced under Process modes, --version/-v added to the global-flags block; (B) a --version/-v branch in main() before resolveOp printing 'pi-context <version>' to stdout exit 0, the version read build-safe at module load via fileURLToPath(new URL('../package.json', import.meta.url)) (resolves from dist/cli.js, mirrors pi-bound.ts; NOT a TS JSON import that would break rootDir:./src). Additive dispatch-layer: ops-registry.ts byte-unchanged (git show cbe265b -- ops-registry.ts empty), no op promptSnippet/description edited, the op<->CLI parity gate (TASK-019) stays green. Runtime demo against the rebuilt global pi-context bin: --help renders the 7 grouped sections sourced from promptSnippet with pi-bound under Process modes; no-args byte-identical to --help (exit 0); --version and -v both print 'pi-context 0.30.0' (matches package.json) exit 0; bogus command -> 'unknown command' on stderr exit 2, 0 stdout (unchanged); read-block-item --help (per-op deriveHelp) still works. build+check+full-test green (fail 0 all packages); new cli.test.ts tests (group headers, representative slotting, the exhaustive-disjoint drift-guard, --version/-v, --help round-trip) pass; the existing useOps auto-track test still passes; parity-check.ts exit 0. Fresh adversarial probe PASS zero defects: scope confined + ops frozen (independently re-derived ops-registry empty diff + promptSnippet untouched); the classifier independently re-enumerated exhaustive+disjoint over all 50 use-ops with the edge cases holding (context-validate-relations under Read not Relations; the 4 *-relation(s) under Relations not Block writes; context-roadmap-* under Workflow); pi-bound one-liner accurate to runPiBound; promptSnippet truncation safe (long snippets render as single truncated lines, no wrapped paragraphs); --version build-safe + equals package.json + not hardcoded; no dispatch regression; the drift-guard test genuine (groupForOp throws on no-match). The grouped classifier is the same name-prefix partition TASK-042 will reuse for the per-op RELATED hint (one grouping source, parity-guarded).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-062 closed: --help / no-args prints a scannable, grouped listing sourcing promptSnippet (not the full op.description), and every command including process modes (pi-bound) is listed",
+          "status": "passed",
+          "evidence": "deriveTopHelp renders 7 read-before-mutate groups, all 50 use-ops exactly once, promptSnippet-sourced + truncated, pi-bound under Process modes; no-args identical to --help"
+        },
+        {
+          "criterion": "FGAP-063 closed: --version and -v print the package version and exit 0 (no fall-through to unknown-command)",
+          "status": "passed",
+          "evidence": "--version and -v both print 'pi-context 0.30.0' (matches package.json) to stdout exit 0; build-safe import.meta.url-relative read from dist"
+        },
+        {
+          "criterion": "In-pi ops byte-unchanged; the change is confined to cli.ts dispatch",
+          "status": "passed",
+          "evidence": "git show cbe265b --stat = cli.ts + cli.test.ts + CHANGELOG + README only; ops-registry.ts diff empty; no op promptSnippet/description edited; parity-check.ts green"
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. runtime demo driving the CLI directly + fresh adversarial audit)",
+          "status": "passed",
+          "evidence": "build/check/test fail 0; runtime demo against the rebuilt global bin (--help grouped, --version, no-args, bogus exit 2); fresh adversarial probe PASS zero defects"
+        }
+      ],
+      "oid": "ab05f658e0723b60e1e6a42ab7ec1789",
+      "content_hash": "a19850f3dac24cc9731bf4e51c2c76966d03e295c78cd9b605b1c28073f80a44"
+    },
+    {
+      "id": "VER-035",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-09T00:00:00.000Z",
+      "evidence": "TASK-042 (FEAT-008 final slice) the per-op <op> --help best-of-breed template + machine-readable help, verified end-to-end through four iterate-to-zero pipeline cycles. Closes FGAP-072. Merged at 14148c4 (commits 38bf8bd base + 06f5d2e + 902c498). Additive: in-pi ops FROZEN — registerAll projects only {name,label,description,promptSnippet,parameters} so the new examples field is invisible to the LLM tool surface; ops-registry.ts diff carries only the additive examples? field + per-op data; the op<->CLI parity gate (TASK-019) stays green. The slice: (A) OpDefinition gains examples?: string[]; all ~50 surface:use ops have an authored copy-pasteable example (high-traffic ops seeded from the CLAUDE.md canonical filing patterns); list-tools (surface:process) excluded by design. (B) cli.ts: an exported pure buildHelpModel(op) -> {name, synopsis, summary, flags:[{name,type,required,description,autoSupplied?}], examples, related}; deriveHelp renders SYNOPSIS -> Flags -> EXAMPLES -> RELATED -> footer; the per-op --help branch honors --format (json emits JSON.stringify(buildHelpModel), else text). RELATED is derived from groupForOp (same single grouping source as the top-level help, no second list). SYNOPSIS brackets writer/arrayKey as optional via the auto-supply exemption. Four iterate-to-zero findings, each through the full explore->plan->approve->agent->fresh-re-audit cycle: (#1) two initial tests falsely premised writer as a per-op schema param of block-mutation ops (it is dispatch-auto-injected, only 3 ops declare it) — corrected, the writer-bracketing rule retargeted onto promote-item which genuinely declares writer; (#2) the Flags block showed --arrayKey/--writer (required) while the synopsis bracketed them optional with no reconciliation — introduced AUTO_SUPPLIED + a per-flag autoSupplied annotation so the Flags line reads (required; auto-derived from --block)/(required; auto-injected) reconciling both surfaces; (#3) the parseOpArgs missing-required exemption (cli.ts:434) was a second hardcoded copy of the auto-supplied set — single-sourced to !(r in AUTO_SUPPLIED) (exported) + a coupling-guard test asserting parseOpArgs exempts every AUTO_SUPPLIED key; (#4) that refactor removed the string literals the TASK-019 parity gate parsed via extractStringLiterals — migrated the gate to a new extractObjectKeys(cli.ts, AUTO_SUPPLIED) reading the canonical object keys via AST (tighter than the old loose all-string-literals scan). Runtime demo against the rebuilt global pi-context bin: per-op --help renders synopsis/examples/related/footer; the arrayKey Flags line shows (required; auto-derived from --block) with [--arrayKey] in the synopsis; --help --format json emits the valid structured model incl. autoSupplied; append-block-item --block tasks errors 'missing required: --item' ONLY (arrayKey/writer exempted, no write); promote-item synopsis brackets [--writer]. build+check+full-test green (fail 0 all packages); npx tsx scripts/parity-check.ts exit 0; the examples-coverage guard + the AUTO_SUPPLIED coupling guard + the extractObjectKeys unit tests pass; extractStringLiterals + its unit tests untouched/green. The cross-package dist-rebuild precondition was hit and handled (the coding agent held the commit on stale pi-context dist; the orchestrator rebuilt + ran the full gate, which surfaced finding #1's 2 failing tests the held commit hid). Fresh adversarial re-audits PASS zero defects on the slice + on findings #3/#4 (no surviving hardcoded copy of the exemption set; extractObjectKeys reads keys-not-values + is tighter; behavioral equivalence; the gate tracks the canonical source).",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-072 closed: per-op <op> --help renders SYNOPSIS + Flags + EXAMPLES + RELATED + footer for every use-op",
+          "status": "passed",
+          "evidence": "deriveHelp renders the full template via buildHelpModel; runtime demo on append-block-item/promote-item/read-block-item confirms all sections"
+        },
+        {
+          "criterion": "Every use-op has a non-empty authored example (no synthetic floor)",
+          "status": "passed",
+          "evidence": "OpDefinition.examples authored for all ~50 surface:use ops; the examples-coverage guard test fails if any op lacks examples; probe independently re-enumerated 0 missing/duplicate/placeholder"
+        },
+        {
+          "criterion": "Per-op --help participates in --format (machine-readable structured help)",
+          "status": "passed",
+          "evidence": "--help --format json emits {name,synopsis,summary,flags[{...,autoSupplied?}],examples,related}; --help --json identical; default --help stays human text to stdout"
+        },
+        {
+          "criterion": "Additive: in-pi ops byte-unchanged, parity gate green",
+          "status": "passed",
+          "evidence": "registerAll projects only {name,label,description,promptSnippet,parameters} (examples invisible to the LLM surface); ops-registry diff is the additive examples field+data only; parity-check.ts exit 0"
+        },
+        {
+          "criterion": "Canonical pipeline green incl. iterate-to-zero (4 findings each through full pipeline + fresh re-audit)",
+          "status": "passed",
+          "evidence": "findings #1-#4 each explore->plan->approve->agent->fresh-re-audit; final re-audits PASS zero defects; build/check/test/parity all green; loop converged"
+        }
+      ],
+      "oid": "0d075248caca069e00e2eefebe167b34",
+      "content_hash": "0bdb7b6f9519b464700420926ec1cc59d49d9dfa8b8f06f124530e08a48c0c60"
+    },
+    {
+      "id": "VER-036",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T00:00:00.000Z",
+      "evidence": "TASK-045 (check-changelog exemption fix) verified; closes FGAP-075. check-changelog now exempts non-shipping surface from published-surface classification: a subtractive isExemptSurface(path) predicate (/\\.test\\.[cm]?tsx?$/ OR a packages/pi-behavior-monitors/examples/ path ending in .patterns.json) filters changedPaths in changedPackages before classification; watchDirsFromFiles, pathInWatchSet, and unreleasedGrew are unchanged (3b98c80, scripts-only, +15/-1 in check-changelog.ts). A genuine src/*.ts (non-test) and a real examples/*.monitor.json still flag. Runtime: with packages/pi-context/src/lens-view-op.test.ts + packages/pi-behavior-monitors/examples/hedge.patterns.json staged, npx tsx scripts/check-changelog.ts exits 0 (no demand); the regression unit case asserts a real src/*.ts still flags its package. build + check + full test green (fail 0 all packages); parity-check exit 0; check-changelog.test.ts cases pass (test-only -> [], examples/*.patterns.json -> [] while examples/*.monitor.json -> [pi-behavior-monitors], real src/*.ts -> [pi-context], plus the direct isExemptSurface unit test). Fresh adversarial probe PASS zero defects: the change is subtractive (only the candidates filter added); no over-exemption — contest.ts / latest.ts / attest.ts / *.monitor.json / a *.patterns.json outside the monitors examples dir all still flag; the regex matches only .test.{ts,mts,cts,tsx} and the monitor exemption is dir-scoped. The monitor test mutating the shipped hedge.patterns.json on each run is a separate test-hygiene matter, noted not fixed.",
+      "criteria_results": [
+        {
+          "criterion": "isExemptSurface true for *.test.ts + monitor examples/*.patterns.json; false for src/*.ts + examples/*.monitor.json",
+          "status": "passed",
+          "evidence": "the predicate + its direct unit tests; adversarial regex/dir-scope probe confirmed no over-exemption"
+        },
+        {
+          "criterion": "changedPackages filters exempt paths before classification; exempt-only set flags nothing; a real src/*.ts still flags",
+          "status": "passed",
+          "evidence": "the candidates = changedPaths.filter(!isExemptSurface) edit; test cases (a)/(b)/(c) pass"
+        },
+        {
+          "criterion": "the gate exits 0 for the staged exempt files; still exits 1 for a genuine src change",
+          "status": "passed",
+          "evidence": "npx tsx scripts/check-changelog.ts exit 0 with lens-view-op.test.ts + hedge.patterns.json staged; the regression unit case proves the real-src bite"
+        },
+        {
+          "criterion": "build/check/test/parity green; husky passes the gate-fix commit",
+          "status": "passed",
+          "evidence": "build+check+test fail 0; parity-check exit 0; 3b98c80 committed husky-green"
+        }
+      ],
+      "oid": "9f7d6609184319041c36ddd3012d6b26",
+      "content_hash": "f63fcaef660a3c2c75f0e1a90eb9dc2e8aca4e50e4f56648a9e067f92e5c1dfc"
+    },
+    {
+      "id": "VER-037",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T00:00:00.000Z",
+      "evidence": "TASK-043 (the context-lens-view op) verified end-to-end; closes FGAP-073. Additive reflected op context-lens-view keyed by --lensId projects any config-declared lens as a binned item-view, reusing loadLensView (lens-view.ts:43) + pageArray (read-element.ts:188), both routed through structureForRead for the cap; renderLensView is not used. Without --bin: a bin->count summary (always under the read cap). With --bin: that bin's items paged by --offset/--limit. Serves target, composition, and hand-curated lenses (loadLensView dispatches all kinds). Unknown lensId or unknown --bin throw, mapping to a non-zero exit with a field-named message and the --json {ok:false,op,error} envelope. Slotted into the cli.ts groupForOp Read & query group; authored examples; registerAll and every other in-pi op byte-unchanged. Runtime demo against the rebuilt global pi-context bin: context-lens-view --lensId gaps-by-status returns {identified:33,accepted:5,in-progress:0,closed:37,wontfix:0}, uncategorized 0, total 75, complete, ~200 bytes (the see-open-gaps answer, under cap despite framework-gaps exceeding 50KB whole); --bin identified --limit 3 returns a paged bin with total/hasMore; tasks-by-status and features-by-status work lens-generically; --lensId bogus -> exit 1 + 'Lens not found, Known lenses: ...' (and the --json {ok:false,error} envelope); --bin nonexistent -> exit 1 + 'Bin not declared, Bins: ...'. An over-cap per-bin page fail-closes (data:null/complete:false/truncated:true) while the summary stays complete. An iterate-to-zero finding (the op-level composition-dispatch coverage was claimed but only transitively tested) was fixed: lens-view-op.test.ts now seeds a kind=composition lens and drives it through the op (data.kind=composition, planned:1/completed:2/empty-bin:0, uncategorized:1, total:4, + per-bin paging) — the op-level lens-kind-agnostic proof. build+check+full-test green (fail 0 all packages); parity-check exit 0 (the new op auto-covered; the {read} channel satisfies the {json}-content-cap gate); SKILL.md regenerated for the new op surface. Fresh adversarial probes PASS zero defects on the op and on the composition-test finding. Cross-package + tooling preconditions surfaced and handled during verification: the pi-context dist rebuild before the pi-context-cli gate; the check-changelog over-flag on the test-only commit (closed by FGAP-075/TASK-045, which exempts non-shipping surface).",
+      "criteria_results": [
+        {
+          "criterion": "context-lens-view --lensId <lens> returns a bin summary always within the cap",
+          "status": "passed",
+          "evidence": "gaps-by-status -> bins/counts + total 75, complete, ~200 bytes, on the real >50KB framework-gaps"
+        },
+        {
+          "criterion": "--bin returns that bin's items paged via pageArray (offset/limit/total/hasMore)",
+          "status": "passed",
+          "evidence": "--bin identified --limit 3 -> 3 items, total, hasMore; offset advances; op-level + CLI tests"
+        },
+        {
+          "criterion": "--json single-parse structured object distinct from context-edges-for-lens Edge[]; --format json same payload",
+          "status": "passed",
+          "evidence": "the {read} envelope data is the summary/per-bin object; cli tests"
+        },
+        {
+          "criterion": "lens-generic across the four target-lenses + composition/hand-curated",
+          "status": "passed",
+          "evidence": "gaps-by-status/gaps-by-priority/tasks-by-status/features-by-status work; the op-level composition-dispatch test drives kind=composition through the op"
+        },
+        {
+          "criterion": "unknown lensId / unknown bin -> field-named error + non-zero exit",
+          "status": "passed",
+          "evidence": "exit 1 + the field-named message on both the stderr and --json {ok:false,error} surfaces"
+        },
+        {
+          "criterion": "over-cap per-bin fail-closes; additive (ops frozen, parity green)",
+          "status": "passed",
+          "evidence": "over-cap per-bin data:null/complete:false; ops-registry diff = the one new op; registerAll unchanged; parity-check exit 0"
+        },
+        {
+          "criterion": "discoverability: per-op --help template + grouped --help; canonical pipeline green incl. fresh adversarial audit",
+          "status": "passed",
+          "evidence": "context-lens-view --help renders the template + examples and appears under Read & query; fresh adversarial probes PASS zero defects"
+        }
+      ],
+      "oid": "ede00f8ac7cfe4bb8b071c08fdc21dbe",
+      "content_hash": "3cbbb1c1b9928e1fc0a84f6673539dc02045df684de211128a8ec1dccc7a2261"
+    },
+    {
+      "id": "VER-038",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T12:00:00.000Z",
+      "evidence": "TASK-046 verified end-to-end; closes FGAP-066. update --dryRun's catalog-ahead arm predicts the precise per-schema outcome via the new pure-read helper simulateResyncOutcome (index.ts, adjacent to computeWouldRegisterMigrations): same/unreadable version -> resynced; no catalog chain -> blocked; version bump + chain + no items -> migrated; in-memory forward-migrate (own createRegistry seeded from substrate decls + the catalog chain, migrationFnFor, runMigrations) + AJV validate against the catalog schema object -> migrated on pass, blocked on throw with migrationsRegistered [] (the live rollback truth) and the ValidationError errors captured but not plumbed (the TASK-048 seam). The dry branch dispatches buckets from the helper inside the existing per-asset tolerance (helper failure falls back to resynced + no decls). resyncSchema, the live arm, and UpdateResult are byte-unchanged; the helper never writes and never touches the cached substrate registry. Runtime demo (throwaway substrates): the R-0012 reproduction now yields dry==live blocked + migrationsRegistered [] with every file byte-unchanged after dry (probe re-verified with full-tree sha256); the valid-item variant yields dry==live migrated + the 1.0.0->1.0.1 decl. Tests: a four-case dry==live parity describe (blocked/validation-fail with the [] no-leak criterion; migrated/populated; same-version resynced + version-bump-no-items migrated; no-chain blocked) plus the extended FGAP-050 dry test asserting the migrated bucket; the dry no-write invariant test routes through the new helper path and stays green; fixture seeds config.substrate_id so the live populated-block migrate stamps (test-harness only). build + check + full test fail 0; parity-check exit 0. Fresh adversarial probe PASS: arm-fidelity verified 1:1 including the unreadable-block-treated-populated, block-version-equals-catalog, broken-mid-chain, and non-ValidationError-throw edges; one MINOR finding (three READMEs carried the old would-act dryRun wording) fixed at the five enumerated locations and re-audited to zero stale occurrences. Op description/promptSnippet corrected; SKILL.md regenerated; CHANGELOG entries filed.",
+      "criteria_results": [
+        {
+          "criterion": "the catalog-ahead dry branch forward-migrates in memory and AJV-validates, classifying by the live logic, writing nothing",
+          "status": "passed",
+          "evidence": "simulateResyncOutcome pure-read (probe-verified: no write calls; full-tree sha256 identical after dry); classification mirrors resyncSchema's five arms"
+        },
+        {
+          "criterion": "dry/live outcome parity demonstrated incl. a bump adding a required field the items lack -> dry blocked matching live",
+          "status": "passed",
+          "evidence": "the R-0012 reproduction: dry==live blocked; the parity test suite covers blocked/migrated/resynced/no-chain"
+        },
+        {
+          "criterion": "migrationsRegistered under dryRun lists decls only for non-blocked outcomes",
+          "status": "passed",
+          "evidence": "dry-blocked reports [] (test deep-equal + the reproduction); migrated lists the chain decls"
+        },
+        {
+          "criterion": "a cleanly-migrating catalog-ahead schema reports migrated (or resynced when same-version) under dryRun, matching live",
+          "status": "passed",
+          "evidence": "the valid-item driver: dry==live migrated; same-version fixture: resynced both"
+        },
+        {
+          "criterion": "build + check + full test pass; runtime demo dry==live on clean-migrate and blocked substrates",
+          "status": "passed",
+          "evidence": "all gates 0; both throwaway-substrate demos; fresh adversarial probe PASS with the README finding fixed + re-audited"
+        }
+      ],
+      "oid": "05d2b456b9fd94a5b326560ab01a8433",
+      "content_hash": "23d3e1b4c45c27d215f67772d673ea3f28d95c5d5e32c1c7638656ceff81a414"
+    },
+    {
+      "id": "VER-039",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-10T14:00:00.000Z",
+      "evidence": "TASK-048 verified end-to-end; closes FGAP-077. update's blocked outcome carries the per-item validation diagnostic on BOTH paths: an additive UpdateResult.blockedDetail (name, reason no-migration-chain | validation-failed, the installed->catalog version pair, and per failing item {itemId, instancePath, keyword, message}) populated by simulateResyncOutcome's blocked arms (dry) and resyncSchema's now-bound catch (live, rollback byte-identical); blocked: string[] unchanged (zero existing assertions broken). itemIdForPath maps AJV instancePath /<arrayKey>/N to the item id with safe undefined on envelope-level errors, id-less items, and non-array keys; a non-ValidationError throw yields a String(err) fallback failure entry. The standalone validate-block-items op validates a named block's items against the catalog schema version and RETURNS the per-item failures (exit 0 + valid:false on validation failure; field-named throw + non-zero exit on unknown block or missing block file; never writes — substrate hash-identical before/after, probe-verified). renderBlocked (exported beside renderConflicts, keyword phrasing mirroring formatAjvError without a cross-package import cycle) surfaces the detail on the update CLI text surface beside the conflicts special-case; --json carries the structured field with no double-emit. Runtime demo on the R-0012 reproduction: dry AND live blockedDetail identically name CONV-001, /rules/0 required 'rationale' and /rules/0/enforcement enum, with from 1.0.0 to 1.0.1; pi-context validate-block-items --block conventions returns the same failure list; --block bogus exits 1 field-named. Dry/live detail divergence reasoned impossible (same schema bytes, same migration keying, same deduped registry edge set, deterministic AJV ordering) and asserted by deepEqual parity tests on both arms. build + check + full test fail 0 (all six packages); parity-check exit 0; examples-coverage + groupForOp drift-guard green (the op slotted in Read & query); the op appears in both regenerated SKILL.md tool tags (pi-bound allowlist). Docs synced usage-only: update op strings name blockedDetail; new op strings; READMEs gained the diagnostic clause preserving the TASK-046-corrected dry-run wording; CHANGELOG entries in pi-context, pi-context-cli, pi-project-workflows. Fresh adversarial probe PASS, zero defects; iterate-to-zero converged on the first pass.",
+      "criteria_results": [
+        {
+          "criterion": "a blocked schema's update result names per failing item the id, field, violated constraint, and value context on both the structured result and the CLI text surface",
+          "status": "passed",
+          "evidence": "blockedDetail + renderBlocked; the R-0012 demo names CONV-001 /rules/0 required + /rules/0/enforcement enum on dry, live, and the text surface"
+        },
+        {
+          "criterion": "a no-chain block is reported distinctly from a validation block",
+          "status": "passed",
+          "evidence": "reason no-migration-chain (+ version pair, no failures) vs validation-failed (+ failures); parity tests assert both arms"
+        },
+        {
+          "criterion": "a standalone reflected op validates a named block's items against a target schema version and RETURNS the per-item failure list; unknown block/version -> field-named error + non-zero exit",
+          "status": "passed",
+          "evidence": "validate-block-items: exit 0 valid:false with failures on the failing block; exit 1 field-named on bogus + missing block file; never writes (hash-verified)"
+        },
+        {
+          "criterion": "resyncSchema's rollback behavior byte-identical; the diagnostic is read-only reporting",
+          "status": "passed",
+          "evidence": "probe diffed the catch region — the three rollback statements unchanged; only the binding + return shape gained detail"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo on a seeded blocked substrate; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "all gates 0; the R-0012 demo; probe PASS zero defects"
+        }
+      ],
+      "oid": "683a3557867a8c68c1438e23c04dd7d5",
+      "content_hash": "7b46ed0840cec9b29d6c6044c9bcb37a3d371f0f38834cb2f3a7185bfa5ed1b0"
+    },
+    {
+      "id": "VER-040",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-11T10:00:00.000Z",
+      "evidence": "TASK-051 verified end-to-end; closes FGAP-080. A live update that blocks a schema persists a pending-blocked record (<substrate>/pending-blocked.json, schema-versioned: per entry name, reason, from/to, target_hash, chain, failures, blocked_at) with the TARGET catalog schema body pinned into the content-addressed object store at block time; updateContext owns the sidecar write post-loop behind !dryRun (resyncSchema returns the entry, never writes it), REPLACING entries each live run and removing the file when the set is empty; a dry run writes neither the sidecar nor the pinned object (probe full-tree-hash verified). The blocked three-file contract (schema/block/migrations.json byte-unchanged) is intact — the sidecar + object are additive, outside it. The new authGated resolve-blocked op (resolveBlocked(cwd, name, ctx?)) commits a resolution: re-validates the corrected block against the PINNED target (in-memory forward-migrate through the pinned chain when the block lags), on FAIL returns {resolved:false, failures} writing nothing (pending intact), on PASS registers the chain decls not present, writes the pinned target schema (writeSchemaCheckedForDir replace), advances the block's schema_version envelope + persists it, advances the merge base to the target (stampBaselineFromBody, the FGAP-070 convergence rule), and clears the pending entry — a re-run update reports the schema in-sync. Runtime demo (the R-0012 reproduction, tmp): blocked -> pending (validation-failed, 2 failures, chain 1) + pinned object -> premature resolve refused naming CONV-001 /rules/0 required + /rules/0/enforcement enum with all files byte-identical -> fix -> resolved, base advanced to the target hash, schema + envelope at 1.0.1, pending removed -> re-run inSync [conventions]. Fresh adversarial probe (29/29 independent asserts) PASS: dry-writes-nothing hash-verified; pinned-vs-moved catalog commits the pinned 1.0.1 body and a re-run classifies the 1.0.2 bump fresh (no stale-pending artifact); clearing semantics (a clean re-run drops the entry, empty set removes the file); absent entry + missing pinned object -> field-named throws, nothing written; the no-chain entry resolves as-is; auth: bare non-interactive without --yes refused on both the repo bin and the global CLI, gatedTools carries resolve-blocked, the auth-gate canonical test asserts 19 including it; pending-blocked.schema.json ships (files[] covers schemas/). Gates: build + check + full test fail 0; parity-check exit 0; examples + groupForOp drift guards green. Probe findings resolved in-loop: the update op promptSnippet extended with the pending-record/resolve-blocked clause lockstep with the description (SKILL regenerated, re-audited); the probe-surfaced pre-existing AJV $id-keyed validator-cache class filed as its own gap, not introduced by this change. Docs synced usage-only across the op strings, both SKILLs, the three READMEs, and four CHANGELOGs.",
+      "criteria_results": [
+        {
+          "criterion": "a blocked update persists a pending-blocked record (target schema version/body reference, migration chain, per-item failure set); the byte-unchanged contract preserved",
+          "status": "passed",
+          "evidence": "the sidecar + pinned object on the live blocked path; the three files byte-unchanged (probe-diffed rollback identical)"
+        },
+        {
+          "criterion": "ONE command re-validates the corrected block against the target schema; on pass writes the schema and advances the merge base so a subsequent update reports in-sync; on fail reports the remaining failures and writes nothing",
+          "status": "passed",
+          "evidence": "resolveBlocked: the demo's fail-then-fix-then-converge loop; no-write-on-fail byte-identical across five files"
+        },
+        {
+          "criterion": "the flow mirrors resolve-conflict end-to-end: surfaced detail -> operator fix -> commit op -> base advance; demonstrated through to convergence",
+          "status": "passed",
+          "evidence": "the R-0012 demo through inSync; renderBlocked's guidance tail names the command"
+        },
+        {
+          "criterion": "per-schema rollback and per-component application (DEC-0018) unchanged for schemas not being resolved",
+          "status": "passed",
+          "evidence": "resyncSchema rollback byte-identical; the pending set replaced per-run, other schemas untouched"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "all gates 0; probe PASS with two findings resolved in-loop (the promptSnippet fix; the pre-existing cache class filed separately)"
+        }
+      ],
+      "oid": "f411716a4632679c81a0cfe98761829d",
+      "content_hash": "f563b7509660fe9aef2a9a83c18cd91badfbc66d37208e21327fb4c4849f06e7"
+    },
+    {
+      "id": "VER-041",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-11T16:00:00.000Z",
+      "evidence": "TASK-052 verified end-to-end against its corrected criteria; closes FGAP-081. Git-style in-file failure markers are the DEFAULT behavior of a live validation-failed block — no flag, no mode, no param (the update op's parameters declare dryRun only; grep of src+dist+docs of both packages finds zero gate residue; a bare updateContext(cwd) writes the markers). Per failing item, full-line sentinels land at the offending item/field line (string-aware line lexer — braces/brackets/escaped quotes/sentinel-ish text inside string values cannot mis-place them; envelope-level or unlocatable failures get a top-of-file header block); the message text matches the CLI report. The pre-marker block is pinned to the object store as a raw-bytes wrapper (premarker_hash on the pending entry, set before the sidecar write) and restores byte-exact, verified on both 2-space and tab+trailing-newline shapes. resolve-blocked detects and strips the sentinels, re-validates against the pinned target, raw-writes the stripped text before the commit's identity-stamping write so oids are PRESERVED across the round-trip (the fixed item's content_parent advances to its prior hash; an untouched sibling's oid and content_hash are identical — probe-verified empirically on the in-place fix-between-sentinels path); on pass it registers the chain, writes the target schema, advances the envelope and the merge base, clears the entry, and a re-run update reports in-sync; while the named violations persist it refuses with the per-item failures and the marker file byte-untouched; a hand-de-marked file resolves identically. A repeat live update over a marked block retains the pending entry WHOLE (failures/chain/premarker_hash deep-equal; the re-run blockedDetail keeps the per-item diagnostic; no double-marking; restore still byte-exact). Dry runs and no-chain blocks write nothing (full-tree hash verified) and their reports carry no markers-written claim (the claim keys on premarker_hash); schema + migrations.json byte-unchanged on every path. Runtime demo: the conventions reproduction flagless — markers at the offending lines, byte-exact restore, premature resolve refused, fix between markers, resolve, re-run in-sync. Gates: build + check + full test fail 0 across all packages; parity-check exit 0; examples + drift guards green; SKILL/READMEs/CHANGELOGs mode-free. Fresh adversarial probe (29-assert class) PASS with two residual findings fixed in-loop and re-audited: full-entry retention on re-run-while-marked, and the conditional write claim. The verbatim-delta check against the operator stories found no qualifier anywhere.",
+      "criteria_results": [
+        {
+          "criterion": "on a live validation-failed blocked schema the block file carries failure markers at each offending item/field naming the violated constraint — default behavior, no flag",
+          "status": "passed",
+          "evidence": "flagless demo + the probe's zero-gate-residue grep of src/dist/docs; position-asserted marker tests incl. string-brace fixtures"
+        },
+        {
+          "criterion": "the pre-marker block is recoverable from the object store, byte-exact restore demonstrated",
+          "status": "passed",
+          "evidence": "raw-bytes wrapper pin + write-back byte-identity on both serialization shapes (probe-verified)"
+        },
+        {
+          "criterion": "the resolution commit strips the markers on a passing resolution; a block whose named violations persist cannot be committed",
+          "status": "passed",
+          "evidence": "strip-validate-commit path + refuse-with-failures path, both via the real CLI; hand-de-marked path equivalent"
+        },
+        {
+          "criterion": "a dry run writes no markers; a no-chain block stays byte-unchanged; migrations.json and the schema file byte-unchanged in all cases",
+          "status": "passed",
+          "evidence": "full-tree hashes on dry/no-chain/resolve-fail; the three-file contract on every path"
+        },
+        {
+          "criterion": "item identity survives the marker round-trip: oids preserved, content_parent lineage intact",
+          "status": "passed",
+          "evidence": "the stripped pre-commit raw-write; empirical oid comparison incl. the untouched sibling and the in-place fix path"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "all gates 0; the flagless reproduction demo; probe PASS with both residual findings fixed and re-audited to convergence"
+        }
+      ],
+      "oid": "29b6fbfebf7512522bf693b6e912875c",
+      "content_hash": "928113bd264fd33166f52acac7249108ef337468adbcaefb1c94d53f57b56d0e"
+    },
+    {
+      "id": "VER-042",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-11T18:00:00.000Z",
+      "evidence": "TASK-053 verified; behavior-preserving refinement complete. buildFreshRegistryWithChain(substrateDir, chain) lives in migration-registry-loader.ts beside buildRegistryFromSubstrateForDir — substrate on-disk decls first (the substrate decl wins a (schemaName, fromVersion) collision), the chain's absent edges merged, migrationFnFor per decl, cache-untouched, no disk writes — and the three former in-memory seeding blocks (simulateResyncOutcome, validateBlockItemsAgainstCatalog, resolveBlocked) call it; createRegistry no longer appears in index.ts. The marker sentinel contract has one source: MARKER_OPEN/MARKER_CLOSE token constants with MARKER_LINE_RE (+ the /m twin) derived from them; composeMarkerText builds its lines from the tokens and every detection/strip site uses the derived regex — the seven-character literals remain only in the constants and user-facing display text. The on-disk appendMigrationDeclForDir loops and the live cache-warming getProjectMigrationRegistryForDir call are byte-unchanged. Behavior preservation: the full test suite passed with ZERO test-file edits (the diff is exactly migration-registry-loader.ts + index.ts + one CHANGELOG line); build + check + parity-check green; the runtime blocked -> markers -> byte-exact restore -> fix -> resolve-blocked -> in-sync loop converges on the refactored dist. Re-audit greps confirm no residual seeding block, the literal placement, and the untouched out-of-scope paths.",
+      "criteria_results": [
+        {
+          "criterion": "buildFreshRegistryWithChain in migration-registry-loader.ts; the three former seeding blocks call it; no in-memory createRegistry seed block remains at a call site",
+          "status": "passed",
+          "evidence": "the helper beside buildRegistryFromSubstrateForDir; three swaps; rg shows createRegistry absent from index.ts"
+        },
+        {
+          "criterion": "exact semantics preserved: existing-first substrate-wins dedup, migrationFnFor per decl, no cache warming, no disk writes",
+          "status": "passed",
+          "evidence": "the helper body is the investigated common shape verbatim; suite green unchanged"
+        },
+        {
+          "criterion": "the on-disk register loops and the live cache-warming call byte-unchanged",
+          "status": "passed",
+          "evidence": "absent from the diff; rg confirms both present and untouched"
+        },
+        {
+          "criterion": "the sentinel pattern defined once; composer tokens and detection regex share one source",
+          "status": "passed",
+          "evidence": "MARKER_OPEN/MARKER_CLOSE + derived MARKER_LINE_RE(+m); literals only in constants + display text"
+        },
+        {
+          "criterion": "behavior-preserving: full suite passes unchanged; build/check/parity green; the runtime loop converges",
+          "status": "passed",
+          "evidence": "zero test edits; all gates 0; the driver loop blocked->restore->resolve->in-sync on the refactored dist"
+        },
+        {
+          "criterion": "fresh adversarial re-audit confirms zero behavioral drift",
+          "status": "passed",
+          "evidence": "grep-sufficient re-audit per plan: seeding sites, sentinel placement, out-of-scope paths, diff scope — all clean; the unchanged suite + runtime loop attest behavior"
+        }
+      ],
+      "oid": "7ef78b34c9bdcce23979d1f23b4e06df",
+      "content_hash": "0da9137f880ac2bc078555a6dcbed8b72aba2981ffe213880328239c6ab5ec12"
+    },
+    {
+      "id": "VER-043",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-12T10:00:00.000Z",
+      "evidence": "TASK-049 verified end-to-end; closes FGAP-030 + FGAP-078. The drift report is a reflected op: context-check-status (zero params, surface use, the context-status template) returns { json: checkStatus(cwd) } — per installed schema the drift state, baseline_version, catalog_version, and the additive reporting fields behind (true iff state is catalog-ahead or both-diverged) and version_delta ({from, to, basis: version-bump | content-only}; basis is version-bump iff both versions present and differ — catalog-ahead is a hash comparison, so behind at equal versions reports the content-only basis). Not-behind assets carry neither field (wire-absent, probe-verified after a JSON round-trip). The classification arm is byte-identical (probe diffed the function across the commit: empty diff through the if/else arm; the existing classification tests untouched, additions only). renderCheckStatus keeps the state grouping + Total and annotates behind names inline — name (1.0.0 -> 1.0.1) for a version bump, name (1.0.1, content changed) for content-only, graceful when a version is undefined; the in-pi /context check-status handler renders the same report. The op is slotted in Read & query with an example; --json is the single-parse envelope; bare text is the JSON.stringify precedent; zero params confirmed behaviorally (an unknown flag exits 2). Adversarial fixtures verified: version-bump behind, content-only behind (the stale-marker idiom), both-diverged behind, locally-modified NOT behind (fields absent), in-sync/no-baseline/missing-catalog/missing-installed unannotated, the undefined-catalog-version edge (no crash, content-only basis, sane render). Runtime demo: a 1.0.0-vs-1.0.1 substrate answers the operator question on the op, the library, and the render. Gates: build + check + full test fail 0; parity-check exit 0; examples + groupForOp drift guards green; SKILL regen zero-drift, both SKILLs carry the op; READMEs + skill-narrative audited to the version-gap wording; three CHANGELOGs; no substrate ids in shipped md. Fresh adversarial probe (Fable) PASS, zero defects; the verbatim-delta check against the operator story found no qualifier.",
+      "criteria_results": [
+        {
+          "criterion": "pi-context context-check-status --json returns the per-asset drift report (name, state, baseline_version, catalog_version) for every installed schema",
+          "status": "passed",
+          "evidence": "the op envelope on the catalog-ahead fixture; the context-status template; zero params"
+        },
+        {
+          "criterion": "the report names which schemas are behind the catalog and the version delta; content-only drift is reported behind with the basis stated",
+          "status": "passed",
+          "evidence": "behind + version_delta fields; version-bump and content-only fixtures both probe-verified; both-diverged included, locally-modified excluded"
+        },
+        {
+          "criterion": "the in-pi check-status render carries the same version-gap information",
+          "status": "passed",
+          "evidence": "renderCheckStatus annotates behind names inline both bases; the handler wires the same report"
+        },
+        {
+          "criterion": "checkStatus classification logic is unchanged (reporting only)",
+          "status": "passed",
+          "evidence": "the probe's byte-diff of the function across the commit: classification arm identical; existing tests untouched"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo against a catalog-ahead substrate; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "all gates 0; the 1.0.0->1.0.1 demo on op/library/render; probe PASS zero defects"
+        }
+      ],
+      "oid": "816b2a82675b937d14ab7bdbc8a93bd5",
+      "content_hash": "ae56454e95961b24569a08346416e194c5b2d57d6fe826ed4bc570387c5a48dc"
+    },
+    {
+      "id": "VER-044",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-050 verified end-to-end; closes FGAP-079, advances STORY-010 (the last FEAT-009 slice — 14 of 14 stories met). The read-catalog-schema op fetches and prints the verbatim catalog *.schema.json body for a named kind: readCatalogSchemaText(kindName) resolves the catalog (resolveCatalog samplesRoot + canonical_id->schema_path), reads the raw file via fs.readFileSync untouched, returns the text; the op returns the bare string; the CLI emits it byte-exact on the text surface via a declared verbatimText flag on OpDefinition (no appended trailing newline). Runtime demo on a tmp catalog-ahead substrate (never the live .context): `read-catalog-schema --kind tasks | diff <samples-file> -` is EMPTY (byte-identical — AC2); `| diff <behind installed schema> -` shows only the real drift (version 1.0.0->1.0.1, the added description/files/acceptance_criteria/assigned_agent/notes/oid/content_hash/content_parent, the cancelled enum value) with NO phantom trailing-newline line (AC1 diffable). The body parses to raw JSON Schema (top-level properties + $id), distinct from the read-samples-catalog projection (AC2). Unknown kind throws naming the kind. The read path takes no cwd and reads only the package-bundled samples dir — mutates no installed schema, block, or config (AC3). Iterate-to-zero: the runtime demo found a trailing-newline doubling defect (the CLI print path appended a second \\n, doubling the file's own }\\n to }\\n\\n, surfacing a phantom diff line); fixed by the declared verbatimText flag honored at the single text-emit locus (byte-exact, no append), re-verified (the samples diff is now empty), and a fresh adversarial probe re-audited the whole implementation across 8 vectors — all MET, zero defects. Gates: build + check + full test fail 0; parity-check exit 0; the read-* family auto-slots the op into the CLI Read & query group (groupForOp + examples drift guards green); both SKILLs regenerated carry the op. Fresh adversarial probe PASS zero defects; the verbatim-delta check against STORY-010 + the ACs found no qualifier (the verbatimText flag is an internal mechanism, not a user-facing qualifier).",
+      "criteria_results": [
+        {
+          "criterion": "The operator obtains the catalog schema body for a named kind via a single read-only CLI invocation that fetches and prints it — diffable locally against <substrate>/schemas/<name>.schema.json without touching node_modules.",
+          "status": "passed",
+          "evidence": "pi-context read-catalog-schema --kind tasks prints the body; piped to diff against a behind installed schema it shows only the real drift, no phantom line; package-intrinsic (bundled samples), no node_modules hunt"
+        },
+        {
+          "criterion": "The body is the verbatim catalog *.schema.json (raw JSON Schema: properties/definitions/$id), not the read-samples-catalog projection.",
+          "status": "passed",
+          "evidence": "the op output diffed against samples/schemas/tasks.schema.json is byte-identical (empty diff); parses to top-level properties + $id; the test contrasts it against the projection which carries neither"
+        },
+        {
+          "criterion": "No installed schema, block, or config is mutated by the read path.",
+          "status": "passed",
+          "evidence": "readCatalogSchemaText takes one param (no cwd), reads only the bundled samplesRoot via fs.readFileSync; the op run ignores cwd; the test pins arity 1 + stable repeat reads"
+        },
+        {
+          "criterion": "build + check + full test green; parity-check exit 0; runtime demo (fetch + local diff against a catalog-ahead substrate); fresh adversarial probe.",
+          "status": "passed",
+          "evidence": "all gates 0; the tmp catalog-ahead demo (empty samples diff + drift-only installed diff); fresh probe PASS 8 vectors zero defects"
+        },
+        {
+          "criterion": "FGAP-079 closed via verification_verifies_item + complete-task.",
+          "status": "passed",
+          "evidence": "this VER-044 + the verification_verifies_item edge to TASK-050 + complete-task; FGAP-079 closed in the same cascade"
+        }
+      ],
+      "oid": "b893686beb028b9de3b717b2486c330a",
+      "content_hash": "673a430d54ad4a6818db0f96400e2c9b7f8e1106205b88e0f70a11256d9e95dc"
+    },
+    {
+      "id": "VER-045",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-059 verified end-to-end; closes FGAP-088. The context-install OpDefinition reflects the existing installContext engine with no behavior fork: run(cwd, params) calls installContext(cwd, { overwrite: params.update === true }) and returns { json: InstallResult } (or the error string) — the same engine and same options derivation as the /context install slash handler (index.ts:3103, overwrite from --update). surface use, authGated true (matches the gated lifecycle siblings). installContext removed from INTENTIONALLY_UNEXPOSED_WRITERS; parity-check exit 0 classifying it op-backed-direct via the op run. context-install slotted into the CLI Substrate lifecycle help group; the auth-gate canonical-membership pin grown 19 -> 20 (the op auto-joins AUTH_REQUIRED_TOOLS from authGated). Runtime demo on a fresh /tmp substrate (never the live .context): context-init -> context-accept-all -> pi-context context-install --cwd /tmp/t59 --yes materialized all 16 installed_schemas[] (<dir>/schemas/<name>.schema.json) + all 16 installed_blocks[] (<dir>/<name>.json) and recorded 16 config.installed_from.assets baseline entries; a subsequent append-block-item --block requirements (REQ-001) against the bootstrapped substrate succeeded — the FGAP-088 repro (init+accept-all then unmaterialized) is resolved, the CLI bootstrap triad is complete. Gates: build + check + full test fail 0; parity-check exit 0; both SKILLs regenerated carry the op. Fresh adversarial probe PASS, 8 vectors zero defects; the verbatim-delta check found the update param faithful to the engine's overwrite + the slash --update (no invented qualifier).",
+      "criteria_results": [
+        {
+          "criterion": "pi-context context-install appears in `pi-context --help` under Substrate lifecycle, and groupForOp does not throw for it.",
+          "status": "passed",
+          "evidence": "context-install added to the Substrate lifecycle oneOf in cli.ts; the groupForOp exhaustive/disjoint drift-guard passes"
+        },
+        {
+          "criterion": "After context-init + context-accept-all, pi-context context-install --cwd <dir> --yes creates <dir>/schemas/<name>.schema.json for every config.installed_schemas[] entry AND <dir>/<name>.json for every config.installed_blocks[] entry (each file exists).",
+          "status": "passed",
+          "evidence": "the /tmp/t59 demo: 16 schema files + 16 block files materialized on disk (ls confirmed)"
+        },
+        {
+          "criterion": "After it, config.installed_from.assets is populated for every installed schema, byte-equivalent to what the /context install slash command produces (same installContext engine, no behavior fork).",
+          "status": "passed",
+          "evidence": "16 content_hash baseline entries in /tmp/t59 config.json; the op test asserts the op result deep-equals a direct installContext call (no fork)"
+        },
+        {
+          "criterion": "A pure-CLI context-init -> context-accept-all -> context-install lets a subsequent append-block-item succeed.",
+          "status": "passed",
+          "evidence": "append-block-item --block requirements --cwd /tmp/t59 appended REQ-001 successfully against the bootstrapped substrate"
+        },
+        {
+          "criterion": "parity-check exits 0 with installContext reflected (its INTENTIONALLY_UNEXPOSED_WRITERS entry removed); build + check + full test green.",
+          "status": "passed",
+          "evidence": "installContext removed from the allowlist; parity-check exit 0 (op-backed-direct=28); build + check + full test fail 0"
+        }
+      ],
+      "oid": "3b700fafe6bc3b02ee1326e8f2a78e6c",
+      "content_hash": "cad55734cc393eb6fa1c25ac3742aea797282752d6e7c2d3cb267889a194c18c"
+    },
+    {
+      "id": "VER-046",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-06-13T00:00:00.000Z",
+      "evidence": "TASK-033 verified end-to-end; the last FEAT-007 slice. Criterion 1: samples/conception.json declares the two governance relation_types (item_governed_by_convention: decisions/features/tasks -> conventions; item_acknowledges_missing_convention: decisions/features/tasks -> framework-gaps) and the three requires-edge invariants (decision/feature/task-articulates-convention) at severity warning, byte-identical to the .context copies but for severity (merged to integration at 1383af2). Criterion 2: a fresh /tmp substrate built through the genuine CLI bootstrap (context-init -> context-accept-all -> context-install) carries the vocabulary at severity warning (read-config confirmed), and an un-sentineled unarticulated task appended there yields context-validate status 'warnings' with the task-articulates-convention WARNING (not error) on that item — run twice (the convergent e2e). Criterion 3: CHANGELOG [Unreleased] + skill-narrative + READMEs updated (usage-only); build + check + full test fail 0; parity-check exit 0; SKILL regen carries the advisory-convention note. Criterion 4: released v0.31.0 via npm run release:minor — lockstep version bump across all packages, the surface gate green (after the release.mjs learned-pattern-store exemption fix 4425ff2), commit 307199a + tag v0.31.0; npm publish + git push remain the user's downstream steps. The release also cut the accumulated [Unreleased] (read-catalog-schema/TASK-050, context-install/TASK-059, the governance vocab/TASK-033, the earlier FEAT-009 ops) into [0.31.0]. The mechanism is config-only — no validator code change (FEAT-007 criterion 3).",
+      "criteria_results": [
+        {
+          "criterion": "[subagent] samples/conception.json declares the two governance relation_types and three requires-edge invariants at severity warning.",
+          "status": "passed",
+          "evidence": "the merged conception.json diff: 2 relation_types + 3 *-articulates-convention invariants at severity:warning"
+        },
+        {
+          "criterion": "[orchestrator] A fresh install/accept-all substrate carries the vocabulary; context-validate WARNS (does not error) on an unarticulated planning artifact.",
+          "status": "passed",
+          "evidence": "the /tmp e2e (twice): init->accept-all->context-install, append an unarticulated task, context-validate -> status warnings + task-articulates-convention WARNING (not error)"
+        },
+        {
+          "criterion": "[orchestrator] CHANGELOG [Unreleased] + usage docs updated; build + check + full test suite green.",
+          "status": "passed",
+          "evidence": "CHANGELOG + skill-narrative + READMEs updated; build+check+full test fail 0; parity-check exit 0"
+        },
+        {
+          "criterion": "[orchestrator] released via npm run release:* (authorization-gated).",
+          "status": "passed",
+          "evidence": "npm run release:minor ran with user authorization: v0.31.0 lockstep bump, commit 307199a, tag v0.31.0; npm publish + push are the user's downstream steps"
+        }
+      ],
+      "oid": "b34bcba9d7b75fca15fca7f0da51f6f4",
+      "content_hash": "ef89f572cbe38ccf6d1d7917d17869053f3ddf66cdac71f528c4bea4a5b8e2b7"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-061 verified end-to-end. The three relation_types are in the active .context config (amend-config, committed e44a144) and the packaged catalog samples/conception.json relation_types[] (committed a582939). read-config --registry relation_types returns decision_raises_gap {data_flow, decisions->framework-gaps}, decision_gated_by_item {ordering, decisions->*}, gap_relates_to_gap {data_flow, framework-gaps->framework-gaps}. A fresh /tmp substrate (context-init -> context-accept-all) carries decision_raises_gap (read-config against /tmp), the catalog adopted wholesale. context-validate warnings-only baseline (no new issue from the additions). npm run build + full npm test across all four packages exited 0 on the merged integration state.",
+      "criteria_results": [
+        {
+          "criterion": "read-config --registry relation_types lists the three with exact category/source/target",
+          "status": "passed",
+          "evidence": "read-config returned each with the exact shape (data_flow decisions->framework-gaps; ordering decisions->*; data_flow framework-gaps->framework-gaps)"
+        },
+        {
+          "criterion": "samples/conception.json relation_types[] carries the three; read-samples-catalog surfaces them",
+          "status": "passed",
+          "evidence": "catalog edit committed a582939; context-accept-all adopts the catalog wholesale (a fresh substrate carries them)"
+        },
+        {
+          "criterion": "a fresh /tmp accept-all+install substrate carries the three relation_types",
+          "status": "passed",
+          "evidence": "/tmp/fgap090-verify via context-init+context-accept-all; read-config --cwd returned decision_raises_gap"
+        },
+        {
+          "criterion": "context-validate warnings-only with no new issue from the additions",
+          "status": "passed",
+          "evidence": "context-validate status warnings, the pre-existing 17 decision-shows-derivation + 2 layer-plans baseline unchanged"
+        },
+        {
+          "criterion": "npm run build + check + full test pass with 0 failures",
+          "status": "passed",
+          "evidence": "build clean; full npm test EXIT=0 across pi-context/pi-workflows/pi-behavior-monitors/pi-agent-dispatch"
+        }
+      ],
+      "id": "VER-047",
+      "oid": "bfb96bb1f45d40ab83b38b9f8545ab63",
+      "content_hash": "1ed61f691744fc26a9baef9d2ea8b9a38af0707edacb4631087490e4050cfc89"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-062 verified end-to-end on the built/merged integration state. Real-CLI runtime demo: a kind-mismatched append-relation (gap_relates_to_gap with a tasks parent) is rejected at write — 'Edge rejected at write time ... source kind tasks not in source_kinds [framework-gaps] for relation_type gap_relates_to_gap' — and nothing is persisted; the four kind-correct TASK-063 edges were accepted and persisted by the same validator. pi-context suite 1147 pass / 0 fail (includes edge-write.test.ts and the issue-order regression test). Fresh adversarial probe: validateContext issue shape byte-identical pre/post refactor (no regression), false-pass/over-reject/parity/dryRun all pass, presence-gate (relation_type with neither source_kinds nor target_kinds) not over-rejected. The probe-found issue-order regression was fixed (289e9ed restores registration-class before kind-class) and independently re-verified.",
+      "criteria_results": [
+        {
+          "criterion": "a kind-mismatched real append-relation is rejected at write naming the offending endpoint kind + relation_type, edge not persisted",
+          "status": "passed",
+          "evidence": "CLI append-relation gap_relates_to_gap TASK-061->FGAP-090 rejected: source kind tasks not in source_kinds [framework-gaps]; relations file unchanged"
+        },
+        {
+          "criterion": "a kind-correct append-relation succeeds and persists the edge",
+          "status": "passed",
+          "evidence": "the four kind-correct TASK-063 edges accepted and persisted (append-relations: appended 4)"
+        },
+        {
+          "criterion": "a relation_type with neither source_kinds nor target_kinds is not rejected at write (presence-gate preserved)",
+          "status": "passed",
+          "evidence": "adversarial probe property 3 PASS — presence-gate honored at the write surface, matching context-sdk.ts:1990"
+        },
+        {
+          "criterion": "write-time and validate-time kind semantics agree; existing validateContext unchanged",
+          "status": "passed",
+          "evidence": "shared validateEdgeAgainstRegistry helper used by both surfaces; probe property 1+4: validateContext issues byte-identical pre/post (incl. order after 289e9ed), parity holds"
+        },
+        {
+          "criterion": "npm build + check + full test pass with 0 failures; adversarial probe on over-reject/parity",
+          "status": "passed",
+          "evidence": "pi-context suite 1147/0; full npm test EXIT=0 across all packages; probe found no over-reject"
+        }
+      ],
+      "id": "VER-048",
+      "oid": "8c4f19b8298d94714fdc17f47e15f544",
+      "content_hash": "fe22d0752682526c8a54bd1e840b2ce04691a0f1ba5a75888a164e30782f10f2"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-063 verified via CLI reads. FGAP-092 filed for DEC-0018's forcing problem (update's post-loop registry propagation ungated on the schema-loop outcome, index.ts:1391-1421), distinct from FGAP-076; read-back-verified. find-references DEC-0018 returns decision_addresses_gap->FGAP-092, decision_raises_gap->FGAP-076 (no longer decision_addresses_gap), decision_gated_by_item->FGAP-076 (plus the pre-existing research_informs_item/derived_from/governed-by edges). find-references FGAP-090 returns gap_relates_to_gap->FGAP-007 and ->FGAP-061. All five edge writes were accepted by the TASK-062 write-time validator (kind-correct). context-validate warnings-only baseline with NO decision-cites-forcing-artifact error on DEC-0018 — satisfied via the FGAP-092 citation rather than the inverted FGAP-076 edge.",
+      "criteria_results": [
+        {
+          "criterion": "a framework-gaps item is filed for DEC-0018's forcing problem, distinct from FGAP-076; read-back-verified",
+          "status": "passed",
+          "evidence": "FGAP-092 filed + read-back; describes the ungated registry-write-on-blocked / no-transactional-boundary problem, distinct from FGAP-076's legibility consequence"
+        },
+        {
+          "criterion": "find-references DEC-0018 shows decision_addresses_gap -> new forcing gap; decision_raises_gap -> FGAP-076 (no longer decision_addresses_gap); decision_gated_by_item -> FGAP-076",
+          "status": "passed",
+          "evidence": "find-references DEC-0018: decision_addresses_gap->FGAP-092, decision_raises_gap->FGAP-076, decision_gated_by_item->FGAP-076"
+        },
+        {
+          "criterion": "find-references FGAP-090 shows gap_relates_to_gap -> FGAP-007 and -> FGAP-061",
+          "status": "passed",
+          "evidence": "find-references FGAP-090: both gap_relates_to_gap edges present"
+        },
+        {
+          "criterion": "context-validate has no decision-cites-forcing-artifact error for DEC-0018 and no new issue beyond baseline",
+          "status": "passed",
+          "evidence": "context-validate warnings-only baseline; no decision-cites-forcing-artifact error"
+        },
+        {
+          "criterion": "every new edge is kind-correct and passes the TASK-062 write-time validator",
+          "status": "passed",
+          "evidence": "append-relations accepted the four additive edges; replace-relation accepted the retype — all kind-correct under the new types' source/target_kinds"
+        }
+      ],
+      "id": "VER-049",
+      "oid": "7506c3109f486112c3de366da0a060d7",
+      "content_hash": "bdcba3a667757479b19e05956818a9097127701db258b6deb0a59b3405bed775"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-064 verified via CLI. Re-confirmed via find-references that all seven warranted edges were absent and entailed by the items' filed text: TASK-010 and TASK-011 each lacked task_governed_by_decision->DEC-0008 and task_addresses_gap->FGAP-012 (both bodies say 'Per DEC-0008 / FGAP-012'); TASK-012 lacked ->DEC-0009 and ->FGAP-015; TASK-014 lacked ->FGAP-014. append-relations wrote 7, all accepted by the write-time validator (kind-correct). context-validate warnings-only baseline — no edge_endpoint_dangling (all targets exist), no new issue.",
+      "criteria_results": [
+        {
+          "criterion": "the complete warranted-but-absent set is re-confirmed via find-references (the five audit-enumerated edges plus the symmetric sibling)",
+          "status": "passed",
+          "evidence": "find-references on TASK-010/011/012/014 confirmed all seven edges absent; TASK-011 confirmed as the symmetric sibling (its text 'Per DEC-0008 / FGAP-012')"
+        },
+        {
+          "criterion": "each absent edge is written via append-relation and accepted as kind-correct",
+          "status": "passed",
+          "evidence": "append-relations: appended 7, skipped 0; all kind-correct (tasks->decisions, tasks->framework-gaps), accepted by the TASK-062 validator"
+        },
+        {
+          "criterion": "find-references shows the new edges; context-validate warnings-only with no new issue",
+          "status": "passed",
+          "evidence": "context-validate warnings-only baseline, no edge_endpoint_dangling, no new code; edges persisted"
+        }
+      ],
+      "id": "VER-050",
+      "oid": "c3bb0879d38ebf54994eeeee66f79fcb",
+      "content_hash": "2285acf74f77229da2e4bcc1fafaac87c34937ebf3fad1b5052bcac37f798e71"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "TASK-065 (gate-aware task readiness, NOW slice of FGAP-061) verified end-to-end. Gates: `npm run build` clean; `npm run check` exit 0; `npm test` exit 0, 0 failures across all packages. Runtime demo — real global `pi-context context-current-state` against freshly-built dist on a /tmp ceremony-built substrate: with the gate target open (FGAP-001 `identified`) TASK-001 reported in `blocked` with `blockedBy:[\"FGAP-001\"]` and absent from `nextActions`; with the gate target closed (FGAP-001 → `closed`) TASK-001 moved to `nextActions` and `blocked` emptied — both directions, real CLI, not mocked. Fresh-context adversarial probe (own fixtures, real CLI): all criteria hold; scope-leak hunt across decision_gated_by_item + prefix/suffix/substring trap relation_types inert (strict literal match); cross-task gates, self/mutual-gate cycles (no crash, no loop), structured-vs-string endpoints, in-progress/accepted non-terminal targets, and requirement→implemented release all confirmed. One probe finding — criterion-3 'byte-identical' falsified only for hand-duplicated task_depends_on_task edges, an input not producible via the dedup-on-write API (appendRelations skips an existing (parent,child,relation_type) triple) — resolved by appending acceptance criterion 11 (the blockersOf dedup contract); no code change warranted. docs-surface-sync: currentState JSDoc + context-current-state op description/promptSnippet + regenerated SKILL.md + CHANGELOG [Unreleased]. Merged to context-jit-spec-v2 at 3872012, rebuilt.",
+      "criteria_results": [
+        {
+          "criterion": "Gated task (target not complete) → blocked with target in blockedBy, absent from nextActions",
+          "status": "passed",
+          "evidence": "demo: TASK-001 blocked, blockedBy [FGAP-001]; probe HOLDS"
+        },
+        {
+          "criterion": "Gate target reaching complete bucket releases gate (kind-general via bucket===complete)",
+          "status": "passed",
+          "evidence": "demo gap→closed released; probe confirmed gap/decision/feature/task/requirement complete-bucket release"
+        },
+        {
+          "criterion": "dep+gate blockedBy union; no-gate path byte-identical to prior derivation",
+          "status": "passed",
+          "evidence": "probe TASK-UNION blockedBy [TASK-DEP,FGAP-5]; single-edge no-gate path byte-identical (criterion 11 records the duplicate-edge dedup nuance)"
+        },
+        {
+          "criterion": "nextActions topo excludes gate-blocked tasks; blocked/ready parity",
+          "status": "passed",
+          "evidence": "probe: no task ever in both blocked and nextActions"
+        },
+        {
+          "criterion": "Dangling gate target treated satisfied, no throw, no block",
+          "status": "passed",
+          "evidence": "probe TASK-DANGLE → NONEXISTENT-99 ready, no error"
+        },
+        {
+          "criterion": "Scope confinement to literal task_gated_by_item; other *_gated_by_item inert",
+          "status": "passed",
+          "evidence": "probe: 5 trap relation_types inert, only literal task_gated_by_item blocks"
+        },
+        {
+          "criterion": "Terminal-abandoned (wontfix/superseded/cancelled) target keeps task blocked",
+          "status": "passed",
+          "evidence": "probe gap→wontfix (bucket unknown): TASK-G stays blocked, no crash"
+        },
+        {
+          "criterion": "Six new currentState tests (gate-blocked/released/cross-kind/dep+gate/dangling/terminal-abandoned)",
+          "status": "passed",
+          "evidence": "context-sdk.test.ts +229 lines; full suite 0 failures"
+        },
+        {
+          "criterion": "build/check/test green; real-CLI runtime demo; fresh adversarial probe",
+          "status": "passed",
+          "evidence": "build/check/test exit 0; demo both directions; probe completed with one resolved finding"
+        },
+        {
+          "criterion": "docs-surface-sync: JSDoc + op string + SKILL regen + CHANGELOG [Unreleased]",
+          "status": "passed",
+          "evidence": "currentState JSDoc + context-current-state op + SKILL.md regen (74a8ff5) + CHANGELOG Unreleased + Documentation lines"
+        },
+        {
+          "criterion": "blockersOf dedups dep+gate union (deps before gates); duplicate-edge collapse a strict improvement",
+          "status": "passed",
+          "evidence": "probe confirmed dedup retains distinct blockers, collapses redundant duplicate; appendRelations write-API dedup makes it unreachable on API substrates"
+        }
+      ],
+      "id": "VER-051",
+      "oid": "9d2622f02ee01bef4385f7a10444d7e5",
+      "content_hash": "dc435c1e8ac09a8a1e8708e400f9404c0f8d5cb485dffc953c96726939fa710e"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Milestone block arc (FGAP-037 milestone block kind; FGAP-039 phase→milestone placement relation; FGAP-041 story_includes_item wildcard) verified end-to-end on the integration branch. Gates: npm run build / check / test green, 0 failures. Real validated-write demo (block-api appendRelationByRef via tsx, NOT direct-write): a phase_positioned_in_milestone edge in parent=phase/child=milestone is ACCEPTED by the write-time validator and REJECTED in the reverse orientation (source kind milestone not in source_kinds [phase]); context-current-state then derives the milestone `reached` when its placed (parent) phase buckets to complete and `planned` otherwise; a milestone with zero edges or a dangling parent endpoint is `planned`, no throw. The reached-milestone-phases-complete invariant (severity error) fires on a milestone authored `reached` with an incomplete placed phase. Fresh-context adversarial probe: 6/6 checks hold, no residual wrong-direction artifact. The direction defect (the deriver read parent=milestone) and the canonical_id/data_path mismatch (milestones.json → milestone.json) were corrected in the iterate-to-zero (96d37ee) and re-verified. story_contains_task retired in favor of story_includes_item. Merged to context-jit-spec-v2 at 18cca3d; op strings + SKILL.md + bundled-resources + CHANGELOG synced; both READMEs audited-clean.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-037: a milestone block kind exists (schema + block_kind + catalog) with derived reached",
+          "status": "passed",
+          "evidence": "fresh install materializes .context/milestone.json; currentState derives milestones[].status"
+        },
+        {
+          "criterion": "FGAP-039: phases are placed in a milestone by a relation; milestone done-ness reads up it",
+          "status": "passed",
+          "evidence": "phase_positioned_in_milestone registered (source phase/target milestone); reached deriver rolls up the parent phases"
+        },
+        {
+          "criterion": "FGAP-041: story_includes_item (story → any) registered; story_contains_task retired",
+          "status": "passed",
+          "evidence": "registered in catalog + config; story_contains_task removed"
+        },
+        {
+          "criterion": "Edge direction is consistent across registration, validator, deriver, invariant (parent=phase/child=milestone)",
+          "status": "passed",
+          "evidence": "real validated write: correct orientation accepted, reverse rejected; deriver reads validator-accepted edge"
+        },
+        {
+          "criterion": "reached is derived, not authored; backstopped by the reached-milestone-phases-complete invariant",
+          "status": "passed",
+          "evidence": "currentState computes reached from placed-phase completion; invariant errors on a reached milestone with an incomplete placed phase"
+        }
+      ],
+      "id": "VER-052",
+      "oid": "7a311b7bc27e7492b65c00343e3dfb2f",
+      "content_hash": "dad7785803808e45587d8c78dcc6d3100d46a1e92671720815c2aed4c7fbc356"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "Iterate-2 fix (scripts/promote-cli.mjs, commit 57d331d) verified by runtime demonstration against throwaway /tmp, poisoned-env, and symlink prefixes, plus a fresh independent adversarial probe. The real-global (O1-O7) and docs (D1-D2) criteria were not exercised — the real-global promote is paused pending these residuals. Two findings beyond S1-S4: a glued --prefix=<dir> is not recognized by argv.indexOf('--prefix') (line ~133) and falls through to the real-global arm, silently targeting /opt/homebrew; and the post-install verify guard (~line 292) uses literal REPO_ROOT with startsWith and no +sep guard, inconsistent with the validation's REPO_ROOT_REAL + sep.",
+      "criteria_results": [
+        {
+          "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+          "status": "skipped",
+          "evidence": "real-global promote paused; analog observed on throwaway (/tmp/s2target/bin/pi-context -> ../lib/node_modules/...), not on /opt/homebrew."
+        },
+        {
+          "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "After a repo npm run build, pi-context --version exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "No file under the repo instructs npm link for the operator binary.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "npm_config_prefix=/tmp/x, NPM_CONFIG_PREFIX=/tmp/x, and Npm_Config_Prefix=/tmp/x each exited non-zero before any global op, naming the matched key (case-insensitive scan, resolveTargetPrefix ~line 146)."
+        },
+        {
+          "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+          "status": "failed",
+          "evidence": "TOCTOU: assertSafeTargetPrefix validates the nearest-existing-ancestor realpath (~line 233) but the install passes the literal unresolved prefix to npm --prefix (~line 274); a path-component symlink repointed during the build/pack window redirects the install to a target validation never approved. The decoy-env case (NPM_CONFIG_PREFIX=/tmp/decoy + --prefix /tmp/s2target) did install only into /tmp/s2target with /tmp/decoy never created, but the invariant is not held under the race."
+        },
+        {
+          "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "--prefix /Users/david/Projects/workflowsPiExtension/packages refused ('resolves under this repo's root'); --prefix /tmp/sym-into-repo (symlink -> repo packages) refused on its resolved path; both before any build/pack/install."
+        },
+        {
+          "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+          "status": "passed",
+          "evidence": "no npm rm -g remains (grep of full promote output = 0); a forced install over a seeded npm-link cleanly replaced it; a failed npm i -g (bogus tarball) left the prior install intact (probe-reproduced)."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-053",
+      "oid": "06363fd7b928135339a1c7d4ce988f39",
+      "content_hash": "8280ec3b2f92685aa9369b14a9ea5c7e50e89b8aebc336265eacf01e73d7d463"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "Iterate-3 fix (scripts/promote-cli.mjs, commit 8d4bdc7) verified by runtime demonstration against throwaway /tmp, glued-flag, and symlink prefixes, plus a fresh independent adversarial probe. issue-008 and issue-009 closed; issue-007's ancestor window closed but a leaf-segment TOCTOU residual remains. The real-global (O1-O7) and docs (D1-D2) criteria were not exercised (real-global promote paused; docs audit pending). Residual (probe vector b, reproduced): nearestExistingRealpath re-appends the literal unresolved non-existent leaf segments, so for a not-yet-created override target safePrefix carries a literal leaf; a leaf created as a symlink-into-repo between validation and install redirects the install through it into the repo (the post-install guard detects the repo-resolving bin after the write, not before). The real-global arm is unaffected (its prefix must already exist, so safePrefix is fully resolved).",
+      "criteria_results": [
+        {
+          "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+          "status": "skipped",
+          "evidence": "real-global promote paused; install-shape demonstrated on throwaway prefixes."
+        },
+        {
+          "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "After a repo npm run build, pi-context --version exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+          "status": "skipped",
+          "evidence": "requires the real-global promote (paused)."
+        },
+        {
+          "criterion": "No file under the repo instructs npm link for the operator binary.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+          "status": "skipped",
+          "evidence": "docs audit not run this iterate."
+        },
+        {
+          "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "NPM_CONFIG_PREFIX=/tmp/x (no override) exited non-zero before any global op, naming the matched key."
+        },
+        {
+          "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+          "status": "failed",
+          "evidence": "Ancestor window closed: assertSafeTargetPrefix returns the resolved realpath and the install/binPath/logs consume that safePrefix (verified --prefix /tmp/g7link -> reported and installed at /private/tmp/g7real). But the leaf-segment residual (probe vector b) remains: a not-yet-created override target's literal leaf, symlinked into the repo between validation and install, redirects the install through it. S2 not fully held under that race."
+        },
+        {
+          "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "--prefix=/Users/david/Projects/workflowsPiExtension/packages (glued, parsed as override) refused 'resolves under this repo's root'; symlink-into-repo refused on its resolved path; the post-install guard now compares against REPO_ROOT_REAL + sep."
+        },
+        {
+          "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+          "status": "passed",
+          "evidence": "carried from iterate-2: no npm rm -g; single npm i -g --force; failed install leaves prior intact (probe vector g confirmed)."
+        },
+        {
+          "criterion": "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context.",
+          "status": "passed",
+          "evidence": "--prefix=/tmp/g8target -> exit 0, /tmp/g8target/bin/pi-context present (shim into the prefix's node_modules)."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-054",
+      "oid": "6facc7debb75ae844bc79c9e91e90b91",
+      "content_hash": "950390b92e3fb337667f4741d33d5744bf3427a6e4e5456201b907559a554bef"
+    },
+    {
+      "id": "VER-055",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-06-20T00:00:00.000Z",
+      "evidence": "Iterate-5 fix (scripts/promote-cli.mjs, commit removing the refuse-on-inherited-npm_config_prefix block from resolveTargetPrefix's real-global arm) verified by the REAL documented invocation `npm run promote:cli` against the real global /opt/homebrew (EXIT=0), not a throwaway-prefix proxy. The removed block had made the documented path non-functional: `npm run` itself exports npm_config_prefix=/opt/homebrew into the script env and the guard process.exit(1) on any inherited value before any op. The forced-fix rationale was confirmed empirically: with npm_config_prefix=/tmp/POISON set and no --prefix, an unscrubbed `npm prefix -g` echoes /tmp/POISON (poisoned) while the script's cleanNpmEnv()-scrubbed probe resolves /opt/homebrew (the true global) — the scrub, not the refusal, is the non-poisonability mechanism, and cleanNpmEnv() is applied to BOTH the `npm prefix -g` probe and the final `npm i -g --force` install. The real promote replaced the live npm-link with a packed copy (960 packages); the live operator pi-context is now a real directory under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli (was a symlink into the repo). A fresh-context adversarial probe independently re-derived tasks 1-4 PASS (refuse block gone, no alternative refusal path, scrub on both ops, no npm rm -g, only one post-validation destructive op) and surfaced the criterion-10 filing contradiction (below). Criterion 7 (re-promote-changes-hash) not exercised this run (a second full real-global promote was not run); the decoupling it supports is proven by criterion 4. Criteria 8-9 (docs) not audited this run — docs-surface-sync remains pending. issue-006's post-condition (no destructive op against an unvalidated target) is realized via scrub + assertSafeTargetPrefix repo-containment ordered before the only destructive op.",
+      "criteria_results": [
+        {
+          "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+          "status": "passed",
+          "evidence": "realpath /opt/homebrew/bin/pi-context -> /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (under the prefix, not the repo). Confirmed independently by the adversarial probe."
+        },
+        {
+          "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+          "status": "passed",
+          "evidence": "npm ls -g --link @davidorex/pi-context-cli -> (empty); the pkg dir /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli is now a real directory, not a symlink into the repo."
+        },
+        {
+          "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+          "status": "passed",
+          "evidence": "sha256 of the installed realpath bin == sha256 of the just-built working-tree packages/pi-context-cli/dist/bin.js (51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42); the packed copy IS the working-tree build."
+        },
+        {
+          "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+          "status": "passed",
+          "evidence": "Ran `npm run build` (which does rm -rf dist && tsc) after the promote. Installed bin inode unchanged (179103571 -> 179103571) and sha256 unchanged. The decoupling TASK-069 exists to achieve is realized."
+        },
+        {
+          "criterion": "After a repo npm run build, pi-context --version exits 0.",
+          "status": "passed",
+          "evidence": "pi-context --version -> `pi-context 0.31.0`, exit 0, after the repo build."
+        },
+        {
+          "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+          "status": "passed",
+          "evidence": "Deleted packages/pi-context-cli/dist, then ran the operator: pi-context --help printed the full op listing and exited 0 — the operator is fully decoupled from the repo build output. Repo dist subsequently rebuilt."
+        },
+        {
+          "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+          "status": "passed",
+          "evidence": "Added a transient comment to packages/pi-context-cli/src/bin.ts and re-ran `npm run promote:cli` against the real global: installed bin sha256 changed 51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42 -> 7abd8fd41df9d462470536b4e32072d881382d4f10625c3ec142d69a53b14f18. Reverted the marker and re-promoted: the installed sha256 returned to 51161305... (the global is left on clean working-tree code) and pi-context --version exited 0."
+        },
+        {
+          "criterion": "No file under the repo instructs npm link for the operator binary.",
+          "status": "passed",
+          "evidence": "Read-only docs audit: zero active instructions to npm link the operator. The two `npm link` mentions (root README line ~45, pi-context-cli README line ~21) are descriptive/historical ('no npm link', 'It uses no npm link.'), explicitly stating the retired approach is not used."
+        },
+        {
+          "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+          "status": "passed",
+          "evidence": "Both document `npm run promote:cli` as the packed-copy operator install: root README (the `npm run promote:cli` block under 'install the operator pi-context binary as a publish-free packed copy') and pi-context-cli/README.md (the `npm run promote:cli` fenced block + the packed-copy explanation). The CHANGELOG was corrected this iterate ([Unreleased] Fixed entry for the refusal removal; [0.31.0] stale 'REFUSES inherited' clauses corrected); READMEs carried no stale refusal prose."
+        },
+        {
+          "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "CRITERION-AS-ORIGINALLY-WRITTEN WAS A FILING DEFECT, corrected in TASK-069 this iterate to the non-poisonability-via-scrub invariant. `npm run` always injects npm_config_prefix=<true global>, indistinguishable at the env-var level from a hostile override, so refusing inherited prefixes refused the tool's own documented happy path while providing no protection the scrub does not. The determinate non-poisonability mechanism — scrub-resolves-true-global + repo-containment validation before any destructive op — is verified: npm_config_prefix=/tmp/POISON, scrubbed probe still resolves /opt/homebrew; a --prefix under the repo root is refused. The corrected criterion (non-poisonability via scrub + containment, NOT via refusing inherited prefixes) is met."
+        },
+        {
+          "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+          "status": "passed",
+          "evidence": "assertSafeTargetPrefix materializes (mkdir -p) and FULLY realpath-resolves the target, re-runs containment on the resolved path, and RETURNS that fully-resolved realpath (safePrefix); the only destructive op (npm i -g --force, line 320) and the verify (binPath) both consume safePrefix. The leaf-segment TOCTOU residual that VER-054 recorded `failed` was closed by iterate-4 (60613cc): no literal unresolved leaf survives validation. Adversarial probe confirmed npm i -g is the sole destructive global op and runs only after assertSafeTargetPrefix returns."
+        },
+        {
+          "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+          "status": "passed",
+          "evidence": "node scripts/promote-cli.mjs --prefix <repo>/tmp/inside-repo-target -> exit 1, 'resolves under this repo's root'; a /tmp symlink whose realpath is <repo>/packages -> exit 1, 'resolves under this repo's root'. No global op runs."
+        },
+        {
+          "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+          "status": "passed",
+          "evidence": "Carried from iterate-2/VER-054 (probe vector g): no npm rm -g; a single npm i -g --force; a failed install leaves the prior operator intact. The iterate-5 change did not touch this path."
+        },
+        {
+          "criterion": "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context.",
+          "status": "passed",
+          "evidence": "Carried from VER-054 (glued --prefix=<dir> parsed as override, installs at <dir>/bin/pi-context); the iterate-5 change did not touch argument parsing."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "oid": "c644b34a128f7fbbc0305f9d26171768",
+      "content_hash": "49cb079041d27bfe850512587b7b428fd5856012bc59061c2d1053e52b7fe1d4",
+      "content_parent": "6043174e344bea99e0b0f59d82990f80752f31784fb0406bbbe77ef31d04c7f2"
+    },
+    {
+      "status": "partial",
+      "method": "command",
+      "evidence": "TASK-020 true position established by running the current working-tree deriver (contextState via tsx-eval, the in-progress source) against both real substrates plus pi-context context-current-state. Implementation lives on feat/task-020-config-derivation (commit chain through 9125385, reachable from HEAD); context-jit-spec-v2 holds only the plan-mode-step-1 filing 9ee8f0a. 4 of 6 criteria met by observed output (149 context-sdk tests pass); criterion 3's real-substrate outcome is NOT met and criterion 6 (verification/closure) is not done — so TASK-020 is genuinely in-progress, not complete.",
+      "criteria_results": [
+        {
+          "criterion": "FGAP-017 closed: currentState derives from the config registry; against .context-jit-spec-v2 (custom vocabulary) it returns a real derivation or a truthful not-configured signal, not empty",
+          "status": "passed",
+          "evidence": "contextState('.context-jit-spec-v2') (via pointer flip, restored after) returned focus 'state-derivation not configured' with empty arrays; that substrate has no state_derivation registry (read-config --registry state_derivation -> not found). Truthful not-configured signal, not silent empty."
+        },
+        {
+          "criterion": "Stock .context behavior byte-preserved",
+          "status": "passed",
+          "evidence": "contextState('.context') derives a real position (focus 'in-flight: TASK-020, TASK-068', 15 ranked nextActions, real blocked set, milestones []); the 149 context-sdk tests including the stock byte-equivalence assertion pass."
+        },
+        {
+          "criterion": "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+          "status": "failed",
+          "evidence": "Mechanism met (head_size:15 is config-declared; no NEXT_ACTIONS_CAP literal in source). Outcome NOT met: context-current-state against live .context (44 open gaps) returns a 15-entry head that is ALL framework-gaps (FGAP-099/017/033/034/035/036/038/040/042/043/044/045/061/071/074), zero ready tasks — the exact truncation the criterion requires eliminated. Remaining work: the stock registry ordering/head must surface ready tasks above/within the gap-dominated head."
+        },
+        {
+          "criterion": "All derivation couplings are config-driven, not just the original set: the blocked-by relation SET (task_depends_on_task + task_gated_by_item gate) and the milestone phase-rollup (block milestone + relation phase_positioned_in_milestone + the reached/planned status) are declared in the registry; no hardcoded relation/kind/status literal survives in the rewired currentState (verified by grep of the deriver)",
+          "status": "passed",
+          "evidence": "Grep of the currentState body (context-sdk.ts) shows only a doc comment and three uses of 'task_gated_by_item' as an endpoint direction-discriminator for a relation already drawn from sd.blocked_by.relation_types config; relation/kind/status/rank/head set membership all read sd.* . Commit 9125385 moved the last kind-coupled reason/focus literals to config (reason_template / focus_fallback.kind)."
+        },
+        {
+          "criterion": "A truthful not-configured signal is returned when no state-derivation registry is declared, distinguishable from a configured-but-empty substrate",
+          "status": "passed",
+          "evidence": "jit-spec-v2 (no registry) -> focus 'state-derivation not configured'; a configured-but-empty substrate derives normally to focus 'no active focus.' with empty arrays. Distinct signals, distinguishable."
+        },
+        {
+          "criterion": "Canonical pipeline green (incl. cross-substrate runtime demo against .context AND .context-jit-spec-v2 + fresh adversarial audit)",
+          "status": "failed",
+          "evidence": "Not done: TASK-020 status in-progress, FGAP-017 status identified (not closed), no verification_verifies_item edge prior to this VER, no recorded cross-substrate runtime demo + fresh adversarial audit. The closure step has not occurred."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-056",
+      "oid": "bcb4669f397914c903e0b7a3b295a3fe",
+      "content_hash": "e6be843def0b76d9785a95866a4fa0f42d2f354860ca00bc2799d42c01f9f9dd"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Criterion 3 met by reordering state_derivation.next_ranked to [tasks, issues, framework-gaps] in the packaged conception (233b48f) and the live .context config (b8eea4f via amend-config) — config only; the deriver is unchanged. pi-context context-current-state on .context returns a 15-entry ranked head of 13 ready planned tasks then 2 open issues (hasTask true); the same substrate's open-gap count exceeds head_size. Full suite green: 2538 tests across all workspaces + migration, 0 fail, with the stock-head test expectations and the STOCK_STATE_DERIVATION fixture reconciled to tasks-first. context-validate reports only pre-existing decision/gap/layer warnings, none from this change. Criteria 1, 2, 4, 5 stand from VER-056 (the config-derivation rewire); the reorder changes the stock head composition by design (criterion 3), superseding criterion 2's mechanism-stage byte-preservation rather than regressing it.",
+      "criteria_results": [
+        {
+          "criterion": "The next-actions head-size is config-declared (replacing the hardcoded NEXT_ACTIONS_CAP=15 slice at context-sdk.ts:864-865); with the shipped conception, ready tasks are no longer truncated below open gaps — a runtime demo against .context (>=15 open gaps) surfaces ready tasks in the ranked head",
+          "status": "passed",
+          "evidence": "head_size is config-declared (read-config state_derivation.head_size=15; no NEXT_ACTIONS_CAP literal in source). With next_ranked reordered tasks-first in the shipped conception and the live .context config, context-current-state on .context returns 13 ready tasks + 2 issues in the 15-slot head (hasTask true), where the prior order returned 15 framework-gaps and zero tasks. The shipped conception and the live substrate carry the same order."
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-06-20T00:00:00.000Z",
+      "id": "VER-057",
+      "oid": "2fe2d3a91633a1cd226d8831f1988173",
+      "content_hash": "78c4638c21bbbf603d5f72902e30215f2328184722496f3b74a71886c087c02f"
+    }
+  ]
+}

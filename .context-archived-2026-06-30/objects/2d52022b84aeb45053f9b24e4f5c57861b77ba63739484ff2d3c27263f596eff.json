@@ -1,0 +1,20 @@
+{
+  "title": "CLI --json double-encodes structured op output (output is a stringified JSON string, not a JSON value)",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "Surfaced by dogfooding the CLI. Under --json the envelope at packages/pi-context-cli/src/cli.ts:487 emits {ok, op, output: text} where text is the op run() return. OpDefinition.run returns a string, and roughly 27 data-returning ops produce JSON as a string (via JSON.stringify or serializeForRead().content). So the output field under --json is a stringified JSON string, forcing consumers to double-parse: JSON.parse(JSON.parse(stdout).output). The roughly 21 prose-returning ops are unaffected. No test asserts the --json output shape, so the double-encode was never caught. Agent-investigated for root cause, shape, and reproducible conditions before filing.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "487",
+      "reference": "envelope wraps the op string return; a JSON-returning op double-encodes under --json"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "resolve-item-by-id / read-block-item / read-config run() return JSON.stringify(...) or serializeForRead().content, i.e. a string"
+    }
+  ],
+  "impact": "A machine consumer of --json must double-parse every structured op, which defeats the point of --json as machine-parseable output. The CLI surface the cli arc built is harder to consume programmatically and the inconsistency is silent (no test locks the shape).",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

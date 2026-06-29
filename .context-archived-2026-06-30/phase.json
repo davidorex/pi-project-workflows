@@ -1,0 +1,13 @@
+{
+  "phases": [
+    {
+      "id": "PHASE-PORT-OPS",
+      "name": "Port the WASC operation framework into this project",
+      "intent": "Port the WASC operation framework into this project, except the bifurcated context (transposed to .context), including memory and CLAUDE.md elements. Active on the operations-constraint branch.",
+      "goal": "The WASC operation regime is operative here: its enforcement hooks, verify-gated iterate-to-zero loop, IMPL/AUDIT dispatch discipline, state-spine transposed to .context, prompt-render, command/agent/skills, governing decisions, and memory/CLAUDE.md elements.",
+      "status": "in-progress",
+      "oid": "0e42809213f0b1c63d76fb016cbcbf7e",
+      "content_hash": "2bc37469d0283027f4500cf5ac9b1e432cecc34e163b8e6ca1bd8b9d0248a074"
+    }
+  ]
+}

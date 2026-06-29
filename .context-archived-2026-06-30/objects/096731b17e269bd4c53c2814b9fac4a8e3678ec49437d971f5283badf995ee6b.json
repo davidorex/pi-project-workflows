@@ -1,0 +1,21 @@
+{
+  "title": "No field-granular schema-edit op; changing one schema property requires whole-document write-schema replace",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Schema evolution exposes only whole-document write-schema (operation create|replace); there is no field-granular schema edit. Changing one property (add/rename/retype, bump version) requires supplying and overwriting the entire schema JSON, unlike block items which have update-block-item for field-level updates.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1183-1227",
+      "reference": "write-schema operation enum is create|replace, whole-document; no granular per-property operation"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "update-block-item provides match+updates field-granular item edits — the absent analogue for schema documents"
+    }
+  ],
+  "impact": "A one-field schema change carries whole-document blast radius: an unrelated edit in the replaced JSON lands silently, and the error surface grows as the PM-model arc evolves many schemas through repeated full-document replaces.",
+  "canonical_vocabulary": "partial schema update (field-granular schema mutation)",
+  "proposed_resolution": "Add a field-granular schema-edit op mirroring update-block-item's match+updates shape: add/replace/remove a single schema property and bump version in one call, meta-validated, leaving untouched properties byte-stable."
+}

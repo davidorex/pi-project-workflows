@@ -1,0 +1,12 @@
+{
+  "description": "Backfill decision derivation edges, then raise decision-shows-derivation to error. The decision-shows-derivation requires-edge invariant (the dedicated structural bite for the derive-decisions-from-facts convention) is live at severity WARNING: every decision must carry a decision_derived_from_item edge (the fact its resolution derives from) OR a decision_escalates_underdetermined edge (a genuinely-underdetermined escalated choice -> a framework-gap). 17 existing decisions currently warn. This task: (1) for each warning decision, read its reasoning and either edge decision_derived_from_item -> the substrate fact its resolution derived from (a research / convention / gap / prior-decision / rationale item; file a rationale item to reify a code/mandate fact that has no existing item), or decision_escalates_underdetermined -> the framework-gap capturing a genuinely-underdetermined choice; (2) once context-validate shows zero decision-shows-derivation warnings, raise the invariant severity from warning to error via amend-config. This completes the convention-articulation clean-after-backfill pattern for decision derivation, making a fork-as-decision (a decision with no shown derivation basis) UNFILEABLE.",
+  "status": "planned",
+  "files": [],
+  "acceptance_criteria": [
+    "Every existing decision carries a decision_derived_from_item OR decision_escalates_underdetermined edge; context-validate shows zero decision-shows-derivation warnings",
+    "A rationale item is filed to reify any decision basis that is a code/mandate fact with no pre-existing substrate item (no fabricated/forced edges)",
+    "decision-shows-derivation severity is raised warning -> error via amend-config; context-validate is clean at error",
+    "A newly-filed decision lacking a derivation/escalation edge is REJECTED at error severity (the bite is blocking, demonstrated)"
+  ],
+  "notes": "governance enforcement | extends the FEAT-007 convention-articulation family to decision DERIVATION | the bite is already live at warning; this raises it to error after backfill"
+}

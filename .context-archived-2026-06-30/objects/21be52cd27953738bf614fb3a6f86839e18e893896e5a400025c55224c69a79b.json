@@ -1,0 +1,15 @@
+{
+  "title": "Story schema reduced to id, description, status (draft|set)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A story holds id, a one-sentence description, and status draft|set. Fields title, acceptance_criteria, and the status values proposed/ready/in-progress/in-review/complete/blocked are removed. Stories carry no criteria.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/story.schema.json",
+      "reference": "declares title, description, acceptance_criteria, and status enum proposed/ready/in-progress/in-review/complete/blocked"
+    }
+  ],
+  "impact": "Story schema carries criteria and a multi-state lifecycle; the model treats a story as a theme with no done-ness of its own.",
+  "proposed_resolution": "Reduce story to id + description + status(draft|set); drop title, acceptance_criteria, and the surplus status values."
+}

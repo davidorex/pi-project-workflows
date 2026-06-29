@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-09T00:00:00.000Z",
+  "evidence": "TASK-042 (FEAT-008 final slice) the per-op <op> --help best-of-breed template + machine-readable help, verified end-to-end through four iterate-to-zero pipeline cycles. Closes FGAP-072. Merged at 14148c4 (commits 38bf8bd base + 06f5d2e + 902c498). Additive: in-pi ops FROZEN — registerAll projects only {name,label,description,promptSnippet,parameters} so the new examples field is invisible to the LLM tool surface; ops-registry.ts diff carries only the additive examples? field + per-op data; the op<->CLI parity gate (TASK-019) stays green. The slice: (A) OpDefinition gains examples?: string[]; all ~50 surface:use ops have an authored copy-pasteable example (high-traffic ops seeded from the CLAUDE.md canonical filing patterns); list-tools (surface:process) excluded by design. (B) cli.ts: an exported pure buildHelpModel(op) -> {name, synopsis, summary, flags:[{name,type,required,description,autoSupplied?}], examples, related}; deriveHelp renders SYNOPSIS -> Flags -> EXAMPLES -> RELATED -> footer; the per-op --help branch honors --format (json emits JSON.stringify(buildHelpModel), else text). RELATED is derived from groupForOp (same single grouping source as the top-level help, no second list). SYNOPSIS brackets writer/arrayKey as optional via the auto-supply exemption. Four iterate-to-zero findings, each through the full explore->plan->approve->agent->fresh-re-audit cycle: (#1) two initial tests falsely premised writer as a per-op schema param of block-mutation ops (it is dispatch-auto-injected, only 3 ops declare it) — corrected, the writer-bracketing rule retargeted onto promote-item which genuinely declares writer; (#2) the Flags block showed --arrayKey/--writer (required) while the synopsis bracketed them optional with no reconciliation — introduced AUTO_SUPPLIED + a per-flag autoSupplied annotation so the Flags line reads (required; auto-derived from --block)/(required; auto-injected) reconciling both surfaces; (#3) the parseOpArgs missing-required exemption (cli.ts:434) was a second hardcoded copy of the auto-supplied set — single-sourced to !(r in AUTO_SUPPLIED) (exported) + a coupling-guard test asserting parseOpArgs exempts every AUTO_SUPPLIED key; (#4) that refactor removed the string literals the TASK-019 parity gate parsed via extractStringLiterals — migrated the gate to a new extractObjectKeys(cli.ts, AUTO_SUPPLIED) reading the canonical object keys via AST (tighter than the old loose all-string-literals scan). Runtime demo against the rebuilt global pi-context bin: per-op --help renders synopsis/examples/related/footer; the arrayKey Flags line shows (required; auto-derived from --block) with [--arrayKey] in the synopsis; --help --format json emits the valid structured model incl. autoSupplied; append-block-item --block tasks errors 'missing required: --item' ONLY (arrayKey/writer exempted, no write); promote-item synopsis brackets [--writer]. build+check+full-test green (fail 0 all packages); npx tsx scripts/parity-check.ts exit 0; the examples-coverage guard + the AUTO_SUPPLIED coupling guard + the extractObjectKeys unit tests pass; extractStringLiterals + its unit tests untouched/green. The cross-package dist-rebuild precondition was hit and handled (the coding agent held the commit on stale pi-context dist; the orchestrator rebuilt + ran the full gate, which surfaced finding #1's 2 failing tests the held commit hid). Fresh adversarial re-audits PASS zero defects on the slice + on findings #3/#4 (no surviving hardcoded copy of the exemption set; extractObjectKeys reads keys-not-values + is tighter; behavioral equivalence; the gate tracks the canonical source).",
+  "criteria_results": [
+    {
+      "criterion": "FGAP-072 closed: per-op <op> --help renders SYNOPSIS + Flags + EXAMPLES + RELATED + footer for every use-op",
+      "status": "passed",
+      "evidence": "deriveHelp renders the full template via buildHelpModel; runtime demo on append-block-item/promote-item/read-block-item confirms all sections"
+    },
+    {
+      "criterion": "Every use-op has a non-empty authored example (no synthetic floor)",
+      "status": "passed",
+      "evidence": "OpDefinition.examples authored for all ~50 surface:use ops; the examples-coverage guard test fails if any op lacks examples; probe independently re-enumerated 0 missing/duplicate/placeholder"
+    },
+    {
+      "criterion": "Per-op --help participates in --format (machine-readable structured help)",
+      "status": "passed",
+      "evidence": "--help --format json emits {name,synopsis,summary,flags[{...,autoSupplied?}],examples,related}; --help --json identical; default --help stays human text to stdout"
+    },
+    {
+      "criterion": "Additive: in-pi ops byte-unchanged, parity gate green",
+      "status": "passed",
+      "evidence": "registerAll projects only {name,label,description,promptSnippet,parameters} (examples invisible to the LLM surface); ops-registry diff is the additive examples field+data only; parity-check.ts exit 0"
+    },
+    {
+      "criterion": "Canonical pipeline green incl. iterate-to-zero (4 findings each through full pipeline + fresh re-audit)",
+      "status": "passed",
+      "evidence": "findings #1-#4 each explore->plan->approve->agent->fresh-re-audit; final re-audits PASS zero defects; build/check/test/parity all green; loop converged"
+    }
+  ]
+}

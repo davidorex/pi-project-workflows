@@ -1,0 +1,27 @@
+{
+  "title": "ready/blocked derivation ignores the *_gated_by_item gating relations; only task_depends_on_task is honored",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "currentState (context-sdk.ts:682), the sole ready/blocked/next deriver, computes blocked + nextActions ordering only from task_depends_on_task (depParentsOf, context-sdk.ts:727-730). It ignores the gating relations task_gated_by_item / feature_gated_by_item / story_gated_by_item, so a task gated by an incomplete item is reported ready. feature_gated_by_item / story_gated_by_item have no readiness deriver at all (currentState buckets only the tasks block). roadmap-plan.ts orders phases by phase_depends_on (no phase_gated_by_item; out of scope).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "727-730",
+      "reference": "depParentsOf filters only task_depends_on_task; feeds blocked (:742) + topoSort order (:787)"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "682",
+      "reference": "currentState is the sole ready/blocked deriver; buckets only the tasks block — no feature/story readiness derivation exists"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1040",
+      "reference": "context-current-state op description promises ranked unblocked/blocked tasks — wrong while gates are ignored"
+    }
+  ],
+  "impact": "Orderings expressed as gates (task_gated_by_item; feature/story_gated_by_item) are invisible to 'what is ready': a gated task surfaces as a next-action, and feature/story gates have no derivation. Cross-arc orderings recorded as gates are documentation-only (carried in a tracker md), not derived.",
+  "canonical_vocabulary": "gate-aware readiness derivation",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

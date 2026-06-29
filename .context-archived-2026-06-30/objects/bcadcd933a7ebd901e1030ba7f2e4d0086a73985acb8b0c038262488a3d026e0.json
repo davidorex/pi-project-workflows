@@ -1,0 +1,20 @@
+{
+  "title": "WASC operation framework — the canonical run process",
+  "status": "complete",
+  "layer": "L4",
+  "type": "historical",
+  "question": "What is the exact step sequence and structure of the WASC operation framework's per-task run process?",
+  "method": "claude-history extraction of the last complete end-to-end run (session 6e98b2bc) and a loop run; verbatim tool-call and agent-dispatch sequencing; cross-checked against the operation-system bundle.",
+  "findings_summary": "The WASC operation framework runs a per-task canonical pipeline: EnterPlanMode, dispatch a read-only Explore agent, the orchestrator independently corroborates the Explore findings against source, write the plan, ExitPlanMode approval, file the task plus edges in .context, branch off main, dispatch a fresh gate-first IMPL agent, the orchestrator re-runs the deterministic gate itself (it does not inherit the IMPL's green), then a separate adversarial AUDIT agent verifies each acceptance criterion and ends with the literal token 'Total findings: N'. Done is two external binary signals: deterministic gate exit 0 AND audit findings 0 (DEC-58); the model may not self-declare done. On findings > 0 each finding re-enters the same pipeline (corroborate, fresh re-IMPL scoped to the finding's whole class, fresh re-audit both-directions) until a pass finds nothing. On done, the machine cascade files a verification item, adds the verification_verifies_item edge, completes the task, closes the gap, runs context-validate, then fast-forward merges to main and updates the spine. Three roles stay separate (Explore read-only, IMPL writes, AUDIT adversarial). The loop's terminator is external, not the model's judgment; that is why it completes. Derived from the last complete run (175 steps, session 6e98b2bc), which audited clean on the first pass.",
+  "findings_document": "analysis/2026-06-21-wasc-process-learned.md",
+  "citations": [
+    {
+      "label": "last complete run step sequence",
+      "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md"
+    },
+    {
+      "label": "loop run step sequence (iterate-to-zero)",
+      "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md"
+    }
+  ]
+}

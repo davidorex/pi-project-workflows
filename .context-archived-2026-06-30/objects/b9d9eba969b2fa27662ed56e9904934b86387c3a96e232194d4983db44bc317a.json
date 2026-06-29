@@ -1,0 +1,20 @@
+{
+  "title": "Schema descriptions carry no per-block rhetorical criteria; block writes are unvalidated against them",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Each block schema's description states the block's purpose but omits the block's specific rhetorical demands/criteria for its entries (terseness, signal-density, self-containment, appropriateness to block type and downstream use, no narration or git/live-source restatement). The criteria must be embedded per-block and machine-checkable so a Claude Code hook can validate a block-item write against them at write time.",
+  "evidence": [
+    {
+      "file": "CLAUDE.md",
+      "reference": "the 'Rhetorical situation for every block write' rule lives only as operating-doc prose — not encoded per-schema, not enforced on write"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/issues.schema.json",
+      "reference": "item descriptions state field purpose but carry no per-block rhetorical criteria; nothing validates an entry against them on write"
+    }
+  ],
+  "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
+  "canonical_vocabulary": "write-time authoring-contract validation",
+  "proposed_resolution": "Resolution not yet determined; to be filed as a separate decision."
+}

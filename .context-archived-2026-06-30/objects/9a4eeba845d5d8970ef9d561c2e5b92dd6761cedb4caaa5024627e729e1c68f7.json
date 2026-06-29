@@ -1,0 +1,51 @@
+{
+  "title": "context-current-state hardcodes framework-gaps/tasks/phase — inert on custom-vocabulary substrates",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "currentState() (context-sdk.ts ~711-915), behind the context-current-state op, derives focus / in-flight / ranked atomic-next / blocked / milestones from HARDCODED stock kinds and couplings: block kinds tasks / framework-gaps / phase / milestone; the blocked-by relation_type SET task_depends_on_task + task_gated_by_item (the gate, TASK-065); the milestone phase-rollup (relation phase_positioned_in_milestone + the literal reached/planned result strings, milestone arc); a literal priority rank P0/P1/P2/P3; the ranking field priority; the kind strings framework-gap / task in nextActions; and a fixed next-actions head-size — NEXT_ACTIONS_CAP = 15 (context-sdk.ts:864-865), slicing nextActions to the first 15 — which, combined with the gaps-pushed-before-tasks order (:813-833 then :859), truncates all ready tasks below the open gaps whenever >=15 gaps are open. status->bucket IS already config-driven (status-vocab resolveStatusVocabulary + config.status_buckets), but the KIND / field / ranking / relation(s) / rollup / head-size couplings are literal. On a substrate whose state-bearing kinds are not tasks/framework-gaps the op returns empty/inert — confirmed: against .context-jit-spec-v2 (axioms/concepts/dispatch-modes) currentState returns an empty result (no active focus, empty inFlight/nextActions/blocked/milestones). No config registry declares which kinds are focus-eligible / next-ranked / blocked-checked, the ranking field, which relation_type(s) are blocked-by/gating, the milestone-style rollup, or the next-actions head-size.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "709",
+      "reference": "in-flight loop hardcodes block !== tasks"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "762",
+      "reference": "open-work loop hardcodes block !== framework-gaps"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "729",
+      "reference": "blocked-by hardcoded to relation_type task_depends_on_task"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "774",
+      "reference": "blocked-by ALSO hardcodes the gate relation_type task_gated_by_item (gateTargetsOf/blockersOf, TASK-065) — a second blocked-by literal; the registry's blocked-by must be a SET"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "878-888",
+      "reference": "milestones rollup hardcodes block milestone + relation phase_positioned_in_milestone + the literal reached/planned result strings (milestone arc) — a hardcoded kind+relation+status-string coupling"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "759",
+      "reference": "hardcoded priorityRank P0/P1/P2/P3; ranking field hardcoded to priority"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "864-865",
+      "reference": "NEXT_ACTIONS_CAP=15 + nextActions.slice(0,15): fixed next-actions head-size, not config-declared; with gaps pushed before tasks (:813-833 then :859), >=15 open gaps truncate every ready task from nextActions (empirically a live run returned 15 framework-gaps, 0 of 14 ready tasks)"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1037",
+      "reference": "context-current-state op delegates to currentState(cwd)"
+    }
+  ],
+  "impact": "where-are-we/what-next is a privilege of the stock PM vocabulary; a custom-vocabulary substrate with a real focus/next-state gets a silent empty result, not its own derivation. The op cannot serve any substrate that does not use framework-gaps + tasks.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "TASK-063 verified via CLI reads. FGAP-092 filed for DEC-0018's forcing problem (update's post-loop registry propagation ungated on the schema-loop outcome, index.ts:1391-1421), distinct from FGAP-076; read-back-verified. find-references DEC-0018 returns decision_addresses_gap->FGAP-092, decision_raises_gap->FGAP-076 (no longer decision_addresses_gap), decision_gated_by_item->FGAP-076 (plus the pre-existing research_informs_item/derived_from/governed-by edges). find-references FGAP-090 returns gap_relates_to_gap->FGAP-007 and ->FGAP-061. All five edge writes were accepted by the TASK-062 write-time validator (kind-correct). context-validate warnings-only baseline with NO decision-cites-forcing-artifact error on DEC-0018 — satisfied via the FGAP-092 citation rather than the inverted FGAP-076 edge.",
+  "criteria_results": [
+    {
+      "criterion": "a framework-gaps item is filed for DEC-0018's forcing problem, distinct from FGAP-076; read-back-verified",
+      "status": "passed",
+      "evidence": "FGAP-092 filed + read-back; describes the ungated registry-write-on-blocked / no-transactional-boundary problem, distinct from FGAP-076's legibility consequence"
+    },
+    {
+      "criterion": "find-references DEC-0018 shows decision_addresses_gap -> new forcing gap; decision_raises_gap -> FGAP-076 (no longer decision_addresses_gap); decision_gated_by_item -> FGAP-076",
+      "status": "passed",
+      "evidence": "find-references DEC-0018: decision_addresses_gap->FGAP-092, decision_raises_gap->FGAP-076, decision_gated_by_item->FGAP-076"
+    },
+    {
+      "criterion": "find-references FGAP-090 shows gap_relates_to_gap -> FGAP-007 and -> FGAP-061",
+      "status": "passed",
+      "evidence": "find-references FGAP-090: both gap_relates_to_gap edges present"
+    },
+    {
+      "criterion": "context-validate has no decision-cites-forcing-artifact error for DEC-0018 and no new issue beyond baseline",
+      "status": "passed",
+      "evidence": "context-validate warnings-only baseline; no decision-cites-forcing-artifact error"
+    },
+    {
+      "criterion": "every new edge is kind-correct and passes the TASK-062 write-time validator",
+      "status": "passed",
+      "evidence": "append-relations accepted the four additive edges; replace-relation accepted the retype — all kind-correct under the new types' source/target_kinds"
+    }
+  ]
+}

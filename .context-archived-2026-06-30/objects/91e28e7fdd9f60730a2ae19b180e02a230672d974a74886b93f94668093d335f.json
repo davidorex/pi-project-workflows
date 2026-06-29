@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T00:00:00.000Z",
+  "evidence": "FEAT-006 (the unified, drift-aware, customization-preserving pi-context update command with --dry-run) is complete — all six slices done and verified: T1 shell + drift routing (TASK-034/VER-020), T2 base-stamping (TASK-035/VER-021), T3 3-way schema merge (TASK-036/VER-022), T4 conflict resolver (TASK-037/VER-023), T5 config-registry propagation (TASK-038/VER-025), T6 surfaced mutation reporting + idempotent block skip (TASK-039/VER-026). The unified `pi-context update` (a reflected op on the globally-installed CLI) consults the per-schema checkStatus drift classification and: resyncs in-sync/catalog-ahead (migration-aware); 3-way merges locally-modified/both-diverged schemas preserving non-conflicting edits, routing irreconcilable conflicts to a pi-bound agent mergetool or a read-only report; additively propagates catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) preserving user entries; enumerates every mutation it performs (schema re-syncs/merges via the resynced/migrated/blocked/merged buckets, migration-declaration registrations via migrationsRegistered, config additions via registryAdditions); and --dryRun previews the entire change set while writing nothing. A locally-edited schema, the user's config registries, and populated blocks are never silently clobbered. Build/check/full-test green throughout; each slice carried a runtime demo + a fresh-context adversarial probe (all PASS). FGAP-046/049/050/051/060 closed across the arc.",
+  "criteria_results": [
+    {
+      "criterion": "pi-context update --dry-run reports the full set of schema/block/migration changes it would make (per the checkStatus drift classification) and writes nothing",
+      "status": "passed",
+      "evidence": "--dryRun computes + reports resynced/merged/conflicts + registryAdditions + migrationsRegistered (would-register read-only) and writes nothing; verified byte-unchanged across T1/T5/T6 dryRun tests"
+    },
+    {
+      "criterion": "pi-context update preserves or merges locally-modified schemas (per FGAP-046's chosen route) rather than overwriting them; config registries, populated blocks, and user-added elements are untouched",
+      "status": "passed",
+      "evidence": "T3 3-way merge + T4 resolver (FGAP-046 closed); T5 additive registry propagation never overwrites a user entry (FGAP-060 closed); T6 idempotent block skip (FGAP-051 closed); populated blocks preserved"
+    },
+    {
+      "criterion": "Every mutation the command performs — schema re-syncs, migration-declaration registrations, block starters — is enumerated in its output",
+      "status": "passed",
+      "evidence": "resynced/migrated/blocked/merged + migrationsRegistered (FGAP-050 closed) + registryAdditions; block starters via the install-path InstallResult buckets"
+    },
+    {
+      "criterion": "The command is exposed on the globally-installed pi-context (gated on the CLI grounding)",
+      "status": "passed",
+      "evidence": "the reflected update op runs as pi-context update on the global CLI (TASK-028/029/030 global install); CLI surface confirmed"
+    }
+  ]
+}

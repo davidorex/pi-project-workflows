@@ -1,0 +1,37 @@
+{
+  "title": "Issues are not a gap-sibling first-class open-work kind — a task cannot focus on / address an issue as it can a gap",
+  "status": "identified",
+  "package": "pi-context",
+  "description": "Framework-gaps are first-class open work in the PM model: task_addresses_gap relates a task to a gap, the task-completed-gap-closed invariant enforces closure, and framework-gaps is a next_ranked open-work kind in state_derivation so currentState surfaces open gaps as focus / next-actions. Issues have no parity — there is no task_addresses_issue relation (issues are reached only via decision_addresses_issue / feature_resolves_issue / gap_relates_to_issue), no issue-closure invariant, and issues are not a next_ranked kind, so currentState never surfaces an open issue as focusable next work. User-verbatim requirement: \"we need gaps and issues to be sibling class items throughout the substrate. a task can and must be able to focus as they can with gaps on issues.\" currentState (context-sdk.ts:733-961) and lens-view are already kind-general (FEAT-004 / TASK-020), so the asymmetry is purely in config/catalog vocabulary (relation_types, invariants, state_derivation) plus two additive issue-schema lifecycle fields — not in code.",
+  "evidence": [
+    {
+      "file": "config.relation_types",
+      "reference": "task_addresses_gap (tasks->framework-gaps) present; there is no task_addresses_issue — a task cannot address an issue the way it addresses a gap"
+    },
+    {
+      "file": "config.invariants",
+      "reference": "task-completed-gap-closed present; no issue analog (e.g. task-completed-issue-resolved), so completing a task against an issue is not lifecycle-checked"
+    },
+    {
+      "file": "config.state_derivation",
+      "lines": "next_ranked",
+      "reference": "framework-gaps is a next_ranked open-work kind; issues is absent, so currentState never ranks/focuses an open issue"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "733-961",
+      "reference": "currentState is kind-general (reads state_derivation); confirms the asymmetry is config/catalog vocabulary, not deriver code"
+    },
+    {
+      "file": "packages/pi-context/schemas/issues.schema.json",
+      "reference": "issues lacks resolved_at and an x-lifecycle block that framework-gaps has — the schema-side lifecycle-parity delta"
+    },
+    {
+      "file": "analysis/2026-06-19-gaps-issues-sibling-parity-shape.md",
+      "reference": "the gap-explore investigation: the full five-axis asymmetry map, the required-vs-acceptable-divergence determination, and the prior-art search (genuinely unfiled)"
+    }
+  ],
+  "impact": "Issues are filed but invisible to the derived focus / what's-next surface and not closeable-by-task in the tracked model — they are second-class relative to gaps. issue-004 (and every issue) sits outside the task-driven close loop that gaps enjoy: no task can focus on or address it, and its resolution is not lifecycle-checked. Sibling parity is required for issues to participate in derivation, focus, and task-closure exactly as gaps do.",
+  "canonical_vocabulary": "first-class sibling block-kind / open-work parity (kind-general PM derivation + relation/invariant parity)",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

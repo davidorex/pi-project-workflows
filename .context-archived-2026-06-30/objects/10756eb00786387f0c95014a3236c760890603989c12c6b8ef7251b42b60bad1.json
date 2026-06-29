@@ -1,0 +1,4 @@
+{
+  "description": "Implement the structure-aware substrate merge/oid driver per DEC-0004 / FGAP-004 / FEAT-002: content-parent-DAG merge-base finder (per-item + substrate LCA); per-item 3-way merge with field-kind dispatch (sequence fields delegate to the convergent ordered-sequence field-type, TASK-005); edge-set 3-way merge with endpoint re-check after deletes; object-store union; config/schema 3-way merge with redefinition-conflict; multi-parent content_parent on merged results (extend content_parent to admit >=2 parents); post-merge full invariant + lens-validator revalidation; typed structured conflict set; cherry-pick as a scoped sub-case. Driver + merge-base finder land in block-api. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+  "status": "planned"
+}

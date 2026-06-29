@@ -1,0 +1,4 @@
+{
+  "description": "Implement the substrate clone/import arc per DEC-0002 / FGAP-002 / FEAT-001: cloneSubstrate library fn (copy config + all blocks + relations.json + objects/ into the destination dir; mint a fresh substrate_id; record a substrate_derived_from_substrate edge; write a provenance-bearing registry entry) + Pi tool + CLI + orchestrator script as one dual-surface unit; register the substrate_derived_from_substrate relation_type in config; extend the registry schema/type with origin/provenance fields; refine the SoT-drift invariant (context-sdk.ts:1685+) to distinguish native-lost-registry / foreign-import / genuine drift. Full completion sequence. Via coding subagent; orchestrator runs all npm + is sole git writer; per-step commit.",
+  "status": "planned"
+}

@@ -1,0 +1,15 @@
+{
+  "description": "FEAT-006 T3 — deterministic schema-merge. Add a key/path-level draft-07 3-way merge mergeSchema(base, ours, theirs) -> {merged, conflicts[]}: base = the base-stamped as-installed body (getObject), ours = the installed dest schema, theirs = the catalog source schema. Wire it into the update flow at the locally-modified / both-diverged branch (replacing TASK-034's refuse-and-report): auto-apply the merged schema when the conflict set is empty; on a non-empty conflict set leave the schema unmodified and hand the typed set to the resolver (TASK-037). Depends on TASK-035; governed by DEC-0017.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/schema-merge.ts",
+    "packages/pi-context/src/index.ts"
+  ],
+  "acceptance_criteria": [
+    "[subagent] mergeSchema(base, ours, theirs) returns {merged, conflicts[]}: disjoint key additions merge; required / enum / type-union arrays merge as sets; overlapping edits to the same node emit a typed conflict {path, base, ours, theirs}.",
+    "[subagent] the merged output passes AJV draft-07 meta-validation + assertNoNestedIdBearingArray before any write.",
+    "[orchestrator] a locally-modified schema with only disjoint edits: update auto-applies the merge and BOTH the user's edit and the catalog change survive (demo: add-field, widen-enum).",
+    "[orchestrator] an overlapping edit: the schema is left unmodified and the typed conflict set is produced (no clobber); checkStatus is consulted before merging (closes FGAP-049).",
+    "[orchestrator] deterministic — identical (base, ours, theirs) yield identical {merged, conflicts}; build + check + full test pass; runtime demo of a clean-merge and a conflict case."
+  ]
+}

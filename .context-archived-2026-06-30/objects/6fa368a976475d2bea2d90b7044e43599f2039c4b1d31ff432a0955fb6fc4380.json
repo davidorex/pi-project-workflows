@@ -1,0 +1,6 @@
+{
+  "title": "Validate block items directly against target catalog schema",
+  "status": "complete",
+  "user_kind": "cli-user",
+  "description": "As an operator, I can validate the block items directly against the target catalog schema and see what fails — which `update` doesn't expose and `context-validate` doesn't do."
+}

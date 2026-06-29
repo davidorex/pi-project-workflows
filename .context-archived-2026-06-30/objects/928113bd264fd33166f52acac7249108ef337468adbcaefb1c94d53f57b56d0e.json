@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-11T16:00:00.000Z",
+  "evidence": "TASK-052 verified end-to-end against its corrected criteria; closes FGAP-081. Git-style in-file failure markers are the DEFAULT behavior of a live validation-failed block — no flag, no mode, no param (the update op's parameters declare dryRun only; grep of src+dist+docs of both packages finds zero gate residue; a bare updateContext(cwd) writes the markers). Per failing item, full-line sentinels land at the offending item/field line (string-aware line lexer — braces/brackets/escaped quotes/sentinel-ish text inside string values cannot mis-place them; envelope-level or unlocatable failures get a top-of-file header block); the message text matches the CLI report. The pre-marker block is pinned to the object store as a raw-bytes wrapper (premarker_hash on the pending entry, set before the sidecar write) and restores byte-exact, verified on both 2-space and tab+trailing-newline shapes. resolve-blocked detects and strips the sentinels, re-validates against the pinned target, raw-writes the stripped text before the commit's identity-stamping write so oids are PRESERVED across the round-trip (the fixed item's content_parent advances to its prior hash; an untouched sibling's oid and content_hash are identical — probe-verified empirically on the in-place fix-between-sentinels path); on pass it registers the chain, writes the target schema, advances the envelope and the merge base, clears the entry, and a re-run update reports in-sync; while the named violations persist it refuses with the per-item failures and the marker file byte-untouched; a hand-de-marked file resolves identically. A repeat live update over a marked block retains the pending entry WHOLE (failures/chain/premarker_hash deep-equal; the re-run blockedDetail keeps the per-item diagnostic; no double-marking; restore still byte-exact). Dry runs and no-chain blocks write nothing (full-tree hash verified) and their reports carry no markers-written claim (the claim keys on premarker_hash); schema + migrations.json byte-unchanged on every path. Runtime demo: the conventions reproduction flagless — markers at the offending lines, byte-exact restore, premature resolve refused, fix between markers, resolve, re-run in-sync. Gates: build + check + full test fail 0 across all packages; parity-check exit 0; examples + drift guards green; SKILL/READMEs/CHANGELOGs mode-free. Fresh adversarial probe (29-assert class) PASS with two residual findings fixed in-loop and re-audited: full-entry retention on re-run-while-marked, and the conditional write claim. The verbatim-delta check against the operator stories found no qualifier anywhere.",
+  "criteria_results": [
+    {
+      "criterion": "on a live validation-failed blocked schema the block file carries failure markers at each offending item/field naming the violated constraint — default behavior, no flag",
+      "status": "passed",
+      "evidence": "flagless demo + the probe's zero-gate-residue grep of src/dist/docs; position-asserted marker tests incl. string-brace fixtures"
+    },
+    {
+      "criterion": "the pre-marker block is recoverable from the object store, byte-exact restore demonstrated",
+      "status": "passed",
+      "evidence": "raw-bytes wrapper pin + write-back byte-identity on both serialization shapes (probe-verified)"
+    },
+    {
+      "criterion": "the resolution commit strips the markers on a passing resolution; a block whose named violations persist cannot be committed",
+      "status": "passed",
+      "evidence": "strip-validate-commit path + refuse-with-failures path, both via the real CLI; hand-de-marked path equivalent"
+    },
+    {
+      "criterion": "a dry run writes no markers; a no-chain block stays byte-unchanged; migrations.json and the schema file byte-unchanged in all cases",
+      "status": "passed",
+      "evidence": "full-tree hashes on dry/no-chain/resolve-fail; the three-file contract on every path"
+    },
+    {
+      "criterion": "item identity survives the marker round-trip: oids preserved, content_parent lineage intact",
+      "status": "passed",
+      "evidence": "the stripped pre-commit raw-write; empirical oid comparison incl. the untouched sibling and the in-place fix path"
+    },
+    {
+      "criterion": "build + check + full test green; parity-check exit 0; runtime demo; fresh adversarial probe",
+      "status": "passed",
+      "evidence": "all gates 0; the flagless reproduction demo; probe PASS with both residual findings fixed and re-audited to convergence"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-06-08T00:00:00.000Z",
+  "evidence": "TASK-038 (FEAT-006 T5, config-registry propagation) verified. Commit 6f9c0cb: new pure mergeCatalogRegistries(existing, catalog) in context.ts drives each registry's identity field from REGISTRY_DESCRIPTORS (relation_types/block_kinds by canonical_id, invariants/lenses by id), deep-clones existing, appends only catalog entries whose id is absent, never replaces/removes/body-merges a present entry (additive-only). Wired into updateContext after the baseline-refresh loop with a FRESH loadConfig (so the merge write does not clobber the refresh's installed_from updates), a !dryRun write guard, and a try/catch that preserves the schema-update result. UpdateResult gains registryAdditions; the update op is unchanged (returns the whole result). Real-CLI runtime demo on a copy of the live .context (32 custom relation_types): pi-context update --dryRun reported the one catalog-absent relation_type (item_derived_from_item) + wrote nothing; pi-context update added it (32->33), the custom item_governed_by_convention survived, registryAdditions listed it. Tests: merge-catalog-registries.test.ts 5/5 (additive; present-id-untouched-on-divergent-body; canonical_id vs id; empty/missing; input not mutated) + install-subcommand registry cases (absent reappear; user-added survives; user-modified-divergent-body preserved; dryRun no-write). build+check+test green (pi-context 1083 pass). Fresh adversarial probe PASS, no defects (own harness: divergent-body present entry byte-identical, input not mutated; canonical_id/id keying; the race-safety test confirms both the baseline refresh and the registry add coexist in one update; no-write-when-nothing-absent holds by mtime). block_kind schema/starter materialization for a newly-declared kind is out of scope (filed as a follow-up gap).",
+  "criteria_results": [
+    {
+      "criterion": "update additively merges catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) absent from the existing config; it never removes or overwrites a user-present entry",
+      "status": "passed",
+      "evidence": "mergeCatalogRegistries (pure, additive, driven by REGISTRY_DESCRIPTORS) + 5 unit cases + adversarial harness: present id never replaced even on divergent body"
+    },
+    {
+      "criterion": "an existing substrate gains the new catalog vocabulary on update; user-added/-modified registry entries are untouched; --dry-run lists the additions and writes nothing (closes FGAP-060)",
+      "status": "passed",
+      "evidence": "real-CLI demo on a .context copy: item_derived_from_item added (32->33), custom item_governed_by_convention survived, dryRun reported + wrote nothing"
+    },
+    {
+      "criterion": "build + check + full test pass; runtime demo (existing substrate + a catalog carrying new entries -> entries appear, customizations intact)",
+      "status": "passed",
+      "evidence": "build/check/test fail 0; real-CLI demo + the install-subcommand integration cases on real substrates"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Active .context is the pi-context dev substrate, not a clean baseline for the operation-framework port",
+  "body": "The WASC operation-framework port (PHASE-PORT-OPS) needs a substrate baseline. The active .context is the pi-context development substrate, carrying its own 74 tasks / 101 gaps / 18 decisions / 14 stories and accumulated suboptimal content; it is not a clean baseline. Building the port on it co-mingles the port's PM state with the pi-context dev arc and inherits the suboptimal content.",
+  "location": ".context",
+  "status": "open",
+  "category": "composition",
+  "priority": "medium",
+  "package": "pi-context",
+  "source": "human"
+}

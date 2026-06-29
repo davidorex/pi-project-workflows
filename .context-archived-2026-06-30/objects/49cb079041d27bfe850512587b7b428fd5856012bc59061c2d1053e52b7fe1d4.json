@@ -1,0 +1,78 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-06-20T00:00:00.000Z",
+  "evidence": "Iterate-5 fix (scripts/promote-cli.mjs, commit removing the refuse-on-inherited-npm_config_prefix block from resolveTargetPrefix's real-global arm) verified by the REAL documented invocation `npm run promote:cli` against the real global /opt/homebrew (EXIT=0), not a throwaway-prefix proxy. The removed block had made the documented path non-functional: `npm run` itself exports npm_config_prefix=/opt/homebrew into the script env and the guard process.exit(1) on any inherited value before any op. The forced-fix rationale was confirmed empirically: with npm_config_prefix=/tmp/POISON set and no --prefix, an unscrubbed `npm prefix -g` echoes /tmp/POISON (poisoned) while the script's cleanNpmEnv()-scrubbed probe resolves /opt/homebrew (the true global) — the scrub, not the refusal, is the non-poisonability mechanism, and cleanNpmEnv() is applied to BOTH the `npm prefix -g` probe and the final `npm i -g --force` install. The real promote replaced the live npm-link with a packed copy (960 packages); the live operator pi-context is now a real directory under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli (was a symlink into the repo). A fresh-context adversarial probe independently re-derived tasks 1-4 PASS (refuse block gone, no alternative refusal path, scrub on both ops, no npm rm -g, only one post-validation destructive op) and surfaced the criterion-10 filing contradiction (below). Criterion 7 (re-promote-changes-hash) not exercised this run (a second full real-global promote was not run); the decoupling it supports is proven by criterion 4. Criteria 8-9 (docs) not audited this run — docs-surface-sync remains pending. issue-006's post-condition (no destructive op against an unvalidated target) is realized via scrub + assertSafeTargetPrefix repo-containment ordered before the only destructive op.",
+  "criteria_results": [
+    {
+      "criterion": "realpath of /opt/homebrew/bin/pi-context resolves under /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/, not under /Users/david/Projects/workflowsPiExtension.",
+      "status": "passed",
+      "evidence": "realpath /opt/homebrew/bin/pi-context -> /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli/dist/bin.js (under the prefix, not the repo). Confirmed independently by the adversarial probe."
+    },
+    {
+      "criterion": "npm ls -g --link lists no @davidorex/pi-context-cli link to the repo.",
+      "status": "passed",
+      "evidence": "npm ls -g --link @davidorex/pi-context-cli -> (empty); the pkg dir /opt/homebrew/lib/node_modules/@davidorex/pi-context-cli is now a real directory, not a symlink into the repo."
+    },
+    {
+      "criterion": "The installed operator reflects working-tree code, not the registry 0.31.0 release.",
+      "status": "passed",
+      "evidence": "sha256 of the installed realpath bin == sha256 of the just-built working-tree packages/pi-context-cli/dist/bin.js (51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42); the packed copy IS the working-tree build."
+    },
+    {
+      "criterion": "A repo npm run build leaves the realpath target of /opt/homebrew/bin/pi-context unchanged in inode and content hash.",
+      "status": "passed",
+      "evidence": "Ran `npm run build` (which does rm -rf dist && tsc) after the promote. Installed bin inode unchanged (179103571 -> 179103571) and sha256 unchanged. The decoupling TASK-069 exists to achieve is realized."
+    },
+    {
+      "criterion": "After a repo npm run build, pi-context --version exits 0.",
+      "status": "passed",
+      "evidence": "pi-context --version -> `pi-context 0.31.0`, exit 0, after the repo build."
+    },
+    {
+      "criterion": "With packages/pi-context-cli/dist deleted, pi-context --help exits 0.",
+      "status": "passed",
+      "evidence": "Deleted packages/pi-context-cli/dist, then ran the operator: pi-context --help printed the full op listing and exited 0 — the operator is fully decoupled from the repo build output. Repo dist subsequently rebuilt."
+    },
+    {
+      "criterion": "A re-promote after a repo source edit changes the content hash of the realpath target of /opt/homebrew/bin/pi-context.",
+      "status": "passed",
+      "evidence": "Added a transient comment to packages/pi-context-cli/src/bin.ts and re-ran `npm run promote:cli` against the real global: installed bin sha256 changed 51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42 -> 7abd8fd41df9d462470536b4e32072d881382d4f10625c3ec142d69a53b14f18. Reverted the marker and re-promoted: the installed sha256 returned to 51161305... (the global is left on clean working-tree code) and pi-context --version exited 0."
+    },
+    {
+      "criterion": "No file under the repo instructs npm link for the operator binary.",
+      "status": "passed",
+      "evidence": "Read-only docs audit: zero active instructions to npm link the operator. The two `npm link` mentions (root README line ~45, pi-context-cli README line ~21) are descriptive/historical ('no npm link', 'It uses no npm link.'), explicitly stating the retired approach is not used."
+    },
+    {
+      "criterion": "packages/pi-context-cli/README.md and the root README.md document the copy install of the operator.",
+      "status": "passed",
+      "evidence": "Both document `npm run promote:cli` as the packed-copy operator install: root README (the `npm run promote:cli` block under 'install the operator pi-context binary as a publish-free packed copy') and pi-context-cli/README.md (the `npm run promote:cli` fenced block + the packed-copy explanation). The CHANGELOG was corrected this iterate ([Unreleased] Fixed entry for the refusal removal; [0.31.0] stale 'REFUSES inherited' clauses corrected); READMEs carried no stale refusal prose."
+    },
+    {
+      "criterion": "An inherited global-prefix override, with no --prefix or PROMOTE_PREFIX given, is refused — no global install or removal occurs.",
+      "status": "passed",
+      "evidence": "CRITERION-AS-ORIGINALLY-WRITTEN WAS A FILING DEFECT, corrected in TASK-069 this iterate to the non-poisonability-via-scrub invariant. `npm run` always injects npm_config_prefix=<true global>, indistinguishable at the env-var level from a hostile override, so refusing inherited prefixes refused the tool's own documented happy path while providing no protection the scrub does not. The determinate non-poisonability mechanism — scrub-resolves-true-global + repo-containment validation before any destructive op — is verified: npm_config_prefix=/tmp/POISON, scrubbed probe still resolves /opt/homebrew; a --prefix under the repo root is refused. The corrected criterion (non-poisonability via scrub + containment, NOT via refusing inherited prefixes) is met."
+    },
+    {
+      "criterion": "Every global install or removal the promote performs acts only on the validated target prefix.",
+      "status": "passed",
+      "evidence": "assertSafeTargetPrefix materializes (mkdir -p) and FULLY realpath-resolves the target, re-runs containment on the resolved path, and RETURNS that fully-resolved realpath (safePrefix); the only destructive op (npm i -g --force, line 320) and the verify (binPath) both consume safePrefix. The leaf-segment TOCTOU residual that VER-054 recorded `failed` was closed by iterate-4 (60613cc): no literal unresolved leaf survives validation. Adversarial probe confirmed npm i -g is the sole destructive global op and runs only after assertSafeTargetPrefix returns."
+    },
+    {
+      "criterion": "A target prefix whose realpath resolves to or under the repo root is refused — no global install or removal occurs.",
+      "status": "passed",
+      "evidence": "node scripts/promote-cli.mjs --prefix <repo>/tmp/inside-repo-target -> exit 1, 'resolves under this repo's root'; a /tmp symlink whose realpath is <repo>/packages -> exit 1, 'resolves under this repo's root'. No global op runs."
+    },
+    {
+      "criterion": "A failed global install leaves the prior operator runnable and its installed payload unchanged.",
+      "status": "passed",
+      "evidence": "Carried from iterate-2/VER-054 (probe vector g): no npm rm -g; a single npm i -g --force; a failed install leaves the prior operator intact. The iterate-5 change did not touch this path."
+    },
+    {
+      "criterion": "Invoking the promote with the argument token --prefix=<dir> installs the operator at <dir>/bin/pi-context.",
+      "status": "passed",
+      "evidence": "Carried from VER-054 (glued --prefix=<dir> parsed as override, installs at <dir>/bin/pi-context); the iterate-5 change did not touch argument parsing."
+    }
+  ]
+}

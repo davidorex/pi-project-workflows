@@ -1,0 +1,16 @@
+{
+  "title": "install --update clobbers user schema customizations; no customization-preserving merge",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "install --update overwrites each installed schema with the catalog copy — verbatim on a same-version resync, migrate-or-refuse on a version gap — so a user's edits to a shipped block schema are lost on update. Block item data is preserved (S1) and a user-added custom block kind is untouched (no catalog counterpart), but edits to a catalog-shipped schema have no merge path: update is replace.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resyncSchema overwrites the installed schema with the catalog version on install --update; same-version resync is a verbatim overwrite, version-gap is migrate-or-refuse — neither reconciles local schema edits"
+    }
+  ],
+  "impact": "A non-developer user who tailors a shipped schema must choose: take the update and lose the customization, or run plain install (never-clobber) and forgo the update. Tailoring a catalog schema is fragile against the next --update.",
+  "canonical_vocabulary": "three-way merge on update (customization-preserving upgrade)",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

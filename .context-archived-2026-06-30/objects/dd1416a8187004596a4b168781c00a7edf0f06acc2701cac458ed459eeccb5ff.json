@@ -1,0 +1,32 @@
+{
+  "title": "update re-baselines an auto-merged schema to the merged body, not the catalog — so a kept-local divergence is resynced to catalog (clobbered) on the NEXT update",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "description": "updateContext's post-merge baseline refresh (the brought_current set = resynced ∪ migrated ∪ merged, looped through refreshBaselineForSchema) stamps the baseline from the schema's ON-DISK body. For a 3-way merge that KEPT a local divergence (installed=merged=R, R≠catalog), this stamps base:=R. checkStatus then reads catalog-ahead (catalogDrift = catalog≠base true; installedDrift = installed=R≠base=R false), and the next update's catalog-ahead arm RESYNCS — copyFileSync of the catalog over the installed file — clobbering R. So a kept-local value survives exactly ONE update then is overwritten by catalog on the second. Empirically confirmed via live CLI: resolve-conflict (R=boolean, catalog=string) → update#1 merged, notes.type stays boolean → update#2 resynced, notes.type FLIPS to string → update#3 in-sync string. The class is GENERAL — every path landing a local divergence in result.merged is hit, INCLUDING the plain T3 disjoint auto-merge (the 'both the user's and the catalog's changes survive' guarantee is therefore also only-one-update-durable, not durable). Surfaced through the resolve-conflict (FGAP-069) multi-update demo; the defect is in the FEAT-006 3-way merge baseline (TASK-036), not in resolve-conflict (which stamps base:=catalog correctly). The convergence tests + tests (h)/(i) currently ASSERT the buggy post-merge catalog-ahead state, so the regression ships green.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1358",
+      "reference": "brought_current includes result.merged; the post-loop refreshBaselineForSchema (~:1371-1372) stamps from the on-disk merged body (~:1478), making a kept-local merge read catalog-ahead next run"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1005-1006",
+      "reference": "checkStatus catalog-ahead derivation (catalogDrift && !installedDrift); the catalog-ahead arm resyncs via resyncSchema copyFileSync (~:529), overwriting the local divergence"
+    },
+    {
+      "file": "packages/pi-context/src/schema-merge.ts",
+      "lines": "167-169",
+      "reference": "the convergence rule base==theirs->ours: stamping base:=catalog instead makes the next update's merge take R (locally-modified), preserving it durably"
+    },
+    {
+      "file": "packages/pi-context/src/install-subcommand.test.ts",
+      "lines": "952-987",
+      "reference": "test (h) asserts post-merge state catalog-ahead + baseline==merged-body hash — encodes the bug; test (i) ~:1046-1050 likewise; both stop after one update so the clobber is never exercised"
+    }
+  ],
+  "impact": "update's never-clobber guarantee fails on the SECOND update: both a reconciled conflict value and a plain disjoint local edit are silently overwritten by the catalog on the next update. The merge 'both survive' / reconciliation 'preserved' guarantees are only-one-update-durable.",
+  "canonical_vocabulary": "post-merge baseline := catalog (theirs), not the merged body",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

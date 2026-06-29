@@ -1,0 +1,15 @@
+{
+  "title": "No convention governs release cadence + changelog-accrual discipline",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "No convention governs release cadence and changelog-accrual discipline. DEC-0007 was decided in this domain without a governing convention.",
+  "evidence": [
+    {
+      "file": ".context/conventions.json",
+      "reference": "conventions block has no rule covering release/changelog process"
+    }
+  ],
+  "impact": "Release/changelog-process decisions are ungoverned.",
+  "proposed_resolution": "To be determined exactly from live codebase."
+}

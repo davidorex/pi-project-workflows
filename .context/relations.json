@@ -7146,5 +7146,18 @@
       "refname": "R-0024"
     },
     "relation_type": "session_touches_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a5f7fc190b220f06db71edaa9595b44f",
+      "refname": "FGAP-102"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
+      "refname": "FGAP-094"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

@@ -1,0 +1,40 @@
+{
+  "title": "Packaged catalog drifts below live config across all four propagated registries and ships a state_derivation reference to an unregistered relation_type, with no forcing-function for vocabulary parity or state_derivation referential integrity",
+  "status": "identified",
+  "priority": "P0",
+  "package": "pi-context",
+  "description": "The packaged catalog `packages/pi-context/samples/conception.json` is a strict subset of the live `.context/config.json` across every keyed registry that `mergeCatalogRegistries` propagates (context.ts:1127), not relation_types alone: 6 live-only relation_types (`task_gated_by_item`, `session_touches_item`, `decision_derived_from_item`, `decision_escalates_underdetermined`, `task_advances_story`, `feature_advances_story`), 4 live-only lenses (`gaps-by-priority`, `features-by-status`, `story-advancers`, `story-advancers-features`), 1 live-only invariant (`decision-shows-derivation`), 1 live-only block_kind (`session-notes`); zero catalog-only entries. Each live-only entry is consumed by shipped code (the edge write-gate, lens-view, the invariant engine, currentState), so a fresh install-ceremony substrate (init -> accept-all -> install) lacks consumed vocabulary. The catalog is also internally inconsistent: `state_derivation.blocked_by.relation_types` lists `task_gated_by_item` (conception.json:503) that the catalog's own `relation_types[]` never registers, and `mergeCatalogRegistries` inherits the catalog `state_derivation` whole on a fresh substrate (context.ts:1150-1152), so every catalog-built substrate ships a blocker derivation referencing an unregistered relation while `task_gated_by_item` edges are write-rejected (`assertEdgeValidForWrite` throws, context-sdk.ts:1628-1635) -- task gating is both unwritable and unresolvable. No forcing-function asserts catalog >= the vocabulary shipped derivations consume across the propagated registries, and none checks that `state_derivation` references resolve against registered relation_types/block_kinds; both drift and dangling-reference recur silently. The relation_types-only axis (the retired FGAP-094 framing) is one of at least five dimensions.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "lines": "500-504",
+      "reference": "state_derivation.blocked_by.relation_types lists task_gated_by_item, the file's only occurrence; it is never registered in relation_types[] -- the catalog is internally inconsistent and a fresh accept-all ships a blocked_by reference to an unregistered relation"
+    },
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "lines": "relation_types[]",
+      "reference": "5 live-only relation_types grep-verified absent (0 occurrences each): session_touches_item, decision_derived_from_item, decision_escalates_underdetermined, task_advances_story, feature_advances_story; task_gated_by_item present only as a state_derivation reference"
+    },
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "live-only lenses (gaps-by-priority, features-by-status, story-advancers, story-advancers-features), invariant (decision-shows-derivation), and block_kind (session-notes) grep-verified absent (0 occurrences each)"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "1121-1154",
+      "reference": "mergeCatalogRegistries propagates exactly relation_types/invariants/block_kinds/lenses (line 1127, additive append-only) and inherits the catalog state_derivation whole when the target lacks one (1150-1152); status_buckets/layers are not propagated"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1576-1582, 1628-1635",
+      "reference": "validateEdgeAgainstRegistry flags an unregistered relation_type and short-circuits; assertEdgeValidForWrite throws -- a task_gated_by_item edge is rejected at write time on a fresh catalog substrate. Consumption verified: write-gate (relation_types); validateProject 2298/2334 (invariants); currentState 784-794 reads sd.blocked_by.relation_types (state_derivation); context-lens-view (lenses)"
+    },
+    {
+      "file": "analysis/2026-07-01-fgap-094-catalog-config-parity-dimensions.md",
+      "reference": "investigation of record: per-registry empirical drift diff, consumption sites, propagation-vs-parity-scope map, and the FGAP-098 multi-registry back-port corroboration (commit 4376399)"
+    }
+  ],
+  "impact": "On every catalog-built substrate: consumed vocabulary is missing across four registries (relation_types, lenses, invariants, block_kinds), and the shipped state_derivation references a relation_type the substrate cannot register or write -- so gate-aware readiness has a dangling dependency and task-level gating is unwritable, while the integrity surface that should catch a state_derivation referencing unregistered vocabulary does not exist. Addressing only the relation_types axis (FGAP-094) leaves three drifting registries and the state_derivation referential defect unaddressed and invites duplicate sibling filings.",
+  "canonical_vocabulary": "registry parity + state_derivation referential integrity (catalog superset of every consumed config registry; state_derivation references resolve against registered relation_types/block_kinds)",
+  "proposed_resolution": "Requires further investigation and determination."
+}

@@ -7159,5 +7159,57 @@
       "refname": "FGAP-094"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c4b64449940f01d1dd0c9fa816fcfab2",
+      "refname": "TASK-075"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "610cba49c94d7d173325d478b9a6b8b1",
+      "refname": "PHASE-CATALOG-PRESTANDUP"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d0e958d9187954e73d874da1dd2d8e14",
+      "refname": "TASK-076"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "610cba49c94d7d173325d478b9a6b8b1",
+      "refname": "PHASE-CATALOG-PRESTANDUP"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c4b64449940f01d1dd0c9fa816fcfab2",
+      "refname": "TASK-075"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a5f7fc190b220f06db71edaa9595b44f",
+      "refname": "FGAP-102"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d0e958d9187954e73d874da1dd2d8e14",
+      "refname": "TASK-076"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "de2d3cfdaf6ec50e07575e812c8ce37b",
+      "refname": "FGAP-101"
+    },
+    "relation_type": "task_addresses_gap"
   }
 ]

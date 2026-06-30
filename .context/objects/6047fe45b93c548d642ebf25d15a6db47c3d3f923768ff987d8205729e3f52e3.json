@@ -1,0 +1,6 @@
+{
+  "name": "Pre-standup catalog fixes",
+  "intent": "Make the packaged catalog correct so a fresh new-substrate standup is born clean: back-port the consumed live-only vocabulary into samples/conception.json, resolve the catalog's state_derivation dangling reference, and fix validateRelations' edge-materialization-lens false-invalid.",
+  "goal": "A fresh init -> accept-all -> install substrate validates clean (context-validate + context-validate-relations) and accepts task_gated_by_item / task_advances_story / session_touches_item edges; FGAP-101 closed; FGAP-102 NOW leg addressed (forward forcing-function remains open).",
+  "status": "in-progress"
+}

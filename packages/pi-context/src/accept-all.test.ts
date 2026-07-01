@@ -75,7 +75,7 @@ describe("adoptConception (accept-all)", () => {
 			".context",
 			"root must be overridden to the actual substrate dir, not the conception's .project",
 		);
-		assert.equal(cfg.block_kinds.length, 17);
+		assert.equal(cfg.block_kinds.length, 18);
 	});
 
 	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {

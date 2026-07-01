@@ -1,0 +1,44 @@
+{
+  "title": "validateRelations conflates content relations with lens-axis relations: a hand-curated edge-materialization lens (derived_from_field null, bins []) over a content relation_type yields spurious edge_parent_not_in_bins on every real advancer edge, forcing context-validate-relations to invalid",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "validateRelations (context.ts:1712-1906) maps EVERY config.lenses[] entry by its relation_type with no filter (1720-1724) and, for any edge whose relation_type matches a lens, unconditionally applies the binning contract: edge.parent must be a declared lens bin (1771-1783). It has no representation for an edge-materialization lens — a hand-curated lens (derived_from_field: null) declared only so context-edges-for-lens can materialize its edges, whose parents are an open item-id set, not a fixed bin-label set. The two story-advancer lenses are exactly this: story-advancers (relation_type task_advances_story) and story-advancers-features (relation_type feature_advances_story), both kind:target, derived_from_field:null, bins:[]. Their relation_types also carry the real content advancer edges (TASK->STORY, FEAT->STORY). For each such content edge the structured item parent (e.g. TASK-046) is not a bin label, [].includes(...) is false, and an edge_parent_not_in_bins error fires (an errorCodes member), so context-validate-relations returns invalid on structurally-correct edges (29 live: 13 task_advances_story + 14 feature_advances_story). The lens author foresaw this — commit f2b8f91 states 'lens-view binning inapplicable (bins are edge-parent labels, an open task-id set)' — but the validator has no way to honor it. General class: a single relation_type overloaded as both a content relation and a lens projection axis, where validateRelations only models the projection axis.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "1720-1724",
+      "reference": "lensesByRelType maps EVERY config.lenses[] by relation_type with no kind/derived_from_field/bins filter — an edge-materialization lens is registered identically to a binning lens"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "1771-1783",
+      "reference": "the lens branch unconditionally requires edge.parent in lens.bins; a structured item parent falls back to its refname (1774-1776) and [].includes(refname) is false -> edge_parent_not_in_bins"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "1894-1904",
+      "reference": "edge_parent_not_in_bins is in errorCodes -> hasErrors -> status 'invalid' (not a warning)"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "lenses story-advancers (relation_type task_advances_story) and story-advancers-features (relation_type feature_advances_story): both kind:target, target:story, derived_from_field:null, bins:[] — read via pi-context read-config --registry lenses"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_types task_advances_story / feature_advances_story: category data_flow, source_kinds tasks/features, target_kinds story — content relations, not lens-axis-only"
+    },
+    {
+      "file": "packages/pi-context/src/lens-view.ts",
+      "lines": "121-124",
+      "reference": "derived_from_field:null is the hand-curated-edge lens marker ('hand-curated edges in relations.json'), confirming these lenses are edge-materialization, not status/priority binning"
+    },
+    {
+      "file": ".context/config.json (git f2b8f91)",
+      "reference": "lens-declaring commit message: 'context-edges-for-lens --lensId story-advancers materializes every task->story criteria binding; lens-view binning inapplicable (bins are edge-parent labels, an open task-id set)' — the conflict acknowledged at authoring"
+    }
+  ],
+  "impact": "context-validate-relations returns invalid on a substrate whose edges are all structurally correct, so the integrity gate is unusable as a green/red signal: every real advancer edge added (each task/feature->story) increases the false count (29 live, was 1 on 2026-06-14). For ~6 days the invalid verdict has been routed around as a 'pre-existing backlog' in every session that ran the gate, masking any genuine relation defect that the same op would surface. Any consumer trusting context-validate-relations status (closure gate, CI, the canonical pipeline's integrity step) gets a false negative on the substrate's health. The pattern recurs for every hand-curated edge-materialization lens declared over a content relation_type.",
+  "canonical_vocabulary": "content-relation vs lens-axis-relation conflation in validateRelations (edge-materialization lens)",
+  "proposed_resolution": "RESOLVED at TASK-076 / commit e1cf07f via mechanism (b): the lens parent-in-bins check now guards on parentBin !== null (endpointBin non-null), so a structured item parent never enters the bins check and an edge-materialization lens no longer false-invalidates content edges; a genuine lens_bin parent not in bins still errors. The 29 live advancer edges validate clean; a new edge-materialization-lens clean-validation test guards it. The explicit lens-flag/kind marker sketched in the original mechanism (b) proved unnecessary -- the endpointBin-null guard suffices. --- Original plan: Make validateRelations distinguish a content relation from a lens projection axis so an edge-materialization lens does not impose the parent-in-bins contract on content edges. Two candidate mechanisms (the closing task decides): (a) skip the parent-in-bins check for a lens with derived_from_field:null AND bins:[]; or (b) preferred for precision: only treat an edge as a lens-bin edge when its parent is structurally a lens_bin endpoint (endpointBin non-null). Relate to FGAP-093, FGAP-073, FGAP-082."
+}

@@ -1864,6 +1864,24 @@
       "id": "VER-057",
       "oid": "2fe2d3a91633a1cd226d8831f1988173",
       "content_hash": "78c4638c21bbbf603d5f72902e30215f2328184722496f3b74a71886c087c02f"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-01",
+      "evidence": "Runtime demo: fresh init -> accept-all -> install throwaway substrate (/tmp/standup-probe) built from the back-ported catalog. context-validate showed only the pre-existing layer-plans nested-array warnings (no dangling-reference error); context-validate-relations clean; context-bootstrap-state ready with session-notes.json materialized (18 schemas + 18 blocks installed). task_gated_by_item, task_advances_story, and session_touches_item edges each wrote successfully (all three were write-rejected before the back-port). npm run build + check clean; full test suite across all workspaces 0 failures, with catalog-inventory count assertions updated to 18 block_kinds / 43 relation_types. Fresh-context adversarial probe refuted none of: parity completeness, catalog internal consistency, session-notes surface consistency.",
+      "id": "VER-058",
+      "oid": "af80503566d5e22f40fd07774a9f0efa",
+      "content_hash": "a396df393f891b49e353d8bfdea4e4199976700ff747e8c0f574603c1a82fe57"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-01",
+      "evidence": "validateRelations FGAP-101 fix (Mechanism B: the lens parent-in-bins check now guards on parentBin !== null so only a lens_bin parent is bin-validated). Full test suite 0 failures, including the rewritten edge_parent_not_in_bins test (now a lens_bin parent, so a genuine violation still errors) and a new edge-materialization-lens clean-validation test (item-parent task_advances_story edges under a derived_from_field:null/bins:[] lens validate clean). Live .context context-validate-relations now returns status clean with 0 issues — the 29 task_advances_story/feature_advances_story false-invalids are gone (the integrity gate FGAP-101 documented as routed-around ~6 days is green on real data). Fresh-context adversarial probe confirmed no over-suppression: a genuine lens_bin parent not among the lens bins still raises edge_parent_not_in_bins.",
+      "id": "VER-059",
+      "oid": "2d8269daa53d1c4721b1fdaffd109d26",
+      "content_hash": "2a347452d24aea7e1039c28631148c3d822998d9d3005b7bdc952bc517f747ec"
     }
   ]
 }

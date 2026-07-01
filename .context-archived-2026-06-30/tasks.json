@@ -1476,6 +1476,47 @@
       "oid": "ce4303169c9cd7665f108909671f0f89",
       "content_hash": "9cc2b0b9a8f0dc2440554026c26eb8350996fd0aa6e77ef38b6a8d489bfbfebd",
       "content_parent": "5bb2db3ca15d18573c6f64ec3c3c57b95db7b8dd77edc5bff17ed227035f5a17"
+    },
+    {
+      "description": "Back-port the consumed live-only config vocabulary from live .context into the packaged catalog packages/pi-context/samples/conception.json, each entry copied verbatim from live config (pi-context read-config --registry <name>): relation_types[] (6) task_gated_by_item, session_touches_item, decision_derived_from_item, decision_escalates_underdetermined, task_advances_story, feature_advances_story; lenses[] (4) gaps-by-priority, features-by-status, story-advancers, story-advancers-features; invariants[] (1) decision-shows-derivation; block_kinds[] (1) session-notes. Plus the session-notes full surface: installed_schemas[] += session-notes, installed_blocks[] += session-notes, new file packages/pi-context/samples/schemas/session-notes.schema.json (copy verbatim from .context/schemas/session-notes.schema.json), new starter packages/pi-context/samples/blocks/session-notes.json = {\"schema_version\":\"1.0.0\",\"sessions\":[]}. Registering task_gated_by_item resolves the catalog's only state_derivation dangling reference (no state_derivation edit needed). Addresses FGAP-102's NOW leg only (catalog repair); the forward forcing-function remains open on FGAP-102.",
+      "acceptance_criteria": [
+        "All 12 vocabulary entries present in conception.json, byte-equal to their live-config bodies; each was previously absent (grep 0).",
+        "session-notes schema file + empty starter present under samples/; installed_schemas and installed_blocks both include session-notes.",
+        "Fresh init -> accept-all -> install throwaway substrate: context-validate + context-validate-relations clean; context-bootstrap-state ready with session-notes.json materialized; task_gated_by_item, task_advances_story, and session_touches_item edges each write successfully.",
+        "npm run build, check, test: 0 failures."
+      ],
+      "files": [
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/samples/schemas/session-notes.schema.json",
+        "packages/pi-context/samples/blocks/session-notes.json"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-01",
+      "status": "completed",
+      "id": "TASK-075",
+      "oid": "c4b64449940f01d1dd0c9fa816fcfab2",
+      "content_hash": "3e6bf3875b874e8fea1d81b9c1c90446d6d402a390db1db354afc107d1d5e2cb",
+      "content_parent": "57159efde55d96cc86a9a2e74d8e85fb7ebc2f44a29c9db0a48daba6f8ec9260"
+    },
+    {
+      "description": "Fix FGAP-101 in packages/pi-context/src/context.ts validateRelations (Mechanism B). At the lens parent-in-bins check (~line 1776) change `const parentBin = endpointBin(edge.parent) ?? parentKey; if (!lens.bins.includes(parentBin)) {` to `const parentBin = endpointBin(edge.parent); if (parentBin !== null && !lens.bins.includes(parentBin)) {` so a structured item parent (endpointBin null) skips the bins check and only a real lens_bin parent is bin-validated; child-block and endpoint-existence checks unchanged. Tests in packages/pi-context/src/context.test.ts: rewrite the existing edge_parent_not_in_bins test (~607-612) to use a structured {kind:'lens_bin', bin:'typo-bin'} parent so it still exercises the genuine violation after the fix; add a test that an edge-materialization lens (derived_from_field:null, bins:[]) with item-parent task_advances_story edges validates clean with zero edge_parent_not_in_bins. Addresses FGAP-101.",
+      "acceptance_criteria": [
+        "validateRelations no longer raises edge_parent_not_in_bins for an item-parent edge under an edge-materialization lens; it still raises it for a genuine lens_bin parent not declared in the lens bins.",
+        "The existing edge_parent_not_in_bins test is rewritten to a lens_bin parent and passes; a new edge-materialization-lens clean-validation test is added and passes.",
+        "On the live .context, context-validate-relations no longer reports the 29 task_advances_story/feature_advances_story edges.",
+        "npm run build, check, test: 0 failures."
+      ],
+      "files": [
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/src/context.test.ts"
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-01",
+      "status": "completed",
+      "id": "TASK-076",
+      "oid": "d0e958d9187954e73d874da1dd2d8e14",
+      "content_hash": "70ae49781ac9b67d1c81046e0b11f2ac009bb1434d3e694a64c6a2ec83c46b29",
+      "content_parent": "6c4b354f96b6ac10b4c86f1c296729a260af2431772366e955b9d5a8c0cddbbf"
     }
   ]
 }

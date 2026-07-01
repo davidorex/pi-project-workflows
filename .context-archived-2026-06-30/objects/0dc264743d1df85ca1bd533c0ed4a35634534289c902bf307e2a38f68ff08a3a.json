@@ -1,0 +1,32 @@
+{
+  "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
+  "status": "superseded_by",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The packaged catalog `packages/pi-context/samples/conception.json` `relation_types[]` (34 entries) is a strict subset of the live `.context/config.json` `relation_types[]` (40) — every catalog relation_type is in live config, zero catalog-only. 6 relation_types are live-only: `task_gated_by_item`, `session_touches_item`, `task_advances_story`, `feature_advances_story`, `decision_derived_from_item`, `decision_escalates_underdetermined` — each hand-added to live config during substrate work (for an edge / lens / invariant) and never back-ported to the catalog. No forcing-function (build gate / parity check) ensures the catalog carries the relation_types the shipped library/derivations consume, and none records which live-only vocabulary is intentionally substrate-local vs catalog-worthy, so drift is silent. `task_gated_by_item` is the triggering instance: a fresh install-ceremony substrate (context-init → accept-all → install) lacks it, so FGAP-061's gate-aware `currentState` (which consumes it) has nothing to derive AND a `task_gated_by_item` edge is rejected at write — `validateEdgeAgainstRegistry` (context-sdk.ts:1496-1502) is registration-first and short-circuits, `assertEdgeValidForWrite` (context-sdk.ts:1548) throws — so task gating is unwritable on a fresh substrate while feature/story/decision gating ships. The other 5 are latent (substrate-organizational), the same drift.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "lines": "relation_types[]",
+      "reference": "34 relation_types; task_gated_by_item absent (git log -S finds zero commits adding it to this file); the three sibling *_gated_by_item present since authoring commit b8a9d7e"
+    },
+    {
+      "file": ".context/config.json",
+      "lines": "relation_types[]",
+      "reference": "40 relation_types; strict superset of the catalog by 6 entries; task_gated_by_item added by commit 669890c (2026-06-07) and never back-ported; the FGAP-090 back-port a582939 was scoped to its three relations only"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1496-1502, 1548, 1569",
+      "reference": "validateEdgeAgainstRegistry registration-first short-circuit + assertEdgeValidForWrite throw + appendRelationByRef gate — an unregistered task_gated_by_item edge is rejected at write time on a fresh substrate (unwritable, not merely inert)"
+    },
+    {
+      "file": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md",
+      "lines": "all",
+      "reference": "full investigation: root-cause git evidence, shape, reproducible conditions, prior-art coverage table, and the systematic 6-member live-only relation_type diff with each adding-commit"
+    }
+  ],
+  "impact": "On every catalog-built substrate the gated_by pattern is incomplete at the task altitude (the most common gating level): a task gate is unwritable (hard write rejection) and gate-aware readiness is inert, while feature/story/decision gates ship. The 5 non-triggering live-only relations are latent debt that surfaces the same way as each is consumed. Filing only the task_gated_by_item symptom leaves the class unaddressed and invites duplicate sibling filings.",
+  "canonical_vocabulary": "registry parity / drift detection (catalog ⊇ consumed vocabulary)",
+  "proposed_resolution": "Superseded by FGAP-102 (multi-registry catalog<->config parity + state_derivation referential integrity; the relation_types-only framing here is one of >=5 dimensions). Original narrow proposal: NOW (symptom + class backfill): decide which of the 6 live-only relation_types are catalog-worthy vs intentionally substrate-local, and back-port the catalog-worthy set into samples/conception.json relation_types[] (at minimum task_gated_by_item, the relation a shipped derivation consumes). FORWARD (the class fix): add a build-time parity forcing-function asserting the catalog superset of the relation_types the shipped library/derivations consume -- mirroring FGAP-010's scripts/parity-check.ts structural answer for the code-surface trio, here for the catalog<->config vocabulary surface -- with an explicit record distinguishing intentionally-substrate-local from catalog-worthy vocabulary, so drift cannot recur silently."
+}

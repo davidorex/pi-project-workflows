@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-01",
+  "evidence": "validateRelations FGAP-101 fix (Mechanism B: the lens parent-in-bins check now guards on parentBin !== null so only a lens_bin parent is bin-validated). Full test suite 0 failures, including the rewritten edge_parent_not_in_bins test (now a lens_bin parent, so a genuine violation still errors) and a new edge-materialization-lens clean-validation test (item-parent task_advances_story edges under a derived_from_field:null/bins:[] lens validate clean). Live .context context-validate-relations now returns status clean with 0 issues — the 29 task_advances_story/feature_advances_story false-invalids are gone (the integrity gate FGAP-101 documented as routed-around ~6 days is green on real data). Fresh-context adversarial probe confirmed no over-suppression: a genuine lens_bin parent not among the lens bins still raises edge_parent_not_in_bins."
+}

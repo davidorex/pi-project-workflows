@@ -1,0 +1,14 @@
+{
+  "description": "Fix FGAP-101 in packages/pi-context/src/context.ts validateRelations (Mechanism B). At the lens parent-in-bins check (~line 1776) change `const parentBin = endpointBin(edge.parent) ?? parentKey; if (!lens.bins.includes(parentBin)) {` to `const parentBin = endpointBin(edge.parent); if (parentBin !== null && !lens.bins.includes(parentBin)) {` so a structured item parent (endpointBin null) skips the bins check and only a real lens_bin parent is bin-validated; child-block and endpoint-existence checks unchanged. Tests in packages/pi-context/src/context.test.ts: rewrite the existing edge_parent_not_in_bins test (~607-612) to use a structured {kind:'lens_bin', bin:'typo-bin'} parent so it still exercises the genuine violation after the fix; add a test that an edge-materialization lens (derived_from_field:null, bins:[]) with item-parent task_advances_story edges validates clean with zero edge_parent_not_in_bins. Addresses FGAP-101.",
+  "acceptance_criteria": [
+    "validateRelations no longer raises edge_parent_not_in_bins for an item-parent edge under an edge-materialization lens; it still raises it for a genuine lens_bin parent not declared in the lens bins.",
+    "The existing edge_parent_not_in_bins test is rewritten to a lens_bin parent and passes; a new edge-materialization-lens clean-validation test is added and passes.",
+    "On the live .context, context-validate-relations no longer reports the 29 task_advances_story/feature_advances_story edges.",
+    "npm run build, check, test: 0 failures."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/context.test.ts"
+  ],
+  "status": "completed"
+}

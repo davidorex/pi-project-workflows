@@ -1,0 +1,15 @@
+{
+  "description": "Back-port the consumed live-only config vocabulary from live .context into the packaged catalog packages/pi-context/samples/conception.json, each entry copied verbatim from live config (pi-context read-config --registry <name>): relation_types[] (6) task_gated_by_item, session_touches_item, decision_derived_from_item, decision_escalates_underdetermined, task_advances_story, feature_advances_story; lenses[] (4) gaps-by-priority, features-by-status, story-advancers, story-advancers-features; invariants[] (1) decision-shows-derivation; block_kinds[] (1) session-notes. Plus the session-notes full surface: installed_schemas[] += session-notes, installed_blocks[] += session-notes, new file packages/pi-context/samples/schemas/session-notes.schema.json (copy verbatim from .context/schemas/session-notes.schema.json), new starter packages/pi-context/samples/blocks/session-notes.json = {\"schema_version\":\"1.0.0\",\"sessions\":[]}. Registering task_gated_by_item resolves the catalog's only state_derivation dangling reference (no state_derivation edit needed). Addresses FGAP-102's NOW leg only (catalog repair); the forward forcing-function remains open on FGAP-102.",
+  "acceptance_criteria": [
+    "All 12 vocabulary entries present in conception.json, byte-equal to their live-config bodies; each was previously absent (grep 0).",
+    "session-notes schema file + empty starter present under samples/; installed_schemas and installed_blocks both include session-notes.",
+    "Fresh init -> accept-all -> install throwaway substrate: context-validate + context-validate-relations clean; context-bootstrap-state ready with session-notes.json materialized; task_gated_by_item, task_advances_story, and session_touches_item edges each write successfully.",
+    "npm run build, check, test: 0 failures."
+  ],
+  "files": [
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/samples/schemas/session-notes.schema.json",
+    "packages/pi-context/samples/blocks/session-notes.json"
+  ],
+  "status": "completed"
+}

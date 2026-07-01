@@ -1773,8 +1773,8 @@ export function validateRelations(
 			// a legacy string parent is bin-or-item ambiguous, resolved by includes.
 			// A structured ITEM parent (endpointBin null) keys on its refname/oid and
 			// fails the includes test → edge_parent_not_in_bins (never an idIndex.get).
-			const parentBin = endpointBin(edge.parent) ?? parentKey;
-			if (!lens.bins.includes(parentBin)) {
+			const parentBin = endpointBin(edge.parent);
+			if (parentBin !== null && !lens.bins.includes(parentBin)) {
 				issues.push({
 					code: "edge_parent_not_in_bins",
 					message: `lens-edge parent '${parentBin}' is not in lens '${lens.id}' bins`,

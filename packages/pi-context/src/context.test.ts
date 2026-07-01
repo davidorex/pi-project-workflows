@@ -606,9 +606,66 @@ describe("validateRelations", () => {
 
 	it("edge_parent_not_in_bins", () => {
 		const cfg = configWithLensAndHierarchy();
-		const edges: Edge[] = [{ parent: "typo-bin", child: "issue-1", relation_type: "context-mgmt-concern" }];
+		const edges: Edge[] = [
+			{ parent: { kind: "lens_bin", bin: "typo-bin" }, child: "issue-1", relation_type: "context-mgmt-concern" },
+		];
 		const r = validateRelations(cfg, edges, itemsByBlock);
 		assert.ok(find(r.issues, "edge_parent_not_in_bins"));
+	});
+
+	it("edge-materialization lens with item-parent content edges does not false-invalidate (FGAP-101)", () => {
+		const cfg: ConfigBlock = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [
+				{
+					canonical_id: "tasks",
+					display_name: "Tasks",
+					prefix: "TASK-",
+					schema_path: "schemas/tasks.schema.json",
+					array_key: "tasks",
+					data_path: "tasks.json",
+				},
+				{
+					canonical_id: "story",
+					display_name: "Stories",
+					prefix: "STORY-",
+					schema_path: "schemas/story.schema.json",
+					array_key: "stories",
+					data_path: "story.json",
+				},
+			],
+			lenses: [
+				{
+					id: "story-advancers",
+					kind: "target",
+					target: "story",
+					relation_type: "task_advances_story",
+					derived_from_field: null,
+					bins: [],
+				},
+			],
+			relation_types: [
+				{
+					canonical_id: "task_advances_story",
+					display_name: "advances story",
+					category: "data_flow",
+					source_kinds: ["tasks"],
+					target_kinds: ["story"],
+				},
+			],
+		};
+		const items: Record<string, ItemRecord[]> = {
+			tasks: [{ id: "TASK-046" }, { id: "TASK-047" }],
+			story: [{ id: "STORY-021" }],
+		};
+		const edges: Edge[] = [
+			{ parent: "TASK-046", child: "STORY-021", relation_type: "task_advances_story" },
+			{ parent: "TASK-047", child: "STORY-021", relation_type: "task_advances_story" },
+		];
+		const r = validateRelations(cfg, edges, items);
+		assert.strictEqual(r.status, "clean");
+		assert.strictEqual(find(r.issues, "edge_parent_not_in_bins"), undefined);
 	});
 
 	it("edge_unresolved_child (lens edge)", () => {

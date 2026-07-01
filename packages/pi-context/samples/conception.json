@@ -136,6 +136,14 @@
       "schema_path": "schemas/work-orders.schema.json",
       "array_key": "work_orders",
       "data_path": "work-orders.json"
+    },
+    {
+      "canonical_id": "session-notes",
+      "display_name": "Session Notes",
+      "prefix": "SESSION-",
+      "schema_path": "schemas/session-notes.schema.json",
+      "array_key": "sessions",
+      "data_path": "session-notes.json"
     }
   ],
   "relation_types": [
@@ -397,6 +405,48 @@
       "category": "data_flow",
       "source_kinds": ["framework-gaps"],
       "target_kinds": ["framework-gaps"]
+    },
+    {
+      "canonical_id": "task_gated_by_item",
+      "display_name": "gated by",
+      "category": "ordering",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["*"]
+    },
+    {
+      "canonical_id": "session_touches_item",
+      "display_name": "touches item",
+      "category": "membership",
+      "source_kinds": ["session-notes"],
+      "target_kinds": ["*"]
+    },
+    {
+      "canonical_id": "decision_derived_from_item",
+      "display_name": "derived from",
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["*"]
+    },
+    {
+      "canonical_id": "decision_escalates_underdetermined",
+      "display_name": "escalates underdetermined choice",
+      "category": "data_flow",
+      "source_kinds": ["decisions"],
+      "target_kinds": ["framework-gaps"]
+    },
+    {
+      "canonical_id": "task_advances_story",
+      "display_name": "advances story",
+      "category": "data_flow",
+      "source_kinds": ["tasks"],
+      "target_kinds": ["story"]
+    },
+    {
+      "canonical_id": "feature_advances_story",
+      "display_name": "advances story",
+      "category": "data_flow",
+      "source_kinds": ["features"],
+      "target_kinds": ["story"]
     }
   ],
   "lenses": [
@@ -448,6 +498,49 @@
         "medium",
         "low"
       ]
+    },
+    {
+      "id": "gaps-by-priority",
+      "kind": "target",
+      "target": "framework-gaps",
+      "derived_from_field": "priority",
+      "bins": [
+        "P0",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    {
+      "id": "features-by-status",
+      "kind": "target",
+      "target": "features",
+      "derived_from_field": "status",
+      "bins": [
+        "proposed",
+        "approved",
+        "in-progress",
+        "in-review",
+        "complete",
+        "blocked",
+        "cancelled"
+      ]
+    },
+    {
+      "id": "story-advancers",
+      "kind": "target",
+      "target": "story",
+      "relation_type": "task_advances_story",
+      "derived_from_field": null,
+      "bins": []
+    },
+    {
+      "id": "story-advancers-features",
+      "kind": "target",
+      "target": "story",
+      "relation_type": "feature_advances_story",
+      "derived_from_field": null,
+      "bins": []
     }
   ],
   "layers": [],
@@ -530,7 +623,8 @@
     "phase",
     "story",
     "milestone",
-    "work-orders"
+    "work-orders",
+    "session-notes"
   ],
   "installed_blocks": [
     "decisions",
@@ -549,7 +643,8 @@
     "phase",
     "story",
     "milestone",
-    "work-orders"
+    "work-orders",
+    "session-notes"
   ],
   "invariants": [
     {
@@ -691,6 +786,18 @@
       "require_target_bucket": "complete",
       "severity": "error",
       "message": "Reached milestone '{id}' has a positioned phase that is not complete — milestone.reached is a pure phase-rollup; a reached milestone requires the parent phase of every phase_positioned_in_milestone edge to be complete"
+    },
+    {
+      "id": "decision-shows-derivation",
+      "class": "requires-edge",
+      "block": "decisions",
+      "relation_types": [
+        "decision_derived_from_item",
+        "decision_escalates_underdetermined"
+      ],
+      "direction": "as_parent",
+      "severity": "warning",
+      "message": "Decision '{id}' shows no derivation basis — add a decision_derived_from_item edge to the fact its resolution derives from, or a decision_escalates_underdetermined edge to the framework-gap capturing a genuinely-underdetermined escalated choice (derive-decisions-from-facts)"
     }
   ],
   "tool_operations": [],

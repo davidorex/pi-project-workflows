@@ -1,0 +1,6 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-01",
+  "evidence": "Runtime demo: fresh init -> accept-all -> install throwaway substrate (/tmp/standup-probe) built from the back-ported catalog. context-validate showed only the pre-existing layer-plans nested-array warnings (no dangling-reference error); context-validate-relations clean; context-bootstrap-state ready with session-notes.json materialized (18 schemas + 18 blocks installed). task_gated_by_item, task_advances_story, and session_touches_item edges each wrote successfully (all three were write-rejected before the back-port). npm run build + check clean; full test suite across all workspaces 0 failures, with catalog-inventory count assertions updated to 18 block_kinds / 43 relation_types. Fresh-context adversarial probe refuted none of: parity completeness, catalog internal consistency, session-notes surface consistency."
+}

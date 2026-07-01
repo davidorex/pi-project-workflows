@@ -1492,11 +1492,11 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-01",
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-075",
       "oid": "c4b64449940f01d1dd0c9fa816fcfab2",
-      "content_hash": "57159efde55d96cc86a9a2e74d8e85fb7ebc2f44a29c9db0a48daba6f8ec9260",
-      "content_parent": "828b3c5cac634d75565a5a9f10ee63f011b1c5e7cd0f698df6a704f1acb0f3c7"
+      "content_hash": "3e6bf3875b874e8fea1d81b9c1c90446d6d402a390db1db354afc107d1d5e2cb",
+      "content_parent": "57159efde55d96cc86a9a2e74d8e85fb7ebc2f44a29c9db0a48daba6f8ec9260"
     },
     {
       "description": "Fix FGAP-101 in packages/pi-context/src/context.ts validateRelations (Mechanism B). At the lens parent-in-bins check (~line 1776) change `const parentBin = endpointBin(edge.parent) ?? parentKey; if (!lens.bins.includes(parentBin)) {` to `const parentBin = endpointBin(edge.parent); if (parentBin !== null && !lens.bins.includes(parentBin)) {` so a structured item parent (endpointBin null) skips the bins check and only a real lens_bin parent is bin-validated; child-block and endpoint-existence checks unchanged. Tests in packages/pi-context/src/context.test.ts: rewrite the existing edge_parent_not_in_bins test (~607-612) to use a structured {kind:'lens_bin', bin:'typo-bin'} parent so it still exercises the genuine violation after the fix; add a test that an edge-materialization lens (derived_from_field:null, bins:[]) with item-parent task_advances_story edges validates clean with zero edge_parent_not_in_bins. Addresses FGAP-101.",
@@ -1512,11 +1512,11 @@
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-01",
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-076",
       "oid": "d0e958d9187954e73d874da1dd2d8e14",
-      "content_hash": "6c4b354f96b6ac10b4c86f1c296729a260af2431772366e955b9d5a8c0cddbbf",
-      "content_parent": "ed986b351d2d8f72229946a60d2574fe706d7e404c1fb0f3807338f5844df2a2"
+      "content_hash": "70ae49781ac9b67d1c81046e0b11f2ac009bb1434d3e694a64c6a2ec83c46b29",
+      "content_parent": "6c4b354f96b6ac10b4c86f1c296729a260af2431772366e955b9d5a8c0cddbbf"
     }
   ]
 }

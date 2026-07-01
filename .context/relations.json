@@ -7276,5 +7276,70 @@
       "refname": "feature-decomposition"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9a63822d8ac46e00f1527c96c790f66f",
+      "refname": "FGAP-095"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ca82f3434231e4586e837a4d4feb5004",
+      "refname": "FGAP-096"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c515c2449f95a83c0fd2bbf477e60830",
+      "refname": "FGAP-097"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "202f544f1f6eacb06c13b407e5bb4a20",
+      "refname": "FGAP-099"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "6c909103e3127305ce4e68a7cbbfd727",
+      "refname": "FGAP-065"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "relation_type": "gap_addressed_by_feature"
   }
 ]

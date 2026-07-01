@@ -7341,5 +7341,18 @@
       "refname": "FEAT-010"
     },
     "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b9c214a91ec020a4f2461fc9bd23091e",
+      "refname": "issue-005"
+    },
+    "relation_type": "feature_resolves_issue"
   }
 ]

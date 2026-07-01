@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PreToolUse(Bash) guard: enforce pi-context-cli direct-drive discipline.
-# Blocks piping the reflecting pi-context CLI output through post-processing glue
-# (grep/jq/sed/awk/head/tail/cut/tr/wc/node), silencing its stderr (2>/dev/null),
+# Blocks piping the reflecting pi-context CLI output through ANY post-processor
+# (its own stdout piped anywhere — a chokepoint, not a tool denylist), silencing its stderr (2>/dev/null),
 # wrapping it in a shell loop (for/while … do … done) that batches the CLI
 # instead of one clean op per question, REDIRECTING ITS STDOUT TO A FILE
 # (pi-context <op> … > /tmp/x) to dump-then-read elsewhere, or WRAPPING IT IN echo
@@ -20,9 +20,10 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
 
 # Is this a reflecting pi-context CLI invocation? (bin.js path or the `pi-context <op>` form)
 if printf '%s' "$cmd" | grep -Eq 'pi-context-cli/dist/bin\.js|(^|[;&|]| )pi-context '; then
-  # ...piped into post-processing glue, or stderr silenced?
-  if printf '%s' "$cmd" | grep -Eq '\|[[:space:]]*(grep|jq|sed|awk|head|tail|cut|tr|wc|node)([[:space:]]|$)|2>[[:space:]]*/dev/null'; then
-    echo "Blocked: do not pipe pi-context CLI output through grep/jq/sed/awk/head/tail/cut/tr/wc/node, nor silence its stderr with 2>/dev/null. Drive one clean CLI op per question and read the whole JSON node (read-block-item / read-block-page / read-schema). This is the pi-context-cli direct-drive discipline; friction is a gap to file, not to route around." >&2
+  # ...piped into ANY post-processor (the pi-context invocation's own stdout piped
+  # anywhere — chokepoint, not a denylist of specific tools), or stderr silenced?
+  if printf '%s' "$cmd" | grep -Eq '(pi-context |bin\.js )[^;&|]*\||2>[[:space:]]*/dev/null'; then
+    echo "Blocked: do not pipe pi-context CLI output through ANYTHING (no | after the op — not grep/jq/awk/node/python3/perl/xargs/tee or any other), nor silence its stderr with 2>/dev/null. pi-context output must land inline and be read directly; narrow a large result with the op itself (filter-block-items / read-block-page --limit / read-schema --path / read-block-item), never post-process it in the shell. This is the pi-context-cli direct-drive discipline; friction is a gap to file, not to route around." >&2
     exit 2
   fi
   # ...or wrapped in a shell loop (for/while … do … done) batching the CLI?

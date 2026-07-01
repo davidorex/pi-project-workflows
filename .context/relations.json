@@ -7263,5 +7263,18 @@
       "refname": "docs-surface-sync"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f60e2e7c4b018b21c766bd482fb780b4",
+      "refname": "FEAT-010"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "947ecbee9ff3d978ddbec9839f90415c",
+      "refname": "feature-decomposition"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

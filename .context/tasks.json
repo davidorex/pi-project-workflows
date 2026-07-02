@@ -1428,13 +1428,13 @@
         "packages/pi-context/schemas/config.schema.json",
         "packages/pi-context/CHANGELOG.md"
       ],
-      "notes": "Build-time-gate family with FGAP-094 (TASK-067).",
+      "notes": "Build-time-gate family with FGAP-094 (TASK-067). Open parameter the plan step MUST fix explicitly before implementation: the diff BASELINE — what the additive gate compares config.schema.json against (prior git revision, a recorded baseline hash, or the published catalog copy); neither this task nor FGAP-097 specifies it, and criterion 1 is not executable until it is decided.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-072",
       "oid": "ad21875be7c7e6360f2508db948c8b06",
-      "content_hash": "59b79ac4dfb0dafeceaeb65f0bc47d7e107ef2f9fe19d83609779672cf3350c2",
-      "content_parent": "0d2a9579dadbe7b68acaebee49245ee3ec6587b43cd00f1d8814eeb87e5e26bb"
+      "content_hash": "8657449c9563c376e0b60a5f748ec36a83be253db8fdeaa503a892bdde621462",
+      "content_parent": "59b79ac4dfb0dafeceaeb65f0bc47d7e107ef2f9fe19d83609779672cf3350c2"
     },
     {
       "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
@@ -1443,7 +1443,7 @@
         "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
         "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
         "Read hook fires on the envelope: with the envelope `schema_version` present, the read-time hook (block-api.ts:785-789) no longer short-circuits on its absence and routes the whole block through validateBlockWithMigrationForDir; demonstrated by a real read-block that exercises the hook, not a mocked assertion.",
-        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO registered migration the gate throws (schema-validator.ts:234-236) — a read-gate throw fails the read, and a write-gate throw rejects the write leaving the block file byte-unchanged (no partial write). Both branches, with their per-gate post-state, are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
+        "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO resolvable migration chain the gate throws via runMigrations -> resolve's no-path throw (schema-migrations.ts:100-104, 121-125, reached from schema-validator.ts:238; the no-registry branch at :234-236 is unreachable from the gates, which always supply the project registry) — a read-gate throw fails the read, and a write-gate throw rejects the write leaving the block file byte-unchanged (no partial write). Both branches, with their per-gate post-state, are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
         "The new field reaches already-installed substrates, not only the samples catalog: the envelope `schema_version` property is added to the installed schema bodies of existing substrates via the install/update path, not only to samples/schemas/; an already-installed substrate's blocks carry and validate the version after update."
       ],
       "files": [
@@ -1456,8 +1456,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-073",
       "oid": "939639ac37a9d806ae06b1940a5eba13",
-      "content_hash": "3d840df424a579930d134f3eac5731cacd204fe60f7cf89f9a4364381cc8dceb",
-      "content_parent": "78096484a31ebc34bd94bafb36755ad3eb0221372be9c23e08a8be3cc9e99461"
+      "content_hash": "32dd9b82830550e74fb3d70c4a62c7d8ba3af4a3f260bfa13ee6ba288f417de3",
+      "content_parent": "3d840df424a579930d134f3eac5731cacd204fe60f7cf89f9a4364381cc8dceb"
     },
     {
       "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",

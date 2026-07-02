@@ -31,8 +31,8 @@
     },
     {
       "title": "update refused conventions items that by inspection satisfy the target schema",
-      "body": "A conventions 1.0.0->1.0.1 forward-migration blocked items that, by the operator's inspection, satisfy 1.0.1: every rule carries description, enforcement, and severity; all enforcement values are within {lint,test,review,manual} and all severity values within {error,warning,info}; the migration is identity. dry-run predicted resynced; the live forward-migrate + re-validate refused, leaving schema and block byte-unchanged. Root cause undetermined. Candidates: the forward-migration path faulting; a schema-parse difference between the dry-run and live paths; an item value that passes inspection but fails a pattern, type-coercion, or JSON-Schema edge case. Reproduction: the operator's substrate (conventions installed at 1.0.0, 45 rules). Not reproducible against this repo's .context, where conventions is in-sync at 1.0.1 and validates cleanly. Confirmation is gated on the per-item schema-validation diagnostic that would name the failing item/field, or an independent reproduction of the operator's substrate.",
-      "location": "packages/pi-context/src/index.ts:599",
+      "body": "A conventions 1.0.0->1.0.1 forward-migration blocked items that, by the operator's inspection, satisfy 1.0.1: every rule carries description, enforcement, and severity; all enforcement values are within {lint,test,review,manual} and all severity values within {error,warning,info}; the migration is identity. dry-run predicted resynced; the live forward-migrate + re-validate refused, leaving schema and block byte-unchanged. Root cause undetermined. The two capabilities confirmation was originally gated on have since shipped: the per-item schema-validation diagnostic (blockedDetail.failures naming item id/field/keyword, TASK-048/STORY-009) and dry/live outcome parity (simulateResyncOutcome, STORY-008). Residual: re-drive the operator-substrate reproduction (conventions installed at 1.0.0, 45 rules) with the diagnostic to name the failing item/field, then fix or retire this issue on that evidence. Not reproducible against this repo's .context, where conventions is in-sync at 1.0.1 and validates cleanly.",
+      "location": "packages/pi-context/src/index.ts:1023",
       "status": "open",
       "category": "issue",
       "priority": "medium",
@@ -40,7 +40,8 @@
       "source": "agent",
       "id": "issue-003",
       "oid": "112cebdeb44629475e8e58999a9905e8",
-      "content_hash": "f1cc163943ec7bbba31fb9d224477c360003c66fcdfb84729ca8a8abe82c7172"
+      "content_hash": "0adafb5114fb1667237bc19e0a7ce80057a46f67007a8cf4ab2e3a0b1944cfdd",
+      "content_parent": "f1cc163943ec7bbba31fb9d224477c360003c66fcdfb84729ca8a8abe82c7172"
     },
     {
       "title": "npm link couples the operator pi-context binary to the dev dist/ — a dev build mutates/bricks the live binary",

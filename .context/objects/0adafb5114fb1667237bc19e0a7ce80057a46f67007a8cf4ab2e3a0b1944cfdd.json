@@ -1,0 +1,10 @@
+{
+  "title": "update refused conventions items that by inspection satisfy the target schema",
+  "body": "A conventions 1.0.0->1.0.1 forward-migration blocked items that, by the operator's inspection, satisfy 1.0.1: every rule carries description, enforcement, and severity; all enforcement values are within {lint,test,review,manual} and all severity values within {error,warning,info}; the migration is identity. dry-run predicted resynced; the live forward-migrate + re-validate refused, leaving schema and block byte-unchanged. Root cause undetermined. The two capabilities confirmation was originally gated on have since shipped: the per-item schema-validation diagnostic (blockedDetail.failures naming item id/field/keyword, TASK-048/STORY-009) and dry/live outcome parity (simulateResyncOutcome, STORY-008). Residual: re-drive the operator-substrate reproduction (conventions installed at 1.0.0, 45 rules) with the diagnostic to name the failing item/field, then fix or retire this issue on that evidence. Not reproducible against this repo's .context, where conventions is in-sync at 1.0.1 and validates cleanly.",
+  "location": "packages/pi-context/src/index.ts:1023",
+  "status": "open",
+  "category": "issue",
+  "priority": "medium",
+  "package": "pi-context",
+  "source": "agent"
+}

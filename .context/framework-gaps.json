@@ -2422,13 +2422,13 @@
       "evidence": [
         {
           "file": "packages/pi-context/src/index.ts",
-          "lines": "1391-1421",
+          "lines": "2150-2169",
           "reference": "post-loop registry propagation computes registryAdditions and calls writeConfig when !dryRun, ungated on schema-loop outcome — runs even when a sibling schema is in result.blocked"
         },
         {
           "file": "packages/pi-context/src/index.ts",
-          "lines": "1282-1293",
-          "reference": "the schema-loop result buckets (resynced/migrated/blocked) are reported independently of registryAdditions; no field ties a blocked outcome to the config mutation that still occurred"
+          "lines": "1836-1849",
+          "reference": "the schema-loop result buckets (resynced/migrated/blocked, populated through ~1908-1960) are reported independently of registryAdditions; no field ties a blocked outcome to the config mutation that still occurred"
         },
         {
           "file": ".context/research.json",
@@ -2442,7 +2442,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:20:35.633Z",
       "oid": "ce550805023c174d4626b03da56911a7",
-      "content_hash": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
+      "content_hash": "116478a12df1cf509e30ae9ec362660242d4163b5abba36faa507f1c6f3612d7",
+      "content_parent": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
     },
     {
       "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
@@ -2929,35 +2930,35 @@
       "content_parent": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
     },
     {
-      "title": "pi-context update has no specified transactional boundary between the schema loop and the post-loop config-registry propagation: the registry write (index.ts:1391-1421) is ungated on the schema-loop outcome, so a run reporting a schema as blocked still mutates config.json",
+      "title": "pi-context update's per-component write boundary (DEC-0018) is undocumented on the update surface — a blocked run's config mutation is contractual but nowhere stated",
       "status": "identified",
       "package": "pi-context",
-      "description": "pi-context update applies, in one run, two steps with opposite risk profiles: additive config-registry vocabulary propagation (relation_types/block_kinds/invariants/lenses — non-destructive) and per-schema version migration (the only step that can return blocked). The post-loop registry propagation (packages/pi-context/src/index.ts:1391-1421) calls writeConfig when !dryRun regardless of whether a sibling schema in the same run returned blocked — the registry write is ungated on the schema-loop outcome. So a live update that reports a schema as blocked still mutates config.json with the catalog-new vocabulary. update has no specified transactional boundary across the schema loop and the registry propagation; the per-schema byte-exact rollback (resyncSchema, index.ts:599-641) bounds only the blocked schema's own file and migrations.json, not the registry write.",
+      "description": "update applies per-component by decision: DEC-0018 (enacted, decision_addresses_gap -> this gap) extends DEC-0017's sibling-schema independence to the registry-propagation seam — a blocked schema rolls back byte-exact (resyncSchema, index.ts:1023-1203) while the additive config-registry propagation (index.ts:2150-2169) writes regardless of the schema-loop outcome. The mechanism is decided and correct; the residual gap is that no surface DOCUMENTS the contract: the update op description, the CLI text, and the README state neither that the boundary is per-component nor that a blocked run still lands the additive vocabulary. Outcome LEGIBILITY (the result object tying blocked to registryAdditions) is FGAP-076's scope, not this gap's.",
       "evidence": [
         {
           "file": "packages/pi-context/src/index.ts",
-          "lines": "1391-1421",
-          "reference": "post-loop registry propagation computes registryAdditions and calls writeConfig when !dryRun, ungated on the schema-loop outcome — runs even when a sibling schema is in result.blocked"
+          "lines": "2150-2169",
+          "reference": "post-loop registry propagation calls writeConfig when !dryRun regardless of schema-loop outcome — per-component per DEC-0018, undocumented on the surface."
         },
         {
           "file": "packages/pi-context/src/index.ts",
-          "lines": "599-641",
-          "reference": "resyncSchema per-schema byte-exact rollback bounds only the blocked schema's file + migrations.json declarations, not the registry write"
+          "lines": "1023-1203",
+          "reference": "resyncSchema per-schema byte-exact rollback bounds only the blocked schema's file + migrations.json declarations — the decided per-component boundary."
         },
         {
           "file": ".context/research.json",
-          "reference": "R-0012 — live reproduction: a schema returned blocked while registryAdditions were written to config.json in the same run"
+          "reference": "R-0012 — live reproduction of the behavior the contract must document: a schema returned blocked while registryAdditions were written in the same run."
         }
       ],
-      "impact": "A caller of update cannot assume a run that reports a schema as blocked left config.json unchanged: the additive vocabulary lands regardless. Without a specified transactional boundary the run's effect on config is implicit and undocumented, and a blocked result reads as a no-op while config was mutated.",
-      "proposed_resolution": "Specify update's transactional boundary across the schema loop and the config-registry propagation — atomic (any block rolls back the registry write and every schema together) vs per-component (each component applies independently: the blocked schema rolls back byte-exact, sibling schemas and the additive registry propagation proceed). Per-component extends DEC-0017's sibling-schema independence to the registry-propagation seam.",
+      "impact": "Operators and agents reading the update surface have no stated contract for what a blocked run does to config.json; the decided per-component behavior reads as an accident instead of a boundary.",
+      "proposed_resolution": "Document the per-component contract on the update surface: the context-update op description, the CLI text, and the README state the DEC-0018 boundary (blocked schema rolls back byte-exact; additive registry propagation and sibling schemas apply independently). Result-object legibility is FGAP-076.",
       "id": "FGAP-092",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T05:13:16.413Z",
       "oid": "6feabcc9ecd0d77f19956178ae19c93d",
-      "content_hash": "2e71f94b608beb76895dcda0fbecf22c4697e2ee9decbcf170c146aab5e28eed",
+      "content_hash": "45758f3fb2164a32dab69380e925883990a91acc12492b90c3cd26c48a4533ef",
       "priority": "P2",
-      "content_parent": "6ad38d6b536876a88dc1c874cf08d0514131b4e7042fcacd87d836eac0df6384"
+      "content_parent": "2e71f94b608beb76895dcda0fbecf22c4697e2ee9decbcf170c146aab5e28eed"
     },
     {
       "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",
@@ -3522,7 +3523,7 @@
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "1443",
+          "lines": "1444",
           "reference": "loadConfigForDirBestEffort raw-parses non-active substrates' config.json — best-effort by design, but shape-blind to migrations."
         }
       ],
@@ -3532,7 +3533,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-107",
       "oid": "f9bfeb7ad8e0807ca765357ba4284fd5",
-      "content_hash": "240c538709c5dc2192b8d4a0ba7d99a9b5bf041ac64f263dc8f62ddd17a32263"
+      "content_hash": "ecfd6ab3f8e9e3c77dec3ea478a331aa6b869f90aadc23bf133722ec148fe84f",
+      "content_parent": "240c538709c5dc2192b8d4a0ba7d99a9b5bf041ac64f263dc8f62ddd17a32263"
     },
     {
       "title": "context-switch declares target_dir schema-required while --to_previous ignores it — the CLI refuses the flag-omitted form the op description implies",

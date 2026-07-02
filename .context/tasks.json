@@ -1303,7 +1303,7 @@
       "content_hash": "329214c5142297974efe6d087eed3f331885ef0881dcc33a0aa6f92ee2cbe1a5"
     },
     {
-      "status": "in-progress",
+      "status": "planned",
       "description": "Make issues a gap-sibling first-class open-work kind: a task addresses an issue as it addresses a framework-gap; an open issue ranks and focuses in currentState as an open gap does; a completed task addressing an unresolved issue is invariant-flagged. Add the parity vocabulary in live .context config and the packaged catalog, plus two additive issue-schema fields. The deriver and lens-view are kind-general — change no deriver code. Preserve the divergences in criterion 7. Prerequisite for addressing issue-004 by a task.",
       "acceptance_criteria": [
         "relation_types task_addresses_issue (source tasks, target issues, data_flow) and issue_relates_to_issue (source/target issues, data_flow) registered in live config and samples/conception.json. A task_addresses_issue edge writes and passes context-validate-relations. A fresh accept-all substrate accepts the same edge.",
@@ -1325,8 +1325,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-068",
       "oid": "df2330cca310ed86af56062af0e17c1c",
-      "content_hash": "fa656149af7cf77c2b5a1061a3c8cf5b1939bd1692ce298d3dddc130fa35f86b",
-      "content_parent": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
+      "content_hash": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64",
+      "content_parent": "fa656149af7cf77c2b5a1061a3c8cf5b1939bd1692ce298d3dddc130fa35f86b"
     },
     {
       "status": "completed",

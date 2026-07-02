@@ -74,7 +74,7 @@ function writeSubstrate(
 		path.join(dir, "config.json"),
 		JSON.stringify(
 			{
-				schema_version: "1.0.0",
+				schema_version: "1.7.0",
 				root: dirName,
 				block_kinds: [
 					{

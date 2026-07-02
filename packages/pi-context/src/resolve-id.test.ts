@@ -33,7 +33,7 @@ function seedConfig(tmpDir: string): void {
 	const projectDir = path.join(tmpDir, ".project");
 	fs.mkdirSync(projectDir, { recursive: true });
 	const cfg = {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [
 			{

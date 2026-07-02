@@ -699,7 +699,7 @@ describe("read-config tool — loadConfig + resolveContextDir cascade", () => {
 		// makeTmpDir wrote pointer for ".project"; place config there.
 		const configPath = path.join(resolveContextDir(cwd), "config.json");
 		const minimalConfig = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -717,7 +717,7 @@ describe("read-config tool — loadConfig + resolveContextDir cascade", () => {
 
 		const loaded = loadConfig(cwd);
 		assert.notStrictEqual(loaded, null, "loadConfig returns non-null when file present");
-		assert.strictEqual(loaded?.schema_version, "1.0.0");
+		assert.strictEqual(loaded?.schema_version, "1.7.0");
 		assert.strictEqual(loaded?.root, ".project");
 		assert.strictEqual(loaded?.block_kinds.length, 1);
 		assert.strictEqual(loaded?.block_kinds[0].canonical_id, "tasks");
@@ -826,7 +826,7 @@ describe("addressed-single-node reads return the whole subtree (capped)", () => 
 		fs.mkdirSync(path.dirname(configPath), { recursive: true });
 		fs.writeFileSync(
 			configPath,
-			JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [], lenses }),
+			JSON.stringify({ schema_version: "1.7.0", root: ".project", block_kinds: [], lenses }),
 		);
 
 		const read = readOf(op("read-config").run(cwd, { registry: "lenses" }));
@@ -849,7 +849,7 @@ describe("addressed-single-node reads return the whole subtree (capped)", () => 
 			data_path: "tasks.json",
 		};
 		fs.mkdirSync(path.dirname(configPath), { recursive: true });
-		fs.writeFileSync(configPath, JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [entry] }));
+		fs.writeFileSync(configPath, JSON.stringify({ schema_version: "1.7.0", root: ".project", block_kinds: [entry] }));
 
 		const read = readOf(op("read-config").run(cwd, { registry: "block_kinds", id: "tasks" }));
 		const data = read.data as Record<string, unknown>;

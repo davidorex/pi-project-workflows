@@ -45,7 +45,7 @@ function configFile(cwd: string): string {
 /** Minimal valid ConfigBlock; callers spread overrides. */
 function baseConfig(overrides: Partial<ConfigBlock> = {}): ConfigBlock {
 	return {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [],
 		...overrides,

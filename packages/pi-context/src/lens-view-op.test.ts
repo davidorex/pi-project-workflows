@@ -26,7 +26,7 @@ function makeProject(opts: {
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [],
 		lenses: opts.lenses,

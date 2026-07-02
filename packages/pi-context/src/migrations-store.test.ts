@@ -13,6 +13,7 @@ import {
 	type MigrationDecl,
 	removeMigrationDecl,
 	replaceMigrationDecl,
+	seedCatalogConfigMigrationDecls,
 	writeMigrationsFile,
 	writeMigrationsFileForDir,
 } from "./migrations-store.js";
@@ -255,6 +256,83 @@ describe("migrations-store: dir-targeted forms (Phase H)", () => {
 		const cwdBytes = fs.readFileSync(path.join(viaCwd, ".project", "migrations.json"), "utf-8");
 		const dirBytes = fs.readFileSync(path.join(viaDir, ".project", "migrations.json"), "utf-8");
 		assert.equal(cwdBytes, dirBytes);
+	});
+});
+
+describe("migrations-store: map_each TransformOp schema variant", () => {
+	it("a map_each declarative-transform decl round-trips append→load (table mode with fallback)", (t) => {
+		const cwd = makeTmpDir("map-each-roundtrip");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const decl = declTransform("thing", "1.0.0", "2.0.0", [
+			{
+				op: "map_each",
+				path: "$.relations",
+				table: { blocks: { relation_type: "task_gated_by_item", item_endpoint: "parent" } },
+				fallback: "child",
+			},
+		]);
+		appendMigrationDecl(cwd, decl);
+		const round = loadMigrationsFile(cwd);
+		assert.deepEqual(round?.migrations[0], decl);
+	});
+
+	it("a map_each decl carrying BOTH table and field is rejected by AJV validation (table XOR field+value)", (t) => {
+		const cwd = makeTmpDir("map-each-both");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const decl = declTransform("thing", "1.0.0", "2.0.0", [
+			{
+				op: "map_each",
+				path: "$.relations",
+				table: { blocks: { relation_type: "task_gated_by_item", item_endpoint: "parent" } },
+				field: "kind",
+				value: "tasks",
+			},
+		]);
+		assert.throws(
+			() => appendMigrationDecl(cwd, decl),
+			(err: unknown) => err instanceof ValidationError,
+		);
+		assert.ok(!fs.existsSync(migrationsPath(cwd)));
+	});
+});
+
+describe("migrations-store: seedCatalogConfigMigrationDecls (ceremony seeding)", () => {
+	it("fresh substrate: seeds exactly the catalog's config decl(s)", (t) => {
+		const cwd = makeTmpDir("seed-fresh");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const substrateDir = path.join(cwd, ".project");
+		const appended = seedCatalogConfigMigrationDecls(substrateDir);
+		assert.equal(appended.length, 1);
+		assert.equal(appended[0]?.schema, "config");
+		assert.equal(appended[0]?.from, "1.0.0");
+		const round = loadMigrationsFileForDir(substrateDir);
+		assert.equal(round?.migrations.length, 1);
+		assert.equal(round?.migrations[0]?.schemaName, "config");
+		assert.equal(round?.migrations[0]?.fromVersion, "1.0.0");
+	});
+
+	it("second call appends nothing (idempotent), file byte-identical", (t) => {
+		const cwd = makeTmpDir("seed-idempotent");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const substrateDir = path.join(cwd, ".project");
+		seedCatalogConfigMigrationDecls(substrateDir);
+		const before = fs.readFileSync(migrationsPathForDir(substrateDir), "utf-8");
+		const second = seedCatalogConfigMigrationDecls(substrateDir);
+		assert.deepEqual(second, []);
+		assert.equal(fs.readFileSync(migrationsPathForDir(substrateDir), "utf-8"), before);
+	});
+
+	it("a pre-existing (config, 1.0.0) decl is preserved byte-identical and nothing appended", (t) => {
+		const cwd = makeTmpDir("seed-preexisting");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const substrateDir = path.join(cwd, ".project");
+		// A user-authored config decl at the same (schemaName, fromVersion) — a
+		// DIFFERENT toVersion proves the seed never replaces an existing entry.
+		appendMigrationDeclForDir(substrateDir, declIdentity("config", "1.0.0", "9.9.9"));
+		const before = fs.readFileSync(migrationsPathForDir(substrateDir), "utf-8");
+		const appended = seedCatalogConfigMigrationDecls(substrateDir);
+		assert.deepEqual(appended, []);
+		assert.equal(fs.readFileSync(migrationsPathForDir(substrateDir), "utf-8"), before);
 	});
 });
 

@@ -47,7 +47,7 @@ function makeBlockDir(prefix: string): string {
 	fs.mkdirSync(path.join(sub, "schemas"), { recursive: true });
 	fs.writeFileSync(
 		path.join(sub, "config.json"),
-		JSON.stringify({ schema_version: "1.0.0", root: ".project", block_kinds: [] }),
+		JSON.stringify({ schema_version: "1.7.0", root: ".project", block_kinds: [] }),
 	);
 	const schema = {
 		type: "object",

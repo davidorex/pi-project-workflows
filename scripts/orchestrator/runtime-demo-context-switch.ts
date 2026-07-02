@@ -30,7 +30,7 @@ function ensureDirWithConfig(dirName: string): void {
 	fs.mkdirSync(dirPath, { recursive: true });
 	fs.writeFileSync(
 		path.join(dirPath, "config.json"),
-		JSON.stringify({ schema_version: "1.0.0", root: dirName }),
+		JSON.stringify({ schema_version: "1.7.0", root: dirName }),
 		"utf-8",
 	);
 }

@@ -68,7 +68,7 @@ function writeSubstrate(cwd: string, spec: SubstrateSpec): void {
 	const dir = path.join(cwd, spec.dirName);
 	fs.mkdirSync(path.join(dir, "schemas"), { recursive: true });
 	const config: Record<string, unknown> = {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: spec.dirName,
 		block_kinds: [
 			{

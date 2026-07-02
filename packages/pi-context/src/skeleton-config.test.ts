@@ -203,7 +203,7 @@ describe("writeSkeletonConfig + initProject", () => {
 		// First init lands a skeleton; populate it, then re-init must not clobber.
 		initProject(cwd, ".context");
 		const populated = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".context",
 			block_kinds: [
 				{

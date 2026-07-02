@@ -259,6 +259,134 @@ describe("migrationFnFor: declarative-transform 'coerce' op", () => {
 	});
 });
 
+describe("migrationFnFor: declarative-transform 'map_each' op (table mode)", () => {
+	function tableFn(fallback?: "parent" | "child") {
+		return migrationFnFor({
+			schemaName: "thing",
+			fromVersion: "1.0.0",
+			toVersion: "2.0.0",
+			kind: "declarative-transform",
+			transform: {
+				operations: [
+					{
+						op: "map_each",
+						path: "$.relations",
+						table: { blocks: { relation_type: "task_gated_by_item", item_endpoint: "parent" } },
+						...(fallback ? { fallback } : {}),
+					},
+				],
+			},
+			created_by: "t@e",
+			created_at: "2026-07-02T00:00:00.000Z",
+		});
+	}
+
+	it("replaces a matched string element with its table value", () => {
+		const out = tableFn()({ relations: ["blocks"] });
+		assert.deepEqual(out, { relations: [{ relation_type: "task_gated_by_item", item_endpoint: "parent" }] });
+	});
+
+	it("maps an unmatched string element to {relation_type, item_endpoint} honoring fallback 'child'", () => {
+		const out = tableFn("child")({ relations: ["unlisted"] });
+		assert.deepEqual(out, { relations: [{ relation_type: "unlisted", item_endpoint: "child" }] });
+	});
+
+	it("fallback defaults to 'parent' when absent", () => {
+		const out = tableFn()({ relations: ["unlisted"] });
+		assert.deepEqual(out, { relations: [{ relation_type: "unlisted", item_endpoint: "parent" }] });
+	});
+
+	it("passes non-string elements through unchanged", () => {
+		const already = { relation_type: "task_depends_on_task", item_endpoint: "child" };
+		const out = tableFn()({ relations: [already, 7, null] }) as { relations: unknown[] };
+		assert.deepEqual(out.relations, [already, 7, null]);
+	});
+
+	it("re-running the transform over its own output is idempotent (objects pass through)", () => {
+		const fn = tableFn("child");
+		const once = fn({ relations: ["blocks", "unlisted"] });
+		const twice = fn(once);
+		assert.deepEqual(twice, once);
+	});
+
+	it("no-ops when the path is absent", () => {
+		const out = tableFn()({ other: 1 });
+		assert.deepEqual(out, { other: 1 });
+	});
+
+	it("no-ops when the value at the path is not an array", () => {
+		const out = tableFn()({ relations: "blocks" });
+		assert.deepEqual(out, { relations: "blocks" });
+	});
+});
+
+describe("migrationFnFor: declarative-transform 'map_each' op (set-on-each mode)", () => {
+	function setEachFn() {
+		return migrationFnFor({
+			schemaName: "thing",
+			fromVersion: "1.0.0",
+			toVersion: "2.0.0",
+			kind: "declarative-transform",
+			transform: { operations: [{ op: "map_each", path: "$.entries", field: "kind", value: "tasks" }] },
+			created_by: "t@e",
+			created_at: "2026-07-02T00:00:00.000Z",
+		});
+	}
+
+	it("sets field=value on every object element", () => {
+		const out = setEachFn()({ entries: [{ id: "a" }, { id: "b", kind: "old" }] });
+		assert.deepEqual(out, {
+			entries: [
+				{ id: "a", kind: "tasks" },
+				{ id: "b", kind: "tasks" },
+			],
+		});
+	});
+
+	it("skips non-object elements", () => {
+		const out = setEachFn()({ entries: ["str", 3, null, { id: "a" }] }) as { entries: unknown[] };
+		assert.deepEqual(out.entries, ["str", 3, null, { id: "a", kind: "tasks" }]);
+	});
+});
+
+describe("migrationFnFor: composed chain with map_each ordered before rename of the same key", () => {
+	it("map_each (table) maps the array elements BEFORE the rename moves the key — order matters", () => {
+		// state_derivation-style fixture: legacy shape carries a string-array
+		// `blocking` whose elements must become structured relation objects
+		// BEFORE the key is renamed to `blocked_by`. Running the rename first
+		// would move the still-string elements, so element order in the
+		// operations list is load-bearing.
+		const fn = migrationFnFor({
+			schemaName: "thing",
+			fromVersion: "1.0.0",
+			toVersion: "2.0.0",
+			kind: "declarative-transform",
+			transform: {
+				operations: [
+					{
+						op: "map_each",
+						path: "$.state_derivation.blocking",
+						table: { task_depends_on_task: { relation_type: "task_depends_on_task", item_endpoint: "parent" } },
+						fallback: "child",
+					},
+					{ op: "rename", from: "$.state_derivation.blocking", to: "$.state_derivation.blocked_by" },
+				],
+			},
+			created_by: "t@e",
+			created_at: "2026-07-02T00:00:00.000Z",
+		});
+		const out = fn({ state_derivation: { blocking: ["task_depends_on_task", "task_gated_by_item"] } });
+		assert.deepEqual(out, {
+			state_derivation: {
+				blocked_by: [
+					{ relation_type: "task_depends_on_task", item_endpoint: "parent" },
+					{ relation_type: "task_gated_by_item", item_endpoint: "child" },
+				],
+			},
+		});
+	});
+});
+
 describe("migrationFnFor: composed multi-op chain", () => {
 	it("applies rename + set in declaration order in the same TransformSpec", () => {
 		const fn = migrationFnFor({

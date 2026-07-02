@@ -174,7 +174,7 @@ function seedCompositeSubstrate(ops: Array<{ canonical_id: string }>): string {
 	writeFileSync(
 		path.join(sub, "config.json"),
 		JSON.stringify({
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [],
 			tool_operations: ops,

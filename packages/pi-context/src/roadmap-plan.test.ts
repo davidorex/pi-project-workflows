@@ -28,7 +28,7 @@ describe("STATUS_VOCABULARY (default registry resolved with no config overrides)
 		fs.mkdirSync(path.join(dir, ".project"), { recursive: true });
 		fs.writeFileSync(
 			path.join(dir, ".project", "config.json"),
-			JSON.stringify({ schema_version: "0.2.0", root: ".project", lenses: [], block_kinds: [] }, null, 2),
+			JSON.stringify({ schema_version: "1.7.0", root: ".project", lenses: [], block_kinds: [] }, null, 2),
 		);
 		const result = resolveStatusVocabulary(dir);
 		fs.rmSync(dir, { recursive: true, force: true });
@@ -311,7 +311,7 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config: Record<string, unknown> = {
-		schema_version: "0.2.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		lenses: fixture.lenses ?? [],
 		installed_blocks: ["roadmap"],

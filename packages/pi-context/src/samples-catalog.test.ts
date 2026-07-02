@@ -18,7 +18,10 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { scanForCitationRot } from "./citation-rot-scanner.js";
+import { migrationFnFor } from "./migration-registry-loader.js";
+import type { MigrationsFile } from "./migrations-store.js";
 import { samplesCatalog } from "./samples-catalog.js";
+import { createRegistry } from "./schema-migrations.js";
 import { validate } from "./schema-validator.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
 
@@ -147,6 +150,28 @@ describe("samplesCatalog", () => {
 		assert.ok(!("root" in conception), "conception.json must not ship a 'root' key");
 		// The catalog projection of the template must not surface a root either.
 		assert.ok(!("root" in samplesCatalog()), "samplesCatalog() must not surface a 'root'");
+	});
+
+	it("packaged migrations.json declares a config chain reaching the bundled config schema version", () => {
+		// Future-guard: a config.schema.json version bump shipped WITHOUT extending
+		// the packaged config migration chain would brick catalog-born substrates
+		// (conception stamps its schema_version; loadConfig walks the chain).
+		const packaged = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "migrations.json"), "utf-8")) as MigrationsFile;
+		const conception = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "conception.json"), "utf-8")) as {
+			schema_version: string;
+		};
+		const schema = JSON.parse(fs.readFileSync(FRAMEWORK_CONFIG_SCHEMA, "utf-8")) as { version: string };
+		const reg = createRegistry();
+		for (const decl of packaged.migrations) {
+			reg.register({
+				schemaName: decl.schemaName,
+				fromVersion: decl.fromVersion,
+				toVersion: decl.toVersion,
+				migrate: migrationFnFor(decl),
+			});
+		}
+		const chain = reg.resolve("config", conception.schema_version, schema.version);
+		assert.ok(chain.length > 0, "packaged config migration chain must be non-empty");
 	});
 
 	// FGAP-131 + FGAP-132: rigorous AST + JSON + markdown/YAML scanner replaces

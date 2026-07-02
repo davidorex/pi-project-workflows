@@ -33,6 +33,7 @@ import {
 	walkDescendants,
 } from "./context.js";
 import { resolveContextDir, writeBootstrapPointer } from "./context-dir.js";
+import { appendMigrationDeclForDir, seedCatalogConfigMigrationDecls } from "./migrations-store.js";
 import { ValidationError } from "./schema-validator.js";
 
 function makeTmpDir(prefix: string): string {
@@ -54,7 +55,7 @@ function writeRelations(tmpDir: string, edges: Edge[]): void {
 }
 
 const minimalConfig = (): ConfigBlock => ({
-	schema_version: "1.0.0",
+	schema_version: "1.7.0",
 	root: ".project",
 	block_kinds: [
 		{
@@ -81,7 +82,7 @@ describe("installed-asset materialization helpers", () => {
 		const tmp = makeTmpDir("unmaterialized");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		const cfg: ConfigBlock = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [],
 			installed_schemas: ["foo", "bar"],
@@ -118,15 +119,16 @@ describe("loadConfig", () => {
 		writeConfig(tmp, minimalConfig());
 		const cfg = loadConfig(tmp);
 		assert.ok(cfg);
-		assert.strictEqual(cfg!.schema_version, "1.0.0");
+		assert.strictEqual(cfg!.schema_version, "1.7.0");
 		assert.strictEqual(cfg!.block_kinds.length, 1);
 	});
 
 	it("throws ValidationError on schema-invalid config", (t) => {
 		const tmp = makeTmpDir("load-config-invalid");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
-		// Missing required block_kinds
-		writeConfig(tmp, { schema_version: "1.0.0", root: ".project" });
+		// Missing required block_kinds. schema_version matches the bundled schema
+		// so the failure exercised is AJV validation, not a version mismatch.
+		writeConfig(tmp, { schema_version: "1.7.0", root: ".project" });
 		assert.throws(
 			() => loadConfig(tmp),
 			(err: unknown) => err instanceof ValidationError,
@@ -143,6 +145,82 @@ describe("loadConfig", () => {
 			() => loadConfig(tmp),
 			(err: unknown) => err instanceof Error && /invalid JSON/i.test(err.message),
 		);
+	});
+});
+
+// ── loadConfig migration-aware path (TASK-070 / FGAP-095) ──────────────────
+
+describe("loadConfig: migration-aware version-mismatch path", () => {
+	const laggingConfig = (): ConfigBlock => ({ ...minimalConfig(), schema_version: "1.0.0" });
+
+	it("version mismatch + seeded chain loads; in-memory schema_version stays '1.0.0' (identity migrates nothing)", (t) => {
+		const tmp = makeTmpDir("load-config-migrated");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, laggingConfig());
+		seedCatalogConfigMigrationDecls(path.join(tmp, ".project"));
+		const cfg = loadConfig(tmp);
+		assert.ok(cfg);
+		// The identity migration passes the data through unchanged; the migrated
+		// form is carried in memory only, never written back to disk.
+		assert.strictEqual(cfg!.schema_version, "1.0.0");
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmp, ".project", "config.json"), "utf-8"));
+		assert.strictEqual(onDisk.schema_version, "1.0.0");
+	});
+
+	it("version mismatch + NO migrations.json throws plain Error (fail-fast), not ValidationError", (t) => {
+		const tmp = makeTmpDir("load-config-nochain");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, laggingConfig());
+		assert.throws(
+			() => loadConfig(tmp),
+			(err: unknown) => err instanceof Error && !(err instanceof ValidationError),
+		);
+	});
+
+	it("version mismatch + chain not reaching the bundled version throws", (t) => {
+		const tmp = makeTmpDir("load-config-partialchain");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, laggingConfig());
+		appendMigrationDeclForDir(path.join(tmp, ".project"), {
+			schemaName: "config",
+			fromVersion: "1.0.0",
+			toVersion: "1.2.0",
+			kind: "identity",
+			created_by: "t@e",
+			created_at: "2026-07-02T00:00:00.000Z",
+		});
+		assert.throws(
+			() => loadConfig(tmp),
+			(err: unknown) => err instanceof Error && !(err instanceof ValidationError),
+		);
+	});
+
+	it("cache-staleness regression: a failed load (registry cached empty), then seed, then reload SAME process succeeds", (t) => {
+		const tmp = makeTmpDir("load-config-cachestale");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, laggingConfig());
+		// First load warms the registry cache with the empty (no migrations.json)
+		// registry and throws on the unresolvable chain.
+		assert.throws(() => loadConfig(tmp));
+		// Seeding writes through the writeMigrationsFileForDir funnel, which
+		// invalidates the cached registry — the reload must see the new chain.
+		seedCatalogConfigMigrationDecls(path.join(tmp, ".project"));
+		const cfg = loadConfig(tmp);
+		assert.ok(cfg);
+		assert.strictEqual(cfg!.schema_version, "1.0.0");
+	});
+
+	it("current-version config + schema-invalid poison migrations.json loads fine (registry never consulted)", (t) => {
+		const tmp = makeTmpDir("load-config-poison");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		writeConfig(tmp, minimalConfig());
+		// Poison: violates the migrations schema (missing required migrations[]).
+		// A version-matched config load must never read it.
+		fs.writeFileSync(path.join(tmp, ".project", "migrations.json"), JSON.stringify({ schema_version: "1.0.0" }));
+		const cfg = loadConfig(tmp);
+		assert.ok(cfg);
+		const onDisk = JSON.parse(fs.readFileSync(path.join(tmp, ".project", "config.json"), "utf-8"));
+		assert.deepStrictEqual(cfg, onDisk);
 	});
 });
 
@@ -540,7 +618,7 @@ describe("listUncategorized", () => {
 
 function configWithLensAndHierarchy(): ConfigBlock {
 	return {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [
 			{
@@ -615,7 +693,7 @@ describe("validateRelations", () => {
 
 	it("edge-materialization lens with item-parent content edges does not false-invalidate (FGAP-101)", () => {
 		const cfg: ConfigBlock = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -701,7 +779,7 @@ describe("validateRelations", () => {
 	it("edge_cycle_detected on a hierarchy relation_type", () => {
 		// Hierarchy with parent_block === child_block to allow same-block edges
 		const cfg: ConfigBlock = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -732,7 +810,7 @@ describe("validateRelations", () => {
 
 	it("relation_types declared with cycle_allowed=true skips cycle check", () => {
 		const cfg: ConfigBlock = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [
 				{

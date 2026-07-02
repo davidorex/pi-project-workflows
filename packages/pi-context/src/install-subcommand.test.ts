@@ -18,6 +18,7 @@ import {
 	updateContext,
 	validateBlockItemsAgainstCatalog,
 } from "./index.js";
+import { loadMigrationsFileForDir, seedCatalogConfigMigrationDecls } from "./migrations-store.js";
 import { getObject } from "./object-store.js";
 import { type OpDefinition, ops } from "./ops-registry.js";
 import { loadPendingBlockedForDir } from "./pending-blocked-store.js";
@@ -31,7 +32,7 @@ function makeProject(installedSchemas: string[] = [], installedBlocks: string[] 
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [],
 		lenses: [],
@@ -301,6 +302,34 @@ describe("installContext", () => {
 		const config = loadConfig(tmpRoot);
 		assert.ok(config, "a pre-baseline config (no installed_from) must load + validate");
 		assert.equal(config?.installed_from, undefined, "no installed_from present before install");
+	});
+
+	it("legacy heal — a direct-written 1.0.0 config with no migrations.json is seeded and installs without error", () => {
+		// A pre-migration-era substrate: config stamped at 1.0.0 (lagging the bundled
+		// schema), no migrations.json. installContext seeds the catalog's config
+		// chain BEFORE its config read, so the ceremony heals the substrate instead
+		// of throwing on the unresolvable version mismatch.
+		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-install-legacy-"));
+		writeBootstrapPointer(tmpRoot, ".project");
+		fs.mkdirSync(path.join(tmpRoot, ".project", "schemas"), { recursive: true });
+		const legacyConfig = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [],
+			lenses: [],
+			installed_schemas: ["tasks"],
+			installed_blocks: [],
+		};
+		fs.writeFileSync(path.join(tmpRoot, ".project", "config.json"), JSON.stringify(legacyConfig, null, 2));
+		const result = installContext(tmpRoot);
+		assert.equal(result.error, undefined, "installContext must complete on the legacy substrate");
+		assert.deepEqual(result.installed, ["schemas/tasks.schema.json"]);
+		const migrations = loadMigrationsFileForDir(path.join(tmpRoot, ".project"));
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "config" && m.fromVersion === "1.0.0"),
+			"installContext must seed the (config, 1.0.0) decl",
+		);
+		assert.ok(loadConfig(tmpRoot), "the lagging config loads through the seeded chain");
 	});
 });
 
@@ -599,6 +628,10 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		const mp = path.join(tmpRoot, ".project", "migrations.json");
 		const schemaBefore = fs.readFileSync(schemaDest);
 		const blockBefore = fs.readFileSync(blockDest);
+		// installContext seeds the catalog's config migration decl at entry; seed
+		// here first so the byte capture reflects the post-seed steady state and
+		// the blocked rollback is asserted against it.
+		seedCatalogConfigMigrationDecls(path.join(tmpRoot, ".project"));
 		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
 		let result!: ReturnType<typeof installContext>;
 		assert.doesNotThrow(() => {
@@ -635,6 +668,9 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		const blockBefore = fs.readFileSync(blockDest);
 		// Load-bearing: this path appends the shipped decls into migrations.json
 		// BEFORE the validate throw, so a blocked outcome must restore them.
+		// installContext seeds the catalog's config decl at entry; seed first so
+		// the byte capture reflects the post-seed steady state.
+		seedCatalogConfigMigrationDecls(path.join(tmpRoot, ".project"));
 		const migrationsBefore = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
 		let result!: ReturnType<typeof installContext>;
 		assert.doesNotThrow(() => {

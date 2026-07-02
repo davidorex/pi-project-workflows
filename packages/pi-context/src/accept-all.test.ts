@@ -20,6 +20,7 @@ import { adoptConception, isSkeletonConfig, loadConfig } from "./context.js";
 import { SUBSTRATE_ID_PATTERN, writeBootstrapPointer } from "./context-dir.js";
 import { loadRegistry } from "./context-registry.js";
 import extension, { initProject } from "./index.js";
+import { loadMigrationsFileForDir } from "./migrations-store.js";
 
 let tmpRoot: string;
 
@@ -160,11 +161,30 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(fs.existsSync(schemasDir), "schemas dir must be scaffolded");
 		const schemaFiles = fs.readdirSync(schemasDir).filter((f) => f.endsWith(".schema.json"));
 		assert.deepEqual(schemaFiles, [], "init must copy no schema assets");
-		// init now writes a SKELETON config.json (FGAP-001 / DEC-0001) — the ONLY
-		// top-level .json file in the substrate dir; NO block data files.
-		const jsonFiles = fs.readdirSync(substrateDir).filter((f) => f.endsWith(".json"));
-		assert.deepEqual(jsonFiles, ["config.json"], "init writes exactly the skeleton config, no block assets");
+		// init writes a SKELETON config.json (FGAP-001 / DEC-0001) plus the seeded
+		// migrations.json (the catalog's config migration chain); NO block data files.
+		const jsonFiles = fs
+			.readdirSync(substrateDir)
+			.filter((f) => f.endsWith(".json"))
+			.sort();
+		assert.deepEqual(
+			jsonFiles,
+			["config.json", "migrations.json"],
+			"init writes exactly the skeleton config + seeded migrations, no block assets",
+		);
 		const config = loadConfig(tmpRoot);
 		assert.ok(config && isSkeletonConfig(config), "the written config must be a skeleton");
+	});
+
+	it("init → accept-all leaves migrations.json carrying the (config, 1.0.0→1.7.0) decl and loadConfig green", () => {
+		tmpRoot = mkTmp(".context");
+		initProject(tmpRoot, ".context");
+		adoptConception(tmpRoot);
+		const migrations = loadMigrationsFileForDir(path.join(tmpRoot, ".context"));
+		assert.ok(migrations, "the ceremony must seed migrations.json");
+		const configDecl = migrations!.migrations.find((m) => m.schemaName === "config" && m.fromVersion === "1.0.0");
+		assert.ok(configDecl, "the (config, 1.0.0) decl must be seeded");
+		assert.equal(configDecl!.toVersion, "1.7.0");
+		assert.ok(loadConfig(tmpRoot), "loadConfig must return the adopted config");
 	});
 });

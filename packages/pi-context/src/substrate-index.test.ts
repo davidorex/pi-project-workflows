@@ -61,7 +61,7 @@ function seed(
 	fs.writeFileSync(
 		path.join(projectDir, "config.json"),
 		JSON.stringify({
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".project",
 			block_kinds: [],
 			relation_types: [],
@@ -230,7 +230,7 @@ describe("SubstrateIndex — validateContext inertness (deterministic across bui
 		fs.writeFileSync(
 			path.join(projectDir, "config.json"),
 			JSON.stringify({
-				schema_version: "1.0.0",
+				schema_version: "1.7.0",
 				root: ".project",
 				block_kinds: [],
 				relation_types: [{ canonical_id: "relates_to", display_name: "relates to", category: "membership" }],

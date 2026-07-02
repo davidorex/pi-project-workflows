@@ -52,7 +52,7 @@ function writeSubstrate(
 	fs.writeFileSync(
 		path.join(dir, "config.json"),
 		JSON.stringify({
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: dirName,
 			block_kinds: [],
 			relation_types: opts.relation_types ?? [],
@@ -211,7 +211,7 @@ describe("resolveRef — graceful foreign-build failure → dangling (no throw)"
 		const fdir = path.join(cwd, ".foreign");
 		fs.mkdirSync(fdir, { recursive: true });
 		const fcfg = {
-			schema_version: "1.0.0",
+			schema_version: "1.7.0",
 			root: ".foreign",
 			block_kinds: [
 				{ canonical_id: "decisions", prefix: "DEC-", display_name: "Decisions" },
@@ -338,7 +338,7 @@ describe("validateContext — F2 severity split + Phase-H-preview", () => {
 
 describe("validateRelations — `resolve?` parity + cross-substrate resolution", () => {
 	const cfg: ConfigBlock = {
-		schema_version: "1.0.0",
+		schema_version: "1.7.0",
 		root: ".project",
 		block_kinds: [],
 		relation_types: [{ canonical_id: "parent_of", display_name: "parent of", category: "hierarchy" }],

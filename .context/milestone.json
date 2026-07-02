@@ -1,3 +1,103 @@
 {
-	"milestones": []
+  "milestones": [
+    {
+      "id": "MILE-001",
+      "name": "Ceremony brick closure — config always loads or is sanctionedly recoverable",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:03:17.561Z",
+      "oid": "7284a8b95df9714e9da9fa5498592f46",
+      "content_hash": "87bbc9a24e6484306122fbe2af6d63de6f68a3bcb8d933ae944b3675540ef587"
+    },
+    {
+      "id": "MILE-002",
+      "name": "Catalog↔config parity — a fresh install is complete and internally consistent",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:03:32.037Z",
+      "oid": "5804cf004330eb2fdde3e8d54dddac78",
+      "content_hash": "55ad971753e50a3cd523531457d5edb22d3dbf1acc266df6bc43e2cd7fe6981a"
+    },
+    {
+      "id": "MILE-003",
+      "name": "Versioned-data convergence — migration live on blocks, versions converge on write, no split-brain readers",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:03:46.783Z",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "content_hash": "458f164e8d45d4b73d03ba83ef6d5809f56a53619c1a7550c26d345ada9a05a6"
+    },
+    {
+      "id": "MILE-004",
+      "name": "Install-state completeness for evolving vocabularies",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:04:01.827Z",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "content_hash": "6fece39f716179f9745e10a363a87f654ad477ba901191fe96e2651c711aee8b"
+    },
+    {
+      "id": "MILE-005",
+      "name": "Write-path integrity — no silently-wrong edge or unwritable correction",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:04:04.272Z",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "content_hash": "029a99294e0953080757694223254231a21c613afd9a092cf60ba314cee42cd6"
+    },
+    {
+      "id": "MILE-006",
+      "name": "Derivation truthfulness — status/focus/ready/blocked never misrepresent",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:04:27.450Z",
+      "oid": "6488203538dd76fce67c3e484c45462e",
+      "content_hash": "8330bf4d517a58732c5d75b5d1096b66d515b8c5a9239442a61641b606383ec8"
+    },
+    {
+      "id": "MILE-007",
+      "name": "Structural enforcement of the disciplines",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:04:42.269Z",
+      "oid": "c00e793a9da3cbda9997d9575e0a2a6d",
+      "content_hash": "a131d55b7240544876e58e655f75d68b6e893a0a388d29fa788f02e622b71199"
+    },
+    {
+      "id": "MILE-008",
+      "name": "Operator-surface truthfulness — CLI, ops, docs, and generation coherent with enforcement",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:04:54.196Z",
+      "oid": "4a278523da9ec7d016e0e7de15d29096",
+      "content_hash": "87fb2ebd4555704cafeb9691698e633f4dad0f8fdec62770d0bf2cac2e332a1c"
+    },
+    {
+      "id": "MILE-009",
+      "name": "Multi-writer substrate — clone, merge driver, sequence CRDT (collaboration expansion)",
+      "status": "planned",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-02T10:05:08.281Z",
+      "oid": "b33e3594f21231dc0b11dda100927dff",
+      "content_hash": "c483740d3043f39cc7543a75f51e4d12b999f25f790ea0553efef579ab8c5afc"
+    }
+  ]
 }

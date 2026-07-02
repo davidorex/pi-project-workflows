@@ -1,0 +1,6 @@
+{
+  "name": "Structural enforcement",
+  "intent": "The disciplines get forcing functions. Members: TASK-047 (FGAP-082 advancer-completion invariant class), TASK-041 (FEAT-007 decision-derivation backfill + invariant raise; substrate-only, may run early in a merge-queue slot), FGAP-071 (arc-coherence invariant), FGAP-086 (AJV cache versioned keying), FGAP-087 (non-array array-key loud path). Fan-in: gated on MILE-004 and MILE-005 (resyncSchema and validateContext are shared surfaces).",
+  "goal": "Advancer-completion and arc-coherence invariant classes exist and fire; decision-shows-derivation raised from warning per FEAT-007; the validator cache cannot serve stale schemas; degenerate resync shapes fail loud.",
+  "status": "planned"
+}

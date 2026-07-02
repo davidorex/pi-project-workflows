@@ -1,0 +1,6 @@
+{
+  "name": "Operator-surface truthfulness",
+  "intent": "CLI, ops, docs, and generation coherent with enforcement. Members: FGAP-104 (hermetic + fail-loud SKILL generation — lands FIRST in this lane; every other lane ceremonially runs the generator), FGAP-108 (context-switch target_dir contradiction), TASK-022 (FGAP-016 cap measures emitted form), TASK-057 (schema-history audit op), TASK-058 (migration-chain walk op), FGAP-044 (field-granular schema edit), FGAP-045 (block-kind rename cascade — locus undetermined, resolved at its plan step), TASK-054 (refinement). Lane C: parallel with Lanes A and B from the start. TASK-057 waits for the MILE-003 plan step to decide the FGAP-105 fold-locus if it touches migrations-store.",
+  "goal": "SKILL.md is a hermetic fail-loud function of the package alone; op contracts match enforcement; caps measure what is emitted; schema history and migration chains are auditable through ops.",
+  "status": "planned"
+}

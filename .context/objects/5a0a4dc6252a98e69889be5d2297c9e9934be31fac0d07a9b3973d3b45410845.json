@@ -1,0 +1,6 @@
+{
+  "name": "Derivation truthfulness",
+  "intent": "Status, focus, ready, and blocked never misrepresent. Members: FGAP-103 (deliberate-suspension status — live false-focus instance on PHASE-PORT-OPS), FGAP-061 (gating relations feed ready/blocked), TASK-068 (FGAP-098 issues as gap-sibling open work), TASK-021 (FGAP-018 lifecycle metrics de-hardcoded), FEAT-004 (config-driven state derivation, class level). Fan-in: gated on MILE-003 (shared samples schema files: phase + issues envelope changes must not race the M3 envelope work).",
+  "goal": "Paused is representable and de-focuses; gating relations feed ready/blocked; issues rank as first-class open work; unconfigured derivation says so instead of guessing.",
+  "status": "planned"
+}

@@ -2922,7 +2922,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T02:08:01.945Z",
       "oid": "59e28b0f7b432759d5234348ebc6aca9",
-      "content_hash": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
+      "content_hash": "dff8b38084a578a277365378a6ea89728a75a00c5dc56c4c15d0209a02372863",
+      "priority": "P2",
+      "content_parent": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
     },
     {
       "title": "pi-context update has no specified transactional boundary between the schema loop and the post-loop config-registry propagation: the registry write (index.ts:1391-1421) is ungated on the schema-loop outcome, so a run reporting a schema as blocked still mutates config.json",
@@ -2951,7 +2953,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T05:13:16.413Z",
       "oid": "6feabcc9ecd0d77f19956178ae19c93d",
-      "content_hash": "6ad38d6b536876a88dc1c874cf08d0514131b4e7042fcacd87d836eac0df6384"
+      "content_hash": "2e71f94b608beb76895dcda0fbecf22c4697e2ee9decbcf170c146aab5e28eed",
+      "priority": "P2",
+      "content_parent": "6ad38d6b536876a88dc1c874cf08d0514131b4e7042fcacd87d836eac0df6384"
     },
     {
       "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",
@@ -3010,7 +3014,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T07:17:10.372Z",
       "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
-      "content_hash": "c747800bc7d6e95df6058ae63a23dccec9539a9b98040354237034f7da14af00"
+      "content_hash": "efc09bd56835f74b3df64a4c09577e13caa7640d8687ca126a4013521d57169e",
+      "priority": "P2",
+      "content_parent": "c747800bc7d6e95df6058ae63a23dccec9539a9b98040354237034f7da14af00"
     },
     {
       "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
@@ -3188,7 +3194,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-098",
       "oid": "3045be571ddb51cb25782d95ec0b4fe6",
-      "content_hash": "5f4b1db1ef2329b84e77a1c244fa2e2c0917e5267e33f9288038eada8e3dfea7"
+      "content_hash": "64da49344db695562c8361a1403bcb9eb65fef649344c9b3b0994d351720e333",
+      "priority": "P2",
+      "content_parent": "5f4b1db1ef2329b84e77a1c244fa2e2c0917e5267e33f9288038eada8e3dfea7"
     },
     {
       "title": "Block data carries no schema_version — read-time validation and migration are inert for all blocks",
@@ -3254,7 +3262,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-100",
       "oid": "702672901cff779f38aac4fc2a64d419",
-      "content_hash": "9d394546e596e1670a454724f3616bd8c986600a536e23107f475ac5149fcbca"
+      "content_hash": "85080c43d7f5aeb63b08ce0cea9f591064c989c9e1aa1a0086174116f1df0d80",
+      "priority": "P3",
+      "content_parent": "9d394546e596e1670a454724f3616bd8c986600a536e23107f475ac5149fcbca"
     },
     {
       "title": "validateRelations conflates content relations with lens-axis relations: a hand-curated edge-materialization lens (derived_from_field null, bins []) over a content relation_type yields spurious edge_parent_not_in_bins on every real advancer edge, forcing context-validate-relations to invalid",
@@ -3385,7 +3395,9 @@
       "created_at": "2026-07-02",
       "id": "FGAP-103",
       "oid": "76a82d22340fc5bfd25457e37f0fc67a",
-      "content_hash": "59046219a941952d060f838c4288c71ac00c9bc861a26cb9195d1064a4907d2d"
+      "content_hash": "b427bee54ee78647f129b6f9ab4bfb7bec8c51bfdb6f70757ae5f68df41371dd",
+      "priority": "P1",
+      "content_parent": "59046219a941952d060f838c4288c71ac00c9bc861a26cb9195d1064a4907d2d"
     },
     {
       "title": "SKILL.md generation executes extension factories against the live environment — shipped package docs are a function of local project state (crash → silently partial output; substrate-declared composites → embedded as package surface)",
@@ -3424,7 +3436,9 @@
       "created_at": "2026-07-02",
       "id": "FGAP-104",
       "oid": "6ef2afa56ccd3df0de74b53fd796af26",
-      "content_hash": "af4fc20d53a10243b258779428450474b2a67ced14889a493cad3741f0491b6b"
+      "content_hash": "b61846b9bed128e92a6f17399122998ed9bd6fbb375ea90224a668e9240a0247",
+      "priority": "P2",
+      "content_parent": "af4fc20d53a10243b258779428450474b2a67ced14889a493cad3741f0491b6b"
     },
     {
       "title": "Versioned substrate documents never converge their persisted schema_version at write time — config is the live instance: reads migrate in memory forever, writes persist the stale version back",
@@ -3543,6 +3557,87 @@
       "id": "FGAP-108",
       "oid": "2cd2f886b0e1572455bfbd7cb64c1090",
       "content_hash": "2878b0c1d5358d40aa6ebbe7cc44164bd1dd62a7599085e4012f8aec8663d6b6"
+    },
+    {
+      "title": "No build-time gate flags a narrowing catalog BLOCK-schema diff — the additive/expand-contract gate covers config.schema.json only",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "TASK-072 (FGAP-097) gates non-additive diffs of config.schema.json at build time; issue-005 covers same-version resync re-validation at APPLY time. No filing gates a narrowing catalog block-schema diff (samples/schemas/*.schema.json — a removed/renamed field or a new required property) at build/authoring time, so a narrowing block-schema change ships in the catalog undetected until a substrate's update/resync hits it. Surfaced as a coverage hole by the critical-focus outline derivation (dimension B): the block-schema half of the additive discipline has apply-time detection only.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/schemas",
+          "reference": "The 18 catalog block schemas have no build-time additive gate; TASK-072's filed files[] names only packages/pi-context/schemas/config.schema.json."
+        }
+      ],
+      "impact": "A narrowing block-schema catalog change lands silently and surfaces as blocked resyncs or invalid items on downstream substrates, far from the authoring change.",
+      "proposed_resolution": "Requires determination: extend TASK-072's gate to walk all catalog block schemas (same additive/expand-contract rule, migration-paired exception) or file a sibling gate. Positioned with MILE-003's convergence work.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-109",
+      "oid": "34c01f49401b976bb4a26856e298348b",
+      "content_hash": "6916718d425cad6d40fecd63eb814b078ba20cbd48e49c8cce35e7d9edba3697"
+    },
+    {
+      "title": "Raw-reader bypass class beyond config is unverified — no filing establishes whether block-data raw readers exist and closes them as a class",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "FGAP-107 files exactly two config.json raw readers. Whether raw readers of block-data *.json exist (parsing substrate block files without the validated read path, and — once TASK-073 activates block read-time migration — without migration awareness) has not been verified, and no filing closes the class either way. Surfaced as a coverage hole by the critical-focus outline derivation (dimension C): the class-level enumeration is the missing precondition to declaring the read side split-brain-free.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "reference": "FGAP-107's two filed instances are config-only; no enumeration of block-data raw readers exists in any filing."
+        }
+      ],
+      "impact": "Unknown exposure: if block-data raw readers exist, TASK-073's read-time migration activation creates the same silent split-brain FGAP-107 files for config, with no tracking item.",
+      "proposed_resolution": "Requires determination after enumeration: grep-enumerate all non-test JSON.parse readers of substrate block files across packages/, verdict each (validated-path / deliberate-raw-with-contract / defect), and file or close the class on the evidence. Positioned with MILE-003.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-110",
+      "oid": "a45222d72708f48dfce1d9a1b3fae56a",
+      "content_hash": "0f3f07acae131cfc3b558992d94512d99ea04c60e8dec1c7555d6f86dca11573"
+    },
+    {
+      "title": "Review-enforced conventions have no structural forcing function as a class — all 12 conventions declare enforcement review or manual",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "Every convention in the conventions block declares enforcement \"review\" or \"manual\"; only FGAP-071 files the unenforced-ness of ONE convention (gap-arc-coherence). The class — a convention registry whose members are all honor-system while the framework's own doctrine treats manual enforcement as a gap (the filing-provenance and branch-discipline guards exist precisely because review-enforcement fails) — is unfiled. Surfaced as a coverage hole by the critical-focus outline derivation (dimension E).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/samples/blocks/conventions.json",
+          "reference": "All shipped conventions carry enforcement review/manual; no invariant, hook, or gate consumes the conventions block's enforcement field."
+        }
+      ],
+      "impact": "Convention compliance depends entirely on session discipline; violations (deviations this project has repeatedly experienced) surface only by later audit, never at act time.",
+      "proposed_resolution": "Requires determination: per-convention triage of which are structurally enforceable (invariant / write-gate / build-gate per the filing-pipeline enforcement surface) vs genuinely review-only, with the enforcement field made consequential. Positioned with MILE-007.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-111",
+      "oid": "8d9622451350dd47a630739417dd2222",
+      "content_hash": "a953242efe1b9829fc14f278a37918f7318f9a8936db6dd68cfbec6017d373ce"
+    },
+    {
+      "title": "CLI errors carry no remediation hints as a class — only FGAP-106 asks for one error's hint",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context-cli",
+      "description": "FGAP-106 files the missing remediation hint on one error (the unresolvable config chain). No filing requires that CLI/op errors name their sanctioned remediation generally — which op un-bricks, which flag previews, which ceremony heals. The class: the error surface tells the operator what failed but not the sanctioned way out, in a system whose whole design is that every recovery has a sanctioned op. Surfaced as a coverage hole by the critical-focus outline derivation (dimension F).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "lines": "96-125",
+          "reference": "Representative instance (FGAP-106): the throw names the stuck version but no remediation op; the pattern generalizes across the error surface with no filing covering it."
+        }
+      ],
+      "impact": "Operators (human or agent) hitting a refusal must already know the recovery op; errors dead-end sessions that the design intends to be self-recoverable.",
+      "proposed_resolution": "Requires determination: an error-surface audit enumerating refusal/throw sites with a sanctioned-recovery op, adding the hint per site or via a shared error-shaping layer (the cli render/formatAjvError precedent). Positioned with MILE-008.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-112",
+      "oid": "e3ca49d3091ab621978adb0060e98368",
+      "content_hash": "187ca90807f1aeca6a71c527144a0c772664781d8ca584173bf2548225d6bcd7"
     }
   ]
 }

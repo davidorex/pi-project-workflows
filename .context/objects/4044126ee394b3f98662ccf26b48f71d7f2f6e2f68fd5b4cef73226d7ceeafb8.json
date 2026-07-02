@@ -1,0 +1,6 @@
+{
+  "name": "Install-state completeness",
+  "intent": "Evolving vocabularies materialize into installed substrates. Members: TASK-074 (FGAP-065 materialize declared blocks), FGAP-033 (pre-identity substrate resync — requires its DEC before execution). Lane A spine position 2: gated on MILE-003.",
+  "goal": "A block kind declared after install materializes via a sanctioned op; pre-identity substrates re-sync; context-bootstrap-state reports ready truthfully.",
+  "status": "planned"
+}

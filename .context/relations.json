@@ -6253,19 +6253,6 @@
   {
     "parent": {
       "kind": "item",
-      "oid": "a67c8c765d626abab530ac88f14b33b8",
-      "refname": "TASK-066"
-    },
-    "child": {
-      "kind": "item",
-      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
-      "refname": "TASK-067"
-    },
-    "relation_type": "task_depends_on_task"
-  },
-  {
-    "parent": {
-      "kind": "item",
       "oid": "a2a807f3e45e551c0024bb9a94c43403",
       "refname": "R-0017"
     },
@@ -7445,5 +7432,512 @@
       "refname": "FGAP-105"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ca17c945f10d611878fdadcdee492154",
+      "refname": "PHASE-M1-CEREMONY-RECOVERY"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7284a8b95df9714e9da9fa5498592f46",
+      "refname": "MILE-001"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "595e7d93fdb4c97e7a5edd6c0dd5d105",
+      "refname": "PHASE-M2-CATALOG-PARITY"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5804cf004330eb2fdde3e8d54dddac78",
+      "refname": "MILE-002"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8ea214284ddcbc567897f2f640b0b470",
+      "refname": "PHASE-M3-DATA-CONVERGENCE"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "061f550d0926956e8e8c6be82af3604a",
+      "refname": "PHASE-M4-INSTALL-COMPLETENESS"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8cd9d94ce2139b20a0cda67e4581ca24",
+      "refname": "PHASE-M5-WRITE-INTEGRITY"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "490f6aef271f4aac8039554c282471bb",
+      "refname": "PHASE-M6-DERIVATION-TRUTH"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6488203538dd76fce67c3e484c45462e",
+      "refname": "MILE-006"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fe281aaeb2f1435d395b61eca424da76",
+      "refname": "PHASE-M7-ENFORCEMENT"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c00e793a9da3cbda9997d9575e0a2a6d",
+      "refname": "MILE-007"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "2b1edbf00f3198b787641f19f20775a5",
+      "refname": "PHASE-M8-OPERATOR-SURFACE"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4a278523da9ec7d016e0e7de15d29096",
+      "refname": "MILE-008"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a22a230271dbf57792e712080369a104",
+      "refname": "PHASE-M9-MULTI-WRITER"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b33e3594f21231dc0b11dda100927dff",
+      "refname": "MILE-009"
+    },
+    "relation_type": "phase_positioned_in_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9997db7b2791579a7095031fcb1fd7bb",
+      "refname": "TASK-071"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca17c945f10d611878fdadcdee492154",
+      "refname": "PHASE-M1-CEREMONY-RECOVERY"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "90f33ed68bc91d4eb4901cdf588e8660",
+      "refname": "TASK-055"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ca17c945f10d611878fdadcdee492154",
+      "refname": "PHASE-M1-CEREMONY-RECOVERY"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "refname": "TASK-067"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "595e7d93fdb4c97e7a5edd6c0dd5d105",
+      "refname": "PHASE-M2-CATALOG-PARITY"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "939639ac37a9d806ae06b1940a5eba13",
+      "refname": "TASK-073"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ea214284ddcbc567897f2f640b0b470",
+      "refname": "PHASE-M3-DATA-CONVERGENCE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ad21875be7c7e6360f2508db948c8b06",
+      "refname": "TASK-072"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ea214284ddcbc567897f2f640b0b470",
+      "refname": "PHASE-M3-DATA-CONVERGENCE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ce4303169c9cd7665f108909671f0f89",
+      "refname": "TASK-074"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "061f550d0926956e8e8c6be82af3604a",
+      "refname": "PHASE-M4-INSTALL-COMPLETENESS"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "79693a3ed131eb2244eac2ab8f2d2940",
+      "refname": "TASK-027"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8cd9d94ce2139b20a0cda67e4581ca24",
+      "refname": "PHASE-M5-WRITE-INTEGRITY"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "refname": "TASK-068"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "490f6aef271f4aac8039554c282471bb",
+      "refname": "PHASE-M6-DERIVATION-TRUTH"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "refname": "TASK-021"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "490f6aef271f4aac8039554c282471bb",
+      "refname": "PHASE-M6-DERIVATION-TRUTH"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "refname": "TASK-047"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fe281aaeb2f1435d395b61eca424da76",
+      "refname": "PHASE-M7-ENFORCEMENT"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9556ca047e5d0a0ff7c9ac7d7337c2f9",
+      "refname": "TASK-041"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fe281aaeb2f1435d395b61eca424da76",
+      "refname": "PHASE-M7-ENFORCEMENT"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "faefd3eb61329ef90eb1ca067733bfe7",
+      "refname": "TASK-022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2b1edbf00f3198b787641f19f20775a5",
+      "refname": "PHASE-M8-OPERATOR-SURFACE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "19ffa834c9d56173043cd05ca01129a5",
+      "refname": "TASK-057"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2b1edbf00f3198b787641f19f20775a5",
+      "refname": "PHASE-M8-OPERATOR-SURFACE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e9aa3e678507797950d994a75198a59f",
+      "refname": "TASK-058"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2b1edbf00f3198b787641f19f20775a5",
+      "refname": "PHASE-M8-OPERATOR-SURFACE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "eb7d80d82c66f39ac1409303e90e7932",
+      "refname": "TASK-054"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2b1edbf00f3198b787641f19f20775a5",
+      "refname": "PHASE-M8-OPERATOR-SURFACE"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "62fa29ee28b79c5504c52a6021eda387",
+      "refname": "TASK-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a22a230271dbf57792e712080369a104",
+      "refname": "PHASE-M9-MULTI-WRITER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a22a230271dbf57792e712080369a104",
+      "refname": "PHASE-M9-MULTI-WRITER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40143fed971ee16d63d90a64d28426a7",
+      "refname": "TASK-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a22a230271dbf57792e712080369a104",
+      "refname": "PHASE-M9-MULTI-WRITER"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ce4303169c9cd7665f108909671f0f89",
+      "refname": "TASK-074"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9997db7b2791579a7095031fcb1fd7bb",
+      "refname": "TASK-071"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "90f33ed68bc91d4eb4901cdf588e8660",
+      "refname": "TASK-055"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0839a88df621b05a05f673f7fc3f5f7c",
+      "refname": "TASK-067"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7284a8b95df9714e9da9fa5498592f46",
+      "refname": "MILE-001"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "df2330cca310ed86af56062af0e17c1c",
+      "refname": "TASK-068"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b0aff3721f693af9431c0595d5f657d5",
+      "refname": "TASK-021"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "refname": "TASK-047"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "b16073c8c524650178110c637a6b8ba5",
+      "refname": "TASK-047"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "24559534b34a51a8940a162ecd965a35",
+      "refname": "TASK-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "62fa29ee28b79c5504c52a6021eda387",
+      "refname": "TASK-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "62fa29ee28b79c5504c52a6021eda387",
+      "refname": "TASK-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "relation_type": "task_gated_by_item"
   }
 ]

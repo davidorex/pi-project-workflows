@@ -1,0 +1,6 @@
+{
+  "name": "Multi-writer substrate",
+  "intent": "The collaboration expansion (deliberate feature work, not defect closure; DEC-0002/0004/0005 lineage). Members ordered by the filed TASK-005-depends-on-TASK-004 edge: TASK-004 (FEAT-002 structure-aware merge driver), TASK-005 (FEAT-003 sequence CRDT field-kind), TASK-003 (FEAT-001 substrate clone with provenance), FGAP-011 (release vocabulary). Last: gated on MILE-003 and MILE-005 — the driver merges what those paths write.",
+  "goal": "Substrates clone with provenance; parallel branch edits to substrate JSON merge structurally without mangling; ordered collections converge; single-writer operation remains unaffected throughout.",
+  "status": "planned"
+}

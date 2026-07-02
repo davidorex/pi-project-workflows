@@ -1,0 +1,30 @@
+{
+  "title": "PM lifecycle vocabularies admit no deliberate-suspension status on any kind; a paused arc is unrepresentable (phase acute: derived focus presents it as active)",
+  "status": "identified",
+  "package": "pi-context",
+  "description": "No shipped lifecycle status enum on any of the 13 status-bearing block kinds carries a deliberate-suspension value (\"paused by the user, to resume\"): every kind expresses only active, blocked-by-something, or terminal states. The bucket layer beneath already reserves the value — STATUS_VOCABULARY_DEFAULTS maps paused -> blocked (status-vocab.ts:80) and every derivation consumes buckets — so only the per-kind schema enums (write-time AJV) reject it. Acute instance: phase, the only work-bearing kind with zero non-active non-terminal value AND the state_derivation focus_fallback kind — a user-paused phase filed in-progress becomes the derived focus the moment no task is in flight (focus_fallback: first phase bucketing in_progress, context-sdk.ts:941-958), presenting the suspended arc as the active work. Triggering instance: PHASE-PORT-OPS, declared paused by the user 2026-07-02, filed in-progress with no representable alternative. Scratchpad-duplicate reproduction: with in-flight empty, focus = \"phase: PHASE-PORT-OPS (…)\"; counterfactual status paused yields \"no active focus.\" with zero deriver change.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/phase.schema.json",
+      "lines": "40-47",
+      "reference": "The phase status enum is exactly [\"planned\",\"in-progress\",\"completed\"] — no deliberate-suspension value. Installed copy identical at version 2.0.1 (read-schema --schemaName phase --path properties.phases.items.properties.status)."
+    },
+    {
+      "file": "packages/pi-context/src/status-vocab.ts",
+      "lines": "80",
+      "reference": "STATUS_VOCABULARY_DEFAULTS already maps paused -> blocked: the bucket layer reserves the value, but no shipped schema enum can emit it — write-time AJV rejects it on every kind."
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "941-958",
+      "reference": "focus_fallback consumption: with in_flight empty, the first phase bucketing in_progress becomes the derived focus string — a paused-but-filed-in-progress phase is promoted to THE active focus (state_derivation registry: focus_fallback {kind: phase, bucket: in_progress})."
+    },
+    {
+      "file": "analysis/2026-07-02-paused-arc-status-vocabulary-gap.md",
+      "reference": "Full investigation: per-kind class table (13 status-bearing kinds, none suspendable), scratchpad-duplicate reproduction (focus becomes 'phase: PHASE-PORT-OPS (…)' when nothing is in flight; counterfactual paused yields 'no active focus.' with zero deriver change), prior-art sweep (no existing coverage), resolution dimension set."
+    }
+  ],
+  "impact": "Derived position/focus/status misrepresent a user-paused arc as active work: context-status counts it in-progress in every projection, and currentState's focus_fallback promotes it to THE derived focus whenever nothing is in flight. The substrate cannot record the true state of a suspended arc, so session-start derivation (the canonical source of position) is false until the arc resumes or completes.",
+  "proposed_resolution": "Additive enum widening: add a deliberate-suspension value (paused) to the status enum, dual-surface per the FGAP-102 parity discipline (samples/schemas/phase.schema.json enum + its lifecycle prose AND the installed schema via /context update), schema version 2.0.1 -> 2.1.0. No deriver change: paused already buckets to blocked (status-vocab.ts:80), removing focus eligibility (observed); no state_derivation registry change; additive, so no data migration; the milestone rollup invariant behaves truthfully (a paused phase keeps its milestone unreached). Docs-surface-sync: status-vocab.ts block comment + schema description strings enumerate the lifecycle. Per-kind extent (phase only vs the class set — tasks/features/story approximate via blocked; issues/requirements deferred is won't-work-on shading) is a user scope determination at task time, surfaced by the class table in the findings document, not decided here.",
+  "priority": "P1"
+}

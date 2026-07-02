@@ -1,0 +1,6 @@
+{
+  "name": "Catalog-config parity",
+  "intent": "A fresh install is complete and internally consistent. Members: FGAP-102 forward leg (build-time catalog-superset-of-consumed-vocabulary gate), TASK-067 (parity forcing-function), FGAP-067 (update reconciles changed catalog registry-entry bodies). Lane A spine position 4 (last): gated on MILE-001 so the gate lands against the corrected catalog.",
+  "goal": "A build-time gate asserts the catalog covers all consumed vocabulary across the four propagated registries and every state_derivation reference resolves; catalog drift cannot recur silently.",
+  "status": "planned"
+}

@@ -1,0 +1,25 @@
+{
+  "title": "pi-context update has no specified transactional boundary between the schema loop and the post-loop config-registry propagation: the registry write (index.ts:1391-1421) is ungated on the schema-loop outcome, so a run reporting a schema as blocked still mutates config.json",
+  "status": "identified",
+  "package": "pi-context",
+  "description": "pi-context update applies, in one run, two steps with opposite risk profiles: additive config-registry vocabulary propagation (relation_types/block_kinds/invariants/lenses — non-destructive) and per-schema version migration (the only step that can return blocked). The post-loop registry propagation (packages/pi-context/src/index.ts:1391-1421) calls writeConfig when !dryRun regardless of whether a sibling schema in the same run returned blocked — the registry write is ungated on the schema-loop outcome. So a live update that reports a schema as blocked still mutates config.json with the catalog-new vocabulary. update has no specified transactional boundary across the schema loop and the registry propagation; the per-schema byte-exact rollback (resyncSchema, index.ts:599-641) bounds only the blocked schema's own file and migrations.json, not the registry write.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1391-1421",
+      "reference": "post-loop registry propagation computes registryAdditions and calls writeConfig when !dryRun, ungated on the schema-loop outcome — runs even when a sibling schema is in result.blocked"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "599-641",
+      "reference": "resyncSchema per-schema byte-exact rollback bounds only the blocked schema's file + migrations.json declarations, not the registry write"
+    },
+    {
+      "file": ".context/research.json",
+      "reference": "R-0012 — live reproduction: a schema returned blocked while registryAdditions were written to config.json in the same run"
+    }
+  ],
+  "impact": "A caller of update cannot assume a run that reports a schema as blocked left config.json unchanged: the additive vocabulary lands regardless. Without a specified transactional boundary the run's effect on config is implicit and undocumented, and a blocked result reads as a no-op while config was mutated.",
+  "proposed_resolution": "Specify update's transactional boundary across the schema loop and the config-registry propagation — atomic (any block rolls back the registry write and every schema together) vs per-component (each component applies independently: the blocked schema rolls back byte-exact, sibling schemas and the additive registry propagation proceed). Per-component extends DEC-0017's sibling-schema independence to the registry-propagation seam.",
+  "priority": "P2"
+}

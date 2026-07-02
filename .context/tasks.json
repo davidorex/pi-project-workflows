@@ -1262,7 +1262,7 @@
     },
     {
       "description": "Back-port the relation_types consumed by shipped pi-context derivations but missing from the packaged catalog packages/pi-context/samples/conception.json relation_types[] (the single source of truth): `task_gated_by_item` (already in live .context/config.json — catalog-only add) and `phase_depends_on` (in NEITHER catalog nor live config — add to BOTH; the config add via amend-config). Before adding `phase_depends_on`, confirm roadmap-plan.ts (which consumes it at :329/:505/:528) is shipped/reachable, not dead code — if dead, surface that as the finding instead of registering the relation. Update the samples-catalog.test.ts relation_type count pin (mirror TASK-061's 31→34 bump). Entry shape per existing catalog entries: {canonical_id, display_name, category, source_kinds, target_kinds}. NOW back-port slice of FGAP-094; mirrors TASK-061/TASK-033 (ship vocabulary in the catalog).",
-      "status": "planned",
+      "status": "cancelled",
       "files": [
         "packages/pi-context/samples/conception.json",
         ".context/config.json",
@@ -1278,7 +1278,9 @@
       ],
       "id": "TASK-066",
       "oid": "a67c8c765d626abab530ac88f14b33b8",
-      "content_hash": "1a6f8d342b6cb922c041246912a4b0b1ba6c567406a75f9a5824d66bdeb4ca7c"
+      "content_hash": "c7e84e28c189d5efd565e6bbd868984b83c829d1205226e02ff7e7d71091945b",
+      "notes": "Cancelled 2026-07-02: its basis FGAP-094 is superseded_by FGAP-102, and its catalog back-port payload shipped via completed TASK-075 (commit e1cf07f). The forward parity-gate work it fed lives in TASK-067 (PHASE-M2-CATALOG-PARITY), whose stale dependency edge on this task is removed with this cancellation.",
+      "content_parent": "1a6f8d342b6cb922c041246912a4b0b1ba6c567406a75f9a5824d66bdeb4ca7c"
     },
     {
       "description": "Build-time forcing-function preventing recurrence of FGAP-094's catalog↔config vocabulary drift: a gate that mechanically enumerates the relation_types consumed by literal string in shipped packages/pi-context/src/** derivations (the AST-reading pattern scripts/parity-check.ts already uses) and asserts the catalog packages/pi-context/samples/conception.json relation_types[] ⊇ that consumed set; a non-empty difference exits non-zero naming the missing relation_types. Wire into .husky/pre-commit AND .github/workflows/ci.yml sequenced alongside the existing parity-check.ts / check-changelog.ts gates, with a unit test mirroring parity-check.test.ts. At that task's plan step, derive whether to extend parity-check.ts with an added check-category or add a sibling scripts/catalog-vocab-parity.ts (parity-check.ts is an extensible gate aggregator). Include the explicit record classifying each live-only relation_type substrate-local-vs-catalog-worthy with its derivation (endpoint blocks shipped? consumed by a shipped derivation?). FORWARD class-fix slice of FGAP-094; mirrors FGAP-010's scripts/parity-check.ts structural answer for the catalog↔config vocabulary surface. Depends on TASK-066 (the gate goes green once the back-port lands).",
@@ -1317,7 +1319,7 @@
       ],
       "files": [
         ".context/config.json",
-        "packages/pi-context/schemas/issues.schema.json",
+        "packages/pi-context/samples/schemas/issues.schema.json",
         "packages/pi-context/samples/conception.json"
       ],
       "notes": "Addresses FGAP-098. Prerequisite for addressing issue-004 by a task. Catalog back-port interacts with FGAP-094, TASK-066, TASK-067.",
@@ -1325,8 +1327,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "TASK-068",
       "oid": "df2330cca310ed86af56062af0e17c1c",
-      "content_hash": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64",
-      "content_parent": "fa656149af7cf77c2b5a1061a3c8cf5b1939bd1692ce298d3dddc130fa35f86b"
+      "content_hash": "625f1ba08bef1b13c6dba32a4d861e677de611e39a7a99addc458431afc38c41",
+      "content_parent": "897583bc72eee2842b2be069f48c789c642402a2108223804f17ff799464ca64"
     },
     {
       "status": "completed",

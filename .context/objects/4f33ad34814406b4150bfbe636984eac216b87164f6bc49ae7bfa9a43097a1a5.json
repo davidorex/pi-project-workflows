@@ -1,0 +1,6 @@
+{
+  "name": "Ceremony brick closure",
+  "intent": "Config always loads or is sanctionedly recoverable. Members: TASK-071 (FGAP-096 config repair path), FGAP-106 (remediation hint in unresolvable-chain error), TASK-055 (update pre-flight dirty-check). Lane A spine position 3: gated on MILE-004.",
+  "goal": "An invalid or lagging config recovers through a sanctioned CLI path that validates the result; unresolvable-chain errors name write-schema-migration and the missing edge; update refuses to run over an uncommitted substrate.",
+  "status": "planned"
+}

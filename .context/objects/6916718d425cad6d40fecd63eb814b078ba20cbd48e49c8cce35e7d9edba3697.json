@@ -1,0 +1,15 @@
+{
+  "title": "No build-time gate flags a narrowing catalog BLOCK-schema diff — the additive/expand-contract gate covers config.schema.json only",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "TASK-072 (FGAP-097) gates non-additive diffs of config.schema.json at build time; issue-005 covers same-version resync re-validation at APPLY time. No filing gates a narrowing catalog block-schema diff (samples/schemas/*.schema.json — a removed/renamed field or a new required property) at build/authoring time, so a narrowing block-schema change ships in the catalog undetected until a substrate's update/resync hits it. Surfaced as a coverage hole by the critical-focus outline derivation (dimension B): the block-schema half of the additive discipline has apply-time detection only.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas",
+      "reference": "The 18 catalog block schemas have no build-time additive gate; TASK-072's filed files[] names only packages/pi-context/schemas/config.schema.json."
+    }
+  ],
+  "impact": "A narrowing block-schema catalog change lands silently and surfaces as blocked resyncs or invalid items on downstream substrates, far from the authoring change.",
+  "proposed_resolution": "Requires determination: extend TASK-072's gate to walk all catalog block schemas (same additive/expand-contract rule, migration-paired exception) or file a sibling gate. Positioned with MILE-003's convergence work."
+}

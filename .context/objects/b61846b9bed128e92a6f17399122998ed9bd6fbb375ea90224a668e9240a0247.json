@@ -1,0 +1,35 @@
+{
+  "title": "SKILL.md generation executes extension factories against the live environment — shipped package docs are a function of local project state (crash → silently partial output; substrate-declared composites → embedded as package surface)",
+  "status": "identified",
+  "package": "pi-project-workflows",
+  "description": "scripts/generate-skills.js derives each SKILL.md by executing the package's built dist factory against a mock pi in the INVOKING cwd, recording registrations. Two consequences: (1) a factory throw is caught with a warning (\"expected for extensions needing runtime context\"), registrations made before the throw are kept, and the generator exits 0 — truncated output is indistinguishable from complete output (realized 2026-07-02: pi-agent-dispatch's factory reads the live substrate config before its two pi.on registrations; a TASK-070 migration-window read threw; the SKILL.md lost its events section and was committed as complete, corrected at 6d91cb0). (2) The generator records ALL registrations with no origin distinction, and pi-agent-dispatch's factory registers substrate-declared composite tools (config.tool_operations[], FEAT-010 runtime design — correct for runtime, wrong as docs input): a project with tool_operations entries would embed its own configuration into the package's shipped documentation (dormant: live tool_operations is []). Class: package documentation must be a pure function of the package; the generator makes it a function of whatever substrate the generating machine holds.",
+  "evidence": [
+    {
+      "file": "scripts/generate-skills.js",
+      "lines": "801-808",
+      "reference": "Factory executed against a mock pi in the invoking cwd; a throw is caught and normalized to a warning, registrations captured before the throw are kept, exit 0 — partial output shipped as complete."
+    },
+    {
+      "file": "scripts/generate-skills.js",
+      "lines": "461-483",
+      "reference": "<tools_reference> composition iterates ALL captured registrations with no distinction between package-defined and environment-derived tools."
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/index.ts",
+      "lines": "45-89",
+      "reference": "Factory order: 6 registerTool calls, then loadComposites(process.cwd(), pi) (live substrate config read), then the two pi.on event registrations — a throw at the read truncates the events surface; substrate-declared composites register before the generator's capture."
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/composite-loader.ts",
+      "lines": "144-197",
+      "reference": "loadComposites reads the active substrate's config.tool_operations[] and calls pi.registerTool per composite entry — intended FEAT-010 runtime design; becomes a docs-content source only via the generator."
+    },
+    {
+      "file": "packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md",
+      "reference": "Realized instance: commit 08f00f9 shipped the events-section-truncated output as complete; 6d91cb0 restored it. Git archaeology dated the three enabling conditions (generator catch 2026-03-18; factory-time substrate read 2026-05-28; fail-fast config load 2026-07-02) and confirmed first-and-only occurrence."
+    }
+  ],
+  "impact": "Shipped SKILL.md content varies with the generating machine's substrate state: a mid-migration or legacy substrate silently truncates the documented surface (realized once); a substrate with tool_operations entries would publish project configuration as package documentation (latent). Exit-0-on-crash means neither case is detectable at generation time — the false-pass mode the project's own doctrine names as fallback-swallows-failure, in the toolchain itself.",
+  "proposed_resolution": "Hermetic generation plus fail-loud: execute factories against an isolated empty cwd so SKILL.md is a pure function of the package (runtime substrate coupling stays in the runtime, per FEAT-010; the generator deliberately documents zero environment-derived registrations), and with the environment isolated, a factory throw loses its \"expected\" justification — the generator exits nonzero instead of emitting partial output. Requires checking pi-behavior-monitors' three-tier discovery under a hermetic cwd (examples tier should still document). Determination at task time; this filing fixes the class, not the incident (already corrected at 6d91cb0).",
+  "priority": "P2"
+}

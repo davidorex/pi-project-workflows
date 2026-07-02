@@ -1,0 +1,20 @@
+{
+  "title": "An operator-filed partial config migration chain bricks every ceremony with no remediation hint; recovery path exists but is undocumented",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "A `config` migration declaration whose toVersion stops short of the bundled schema version (e.g. 1.0.0→1.2.0 against bundled 1.7.0) is correctly never replaced by ceremony seeding (never-clobber), but then no chain resolves to the bundled version and every ceremony throws — init/accept-all/install each loadConfig after seeding, so the ceremony family cannot heal past an operator-filed partial edge. Recovery works (write-schema-migration --operation create for the missing edge; the op path loads no config, verified) but no surface documents it and the throw (`no path from 1.0.0 to 1.7.0 ... (stuck at '1.2.0')`) names no remediation. If FGAP-105's write-time version convergence lands, this pocket shrinks substantially — a converged substrate stops depending on chains in steady state — so the fix may fold into that work.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/schema-migrations.ts",
+      "lines": "96-125",
+      "reference": "resolve/runMigrations throw plain Error on an unresolvable chain; the message names the stuck version but no remediation (no mention of write-schema-migration or the missing edge)."
+    },
+    {
+      "file": "packages/pi-context/src/migrations-store.ts",
+      "reference": "Adversarial-probe reproduction (TASK-070 verification round, this session): partial (config,1.0.0→1.2.0) edge filed on a scratch substrate → ceremony seeding correctly appends nothing (never-replace honored) → init/accept-all/install all throw; recovery via write-schema-migration create 1.2.0→1.7.0 then green."
+    }
+  ],
+  "impact": "A substrate carrying a stale partial config chain is unrecoverable through ceremony re-entry; the operator must already know the undocumented write-schema-migration recovery to proceed.",
+  "proposed_resolution": "Requires determination: a remediation hint in the unresolvable-chain error (naming write-schema-migration and the missing edge) and/or documenting the recovery; interacts with TASK-071's recover path and with FGAP-105's write-time convergence (which retires steady-state chain dependence)."
+}

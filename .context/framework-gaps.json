@@ -3466,6 +3466,83 @@
       "id": "FGAP-105",
       "oid": "23e1efb8f3c97f1b159111690174dfb8",
       "content_hash": "b60cb1013acd89bbf45839ccc865d247dd964e1eed0b3054fb5435265bebf5ed"
+    },
+    {
+      "title": "An operator-filed partial config migration chain bricks every ceremony with no remediation hint; recovery path exists but is undocumented",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "A `config` migration declaration whose toVersion stops short of the bundled schema version (e.g. 1.0.0→1.2.0 against bundled 1.7.0) is correctly never replaced by ceremony seeding (never-clobber), but then no chain resolves to the bundled version and every ceremony throws — init/accept-all/install each loadConfig after seeding, so the ceremony family cannot heal past an operator-filed partial edge. Recovery works (write-schema-migration --operation create for the missing edge; the op path loads no config, verified) but no surface documents it and the throw (`no path from 1.0.0 to 1.7.0 ... (stuck at '1.2.0')`) names no remediation. If FGAP-105's write-time version convergence lands, this pocket shrinks substantially — a converged substrate stops depending on chains in steady state — so the fix may fold into that work.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "lines": "96-125",
+          "reference": "resolve/runMigrations throw plain Error on an unresolvable chain; the message names the stuck version but no remediation (no mention of write-schema-migration or the missing edge)."
+        },
+        {
+          "file": "packages/pi-context/src/migrations-store.ts",
+          "reference": "Adversarial-probe reproduction (TASK-070 verification round, this session): partial (config,1.0.0→1.2.0) edge filed on a scratch substrate → ceremony seeding correctly appends nothing (never-replace honored) → init/accept-all/install all throw; recovery via write-schema-migration create 1.2.0→1.7.0 then green."
+        }
+      ],
+      "impact": "A substrate carrying a stale partial config chain is unrecoverable through ceremony re-entry; the operator must already know the undocumented write-schema-migration recovery to proceed.",
+      "proposed_resolution": "Requires determination: a remediation hint in the unresolvable-chain error (naming write-schema-migration and the missing edge) and/or documenting the recovery; interacts with TASK-071's recover path and with FGAP-105's write-time convergence (which retires steady-state chain dependence).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-106",
+      "oid": "cf2c443da8c12971e79912b0ceffa57a",
+      "content_hash": "51e922243f356147c6e5cf224e8b75fe058673f29b67a332470b4097605cc089"
+    },
+    {
+      "title": "Raw config.json readers bypass the config migration layer — silent shape divergence once the first shape-changing config migration ships",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "Two readers parse config.json raw, skipping loadConfigForDir's migrate-then-validate: resolveOperationVocabulary (pi-agent-dispatch/src/capability-composer.ts:26, active substrate, fail-safe) and loadConfigForDirBestEffort (pi-context/src/context-sdk.ts:1443, non-active substrates). Harmless while only identity chains exist; the day a shape-changing `config` migration ships (map_each's declared consumer: the state_derivation delta), these see the un-migrated shape while loadConfig sees the migrated one — divergent reads of the same file, no throw, no signal. Class member of FGAP-105's raw-readers-cannot-tell-stale-from-current observation; distinct defect: these paths never migrate at all.",
+      "evidence": [
+        {
+          "file": "packages/pi-agent-dispatch/src/capability-composer.ts",
+          "lines": "26",
+          "reference": "resolveOperationVocabulary raw-parses the ACTIVE substrate's config.json (fail-safe try/catch), bypassing the migration-aware loader."
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "1443",
+          "reference": "loadConfigForDirBestEffort raw-parses non-active substrates' config.json — best-effort by design, but shape-blind to migrations."
+        }
+      ],
+      "impact": "Latent split-brain on config shape between the migration-aware and raw read paths; surfaces only when a non-identity config migration lands, far from this cause, with no error at the divergence point.",
+      "proposed_resolution": "Requires determination: route both through the migration-aware loader (best-effort semantics preserved via try/catch) or document them as deliberately raw with a shape-floor contract. FGAP-105's write-time convergence narrows the exposure window (converged files carry the current shape on disk) but does not close it for lagging substrates.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-107",
+      "oid": "f9bfeb7ad8e0807ca765357ba4284fd5",
+      "content_hash": "240c538709c5dc2192b8d4a0ba7d99a9b5bf041ac64f263dc8f62ddd17a32263"
+    },
+    {
+      "title": "context-switch declares target_dir schema-required while --to_previous ignores it — the CLI refuses the flag-omitted form the op description implies",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "The context-switch op description says target_dir is ignored for --to_previous, but the parameter is schema-required and the CLI enforces schema.required (pi-context-cli/src/cli.ts:440-443), so `pi-context context-switch --to_previous true` without --target_dir gets a UsageError. The switch-back form works only with a dummy target_dir supplied — documentation and enforcement contradict each other.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1565-1645",
+          "reference": "context-switch parameter schema requires target_dir; the description states it is ignored for to_previous."
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "440-443",
+          "reference": "The CLI enforces schema.required before dispatch — the documented flag-omitted switch-back form is refused with a UsageError."
+        }
+      ],
+      "impact": "Operators following the op's own description hit a usage error on the switch-back form; the workaround (a dummy required-but-ignored flag) contradicts the surfaced contract.",
+      "proposed_resolution": "Requires determination: conditional requirement (target_dir required unless to_previous) vs correcting the description to state target_dir must be supplied and is ignored. Surfaced by the TASK-070 round-3 re-audit as targeted-review information; op schema untouched by that branch.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-108",
+      "oid": "2cd2f886b0e1572455bfbd7cb64c1090",
+      "content_hash": "2878b0c1d5358d40aa6ebbe7cc44164bd1dd62a7599085e4012f8aec8663d6b6"
     }
   ]
 }

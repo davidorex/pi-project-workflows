@@ -7939,5 +7939,135 @@
       "refname": "MILE-005"
     },
     "relation_type": "task_gated_by_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e2793ad57e2a5084ff45b13a7eaadfae",
+      "refname": "TASK-077"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "99dd98ebd606aa911c245f6c1967c8a3",
+      "refname": "FGAP-042"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7284a8b95df9714e9da9fa5498592f46",
+      "refname": "MILE-001"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7284a8b95df9714e9da9fa5498592f46",
+      "refname": "MILE-001"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5804cf004330eb2fdde3e8d54dddac78",
+      "refname": "MILE-002"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6488203538dd76fce67c3e484c45462e",
+      "refname": "MILE-006"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d55dd0158add3b36332d8e3d413283f2",
+      "refname": "MILE-004"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c00e793a9da3cbda9997d9575e0a2a6d",
+      "refname": "MILE-007"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c00e793a9da3cbda9997d9575e0a2a6d",
+      "refname": "MILE-007"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "814c410de5c0463957994eaad93e23dc",
+      "refname": "MILE-003"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b33e3594f21231dc0b11dda100927dff",
+      "refname": "MILE-009"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "514e6cc576541532e0819a36b279b15c",
+      "refname": "MILE-005"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b33e3594f21231dc0b11dda100927dff",
+      "refname": "MILE-009"
+    },
+    "relation_type": "milestone_precedes_milestone"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e2793ad57e2a5084ff45b13a7eaadfae",
+      "refname": "TASK-077"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

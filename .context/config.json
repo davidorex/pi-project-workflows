@@ -623,6 +623,17 @@
       "target_kinds": [
         "issues"
       ]
+    },
+    {
+      "canonical_id": "milestone_precedes_milestone",
+      "display_name": "precedes",
+      "category": "ordering",
+      "source_kinds": [
+        "milestone"
+      ],
+      "target_kinds": [
+        "milestone"
+      ]
     }
   ],
   "lenses": [

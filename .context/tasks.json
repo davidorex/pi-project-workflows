@@ -1520,6 +1520,40 @@
       "oid": "d0e958d9187954e73d874da1dd2d8e14",
       "content_hash": "70ae49781ac9b67d1c81046e0b11f2ac009bb1434d3e694a64c6a2ec83c46b29",
       "content_parent": "6c4b354f96b6ac10b4c86f1c296729a260af2431772366e955b9d5a8c0cddbbf"
+    },
+    {
+      "description": "Enact FGAP-042: the roadmap becomes a derived view over milestone_precedes_milestone. Register the relation_type (live config + catalog, dual-surface); author the 8 ordering edges over MILE-001..009 (the user-validated lane DAG — three starts, two joins; the chain language of FGAP-042 generalized to the DAG per the approved plan's D1 delta); rewire roadmap-plan.ts from the never-registered roadmap.json/phase_depends_on design to the milestone-chain derivation (loadRoadmap(cwd) — no id, no block, no file; validateRoadmap with endpoint/cycle/positioning codes and a non-status-flipping isolated info; renderRoadmap edges-only); ops -load/-render/-validate keep names with empty params, -list retires; build-html-views gains the derived roadmap section; legacy registry/schemas/roadmap.schema.json deleted; dangling DEC-0012 citations replaced with FGAP-042.",
+      "status": "in-progress",
+      "acceptance_criteria": [
+        "milestone_precedes_milestone (ordering, milestone→milestone, modeled on decision_supersedes_decision) registered in live config AND samples/conception.json; catalog count assertions updated; a fresh accept-all substrate carries it.",
+        "The 8 precedes edges filed (003→004, 004→001, 001→002, 003→006, 004→007, 005→007, 003→009, 005→009); context-validate and context-validate-relations clean after.",
+        "pi-context context-roadmap-render on the live substrate outputs MILE-003,005,008,004,006,009,001,007,002 with per-milestone derived status, phase sections, task tables, and Preceded-by lines sourced strictly from edges (MILE-008 shows none).",
+        "context-roadmap-validate on the live substrate: clean, with only the MILE-008 isolated info finding; each error code (endpoint-missing, cycle, milestone-missing) demonstrated on scratch fixtures; info never flips status.",
+        "context-roadmap-load returns the structured MilestoneRoadmapView; context-roadmap-list and the roadmap-list subcommand are gone; no roadmap.json exists anywhere in the repo; registry/schemas/roadmap.schema.json deleted.",
+        "roadmap-plan.test.ts: pure suites unchanged; rewired fixtures cover empty-view, linear chain, the live-shaped DAG verbatim, cycles, all validation codes; full workspace suite 0 failures.",
+        "build-html-views renders the derived roadmap section from the same view; the hand-authored milestones-and-roadmap.html is untouched.",
+        "Docs-surface-sync: op description strings, both READMEs' roadmap family, skill-narrative if it names roadmap ops, SKILL regen, CHANGELOG [Unreleased] entries in pi-context and pi-agent-dispatch (D1 generalization stated)."
+      ],
+      "files": [
+        "packages/pi-context/src/roadmap-plan.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/roadmap-plan.test.ts",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/src/samples-catalog.test.ts",
+        "packages/pi-agent-dispatch/src/operation-vocab.ts",
+        "scripts/orchestrator/build-html-views.ts",
+        "packages/pi-context/registry/schemas/roadmap.schema.json",
+        ".context/config.json",
+        ".context/relations.json"
+      ],
+      "notes": "Enacts FGAP-042 per the approved plan (2026-07-02 session); D1 chain→DAG generalization user-approved at plan approval; archaeology basis in the session record (FGAP-042 user-directed 2026-06-06; follow-through LLM-omitted). Relation names as module constants; config-driven resolution named as future boundary.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "TASK-077",
+      "oid": "e2793ad57e2a5084ff45b13a7eaadfae",
+      "content_hash": "287d7264f55f47e7a53627f277d2b7a641878bb558486d21b276b2dcc77da1c4",
+      "content_parent": "0de09595ce837f28736d6e9994de5791d3caf381a2d2cb36ef730b46c4735110"
     }
   ]
 }

@@ -13,13 +13,13 @@ Run
 
 The currently-active substrate is whatever `.pi-context.json`'s `contextDir` field names (the active-substrate pointer) — read it to establish which substrate is active. Do NOT assume the active substrate; confirm the resolved `contextDir` with the user before any read or write. Derive current project state (position, open work, recent history) from the active substrate itself — `contextState('.')` / `/context status` (below) plus `git log` — never from a stored narrative.
 
-Substrates can be switched (like switching git branches). Switching flips the active-substrate pointer in `.pi-context.json`; subsequent reads/writes target the newly-active substrate. Pass the target substrate name (from the `listSubstrates` output above) as the second argument:
+Substrates can be switched (like switching git branches). Switching flips the active-substrate pointer in `.pi-context.json`; subsequent reads/writes target the newly-active substrate. Switch via the gated `context-switch` op (never the raw `flipBootstrapPointer` library call — the op routes through the seeded ceremony path):
 
 ```bash
-npx tsx -e "import {flipBootstrapPointer} from '@davidorex/pi-context/context-dir'; flipBootstrapPointer('.', '<target-substrate-dir>', 'human:davidryan@gmail.com')"
+pi-context context-switch --target_dir <target-substrate-dir> --writer '{"kind":"human","user":"davidryan@gmail.com"}' --json
 ```
 
-Replace `<target-substrate-dir>` with the substrate to activate, e.g. `.context` or `.context-jit-spec-v2`. The third argument is the writer identity stamped on the switch.
+Replace `<target-substrate-dir>` with the substrate to activate (from the `listSubstrates` output above), e.g. `.context` or `.context-jit-spec-v2`. Default mode flips to an existing substrate (requires its `config.json` present); `--create_new true` bootstraps a fresh substrate at `--target_dir` AND flips in one operation; `--to_previous true` flips back to the pointer's `previous_contextDir` (`--target_dir` ignored). The op is auth-gated; the `--writer` identity is stamped on the switch.
 
 ## Commands
 
@@ -159,7 +159,7 @@ Typed JSON files with schemas. Substrate writes via block-api primitives (valida
 - **Append** (new item): write JSON to `/tmp/<id>.json`, then `append-block-item --block <name> --arrayKey <key> --autoId true --item @/tmp/<id>.json --writer … --json`. Use `read-schema --schemaName <name> --path properties.<key>.items.required` first when unfamiliar with the block's fields; `--arrayKey` is the block's `array_key` (`read-config --registry block_kinds --id <name>`).
 - **Status mutation / field update**: `update-block-item --block <name> --arrayKey <key> --match '{"id":"…"}' --updates '{…}' --writer …`.
 - **Edges**: `append-relation` / `append-relations`. **Task closure**: file a `verification` item + `append-relation --relation_type verification_verifies_item` + `complete-task --taskId … --verificationId …`. **Integrity**: `context-validate` after relation writes.
-- `--item`/`--updates` `@file` for apostrophe/newline-heavy payloads; verify every write by reading back (`read-block-item` / `read-block-page`). (Library functions with no CLI op — e.g. `flipBootstrapPointer` — still go via `npx tsx -e`.)
+- `--item`/`--updates` `@file` for apostrophe/newline-heavy payloads; verify every write by reading back (`read-block-item` / `read-block-page`). (Library functions with no CLI op still go via `npx tsx -e`; substrate switching has one — `context-switch` — so never raw-flip via `flipBootstrapPointer`.)
 
 **Install ceremony** (per `/context init`). The canonical catalog is the packaged conception `packages/pi-context/samples/conception.json`; legacy `registry/`+`defaults/` are unshipped on-disk test fixtures only:
 - `/context init <dir>` — bootstrap `.pi-context.json` pointer + substrate/schemas dirs only (no config, no defaults)

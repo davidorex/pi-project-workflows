@@ -322,6 +322,19 @@ describe("migrations-store: seedCatalogConfigMigrationDecls (ceremony seeding)",
 		assert.equal(fs.readFileSync(migrationsPathForDir(substrateDir), "utf-8"), before);
 	});
 
+	it("nonexistent substrate dir: returns [] and materializes NOTHING (no dir, no migrations.json)", (t) => {
+		const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "migrations-store-seed-ghost-"));
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		// Pointer names a dir that was never created — the degenerate-pointer shape
+		// read-flavored ceremonies can hit. The seed must not mkdir it into existence.
+		writeBootstrapPointer(cwd, ".ghost");
+		const substrateDir = path.join(cwd, ".ghost");
+		const appended = seedCatalogConfigMigrationDecls(substrateDir);
+		assert.deepEqual(appended, []);
+		assert.ok(!fs.existsSync(substrateDir), "the seed must not create the nonexistent substrate dir");
+		assert.ok(!fs.existsSync(migrationsPathForDir(substrateDir)), "no migrations.json may land anywhere");
+	});
+
 	it("a pre-existing (config, 1.0.0) decl is preserved byte-identical and nothing appended", (t) => {
 		const cwd = makeTmpDir("seed-preexisting");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));

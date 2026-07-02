@@ -929,11 +929,15 @@ export function isSkeletonConfig(config: ConfigBlock): boolean {
  * so the skeleton is cast `as unknown as ConfigBlock` — runtime validation in
  * `writeConfigForDir` enforces only the schema.
  *
- * Seeds the catalog's `config` migration chain (idempotent) before the first
- * config read, so a version-lagging config always has a resolvable chain.
+ * Ensures the substrate dir exists (a write ceremony materializes its own dir),
+ * then seeds the catalog's `config` migration chain (idempotent) before the
+ * first config read, so a version-lagging config always has a resolvable chain.
  */
 export function writeSkeletonConfig(cwd: string, ctx?: DispatchContext): { written: boolean } {
 	const substrateDir = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	// Write ceremony materializes the dir so the seed lands even when this write is the first touch;
+	// read ceremonies rely on the seed helper's absent-dir no-op guard instead.
+	fs.mkdirSync(substrateDir, { recursive: true });
 	seedCatalogConfigMigrationDecls(substrateDir, ctx);
 	const root = path.relative(cwd, substrateDir);
 	if (loadConfig(cwd) !== null) {
@@ -1009,11 +1013,17 @@ export interface AdoptResult {
  * (DEC-0011/0038 offer-don't-impose). The conception ships NO root (it is a
  * template, not an instance — DEC-0041/FGAP-094); this function SETS root to the
  * ACTUAL substrate dir name (resolved from the .pi-context.json pointer) on the
- * adopted config. Validated via writeConfig (whole-config AJV). Seeds the
- * catalog's `config` migration chain (idempotent) before the config pre-read.
+ * adopted config. Validated via writeConfig (whole-config AJV). Ensures the
+ * substrate dir exists (a write ceremony materializes its own dir), then seeds
+ * the catalog's `config` migration chain (idempotent) before the config
+ * pre-read — so a first-touch accept-all on a pointer whose dir was never
+ * created lands the seed before writing config.
  */
 export function adoptConception(cwd: string): AdoptResult {
 	const contextDirAbs = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	// Write ceremony materializes the dir so the seed lands even when accept-all is the first touch;
+	// read ceremonies rely on the seed helper's absent-dir no-op guard instead.
+	fs.mkdirSync(contextDirAbs, { recursive: true });
 	seedCatalogConfigMigrationDecls(contextDirAbs);
 	const root = path.relative(cwd, contextDirAbs);
 	const cfgPath = configPath(cwd);

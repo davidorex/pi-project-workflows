@@ -393,6 +393,27 @@ describe("ceremony legacy-heal seeding — update / check-status / resolve famil
 		assert.ok(loadConfig(tmpRoot), "the lagging config loads through the seeded chain");
 	});
 
+	it("checkStatus on a pointer naming a NONEXISTENT dir degrades empty and materializes NOTHING", () => {
+		// Degenerate pointer: .pi-context.json names a dir that was never created.
+		// checkStatus must degrade exactly as it did before ceremony seeding —
+		// empty report, zero writes: the seed must not mkdir the dir into
+		// existence just to drop a migrations.json into it.
+		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-ceremony-ghost-"));
+		writeBootstrapPointer(tmpRoot, ".ghost");
+		const ghostDir = path.join(tmpRoot, ".ghost");
+		let report!: ReturnType<typeof checkStatus>;
+		assert.doesNotThrow(() => {
+			report = checkStatus(tmpRoot);
+		}, "checkStatus must degrade on the nonexistent substrate dir, not throw");
+		assert.deepEqual(report.perAsset, []);
+		assert.equal(report.summary.total, 0);
+		assert.ok(!fs.existsSync(ghostDir), "checkStatus must not create the pointed-at dir");
+		assert.ok(
+			!fs.existsSync(path.join(ghostDir, "migrations.json")),
+			"no migrations.json may be materialized anywhere",
+		);
+	});
+
 	it("resolveConflict seeds before its config read — a cold call fails on ITS contract error, not the version lag", () => {
 		tmpRoot = makeLegacyProject(["tasks"]);
 		// A cold resolve-conflict on a baseline-less substrate fails on the MISSING

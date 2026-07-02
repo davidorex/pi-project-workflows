@@ -66,6 +66,10 @@ describe("adoptConception (accept-all)", () => {
 
 	it("accept-all writes config with root override", () => {
 		tmpRoot = mkTmp(".context");
+		// Pointer written, dir ABSENT: accept-all is the sanctioned first materializer —
+		// the write ceremony must mkdir the dir so the migration seed lands before the
+		// config write (the seed helper itself no-ops on a nonexistent dir).
+		assert.ok(!fs.existsSync(path.join(tmpRoot, ".context")), "precondition: substrate dir absent at adopt time");
 		const result = adoptConception(tmpRoot);
 		assert.equal(result.adopted, true);
 		const config = loadConfig(tmpRoot);
@@ -77,6 +81,12 @@ describe("adoptConception (accept-all)", () => {
 			"root must be overridden to the actual substrate dir, not the conception's .project",
 		);
 		assert.equal(cfg.block_kinds.length, 18);
+		// First-touch adopt must leave migrations.json carrying the catalog's config chain.
+		const migrations = loadMigrationsFileForDir(path.join(tmpRoot, ".context"));
+		assert.ok(migrations, "a first-touch accept-all must seed migrations.json");
+		const configDecl = migrations!.migrations.find((m) => m.schemaName === "config" && m.fromVersion === "1.0.0");
+		assert.ok(configDecl, "the (config, 1.0.0) decl must be seeded on the dir-absent path");
+		assert.equal(configDecl!.toVersion, "1.7.0");
 	});
 
 	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {

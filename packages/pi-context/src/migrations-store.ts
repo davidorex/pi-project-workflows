@@ -272,12 +272,15 @@ export function removeMigrationDecl(cwd: string, schemaName: string, fromVersion
  * a decl is appended only when its (schemaName, fromVersion) pair is absent
  * on-disk; an existing entry is never replaced. Returns the appended edges
  * (empty when everything was already present or the packaged catalog ships
- * no migrations file).
+ * no migrations file). No-op on a nonexistent substrate dir — the seed heals
+ * substrates, it never materializes them (ceremonies that need the dir create
+ * it themselves before seeding).
  */
 export function seedCatalogConfigMigrationDecls(
 	substrateDir: string,
 	ctx?: DispatchContext,
 ): Array<{ schema: string; from: string; to: string }> {
+	if (!fs.existsSync(substrateDir)) return [];
 	const here = path.dirname(fileURLToPath(import.meta.url));
 	const catalogPath = path.resolve(here, "..", "samples", "migrations.json");
 	if (!fs.existsSync(catalogPath)) return [];

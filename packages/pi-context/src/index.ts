@@ -1503,7 +1503,11 @@ export interface CheckStatusReport {
  * re-sync, slice S3). Compares, per installed schema, the S2 install baseline
  * against the catalog's current schema file and the currently-installed schema
  * file, classifies the drift, and RETURNS the report. Writes NOTHING anywhere —
- * no config write, no file copy, no mkdir; only reads.
+ * no config write, no file copy, no mkdir; only reads. One designed exception:
+ * like every ceremony entry point it seeds the catalog's `config` migration
+ * chain into `migrations.json` (idempotent) before its first config read — the
+ * heal semantic, consistent with idempotent re-init healing — so a
+ * version-lagging legacy substrate is diagnosable instead of throwing.
  *
  * For each `config.installed_schemas` entry:
  *   - baseline      = config.installed_from?.assets?.[name]?.content_hash
@@ -1537,6 +1541,9 @@ export function checkStatus(cwd: string): CheckStatusReport {
 	if (destRoot === null) {
 		return { perAsset, summary: emptySummary() };
 	}
+	// Ceremony seed (idempotent) before the config read below — the one
+	// sanctioned write in this otherwise pure-read detector (see docstring).
+	seedCatalogConfigMigrationDecls(destRoot);
 	const config = loadConfig(cwd);
 	if (!config) {
 		return { perAsset, summary: emptySummary() };
@@ -1847,6 +1854,10 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.";
 		return result;
 	}
+	// Seed the catalog's `config` migration chain (idempotent) before the config
+	// read below — every ceremony entry point seeds before its first config read,
+	// so a version-lagging legacy substrate heals on update instead of throwing.
+	seedCatalogConfigMigrationDecls(destRoot);
 	const config = loadConfig(cwd);
 	if (!config) {
 		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
@@ -2271,6 +2282,10 @@ export function resolveConflict(
 	if (destRoot === null) {
 		throw new Error(`resolve-conflict: no active substrate resolved for '${cwd}'`);
 	}
+	// Ceremony seed (idempotent) — update-family class rule: every ceremony
+	// entry point seeds the catalog's `config` migration chain before its first
+	// config read (here reached via stampBaselineFromBody's loadConfig).
+	seedCatalogConfigMigrationDecls(destRoot);
 	const { samplesRoot, byId } = resolveCatalog();
 	const kind = byId.get(name);
 	if (!kind) {
@@ -2361,6 +2376,11 @@ export function resolveBlocked(
 	if (destRoot === null) {
 		throw new Error(`resolve-blocked: no active substrate resolved for '${cwd}'`);
 	}
+	// Ceremony seed (idempotent) — update-family class rule: every ceremony
+	// entry point seeds the catalog's `config` migration chain before its first
+	// config read (here reached via stampBaselineFromBody's loadConfig on the
+	// pass path).
+	seedCatalogConfigMigrationDecls(destRoot);
 	const pending = loadPendingBlockedForDir(destRoot);
 	const entry = pending?.entries.find((e) => e.name === name);
 	if (!entry) {
@@ -2820,6 +2840,11 @@ export function switchToExisting(cwd: string, targetDir: string, writerIdentity:
 		);
 	}
 	flipBootstrapPointer(cwd, targetDir, writerIdentity);
+	// Seed the TARGET substrate's catalog `config` migration chain (idempotent)
+	// right after the flip — every ceremony entry point seeds before its first
+	// config read, so the first read on the now-active substrate (reconcile's
+	// below, or any later one) cannot throw on a version-lagging legacy config.
+	seedCatalogConfigMigrationDecls(resolveContextDir(cwd));
 	// Register the now-active substrate's identity if the target carried a
 	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
 	// does not raise a false substrate_id_unregistered after the flip.
@@ -2854,6 +2879,11 @@ export function switchToPrevious(cwd: string, writerIdentity: string): { from: s
 		);
 	}
 	flipBootstrapPointer(cwd, previous, writerIdentity);
+	// Seed the flipped-back-to substrate's catalog `config` migration chain
+	// (idempotent) right after the flip — same switch-family ceremony rule as
+	// switchToExisting: the first config read on the now-active substrate must
+	// not throw on a version-lagging legacy config.
+	seedCatalogConfigMigrationDecls(resolveContextDir(cwd));
 	// Register the now-active substrate's identity if flipping back landed on a
 	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
 	// does not raise a false substrate_id_unregistered after the flip. Mirrors

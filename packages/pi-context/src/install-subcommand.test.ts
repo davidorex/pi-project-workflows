@@ -333,9 +333,87 @@ describe("installContext", () => {
 	});
 });
 
+// TASK-070 class rule: EVERY sanctioned ceremony entry point seeds the catalog's
+// `config` migration chain before its first config read, so a legacy substrate
+// (1.0.0 config, no migrations.json) heals on the ceremony instead of throwing.
+// init / accept-all / install seeding is covered in their own suites (and the
+// legacy-heal test above); this suite covers the update / check-status / resolve
+// family plus the switch family (the switch tests live in
+// context-switch-tool.test.ts beside their function suites).
+describe("ceremony legacy-heal seeding — update / check-status / resolve family (TASK-070 class rule)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// The install legacy-heal fixture shape: config stamped 1.0.0 (lagging the
+	// bundled schema), no migrations.json.
+	function makeLegacyProject(installedSchemas: string[] = []): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-ceremony-legacy-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		const legacyConfig = {
+			schema_version: "1.0.0",
+			root: ".project",
+			block_kinds: [],
+			lenses: [],
+			installed_schemas: installedSchemas,
+			installed_blocks: [],
+		};
+		fs.writeFileSync(path.join(dir, ".project", "config.json"), JSON.stringify(legacyConfig, null, 2));
+		return dir;
+	}
+
+	function assertConfigDeclSeeded(dir: string): void {
+		const migrations = loadMigrationsFileForDir(path.join(dir, ".project"));
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "config" && m.fromVersion === "1.0.0"),
+			"the ceremony must seed the (config, 1.0.0) decl",
+		);
+	}
+
+	it("updateContext completes on a legacy substrate and seeds the config decl", () => {
+		tmpRoot = makeLegacyProject();
+		let result!: ReturnType<typeof updateContext>;
+		assert.doesNotThrow(() => {
+			result = updateContext(tmpRoot);
+		}, "updateContext must heal the legacy substrate, not throw on the version lag");
+		assert.equal(result.error, undefined, "updateContext must complete on the legacy substrate");
+		assertConfigDeclSeeded(tmpRoot);
+		assert.ok(loadConfig(tmpRoot), "the lagging config loads through the seeded chain");
+	});
+
+	it("checkStatus completes on a legacy substrate and seeds the config decl (the designed heal write)", () => {
+		tmpRoot = makeLegacyProject(["tasks"]);
+		let report!: ReturnType<typeof checkStatus>;
+		assert.doesNotThrow(() => {
+			report = checkStatus(tmpRoot);
+		}, "checkStatus must heal the legacy substrate, not throw on the version lag");
+		assert.equal(report.summary.total, 1, "the drift report covers the declared schema");
+		assertConfigDeclSeeded(tmpRoot);
+		assert.ok(loadConfig(tmpRoot), "the lagging config loads through the seeded chain");
+	});
+
+	it("resolveConflict seeds before its config read — a cold call fails on ITS contract error, not the version lag", () => {
+		tmpRoot = makeLegacyProject(["tasks"]);
+		// A cold resolve-conflict on a baseline-less substrate fails on the MISSING
+		// INSTALL BASELINE (its own contract error) — reached only because the seed
+		// let stampBaselineFromBody's loadConfig walk the 1.0.0 config forward.
+		assert.throws(() => resolveConflict(tmpRoot, "tasks"), /no install baseline in config/);
+		assertConfigDeclSeeded(tmpRoot);
+	});
+
+	it("resolveBlocked seeds at entry — a cold call fails on its pending-entry contract error, decl present", () => {
+		tmpRoot = makeLegacyProject(["tasks"]);
+		assert.throws(() => resolveBlocked(tmpRoot, "tasks"), /no pending-blocked entry/);
+		assertConfigDeclSeeded(tmpRoot);
+	});
+});
+
 // FGAP-029 safe re-sync (slice S3): /context check-status is a PURE-READ drift
 // detector — it compares the S2 install baseline against the catalog + the
-// currently-installed schema files, classifies per-schema drift, and writes NOTHING.
+// currently-installed schema files, classifies per-schema drift, and writes NOTHING
+// (except the TASK-070 ceremony seed of the catalog's `config` migration decls
+// into migrations.json — idempotent, covered by the legacy-heal suite above).
 describe("checkStatus (read-only drift detector)", () => {
 	afterEach(() => {
 		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });

@@ -23,10 +23,12 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
+import { loadConfig } from "./context.js";
 import { mintSubstrateId, writeBootstrapPointer } from "./context-dir.js";
 import { loadRegistry, registerSubstrate, writeRegistry } from "./context-registry.js";
 import { validateContext } from "./context-sdk.js";
 import { archiveSubstrate, listSubstrates, switchAndCreate, switchToExisting, switchToPrevious } from "./index.js";
+import { loadMigrationsFileForDir } from "./migrations-store.js";
 
 /**
  * Materialize a fake substrate dir at `<cwd>/<name>/config.json` so target-dir
@@ -73,6 +75,25 @@ function makeSubstrateValidNoId(cwd: string, name: string): void {
 	fs.writeFileSync(
 		path.join(dir, "config.json"),
 		JSON.stringify({ schema_version: "1.7.0", block_kinds: [], root: name }),
+		"utf-8",
+	);
+}
+
+/**
+ * Materialize a version-LAGGING legacy substrate: a config stamped
+ * `schema_version: "1.0.0"` (the bundled config schema is ahead) and NO
+ * migrations.json — the pre-seeding era's on-disk state. Reading its config
+ * without the catalog `config` chain seeded throws a version mismatch, so the
+ * switch ceremonies must seed the target right after the pointer flip
+ * (TASK-070 class rule: every ceremony entry point seeds before its first
+ * config read).
+ */
+function makeLegacySubstrate(cwd: string, name: string): void {
+	const dir = path.join(cwd, name);
+	fs.mkdirSync(dir, { recursive: true });
+	fs.writeFileSync(
+		path.join(dir, "config.json"),
+		JSON.stringify({ schema_version: "1.0.0", block_kinds: [], root: name }),
 		"utf-8",
 	);
 }
@@ -153,6 +174,17 @@ describe("switchToExisting", () => {
 			result.issues.find((i) => i.code === "substrate_id_registry_mismatch"),
 			undefined,
 		);
+	});
+
+	it("seeds a legacy target's config migration chain right after the flip — post-switch loadConfig is green", () => {
+		makeLegacySubstrate(tmpDir, ".legacy");
+		assert.doesNotThrow(() => switchToExisting(tmpDir, ".legacy", "test-op"));
+		const migrations = loadMigrationsFileForDir(path.join(tmpDir, ".legacy"));
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "config" && m.fromVersion === "1.0.0"),
+			"the switch must seed the (config, 1.0.0) decl into the TARGET substrate",
+		);
+		assert.ok(loadConfig(tmpDir), "the first config read after the switch loads through the seeded chain");
 	});
 });
 
@@ -266,6 +298,23 @@ describe("switchToPrevious", () => {
 			issues.find((i) => i.code === "substrate_id_unregistered"),
 			undefined,
 		);
+	});
+
+	it("seeds the flipped-back-to legacy substrate — post-switch loadConfig is green", () => {
+		writeBootstrapPointer(tmpDir, ".legacy");
+		makeLegacySubstrate(tmpDir, ".legacy");
+		makeSubstrateValidNoId(tmpDir, ".modern");
+		switchToExisting(tmpDir, ".modern", "test-op-1"); // seeds .modern only — .legacy stays unseeded
+		assert.ok(!fs.existsSync(path.join(tmpDir, ".legacy", "migrations.json")), "precondition: .legacy is unseeded");
+
+		const { to } = switchToPrevious(tmpDir, "test-op-2");
+		assert.equal(to, ".legacy");
+		const migrations = loadMigrationsFileForDir(path.join(tmpDir, ".legacy"));
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "config" && m.fromVersion === "1.0.0"),
+			"flipping back must seed the (config, 1.0.0) decl into the now-active substrate",
+		);
+		assert.ok(loadConfig(tmpDir), "the first config read after flipping back loads through the seeded chain");
 	});
 });
 

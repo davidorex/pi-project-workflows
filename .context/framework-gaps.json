@@ -3425,6 +3425,47 @@
       "id": "FGAP-104",
       "oid": "6ef2afa56ccd3df0de74b53fd796af26",
       "content_hash": "af4fc20d53a10243b258779428450474b2a67ced14889a493cad3741f0491b6b"
+    },
+    {
+      "title": "Versioned substrate documents never converge their persisted schema_version at write time — config is the live instance: reads migrate in memory forever, writes persist the stale version back",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "description": "Read-time migration (loadConfigForDir, TASK-070) carries a lagging config forward in memory only; no write path stamps the current schema version, so the staleness is permanent: writeConfigForDir (context.ts:872-874) passes schema_version through verbatim, every sanctioned mutation writes 1.0.0 back (observed: amendConfigEntryForDir on a live-copy — on-disk 1.0.0 before load, after chain-walked load, and after the write), every load resolves the chain forever, and future bumps stack hops on every read. Fresh substrates are born lagging: writeSkeletonConfig writes a literal \"1.0.0\" (context.ts:948) and adoptConception writes conception.json's \"1.0.0\" against the 1.7.0 bundled schema. Scope hole confirmed against filed text: TASK-070 criterion 3 pins \"carried forward in memory\" (read half only); TASK-073 criterion 2 stamps \"the whole-block object ... on every block write\" (blocks only); no FEAT-010 criterion states persisted config version converges. Class: read-time in-memory migration without write-time version convergence — blocks (remedy filed, TASK-073, planned), config (this instance, unfiled until now), migrations.json (latent sibling: appendMigrationDeclForDir carries the loaded envelope version forward verbatim, migrations-store.ts:208-219, and loadMigrationsFileForDir has no migration path; benign while file and schema both sit at 1.0.0).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "872-874",
+          "reference": "writeConfigForDir delegates to writeTypedFile with the caller's object verbatim — nothing anywhere sets schema_version; the AJV gate validates but does not stamp."
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "1261-1420",
+          "reference": "Observed write-path fact (scratch byte-copy of the live substrate): amendConfigEntryForDir load→mutate→write persisted schema_version 1.0.0 unchanged after a chain-walked load — the sanctioned write writes the stale version back."
+        },
+        {
+          "file": "packages/pi-context/src/context.ts",
+          "lines": "948",
+          "reference": "writeSkeletonConfig writes a literal schema_version \"1.0.0\"; adoptConception writes samples/conception.json which itself declares \"1.0.0\" (line 2) against the bundled 1.7.0 schema — fresh substrates are born in the mismatch branch."
+        },
+        {
+          "file": "packages/pi-context/src/migrations-store.ts",
+          "lines": "208-219",
+          "reference": "Latent class sibling: appendMigrationDeclForDir carries the loaded migrations.json envelope schema_version forward verbatim, and loadMigrationsFileForDir raw-validates with no migration path — reproduces this defect at the first migrations-schema bump."
+        },
+        {
+          "file": "packages/pi-context/src/schema-migrations.ts",
+          "lines": "144-159",
+          "reference": "runMigrations applies chain fns only; an identity decl returns data unchanged, so even the in-memory form keeps 1.0.0 — the chain is resolved on every load, permanently (loadConfigForDir consults the registry on every mismatch)."
+        }
+      ],
+      "impact": "The on-disk validity signal is permanently false (1.0.0 declared, 1.7.0 effective) — raw readers cannot distinguish stale from current; chain resolution is paid on every config read forever and grows with every future bump; the ceremony-seeding and recovery machinery becomes load-bearing steady state for a fact one write-time stamp would make durable; fresh catalog substrates begin life in the mismatch branch.",
+      "proposed_resolution": "Stamp schema_version = the bundled config schema version inside writeConfigForDir before delegating to writeTypedFile — truthful by construction (the AJV gate validates the post-stamp object against the bundled schema; every mutating caller loads through the migrating loader first), symmetric with TASK-073's block-envelope design, and self-converging (the first sanctioned write persists the current version; subsequent loads version-match and never consult the registry). Also fixes born-lagging fresh substrates (skeleton + adoptConception writes stamp current). Optional in-memory hygiene: replace the identity decl with a declarative set of schema_version (mechanically supported today). migrations.json's latent sibling is named for the class, addressed when its schema first bumps or folded into TASK-073's implementation locus if the stamp lands generically in writeTypedFile. Determination at task time.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-02",
+      "id": "FGAP-105",
+      "oid": "23e1efb8f3c97f1b159111690174dfb8",
+      "content_hash": "b60cb1013acd89bbf45839ccc865d247dd964e1eed0b3054fb5435265bebf5ed"
     }
   ]
 }

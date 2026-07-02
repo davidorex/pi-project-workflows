@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Regenerated `SKILL.md`, restoring the `<events>` section (`tool_call`, `tool_result`) omitted by an earlier partial generation; the generated surface again matches the package's registrations.
+
 ## [0.31.0] - 2026-06-13
 
 ### Changed

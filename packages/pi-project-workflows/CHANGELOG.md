@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Regenerated the aggregate pi-agent-dispatch `SKILL.md`, restoring the `<events>` section omitted by an earlier partial generation.
+
 - Regenerated the aggregate `SKILL.md` for the pi-context `write-schema-migration` op description now enumerating the `map_each` transform (table lookup with parent/child fallback endpoint; set-field-on-each-element) alongside rename/set/delete/coerce; see the `pi-context` changelog for the member-package detail.
 
 ## [0.31.0] - 2026-06-13

@@ -88,6 +88,10 @@ Execute the bounded work-order loop: dispatch target_agent (via direct pi-jit-ag
 
 </tools_reference>
 
+<events>
+`tool_call`, `tool_result`
+</events>
+
 <objective>
 pi-agent-dispatch is the harness-confined orchestrator's in-pi surface. It registers Pi tools the orchestrator agent invokes to dispatch sub-agents, author specs and tool grants, run deterministic checks the executive cannot fake, commit with writer attestation, and drive bounded work-order loops. It is the sibling-consumer registration site; pi-jit-agents stays a library consumed directly by this package and by pi-workflows.
 </objective>

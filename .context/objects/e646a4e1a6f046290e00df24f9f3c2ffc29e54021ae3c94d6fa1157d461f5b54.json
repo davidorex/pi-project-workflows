@@ -1,0 +1,22 @@
+{
+  "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:565-582): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242), including its fail-fast throw when no chain resolves. Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on mismatch with no resolvable chain it fails fast (throws, mirroring validateBlockWithMigrationForDir's version-mismatch throw), never falling back to raw validation; on version match it does not consult the registry.",
+    "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
+    "A config whose schema_version lags the bundled config schema by the real on-disk gap (1.0.0 → current) loads valid through the migrated path, carried forward in memory, with zero config-load failure of any exit class — demonstrated by runtime reproduction on a scratch substrate, not by a version-matched no-op.",
+    "The map_each declarative-transform primitive is added to the TransformOp union (migrations-store.ts:64-68), the migrations.schema.json TransformOp oneOf, and applyOp (migration-registry-loader.ts), with two declared modes: table mode (`path` + `table` [+ `fallback`, enum parent|child, defaulting to \"parent\" when absent]) replaces each string element of the array at `path` by table[element], or by {relation_type: element, item_endpoint: fallback} when unmatched, with non-string elements passing through unchanged; and set-on-each mode (`path` + `field` + `value`) sets element[field]=value on each object element of the array at `path`. A migration step exercising each mode transforms the array elements at `path` accordingly, verified against a fixture.",
+    "A current-version config (schema_version equal to the bundled schema version) loads byte-unchanged: no migration applied, registry not consulted.",
+    "TASK-070 is recorded as the config instance of FEAT-010; its scope is the config instance, not the block-data class.",
+    "samples/migrations.json ships an identity `config` migration declaration covering 1.0.0 → the bundled config schema version; a fresh init → accept-all → install substrate carries that declaration in its migrations.json, so loadConfigForDir resolves a NON-EMPTY chain for `config` and a catalog-born substrate loads through the migration path, never reaching the no-chain throw."
+  ],
+  "files": [
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/migrations-store.ts",
+    "packages/pi-context/src/migration-registry-loader.ts",
+    "packages/pi-context/schemas/migrations.schema.json",
+    "packages/pi-context/samples/migrations.json",
+    ".context/migrations.json"
+  ],
+  "notes": "Design: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (+ -design-feasibility, -proposal-validation). Mismatch-with-no-resolvable-chain resolved 2026-07-02 (user-adopted): fail-fast + shipped coverage — derived from the description's named mirror (validateBlockWithMigrationForDir throws, schema-validator.ts:233-237), FEAT-010's invariant (no brick / no silent validity-signal corruption / recoverable via sanctioned ops), ops-registry.ts:1314's companion-migration requirement, and criterion 2's NON-EMPTY-chain premise. Lagging substrates without a chain recover via TASK-071's recover path. Criteria validation: analysis/2026-07-02-task-070-acceptance-criteria-validation.md."
+}

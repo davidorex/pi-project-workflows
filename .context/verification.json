@@ -1882,6 +1882,15 @@
       "id": "VER-059",
       "oid": "2d8269daa53d1c4721b1fdaffd109d26",
       "content_hash": "2a347452d24aea7e1039c28631148c3d822998d9d3005b7bdc952bc517f747ec"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-02",
+      "evidence": "TASK-070 migration-aware config load: full workspace suite 0 failures (build/check green each commit). Runtime demos on scratch substrates: fresh init→accept-all→install ceremony green with seeded (config,1.0.0→1.7.0) chain; removing the decl reproduces the fail-fast chain error and re-creating restores green (proves flow-through-chain, not version-matched no-op); a 1.7.0 config loads with a byte-garbage migrations.json (registry never consulted on match); a cold legacy substrate heals on check-status. Live substrate: criterion-2 decl filed via authGated write-schema-migration — read-config threw the no-chain error immediately before and returned green immediately after. Three fresh-context adversarial rounds: initial probe (2 findings), class fix b47dec1 (re-audit: holds, 2 LOW), guard+materialize c12e87a (re-audit: holds, nothing new — converged). Commits 6661c9c, dbd7c88, 08f00f9, b47dec1, c12e87a; merged to main.",
+      "id": "VER-060",
+      "oid": "04cb09ff022dc9ef244cef314c167663",
+      "content_hash": "3048a4c1826c08fe68bfe2a9364f8cc2217f9edca91f46a6d3a856fcde2017e5"
     }
   ]
 }

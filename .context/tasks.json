@@ -1364,7 +1364,7 @@
     },
     {
       "description": "Add a load-time config-migration path to loadConfigForDir (context.ts:565-582): read the config's schema_version and, on mismatch with the bundled config schema version, walk the schema-name-keyed migration chain for config before validating — mirroring validateBlockWithMigrationForDir (schema-validator.ts:205-242), including its fail-fast throw when no chain resolves. Add a config migration registry entry and the declarative-transform primitive (map_each) that maps array elements within a migration step.",
-      "status": "in-progress",
+      "status": "completed",
       "acceptance_criteria": [
         "loadConfigForDir reads the config's schema_version, compares it to the bundled config schema version, and on mismatch consults the schema-name-keyed migration chain for `config` (via the project MigrationRegistry built from migrations.json) and runs it forward before validating; on mismatch with no resolvable chain it fails fast (throws, mirroring validateBlockWithMigrationForDir's version-mismatch throw), never falling back to raw validation; on version match it does not consult the registry.",
         "A `config` migration declaration covering the on-disk config's schema_version up to the bundled schema version is filed in the substrate's migrations.json via write-schema-migration, such that loadConfigForDir resolves a NON-EMPTY chain for it; the registry is not empty for `config` at the demonstrated version gap.",
@@ -1387,8 +1387,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-070",
       "oid": "dbf5c76b88715ea39a31807b0ea1076c",
-      "content_hash": "3530b860b36a65a08b1d5f60ecfde173b08415c41cc8d8663f40d06e0ac2e2ed",
-      "content_parent": "f7b9b89c6deff2358970804d9ec81960f685536a9714449a765ffac681b0a75c"
+      "content_hash": "e646a4e1a6f046290e00df24f9f3c2ffc29e54021ae3c94d6fa1157d461f5b54",
+      "content_parent": "3530b860b36a65a08b1d5f60ecfde173b08415c41cc8d8663f40d06e0ac2e2ed"
     },
     {
       "description": "Add a sanctioned config-repair path that applies the corrective mutation and validates the result, rather than loading-and-validating the stored config before the repair, so an already-invalid config is recoverable. Scope: any invalid config regardless of version, distinct from the version-gap migration. The repair mechanism is a `force`/`repair` opt on amend-config that bypasses the pre-load validation and validates the result via the existing write path (block-api.ts:892); derived from the existing op surface, no DEC.",

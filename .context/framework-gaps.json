@@ -3054,7 +3054,7 @@
     },
     {
       "title": "Config-schema evolution has no load-time migration path",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "loadConfigForDir parses config.json then calls validateFromFile(bundledSchemaPath(\"config\"), …) and returns — no schema_version check, no migration step. A schema-name-keyed migration mechanism exists (validateBlockWithMigrationForDir: compare schema.version to data.schema_version, walk the registered chain on mismatch, then validate) and \"config\" is a valid schemaName, but config-load never invokes it. When config.schema.json advances to a shape the stored config does not satisfy, every config-loading op fails validation (exit 5) with no path to carry the config across the version gap. The class: read-time validation and migration require a versioned-data envelope; config carries no schema_version, so the mechanism is uninvoked and config's raw-validate brick is the acute symptom.",
       "evidence": [
@@ -3076,14 +3076,16 @@
       ],
       "impact": "A breaking config-schema bump strands the live substrate: config.json fails validation against the rebuilt CLI and every config-loading op exits 5, with no sanctioned recovery (amend-config also validates-before-mutate). Reproduced in this project: the TASK-020 state_derivation.blocked_by shape change bricked the live .context until the change was reverted. Until a config-migration path exists, every future config-schema shape change carries the same live-substrate-bricking risk.",
       "canonical_vocabulary": "schema migration (forward migration / version-gated transform applied at load)",
-      "proposed_resolution": "Add a load-time config-migration path mirroring validateBlockWithMigrationForDir: loadConfigForDir reads the config's schema_version and, on mismatch with the bundled schema version, walks the schema-name-keyed migration chain for \"config\" before validating. Requires a declarative-transform primitive able to map array elements (map_each) and a config migration registry entry. Verified design + corrected wiring: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (and the same-date feasibility/validation md's). File at the class level (schema-evolution safety: read-time validation + migration require a versioned-data envelope).",
+      "proposed_resolution": "RESOLVED at TASK-070: loadConfigForDir migrates-then-validates via the schema-name-keyed config chain (fail-fast on unresolvable chain, no raw-validate fallback); map_each declarative-transform primitive shipped (table + set-on-each modes); catalog identity config 1.0.0→1.7.0 declaration in samples/migrations.json with idempotent seeding at every ceremony entry point (write ceremonies materialize-then-seed; read ceremonies no-op on a nonexistent dir); the live substrate's config chain filed via write-schema-migration. Verified VER-060. --- Original: Add a load-time config-migration path mirroring validateBlockWithMigrationForDir: loadConfigForDir reads the config's schema_version and, on mismatch with the bundled schema version, walks the schema-name-keyed migration chain for \"config\" before validating. Requires a declarative-transform primitive able to map array elements (map_each) and a config migration registry entry. Verified design + corrected wiring: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (and the same-date feasibility/validation md's). File at the class level (schema-evolution safety: read-time validation + migration require a versioned-data envelope).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-095",
       "oid": "9a63822d8ac46e00f1527c96c790f66f",
-      "content_hash": "a3bdf158ebd33e687c467cb434b8fc7d70d3f6e959604807a23227e6bd33f82d",
-      "content_parent": "230fd21b01482fa433c21d5dd9970688622d44291960d0e87ca80998ebfb945e",
-      "priority": "P2"
+      "content_hash": "cbadcc9ea6542e4fb96f32486595ff01bdce23aa6c8c3de81bb2b6e5e6c0025d",
+      "content_parent": "a3bdf158ebd33e687c467cb434b8fc7d70d3f6e959604807a23227e6bd33f82d",
+      "priority": "P2",
+      "closed_at": "2026-07-02",
+      "closed_by": "human/davidryan@gmail.com -- fixed by TASK-070 (commits 6661c9c..c12e87a) per its 7 accepted criteria; verified VER-060"
     },
     {
       "title": "Config repair is impossible once the stored config is invalid (validate-before-mutate)",

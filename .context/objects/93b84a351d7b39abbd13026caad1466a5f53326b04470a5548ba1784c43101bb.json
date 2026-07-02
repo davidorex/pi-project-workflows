@@ -1,0 +1,5 @@
+{
+  "description": "Before ANY implementation work under a milestone begins, the filed text of EVERY member element of that milestone — the phase's intent/goal, each member task's description and acceptance_criteria, and each member gap/issue/feature criterion the phase names — is strictly validated by a fresh agent against the current code: reference accuracy (anchors and behavior claims as of today), mechanism truth (presupposed machinery exists as described), internal AND cross-member consistency (member texts must leave shared design decisions coherent), testability (each criterion independently verifiable as written), and provenance (an element narrowing beyond its user-directed source is a filing defect to surface, never a requirement to implement). Findings are corrected through provenance-gated grants BEFORE the milestone's first task enters plan mode. Basis: filed atoms are composed verbatim into downstream briefs; validation has repeatedly caught unresolved design holes and stale anchors pre-implementation.",
+  "enforcement": "manual",
+  "severity": "error"
+}

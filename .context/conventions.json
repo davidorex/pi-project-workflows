@@ -99,6 +99,14 @@
       "description": "Scope: Claude Code only — not the in-pi context. Match the subagent type to the work, and make every empirical step in a brief a non-inferrable deliverable. 1. Explore is a read-only search/trace agent — fan-out reading, locating, and enumerating code, not running experiments. Dispatch Explore ONLY for read / trace / enumerate work. Any task whose decisive step RUNS code or WRITES — a runtime experiment, a validated write, building or executing a fixture — goes to an executing agent (general-purpose) or the orchestrator runs it; never Explore. 2. Every empirical step a brief requires is a non-inferrable deliverable: the brief demands the actual observed output (the pasted command result) and instructs — 'if you cannot run it, STOP and report exactly what blocked; never infer or reason about what the result would be.' A reasoned-but-unrun conclusion is not a finding and must not be reported as one. 3. The orchestrator independently re-runs or verifies the load-bearing empirical claim before relaying it: an agent's brief and process are invisible to the user, so an unverified inferred claim reaches the user as fact unless caught.",
       "oid": "ffdf4b07456e67643703a231a31b8ab4",
       "content_hash": "d041f7ece998695a082198e1f2ae10c72b719488ff96ab9f6b95275f25f94371"
+    },
+    {
+      "id": "milestone-validity-gate",
+      "description": "Before ANY implementation work under a milestone begins, the filed text of EVERY member element of that milestone — the phase's intent/goal, each member task's description and acceptance_criteria, and each member gap/issue/feature criterion the phase names — is strictly validated by a fresh agent against the current code: reference accuracy (anchors and behavior claims as of today), mechanism truth (presupposed machinery exists as described), internal AND cross-member consistency (member texts must leave shared design decisions coherent), testability (each criterion independently verifiable as written), and provenance (an element narrowing beyond its user-directed source is a filing defect to surface, never a requirement to implement). Findings are corrected through provenance-gated grants BEFORE the milestone's first task enters plan mode. Basis: filed atoms are composed verbatim into downstream briefs; validation has repeatedly caught unresolved design holes and stale anchors pre-implementation.",
+      "enforcement": "manual",
+      "severity": "error",
+      "oid": "0893eca1bfd670d02a579a13a59060cc",
+      "content_hash": "93b84a351d7b39abbd13026caad1466a5f53326b04470a5548ba1784c43101bb"
     }
   ]
 }

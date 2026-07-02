@@ -1101,14 +1101,14 @@ function resyncSchema(
 	// throws on collision). Registration is required BEFORE the validate+migrate
 	// call so the loaded registry carries the forward edge.
 	const existing = loadMigrationsFileForDir(destRoot);
-	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName}\u0000${m.fromVersion}`));
 	// Accumulate the decls THIS call actually appends (the not-already-present
 	// subset), reported as the { schema, from, to } shape for the caller to
 	// surface (FGAP-050). On the blocked rollback path below this list is
 	// discarded and [] is returned (post-rollback truth: nothing stuck).
 	const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
 	for (const decl of chain) {
-		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		const key = `${decl.schemaName}\u0000${decl.fromVersion}`;
 		if (present.has(key)) continue;
 		appendMigrationDeclForDir(destRoot, decl);
 		present.add(key);

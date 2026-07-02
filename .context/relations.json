@@ -7354,5 +7354,31 @@
       "refname": "issue-005"
     },
     "relation_type": "feature_resolves_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "76a82d22340fc5bfd25457e37f0fc67a",
+      "refname": "FGAP-103"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9a2bcfaf30cf57acf84e7183261ca7c8",
+      "refname": "FGAP-018"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "76a82d22340fc5bfd25457e37f0fc67a",
+      "refname": "FGAP-103"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a5f7fc190b220f06db71edaa9595b44f",
+      "refname": "FGAP-102"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

@@ -1891,6 +1891,15 @@
       "id": "VER-060",
       "oid": "04cb09ff022dc9ef244cef314c167663",
       "content_hash": "3048a4c1826c08fe68bfe2a9364f8cc2217f9edca91f46a6d3a856fcde2017e5"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-02",
+      "evidence": "TASK-077 roadmap-as-derived-view: full workspace suite 0 failures (pi-context 1186/0/2 pre-existing skips; dispatch 93/93; cli 155/155); biome+tsc clean. Live runtime demo: context-roadmap-render outputs MILE-003,005,008,004,006,009,001,007,002 with per-milestone derived status, phase sections, task tables, Preceded-by strictly from the 8 authored edges (MILE-008 none); context-roadmap-validate clean with only the MILE-008 isolated info; context-roadmap-load structured view; zero roadmap.json in the repo; regenerated HTML overview carries the derived section (9 milestones/8 edges verified in the baked payload). Fresh adversarial probe (8 attack surfaces incl. dist-path fixtures for every validation code, info-never-flips, fabrication, catalog parity on a fresh accept-all substrate, docs truth): zero defects, merge-ready first pass. Criterion 2 closes as zero-delta: context-validate's warning set is byte-identical pre/post change (24 pre-existing warnings; none introduced). Commits 88319af (substrate pre-step) + 4212396 (rewire); merged to main.",
+      "id": "VER-061",
+      "oid": "efcffd910f30554f332f821b698035d3",
+      "content_hash": "0d030a29de195c62ea5b13bc9f0892c9624c7ea68252c0023592b151151a06d6"
     }
   ]
 }

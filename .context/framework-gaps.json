@@ -1446,7 +1446,7 @@
     {
       "id": "FGAP-042",
       "title": "Roadmap is a view over ordered milestones; ordering is a relation",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "Milestone order is a milestone-to-milestone ordering relation. The roadmap is a derived view over milestones in that order. No roadmap block exists.",
@@ -1457,12 +1457,14 @@
         }
       ],
       "impact": "The roadmap has no live source and milestone sequence is unrepresented.",
-      "proposed_resolution": "Register relation_type milestone_precedes_milestone (category ordering, source milestone, target milestone), modeled on the existing decision_supersedes_decision. Roadmap order is the precedes-chain: start at the milestone with no predecessor and follow precedes to the end. Render the roadmap as a view over that chain; add no block.",
+      "proposed_resolution": "RESOLVED at TASK-077: milestone_precedes_milestone registered (live + catalog, modeled on decision_supersedes_decision); the roadmap derives as a view over the precedes DAG (chain generalized to DAG per the user-approved plan delta — three starts, two joins over MILE-001..009); rendered/validated/loaded by the param-less context-roadmap ops; no block, no roadmap.json; the legacy machinery retired. --- Original: Register relation_type milestone_precedes_milestone (category ordering, source milestone, target milestone), modeled on the existing decision_supersedes_decision. Roadmap order is the precedes-chain: start at the milestone with no predecessor and follow precedes to the end. Render the roadmap as a view over that chain; add no block.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "99dd98ebd606aa911c245f6c1967c8a3",
-      "content_hash": "aec9e606826116d80bb11df392df0bbc96962ddd015af6b71fdec9691b19ce27",
-      "content_parent": "7570c12931f1f35e40a6cae6ac684c49a24b029f4c7e71571fc0ddfd882f9354"
+      "content_hash": "cab7f8cb5d0105bfe6e3cbf7ef8dfe32bfe7e4e72e7b3d763727f7a89f6a9050",
+      "content_parent": "aec9e606826116d80bb11df392df0bbc96962ddd015af6b71fdec9691b19ce27",
+      "closed_at": "2026-07-02",
+      "closed_by": "human/davidryan@gmail.com -- fixed by TASK-077 (commits 88319af + 4212396) per its 8 accepted criteria; verified VER-061"
     },
     {
       "id": "FGAP-043",

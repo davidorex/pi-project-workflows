@@ -116,6 +116,31 @@
 							"enum": ["string", "number", "boolean", "array", "object"]
 						}
 					}
+				},
+				{
+					"type": "object",
+					"required": ["op", "path"],
+					"additionalProperties": false,
+					"properties": {
+						"op": { "type": "string", "enum": ["map_each"] },
+						"path": { "type": "string", "description": "Dotted '$'-prefixed path to the array whose elements are mapped." },
+						"table": {
+							"type": "object",
+							"description": "When present: each string element is replaced by table[element], or by {relation_type: element, item_endpoint: fallback} when unmatched.",
+							"additionalProperties": { "type": "object" }
+						},
+						"fallback": {
+							"type": "string",
+							"enum": ["parent", "child"],
+							"description": "item_endpoint used for an unmatched string element under `table`; defaults to 'parent' when absent."
+						},
+						"field": { "type": "string", "description": "When present (and `table` absent): set this field on every object element." },
+						"value": { "description": "Value assigned to `field` on each object element." }
+					},
+					"oneOf": [
+						{ "required": ["table"], "not": { "required": ["field"] } },
+						{ "required": ["field", "value"], "not": { "required": ["table"] } }
+					]
 				}
 			]
 		}

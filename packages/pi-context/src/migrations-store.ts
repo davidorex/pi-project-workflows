@@ -21,8 +21,8 @@
  *   - removeMigrationDecl requires the pair to be PRESENT; a missing target
  *     throws.
  *
- * After each successful mutation the helper invokes
- * `invalidateMigrationRegistry(cwd)` (migration-registry-loader.ts) so the
+ * Every migrations.json write flows through `writeMigrationsFileForDir`,
+ * which invalidates the loader cache (migration-registry-loader.ts) so the
  * next `getProjectMigrationRegistry(cwd)` consumer reads the fresh
  * declarations without process restart. The store↔loader edge is mutually
  * cyclic (loader reads from store; store writes invalidate loader cache);
@@ -42,7 +42,7 @@ import { fileURLToPath } from "node:url";
 import { writeTypedFile } from "./block-api.js";
 import { migrationsPath, migrationsPathForDir, resolveContextDir } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
-import { invalidateMigrationRegistry, invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
+import { invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { validateFromFile } from "./schema-validator.js";
 
 /**
@@ -65,7 +65,15 @@ export type TransformOp =
 	| { op: "rename"; from: string; to: string }
 	| { op: "set"; path: string; value?: unknown }
 	| { op: "delete"; path: string }
-	| { op: "coerce"; path: string; type: "string" | "number" | "boolean" | "array" | "object" };
+	| { op: "coerce"; path: string; type: "string" | "number" | "boolean" | "array" | "object" }
+	| {
+			op: "map_each";
+			path: string;
+			table?: Record<string, Record<string, unknown>>;
+			fallback?: "parent" | "child";
+			field?: string;
+			value?: unknown;
+	  };
 
 export interface TransformSpec {
 	operations: TransformOp[];
@@ -125,8 +133,8 @@ export function loadMigrationsFile(cwd: string): MigrationsFile | null {
  * block-api's writeTypedFile against the bundled migrations schema. `ctx` is
  * accepted for call-site parity with the rest of the substrate write surface;
  * the migrations schema declares no envelope author fields so stamping is a
- * structural no-op today (the loader-cache invalidation upstream of this call
- * is the side-effect that matters for read-after-write parity).
+ * structural no-op today (the loader-cache invalidation inside the ForDir
+ * funnel is the side-effect that matters for read-after-write parity).
  */
 export function writeMigrationsFile(cwd: string, file: MigrationsFile, ctx?: DispatchContext): void {
 	writeMigrationsFileForDir(resolveContextDir(cwd), file, ctx);
@@ -139,12 +147,15 @@ export function writeMigrationsFile(cwd: string, file: MigrationsFile, ctx?: Dis
  * dir directly (no `.pi-context.json` pointer resolution). The cwd form is a
  * thin wrapper resolving the active dir; behaviour is byte-identical when called
  * via cwd. Same attestation-parity no-op semantics as the cwd form (the
- * migrations schema declares no envelope author fields). Does NOT invalidate any
- * loader cache — the cache-invalidation side-effect lives on the
- * appendMigrationDecl mutation helpers, not the raw whole-file write.
+ * migrations schema declares no envelope author fields). Invalidates the loader
+ * cache for `substrateDir` after the write — this funnel is the single path
+ * every migrations.json write (both forms, all mutation helpers) flows through,
+ * so every write is cache-coherent: the next registry consumer rebuilds from
+ * the fresh declarations.
  */
 export function writeMigrationsFileForDir(substrateDir: string, file: MigrationsFile, ctx?: DispatchContext): void {
 	writeTypedFile(migrationsPathForDir(substrateDir), bundledMigrationsSchemaPath(), file, ctx, "migrations.json");
+	invalidateMigrationRegistryForDir(substrateDir);
 }
 
 /**
@@ -177,8 +188,9 @@ function findMigrationIndex(file: MigrationsFile, schemaName: string, fromVersio
 /**
  * Append a new MigrationDecl to the substrate. Op-correctness: the
  * (schemaName, fromVersion) pair must be ABSENT on-disk; collision throws.
- * Invalidates the loader cache for `cwd` after a successful write so the
- * next registry consumer reads the fresh declaration.
+ * The write flows through the `writeMigrationsFileForDir` funnel, which
+ * invalidates the loader cache so the next registry consumer reads the
+ * fresh declaration.
  */
 export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: DispatchContext): void {
 	appendMigrationDeclForDir(resolveContextDir(cwd), decl, ctx);
@@ -188,11 +200,10 @@ export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Disp
  * Dir-targeted twin of {@link appendMigrationDecl} (Cycle-1 `*ForDir` pattern).
  * Append a new MigrationDecl to the substrate at `substrateDir`. Op-correctness:
  * the (schemaName, fromVersion) pair must be ABSENT on-disk; collision throws.
- * Invalidates the loader cache for `substrateDir` after a successful write so
- * the next registry consumer reads the fresh declaration. The cwd form is a thin
- * wrapper resolving the active dir; behaviour is byte-identical when called via
- * cwd (resolveContextDir(cwd) → invalidateMigrationRegistry(cwd) routes through
- * invalidateMigrationRegistryForDir on the same dir).
+ * The write flows through the `writeMigrationsFileForDir` funnel, which
+ * invalidates the loader cache for `substrateDir` so the next registry consumer
+ * reads the fresh declaration. The cwd form is a thin wrapper resolving the
+ * active dir; behaviour is byte-identical when called via cwd.
  */
 export function appendMigrationDeclForDir(substrateDir: string, decl: MigrationDecl, ctx?: DispatchContext): void {
 	const current = loadMigrationsFileForDir(substrateDir) ?? emptyMigrationsFile();
@@ -205,14 +216,13 @@ export function appendMigrationDeclForDir(substrateDir: string, decl: MigrationD
 	const next: MigrationsFile = clone(current);
 	next.migrations.push(decl);
 	writeMigrationsFileForDir(substrateDir, next, ctx);
-	invalidateMigrationRegistryForDir(substrateDir);
 }
 
 /**
  * Replace an existing MigrationDecl identified by (schemaName, fromVersion).
  * Op-correctness: target must be PRESENT; missing target throws. The whole
- * decl is replaced (no per-field merge). Invalidates the loader cache after a
- * successful write.
+ * decl is replaced (no per-field merge). The write flows through the
+ * `writeMigrationsFileForDir` funnel, which invalidates the loader cache.
  */
 export function replaceMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: DispatchContext): void {
 	const current = loadMigrationsFile(cwd);
@@ -230,13 +240,13 @@ export function replaceMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Dis
 	const next: MigrationsFile = clone(current);
 	next.migrations[idx] = decl;
 	writeMigrationsFile(cwd, next, ctx);
-	invalidateMigrationRegistry(cwd);
 }
 
 /**
  * Remove an existing MigrationDecl identified by (schemaName, fromVersion).
- * Op-correctness: target must be PRESENT; missing target throws. Invalidates
- * the loader cache after a successful write.
+ * Op-correctness: target must be PRESENT; missing target throws. The write
+ * flows through the `writeMigrationsFileForDir` funnel, which invalidates the
+ * loader cache.
  */
 export function removeMigrationDecl(cwd: string, schemaName: string, fromVersion: string, ctx?: DispatchContext): void {
 	const current = loadMigrationsFile(cwd);
@@ -252,5 +262,35 @@ export function removeMigrationDecl(cwd: string, schemaName: string, fromVersion
 	const next: MigrationsFile = clone(current);
 	next.migrations.splice(idx, 1);
 	writeMigrationsFile(cwd, next, ctx);
-	invalidateMigrationRegistry(cwd);
+}
+
+/**
+ * Ceremony seeding site (init / accept-all / install): copy the packaged
+ * catalog's `config`-schema MigrationDecl entries into the substrate's
+ * migrations.json so a catalog-born (or re-entered legacy) substrate carries
+ * the config migration chain BEFORE any config read walks it. Idempotent —
+ * a decl is appended only when its (schemaName, fromVersion) pair is absent
+ * on-disk; an existing entry is never replaced. Returns the appended edges
+ * (empty when everything was already present or the packaged catalog ships
+ * no migrations file).
+ */
+export function seedCatalogConfigMigrationDecls(
+	substrateDir: string,
+	ctx?: DispatchContext,
+): Array<{ schema: string; from: string; to: string }> {
+	const here = path.dirname(fileURLToPath(import.meta.url));
+	const catalogPath = path.resolve(here, "..", "samples", "migrations.json");
+	if (!fs.existsSync(catalogPath)) return [];
+	const data: unknown = JSON.parse(fs.readFileSync(catalogPath, "utf-8"));
+	validateFromFile(bundledMigrationsSchemaPath(), data, `migrations.json (${catalogPath})`);
+	const catalog = data as MigrationsFile;
+	const configDecls = catalog.migrations.filter((m) => m.schemaName === "config");
+	const existing = loadMigrationsFileForDir(substrateDir);
+	const appended: Array<{ schema: string; from: string; to: string }> = [];
+	for (const decl of configDecls) {
+		if (existing && findMigrationIndex(existing, decl.schemaName, decl.fromVersion) >= 0) continue;
+		appendMigrationDeclForDir(substrateDir, decl, ctx);
+		appended.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
+	}
+	return appended;
 }

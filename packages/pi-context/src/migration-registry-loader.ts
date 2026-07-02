@@ -32,7 +32,13 @@
  *     primitive constructors String(v) / Number(v) / Boolean(v); for
  *     'array' coercion uses [].concat(v) so a non-array value becomes a
  *     single-element array (and an existing array passes through
- *     unchanged); for 'object' coercion uses Object(v).
+ *     unchanged); for 'object' coercion uses Object(v). 'map_each'
+ *     addresses an ARRAY at the path (absent path / non-array value
+ *     no-op) and maps its elements: table mode replaces each string
+ *     element via a lookup (unmatched strings become
+ *     { relation_type: <element>, item_endpoint: fallback ?? 'parent' };
+ *     non-string elements pass through); set-on-each mode assigns
+ *     field=value on every object element (non-objects skipped).
  *
  * Identity migrations are the pass-through case the operator declares when
  * the bumped schema is shape-compatible with the prior version; the closure
@@ -51,14 +57,15 @@ import { createRegistry } from "./schema-migrations.js";
  * RESOLVED SUBSTRATE DIR (`path.resolve(substrateDir)`) — not by cwd. The cwd
  * and dir forms converge on this single key: the cwd forms first resolve
  * `cwd → substrateDir` via the bootstrap pointer, then read/invalidate the
- * dir-keyed entry. Invalidated by `invalidateMigrationRegistry(cwd)` /
- * `invalidateMigrationRegistryForDir(substrateDir)` after a successful
- * migrations.json mutation so the next consumer sees the new declarations
- * without restarting the process.
+ * dir-keyed entry. Invalidation fires inside the migrations-store write
+ * funnel `writeMigrationsFileForDir` (which every migrations.json write —
+ * both forms, all mutation helpers — flows through), so every write leaves
+ * the next consumer reading the new declarations without restarting the
+ * process.
  *
  * Keying on the resolved dir (rather than cwd) is load-bearing for coherence:
  * the block writers read the registry via `getProjectMigrationRegistryForDir`
- * (dir-keyed); a migration declaration invalidates via the cwd form. If the
+ * (dir-keyed); the write funnel invalidates on the same resolved dir. If the
  * read key (resolved dir) and the invalidate key (raw cwd) diverged — which
  * they do whenever cwd ≠ substrateDir, e.g. `<root>` vs `<root>/.project` —
  * the post-declaration read would serve a stale pre-declaration registry. The
@@ -176,6 +183,24 @@ function applyOp(data: unknown, op: TransformOp): unknown {
 					break;
 			}
 			read.parent[read.key] = next;
+			return data;
+		}
+		case "map_each": {
+			const read = walkPath(data, op.path, false);
+			if (read.parent === null || !(read.key in read.parent)) return data;
+			const arr = read.parent[read.key];
+			if (!Array.isArray(arr)) return data;
+			if (op.table) {
+				read.parent[read.key] = arr.map((el) =>
+					typeof el === "string"
+						? (op.table![el] ?? { relation_type: el, item_endpoint: op.fallback ?? "parent" })
+						: el,
+				);
+			} else if (op.field !== undefined) {
+				for (const el of arr) {
+					if (el && typeof el === "object") (el as Record<string, unknown>)[op.field] = op.value;
+				}
+			}
 			return data;
 		}
 	}
@@ -304,8 +329,8 @@ export function getProjectMigrationRegistry(cwd: string): MigrationRegistry {
  *
  * The cwd form (`getProjectMigrationRegistry`) resolves `cwd → substrateDir`
  * and delegates here, so when `substrateDir === resolveContextDir(cwd)` both
- * forms hit the SAME entry. The migrations-store mutation helpers invalidate
- * via `invalidateMigrationRegistry(cwd)`, which resolves the same dir key and
+ * forms hit the SAME entry. The migrations-store write funnel
+ * (`writeMigrationsFileForDir`) invalidates on the same resolved-dir key and
  * deletes the entry this builder populates — so a declare-then-read sequence
  * (mutate migrations.json, then `writeBlockForDir` re-reads) rebuilds against
  * the fresh declarations rather than serving a stale registry.
@@ -322,7 +347,10 @@ export function getProjectMigrationRegistryForDir(substrateDir: string): Migrati
 /**
  * Drop the cached MigrationRegistry for an explicit substrate directory (if
  * any). Deletes `path.resolve(substrateDir)` — the SAME key the read forms
- * populate, so an invalidation here is observed by the next read.
+ * populate, so an invalidation here is observed by the next read. Called by
+ * the migrations-store write funnel `writeMigrationsFileForDir` after each
+ * successful migrations.json write (the single invalidation site for the
+ * whole mutation surface).
  *
  * No-op when no entry is cached — invalidation is cheap and write-after-no-
  * cache is a normal pre-warming state.
@@ -332,18 +360,17 @@ export function invalidateMigrationRegistryForDir(substrateDir: string): void {
 }
 
 /**
- * Drop the cached MigrationRegistry for `cwd` (if any). Called by each
- * migrations-store mutation helper after a successful write so the next
- * consumer reads the fresh declarations without process restart.
+ * Drop the cached MigrationRegistry for `cwd` (if any) — the cwd convenience
+ * form for callers holding a project root rather than a resolved substrate
+ * dir. The canonical invalidation site is the migrations-store write funnel
+ * `writeMigrationsFileForDir`, which calls the ForDir form directly.
  *
  * Resolves `cwd → substrateDir` and delegates to the ForDir form so the
  * deleted key MATCHES the resolved-substrate-dir key the read path uses (the
  * Regression-B fix: pre-fix this deleted `path.resolve(cwd)`, a different key
- * from the dir-keyed read entry, leaving the post-declaration read stale). The
- * mutation helpers always call this after a successful `writeMigrationsFile`,
- * which itself required the pointer to resolve — so resolution is normally
- * safe; `tryResolveContextDir` guards the absent-pointer edge with a no-op
- * rather than throwing during invalidation.
+ * from the dir-keyed read entry, leaving the post-declaration read stale).
+ * `tryResolveContextDir` guards the absent-pointer edge with a no-op rather
+ * than throwing during invalidation.
  */
 export function invalidateMigrationRegistry(cwd: string): void {
 	const substrateDir = tryResolveContextDir(cwd);

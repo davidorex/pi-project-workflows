@@ -43,7 +43,12 @@ import {
 	getProjectMigrationRegistryForDir,
 	invalidateMigrationRegistryForDir,
 } from "./migration-registry-loader.js";
-import { appendMigrationDeclForDir, loadMigrationsFileForDir, type MigrationDecl } from "./migrations-store.js";
+import {
+	appendMigrationDeclForDir,
+	loadMigrationsFileForDir,
+	type MigrationDecl,
+	seedCatalogConfigMigrationDecls,
+} from "./migrations-store.js";
 import { getObject, putObject } from "./object-store.js";
 import { registerAll } from "./ops-registry.js";
 import { buildOrientationBlock, skillsDir } from "./orientation.js";
@@ -1227,6 +1232,11 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.";
 		return result;
 	}
+	// Seed the catalog's `config` migration chain (idempotent) before the config
+	// read below, and before resyncSchema's pre-call migrations.json byte capture
+	// — so a blocked-resync rollback restores to the seeded state, preserving the
+	// seed.
+	seedCatalogConfigMigrationDecls(destRoot);
 	const config: ConfigBlock | null = loadConfig(cwd);
 	if (!config) {
 		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";

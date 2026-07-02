@@ -32,6 +32,9 @@ import {
 } from "./context-dir.js";
 import { loadRegistry, registerSubstrate } from "./context-registry.js";
 import type { DispatchContext } from "./dispatch-context.js";
+import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
+import { seedCatalogConfigMigrationDecls } from "./migrations-store.js";
+import { runMigrations } from "./schema-migrations.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
 // ── Type definitions (from plan §"Files to create") ──────────────────────────
@@ -561,6 +564,14 @@ export function loadConfig(cwd: string): ConfigBlock | null {
  * `loadConfig` is a thin wrapper resolving the active pointer dir; behaviour is
  * byte-identical when called via cwd. Used by the Cycle-10 canonicalizer to read
  * a NON-active (work-dupe) substrate's config in place.
+ *
+ * Migration-aware (mirror of `validateBlockWithMigrationForDir`): when the
+ * config's `schema_version` differs from the bundled schema's `version`, the
+ * substrate's registered `config` migration chain walks the data forward
+ * before validation, or `runMigrations` throws when no chain resolves —
+ * fail-fast, no raw-validate fallback. On version match the registry is never
+ * consulted. The migrated form is carried in memory only; the on-disk file is
+ * never rewritten.
  */
 export function loadConfigForDir(substrateDir: string): ConfigBlock | null {
 	const p = path.join(substrateDir, "config.json");
@@ -577,8 +588,20 @@ export function loadConfigForDir(substrateDir: string): ConfigBlock | null {
 	} catch (err) {
 		throw new Error(`loadConfigForDir: invalid JSON in ${p}: ${err instanceof Error ? err.message : String(err)}`);
 	}
-	validateFromFile(bundledSchemaPath("config"), data, `config.json (${p})`);
-	return data as ConfigBlock;
+	const schemaPath = bundledSchemaPath("config");
+	const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as { version?: string };
+	const schemaVersion = typeof schema.version === "string" ? schema.version : undefined;
+	const dataVersion =
+		data && typeof data === "object" && "schema_version" in (data as Record<string, unknown>)
+			? ((data as Record<string, unknown>).schema_version as string | undefined)
+			: undefined;
+	let toValidate: unknown = data;
+	if (schemaVersion && dataVersion && schemaVersion !== dataVersion) {
+		const registry = getProjectMigrationRegistryForDir(substrateDir);
+		toValidate = runMigrations(registry, "config", dataVersion, schemaVersion, data);
+	}
+	validateFromFile(schemaPath, toValidate, `config.json (${p})`);
+	return toValidate as ConfigBlock;
 }
 
 // ── Installed-asset materialization (shared with installContext; DEC-0042 / FGAP-095) ──
@@ -905,9 +928,13 @@ export function isSkeletonConfig(config: ConfigBlock): boolean {
  * (`schemas/config.schema.json` requires only `schema_version` + `block_kinds`),
  * so the skeleton is cast `as unknown as ConfigBlock` — runtime validation in
  * `writeConfigForDir` enforces only the schema.
+ *
+ * Seeds the catalog's `config` migration chain (idempotent) before the first
+ * config read, so a version-lagging config always has a resolvable chain.
  */
 export function writeSkeletonConfig(cwd: string, ctx?: DispatchContext): { written: boolean } {
 	const substrateDir = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	seedCatalogConfigMigrationDecls(substrateDir, ctx);
 	const root = path.relative(cwd, substrateDir);
 	if (loadConfig(cwd) !== null) {
 		return { written: false };
@@ -982,10 +1009,12 @@ export interface AdoptResult {
  * (DEC-0011/0038 offer-don't-impose). The conception ships NO root (it is a
  * template, not an instance — DEC-0041/FGAP-094); this function SETS root to the
  * ACTUAL substrate dir name (resolved from the .pi-context.json pointer) on the
- * adopted config. Validated via writeConfig (whole-config AJV).
+ * adopted config. Validated via writeConfig (whole-config AJV). Seeds the
+ * catalog's `config` migration chain (idempotent) before the config pre-read.
  */
 export function adoptConception(cwd: string): AdoptResult {
 	const contextDirAbs = resolveContextDir(cwd); // throws BootstrapNotFoundError if no pointer
+	seedCatalogConfigMigrationDecls(contextDirAbs);
 	const root = path.relative(cwd, contextDirAbs);
 	const cfgPath = configPath(cwd);
 	const existing = loadConfig(cwd);

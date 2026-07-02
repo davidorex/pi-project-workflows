@@ -8,14 +8,13 @@ import { writeBootstrapPointer } from "./context-dir.js";
 import { validateContext } from "./context-sdk.js";
 import { clearLensValidators, getLensValidators, registerLensValidator } from "./lens-validator.js";
 import {
-	listRoadmaps,
 	loadRoadmap,
 	renderRoadmap,
 	resolveStatusVocabulary,
 	rollupPhaseStatus,
 	type StatusBucket,
 	topoSort,
-	validateRoadmaps,
+	validateRoadmap,
 } from "./roadmap-plan.js";
 
 // ── Status vocabulary defaults (mapped via resolveStatusVocabulary against an
@@ -290,17 +289,13 @@ describe("StatusBucket type", () => {
 	});
 });
 
-// ── Roadmap loading + validation + rendering ─────────────────────────────
+// ── Derived roadmap loading + validation + rendering ────────────────────────
 
 interface RoadmapFixture {
-	lenses?: Array<Record<string, unknown>>;
 	relations?: Array<{ parent: string; child: string; relation_type: string }>;
-	roadmaps?: Array<Record<string, unknown>>;
-	issues?: Array<Record<string, unknown>>;
-	features?: Array<Record<string, unknown>>;
-	verifications?: Array<Record<string, unknown>>;
 	milestones?: Array<Record<string, unknown>>;
 	phases?: Array<Record<string, unknown>>;
+	tasks?: Array<Record<string, unknown>>;
 	naming?: Record<string, string>;
 	status_buckets?: Record<string, StatusBucket>;
 	display_strings?: Record<string, string>;
@@ -313,12 +308,12 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 	const config: Record<string, unknown> = {
 		schema_version: "1.7.0",
 		root: ".project",
-		lenses: fixture.lenses ?? [],
-		installed_blocks: ["roadmap"],
+		lenses: [],
 		block_kinds: [],
-		// Stock state_derivation (TASK-020): roadmap-plan's milestone resolution reads
-		// currentState().milestones[].status, which now requires a declared registry —
-		// the milestone rollup over phase_positioned_in_milestone (reached/planned).
+		// Stock state_derivation (TASK-020): loadRoadmap's per-milestone status +
+		// phaseCount read currentState().milestones — the config-declared rollup
+		// over phase_positioned_in_milestone (reached/planned) — so the fixture
+		// must declare the stock rollups entry.
 		state_derivation: {
 			in_flight: { kinds: ["tasks"], bucket: "in_progress" },
 			focus_fallback: { kind: "phase", bucket: "in_progress" },
@@ -345,27 +340,6 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 		// is the lens-view fixture's prior shape and would AJV-fail here.
 		fs.writeFileSync(path.join(dir, ".project", "relations.json"), JSON.stringify(fixture.relations, null, 2));
 	}
-	if (fixture.roadmaps !== undefined) {
-		fs.writeFileSync(
-			path.join(dir, ".project", "roadmap.json"),
-			JSON.stringify({ roadmaps: fixture.roadmaps }, null, 2),
-		);
-	}
-	if (fixture.issues) {
-		fs.writeFileSync(path.join(dir, ".project", "issues.json"), JSON.stringify({ issues: fixture.issues }, null, 2));
-	}
-	if (fixture.features) {
-		fs.writeFileSync(
-			path.join(dir, ".project", "features.json"),
-			JSON.stringify({ features: fixture.features }, null, 2),
-		);
-	}
-	if (fixture.verifications) {
-		fs.writeFileSync(
-			path.join(dir, ".project", "verification.json"),
-			JSON.stringify({ verifications: fixture.verifications }, null, 2),
-		);
-	}
 	if (fixture.milestones) {
 		fs.writeFileSync(
 			path.join(dir, ".project", "milestone.json"),
@@ -375,53 +349,63 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 	if (fixture.phases) {
 		fs.writeFileSync(path.join(dir, ".project", "phase.json"), JSON.stringify({ phases: fixture.phases }, null, 2));
 	}
+	if (fixture.tasks) {
+		fs.writeFileSync(path.join(dir, ".project", "tasks.json"), JSON.stringify({ tasks: fixture.tasks }, null, 2));
+	}
 	return dir;
 }
 
-const ACYCLIC_LENSES = [
-	{
-		id: "lens-issues-by-phase",
-		target: "issues",
-		relation_type: "phase_member",
-		derived_from_field: null,
-		bins: ["PHASE-A", "PHASE-B", "PHASE-C"],
-	},
-	{
-		id: "lens-features",
-		target: "features",
-		relation_type: "feature_member",
-		derived_from_field: null,
-		bins: ["PHASE-A", "PHASE-B", "PHASE-C"],
-	},
-];
-
-const ACYCLIC_PHASES = [
-	{ id: "PHASE-A", name: "Spec", lens: "lens-issues-by-phase" },
-	{ id: "PHASE-B", name: "Implement", lens: "lens-issues-by-phase" },
-	{
-		id: "PHASE-C",
-		name: "Verify",
-		lens: "lens-features",
-		milestone: "MILE-001",
-		exit_criteria: ["all tests pass"],
-	},
-];
-
-// Milestone-block item the roadmap's PHASE-C references by MILE- id. status is
-// schema-required but irrelevant to the derivation — loadRoadmap recomputes
-// reached from phase_positioned_in_milestone edges + phase completion.
-const ACYCLIC_MILESTONES = [{ id: "MILE-001", name: "All verified", status: "planned" }];
-
-function buildAcyclicRoadmap(extras: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
-	return {
-		id: "ROADMAP-001",
-		title: "Substrate arc",
-		description: "Sequenced substrate landing.",
-		status: "active",
-		phases: ACYCLIC_PHASES,
-		...extras,
-	};
+// Linear 3-milestone chain: 001 → 002 → 003, with phase/task membership on
+// 001 (mixed statuses) and 002 (in-progress), and a completed phase on 003
+// so its derived rollup is "reached" while 001/002 stay "planned".
+function makeLinearChainProject(): string {
+	return makeRoadmapProject({
+		milestones: [
+			{ id: "MILE-001", name: "Foundation", status: "planned" },
+			{ id: "MILE-002", name: "Expansion", status: "planned" },
+			{ id: "MILE-003", name: "Polish", status: "planned" },
+		],
+		phases: [
+			{ id: "PHASE-A", name: "Groundwork", intent: "a", status: "planned" },
+			{ id: "PHASE-B", name: "Build-out", intent: "b", status: "in-progress" },
+			{ id: "PHASE-C", name: "Finishing", intent: "c", status: "completed" },
+		],
+		tasks: [
+			{ id: "TASK-001", status: "completed" },
+			{ id: "TASK-002", status: "todo" },
+			{ id: "TASK-003", status: "in_progress" },
+		],
+		relations: [
+			{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+			{ parent: "MILE-002", child: "MILE-003", relation_type: "milestone_precedes_milestone" },
+			{ parent: "PHASE-A", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+			{ parent: "PHASE-B", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+			{ parent: "PHASE-C", child: "MILE-003", relation_type: "phase_positioned_in_milestone" },
+			{ parent: "TASK-001", child: "PHASE-A", relation_type: "task_positioned_in_phase" },
+			{ parent: "TASK-002", child: "PHASE-A", relation_type: "task_positioned_in_phase" },
+			{ parent: "TASK-003", child: "PHASE-B", relation_type: "task_positioned_in_phase" },
+		],
+	});
 }
+
+// Live-shaped DAG: 9 milestones + the 8 authored edges verbatim (three starts
+// 003/005/008 — 008 fully isolated — and two joins 007 ← 004+005, 009 ← 003+005).
+const LIVE_DAG_MILESTONES = Array.from({ length: 9 }, (_, i) => ({
+	id: `MILE-00${i + 1}`,
+	name: `Milestone ${i + 1}`,
+	status: "planned",
+}));
+
+const LIVE_DAG_EDGES = [
+	{ parent: "MILE-003", child: "MILE-004", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-004", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-003", child: "MILE-006", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-004", child: "MILE-007", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-005", child: "MILE-007", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-003", child: "MILE-009", relation_type: "milestone_precedes_milestone" },
+	{ parent: "MILE-005", child: "MILE-009", relation_type: "milestone_precedes_milestone" },
+];
 
 let roadmapTmpRoot: string;
 
@@ -434,245 +418,199 @@ describe("loadRoadmap", () => {
 		roadmapTmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-roadmap-noconfig-"));
 		writeBootstrapPointer(roadmapTmpRoot, ".project");
 		fs.mkdirSync(path.join(roadmapTmpRoot, ".project"), { recursive: true });
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
+		const result = loadRoadmap(roadmapTmpRoot);
 		assert.ok("error" in result);
 		assert.match(result.error, /No <substrate-dir>\/config\.json/);
 	});
 
-	it("returns error when roadmap.json absent", () => {
-		roadmapTmpRoot = makeRoadmapProject({ lenses: ACYCLIC_LENSES, relations: [] });
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
-		assert.ok("error" in result);
-		assert.match(result.error, /no roadmap\.json/);
-	});
-
-	it("returns error when roadmap id unknown", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [buildAcyclicRoadmap()],
-		});
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-999");
-		assert.ok("error" in result);
-		assert.match(result.error, /not found/);
-	});
-
-	it("loads happy path with linear phase chain", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-C", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
-			issues: [{ id: "issue-001", status: "resolved" }],
-			features: [{ id: "FEAT-001", status: "complete" }],
-			verifications: [{ id: "VER-001", status: "passed", target: "PHASE-C" }],
-		});
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
+	it("returns a valid empty view (NOT an error) when no milestone-block items exist", () => {
+		roadmapTmpRoot = makeRoadmapProject({ relations: [] });
+		const result = loadRoadmap(roadmapTmpRoot);
 		assert.ok(!("error" in result));
-		assert.deepEqual(result.phaseOrder, ["PHASE-A", "PHASE-B", "PHASE-C"]);
+		assert.deepEqual(result, { milestones: [], order: [], cycles: [], edges: [] });
+	});
+
+	it("loads a linear 3-milestone chain with per-milestone phase/task rollups and both reached states", () => {
+		roadmapTmpRoot = makeLinearChainProject();
+		const result = loadRoadmap(roadmapTmpRoot);
+		assert.ok(!("error" in result));
+		assert.deepEqual(result.order, ["MILE-001", "MILE-002", "MILE-003"]);
 		assert.deepEqual(result.cycles, []);
-		assert.equal(result.phases.length, 3);
 		assert.equal(result.edges.length, 2);
+		assert.equal(result.milestones.length, 3);
+
+		const m1 = result.milestones.find((m) => m.id === "MILE-001");
+		assert.ok(m1);
+		assert.equal(m1.name, "Foundation");
+		assert.equal(m1.status, "planned"); // PHASE-A is not complete
+		assert.equal(m1.phaseCount, 1);
+		assert.equal(m1.phases.length, 1);
+		const phaseA = m1.phases[0];
+		assert.ok(phaseA);
+		assert.equal(phaseA.id, "PHASE-A");
+		assert.equal(phaseA.name, "Groundwork");
+		assert.equal(phaseA.tasks.length, 2);
+		assert.deepEqual(
+			phaseA.tasks.map((t) => t.id),
+			["TASK-001", "TASK-002"],
+		);
+		// TASK-002 has no title field (tasks carry description, not title).
+		assert.equal(phaseA.tasks[0]?.title, undefined);
+		assert.equal(phaseA.rollup.bucket, "todo"); // complete=1 todo=1
+		assert.equal(phaseA.rollup.counts.complete, 1);
+		assert.equal(phaseA.rollup.counts.todo, 1);
+		assert.equal(m1.rollup.total, 2); // milestone aggregates all member phases' tasks
+
+		const m2 = result.milestones.find((m) => m.id === "MILE-002");
+		assert.ok(m2);
+		assert.equal(m2.phases[0]?.rollup.bucket, "in_progress");
+
+		const m3 = result.milestones.find((m) => m.id === "MILE-003");
+		assert.ok(m3);
+		assert.equal(m3.status, "reached"); // its sole member phase PHASE-C is complete
+		assert.equal(m3.phaseCount, 1);
+		assert.equal(m3.rollup.total, 0); // PHASE-C has no tasks
 	});
 
-	it("returns partial phaseOrder + populated cycles when phases form a cycle", () => {
+	it("orders the live-shaped DAG (9 milestones + the 8 authored edges) exactly", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-A", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
+			milestones: LIVE_DAG_MILESTONES,
+			relations: LIVE_DAG_EDGES,
 		});
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
+		const result = loadRoadmap(roadmapTmpRoot);
 		assert.ok(!("error" in result));
-		assert.deepEqual(result.phaseOrder, ["PHASE-C"]);
+		assert.deepEqual(result.order, [
+			"MILE-003",
+			"MILE-005",
+			"MILE-008",
+			"MILE-004",
+			"MILE-006",
+			"MILE-009",
+			"MILE-001",
+			"MILE-007",
+			"MILE-002",
+		]);
+		assert.deepEqual(result.cycles, []);
+		assert.equal(result.edges.length, 8);
+	});
+
+	it("returns partial order + populated cycles when precedes edges cycle", () => {
+		roadmapTmpRoot = makeRoadmapProject({
+			milestones: [
+				{ id: "MILE-001", name: "A", status: "planned" },
+				{ id: "MILE-002", name: "B", status: "planned" },
+				{ id: "MILE-003", name: "C", status: "planned" },
+			],
+			relations: [
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+				{ parent: "MILE-002", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
+			],
+		});
+		const result = loadRoadmap(roadmapTmpRoot);
+		assert.ok(!("error" in result));
+		assert.deepEqual(result.order, ["MILE-003"]);
 		assert.ok(result.cycles.length > 0);
 	});
-
-	it("resolves milestone reached=true when all positioned phases are complete", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-X", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
-				{ parent: "PHASE-Y", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
-			milestones: ACYCLIC_MILESTONES,
-			phases: [
-				{ id: "PHASE-X", name: "X", intent: "x", status: "completed" },
-				{ id: "PHASE-Y", name: "Y", intent: "y", status: "completed" },
-			],
-		});
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
-		assert.ok(!("error" in result));
-		const phaseC = result.phases.find((p) => p.phase.id === "PHASE-C");
-		assert.ok(phaseC);
-		assert.ok(phaseC.milestone);
-		assert.equal(phaseC.milestone.id, "MILE-001");
-		assert.equal(phaseC.milestone.status, "reached");
-		assert.equal(phaseC.milestoneReached, true);
-	});
-
-	it("resolves milestone reached=false when a positioned phase is incomplete", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-X", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
-				{ parent: "PHASE-Y", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
-			milestones: ACYCLIC_MILESTONES,
-			phases: [
-				{ id: "PHASE-X", name: "X", intent: "x", status: "completed" },
-				{ id: "PHASE-Y", name: "Y", intent: "y", status: "planned" },
-			],
-		});
-		const result = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
-		assert.ok(!("error" in result));
-		const phaseC = result.phases.find((p) => p.phase.id === "PHASE-C");
-		assert.ok(phaseC);
-		assert.ok(phaseC.milestone);
-		assert.equal(phaseC.milestone.status, "planned");
-		assert.equal(phaseC.milestoneReached, false);
-	});
 });
 
-describe("listRoadmaps", () => {
+describe("validateRoadmap", () => {
 	afterEach(() => {
 		if (roadmapTmpRoot) fs.rmSync(roadmapTmpRoot, { recursive: true, force: true });
 	});
 
-	it("returns empty array when roadmap.json absent", () => {
-		roadmapTmpRoot = makeRoadmapProject({ lenses: ACYCLIC_LENSES, relations: [] });
-		const result = listRoadmaps(roadmapTmpRoot);
-		assert.deepEqual(result, []);
-	});
-
-	it("returns one entry per roadmap with correct shape", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [buildAcyclicRoadmap()],
-		});
-		const result = listRoadmaps(roadmapTmpRoot);
-		assert.equal(result.length, 1);
-		assert.equal(result[0]?.id, "ROADMAP-001");
-		assert.equal(result[0]?.title, "Substrate arc");
-		assert.equal(result[0]?.status, "active");
-		assert.equal(result[0]?.phaseCount, 3);
-	});
-});
-
-describe("validateRoadmaps", () => {
-	afterEach(() => {
-		if (roadmapTmpRoot) fs.rmSync(roadmapTmpRoot, { recursive: true, force: true });
-	});
-
-	it("returns clean for happy-path acyclic fixture", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-C", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
-			milestones: ACYCLIC_MILESTONES,
-			issues: [{ id: "issue-001", status: "resolved" }],
-			features: [{ id: "FEAT-001", status: "complete" }],
-			verifications: [{ id: "VER-001", status: "passed", target: "PHASE-C" }],
-		});
-		const result = validateRoadmaps(roadmapTmpRoot);
+	it("returns clean for the linear-chain fixture", () => {
+		roadmapTmpRoot = makeLinearChainProject();
+		const result = validateRoadmap(roadmapTmpRoot);
 		assert.equal(result.status, "clean");
 		assert.deepEqual(result.issues, []);
 	});
 
-	it("emits roadmap_lens_missing when phase references unknown lens", () => {
-		const phases = [
-			{ id: "PHASE-A", name: "Spec", lens: "doesnt-exist" },
-			{ id: "PHASE-B", name: "Build", lens: "lens-issues-by-phase" },
-		];
+	it("emits roadmap_precedes_endpoint_missing for absent AND wrong-kind precedes endpoints", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [{ id: "ROADMAP-001", title: "X", phases }],
-		});
-		const result = validateRoadmaps(roadmapTmpRoot);
-		assert.equal(result.status, "invalid");
-		assert.ok(result.issues.some((i) => i.code === "roadmap_lens_missing" && i.phase_id === "PHASE-A"));
-	});
-
-	it("emits roadmap_phase_dep_missing for dangling phase_depends_on edge", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [{ parent: "PHASE-X", child: "PHASE-A", relation_type: "phase_depends_on" }],
-			roadmaps: [buildAcyclicRoadmap()],
-		});
-		const result = validateRoadmaps(roadmapTmpRoot);
-		assert.equal(result.status, "invalid");
-		assert.ok(result.issues.some((i) => i.code === "roadmap_phase_dep_missing"));
-	});
-
-	it("emits roadmap_phase_cycle when phases cycle", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
+			milestones: [{ id: "MILE-001", name: "A", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "Not a milestone", intent: "a", status: "planned" }],
 			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-A", relation_type: "phase_depends_on" },
+				{ parent: "MILE-999", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
+				{ parent: "PHASE-A", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
 			],
-			roadmaps: [buildAcyclicRoadmap()],
 		});
-		const result = validateRoadmaps(roadmapTmpRoot);
+		const result = validateRoadmap(roadmapTmpRoot);
 		assert.equal(result.status, "invalid");
-		assert.ok(result.issues.some((i) => i.code === "roadmap_phase_cycle"));
+		assert.ok(
+			result.issues.some((i) => i.code === "roadmap_precedes_endpoint_missing" && i.milestone_id === "MILE-999"),
+			"absent endpoint flagged",
+		);
+		assert.ok(
+			result.issues.some((i) => i.code === "roadmap_precedes_endpoint_missing" && i.milestone_id === "PHASE-A"),
+			"wrong-kind endpoint flagged",
+		);
 	});
 
-	it("emits roadmap_composition_cycle when phase resolves to a self-cycling composition lens", () => {
-		const lenses = [
-			{ id: "lens-A", kind: "composition", bins: [], targets: ["issues"], members: [{ lens: "lens-B" }] },
-			{ id: "lens-B", kind: "composition", bins: [], targets: ["issues"], members: [{ lens: "lens-A" }] },
-		];
+	it("emits roadmap_milestone_cycle when the precedes graph cycles", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses,
-			relations: [],
-			roadmaps: [
-				{
-					id: "ROADMAP-001",
-					title: "Cycle test",
-					phases: [{ id: "PHASE-A", name: "Cycle", lens: "lens-A" }],
-				},
+			milestones: [
+				{ id: "MILE-001", name: "A", status: "planned" },
+				{ id: "MILE-002", name: "B", status: "planned" },
 			],
-			issues: [],
+			relations: [
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+				{ parent: "MILE-002", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
+			],
 		});
-		const result = validateRoadmaps(roadmapTmpRoot);
+		const result = validateRoadmap(roadmapTmpRoot);
 		assert.equal(result.status, "invalid");
-		assert.ok(result.issues.some((i) => i.code === "roadmap_composition_cycle"));
+		const cycleIssue = result.issues.find((i) => i.code === "roadmap_milestone_cycle");
+		assert.ok(cycleIssue);
+		assert.ok(Array.isArray(cycleIssue.cycle) && cycleIssue.cycle.length > 0);
 	});
 
-	it("emits roadmap_milestone_missing when a phase references a MILE- id absent from the milestone block", () => {
-		// PHASE-C references MILE-001 but no milestone block is written → the
-		// referenced id is absent → roadmap_milestone_missing.
+	it("emits roadmap_milestone_missing for a phase_positioned_in_milestone edge whose child is unknown", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [buildAcyclicRoadmap()],
+			milestones: [{ id: "MILE-001", name: "A", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			relations: [{ parent: "PHASE-A", child: "MILE-404", relation_type: "phase_positioned_in_milestone" }],
 		});
-		const result = validateRoadmaps(roadmapTmpRoot);
+		const result = validateRoadmap(roadmapTmpRoot);
 		assert.equal(result.status, "invalid");
-		assert.ok(result.issues.some((i) => i.code === "roadmap_milestone_missing"));
+		assert.ok(
+			result.issues.some(
+				(i) => i.code === "roadmap_milestone_missing" && i.milestone_id === "MILE-404" && i.phase_id === "PHASE-A",
+			),
+		);
 	});
 
-	it("emits roadmap_status_unknown_value when roadmap.status is outside enum", () => {
-		const roadmap = buildAcyclicRoadmap({ status: "rejected" });
+	it("emits roadmap_status_unknown_value (warning) when a phase's task rollup buckets unknown with items", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [roadmap],
+			milestones: [{ id: "MILE-001", name: "A", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			tasks: [{ id: "TASK-001", status: "frobnicated" }],
+			relations: [
+				{ parent: "PHASE-A", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "TASK-001", child: "PHASE-A", relation_type: "task_positioned_in_phase" },
+			],
 		});
-		const result = validateRoadmaps(roadmapTmpRoot);
-		assert.ok(result.issues.some((i) => i.code === "roadmap_status_unknown_value"));
+		const result = validateRoadmap(roadmapTmpRoot);
+		assert.equal(result.status, "warnings");
+		assert.ok(
+			result.issues.some(
+				(i) => i.code === "roadmap_status_unknown_value" && i.milestone_id === "MILE-001" && i.phase_id === "PHASE-A",
+			),
+		);
+	});
+
+	it("emits roadmap_milestone_isolated (info) with status STAYING clean when it is the sole finding", () => {
+		roadmapTmpRoot = makeRoadmapProject({
+			milestones: [
+				{ id: "MILE-001", name: "A", status: "planned" },
+				{ id: "MILE-002", name: "B", status: "planned" },
+				{ id: "MILE-003", name: "Isolated", status: "planned" },
+			],
+			relations: [{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" }],
+		});
+		const result = validateRoadmap(roadmapTmpRoot);
+		assert.equal(result.status, "clean");
+		assert.equal(result.issues.length, 1);
+		assert.ok(result.issues.some((i) => i.code === "roadmap_milestone_isolated" && i.milestone_id === "MILE-003"));
 	});
 });
 
@@ -681,135 +619,74 @@ describe("renderRoadmap (markdown shape, NO mermaid)", () => {
 		if (roadmapTmpRoot) fs.rmSync(roadmapTmpRoot, { recursive: true, force: true });
 	});
 
-	it("emits the canonical pure-textual markdown layout", () => {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-C", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
-			milestones: ACYCLIC_MILESTONES,
-			issues: [{ id: "issue-001", status: "open", title: "First" }],
-			features: [{ id: "FEAT-001", status: "complete", title: "Done" }],
-			verifications: [{ id: "VER-001", status: "passed" }],
-		});
-		const view = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
+	it("emits the canonical pure-textual markdown layout for the linear chain", () => {
+		roadmapTmpRoot = makeLinearChainProject();
+		const view = loadRoadmap(roadmapTmpRoot);
 		assert.ok(!("error" in view));
-		const md = renderRoadmap(view, undefined);
+		const md = renderRoadmap(view);
 
-		assert.match(md, /^# Roadmap: .* \(ROADMAP-001\)$/m);
-		assert.match(md, /\*\*Status:\*\*/);
-		assert.match(md, /^## Phase order$/m);
-		assert.match(md, /^1\. PHASE-A — /m);
-		assert.match(md, /^2\. PHASE-B — /m);
-		assert.match(md, /^3\. PHASE-C — /m);
-		assert.match(md, /^## Phases$/m);
-		assert.match(md, /^### .+ \(PHASE-A\) \[(complete|in_progress|blocked|todo|unknown)\]$/m);
-		assert.match(md, /\*\*Lens:\*\* lens-issues-by-phase/);
-		assert.match(md, /\*\*Depends on:\*\* (—|[A-Z0-9-]+(, [A-Z0-9-]+)*)/);
-		assert.match(md, /\*\*Counts:\*\* complete=\d+ in_progress=\d+ blocked=\d+ todo=\d+ unknown=\d+ \(total=\d+\)/);
-		assert.match(md, /\*\*Milestone:\*\* MILE-001 — .+ — (reached|planned)/);
-		assert.match(md, /\| Item +\| Status +\| Title +\|/);
+		assert.match(md, /^# Roadmap \(derived\)$/m);
+		assert.match(md, /\*\*Milestones:\*\* 3 {2}\| {2}\*\*Ordered:\*\* 3 {2}\| {2}\*\*Cycles:\*\* 0/);
+		assert.match(md, /^## Milestone order$/m);
+		assert.match(md, /^1\. MILE-001 — Foundation \[planned\]$/m);
+		assert.match(md, /^2\. MILE-002 — Expansion \[planned\]$/m);
+		assert.match(md, /^3\. MILE-003 — Polish \[reached\]$/m);
+		assert.match(md, /^## Milestones$/m);
+		assert.match(md, /^### Foundation \(MILE-001\) \[planned\]$/m);
+		assert.match(md, /\*\*Preceded by:\*\* —/);
+		assert.match(md, /\(MILE-002\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* MILE-001/);
+		assert.match(md, /\*\*Rollup:\*\* complete=\d+ in_progress=\d+ blocked=\d+ todo=\d+ unknown=\d+ \(total=\d+\)/);
+		assert.match(md, /^#### Groundwork \(PHASE-A\) \[planned\]$/m);
+		assert.match(md, /\| Task \| Status \|/);
+		assert.match(md, /\| TASK-001 \| completed \|/);
 
 		// Negative regression assertion (against the prior fabrication defect).
 		assert.doesNotMatch(md, /mermaid|graph LR|graph TD|-->/);
 	});
 
-	it("surfaces cycle-participating phases under a separate heading and Cycles detected line", () => {
+	it("renders Preceded-by lines strictly from authored edges — the three DAG starts stay mutually unconnected", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-A", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [buildAcyclicRoadmap()],
+			milestones: LIVE_DAG_MILESTONES,
+			relations: LIVE_DAG_EDGES,
 		});
-		const view = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
+		const view = loadRoadmap(roadmapTmpRoot);
 		assert.ok(!("error" in view));
-		const md = renderRoadmap(view, undefined);
+		const md = renderRoadmap(view);
 
-		assert.match(md, /\*\*Unordered \(cycle-participating\):\*\*/);
+		assert.match(md, /\(MILE-003\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* —/);
+		assert.match(md, /\(MILE-005\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* —/);
+		assert.match(md, /\(MILE-008\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* —/);
+		assert.match(md, /\(MILE-007\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* MILE-004, MILE-005/);
+		assert.match(md, /\(MILE-009\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* MILE-003, MILE-005/);
+
+		// CRITICAL: no fabricated adjacency between the mutually-unconnected starts.
+		assert.doesNotMatch(md, /\*\*Preceded by:\*\*[^\n]*MILE-008/);
+		assert.doesNotMatch(md, /MILE-003 → MILE-005/);
+		assert.doesNotMatch(md, /MILE-005 → MILE-003/);
+
+		// And the ambient mermaid/graph-syntax regression guard.
+		assert.doesNotMatch(md, /mermaid|graph LR|graph TD|-->/);
+	});
+
+	it("surfaces cycle participants under a separate heading and Cycles detected line", () => {
+		roadmapTmpRoot = makeRoadmapProject({
+			milestones: [
+				{ id: "MILE-001", name: "A", status: "planned" },
+				{ id: "MILE-002", name: "B", status: "planned" },
+			],
+			relations: [
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+				{ parent: "MILE-002", child: "MILE-001", relation_type: "milestone_precedes_milestone" },
+			],
+		});
+		const view = loadRoadmap(roadmapTmpRoot);
+		assert.ok(!("error" in view));
+		const md = renderRoadmap(view);
+
+		assert.match(md, /\*\*Unordered \(cycle participants\):\*\*/);
 		assert.match(md, /\*\*Cycles detected:\*\*/);
 
 		// Negative regression assertion.
-		assert.doesNotMatch(md, /mermaid|graph LR|graph TD|-->/);
-	});
-});
-
-describe("Diamond/branching-DAG roadmap (no fabricated edges)", () => {
-	afterEach(() => {
-		if (roadmapTmpRoot) fs.rmSync(roadmapTmpRoot, { recursive: true, force: true });
-	});
-
-	const DIAMOND_LENSES = [
-		{
-			id: "lens-issues-by-phase",
-			target: "issues",
-			relation_type: "phase_member",
-			derived_from_field: null,
-			bins: ["PHASE-A", "PHASE-B", "PHASE-C", "PHASE-D"],
-		},
-	];
-
-	const diamondRoadmap = {
-		id: "ROADMAP-001",
-		title: "Diamond DAG",
-		status: "active",
-		phases: [
-			{ id: "PHASE-A", name: "Root", lens: "lens-issues-by-phase" },
-			{ id: "PHASE-B", name: "Left", lens: "lens-issues-by-phase" },
-			{ id: "PHASE-C", name: "Right", lens: "lens-issues-by-phase" },
-			{ id: "PHASE-D", name: "Sink", lens: "lens-issues-by-phase" },
-		],
-	};
-
-	function setupDiamond(): void {
-		roadmapTmpRoot = makeRoadmapProject({
-			lenses: DIAMOND_LENSES,
-			relations: [
-				{ parent: "PHASE-A", child: "PHASE-B", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-A", child: "PHASE-C", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-B", child: "PHASE-D", relation_type: "phase_depends_on" },
-				{ parent: "PHASE-C", child: "PHASE-D", relation_type: "phase_depends_on" },
-			],
-			roadmaps: [diamondRoadmap],
-		});
-	}
-
-	it("loads with phaseOrder anchored at A and D, no cycles, all four edges populated", () => {
-		setupDiamond();
-		const view = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
-		assert.ok(!("error" in view));
-		assert.equal(view.phaseOrder[0], "PHASE-A");
-		assert.equal(view.phaseOrder[3], "PHASE-D");
-		const middle = view.phaseOrder.slice(1, 3).sort();
-		assert.deepEqual(middle, ["PHASE-B", "PHASE-C"]);
-		assert.deepEqual(view.cycles, []);
-		assert.equal(view.edges.length, 4);
-
-		const edgeKeys = view.edges.map((e) => `${e.parent}->${e.child}`).sort();
-		assert.deepEqual(edgeKeys, ["PHASE-A->PHASE-B", "PHASE-A->PHASE-C", "PHASE-B->PHASE-D", "PHASE-C->PHASE-D"]);
-	});
-
-	it("renders per-phase Depends on lines from authored edges only — no fabricated B↔C edge", () => {
-		setupDiamond();
-		const view = loadRoadmap(roadmapTmpRoot, "ROADMAP-001");
-		assert.ok(!("error" in view));
-		const md = renderRoadmap(view, undefined);
-
-		assert.match(md, /\(PHASE-A\)[^\n]*\n[\s\S]*?\*\*Depends on:\*\* —/);
-		assert.match(md, /\(PHASE-B\)[^\n]*\n[\s\S]*?\*\*Depends on:\*\* PHASE-A/);
-		assert.match(md, /\(PHASE-C\)[^\n]*\n[\s\S]*?\*\*Depends on:\*\* PHASE-A/);
-		assert.match(md, /\(PHASE-D\)[^\n]*\n[\s\S]*?\*\*Depends on:\*\* PHASE-B, PHASE-C/);
-
-		// CRITICAL: render output must NOT contain any sibling B↔C edge text.
-		assert.doesNotMatch(md, /B → C/);
-		assert.doesNotMatch(md, /C → B/);
-		assert.doesNotMatch(md, /PHASE-B → PHASE-C/);
-		assert.doesNotMatch(md, /PHASE-C → PHASE-B/);
-
-		// And the ambient mermaid/graph-syntax regression guard.
 		assert.doesNotMatch(md, /mermaid|graph LR|graph TD|-->/);
 	});
 });
@@ -823,7 +700,6 @@ describe("resolveStatusVocabulary merges config.status_buckets over defaults (co
 
 	it("merges config.status_buckets over defaults; user keys win on collision", () => {
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: [],
 			relations: [],
 			status_buckets: { custom_status: "blocked", resolved: "todo" },
 		});
@@ -845,38 +721,26 @@ describe("diagMessage resolves config.display_strings override; falls back to em
 	it("returns embedded English when no config override; returns custom string when override present", () => {
 		// First fixture: no display_strings override.
 		const fallbackDir = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [
-				{
-					id: "ROADMAP-001",
-					title: "X",
-					phases: [{ id: "PHASE-A", name: "A", lens: "doesnt-exist" }],
-				},
-			],
+			milestones: [{ id: "MILE-001", name: "A", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			relations: [{ parent: "PHASE-A", child: "MILE-404", relation_type: "phase_positioned_in_milestone" }],
 		});
-		const fallback = validateRoadmaps(fallbackDir);
-		const fallbackIssue = fallback.issues.find((i) => i.code === "roadmap_lens_missing");
+		const fallback = validateRoadmap(fallbackDir);
+		const fallbackIssue = fallback.issues.find((i) => i.code === "roadmap_milestone_missing");
 		assert.ok(fallbackIssue);
-		assert.match(fallbackIssue.message, /references unknown lens 'doesnt-exist'/);
+		assert.match(fallbackIssue.message, /references milestone 'MILE-404' that is not declared in the milestone block/);
 		fs.rmSync(fallbackDir, { recursive: true, force: true });
 
 		// Second fixture (distinct tmpdir bypasses the loadContext mtime cache):
 		// display_strings override.
 		roadmapTmpRoot = makeRoadmapProject({
-			lenses: ACYCLIC_LENSES,
-			relations: [],
-			roadmaps: [
-				{
-					id: "ROADMAP-001",
-					title: "X",
-					phases: [{ id: "PHASE-A", name: "A", lens: "doesnt-exist" }],
-				},
-			],
-			display_strings: { roadmap_lens_missing: "Custom localized message" },
+			milestones: [{ id: "MILE-001", name: "A", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			relations: [{ parent: "PHASE-A", child: "MILE-404", relation_type: "phase_positioned_in_milestone" }],
+			display_strings: { roadmap_milestone_missing: "Custom localized message" },
 		});
-		const overridden = validateRoadmaps(roadmapTmpRoot);
-		const overriddenIssue = overridden.issues.find((i) => i.code === "roadmap_lens_missing");
+		const overridden = validateRoadmap(roadmapTmpRoot);
+		const overriddenIssue = overridden.issues.find((i) => i.code === "roadmap_milestone_missing");
 		assert.ok(overriddenIssue);
 		assert.equal(overriddenIssue.message, "Custom localized message");
 	});
@@ -948,7 +812,7 @@ describe("validateContext (context-sdk) iterates registered lens-validators and 
 			},
 		});
 
-		roadmapTmpRoot = makeRoadmapProject({ lenses: [], relations: [] });
+		roadmapTmpRoot = makeRoadmapProject({ relations: [] });
 		const result = validateContext(roadmapTmpRoot);
 
 		// Fake validator's issue surfaces verbatim.
@@ -964,5 +828,34 @@ describe("validateContext (context-sdk) iterates registered lens-validators and 
 		assert.ok(thrown, "expected wrapped failure issue from throwing validator");
 		assert.equal(thrown.severity, "warning");
 		assert.match(thrown.message, /synthetic crash/);
+	});
+
+	it("roadmap validator contributes ONLY error-code issues (block 'milestone'); info is excluded from the merge", () => {
+		snapshot = [...getLensValidators()];
+		// Fixture combines an error (dangling membership edge) with an info-only
+		// condition (MILE-003 isolated while MILE-001/002 are ordered).
+		roadmapTmpRoot = makeRoadmapProject({
+			milestones: [
+				{ id: "MILE-001", name: "A", status: "planned" },
+				{ id: "MILE-002", name: "B", status: "planned" },
+				{ id: "MILE-003", name: "Isolated", status: "planned" },
+			],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			relations: [
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+				{ parent: "PHASE-A", child: "MILE-404", relation_type: "phase_positioned_in_milestone" },
+			],
+		});
+		const result = validateContext(roadmapTmpRoot);
+
+		const missing = result.issues.find((i) => i.code === "roadmap_milestone_missing");
+		assert.ok(missing, "expected roadmap_milestone_missing from the roadmap lens-validator");
+		assert.equal(missing.severity, "error");
+		assert.equal(missing.block, "milestone");
+
+		assert.ok(
+			!result.issues.some((i) => i.code === "roadmap_milestone_isolated"),
+			"info-code issues must not reach the lens-validator merge",
+		);
 	});
 });

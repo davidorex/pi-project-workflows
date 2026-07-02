@@ -680,9 +680,10 @@ export function contextState(cwd: string): ContextState {
  * `.project` substrate. No writes; tolerant of absent optional blocks (every
  * branch defaults to empty rather than throwing).
  *
- * Edge-direction contract for blocked/ready derivation (verified against
- * roadmap-plan.ts:471 — the topoSort-deps mapping for phase_depends_on uses the
- * identical convention): a `task_depends_on_task` edge `{parent: D, child: T}`
+ * Edge-direction contract for blocked/ready derivation (the same convention as
+ * roadmap-plan's topoSort-preds mapping for milestone_precedes_milestone —
+ * preds are parents of edges whose child is the node): a
+ * `task_depends_on_task` edge `{parent: D, child: T}`
  * means task T DEPENDS ON task D, so D must reach status "completed" before T is
  * unblocked. (relation name source_verb_target = task_depends_on_task ⇒ child is
  * the source/dependent, parent is the target/prerequisite; config display_name

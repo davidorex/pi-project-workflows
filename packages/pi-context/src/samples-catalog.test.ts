@@ -3,7 +3,7 @@
  *
  * The catalog reads the extension's OWN bundled samples/ — it is
  * package-intrinsic (no cwd). These cases pin the live conception:
- *   - structural completeness (18 kinds; 43 relation_types; registries present)
+ *   - structural completeness (18 kinds; 44 relation_types; registries present)
  *   - DEC-0023 live-data guard (every kind has title + description + shape)
  *   - endpoint-participation semantics (wildcard, alias/split, convergence)
  *   - per-kind invariant / lens attachment
@@ -48,9 +48,9 @@ describe("samplesCatalog", () => {
 		}
 	});
 
-	it("exposes the full top-level registries (43 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
+	it("exposes the full top-level registries (44 relation_types; lenses/invariants/layers/status_buckets defined)", () => {
 		const c = samplesCatalog();
-		assert.strictEqual(c.relationTypes.length, 43);
+		assert.strictEqual(c.relationTypes.length, 44);
 		assert.ok(Array.isArray(c.lenses));
 		assert.ok(Array.isArray(c.invariants));
 		assert.ok(Array.isArray(c.layers));
@@ -70,6 +70,19 @@ describe("samplesCatalog", () => {
 		assert.ok(
 			verification?.relation_types.as_source.some((r) => r.canonical_id === "verification_verifies_item"),
 			"verification should be the source of verification_verifies_item",
+		);
+	});
+
+	it("ORDERING: milestone is as_source AND as_target of milestone_precedes_milestone", () => {
+		const milestone = samplesCatalog().kinds.find((k) => k.canonical_id === "milestone");
+		assert.ok(milestone, "milestone kind present");
+		assert.ok(
+			milestone?.relation_types.as_source.some((r) => r.canonical_id === "milestone_precedes_milestone"),
+			"milestone should be the source of milestone_precedes_milestone",
+		);
+		assert.ok(
+			milestone?.relation_types.as_target.some((r) => r.canonical_id === "milestone_precedes_milestone"),
+			"milestone should be the target of milestone_precedes_milestone",
 		);
 	});
 

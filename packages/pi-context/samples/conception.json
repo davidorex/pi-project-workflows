@@ -323,6 +323,13 @@
       "target_kinds": ["milestone"]
     },
     {
+      "canonical_id": "milestone_precedes_milestone",
+      "display_name": "precedes",
+      "category": "ordering",
+      "source_kinds": ["milestone"],
+      "target_kinds": ["milestone"]
+    },
+    {
       "canonical_id": "feature_contains_story",
       "display_name": "contains story",
       "category": "membership",

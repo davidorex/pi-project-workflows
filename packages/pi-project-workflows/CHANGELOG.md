@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Regenerated the aggregate `SKILL.md` for the pi-context roadmap rework: the roadmap is a derived view over the `milestone_precedes_milestone` relation — `context-roadmap-load`/`-render`/`-validate` take no parameters and derive from substrate state; `context-roadmap-list` is retired; see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate pi-agent-dispatch `SKILL.md`, restoring the `<events>` section omitted by an earlier partial generation.
 
 - Regenerated the aggregate `SKILL.md` for the pi-context `write-schema-migration` op description now enumerating the `map_each` transform (table lookup with parent/child fallback endpoint; set-field-on-each-element) alongside rename/set/delete/coerce; see the `pi-context` changelog for the member-package detail.

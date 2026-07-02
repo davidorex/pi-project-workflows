@@ -57,7 +57,7 @@ import {
 	type PendingBlockedEntry,
 	reconcilePendingBlockedForDir,
 } from "./pending-blocked-store.js";
-import { listRoadmaps, loadRoadmap, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { loadRoadmap, renderRoadmap, validateRoadmap } from "./roadmap-plan.js";
 import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
 import { runMigrations } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigrationForDir } from "./schema-validator.js";
@@ -3244,56 +3244,31 @@ const extension = (pi: ExtensionAPI) => {
 				);
 			},
 		},
-		"roadmap-list": {
-			description: "List every roadmap in <config.root>/roadmap.json with id, title, status, and phase count",
-			handler: (_args, ctx) => {
-				const list = listRoadmaps(ctx.cwd);
-				if (list.length === 0) {
-					ctx.ui.notify(
-						"No roadmaps found. Install the roadmap block via the substrate dir's config.json installed_blocks, then author roadmap.json.",
-						"info",
-					);
-					return;
-				}
-				const lines = list.map(
-					(r) =>
-						`${r.id} [${r.status ?? "(unspecified)"}] ${r.title} (${r.phaseCount} phase${r.phaseCount === 1 ? "" : "s"})`,
-				);
-				ctx.ui.notify(lines.join("\n"), "info");
-			},
-		},
 		"roadmap-view": {
 			description:
-				"Render a roadmap as pure-textual markdown (phase order, per-phase adjacency from authored phase_depends_on edges, status rollup, milestone resolution). NO mermaid.",
-			handler: (args, ctx) => {
-				const roadmapId = args.trim().split(/\s+/)[0];
-				if (!roadmapId) {
-					ctx.ui.notify("Usage: /context roadmap-view <ROADMAP-id>", "error");
-					return;
-				}
-				const view = loadRoadmap(ctx.cwd, roadmapId);
+				"Render the derived roadmap as pure-textual markdown (milestone order over authored milestone_precedes_milestone edges, per-milestone phase/task rollups, adjacency strictly from edges). NO mermaid.",
+			handler: (_args, ctx) => {
+				const view = loadRoadmap(ctx.cwd);
 				if ("error" in view) {
 					ctx.ui.notify(view.error, "error");
 					return;
 				}
-				const naming = loadContext(ctx.cwd).config?.naming;
-				ctx.ui.notify(renderRoadmap(view, naming), "info");
+				ctx.ui.notify(renderRoadmap(view), "info");
 			},
 		},
 		"roadmap-validate": {
-			description: "Validate every roadmap (or a single one when ROADMAP-id supplied) — surfaces structured issues",
-			handler: (args, ctx) => {
-				const roadmapId = args.trim().split(/\s+/)[0] || undefined;
-				const result = validateRoadmaps(ctx.cwd);
-				const filtered = roadmapId
-					? result.issues.filter((i) => !i.roadmap_id || i.roadmap_id === roadmapId)
-					: result.issues;
-				if (filtered.length === 0) {
-					ctx.ui.notify(`✓ Roadmap validation passed${roadmapId ? ` for ${roadmapId}` : ""}.`, "info");
+			description: "Validate the derived milestone roadmap — surfaces structured issues (error/warning/info codes)",
+			handler: (_args, ctx) => {
+				const result = validateRoadmap(ctx.cwd);
+				if (result.issues.length === 0) {
+					ctx.ui.notify("✓ Roadmap validation passed.", "info");
 					return;
 				}
-				const lines = filtered.map((i) => `✗ [${i.code}] ${i.roadmap_id ?? ""}/${i.phase_id ?? ""}: ${i.message}`);
-				const level = result.status === "invalid" ? "error" : "warning";
+				const lines = result.issues.map((i) => {
+					const where = `${i.milestone_id ? ` ${i.milestone_id}` : ""}${i.phase_id ? ` ${i.phase_id}` : ""}`;
+					return `✗ [${i.code}]${where}: ${i.message}`;
+				});
+				const level = result.status === "invalid" ? "error" : result.status === "warnings" ? "warning" : "info";
 				ctx.ui.notify(lines.join("\n"), level);
 			},
 		},
@@ -3422,18 +3397,17 @@ export {
 } from "./context-sdk.js";
 export { type RenameKind, type RenameReport, renameCanonicalId } from "./rename-canonical-id.js";
 export {
-	listRoadmaps,
 	loadRoadmap,
-	type PhaseSpec,
+	type MilestoneRoadmapView,
+	type MilestoneView,
+	type PhaseRollupView,
 	type PhaseStatus,
-	type PhaseView,
-	type RoadmapSpec,
-	type RoadmapView,
 	renderRoadmap,
 	resolveStatusVocabulary,
 	rollupPhaseStatus,
+	type TaskRow,
 	topoSort,
-	validateRoadmaps,
+	validateRoadmap,
 } from "./roadmap-plan.js";
 // Re-export the 3-way merge conflict type so cross-package consumers (the
 // pi-context-cli conflict resolver, TASK-037) can type `UpdateResult.conflicts`

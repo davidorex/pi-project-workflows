@@ -50,7 +50,7 @@ export type { StatusBucket } from "./context.js";
  * status-vocab.test.ts guards completeness: every samples/schemas status enum
  * value must resolve here (only the intended terminal-not-complete set may map
  * to "unknown"). Values still bucket to "unknown" without throwing — caller
- * decides whether unknown statuses are warning-worthy (validateRoadmaps emits
+ * decides whether unknown statuses are warning-worthy (validateRoadmap emits
  * roadmap_status_unknown_value when relevant).
  */
 export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {

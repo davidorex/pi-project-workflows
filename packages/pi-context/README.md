@@ -88,7 +88,7 @@ All inter-item relationships are closure-table edges in `<substrate-dir>/relatio
 - **Discovery/introspection** — `read-config`, `read-schema`, `read-samples-catalog`, `read-catalog-schema`, `list-tools`, `context-current-state`, `context-bootstrap-state`.
 - **Lifecycle/state** — `context-status`, `context-validate`, `context-validate-relations`, `complete-task` (gates on a passing `verification_verifies_item` edge — verification=parent, task=child).
 - **Substrate management** — `context-init`, `context-accept-all`, `context-install`, `context-switch`, `context-list`, `context-archive`.
-- **Roadmap** — `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`, `context-roadmap-list`.
+- **Roadmap** — `context-roadmap-load`, `context-roadmap-render`, `context-roadmap-validate`: the derived roadmap over the `milestone_precedes_milestone` DAG — milestone-block items topo-ordered by the authored precedes edges, with per-milestone phase/task rollups; adjacency comes strictly from the edges, never inferred from order.
 
 The relation byRef ops (`append-relation` / `remove-relation` / `replace-relation` / `append-relations`) and `upsert-block-item` accept a `dryRun` flag: it resolves the operation and validates the prospective whole file under the SAME write-path validation, returning the would-decision (`{ ..., dryRun: true }`) while writing nothing. The same shared library path backs both the op (`--dryRun`) and the orchestrator scripts — one implementation, not a script-only preview.
 
@@ -113,9 +113,8 @@ The relation byRef ops (`append-relation` / `remove-relation` / `replace-relatio
 - `/context status` — derived project state (source metrics, test counts, block summaries, git state)
 - `/context add-work` — extract structured items from conversation into typed blocks
 - `/context validate` — cross-block referential integrity checks
-- `/context roadmap-list` — list every roadmap in `<config.root>/roadmap.json` (id, title, status, phase count)
-- `/context roadmap-view <ROADMAP-id>` — render a roadmap as pure-textual markdown (phase order, per-phase adjacency from authored `phase_depends_on` edges, status rollup, milestone resolution; no mermaid)
-- `/context roadmap-validate [ROADMAP-id]` — validate every roadmap (or one) and surface structured issues
+- `/context roadmap-view` — render the derived roadmap as pure-textual markdown (milestone order over authored `milestone_precedes_milestone` edges, per-milestone phase/task rollups, adjacency strictly from edges; no mermaid)
+- `/context roadmap-validate` — validate the derived roadmap and surface structured issues (error/warning/info codes; info never affects status)
 - `/context switch <existing-dir> | -c <new-dir> | -` — flip the bootstrap pointer (to an existing substrate, bootstrap-new-and-flip, or back to `previous_contextDir`)
 - `/context list` — enumerate top-level dirs containing `config.json` (switchable substrates); marks the active one
 - `/context archive <dir>` — move a non-active substrate dir to `archive/<dir>/`

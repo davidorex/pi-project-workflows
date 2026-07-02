@@ -37,6 +37,7 @@
 import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { loadRoadmap, type MilestoneRoadmapView } from "@davidorex/pi-context";
 import { readBlock } from "@davidorex/pi-context/block-api";
 import { availableBlocks, type SchemaInfo, type SchemaProperty, schemaInfo } from "@davidorex/pi-context/context-sdk";
 import { cleanGitEnv } from "@davidorex/pi-context/git-env";
@@ -113,6 +114,12 @@ interface SubstrateData {
 	repo_head_short: string;
 	cwd: string;
 	blocks: RenderedBlock[];
+	/**
+	 * The derived roadmap view (milestone_precedes_milestone DAG + per-milestone
+	 * phase/task rollups) via the canonical pi-context loadRoadmap; null when the
+	 * substrate has no config or no milestone items (the section is omitted).
+	 */
+	roadmap: MilestoneRoadmapView | null;
 }
 
 function getRepoHead(cwd: string): { full: string; short: string } {
@@ -265,12 +272,15 @@ function gatherSubstrate(cwd: string): SubstrateData {
 		if (NON_BLOCK_FILES.has(info.name)) continue;
 		blocks.push(gatherBlock(cwd, info.name, info.hasSchema));
 	}
+	const roadmapView = loadRoadmap(cwd);
+	const roadmap = "error" in roadmapView || roadmapView.milestones.length === 0 ? null : roadmapView;
 	return {
 		generated_at: new Date().toISOString(),
 		repo_head: head.full,
 		repo_head_short: head.short,
 		cwd,
 		blocks,
+		roadmap,
 	};
 }
 
@@ -1051,8 +1061,128 @@ function renderBlockSection(block) {
   return sec;
 }
 
+// Consumer-layer key for a relations.json edge endpoint (string legacy form or
+// structured {kind:"item", refname/oid} / {kind:"lens_bin", bin}) — mirrors the
+// pi-context endpointKey helper for the serialized view data.
+function edgeKey(e) {
+  if (typeof e === "string") return e;
+  if (e && e.kind === "lens_bin") return e.bin;
+  return (e && (e.refname || e.oid)) || String(e);
+}
+
+// Derived-roadmap section: milestone-order list + per-milestone cards. The
+// Preceded-by chips are sourced STRICTLY from view.edges (the authored
+// milestone_precedes_milestone subset) — never inferred from order consecutive
+// pairs, which fabricates sibling edges in branching DAGs.
+function renderRoadmapSection(view) {
+  const sec = el("section", { class: "block-section", id: "roadmap-derived" });
+  sec.appendChild(el("h2", {}, "Roadmap (derived)"));
+  sec.appendChild(el("p", { class: "block-meta" },
+    "derived from milestone_precedes_milestone edges · " + view.milestones.length + " milestone(s) · " +
+    view.order.length + " ordered · " + view.cycles.length + " cycle(s) · " + view.edges.length + " edge(s)"));
+
+  const byId = new Map(view.milestones.map(m => [m.id, m]));
+
+  const orderWrap = el("section", { class: "subsection" });
+  orderWrap.appendChild(el("h3", {}, "Milestone order"));
+  if (view.order.length === 0) {
+    orderWrap.appendChild(el("p", { class: "section-empty" }, "(no acyclic ordering possible — see cycles)"));
+  } else {
+    const ol = el("ol", {});
+    for (const id of view.order) {
+      const m = byId.get(id);
+      const li = el("li", {});
+      li.appendChild(chip(id));
+      li.appendChild(document.createTextNode(" " + (m && m.name ? m.name : "") + " "));
+      if (m) li.appendChild(statusBadge(m.status));
+      ol.appendChild(li);
+    }
+    orderWrap.appendChild(ol);
+  }
+  sec.appendChild(orderWrap);
+
+  if (view.cycles.length > 0) {
+    sec.appendChild(el("p", { class: "block-meta" },
+      "Cycles detected: " + view.cycles.map(c => c.join(" → ")).join("; ")));
+  }
+
+  const orderedSet = new Set(view.order);
+  const renderIds = view.order.concat(view.milestones.filter(m => !orderedSet.has(m.id)).map(m => m.id));
+  const grid = el("div", { class: "milestone-grid" });
+  for (const id of renderIds) {
+    const m = byId.get(id);
+    if (!m) continue;
+    const card = el("article", {
+      class: "milestone",
+      id: m.id,
+      "data-block": "roadmap-derived",
+      "data-id": m.id,
+      "data-status": m.status,
+      "data-search": (m.id + " " + (m.name || "")).toLowerCase(),
+    });
+    const idBadge = el("span", { class: "id-badge", "data-id": m.id }, m.id);
+    idBadge.addEventListener("click", () => toggleHighlight(m.id));
+    const head = el("div", { class: "m-head" }, idBadge);
+    head.appendChild(el("span", { class: "m-name" }, m.name || "(unnamed)"));
+    head.appendChild(statusBadge(m.status));
+    card.appendChild(head);
+
+    const preceded = view.edges.filter(e => edgeKey(e.child) === m.id).map(e => edgeKey(e.parent)).sort();
+    const chipsWrap = el("aside", { class: "chips" });
+    if (preceded.length === 0) chipsWrap.appendChild(el("span", { class: "chip vocab" }, "—"));
+    else for (const pid of preceded) chipsWrap.appendChild(chip(pid));
+    card.appendChild(el("div", { class: "field-row" }, el("span", { class: "field-label" }, "preceded by"), chipsWrap));
+
+    const c = m.rollup.counts;
+    card.appendChild(el("div", { class: "field-row" },
+      el("span", { class: "field-label" }, "rollup"),
+      el("span", {}, "complete=" + c.complete + " in_progress=" + c.in_progress + " blocked=" + c.blocked +
+        " todo=" + c.todo + " unknown=" + c.unknown + " (total=" + m.rollup.total + ")"),
+    ));
+
+    for (const p of m.phases) {
+      const sub = el("div", { class: "subsection" });
+      const h = el("h3", {});
+      h.appendChild(document.createTextNode((p.name || p.id) + " "));
+      h.appendChild(chip(p.id));
+      if (p.status) {
+        h.appendChild(document.createTextNode(" "));
+        h.appendChild(statusBadge(p.status));
+      }
+      sub.appendChild(h);
+      if (p.tasks.length === 0) {
+        sub.appendChild(el("p", { class: "section-empty" }, "(no tasks)"));
+      } else {
+        const table = el("table", {});
+        table.appendChild(el("thead", {}, el("tr", {}, el("th", {}, "Task"), el("th", {}, "Status"))));
+        const tbody = el("tbody", {});
+        for (const t of p.tasks) {
+          const tr = el("tr", {});
+          const td = el("td", {});
+          td.appendChild(chip(t.id));
+          if (t.title) td.appendChild(document.createTextNode(" " + t.title));
+          tr.appendChild(td);
+          const tdStatus = el("td", {});
+          if (t.status) tdStatus.appendChild(statusBadge(t.status));
+          tr.appendChild(tdStatus);
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        sub.appendChild(table);
+      }
+      card.appendChild(sub);
+    }
+    grid.appendChild(card);
+  }
+  sec.appendChild(grid);
+  return sec;
+}
+
 function renderTOC() {
   const toc = document.getElementById("toc");
+  if (SUBSTRATE_DATA.roadmap) {
+    toc.appendChild(el("a", { href: "#roadmap-derived" }, "Roadmap (derived)"));
+  }
   for (const block of SUBSTRATE_DATA.blocks) {
     const a = el("a", { href: "#block-" + block.name }, block.schemaTitle);
     toc.appendChild(a);
@@ -1088,6 +1218,9 @@ function renderStatusPills() {
 
 function renderSections() {
   const root = document.getElementById("sections");
+  if (SUBSTRATE_DATA.roadmap) {
+    root.appendChild(renderRoadmapSection(SUBSTRATE_DATA.roadmap));
+  }
   for (const block of SUBSTRATE_DATA.blocks) {
     root.appendChild(renderBlockSection(block));
   }
@@ -1171,6 +1304,11 @@ function reportStats(data: SubstrateData): void {
 		);
 	}
 	console.log(`total items: ${totalItems}`);
+	if (data.roadmap) {
+		console.log(
+			`roadmap (derived): ${data.roadmap.milestones.length} milestone(s), ${data.roadmap.order.length} ordered, ${data.roadmap.cycles.length} cycle(s), ${data.roadmap.edges.length} edge(s)`,
+		);
+	}
 	if (titleFallbacks > 0) console.log(`schema-title fallbacks: ${titleFallbacks}`);
 	if (readErrors > 0) console.log(`read errors: ${readErrors}`);
 }

@@ -606,39 +606,23 @@ Compose a ContextBundle for a work-unit by reading its context-contract (by unit
 </tool>
 
 <tool name="context-roadmap-load">
-Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, resolved milestone, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). A phase's milestone is a MILE- milestone-block id; its satisfaction reads that milestone's derived `reached` (a pure phase-rollup over the parent phases of its phase_positioned_in_milestone edges, in which the phase is the parent and the milestone the child), not inline evidence. Phase ordering lives in relations.json with relation_type='phase_depends_on'.
+Load the derived roadmap view over the milestone_precedes_milestone DAG: milestone-block items topo-ordered by the authored precedes edges (order + cycles), each milestone carrying its derived status/phaseCount (currentState's milestone rollup), its member phases (parents of phase_positioned_in_milestone edges), each phase's tasks (parents of task_positioned_in_phase edges), and per-phase + per-milestone status rollups. Adjacency comes strictly from the authored edges — never inferred from order. Zero milestones is a valid empty view.
 
-*Load a roadmap by id*
+*Load the derived milestone roadmap view*
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
 </tool>
 
 <tool name="context-roadmap-render">
-Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, resolved milestone (MILE- block id + name + derived reached|planned phase-rollup), exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.
+Render the derived roadmap as pure-textual markdown — milestone order list (topo over the authored milestone_precedes_milestone edges), per-milestone sections with **Preceded by:** adjacency lines sourced strictly from those edges (alphabetically sorted; '—' when none), per-milestone rollup counts, and per-phase task tables. Cycle participants surface under a separate heading with a Cycles-detected line. NO mermaid / graph syntax; adjacency is never inferred from order consecutive pairs.
 
-*Render a roadmap as markdown*
+*Render the derived milestone roadmap as markdown*
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `roadmapId` | string | yes | ROADMAP-NNN id from <config.root>/roadmap.json |
 </tool>
 
 <tool name="context-roadmap-validate">
-Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_missing, roadmap_status_unknown_value. A phase's milestone is a MILE- milestone-block id; roadmap_milestone_missing fires when the referenced id is absent from the milestone block. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.
+Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task rollup buckets unknown with items present). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status: invalid iff any error-code issue, warnings iff any warning-code issue, else clean. Display strings flow through config.display_strings (pi-context divergence).
 
-*Validate roadmaps*
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `roadmapId` | string | no | Filter to issues matching this roadmap_id (omit for full-project validation) |
-</tool>
-
-<tool name="context-roadmap-list">
-List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).
-
-*List roadmaps*
+*Validate the derived milestone roadmap*
 
 </tool>
 
@@ -648,7 +632,7 @@ List every roadmap in <config.root>/roadmap.json with id, title, optional status
 <command name="/context">
 Context state management
 
-Subcommands: `init`, `switch`, `list`, `archive`, `install`, `check-status`, `accept-all`, `view`, `lens-curate`, `roadmap-list`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
+Subcommands: `init`, `switch`, `list`, `archive`, `install`, `check-status`, `accept-all`, `view`, `lens-curate`, `roadmap-view`, `roadmap-validate`, `status`, `add-work`, `validate`, `help`
 </command>
 
 </commands_reference>

@@ -25,7 +25,7 @@ export interface OperationDescriptor {
 export const FORBIDDEN_WHOLESALE_OPERATIONS = ["bash", "write", "edit", "shell", "execute"] as const;
 
 export const TOOL_OPERATION_DEFAULTS: Record<string, OperationDescriptor> = {
-	// pi-context (40)
+	// pi-context (39)
 	"amend-config": { canonical_id: "amend-config", category: "context" },
 	"append-block-item": { canonical_id: "append-block-item", category: "context" },
 	"append-block-nested-item": { canonical_id: "append-block-nested-item", category: "context" },
@@ -36,7 +36,6 @@ export const TOOL_OPERATION_DEFAULTS: Record<string, OperationDescriptor> = {
 	"context-current-state": { canonical_id: "context-current-state", category: "context" },
 	"context-edges-for-lens": { canonical_id: "context-edges-for-lens", category: "context" },
 	"context-init": { canonical_id: "context-init", category: "context" },
-	"context-roadmap-list": { canonical_id: "context-roadmap-list", category: "context" },
 	"context-roadmap-load": { canonical_id: "context-roadmap-load", category: "context" },
 	"context-roadmap-render": { canonical_id: "context-roadmap-render", category: "context" },
 	"context-roadmap-validate": { canonical_id: "context-roadmap-validate", category: "context" },

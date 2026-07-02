@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Removed `context-roadmap-list` from `TOOL_OPERATION_DEFAULTS` — the pi-context op is retired with the roadmap's rework as a derived view (the pi-context contribution to the vocabulary is 39 operations).
 - Regenerated `SKILL.md`, restoring the `<events>` section (`tool_call`, `tool_result`) omitted by an earlier partial generation; the generated surface again matches the package's registrations.
 
 ## [0.31.0] - 2026-06-13

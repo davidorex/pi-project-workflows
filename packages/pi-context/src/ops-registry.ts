@@ -37,7 +37,7 @@ import {
 	upsertItemInBlock,
 	writeBlock,
 } from "./block-api.js";
-import { type AdoptResult, adoptConception, amendConfigEntry, loadConfig, loadContext } from "./context.js";
+import { type AdoptResult, adoptConception, amendConfigEntry, loadConfig } from "./context.js";
 import { BootstrapNotFoundError, schemaPath, tryResolveContextDir } from "./context-dir.js";
 import {
 	appendRelationByRef,
@@ -91,7 +91,7 @@ import {
 import { promoteItem } from "./promote-item.js";
 import { addressInto, pageArray, type ReadStructured, renderReadText, structureForRead } from "./read-element.js";
 import { renameCanonicalId } from "./rename-canonical-id.js";
-import { listRoadmaps, loadRoadmap, type RoadmapView, renderRoadmap, validateRoadmaps } from "./roadmap-plan.js";
+import { loadRoadmap, renderRoadmap, validateRoadmap } from "./roadmap-plan.js";
 import { samplesCatalog } from "./samples-catalog.js";
 import { readSchema, writeSchemaChecked } from "./schema-write.js";
 import { truncateHead } from "./truncate.js";
@@ -232,33 +232,6 @@ export interface OpDefinition<P = any> {
 	verbatimText?: boolean;
 	surface: "use" | "process";
 }
-
-// ── serializeRoadmapView ────────────────────────────────────────────────────
-// Strip non-serializable fields (suggestionTemplate fn, grouped Map) from the
-// embedded LoadedLensView records before tool serialization. Relocated verbatim
-// from the extension factory; consumed by the context-roadmap-load op.
-const serializeRoadmapView = (view: RoadmapView): unknown => ({
-	roadmap: view.roadmap,
-	phases: view.phases.map((pv) => ({
-		phase: pv.phase,
-		lensView:
-			"error" in pv.lensView
-				? pv.lensView
-				: {
-						lens: pv.lensView.lens,
-						items: pv.lensView.items,
-						edges: pv.lensView.edges,
-						grouped: Object.fromEntries(pv.lensView.grouped),
-						uncategorized: pv.lensView.uncategorized,
-					},
-		status: pv.status,
-		...(pv.milestone ? { milestone: pv.milestone } : {}),
-		...(pv.milestoneReached !== undefined ? { milestoneReached: pv.milestoneReached } : {}),
-	})),
-	phaseOrder: view.phaseOrder,
-	cycles: view.cycles,
-	edges: view.edges,
-});
 
 export const ops: OpDefinition[] = [
 	{
@@ -2056,25 +2029,16 @@ export const ops: OpDefinition[] = [
 		name: "context-roadmap-load",
 		label: "Context: load roadmap",
 		description:
-			"Load a roadmap by id and return the materialized RoadmapView (phases, lens-views, status rollup, resolved milestone, scoped phase_depends_on edges, topo-ordered phaseOrder + cycles). A phase's milestone is a MILE- milestone-block id; its satisfaction reads that milestone's derived `reached` (a pure phase-rollup over the parent phases of its phase_positioned_in_milestone edges, in which the phase is the parent and the milestone the child), not inline evidence. Phase ordering lives in relations.json with relation_type='phase_depends_on'.",
-		promptSnippet: "Load a roadmap by id",
-		examples: [`pi-context context-roadmap-load --roadmapId ROADMAP-001 --json`],
-		parameters: Type.Object({
-			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
-		}),
+			"Load the derived roadmap view over the milestone_precedes_milestone DAG: milestone-block items topo-ordered by the authored precedes edges (order + cycles), each milestone carrying its derived status/phaseCount (currentState's milestone rollup), its member phases (parents of phase_positioned_in_milestone edges), each phase's tasks (parents of task_positioned_in_phase edges), and per-phase + per-milestone status rollups. Adjacency comes strictly from the authored edges — never inferred from order. Zero milestones is a valid empty view.",
+		promptSnippet: "Load the derived milestone roadmap view",
+		examples: [`pi-context context-roadmap-load --json`],
+		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, params: { roadmapId: string }): OpResult {
-			const view = loadRoadmap(cwd, params.roadmapId);
-			if ("error" in view) {
-				const read = structureForRead(view, { whole: true, label: `roadmap ${params.roadmapId} (error)` });
-				return { read };
-			}
-			// whole: a structured RoadmapView (phases + lens-views + rollups) — keep
-			// the view shape intact rather than paging an inner array.
-			const read = structureForRead(serializeRoadmapView(view), {
-				whole: true,
-				label: `roadmap ${params.roadmapId}`,
-			});
+		run(cwd: string, _params: Record<string, never>): OpResult {
+			const view = loadRoadmap(cwd);
+			// whole: a structured MilestoneRoadmapView (milestones + rollups + edges)
+			// — keep the view shape intact rather than paging an inner array.
+			const read = structureForRead(view, { whole: true, label: "roadmap (derived)" });
 			return { read };
 		},
 	},
@@ -2082,54 +2046,30 @@ export const ops: OpDefinition[] = [
 		name: "context-roadmap-render",
 		label: "Context: render roadmap",
 		description:
-			"Render a roadmap by id as pure-textual markdown — phase order list, per-phase adjacency lines (sourced from view.edges, alphabetically sorted), status rollup counts, resolved milestone (MILE- block id + name + derived reached|planned phase-rollup), exit criteria. NO mermaid / graph syntax: per-phase **Depends on:** lines come strictly from authored phase_depends_on edges scoped to in-roadmap phases.",
-		promptSnippet: "Render a roadmap as markdown",
-		examples: [`pi-context context-roadmap-render --roadmapId ROADMAP-001`],
-		parameters: Type.Object({
-			roadmapId: Type.String({ description: "ROADMAP-NNN id from <config.root>/roadmap.json" }),
-		}),
+			"Render the derived roadmap as pure-textual markdown — milestone order list (topo over the authored milestone_precedes_milestone edges), per-milestone sections with **Preceded by:** adjacency lines sourced strictly from those edges (alphabetically sorted; '—' when none), per-milestone rollup counts, and per-phase task tables. Cycle participants surface under a separate heading with a Cycles-detected line. NO mermaid / graph syntax; adjacency is never inferred from order consecutive pairs.",
+		promptSnippet: "Render the derived milestone roadmap as markdown",
+		examples: [`pi-context context-roadmap-render`],
+		parameters: Type.Object({}),
 		surface: "use",
-		run(cwd: string, params: { roadmapId: string }): OpResult {
-			const view = loadRoadmap(cwd, params.roadmapId);
+		run(cwd: string, _params: Record<string, never>): OpResult {
+			const view = loadRoadmap(cwd);
 			if ("error" in view) {
 				return { json: view };
 			}
-			const naming = loadContext(cwd).config?.naming;
-			return renderRoadmap(view, naming);
+			return renderRoadmap(view);
 		},
 	},
 	{
 		name: "context-roadmap-validate",
-		label: "Context: validate roadmap(s)",
+		label: "Context: validate roadmap",
 		description:
-			"Validate every roadmap × phase × milestone in <config.root>/roadmap.json. Codes: roadmap_lens_missing, roadmap_phase_dep_missing, roadmap_phase_cycle, roadmap_composition_cycle, roadmap_milestone_missing, roadmap_status_unknown_value. A phase's milestone is a MILE- milestone-block id; roadmap_milestone_missing fires when the referenced id is absent from the milestone block. Display strings flow through config.display_strings (pi-context divergence). Optional roadmapId filter restricts issue list to a single roadmap.",
-		promptSnippet: "Validate roadmaps",
-		examples: [`pi-context context-roadmap-validate --roadmapId ROADMAP-001 --json`],
-		parameters: Type.Object({
-			roadmapId: Type.Optional(
-				Type.String({ description: "Filter to issues matching this roadmap_id (omit for full-project validation)" }),
-			),
-		}),
-		surface: "use",
-		run(cwd: string, params: { roadmapId?: string }): OpResult {
-			const result = validateRoadmaps(cwd);
-			const filtered = params.roadmapId
-				? result.issues.filter((i) => !i.roadmap_id || i.roadmap_id === params.roadmapId)
-				: result.issues;
-			return { json: { status: result.status, issues: filtered } };
-		},
-	},
-	{
-		name: "context-roadmap-list",
-		label: "Context: list roadmaps",
-		description:
-			"List every roadmap in <config.root>/roadmap.json with id, title, optional status, and phase count. Returns [] when roadmap.json absent (opt-in block; absence is the truthful answer).",
-		promptSnippet: "List roadmaps",
-		examples: [`pi-context context-roadmap-list --json`],
+			"Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task rollup buckets unknown with items present). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status: invalid iff any error-code issue, warnings iff any warning-code issue, else clean. Display strings flow through config.display_strings (pi-context divergence).",
+		promptSnippet: "Validate the derived milestone roadmap",
+		examples: [`pi-context context-roadmap-validate --json`],
 		parameters: Type.Object({}),
 		surface: "use",
 		run(cwd: string, _params: Record<string, never>): OpResult {
-			return { json: listRoadmaps(cwd) };
+			return { json: validateRoadmap(cwd) };
 		},
 	},
 ];

@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Regenerated `SKILL.md` against the current generator output: the `<events>` section is no longer emitted (generated-artifact catch-up; no behavior change in this package).
+
 ## [0.31.0] - 2026-06-13
 
 ### Changed

@@ -353,7 +353,7 @@ Commit the resolution of a blocked schema surfaced by update. Run AFTER fixing t
 </tool>
 
 <tool name="write-schema-migration">
-Declare a schema version-bump migration into substrate (migrations.json). operation 'create' appends a new declaration; 'replace' overwrites an existing declaration matched by (schemaName, fromVersion); 'remove' drops a declaration. kind='identity' asserts the bump is shape-compatible (no data transform); kind='declarative-transform' carries a TransformSpec of rename/set/delete/coerce operations on dotted JSON paths. The loaded MigrationRegistry resolves the recorded edge at next read/write so block items declaring an older schema_version walk forward without process restart. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer.
+Declare a schema version-bump migration into substrate (migrations.json). operation 'create' appends a new declaration; 'replace' overwrites an existing declaration matched by (schemaName, fromVersion); 'remove' drops a declaration. kind='identity' asserts the bump is shape-compatible (no data transform); kind='declarative-transform' carries a TransformSpec of rename/set/delete/coerce/map_each operations on dotted JSON paths; map_each addresses an array — table mode maps each string element through a lookup (unmatched elements become {relation_type, item_endpoint} with parent/child fallback), set-on-each mode sets a field on every object element. The loaded MigrationRegistry resolves the recorded edge at next read/write so block items declaring an older schema_version walk forward without process restart. Requires user authorization via interactive confirmation at the pi-dispatch auth-gate; on confirm, the verified terminal-operator identity is stamped as writer.
 
 *Declare a schema version-bump migration (identity or declarative-transform) into migrations.json*
 
@@ -658,7 +658,7 @@ Subcommands: `init`, `switch`, `list`, `archive`, `install`, `check-status`, `ac
 </events>
 
 <bundled_resources>
-12 schemas, 36 samples bundled.
+12 schemas, 38 samples bundled.
 See references/bundled-resources.md for full inventory.
 </bundled_resources>
 
@@ -685,6 +685,7 @@ Names valid for the `installed_blocks` array in `<substrate-dir>/config.json`. I
 | `story` | `samples/blocks/story.json` |
 | `milestone` | `samples/blocks/milestone.json` |
 | `work-orders` | `samples/blocks/work-orders.json` |
+| `session-notes` | `samples/blocks/session-notes.json` |
 
 </installable_blocks>
 
@@ -711,6 +712,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `story` | `samples/schemas/story.schema.json` |
 | `milestone` | `samples/schemas/milestone.schema.json` |
 | `work-orders` | `samples/schemas/work-orders.schema.json` |
+| `session-notes` | `samples/schemas/session-notes.schema.json` |
 
 </installable_schemas>
 
@@ -724,7 +726,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `framework-gaps` | Framework Gaps | `gaps` | id, title, status (string (identified|accepted|in-progress|closed|wontfix|superseded_by)), priority? (string (P0|P1|P2|P3)), package, layer? (string (L1|L2|L3|L4|L5)), description, evidence (array), impact, canonical_vocabulary?, proposed_resolution, related_features? (array), related_decisions? (array), related_issues? (array), created_by, created_at, closed_by?, closed_at?, oid?, content_hash?, content_parent? |
 | `tasks` | Tasks | `tasks` | id, description, status (string (planned|in-progress|completed|blocked|cancelled)), files? (array), acceptance_criteria? (array), assigned_agent?, notes?, oid?, content_hash?, content_parent? |
 | `verification` | Verification | `verifications` | id, status (string (passed|failed|partial|skipped)), method (string (command|inspect|test)), evidence?, timestamp?, criteria_results? (array), oid?, content_hash?, content_parent? |
-| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by?, oid?, content_hash?, content_parent? |
+| `issues` | Issues | `issues` | id, title, body, location, status (string (open|resolved|deferred)), category (string (primitive|issue|cleanup|capability|composition)), priority (string (low|medium|high|critical)), package, source? (string (human|agent|monitor|workflow)), resolved_by?, resolved_at?, oid?, content_hash?, content_parent? |
 | `features` | Features | `features` | id, title, status (string (proposed|approved|in-progress|in-review|complete|blocked|cancelled)), layer (string (L1|L2|L3|L4|L5)), description, motivation?, acceptance_criteria (array), created_by, created_at, modified_by?, modified_at?, approved_by?, approved_at?, oid?, content_hash?, content_parent? |
 | `research` | Research | `research` | id, title, status (string (planned|in-progress|complete|stale|superseded|revised)), layer (string (L1|L2|L3|L4|L5)), type (string (investigative|comparative|empirical|historical|audit|landscape|feasibility|curation)), question, method, scope? (array), findings_summary, findings_document?, grounding? (object), grounded_at?, stale_conditions? (array), citations? (array), conducted_by?, conducted_at?, created_by, created_at, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 | `rationale` | Design Rationale | `rationales` | id, title, narrative, phase? (integer), oid?, content_hash?, content_parent? |
@@ -737,6 +739,7 @@ Names valid for the `installed_schemas` array in `<substrate-dir>/config.json`. 
 | `story` | Stories | `stories` | id, title, status (string (proposed|ready|in-progress|in-review|complete|blocked)), description?, acceptance_criteria? (array), created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 | `milestone` | Milestones | `milestones` | id, name, status (string (planned|reached)), release?, created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
 | `work-orders` | Work Orders | `work_orders` | id, title, status (string (proposed|in-progress|real-check-passed|real-check-failed|completed|cancelled)), target_agent, input_contract (object), context_blocks (array), output_contract (object), scope (object), real_check_criteria (object), description?, created_by?, created_at?, modified_by?, modified_at?, oid?, content_hash?, content_parent? |
+| `session-notes` | Session Notes | `sessions` | id, timestamp, focus, discoveries? (array), questions? (array), decisions_made? (array), current_status, next_steps (array), oid?, content_hash?, content_parent? |
 
 **Status Enums:**
 
@@ -824,7 +827,7 @@ Source-of-truth-drift invariant: `validateContext` requires the active `config.s
 </cross_substrate>
 
 <schema_versioning>
-Schemas are draft-07 JSON-Schema, one per block kind, under `<substrate-dir>/schemas/`. Package-shipped substrate-singleton schemas carry a `pi-context://schemas/<name>` `$id` plus a `version`. `<substrate-dir>/migrations.json` is the per-substrate schema-version migration registry. A schema `version` bump REQUIRES a companion migration declared via the `write-schema-migration` tool; without one, reading or writing an item that declares an older `schema_version` throws a version mismatch. Migration kinds are `identity` (shape-compatible, no transform) or `declarative-transform` (a TransformSpec of rename/set/delete/coerce on dotted paths). The loaded registry resolves the migration edge at the next read/write, so items walk forward without a process restart. A `block:<name>` reference resolves to `<contextDir>/schemas/<name>.schema.json`.
+Schemas are draft-07 JSON-Schema, one per block kind, under `<substrate-dir>/schemas/`. Package-shipped substrate-singleton schemas carry a `pi-context://schemas/<name>` `$id` plus a `version`. `<substrate-dir>/migrations.json` is the per-substrate schema-version migration registry. A schema `version` bump REQUIRES a companion migration declared via the `write-schema-migration` tool; without one, reading or writing an item that declares an older `schema_version` throws a version mismatch. Migration kinds are `identity` (shape-compatible, no transform) or `declarative-transform` (a TransformSpec of rename/set/delete/coerce/map_each on dotted paths; `map_each` addresses an array — table mode maps each string element through a lookup, with unmatched elements becoming `{relation_type, item_endpoint}` under a parent/child fallback, and set-on-each mode sets a field on every object element). The loaded registry resolves the migration edge at the next read/write, so items walk forward without a process restart. Config loading is migration-aware: a `config.json` whose `schema_version` lags the bundled config schema is walked forward through the `config` migration chain in memory at load (the on-disk file is never rewritten); init / accept-all / install each seed the catalog's `config` identity declaration into `migrations.json` (idempotent), and a version mismatch with no resolvable chain throws. A `block:<name>` reference resolves to `<contextDir>/schemas/<name>.schema.json`.
 </schema_versioning>
 
 <lens_views>

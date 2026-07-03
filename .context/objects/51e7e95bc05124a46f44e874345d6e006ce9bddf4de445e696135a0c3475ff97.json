@@ -1,0 +1,21 @@
+{
+  "title": "context-switch declares target_dir schema-required while --to_previous ignores it — the CLI refuses the flag-omitted form the op description implies",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "The context-switch op description says target_dir is ignored for --to_previous, but the parameter is schema-required and the CLI enforces schema.required (pi-context-cli/src/cli.ts:440-443), so `pi-context context-switch --to_previous true` without --target_dir gets a UsageError. The switch-back form works only with a dummy target_dir supplied — documentation and enforcement contradict each other.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1538-1616",
+      "reference": "context-switch parameter schema requires target_dir; the description states it is ignored for to_previous."
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "440-443",
+      "reference": "The CLI enforces schema.required before dispatch — the documented flag-omitted switch-back form is refused with a UsageError."
+    }
+  ],
+  "impact": "Operators following the op's own description hit a usage error on the switch-back form; the workaround (a dummy required-but-ignored flag) contradicts the surfaced contract.",
+  "proposed_resolution": "Requires determination: conditional requirement (target_dir required unless to_previous) vs correcting the description to state target_dir must be supplied and is ignored. Surfaced by the TASK-070 round-3 re-audit as targeted-review information; op schema untouched by that branch."
+}

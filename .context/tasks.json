@@ -362,10 +362,11 @@
       "content_hash": "b858cfa27d396cfd59dc56df37215000a7de0dc33d129b8de3b16aca51af9fca"
     },
     {
-      "description": "Read-cap measurement basis per surface. Closes FGAP-016 (P3): for --json measure the EMITTED compact form (so the cap reflects what actually ships), for text/Pi-tool keep measuring the pretty form (what the agent reads); surface the firing dimension (bytes vs lines) in the REFUSAL message. Cross-channel: the truncate.ts cap primitive + cli.ts boundedJsonOutput + read-element.ts structureForRead/renderReadText.",
+      "description": "Read-cap measurement basis per surface. Closes FGAP-016 (P3): for --json measure the EMITTED compact form (so the cap reflects what actually ships), for text/Pi-tool keep measuring the pretty form (what the agent reads); surface the firing dimension (bytes vs lines) in the REFUSAL message. Cross-channel: the truncate.ts cap primitive + ops-registry.ts boundedJsonOutput (:198), overCapRefusalText (:163), and renderOpResultText (:177) — cli.ts imports (:37) and calls (:1135) them — + read-element.ts structureForRead/renderReadText.",
       "status": "planned",
       "files": [
         "packages/pi-context/src/truncate.ts",
+        "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context-cli/src/cli.ts",
         "packages/pi-context/src/read-element.ts"
       ],
@@ -380,7 +381,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "TASK-022",
       "oid": "faefd3eb61329ef90eb1ca067733bfe7",
-      "content_hash": "51f2a5810bac6b1279b4d1296366897d878c35a3d783f276220c2cac95d89afa"
+      "content_hash": "82c39dab5c8e6d91f6d59e98cbce5c24899968dc7b59c47bfb5f61854f8bdcdc",
+      "content_parent": "51f2a5810bac6b1279b4d1296366897d878c35a3d783f276220c2cac95d89afa"
     },
     {
       "description": "Slice S1 (FGAP-029 P0 safety): /context install --update must NEVER overwrite a populated block. In installContext's blocks loop (packages/pi-context/src/index.ts:396-416), when destExists && overwrite, read the existing block via readBlockForDir and test for items via forEachBlockArray; if any array is non-empty, push to a new InstallResult.preserved[] and skip the copyFileSync. Empty/absent blocks behave as today; the schemas loop is UNCHANGED (schemas still honor --update). Render preserved in the install handler (index.ts:910-942). Add a regression test (none exists today). Per DEC-0010: also add a CHANGELOG [Unreleased] entry + usage-only docs (pkg README, monorepo README, SKILL via skill-narrative.md). Reuse readBlockForDir + forEachBlockArray (block-api.ts); installContext is the sole block-writer.",

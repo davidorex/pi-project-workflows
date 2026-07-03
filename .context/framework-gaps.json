@@ -194,11 +194,11 @@
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
       "status": "accepted",
       "package": "pi-context",
-      "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:667-722). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a.",
+      "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:678-712). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a. History: the proposed_resolution's design (endpoint_roles metadata + write-time validate-or-normalize) was implemented on 2026-06-06 (a08e586; TASK-027 closed at 7968580) and reverted the same day at user direction (b80eea7/98b6413/fe676a5); the recorded verdict — 'worth running but a failure implementation wise' — carries no recorded articulation of what failed (analysis/2026-07-03-task-027-revert-archaeology.md + analysis/2026-07-03-task-027-context-supplement.md). Whether the failure was the design or its unisolated execution is an open user determination; the reverted implementation remains recoverable at a08e586.",
       "evidence": [
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "667-722",
+          "lines": "678-712",
           "reference": "edge-direction contract: {parent: D, child: T} => T blocked until D completed (parent=prerequisite, child=dependent) — opposite to the source_verb_target name reading"
         },
         {
@@ -216,7 +216,8 @@
       "created_at": "2026-06-03T23:04:22.642Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
-      "content_hash": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
+      "content_hash": "d36311ceb1266eed9511d80e74734f9735a02d72067e8d0a291111e2f7eb7fc5",
+      "content_parent": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
     },
     {
       "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",
@@ -530,8 +531,9 @@
           "reference": "truncateHead measures pretty-serialized bytes + DEFAULT_MAX_LINES=2000; the cap dimension that fires is not surfaced in the refusal text"
         },
         {
-          "file": "packages/pi-context-cli/src/cli.ts",
-          "reference": "--json envelope emits compact JSON.stringify({ok,op,output}); boundedJsonOutput measures the pretty form -> measurement form != emission form"
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "198",
+          "reference": "boundedJsonOutput (defined here) measures the pretty form; the CLI --json envelope emits compact JSON.stringify({ok,op,output}) at its cli.ts:1135-1136 call site -> measurement form != emission form"
         },
         {
           "file": "packages/pi-context/src/read-element.ts",
@@ -543,7 +545,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d35361e9bdb0c0892a860ebff318bc1",
-      "content_hash": "0893d5de34ba679c550f18f52da99e3d7743a7325da42a1956dd4e723722bd29"
+      "content_hash": "0b8cbf6dc4078d3ebd2bd261ee7ddee53424f3d47606033df7f7995cea4124ac",
+      "content_parent": "0893d5de34ba679c550f18f52da99e3d7743a7325da42a1956dd4e723722bd29"
     },
     {
       "id": "FGAP-017",
@@ -1502,7 +1505,7 @@
       "evidence": [
         {
           "file": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1183-1227",
+          "lines": "1282-1330",
           "reference": "write-schema operation enum is create|replace, whole-document; no granular per-property operation"
         },
         {
@@ -1516,7 +1519,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "a5de06b93ccd6dc5f6e4494a96db4c7f",
-      "content_hash": "096731b17e269bd4c53c2814b9fac4a8e3678ec49437d971f5283badf995ee6b"
+      "content_hash": "869b528484211f1f6206225726adb0ae40e7319aabc85ee95d1f354b12a4b98d",
+      "content_parent": "096731b17e269bd4c53c2814b9fac4a8e3678ec49437d971f5283badf995ee6b"
     },
     {
       "title": "No one-step block-kind rename tool",
@@ -2888,7 +2892,7 @@
       "status": "identified",
       "package": "pi-context",
       "canonical_vocabulary": "forcing-function coverage for warranted non-invariant closure-table edges",
-      "description": "Closure-table edge presence is enforced only for relation_types backed by a requires-edge invariant: completed-task-has-verification, decision-cites-forcing-artifact, the three *-articulates-convention invariants, and decision-shows-derivation. The vocabulary-free requires-edge loop (the mechanism DEC-0016 establishes, context-sdk.ts:2055-2078) flags at context-validate any item in the invariant's block missing an edge of the named relation_types. Every other warranted relation_type — task_governed_by_decision, task_addresses_gap, task_addresses_feature, research_informs_item, the data_flow links — has no requires-edge invariant and is filed only by a manual append-relation step that runs after the item write; no surface flags a warranted-but-absent non-invariant edge. The forcing-function absence is both-surface: write-time has no completeness check tying an item's filed body to the edges its text entails, and context-validate has no rule flagging a missing non-invariant edge. Warranted means entailed by an item's filed text or by the relation_type's intended population — not universal (not every task addresses a gap), so a blanket requires-edge invariant is not the answer for every type. Edges an item's own text entails are written inconsistently or omitted, concentrated in pre-discipline history. General class: the five missing TASK->decision/gap edges (TASK-010->DEC-0008 and ->FGAP-012, TASK-012->DEC-0009 and ->FGAP-015, TASK-014->FGAP-014) are the triggering instance; FGAP-071 (gap->arc binding) is a contained sibling instance already filed narrowly.",
+      "description": "Closure-table edge presence is enforced only for relation_types backed by a requires-edge invariant: completed-task-has-verification, decision-cites-forcing-artifact, the three *-articulates-convention invariants, and decision-shows-derivation. The vocabulary-free requires-edge loop (the mechanism DEC-0016 establishes, context-sdk.ts:2299-2322) flags at context-validate any item in the invariant's block missing an edge of the named relation_types. Every other warranted relation_type — task_governed_by_decision, task_addresses_gap, task_addresses_feature, research_informs_item, the data_flow links — has no requires-edge invariant and is filed only by a manual append-relation step that runs after the item write; no surface flags a warranted-but-absent non-invariant edge. The forcing-function absence is both-surface: write-time has no completeness check tying an item's filed body to the edges its text entails, and context-validate has no rule flagging a missing non-invariant edge. Warranted means entailed by an item's filed text or by the relation_type's intended population — not universal (not every task addresses a gap), so a blanket requires-edge invariant is not the answer for every type. Edges an item's own text entails are written inconsistently or omitted, concentrated in pre-discipline history. General class: the five TASK->decision/gap edges missing at filing (TASK-010->DEC-0008 and ->FGAP-012, TASK-012->DEC-0009 and ->FGAP-015, TASK-014->FGAP-014) were the triggering instance; they have since been backfilled MANUALLY with no invariant added — the unforced-omission pattern the class predicts remains. FGAP-071 (gap->arc binding) is a contained sibling instance already filed narrowly.",
       "evidence": [
         {
           "file": ".context/config.json",
@@ -2896,7 +2900,7 @@
         },
         {
           "file": ".context/config.json",
-          "reference": "read-config --registry relation_types: 38 relation_types; only the six requires-edge-named ones are forced; task_governed_by_decision / task_addresses_gap / research_informs_item carry no invariant"
+          "reference": "read-config --registry relation_types: 44 relation_types; only the six requires-edge-named ones are forced; task_governed_by_decision / task_addresses_gap / research_informs_item carry no invariant"
         },
         {
           "file": ".context/relations.json",
@@ -2904,15 +2908,15 @@
         },
         {
           "file": ".context/relations.json",
-          "reference": "find-references TASK-010: edges VER-009 + two conventions; no edge to DEC-0008 or FGAP-012 though TASK-010 description names 'Per DEC-0008 / FGAP-012'"
+          "reference": "find-references TASK-010: task_governed_by_decision->DEC-0008 and task_addresses_gap->FGAP-012 now present (5 edges total) — the edges named missing at filing were backfilled manually since, with no invariant added to force the next omission"
         },
         {
           "file": ".context/relations.json",
-          "reference": "find-references TASK-012: edges VER-007 + two conventions; no edge to DEC-0009 or FGAP-015 though TASK-012 is FGAP-013's fix and DEC-0009's enacting task"
+          "reference": "find-references TASK-012: task_governed_by_decision->DEC-0009 and task_addresses_gap->FGAP-015 now present (5 edges total) — backfilled manually since filing, no invariant added"
         },
         {
           "file": ".context/relations.json",
-          "reference": "find-references TASK-014: edges VER-008 + one convention; no edge to FGAP-014 though TASK-014 description names 'Closes FGAP-014'"
+          "reference": "find-references TASK-014: task_addresses_gap->FGAP-014 now present (3 edges total) — backfilled manually since filing, no invariant added"
         },
         {
           "file": "analysis/2026-06-14-edge-coverage-forcing-function-investigation.md",
@@ -2925,9 +2929,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T02:08:01.945Z",
       "oid": "59e28b0f7b432759d5234348ebc6aca9",
-      "content_hash": "dff8b38084a578a277365378a6ea89728a75a00c5dc56c4c15d0209a02372863",
+      "content_hash": "a084a6d5f40a0874bfdb03481a646b43cae5e6d68fc6f901836b47f4a8066508",
       "priority": "P2",
-      "content_parent": "caf6a49a632b73c636a94b3ab58bd286b7fc0fffc40d2357b0d3fc89704a2ea7"
+      "content_parent": "dff8b38084a578a277365378a6ea89728a75a00c5dc56c4c15d0209a02372863"
     },
     {
       "title": "pi-context update's per-component write boundary (DEC-0018) is undocumented on the update surface — a blocked run's config mutation is contractual but nowhere stated",
@@ -2965,36 +2969,36 @@
       "status": "identified",
       "package": "pi-context",
       "canonical_vocabulary": "write-time / validate-time edge-guard parity",
-      "description": "The write-time edge gate validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1430-1463), invoked by appendRelationByRef (1528) and appendRelationsByRef via assertEdgeValidForWrite (1491-1498), checks only (a) relation_type registration (1439-1445) and (b) presence-gated source/target-kind membership (1450-1461) — the kind check is conditioned on the endpoint resolving to a loc (1452/1457). A non-existent endpoint resolves to no loc (resolver status dangling), so the kind check is skipped and the edge is accepted and persisted; the helper never checks endpoint existence. The same resolution-gating skips an <alias>:<id> endpoint whose alias is unregistered (status unregistered). Cycle is not checked at write at all (the appendRelationsByRef JSDoc, 1649-1652, names endpoint resolution / cycle checks deferred to validateContext). validateContext's endpoint loop catches these only post-hoc: edge_endpoint_dangling (2060-2085), edge_endpoint_unregistered (2052-2076), and edge_cycle_detected merged from validateRelations (2131-2150). This is the endpoint-existence residual of FGAP-090/TASK-062, which achieved write-validate parity on the registration + kind axes but left endpoint-existence and cycle validate-only. General class: the write-time edge guard rejects a strict subset of what validateContext rejects; full parity requires it to additionally reject dangling endpoints, unregistered-alias endpoints, and cycles, so a write-accepted edge is always validate-clean.",
+      "description": "The write-time edge gate validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1568-1601), invoked by appendRelationByRef (1666) and appendRelationsByRef via assertEdgeValidForWrite (1629-1636), checks only (a) relation_type registration (1577-1583) and (b) presence-gated source/target-kind membership (1586-1599) — the kind check is conditioned on the endpoint resolving to a loc. A non-existent endpoint resolves to no loc (resolver status dangling), so the kind check is skipped and the edge is accepted and persisted; the helper never checks endpoint existence. The same resolution-gating skips an <alias>:<id> endpoint whose alias is unregistered (status unregistered). Cycle is not checked at write at all (the appendRelationsByRef JSDoc, 1788-1790, names endpoint resolution / cycle checks deferred to validateContext). validateContext's endpoint loop catches these only post-hoc: edge_endpoint_dangling (2204/2221), edge_endpoint_unregistered (2196/2213), and edge_cycle_detected merged from validateRelations (2279). This is the endpoint-existence residual of FGAP-090/TASK-062, which achieved write-validate parity on the registration + kind axes but left endpoint-existence and cycle validate-only. General class: the write-time edge guard rejects a strict subset of what validateContext rejects; full parity requires it to additionally reject dangling endpoints, unregistered-alias endpoints, and cycles, so a write-accepted edge is always validate-clean.",
       "evidence": [
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "1450-1461",
+          "lines": "1586-1599",
           "reference": "validateEdgeAgainstRegistry gates source/target-kind membership on parentLoc/childLoc being truthy; an endpoint that resolves to no loc (dangling/unregistered) skips the check and the helper returns no error — no endpoint-existence check exists"
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "1421-1424",
+          "lines": "1555-1562",
           "reference": "helper JSDoc: a lens_bin / dangling / unregistered endpoint carries no loc and is skipped for the kind check (endpoint-resolution failures are validateContext's own surface) — documents the gap as intended"
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "1649-1652",
+          "lines": "1788-1790",
           "reference": "appendRelationsByRef JSDoc: relation_type registration / endpoint resolution / cycle checks deferred to validateContext — names endpoint-resolution + cycle as the write-deferred checks"
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "2060-2085",
+          "lines": "2204, 2221",
           "reference": "validateContext emits edge_endpoint_dangling (error) for a parent/child that does not resolve to any item — the post-hoc catch for the write-accepted edge"
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "2052-2076",
+          "lines": "2196, 2213",
           "reference": "validateContext emits edge_endpoint_unregistered (error) for an endpoint naming an unregistered substrate alias — the sibling resolution-failure also write-accepted"
         },
         {
           "file": "packages/pi-context/src/context-sdk.ts",
-          "lines": "2131-2150",
+          "lines": "2279",
           "reference": "validateContext merges edge_cycle_detected from validateRelations — the cycle check absent at write"
         },
         {
@@ -3011,15 +3015,15 @@
           "reference": "empirical repro on a fresh /tmp adopt-only substrate: appended=true, ON_DISK_COUNT=1, validateContext two edge_endpoint_dangling errors; root cause + class + prior-art (FGAP-090 closed-adjacent, FGAP-007/TASK-027 sibling-direction, FGAP-091 inverse-absence) — untracked"
         }
       ],
-      "impact": "A relation can be written and committed naming an endpoint that does not exist (a typo'd or premature id) or an unregistered cross-substrate alias, or closing a cycle, with no write-time signal — the porcelain returns appended: true. The defect surfaces only at a later context-validate pass (if one runs), divorced in time from the write that introduced it, so a CLI/op caller filing an edge gets no immediate feedback that the edge is broken. This is the precise inverse of the TASK-062-enforced kind check: a present-but-wrong-kind endpoint is rejected at write, but an absent endpoint (strictly more broken) is accepted — write-time rejection coverage is non-monotonic in edge brokenness. Broken edges accumulate substrate-wide between validate runs, and --dryRun previews (which run the same gate, 1528-1529) also fail to predict the dangling-edge defect.",
-      "proposed_resolution": "Extend the write-time edge guard to full write-validate parity — reject at write everything validateContext rejects for an edge: the residual endpoint-existence (edge_endpoint_dangling), unregistered-alias (edge_endpoint_unregistered), and cycle (edge_cycle_detected) checks, in addition to the registration + present-endpoint-kind checks TASK-062 already hoisted. Mechanism: the write-time resolver already classifies each endpoint status (the same resolveRef validateContext uses, built by buildWriteTimeEdgeValidator, 1474-1483) — surface a dangling/unregistered status as a write-time rejection rather than a skip; add a prospective-cycle check against the existing edges (mirroring the validateRelations cycle pass). Reconcile structured-endpoints.test.ts:288-310 (currently asserts dangling-append succeeds) as part of the change — whether a legitimately forward-referencing append needs an explicit opt-out, or dangling is always a write error, is a genuine open implementation choice for the closing task. Pairs with FGAP-007/TASK-027 (sibling write-time edge-direction guard); the endpoint-existence residual of the closed FGAP-090.",
+      "impact": "A relation can be written and committed naming an endpoint that does not exist (a typo'd or premature id) or an unregistered cross-substrate alias, or closing a cycle, with no write-time signal — the porcelain returns appended: true. The defect surfaces only at a later context-validate pass (if one runs), divorced in time from the write that introduced it, so a CLI/op caller filing an edge gets no immediate feedback that the edge is broken. This is the precise inverse of the TASK-062-enforced kind check: a present-but-wrong-kind endpoint is rejected at write, but an absent endpoint (strictly more broken) is accepted — write-time rejection coverage is non-monotonic in edge brokenness. Broken edges accumulate substrate-wide between validate runs, and --dryRun previews (which run the same gate, 1666-1675) also fail to predict the dangling-edge defect.",
+      "proposed_resolution": "Extend the write-time edge guard to full write-validate parity — reject at write everything validateContext rejects for an edge: the residual endpoint-existence (edge_endpoint_dangling), unregistered-alias (edge_endpoint_unregistered), and cycle (edge_cycle_detected) checks, in addition to the registration + present-endpoint-kind checks TASK-062 already hoisted. Mechanism: the write-time resolver already classifies each endpoint status (the same resolveRef validateContext uses, built by buildWriteTimeEdgeValidator, 1612-1621) — surface a dangling/unregistered status as a write-time rejection rather than a skip; add a prospective-cycle check against the existing edges (mirroring the validateRelations cycle pass). Reconcile structured-endpoints.test.ts:288-310 (currently asserts dangling-append succeeds) as part of the change — whether a legitimately forward-referencing append needs an explicit opt-out, or dangling is always a write error, is a genuine open implementation choice for the closing task. Pairs with FGAP-007/TASK-027 (sibling write-time edge-direction guard); the endpoint-existence residual of the closed FGAP-090.",
       "id": "FGAP-093",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T07:17:10.372Z",
       "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
-      "content_hash": "efc09bd56835f74b3df64a4c09577e13caa7640d8687ca126a4013521d57169e",
+      "content_hash": "2524c771f55e7426dd50874f490bcb27c373f1de10b4d80c328d98cfda14070d",
       "priority": "P2",
-      "content_parent": "c747800bc7d6e95df6058ae63a23dccec9539a9b98040354237034f7da14af00"
+      "content_parent": "efc09bd56835f74b3df64a4c09577e13caa7640d8687ca126a4013521d57169e"
     },
     {
       "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
@@ -3545,7 +3549,7 @@
       "evidence": [
         {
           "file": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1565-1645",
+          "lines": "1538-1616",
           "reference": "context-switch parameter schema requires target_dir; the description states it is ignored for to_previous."
         },
         {
@@ -3560,7 +3564,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-108",
       "oid": "2cd2f886b0e1572455bfbd7cb64c1090",
-      "content_hash": "2878b0c1d5358d40aa6ebbe7cc44164bd1dd62a7599085e4012f8aec8663d6b6"
+      "content_hash": "51e7e95bc05124a46f44e874345d6e006ce9bddf4de445e696135a0c3475ff97",
+      "content_parent": "2878b0c1d5358d40aa6ebbe7cc44164bd1dd62a7599085e4012f8aec8663d6b6"
     },
     {
       "title": "No build-time gate flags a narrowing catalog BLOCK-schema diff — the additive/expand-contract gate covers config.schema.json only",

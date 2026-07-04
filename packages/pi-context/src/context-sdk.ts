@@ -794,22 +794,35 @@ export function currentState(cwd: string): CurrentState {
 	// DEPENDENCY direction (parent-of-edge-with-child=item). Which relations
 	// participate is gated on membership in `sd.blocked_by.relation_types`, so an
 	// empty/absent relation is simply not consulted.
+	// Partition the configured blocking relations into GATE-direction vs
+	// DEPENDENCY-direction by each relation's declared `role_direction` (FGAP-113),
+	// replacing the former single `task_gated_by_item` string literal:
+	//   • role_direction === "as_child" → GATE direction: the relation's PRIMARY
+	//     role (the gate) sits at edge.child and the waiting item at edge.parent, so
+	//     the item's gates are the CHILDREN of edges whose PARENT is the item.
+	//   • otherwise (as_parent OR unset) → DEPENDENCY direction: the item's
+	//     prerequisites are the PARENTS of edges whose CHILD is the item.
+	// For the stock set {task_depends_on_task (as_parent), task_gated_by_item
+	// (as_child)} this partition is identical to the pre-change literal split, so
+	// blocked / nextActions / blockedBy stay byte-identical; any *_gated_by_item
+	// sibling later added to blocked_by routes to the gate direction by
+	// construction (no literal to extend). A blocked_by relation the config does
+	// NOT register with a role_direction reads as the DEPENDENCY default.
 	const blockedByRels = new Set(sd.blocked_by.relation_types);
-	const depDirRels = new Set(
-		// task_gated_by_item is the one gate-direction relation; everything else in
-		// the configured set reads the dependency direction (incl. the default rule).
-		[...blockedByRels].filter((rt) => rt !== "task_gated_by_item"),
-	);
+	const roleDirection = new Map<string, "as_parent" | "as_child">();
+	for (const rt of loadConfig(cwd)?.relation_types ?? []) {
+		if (rt.role_direction !== undefined) roleDirection.set(rt.canonical_id, rt.role_direction);
+	}
+	const gateDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) === "as_child"));
+	const depDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) !== "as_child"));
 	const dependencyPredsOf = (itemId: string): string[] =>
 		edges
 			.filter((e) => depDirRels.has(e.relation_type) && endpointKey(e.child) === itemId)
 			.map((e) => endpointKey(e.parent));
 	const gatePredsOf = (itemId: string): string[] =>
-		blockedByRels.has("task_gated_by_item")
-			? edges
-					.filter((e) => e.relation_type === "task_gated_by_item" && endpointKey(e.parent) === itemId)
-					.map((e) => endpointKey(e.child))
-			: [];
+		edges
+			.filter((e) => gateDirRels.has(e.relation_type) && endpointKey(e.parent) === itemId)
+			.map((e) => endpointKey(e.child));
 	// All preds (deps ∪ gates) in discovery order — used by the topo ordering below.
 	const allPredsOf = (itemId: string): string[] => [...dependencyPredsOf(itemId), ...gatePredsOf(itemId)];
 	const incompletePreds = (itemId: string): string[] =>

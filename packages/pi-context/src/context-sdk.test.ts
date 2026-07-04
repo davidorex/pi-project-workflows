@@ -370,7 +370,21 @@ describe("contextState", () => {
 const REL_TYPES = [
 	{ canonical_id: "verification_verifies_item", display_name: "verifies", category: "data_flow" as const },
 	{ canonical_id: "decision_addresses_gap", display_name: "addresses gap", category: "data_flow" as const },
-	{ canonical_id: "task_depends_on_task", display_name: "depends on", category: "ordering" as const },
+	{
+		canonical_id: "task_depends_on_task",
+		display_name: "depends on",
+		category: "ordering" as const,
+		role_direction: "as_parent" as const,
+	},
+	// The stock gate relation carries role_direction as_child (the gate/primary at
+	// edge.child, the waiting task at edge.parent) so the deriver classifies it as
+	// gate-direction from config rather than a source literal (FGAP-113).
+	{
+		canonical_id: "task_gated_by_item",
+		display_name: "gated by",
+		category: "ordering" as const,
+		role_direction: "as_child" as const,
+	},
 ];
 
 // Canonical config-declared invariants (DEC-0025): the two previously-hardcoded
@@ -2942,6 +2956,104 @@ describe("currentState", () => {
 			state.nextActions.some((a) => a.id === "TASK-G" && a.kind === "task"),
 			"TASK-G unaffected by decision/feature gate edges",
 		);
+	});
+
+	it("gate sibling (FGAP-113): a feature_gated_by_item in blocked_by, declared as_child, reads gate=child — the latent-sibling fix", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-sibling");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// feature_gated_by_item shares the gate SHAPE of task_gated_by_item
+		// (as_child: the gate/primary at edge.child, the waiter at edge.parent). The
+		// pre-FGAP-113 deriver keyed the gate direction off the single literal
+		// "task_gated_by_item", so this sibling — if placed in blocked_by — read the
+		// SWAPPED (dependency) direction. Driven from role_direction it now reads
+		// gate=child by construction.
+		const rels = [
+			...REL_TYPES,
+			{
+				canonical_id: "feature_gated_by_item",
+				display_name: "feature gated by",
+				category: "ordering" as const,
+				role_direction: "as_child" as const,
+			},
+		];
+		const sd = { ...STOCK_STATE_DERIVATION, blocked_by: { relation_types: ["feature_gated_by_item"] } };
+		writeConfig(projectDir, rels, CANONICAL_INVARIANTS, undefined, sd);
+		// edge parent=TASK-W (the waiter, counter endpoint) child=FEAT-G (the gate,
+		// primary endpoint). The waiting task is gated by the feature.
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-W", child: "FEAT-G", relation_type: "feature_gated_by_item" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-W", description: "waits on a feature", status: "planned" }] }),
+		);
+		// FEAT-G incomplete (planning buckets non-complete) → gate unsatisfied.
+		fs.writeFileSync(
+			path.join(projectDir, "features.json"),
+			JSON.stringify({ features: [{ id: "FEAT-G", title: "gate feature", status: "planning" }] }),
+		);
+
+		let state = currentState(tmpDir);
+		const wEntry = state.blocked.find((b) => b.id === "TASK-W");
+		assert.ok(wEntry, "TASK-W is gate-blocked by FEAT-G (gate=child, not swapped)");
+		assert.deepStrictEqual(wEntry!.blockedBy, ["FEAT-G"]);
+		assert.ok(!state.nextActions.some((a) => a.id === "TASK-W"), "gate-blocked task absent from nextActions");
+		// FEAT-G is NOT itself read as blocked — it sits at the gate (child) end, not
+		// the waiting (parent) end (proves the direction is not swapped).
+		assert.ok(!state.blocked.some((b) => b.id === "FEAT-G"), "the gate endpoint is not itself blocked");
+
+		// Complete the feature → gate releases → TASK-W ready.
+		fs.writeFileSync(
+			path.join(projectDir, "features.json"),
+			JSON.stringify({ features: [{ id: "FEAT-G", title: "gate feature", status: "complete" }] }),
+		);
+		state = currentState(tmpDir);
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-W"), "TASK-W released once its feature gate completes");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-W" && a.kind === "task"),
+			"TASK-W ready",
+		);
+	});
+
+	it("unset role_direction (FGAP-113): a blocked_by relation with no declared role_direction reads as the dependency default", (t) => {
+		const tmpDir = makeTmpDir("cs-gate-unset");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// task_needs_task carries NO role_direction → the deriver classifies it as
+		// the DEPENDENCY default (prerequisite at edge.parent, dependent at
+		// edge.child), never the gate direction.
+		const rels = [
+			...REL_TYPES,
+			{ canonical_id: "task_needs_task", display_name: "needs", category: "ordering" as const },
+		];
+		const sd = { ...STOCK_STATE_DERIVATION, blocked_by: { relation_types: ["task_needs_task"] } };
+		writeConfig(projectDir, rels, CANONICAL_INVARIANTS, undefined, sd);
+		// edge parent=TASK-P (prerequisite) child=TASK-C (dependent).
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "TASK-P", child: "TASK-C", relation_type: "task_needs_task" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-P", description: "prereq", status: "planned" },
+					{ id: "TASK-C", description: "dependent", status: "planned" },
+				],
+			}),
+		);
+
+		const state = currentState(tmpDir);
+		const cEntry = state.blocked.find((b) => b.id === "TASK-C");
+		assert.ok(cEntry, "TASK-C blocked by its prerequisite (dependency default for an unset relation)");
+		assert.deepStrictEqual(cEntry!.blockedBy, ["TASK-P"]);
+		// The parent (TASK-P) is NOT itself blocked — unset reads dependency, not
+		// gate; a gate misread would have blocked TASK-P by TASK-C.
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-P"), "the parent endpoint is not gate-blocked");
 	});
 
 	it("nextActions ranks open framework-gaps by priority (P1 before P3)", (t) => {

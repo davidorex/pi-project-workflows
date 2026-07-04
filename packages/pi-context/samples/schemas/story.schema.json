@@ -33,6 +33,10 @@
           "title": {
             "type": "string"
           },
+          "user_kind": {
+            "type": "string",
+            "description": "Which user the story speaks for (e.g. cli-user, operator, agent) — the 'As a <user_kind>' subject of the story statement."
+          },
           "status": {
             "type": "string",
             "enum": [

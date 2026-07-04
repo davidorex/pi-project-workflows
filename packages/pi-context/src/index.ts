@@ -806,8 +806,40 @@ function simulateResyncOutcome(
 	const installedVersion = readDeclaredVersion(destFile);
 
 	// Arm 1 — same version (or either unreadable / non-versioned): no transition
-	// to migrate across, the live path overwrites verbatim → resynced, no decls.
+	// to migrate across. Mirrors the live path 1:1 — a populated block is
+	// re-validated in memory against the incoming catalog body, and a failure
+	// predicts blocked (validation-failed, per-item failures); otherwise the
+	// live path overwrites verbatim → resynced, no decls.
 	if (installedVersion === catalogVersion || catalogVersion === undefined || installedVersion === undefined) {
+		const sameVersionBlockFile = installedBlockDestPath(destRoot, name);
+		if (fs.existsSync(sameVersionBlockFile)) {
+			let sameVersionBlockData: unknown;
+			let sameVersionHasItems = false;
+			try {
+				sameVersionBlockData = JSON.parse(fs.readFileSync(sameVersionBlockFile, "utf-8"));
+				forEachBlockArray(sameVersionBlockData, (_arrayKey, arr) => {
+					if (arr.length > 0) sameVersionHasItems = true;
+				});
+			} catch {
+				sameVersionHasItems = true; // unreadable — same safety default as the live path
+			}
+			if (sameVersionHasItems) {
+				try {
+					const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+					validate(catalogSchema, sameVersionBlockData, name);
+				} catch (err) {
+					const failures =
+						err instanceof ValidationError
+							? mapValidationFailures(err.errors, sameVersionBlockData)
+							: [{ instancePath: "", keyword: "error", message: String(err) }];
+					return {
+						outcome: "blocked",
+						wouldRegister: [],
+						detail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+					};
+				}
+			}
+		}
 		return { outcome: "resynced", wouldRegister: [] };
 	}
 
@@ -1064,11 +1096,50 @@ function resyncSchema(
 	};
 
 	// (A) Same version (or either version unreadable / non-versioned): there is no
-	// version transition to migrate across, so the drift is description-only —
-	// safe to overwrite the schema verbatim. Items are unaffected by a same-
-	// version schema body change (the version is the migration contract). No
+	// version transition to migrate across. A verbatim overwrite is safe only
+	// when the existing block items still conform to the INCOMING catalog body —
+	// a same-version change that narrows validity (a dropped property under
+	// additionalProperties:false, an added required, a narrowed enum) would
+	// otherwise silently invalidate the block. Populated blocks are therefore
+	// re-validated against the incoming body IN MEMORY before any write, and a
+	// failure refuses the resync (blocked, per-item failures, pending-blocked
+	// recorded) — mirroring the version-bump path's validate-or-refuse
+	// discipline. Nothing has been written when the refusal fires, so the
+	// schema file, block file, and migrations.json are all byte-unchanged. No
 	// migration is registered on this arm, so it reports an empty decl list.
 	if (installedVersion === catalogVersion || catalogVersion === undefined || installedVersion === undefined) {
+		const sameVersionBlockFile = installedBlockDestPath(destRoot, name);
+		if (fs.existsSync(sameVersionBlockFile)) {
+			let sameVersionBlockData: unknown;
+			let sameVersionHasItems = false;
+			try {
+				sameVersionBlockData = JSON.parse(fs.readFileSync(sameVersionBlockFile, "utf-8"));
+				forEachBlockArray(sameVersionBlockData, (_arrayKey, arr) => {
+					if (arr.length > 0) sameVersionHasItems = true;
+				});
+			} catch {
+				// Unreadable block — safety default: treat as populated and route it
+				// through the validate path (which throws → blocked).
+				sameVersionHasItems = true;
+			}
+			if (sameVersionHasItems) {
+				try {
+					const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
+					validate(catalogSchema, sameVersionBlockData, name);
+				} catch (err) {
+					const failures =
+						err instanceof ValidationError
+							? mapValidationFailures(err.errors, sameVersionBlockData)
+							: [{ instancePath: "", keyword: "error", message: String(err) }];
+					return {
+						status: "blocked",
+						registeredMigrations: [],
+						blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+						pendingEntry: buildPendingEntry("validation-failed", [], failures),
+					};
+				}
+			}
+		}
 		fs.copyFileSync(sourceFile, destFile);
 		return { status: "resynced", registeredMigrations: [] };
 	}

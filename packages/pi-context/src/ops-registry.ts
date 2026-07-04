@@ -46,9 +46,11 @@ import {
 	contextState,
 	currentState,
 	deriveBootstrapState,
+	endpointKey,
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
+	type RelationAppendInput,
 	readBlockItem,
 	readBlockPage,
 	removeRelationByRef,
@@ -333,8 +335,29 @@ export const ops: OpDefinition[] = [
 			`pi-context append-relation --parent VER-001 --child TASK-001 --relation_type verification_verifies_item --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
 		parameters: Type.Object({
-			parent: Type.String({ description: "Canonical id (or lens bin name) of the parent endpoint" }),
-			child: Type.String({ description: "Canonical id of the child endpoint" }),
+			parent: Type.Optional(
+				Type.String({
+					description:
+						"Parent-endpoint selector (canonical id / <alias>:<refname> / lens bin) — RAW orientation. Mutually exclusive with --primary/--counter.",
+				}),
+			),
+			child: Type.Optional(
+				Type.String({
+					description: "Child-endpoint selector — RAW orientation. Mutually exclusive with --primary/--counter.",
+				}),
+			),
+			primary: Type.Optional(
+				Type.String({
+					description:
+						"Selector of the endpoint holding the relation's PRIMARY semantic role (ROLE-TYPED orientation; mapped to parent/child via the relation's declared role_direction). Requires --counter; the relation_type must declare role_direction.",
+				}),
+			),
+			counter: Type.Optional(
+				Type.String({
+					description:
+						"Selector of the endpoint holding the relation's COUNTER role (ROLE-TYPED orientation). Requires --primary.",
+				}),
+			),
 			relation_type: Type.String({
 				description: "Registered relation_type canonical_id / hierarchy edge type / lens id",
 			}),
@@ -344,35 +367,49 @@ export const ops: OpDefinition[] = [
 		surface: "use",
 		run(
 			cwd: string,
-			params: { parent: string; child: string; relation_type: string; ordinal?: number; dryRun?: boolean },
+			params: {
+				parent?: string;
+				child?: string;
+				primary?: string;
+				counter?: string;
+				relation_type: string;
+				ordinal?: number;
+				dryRun?: boolean;
+			},
 			ctx?: DispatchContext,
 		): OpResult {
 			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
-			// lens-bin) are resolved to structured EdgeEndpoints and written via the
-			// raw plumbing. The param surface stays string-typed; messaging uses the
-			// raw selectors (params.*), not the resolved structured endpoints. Under
-			// dryRun the byRef fn validates the prospective relations + dedup-checks
-			// without writing (TASK-010 shared preview path).
-			const { appended } = appendRelationByRef(
+			// lens-bin) are resolved to structured EdgeEndpoints and written via the raw
+			// plumbing. The append accepts EITHER raw --parent/--child OR the role-typed
+			// --primary/--counter form (FGAP-113); messaging renders the RESOLVED stored
+			// orientation (endpointKey of the returned edge), so a role-typed call reports
+			// the parent/child it actually filed. Under dryRun the byRef fn validates the
+			// prospective relations + dedup-checks without writing (TASK-010 shared
+			// preview path).
+			const { appended, edge } = appendRelationByRef(
 				cwd,
 				{
-					parent: params.parent,
-					child: params.child,
+					...(params.parent !== undefined ? { parent: params.parent } : {}),
+					...(params.child !== undefined ? { child: params.child } : {}),
+					...(params.primary !== undefined ? { primary: params.primary } : {}),
+					...(params.counter !== undefined ? { counter: params.counter } : {}),
 					relation_type: params.relation_type,
 					...(params.ordinal !== undefined ? { ordinal: params.ordinal } : {}),
 				},
 				ctx,
 				{ dryRun: params.dryRun },
 			);
+			const from = endpointKey(edge.parent);
+			const to = endpointKey(edge.child);
 			const ordinalNote = params.ordinal !== undefined ? ` (ordinal ${params.ordinal})` : "";
 			if (params.dryRun) {
 				return appended
-					? `would append relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
-					: `would no-op (duplicate): relation ${params.parent} -[${params.relation_type}]-> ${params.child}`;
+					? `would append relation ${from} -[${params.relation_type}]-> ${to}${ordinalNote}`
+					: `would no-op (duplicate): relation ${from} -[${params.relation_type}]-> ${to}`;
 			}
 			return appended
-				? `Appended relation ${params.parent} -[${params.relation_type}]-> ${params.child}${ordinalNote}`
-				: `Relation ${params.parent} -[${params.relation_type}]-> ${params.child} already exists — no-op`;
+				? `Appended relation ${from} -[${params.relation_type}]-> ${to}${ordinalNote}`
+				: `Relation ${from} -[${params.relation_type}]-> ${to} already exists — no-op`;
 		},
 	},
 	{
@@ -520,7 +557,7 @@ export const ops: OpDefinition[] = [
 		parameters: Type.Object({
 			edges: Type.Unknown({
 				description:
-					"JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors)",
+					"JSON array of edge objects. Each edge is { relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair (mapped to parent/child via the relation's declared role_direction); the two orientation pairs are mutually exclusive per edge. Selectors are id / <alias>:<refname> / lens-bin.",
 			}),
 			dryRun: Type.Optional(Type.Boolean({ description: "Preview without writing relations.json" })),
 		}),
@@ -536,17 +573,16 @@ export const ops: OpDefinition[] = [
 				}
 			}
 			if (!Array.isArray(edges)) {
-				throw new Error(`edges parameter must be a JSON array of { parent, child, relation_type, ordinal? } objects`);
+				throw new Error(`edges parameter must be a JSON array of relation edge objects`);
 			}
 			// Under dryRun the byRef fn replays the on-disk + in-batch dedup and
 			// validates the prospective relations without writing (TASK-010 shared
-			// preview path).
-			const { appended, skipped } = appendRelationsByRef(
-				cwd,
-				edges as { parent: string; child: string; relation_type: string; ordinal?: number }[],
-				ctx,
-				{ dryRun: params.dryRun },
-			);
+			// preview path). Each edge accepts raw {parent,child} or role-typed
+			// {primary,counter} (FGAP-113); orientation + the ambiguous-bare-append
+			// reject are applied inside appendRelationsByRef before any write.
+			const { appended, skipped } = appendRelationsByRef(cwd, edges as RelationAppendInput[], ctx, {
+				dryRun: params.dryRun,
+			});
 			return params.dryRun
 				? `would append ${appended}, skip ${skipped} (duplicates)`
 				: `appended ${appended}, skipped ${skipped} (duplicates)`;

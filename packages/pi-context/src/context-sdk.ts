@@ -25,6 +25,7 @@ import {
 	loadRelations,
 	primaryEndpoint,
 	type RawEndpoint,
+	type RelationTypeDecl,
 	removeRelation,
 	validateRelations,
 	writeRelations,
@@ -1659,12 +1660,105 @@ function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
 }
 
 /**
- * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
- * `child` STRING selectors to structured `EdgeEndpoint`s via
- * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
- * (atomic, AJV-validated, exact-duplicate no-op — same deferred-integrity
- * semantics). Keeps the string param surface its callers (the append-relation
- * Pi tool + the orchestrator CLI) already expose.
+ * Input to the relation-append porcelain: EITHER the raw `{parent, child}`
+ * endpoint selectors (the storage orientation directly) OR the role-typed
+ * `{primary, counter}` form (FGAP-113 — name the semantic roles, let the porcelain
+ * map them to parent/child via the relation's declared `role_direction`).
+ * `relation_type` + optional `ordinal` are common to both. The two orientation
+ * pairs are mutually exclusive.
+ */
+export interface RelationAppendInput {
+	parent?: string;
+	child?: string;
+	primary?: string;
+	counter?: string;
+	relation_type: string;
+	ordinal?: number;
+}
+
+/**
+ * Whether a role-bearing relation is orientation-AMBIGUOUS: its `source_kinds`
+ * and `target_kinds` overlap (a shared kind, or either side unconstrained / the
+ * `"*"` wildcard), so a bare `{parent, child}` append cannot be reliably oriented
+ * from the endpoint kinds alone. Disjoint-kind relations are self-orienting — the
+ * `validateEdgeAgainstRegistry` source/target-kind gate already rejects an
+ * inversion — so a bare append of them stays allowed.
+ */
+function relationKindsOverlap(rt: RelationTypeDecl | undefined): boolean {
+	const s = rt?.source_kinds;
+	const t = rt?.target_kinds;
+	if (!s || !t) return true; // an unconstrained endpoint is universal → overlaps everything
+	if (s.includes("*") || t.includes("*")) return true;
+	return s.some((k) => t.includes(k));
+}
+
+/**
+ * Resolve a {@link RelationAppendInput} (raw `{parent,child}` OR role-typed
+ * `{primary,counter}`) to the canonical `{parent, child}` STRING selectors the raw
+ * plumbing consumes, applying the FGAP-113 write-orientation rules:
+ *  - the raw and role-typed pairs are mutually exclusive; exactly one complete
+ *    pair must be supplied.
+ *  - the role-typed form maps `primary`/`counter` → `parent`/`child` via the
+ *    relation's declared `role_direction`; it throws when the relation declares no
+ *    `role_direction` (there is no primary/counter role to map).
+ *  - a bare `{parent,child}` append of a role-BEARING relation that is
+ *    orientation-ambiguous (same-kind / wildcard endpoints) is REJECTED, directing
+ *    the author to `--primary`/`--counter`. The porcelain never guesses or swaps.
+ *  - a bare append of a role-less relation, or of a role-bearing DISJOINT-kind
+ *    relation (self-orienting via the kind gate), passes through unchanged.
+ */
+function orientAppendInput(
+	config: ConfigBlock | null,
+	rel: RelationAppendInput,
+): { parent: string; child: string; relation_type: string; ordinal?: number } {
+	const hasRole = rel.primary !== undefined || rel.counter !== undefined;
+	const hasRaw = rel.parent !== undefined || rel.child !== undefined;
+	if (hasRole && hasRaw) {
+		throw new Error(
+			`Relation append for '${rel.relation_type}': --primary/--counter and --parent/--child are mutually exclusive; supply exactly one orientation pair.`,
+		);
+	}
+	const rt = (config?.relation_types ?? []).find((r) => r.canonical_id === rel.relation_type);
+	const roleDir = rt?.role_direction;
+	const ordinalPart = rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {};
+	if (hasRole) {
+		if (rel.primary === undefined || rel.counter === undefined) {
+			throw new Error(
+				`Relation append for '${rel.relation_type}': the role-typed form needs BOTH --primary and --counter.`,
+			);
+		}
+		if (roleDir === undefined) {
+			throw new Error(
+				`Relation '${rel.relation_type}' declares no role_direction, so it has no primary/counter role to map — author it with --parent/--child.`,
+			);
+		}
+		const parent = roleDir === "as_parent" ? rel.primary : rel.counter;
+		const child = roleDir === "as_parent" ? rel.counter : rel.primary;
+		return { parent, child, relation_type: rel.relation_type, ...ordinalPart };
+	}
+	if (rel.parent === undefined || rel.child === undefined) {
+		throw new Error(
+			`Relation append for '${rel.relation_type}': supply either --parent and --child, or --primary and --counter.`,
+		);
+	}
+	if (roleDir !== undefined && relationKindsOverlap(rt)) {
+		throw new Error(
+			`Relation '${rel.relation_type}' carries a declared role_direction and is orientation-ambiguous (its ` +
+				`source and target kinds overlap), so a bare --parent/--child append cannot be reliably oriented. Re-issue ` +
+				`with --primary/--counter (primary = the endpoint holding the relation's semantic role, stored at edge.${roleDir === "as_parent" ? "parent" : "child"}).`,
+		);
+	}
+	return { parent: rel.parent, child: rel.child, relation_type: rel.relation_type, ...ordinalPart };
+}
+
+/**
+ * Friendly-selector relation append (Cycle 5 porcelain). Accepts EITHER raw
+ * `{parent, child}` selectors OR the role-typed `{primary, counter}` form
+ * (FGAP-113), resolves the (possibly role-mapped) STRING selectors to structured
+ * `EdgeEndpoint`s via `resolveRelationSelector`, then delegates to the raw
+ * `appendRelation` plumbing (atomic, AJV-validated, exact-duplicate no-op — same
+ * deferred-integrity semantics). Keeps the string param surface its callers (the
+ * append-relation Pi tool + the orchestrator CLI) already expose.
  *
  * Returns `{ appended, edge }` where `edge` is the RESOLVED structured edge
  * actually written (so callers can report / dry-run-validate the structured
@@ -1672,15 +1766,16 @@ function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
  */
 export function appendRelationByRef(
 	cwd: string,
-	rel: { parent: string; child: string; relation_type: string; ordinal?: number },
+	rel: RelationAppendInput,
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: boolean; edge: Edge; dryRun?: boolean } {
+	const oriented = orientAppendInput(loadConfig(cwd), rel);
 	const edge: Edge = {
-		parent: resolveRelationSelector(cwd, rel.parent),
-		child: resolveRelationSelector(cwd, rel.child),
-		relation_type: rel.relation_type,
-		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+		parent: resolveRelationSelector(cwd, oriented.parent),
+		child: resolveRelationSelector(cwd, oriented.child),
+		relation_type: oriented.relation_type,
+		...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 	};
 	// Write-time edge-registry gate (TASK-062): reject an unregistered
 	// relation_type or a source/target-kind-violating endpoint BEFORE any write
@@ -1814,16 +1909,24 @@ export function replaceRelationByRef(
  */
 export function appendRelationsByRef(
 	cwd: string,
-	edges: { parent: string; child: string; relation_type: string; ordinal?: number }[],
+	edges: RelationAppendInput[],
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: number; skipped: number; edges: Edge[]; dryRun?: boolean } {
-	const resolved: Edge[] = edges.map((rel) => ({
-		parent: resolveRelationSelector(cwd, rel.parent),
-		child: resolveRelationSelector(cwd, rel.child),
-		relation_type: rel.relation_type,
-		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-	}));
+	// Orient every input once against the loaded config (FGAP-113): a role-typed
+	// {primary,counter} edge maps to parent/child via role_direction; a bare
+	// {parent,child} append of an orientation-ambiguous role-bearing relation is
+	// rejected here (before any write), directing the author to --primary/--counter.
+	const config = loadConfig(cwd);
+	const resolved: Edge[] = edges.map((rel) => {
+		const oriented = orientAppendInput(config, rel);
+		return {
+			parent: resolveRelationSelector(cwd, oriented.parent),
+			child: resolveRelationSelector(cwd, oriented.child),
+			relation_type: oriented.relation_type,
+			...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
+		};
+	});
 	// Write-time edge-registry gate (TASK-062): every resolved edge in the batch
 	// is checked BEFORE any write (dryRun included). Build the validator once for
 	// the batch (config + active index built once) and reject if any edge fails —

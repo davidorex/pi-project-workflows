@@ -8186,5 +8186,31 @@
       "refname": "issue-005"
     },
     "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7a2ef167950d85e95de66944ee8b2d77",
+      "refname": "TASK-078"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "be37aff0e312f5ddddb526365564da4e",
+      "refname": "FGAP-114"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7a2ef167950d85e95de66944ee8b2d77",
+      "refname": "TASK-078"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b9c214a91ec020a4f2461fc9bd23091e",
+      "refname": "issue-005"
+    },
+    "relation_type": "task_addresses_issue"
   }
 ]

@@ -8212,5 +8212,31 @@
       "refname": "issue-005"
     },
     "relation_type": "task_addresses_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7a2ef167950d85e95de66944ee8b2d77",
+      "refname": "TASK-078"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "213e5b27137c92ac580d8fb8b710d9b5",
+      "refname": "VER-065"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7a2ef167950d85e95de66944ee8b2d77",
+      "refname": "TASK-078"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

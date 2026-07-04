@@ -62,14 +62,15 @@
       "title": "update same-version resync verbatim-overwrites the installed schema with no block-item re-validation — a narrowing catalog change silently invalidates existing items",
       "body": "update routes a catalog-ahead schema whose body changed at the SAME version through resyncSchema's verbatim-overwrite arm (index.ts:1066): the installed schema file is replaced with the catalog body and no existing block item is re-validated against it. A catalog change that narrows validity at the same version — dropping a property under additionalProperties:false, adding a required field, narrowing an enum — silently leaves existing block items invalid, with no refusal and no warning. This is asymmetric with the version-bump path, which forward-migrates + re-validates the items and refuses (blocked, byte-unchanged) when they would fail. Concretely: the catalog story schema omits user_kind under additionalProperties:false while 14 live story items carry user_kind; update --dryRun classifies that schema resync (not blocked), so applying it invalidates those items.",
       "location": "packages/pi-context/src/index.ts:1066",
-      "status": "open",
+      "status": "resolved",
       "category": "issue",
       "priority": "high",
       "package": "pi-context",
       "source": "agent",
       "id": "issue-005",
       "oid": "b9c214a91ec020a4f2461fc9bd23091e",
-      "content_hash": "0af9de1a04c09bd55da9e36ec3c198f0b93acb15cde8d8c0ba0aafee10fecba4"
+      "content_hash": "3a04696e7420d57dfa33bbf11988c1234b1a810f307511823ebf3125e7a6cfe3",
+      "content_parent": "0af9de1a04c09bd55da9e36ec3c198f0b93acb15cde8d8c0ba0aafee10fecba4"
     },
     {
       "title": "promote-cli runs `npm rm -g` against a poisonable, unvalidated target prefix before any guard",
@@ -144,5 +145,6 @@
       "oid": "2fea91136efa95a1a219c57abf0646b5",
       "content_hash": "f103c353d0196771b0c939acdfc6f159219468d29d884e30bbba43cbb8782436"
     }
-  ]
+  ],
+  "schema_version": "1.0.1"
 }

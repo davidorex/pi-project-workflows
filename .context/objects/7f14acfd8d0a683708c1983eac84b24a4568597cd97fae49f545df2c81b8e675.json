@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "Schema-validity class fix verified on merged main (5dc2f2fc) with the full live remediation cycle demonstrated on the active substrate: context-validate's new sweep reported status invalid with all 14 story items named (block_schema_invalid, item ids, additionalProperties) — the exact damage the pre-fix verdict missed; update --dryRun then predicted story:resynced against the widened catalog (the same-version re-validation passing in simulation); the live update resynced; validate-block-items --block story returned valid:true; context-validate returned to warnings-only with zero errors. Gates: npm run build / check / test all exit 0. The sweep also caught a real filing omission live (a task missing its governing-convention edge), corrected on the spot.",
+  "criteria_results": [
+    {
+      "criterion": "context-validate reports schema-invalid blocks with block/item/keyword; live story invalidity reported before remediation, baseline after",
+      "status": "passed",
+      "evidence": "Live: status invalid + 14 block_schema_invalid errors naming STORY-001..014 and additionalProperties; post-resync: warnings-only, zero errors. Tests: sweep valid/invalid cells + stamped-envelope migration-aware + unresolvable-version surfacing + pointer-less graceful skip"
+    },
+    {
+      "criterion": "Same-version narrowing change refused: schema + migrations.json byte-unchanged, blocked with per-item failures, standard recoverable markers on the block, dryRun predicts writing nothing",
+      "status": "passed",
+      "evidence": "Tests: enum-narrowing fixture -> blocked ['tasks'], schema byte-unchanged, validation-failed detail naming TASK-001/enum; the refusal flows through the same pending-blocked + marker machinery every validation-failed blocked entry uses; dryRun parity test asserts the same blocked prediction with schema AND block byte-unchanged"
+    },
+    {
+      "criterion": "Compatible same-version change still resyncs verbatim",
+      "status": "passed",
+      "evidence": "Pre-existing same-version resync + idempotence tests green with enum-valid fixtures; live: the story resync itself (items valid against the widened body) proceeded as resynced"
+    },
+    {
+      "criterion": "Catalog story schema declares optional user_kind; live story valid after update, verdict at baseline",
+      "status": "passed",
+      "evidence": "validate-block-items --block story: valid true, zero failures; context-validate warnings-only"
+    },
+    {
+      "criterion": "Tests cover sweep (stamped + unstamped), refuse/allow cells, dry/live parity; gates green in dist/",
+      "status": "passed",
+      "evidence": "context-sdk.test.ts sweep suite (3 cells) + install-subcommand.test.ts narrowing/dryRun/resync/idempotence; npm build/check/test exit 0; dist rebuilt + operator promoted on merged main"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "description": "Close the silent schema-invalidity class end to end. DETECTOR: the composed context-validate verdict gains a substrate-wide schema-validity pass — for each installed block, whole-block validation against the installed schema (migration-aware via validateBlockWithMigrationForDir for stamped envelopes, raw validation for unstamped), surfacing per-item failures as error findings (block, item id, field/keyword). PRODUCER: update's same-version resync arm re-validates existing block items against the incoming catalog body and refuses when they would fail — blocked, schema file and block file byte-unchanged, pending-blocked recorded, dryRun predicting the same outcome — mirroring the version-bump path. REMEDIATION: the catalog story schema declares optional user_kind (the catalog sits below live truth; user_kind is user-authored load-bearing metadata), resynced to the active substrate so the 14 live story items validate again.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/samples/schemas/story.schema.json",
+    "packages/pi-context/src/block-tools.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "context-validate on a substrate containing a schema-invalid block reports error findings naming the block, item id, and field/keyword; on the active substrate it reports the story invalidity before remediation and returns to the warnings-only baseline after.",
+    "A same-version catalog body change that would invalidate existing block items is refused by update: the installed schema file and migrations.json are byte-unchanged, the schema is reported blocked with per-item failures, the block file receives the standard recoverable in-file failure markers (pre-marker bytes pinned for resolve-blocked), and --dryRun predicts the same blocked outcome writing nothing.",
+    "A same-version catalog body change that keeps existing items valid still resyncs verbatim (no new false refusals).",
+    "samples/schemas/story.schema.json declares an optional user_kind; after update on the active substrate, validate-block-items --block story reports valid and context-validate sits at its warnings-only baseline.",
+    "Tests cover the sweep catching invalid items under both stamped and unstamped envelopes, the same-version refuse and allow cells with byte-unchanged post-state, and dry/live outcome parity for the refusal; build, check, and the full test suite pass at zero failures with the change in dist/."
+  ],
+  "notes": "Detector = the filed resolution of the validate-coverage gap; producer = the same-version resync asymmetry the issue names; remediation direction (catalog gains the property, data preserved) per the catalog-below-live-truth pattern. Completes the feature criterion that the issue held open."
+}

@@ -948,7 +948,7 @@
   "installed_from": {
     "catalog": "@davidorex/pi-context@0.31.0",
     "catalog_version": "1.0.0",
-    "at": "2026-07-04T22:39:49.455Z",
+    "at": "2026-07-04T23:33:29.679Z",
     "assets": {
       "decisions": {
         "content_hash": "4f60e5b3c67ebdea2bac98b1bb3cb2b3ecccb516b68ab774f52a98713d9d5680",
@@ -1007,7 +1007,7 @@
         "version": "2.0.1"
       },
       "story": {
-        "content_hash": "cddb136f5bae78b93c4dce8125660f505053d79da79cb29b9c477c3896500c35",
+        "content_hash": "976b4bd6da0017d981b8950cb064f9cda54537748c69dcd28c5748c6f017e1ae",
         "version": "1.0.1"
       },
       "work-orders": {

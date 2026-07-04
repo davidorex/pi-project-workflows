@@ -489,7 +489,7 @@
     {
       "id": "TASK-027",
       "description": "Close the edge-orientation ambiguity class (FGAP-113): make edge orientation explicit metadata on every orientation-bearing relation_type and consume it symmetrically so a wrong-orientation guess is never silent on either side. WRITE — a backwards orientation-bearing edge is REJECTED at append (never auto-oriented; the reverted 2026-06-06 always-swap inverted canonically-authored edges, a08e586). READ — a walk/query issued against the wrong end of an orientation-bearing relation ERRORS (or normalizes with an explicit signal) rather than returning silent-empty. Covers ordering relations (task_depends_on_task and its same-kind siblings), the membership relations (reconciling the contains/includes vs positioned_in container-orientation split), and the unconstrained wildcard item_derived_from_item; reconciles relation_type names/metadata with the deriver contract; migrates any inverted edges. FGAP-007 (task_depends_on_task) is the write-ordering instance; the task_positioned_in_phase silent-empty is the read instance.",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/context-sdk.ts",
         "packages/pi-context/src/context.ts",
@@ -512,8 +512,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "79693a3ed131eb2244eac2ab8f2d2940",
-      "content_hash": "b204649801acc3e5fb2e71c323fcb96df859a352d9616e250990e4ef1d29465e",
-      "content_parent": "5239cfc24b098be68eb87e8d82c7770674946c45f598aec5f0aa549337c13d6c"
+      "content_hash": "2fdb56db3ef364ee90fe9464d0400fc7d9a76638c55672d70ad1b1aabd9b6a6d",
+      "content_parent": "b204649801acc3e5fb2e71c323fcb96df859a352d9616e250990e4ef1d29465e"
     },
     {
       "id": "TASK-028",

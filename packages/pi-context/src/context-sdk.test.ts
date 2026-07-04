@@ -3182,6 +3182,66 @@ describe("currentState", () => {
 		assert.strictEqual(mile!.phaseCount, 1);
 	});
 
+	it("membership rollup orientation (FGAP-113): a container-at-parent (as_parent) membership relation reads container=parent/member=child", (t) => {
+		const tmpDir = makeTmpDir("cs-rollup-asparent");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// A `contains`-shaped membership relation: role_direction as_parent, so the
+		// CONTAINER (milestone) is the edge PARENT and the MEMBER (phase) the CHILD —
+		// the mirror image of the stock phase_positioned_in_milestone (as_child)
+		// layout. Under the pre-FGAP-113 hardcoded container=child rollup this edge
+		// would find zero members (the milestone is the parent, never scanned as the
+		// child); driven from role_direction the member is correctly read at the
+		// child endpoint.
+		const rels = [
+			...REL_TYPES,
+			{
+				canonical_id: "milestone_contains_phase",
+				display_name: "contains phase",
+				category: "membership" as const,
+				role_direction: "as_parent" as const,
+			},
+		];
+		const sd = {
+			...STOCK_STATE_DERIVATION,
+			rollups: [
+				{
+					kind: "milestone",
+					membership_relation: "milestone_contains_phase",
+					complete_status: "reached",
+					incomplete_status: "planned",
+				},
+			],
+		};
+		writeConfig(projectDir, rels, CANONICAL_INVARIANTS, undefined, sd);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: "planned" }] }),
+		);
+		// container=parent (MILE-001), member=child (PHASE-1).
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "MILE-001", child: "PHASE-1", relation_type: "milestone_contains_phase" }]),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "a", intent: "i", status: "completed" }] }),
+		);
+		let mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.ok(mile, "MILE-001 derived");
+		assert.strictEqual(mile!.phaseCount, 1, "member read at the CHILD endpoint under an as_parent container");
+		assert.strictEqual(mile!.status, "reached", "complete member → reached");
+
+		// An incomplete member flips it to the incomplete status.
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "a", intent: "i", status: "in-progress" }] }),
+		);
+		mile = currentState(tmpDir).milestones.find((m) => m.id === "MILE-001");
+		assert.strictEqual(mile!.status, "planned", "incomplete member → planned");
+	});
+
 	// ── TASK-020: config-driven state_derivation rewire ─────────────────────────
 
 	it("STOCK byte-equivalence: stock state_derivation reproduces the pre-rewire output shape", (t) => {

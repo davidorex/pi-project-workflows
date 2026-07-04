@@ -13,6 +13,7 @@ import {
 	appendRelation,
 	appendRelations,
 	type ConfigBlock,
+	counterEndpoint,
 	type Edge,
 	type EdgeEndpoint,
 	endpointIdentity,
@@ -22,6 +23,7 @@ import {
 	isSkeletonConfig,
 	loadConfig,
 	loadRelations,
+	primaryEndpoint,
 	type RawEndpoint,
 	removeRelation,
 	validateRelations,
@@ -926,20 +928,26 @@ export function currentState(cwd: string): CurrentState {
 	const cappedNextActions = nextActions.slice(0, sd.head_size);
 
 	// ── milestones: config-declared membership rollups ──────────────────────────
-	// For each `sd.rollups` entry, members are the PARENT items of
-	// `membership_relation` edges whose CHILD is the rollup item (the stock
-	// phase_positioned_in_milestone direction: parent=phase/child=milestone). The
-	// rollup emits `complete_status` when ≥1 member exists and every member id
-	// resolves to a known item bucketing to complete; else `incomplete_status`
-	// (covering no-members + any-incomplete). Every comparison routes through
-	// bucket() — no raw status literal.
+	// For each `sd.rollups` entry, orientation is read from the membership
+	// relation's declared `role_direction` (FGAP-113): the CONTAINER (the rollup
+	// item itself) sits at the PRIMARY endpoint, its MEMBERS at the COUNTER
+	// endpoint. `phase_positioned_in_milestone` is `as_child` (container=milestone
+	// at edge.child, member=phase at edge.parent), so `primaryEndpoint`===child /
+	// `counterEndpoint`===parent reproduces the prior filter-child / map-parent
+	// selection exactly. A membership relation the config does not register with a
+	// `role_direction` defaults to `as_child` (the pre-FGAP-113 container=child
+	// convention). The rollup emits `complete_status` when ≥1 member exists and
+	// every member id resolves to a known item bucketing to complete; else
+	// `incomplete_status` (covering no-members + any-incomplete). Every comparison
+	// routes through bucket() — no raw status literal.
 	const milestones: CurrentState["milestones"] = [];
 	for (const entry of sd.rollups) {
+		const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
 		for (const loc of index.byRefname.values()) {
 			if (loc.block !== entry.kind) continue;
 			const memberIds = edges
-				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(e.child) === loc.id)
-				.map((e) => endpointKey(e.parent));
+				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === loc.id)
+				.map((e) => endpointKey(counterEndpoint(e, dir)));
 			const phaseCount = memberIds.length;
 			const allComplete = memberIds.every((memberId) => isCompleted(memberId));
 			const reached = phaseCount >= 1 && allComplete;

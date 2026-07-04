@@ -326,11 +326,15 @@ export const ops: OpDefinition[] = [
 		name: "append-relation",
 		label: "Append Relation",
 		description:
-			"Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. " +
-			"Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference " +
-			"integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate " +
-			"after. Creates relations.json if absent.",
-		promptSnippet: "Create a relation/edge between two items (parent→child under a relation_type)",
+			"Append a closure-table relation (edge: relation_type, optional ordinal) to relations.json. Orient the edge with " +
+			"EITHER raw --parent/--child OR the role-typed --primary/--counter (which maps to parent/child via the relation's " +
+			"declared role_direction); the two pairs are mutually exclusive. A bare --parent/--child append of a relation that " +
+			"is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap) is rejected — re-issue with " +
+			"--primary/--counter. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. " +
+			"Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run " +
+			"context-validate after. Creates relations.json if absent.",
+		promptSnippet:
+			"Create a relation/edge between two items (raw --parent/--child, or role-typed --primary/--counter mapped via role_direction)",
 		examples: [
 			`pi-context append-relation --parent VER-001 --child TASK-001 --relation_type verification_verifies_item --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
@@ -466,7 +470,9 @@ export const ops: OpDefinition[] = [
 			"Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and " +
 			"the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; " +
 			"the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of " +
-			"the new edge. Reference integrity is NOT checked here — run context-validate after.",
+			"the new edge. This op takes RAW parent/child (old + new) and BYPASSES the write-time orientation gate that " +
+			"append-relation applies — it writes the endpoints verbatim, so it is the affordance for re-orienting an existing " +
+			"edge; reference integrity is NOT checked here — run context-validate after.",
 		promptSnippet: "Atomically swap one relation/edge for another in a single write",
 		examples: [
 			`pi-context replace-relation --old_parent TASK-001 --old_child DEC-0001 --old_relation_type task_informed_by_decision --parent TASK-001 --child DEC-0002 --relation_type task_informed_by_decision --writer '{"kind":"human","user":"you@example.com"}' --json`,
@@ -546,11 +552,14 @@ export const ops: OpDefinition[] = [
 		name: "append-relations",
 		label: "Append Relations (bulk)",
 		description:
-			"Append MANY closure-table relations to relations.json in a single write. Each edge is an object " +
-			"{ parent, child, relation_type, ordinal? }. Per-(parent, child, relation_type) duplicates are skipped (against " +
-			"on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT " +
-			"checked here — run context-validate after. Creates relations.json if absent.",
-		promptSnippet: "Create many relations/edges between items in one write",
+			"Append MANY closure-table relations to relations.json in a single write. Each edge is an object with " +
+			"{ relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair " +
+			"(mapped to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive per edge, " +
+			"and a bare { parent, child } for an orientation-ambiguous role-bearing relation rejects the whole batch before any " +
+			"write. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the " +
+			"same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate " +
+			"after. Creates relations.json if absent.",
+		promptSnippet: "Create many relations/edges between items in one write (raw or role-typed per edge)",
 		examples: [
 			`pi-context append-relations --edges '[{"parent":"FEAT-008","child":"TASK-042","relation_type":"feature_decomposed_into_task"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
@@ -1976,7 +1985,7 @@ export const ops: OpDefinition[] = [
 		name: "context-walk-descendants",
 		label: "Context Walk Descendants",
 		description:
-			"Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).",
+			"Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent). For a DISJOINT-kind relation, querying from the wrong (target-kind) end THROWS naming walk-ancestors instead of silently returning []; same-kind / wildcard relations return [] honestly.",
 		promptSnippet: "Walk closure-table descendants under a relation_type",
 		examples: [
 			`pi-context context-walk-descendants --parentId FEAT-008 --relationType feature_decomposed_into_task --json`,
@@ -1995,7 +2004,7 @@ export const ops: OpDefinition[] = [
 		name: "walk-ancestors",
 		label: "Walk Ancestors",
 		description:
-			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).",
+			"Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent). For a DISJOINT-kind relation, querying from the wrong (source-kind) end THROWS naming context-walk-descendants instead of silently returning []; same-kind / wildcard relations return [] honestly.",
 		promptSnippet: "Walk closure-table ancestors under a relation_type",
 		examples: [`pi-context walk-ancestors --itemId TASK-042 --relationType feature_decomposed_into_task --json`],
 		parameters: Type.Object({

@@ -61,9 +61,10 @@
       "name": "Write-path integrity",
       "intent": "No silently-wrong edge, no unwritable correction. Members: TASK-027 (FGAP-007 edge-direction guard), FGAP-093 (dangling/unregistered endpoint guard), FGAP-091 (warranted-edge forcing function — mechanism fork open), FGAP-085 (field deletion through update-block-item). Lane B: parallel with the Lane A spine from the start (edge-write region of context-sdk; soft-only overlap).",
       "goal": "append-relation rejects mis-directed and dangling edges at write time; field deletion has a sanctioned path.",
-      "status": "planned",
+      "status": "in-progress",
       "oid": "8cd9d94ce2139b20a0cda67e4581ca24",
-      "content_hash": "be2b401e6ba35e1caa74b2850b23a27ea4b5d91cb8e21b47314a168eb0ac4cdc"
+      "content_hash": "4833c880fba5f4cf32770307bc3cc57aaa5c9c2073ff9fac91706892969655fc",
+      "content_parent": "be2b401e6ba35e1caa74b2850b23a27ea4b5d91cb8e21b47314a168eb0ac4cdc"
     },
     {
       "id": "PHASE-M6-DERIVATION-TRUTH",

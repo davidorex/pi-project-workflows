@@ -29,7 +29,16 @@
  * routes the message through config so per-project / per-locale
  * overrides are config-driven.
  */
-import { type Edge, endpointKey, type ItemRecord, loadContext, type StatusBucket } from "./context.js";
+import {
+	type ConfigBlock,
+	counterEndpoint,
+	type Edge,
+	endpointKey,
+	type ItemRecord,
+	loadContext,
+	primaryEndpoint,
+	type StatusBucket,
+} from "./context.js";
 import { buildIdIndex, currentState } from "./context-sdk.js";
 import { type LensValidatorIssue, registerLensValidator } from "./lens-validator.js";
 import { resolveStatusVocabulary, STATUS_VOCABULARY_DEFAULTS } from "./status-vocab.js";
@@ -140,12 +149,30 @@ export { topoSort };
 // MilestoneRoadmapView.edges, not inferred from `order` consecutive pairs (a
 // fabrication pattern in branching DAGs).
 
-// Relation names are module constants; config-driven resolution (reading them from
-// state_derivation the way currentState resolves membership_relation) is a future
-// refinement boundary outside FGAP-042's scope.
-const MILESTONE_PRECEDES = "milestone_precedes_milestone";
-const PHASE_IN_MILESTONE = "phase_positioned_in_milestone";
-const TASK_IN_PHASE = "task_positioned_in_phase";
+// The roadmap selects its three domain relations by canonical_id
+// (milestone_precedes_milestone for the precedes DAG, phase_positioned_in_milestone
+// + task_positioned_in_phase for the membership tiers), but the ORIENTATION of
+// each edge — which endpoint is the predecessor / container — is read from the
+// relation's declared `role_direction` (FGAP-113) via primaryEndpoint /
+// counterEndpoint, not hardcoded parent/child picks. The former module constants
+// are inlined at their (few) use sites so no relation-name literal is duplicated
+// as an orientation carrier.
+
+/**
+ * The declared orientation of a roadmap relation, or the roadmap's `fallback`
+ * when the config does not register a `role_direction` for it (FGAP-113). The
+ * fallbacks preserve the pre-metadata hardcoded orientation exactly:
+ * `milestone_precedes_milestone` → `as_parent` (predecessor at `edge.parent`);
+ * the two `*_positioned_in_*` membership relations → `as_child` (container at
+ * `edge.child`, member at `edge.parent`).
+ */
+function roadmapRoleDirection(
+	config: ConfigBlock | null,
+	relationType: string,
+	fallback: "as_parent" | "as_child",
+): "as_parent" | "as_child" {
+	return config?.relation_types?.find((r) => r.canonical_id === relationType)?.role_direction ?? fallback;
+}
 
 /**
  * One task row in a phase's membership — the parent of a
@@ -270,17 +297,30 @@ export function loadRoadmap(cwd: string): MilestoneRoadmapView | { error: string
 	}
 
 	const milestoneIds = new Set(milestoneItems.map((loc) => loc.id));
+	// Precedes DAG: predecessor at the PRIMARY endpoint (as_parent fallback), so a
+	// milestone's preds are the PRIMARY endpoints of edges where the milestone is
+	// the COUNTER (successor) endpoint. The endpoint-membership filter below is
+	// orientation-independent (both endpoints must be milestones either way).
+	const precedesRel = "milestone_precedes_milestone";
+	const precedesDir = roadmapRoleDirection(ctx.config, precedesRel, "as_parent");
 	const edges = ctx.relations.filter(
 		(e) =>
-			e.relation_type === MILESTONE_PRECEDES &&
+			e.relation_type === precedesRel &&
 			milestoneIds.has(endpointKey(e.parent)) &&
 			milestoneIds.has(endpointKey(e.child)),
 	);
 	const { order, cycles } = topoSort(
 		milestoneItems,
 		(loc) => loc.id,
-		(loc) => edges.filter((e) => endpointKey(e.child) === loc.id).map((e) => endpointKey(e.parent)),
+		(loc) =>
+			edges
+				.filter((e) => endpointKey(counterEndpoint(e, precedesDir)) === loc.id)
+				.map((e) => endpointKey(primaryEndpoint(e, precedesDir))),
 	);
+	const phaseMembershipRel = "phase_positioned_in_milestone";
+	const phaseDir = roadmapRoleDirection(ctx.config, phaseMembershipRel, "as_child");
+	const taskMembershipRel = "task_positioned_in_phase";
+	const taskDir = roadmapRoleDirection(ctx.config, taskMembershipRel, "as_child");
 
 	const vocabulary = resolveStatusVocabulary(cwd);
 	// One currentState call: the config-declared milestone rollup supplies each
@@ -289,16 +329,18 @@ export function loadRoadmap(cwd: string): MilestoneRoadmapView | { error: string
 
 	const milestones: MilestoneView[] = milestoneItems.map((loc) => {
 		const derived = derivedMilestones.get(loc.id);
+		// Member phases: the milestone is the CONTAINER (primary); its members are
+		// the COUNTER endpoints of phase_positioned_in_milestone edges pointing at it.
 		const memberPhaseIds = ctx.relations
-			.filter((e) => e.relation_type === PHASE_IN_MILESTONE && endpointKey(e.child) === loc.id)
-			.map((e) => endpointKey(e.parent));
+			.filter((e) => e.relation_type === phaseMembershipRel && endpointKey(primaryEndpoint(e, phaseDir)) === loc.id)
+			.map((e) => endpointKey(counterEndpoint(e, phaseDir)));
 
 		const allTaskItems: ItemRecord[] = [];
 		const phases: PhaseRollupView[] = memberPhaseIds.map((phaseId) => {
 			const phaseLoc = index.byRefname.get(phaseId);
 			const taskIds = ctx.relations
-				.filter((e) => e.relation_type === TASK_IN_PHASE && endpointKey(e.child) === phaseId)
-				.map((e) => endpointKey(e.parent));
+				.filter((e) => e.relation_type === taskMembershipRel && endpointKey(primaryEndpoint(e, taskDir)) === phaseId)
+				.map((e) => endpointKey(counterEndpoint(e, taskDir)));
 			const taskItems: ItemRecord[] = taskIds.map((taskId) => {
 				const taskLoc = index.byRefname.get(taskId);
 				return taskLoc ? ({ ...taskLoc.item, id: taskId } as ItemRecord) : { id: taskId };
@@ -365,8 +407,10 @@ export function validateRoadmap(cwd: string): {
 
 	// Precedes-edge endpoint integrity — BOTH endpoints must be milestone-block
 	// items (an id resolving to another block is "wrong kind", equally missing).
+	// This is an orientation-independent both-endpoints check, so it needs no
+	// role_direction; it selects the relation by canonical_id only.
 	for (const e of ctx.relations) {
-		if (e.relation_type !== MILESTONE_PRECEDES) continue;
+		if (e.relation_type !== "milestone_precedes_milestone") continue;
 		for (const endpoint of [e.parent, e.child]) {
 			const key = endpointKey(endpoint);
 			if (!milestoneIds.has(key)) {
@@ -383,21 +427,23 @@ export function validateRoadmap(cwd: string): {
 		}
 	}
 
-	// Phase-membership integrity — a phase_positioned_in_milestone edge's child
-	// must be a known milestone.
+	// Phase-membership integrity — a phase_positioned_in_milestone edge's CONTAINER
+	// (the milestone, at the relation's PRIMARY endpoint) must be a known milestone.
+	const phaseMembershipRel = "phase_positioned_in_milestone";
+	const phaseDir = roadmapRoleDirection(ctx.config, phaseMembershipRel, "as_child");
 	for (const e of ctx.relations) {
-		if (e.relation_type !== PHASE_IN_MILESTONE) continue;
-		const childKey = endpointKey(e.child);
-		if (!milestoneIds.has(childKey)) {
+		if (e.relation_type !== phaseMembershipRel) continue;
+		const milestoneKey = endpointKey(primaryEndpoint(e, phaseDir));
+		if (!milestoneIds.has(milestoneKey)) {
 			issues.push({
 				code: "roadmap_milestone_missing",
 				message: diagMessage(
 					cwd,
 					"roadmap_milestone_missing",
-					`phase_positioned_in_milestone edge {parent:${endpointKey(e.parent)}, child:${childKey}} references milestone '${childKey}' that is not declared in the milestone block.`,
+					`phase_positioned_in_milestone edge {parent:${endpointKey(e.parent)}, child:${endpointKey(e.child)}} references milestone '${milestoneKey}' that is not declared in the milestone block.`,
 				),
-				milestone_id: childKey,
-				phase_id: endpointKey(e.parent),
+				milestone_id: milestoneKey,
+				phase_id: endpointKey(counterEndpoint(e, phaseDir)),
 			});
 		}
 	}

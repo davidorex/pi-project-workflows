@@ -58,7 +58,7 @@ describe("resolveOperationVocabulary", () => {
 		fs.writeFileSync(
 			path.join(substrateDir, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: "substrate",
 				block_kinds: [],
 				tool_operations: [

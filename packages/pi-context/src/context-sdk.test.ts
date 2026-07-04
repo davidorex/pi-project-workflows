@@ -57,7 +57,7 @@ describe("deriveBootstrapState", () => {
 		fs.writeFileSync(path.join(tmp, ctxDir, "config.json"), JSON.stringify(cfg));
 	};
 	const declaring = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ctxDir,
 		block_kinds: [],
 		installed_schemas: ["foo"],
@@ -87,7 +87,7 @@ describe("deriveBootstrapState", () => {
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		fs.mkdirSync(path.join(tmp, ctxDir, "schemas"), { recursive: true });
 		// A skeleton config: schema-valid, empty of vocabulary (the shape init / switch -c write).
-		writeCfg(tmp, { schema_version: "1.7.0", root: ctxDir, block_kinds: [] });
+		writeCfg(tmp, { schema_version: "1.8.0", root: ctxDir, block_kinds: [] });
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "skeleton");
 		assert.strictEqual(s.contextDir, path.join(tmp, ctxDir));
@@ -454,7 +454,7 @@ function writeConfig(
 	fs.writeFileSync(
 		path.join(projectDir, "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [],
 			relation_types: relationTypes,
@@ -1190,7 +1190,7 @@ describe("completeTask", () => {
 		fs.writeFileSync(
 			path.join(projectDir, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [],
 				relation_types: [
@@ -3726,7 +3726,7 @@ describe("expectedBlockForId", () => {
 		data_path: `${canonical_id}.json`,
 	});
 	const cfg = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [bk("empty", ""), bk("decisions", "DEC-")],
 	} as ConfigBlock;
@@ -3870,7 +3870,7 @@ describe("validateContext: substrate_id SoT-drift invariant", () => {
 		fs.writeFileSync(
 			path.join(projectDir, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [],
 				...(substrate_id ? { substrate_id } : {}),

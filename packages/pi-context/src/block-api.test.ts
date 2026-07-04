@@ -70,7 +70,7 @@ function setupSubstrateId(tmpDir: string): void {
 	fs.mkdirSync(wfDir, { recursive: true });
 	fs.writeFileSync(
 		path.join(wfDir, "config.json"),
-		JSON.stringify({ schema_version: "1.7.0", substrate_id: SCRATCH_SUBSTRATE_ID, block_kinds: [] }, null, 2),
+		JSON.stringify({ schema_version: "1.8.0", substrate_id: SCRATCH_SUBSTRATE_ID, block_kinds: [] }, null, 2),
 	);
 }
 

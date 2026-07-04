@@ -251,7 +251,7 @@ describe("FGAP-103: read-config registry addressing", () => {
 		fs.writeFileSync(
 			path.join(projectDir, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				relation_types: [
 					{ canonical_id: "task_verified_by", display_name: "verified by", category: "data_flow" },

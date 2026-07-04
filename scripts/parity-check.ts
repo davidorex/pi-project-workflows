@@ -975,7 +975,7 @@ export async function checkOutputShapeParity(): Promise<string[]> {
 		mkdirSync(join(sub, "schemas"), { recursive: true });
 		writeFileSync(
 			join(sub, "config.json"),
-			JSON.stringify({ schema_version: "1.7.0", root: ".project", block_kinds: [] }),
+			JSON.stringify({ schema_version: "1.8.0", root: ".project", block_kinds: [] }),
 		);
 		const schema = {
 			type: "object",

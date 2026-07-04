@@ -56,7 +56,7 @@ function makeSubstrateWithId(cwd: string, name: string): string {
 	const substrate_id = mintSubstrateId();
 	fs.writeFileSync(
 		path.join(dir, "config.json"),
-		JSON.stringify({ schema_version: "1.7.0", block_kinds: [], root: name, substrate_id }),
+		JSON.stringify({ schema_version: "1.8.0", block_kinds: [], root: name, substrate_id }),
 		"utf-8",
 	);
 	return substrate_id;
@@ -74,7 +74,7 @@ function makeSubstrateValidNoId(cwd: string, name: string): void {
 	fs.mkdirSync(dir, { recursive: true });
 	fs.writeFileSync(
 		path.join(dir, "config.json"),
-		JSON.stringify({ schema_version: "1.7.0", block_kinds: [], root: name }),
+		JSON.stringify({ schema_version: "1.8.0", block_kinds: [], root: name }),
 		"utf-8",
 	);
 }

@@ -55,7 +55,7 @@ function writeRelations(tmpDir: string, edges: Edge[]): void {
 }
 
 const minimalConfig = (): ConfigBlock => ({
-	schema_version: "1.7.0",
+	schema_version: "1.8.0",
 	root: ".project",
 	block_kinds: [
 		{
@@ -82,7 +82,7 @@ describe("installed-asset materialization helpers", () => {
 		const tmp = makeTmpDir("unmaterialized");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [],
 			installed_schemas: ["foo", "bar"],
@@ -119,7 +119,7 @@ describe("loadConfig", () => {
 		writeConfig(tmp, minimalConfig());
 		const cfg = loadConfig(tmp);
 		assert.ok(cfg);
-		assert.strictEqual(cfg!.schema_version, "1.7.0");
+		assert.strictEqual(cfg!.schema_version, "1.8.0");
 		assert.strictEqual(cfg!.block_kinds.length, 1);
 	});
 
@@ -128,7 +128,7 @@ describe("loadConfig", () => {
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		// Missing required block_kinds. schema_version matches the bundled schema
 		// so the failure exercised is AJV validation, not a version mismatch.
-		writeConfig(tmp, { schema_version: "1.7.0", root: ".project" });
+		writeConfig(tmp, { schema_version: "1.8.0", root: ".project" });
 		assert.throws(
 			() => loadConfig(tmp),
 			(err: unknown) => err instanceof ValidationError,
@@ -618,7 +618,7 @@ describe("listUncategorized", () => {
 
 function configWithLensAndHierarchy(): ConfigBlock {
 	return {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [
 			{
@@ -693,7 +693,7 @@ describe("validateRelations", () => {
 
 	it("edge-materialization lens with item-parent content edges does not false-invalidate (FGAP-101)", () => {
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -779,7 +779,7 @@ describe("validateRelations", () => {
 	it("edge_cycle_detected on a hierarchy relation_type", () => {
 		// Hierarchy with parent_block === child_block to allow same-block edges
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -810,7 +810,7 @@ describe("validateRelations", () => {
 
 	it("relation_types declared with cycle_allowed=true skips cycle check", () => {
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{

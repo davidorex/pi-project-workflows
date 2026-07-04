@@ -3369,7 +3369,10 @@ export default extension;
 // Re-export the config-registry-propagation surface (TASK-038 — FEAT-006 T5) so
 // consumers can type `UpdateResult.registryAdditions` and call the pure merge
 // helper against the public `@davidorex/pi-context` surface.
-export { mergeCatalogRegistries, type RegistryAdditions } from "./context.js";
+// mergeCatalogRegistries + the FGAP-113 edge-orientation helpers
+// (counterEndpoint / primaryEndpoint — the single source of truth for reading a
+// relation's primary/counter endpoint under its config-declared role_direction).
+export { counterEndpoint, mergeCatalogRegistries, primaryEndpoint, type RegistryAdditions } from "./context.js";
 export {
 	contextRegistryPath,
 	invalidateRegistry,

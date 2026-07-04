@@ -116,7 +116,7 @@ function writeBlock(cwd: string, blockName: string, payload: Record<string, unkn
 
 function writeConfig(cwd: string, relationTypes: SubstrateSpec["configRelationTypes"]): void {
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [
 			{

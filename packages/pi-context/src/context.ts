@@ -270,6 +270,22 @@ export interface RelationTypeDecl {
 	cycle_allowed?: boolean;
 	source_kinds?: string[];
 	target_kinds?: string[];
+	/**
+	 * Which stored endpoint holds the relation's PRIMARY semantic role — the ONE
+	 * source of truth for edge orientation (FGAP-113). Category interprets what the
+	 * primary role IS (`ordering`→antecedent: prerequisite/predecessor/gate;
+	 * `membership`→container; `data_flow`→source); this field names WHERE it sits:
+	 * `as_parent` = primary is `edge.parent`, `as_child` = primary is `edge.child`.
+	 * Reuses the existing `InvariantDecl.direction` vocabulary. PRESENCE (not
+	 * category) decides whether it is set: populated only for relations that have a
+	 * per-role consumer (deriver, rollup, roadmap, promote, write-orientation,
+	 * read-signal); role-less relations (review_targets_item, session_touches_item,
+	 * the addresses / relates-to / governed-by family, ...) omit it. Every
+	 * per-relation-role consumer routes through this field via
+	 * primaryEndpoint/counterEndpoint rather than hardcoding a relation-name
+	 * literal, so adding a same-shape sibling relation is correct by construction.
+	 */
+	role_direction?: "as_parent" | "as_child";
 }
 
 export interface HierarchyDecl {
@@ -415,6 +431,24 @@ export function endpointKey(e: RawEndpoint): string {
 export function endpointBin(e: RawEndpoint): string | null {
 	const n = normalizeEndpoint(e);
 	return n.kind === "lens_bin" ? n.bin : null;
+}
+
+/**
+ * The PRIMARY-role endpoint of an edge under a declared `role_direction`
+ * (FGAP-113). `as_parent` → the role sits on `edge.parent`; `as_child` → on
+ * `edge.child`. Pure endpoint selection (no normalization, no resolution): the
+ * single derivation every per-relation-role consumer (deriver gate-direction,
+ * membership rollup container, roadmap precedes/membership, promote lineage
+ * source) reads in place of a hardcoded parent/child pick. `counterEndpoint` is
+ * its complement (the non-primary endpoint).
+ */
+export function primaryEndpoint(e: Edge, dir: "as_parent" | "as_child"): RawEndpoint {
+	return dir === "as_parent" ? e.parent : e.child;
+}
+
+/** The non-primary (counter-role) endpoint of an edge — complement of {@link primaryEndpoint}. */
+export function counterEndpoint(e: Edge, dir: "as_parent" | "as_child"): RawEndpoint {
+	return dir === "as_parent" ? e.child : e.parent;
 }
 
 /**

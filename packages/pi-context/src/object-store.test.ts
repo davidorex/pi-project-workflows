@@ -101,7 +101,7 @@ function makeIdentityScratch(): { dir: string } {
 	fs.mkdirSync(path.join(dir, "schemas"), { recursive: true });
 	fs.writeFileSync(
 		path.join(dir, "config.json"),
-		JSON.stringify({ schema_version: "1.7.0", block_kinds: [], substrate_id: SUB }, null, 2),
+		JSON.stringify({ schema_version: "1.8.0", block_kinds: [], substrate_id: SUB }, null, 2),
 		"utf-8",
 	);
 	const schema = {

@@ -168,7 +168,7 @@ function writeConfig(cwd: string, relationTypes: unknown[] = REL_TYPES): void {
 	fs.writeFileSync(
 		path.join(cwd, ".project", "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [],
 			relation_types: relationTypes,
@@ -464,7 +464,7 @@ describe("write-time ↔ validate-time parity (TASK-062)", () => {
 /** Minimal ConfigBlock-shaped object carrying the kinded relation_type. */
 function KINDED_REL_CONFIG(): never {
 	return {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [],
 		relation_types: KINDED_REL,

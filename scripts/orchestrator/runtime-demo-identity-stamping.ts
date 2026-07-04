@@ -50,7 +50,7 @@ fs.mkdirSync(path.join(subDir, "schemas"), { recursive: true });
 // config.json carrying a minted substrate_id (substrateIdForDir reads this).
 fs.writeFileSync(
 	path.join(subDir, "config.json"),
-	JSON.stringify({ schema_version: "1.7.0", substrate_id: SUBSTRATE_ID, block_kinds: [] }, null, 2),
+	JSON.stringify({ schema_version: "1.8.0", substrate_id: SUBSTRATE_ID, block_kinds: [] }, null, 2),
 	"utf-8",
 );
 

@@ -121,7 +121,7 @@ describe("writeSchema", () => {
 		// DEC-0045 this would make writeSchema (a config.root-honoring path-builder) land under
 		// alt-substrate/ while readSchema/schemaPath (pointer-based) look under
 		// .project/ — a divergence. Post-unification both resolve to the pointer dir.
-		writeConfig(tmpDir, { schema_version: "1.7.0", root: "alt-substrate", block_kinds: [] });
+		writeConfig(tmpDir, { schema_version: "1.8.0", root: "alt-substrate", block_kinds: [] });
 
 		writeSchema(tmpDir, "demo-kind", validSchema);
 

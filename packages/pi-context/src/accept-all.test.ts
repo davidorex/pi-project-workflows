@@ -86,7 +86,7 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(migrations, "a first-touch accept-all must seed migrations.json");
 		const configDecl = migrations!.migrations.find((m) => m.schemaName === "config" && m.fromVersion === "1.0.0");
 		assert.ok(configDecl, "the (config, 1.0.0) decl must be seeded on the dir-absent path");
-		assert.equal(configDecl!.toVersion, "1.7.0");
+		assert.equal(configDecl!.toVersion, "1.8.0");
 	});
 
 	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {
@@ -186,7 +186,7 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(config && isSkeletonConfig(config), "the written config must be a skeleton");
 	});
 
-	it("init → accept-all leaves migrations.json carrying the (config, 1.0.0→1.7.0) decl and loadConfig green", () => {
+	it("init → accept-all leaves migrations.json carrying the (config, 1.0.0→1.8.0) decl and loadConfig green", () => {
 		tmpRoot = mkTmp(".context");
 		initProject(tmpRoot, ".context");
 		adoptConception(tmpRoot);
@@ -194,7 +194,7 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(migrations, "the ceremony must seed migrations.json");
 		const configDecl = migrations!.migrations.find((m) => m.schemaName === "config" && m.fromVersion === "1.0.0");
 		assert.ok(configDecl, "the (config, 1.0.0) decl must be seeded");
-		assert.equal(configDecl!.toVersion, "1.7.0");
+		assert.equal(configDecl!.toVersion, "1.8.0");
 		assert.ok(loadConfig(tmpRoot), "loadConfig must return the adopted config");
 	});
 });

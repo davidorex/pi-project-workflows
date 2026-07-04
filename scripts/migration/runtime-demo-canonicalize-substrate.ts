@@ -114,7 +114,7 @@ function makeFixture(): { cwd: string; work: string } {
 	fs.writeFileSync(
 		path.join(cwd, ".active", "config.json"),
 		JSON.stringify(
-			{ schema_version: "1.7.0", root: ".active", substrate_id: "sub-aaaaaaaaaaaaaaaa", block_kinds: [] },
+			{ schema_version: "1.8.0", root: ".active", substrate_id: "sub-aaaaaaaaaaaaaaaa", block_kinds: [] },
 			null,
 			2,
 		),
@@ -127,7 +127,7 @@ function makeFixture(): { cwd: string; work: string } {
 	const work = path.join(cwd, ".work");
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: "sub-0123456789abcdef",
 		// ONLY the `features` block is registered. Per the CLI's PROJECT_MIGRATE_TARGETS

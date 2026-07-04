@@ -136,7 +136,10 @@ const SUB_B = "sub-0000000000000b02";
 
 /** Build a scratch project: active .subA (source) + registered .subB (dest with
  * item_derived_from_item). The source decisions block carries DEC-0001 open. */
-function makeProject(prefix: string): { cwd: string; aDir: string; bDir: string } {
+function makeProject(
+	prefix: string,
+	itemDerivedDecl: Record<string, unknown> = ITEM_DERIVED,
+): { cwd: string; aDir: string; bDir: string } {
 	const cwd = fs.mkdtempSync(path.join(os.tmpdir(), `promote-item-${prefix}-`));
 	writeBootstrapPointer(cwd, ".subA");
 	const aDir = writeSub(cwd, ".subA", {
@@ -150,7 +153,7 @@ function makeProject(prefix: string): { cwd: string; aDir: string; bDir: string 
 	});
 	const bDir = writeSub(cwd, ".subB", {
 		substrate_id: SUB_B,
-		relation_types: [ITEM_DERIVED, RELATES_TO],
+		relation_types: [itemDerivedDecl, RELATES_TO],
 		schemas: { decisions: decisionsSchema(), tasks: tasksSchema() },
 		blocks: { decisions: { decisions: [] }, tasks: { tasks: [] } },
 	});
@@ -241,6 +244,40 @@ describe("promoteItem", () => {
 
 		// Source status flipped to superseded; source preserved (still present).
 		assert.strictEqual(srcItemAfter.status, "superseded");
+	});
+
+	it("lineage orientation (FGAP-113): item_derived_from_item declared as_parent reverses the edge (parent=source, child=new-derived)", () => {
+		// Same promotion as the default-orientation test, but the destination config
+		// declares item_derived_from_item with role_direction as_parent (source at
+		// the PRIMARY/parent endpoint). The lineage edge must be the mirror image of
+		// the as_child default: parent=source, child=new-derived.
+		const { cwd, bDir } = makeProject("lineage-asparent", { ...ITEM_DERIVED, role_direction: "as_parent" });
+		const srcRef = resolveRef(cwd, "DEC-0001");
+		const srcOid = srcRef.loc?.item.oid as string;
+
+		const result = promoteItem(
+			cwd,
+			{ source: "DEC-0001", destinationSubstrate: "target" },
+			{ writer: { kind: "human", user: "tester@example.com" } },
+		);
+		assert.strictEqual(result.lineageEdgeAppended, true);
+		const newOid = result.destination.oid as string;
+
+		const destRelations = JSON.parse(fs.readFileSync(path.join(bDir, "relations.json"), "utf-8")) as Array<
+			Record<string, unknown>
+		>;
+		assert.strictEqual(destRelations.length, 1);
+		const edge = destRelations[0];
+		assert.strictEqual(edge.relation_type, "item_derived_from_item");
+		const parent = edge.parent as Record<string, unknown>;
+		const child = edge.child as Record<string, unknown>;
+		// as_parent: source (PRIMARY) at parent, new-derived (COUNTER) at child.
+		assert.strictEqual(parent.substrate_id, SUB_A);
+		assert.strictEqual(parent.refname, "DEC-0001");
+		assert.strictEqual(parent.oid, srcOid);
+		assert.strictEqual(child.substrate_id, SUB_B);
+		assert.strictEqual(child.oid, newOid);
+		assert.strictEqual(child.refname, "DEC-0001");
 	});
 
 	it("source oid is preserved across supersession", () => {

@@ -99,6 +99,28 @@ function supersessionStatusFor(srcDir: string, block: string): string | null {
 	return null;
 }
 
+/**
+ * Read the declared `role_direction` of a relation_type from a substrate dir's
+ * config (FGAP-113), or `undefined` when the config is absent, the relation is
+ * unregistered, or it carries no `role_direction`. Reads the raw config JSON
+ * (same non-migrating pattern as `relationTypeIds`) — the field is a plain
+ * optional string, so no schema migration is needed to read it.
+ */
+function roleDirectionForRelation(substrateDir: string, relationType: string): "as_parent" | "as_child" | undefined {
+	const configPath = path.join(substrateDir, "config.json");
+	if (!fs.existsSync(configPath)) return undefined;
+	let cfg: Record<string, unknown>;
+	try {
+		cfg = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
+	} catch {
+		return undefined;
+	}
+	const rts = Array.isArray(cfg.relation_types) ? (cfg.relation_types as Record<string, unknown>[]) : [];
+	const rt = rts.find((r) => r && typeof r === "object" && r.canonical_id === relationType);
+	const dir = rt?.role_direction;
+	return dir === "as_parent" || dir === "as_child" ? dir : undefined;
+}
+
 /** Read the `config.relation_types[].canonical_id` set of a substrate dir. */
 function relationTypeIds(substrateDir: string): Set<string> {
 	const configPath = path.join(substrateDir, "config.json");
@@ -222,19 +244,27 @@ export function promoteItem(cwd: string, input: PromoteItemInput, ctx?: Dispatch
 		);
 	}
 
-	// (9) File the lineage edge into the DESTINATION (parent = the new derived
-	// item; child = the source).
-	const edge: Edge = {
-		parent: { kind: "item", substrate_id: destId, oid: newOid, refname: destRefname },
-		child: {
-			kind: "item",
-			substrate_id: srcId,
-			...(srcOid !== undefined ? { oid: srcOid } : {}),
-			refname: srcRefname,
-			...(srcContentHash !== undefined ? { content_hash: srcContentHash } : {}),
-		},
-		relation_type: "item_derived_from_item",
-	} as Edge;
+	// (9) File the lineage edge into the DESTINATION, oriented by the destination
+	// config's declared role_direction for item_derived_from_item (FGAP-113): the
+	// SOURCE (the item being derived FROM) holds the PRIMARY data_flow role, the
+	// NEW-DERIVED item the COUNTER role. item_derived_from_item is `as_child`
+	// (source at edge.child), reproducing the prior parent=new-derived / child=source
+	// layout; the `as_child` fallback preserves that layout when the destination
+	// config does not register a role_direction.
+	const derivedEndpoint = { kind: "item", substrate_id: destId, oid: newOid, refname: destRefname };
+	const sourceEndpoint = {
+		kind: "item",
+		substrate_id: srcId,
+		...(srcOid !== undefined ? { oid: srcOid } : {}),
+		refname: srcRefname,
+		...(srcContentHash !== undefined ? { content_hash: srcContentHash } : {}),
+	};
+	const lineageDir = roleDirectionForRelation(destDir, "item_derived_from_item") ?? "as_child";
+	const edge: Edge = (
+		lineageDir === "as_parent"
+			? { parent: sourceEndpoint, child: derivedEndpoint, relation_type: "item_derived_from_item" }
+			: { parent: derivedEndpoint, child: sourceEndpoint, relation_type: "item_derived_from_item" }
+	) as Edge;
 	const { appended: lineageEdgeAppended } = appendRelationForDir(destDir, edge, ctx);
 
 	// (10) Mark the source superseded when its status enum supports it; the

@@ -115,13 +115,11 @@ describe("FGAP-136 end-to-end: identity migration unblocks version-bumped block 
 		// data passes through unchanged, AJV-validates against v2 schema.
 		writeBlock(cwd, "thing", { schema_version: "1.0.0", items: [{ id: "a" }] });
 		const persisted = JSON.parse(fs.readFileSync(path.join(cwd, ".project", "thing.json"), "utf-8"));
-		// Identity migration is byte-cheap: it returns the input reference; the
-		// schema_version field is the writer-supplied value (no transform
-		// applied), so what landed on disk reflects the v1 schema_version even
-		// though the on-disk schema is at v2. The contract is that AJV passes
-		// (which it did) — schema_version transformation is the operator's
-		// concern via a declarative-transform set op when desired.
-		assert.equal(persisted.schema_version, "1.0.0");
+		// Identity migration is byte-cheap on the DATA (items pass through
+		// unchanged), and the write path stamps the envelope to the schema's
+		// current version (TASK-073): the persisted schema_version converges to
+		// v2 on the write rather than echoing the writer-supplied v1 claim.
+		assert.equal(persisted.schema_version, "2.0.0");
 		assert.deepEqual(persisted.items, [{ id: "a" }]);
 	});
 

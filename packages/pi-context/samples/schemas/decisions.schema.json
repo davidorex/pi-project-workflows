@@ -9,6 +9,10 @@
     "decisions"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
+    },
     "decisions": {
       "type": "array",
       "items": {

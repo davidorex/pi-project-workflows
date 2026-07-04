@@ -889,6 +889,35 @@ export function writeTypedFile(
 		}
 	}
 
+	// Parse the supplied schema once — the version stamp below and the
+	// post-validation object persistence both consume it.
+	const parsedSchema: Record<string, unknown> | null = schemaPath
+		? (JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>)
+		: null;
+
+	// Envelope schema_version stamp (TASK-073; the FGAP-105 fold-locus lands
+	// generically here so EVERY versioned-document write converges — block
+	// wrappers, whole-block writes, config, migrations.json all funnel through
+	// writeTypedFile). When the schema declares a top-level `schema_version`
+	// property AND carries a `version` string, the envelope is stamped to the
+	// schema's current version — overwritten, never passed through, so the
+	// persisted version is truthful by construction (an incoming stale version
+	// has already been walked forward by the caller's migration gate). Self-
+	// gating: a schema that does not declare the property (or has no version)
+	// leaves the data untouched, so substrates whose installed schemas predate
+	// the property keep writing unchanged until `/context update` lands it.
+	if (parsedSchema && toWrite && typeof toWrite === "object" && !Array.isArray(toWrite)) {
+		const props = parsedSchema.properties;
+		if (
+			props &&
+			typeof props === "object" &&
+			"schema_version" in (props as Record<string, unknown>) &&
+			typeof parsedSchema.version === "string"
+		) {
+			toWrite = { ...(toWrite as Record<string, unknown>), schema_version: parsedSchema.version };
+		}
+	}
+
 	// Validate before write (if a schema is supplied)
 	if (schemaPath) {
 		validateFromFile(schemaPath, toWrite, label);
@@ -902,9 +931,9 @@ export function writeTypedFile(
 	// Gated on schemaPath: a schema-less write carries no identity items, and
 	// the per-item content_hash check protects the non-stamping config/registry/
 	// relations/migrations writers (their items carry no content_hash).
-	if (schemaPath) {
+	if (schemaPath && parsedSchema) {
 		const substrateDir = path.dirname(filePath);
-		const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>;
+		const schema = parsedSchema;
 		forEachBlockArray(toWrite, (arrayKey, arr) => {
 			for (const item of arr) {
 				if (item && typeof item === "object" && !Array.isArray(item)) {

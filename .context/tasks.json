@@ -1444,7 +1444,7 @@
     },
     {
       "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
-      "status": "planned",
+      "status": "in-progress",
       "acceptance_criteria": [
         "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
         "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
@@ -1462,8 +1462,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-073",
       "oid": "939639ac37a9d806ae06b1940a5eba13",
-      "content_hash": "32dd9b82830550e74fb3d70c4a62c7d8ba3af4a3f260bfa13ee6ba288f417de3",
-      "content_parent": "3d840df424a579930d134f3eac5731cacd204fe60f7cf89f9a4364381cc8dceb"
+      "content_hash": "8e31d55a51345a2d566b8d30053bd494ef2da083bb389723efdbaa6f2e6cb7b4",
+      "content_parent": "32dd9b82830550e74fb3d70c4a62c7d8ba3af4a3f260bfa13ee6ba288f417de3"
     },
     {
       "description": "Add a sanctioned op that materializes any declared-but-absent block data file — the missing.blocks[] set from findUnmaterializedAssets — into an existing substrate, copying the catalog starter via the install path. Invoked by update for a catalog-added block kind and available standalone as a repair/materialize op; previewed by --dryRun.",

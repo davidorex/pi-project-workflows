@@ -1,0 +1,17 @@
+{
+  "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",
+  "status": "in-progress",
+  "acceptance_criteria": [
+    "Envelope schema admits the version: every block schema's top-level envelope declares an optional `schema_version` string property; the relaxation is that one named property only — `additionalProperties:false` is NOT opened wholesale; per-item `additionalProperties:false` is unchanged (no per-item `schema_version`).",
+    "Write path produces the envelope version: the write path (writeTypedFile / writeBlockForDir, block-api.ts:870-938, 1758-1767) sets the top-level `schema_version` on the whole-block object to the current schema `version` on every block write; it is stamped, not merely passed through.",
+    "Read hook fires on the envelope: with the envelope `schema_version` present, the read-time hook (block-api.ts:785-789) no longer short-circuits on its absence and routes the whole block through validateBlockWithMigrationForDir; demonstrated by a real read-block that exercises the hook, not a mocked assertion.",
+    "Version-gap behavior is the two explicit branches — migrate AND throw — on both read and write gates: when the block's envelope `schema_version` differs from the schema `version`, (i) with a registered migration runMigrations walks the whole block forward and validation passes (schema-validator.ts:232-238); (ii) with NO resolvable migration chain the gate throws via runMigrations -> resolve's no-path throw (schema-migrations.ts:100-104, 121-125, reached from schema-validator.ts:238; the no-registry branch at :234-236 is unreachable from the gates, which always supply the project registry) — a read-gate throw fails the read, and a write-gate throw rejects the write leaving the block file byte-unchanged (no partial write). Both branches, with their per-gate post-state, are tested at both the read gate (block-api.ts:785-789) and the write gate (block-api.ts:1758-1767).",
+    "The new field reaches already-installed substrates, not only the samples catalog: the envelope `schema_version` property is added to the installed schema bodies of existing substrates via the install/update path, not only to samples/schemas/; an already-installed substrate's blocks carry and validate the version after update."
+  ],
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/samples/schemas/"
+  ],
+  "notes": "Stamp location is the block envelope (top-level schema_version), derived: the read/write hooks already key on envelope.schema_version (block-api.ts:785-789, 1758-1767). Not a deferred DECISION."
+}

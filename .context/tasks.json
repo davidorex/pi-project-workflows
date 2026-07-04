@@ -1585,6 +1585,30 @@
       "oid": "7a2ef167950d85e95de66944ee8b2d77",
       "content_hash": "bac47694268e085451fb91e752f0d4d6b7214c34199a1387717f4141851d82d3",
       "content_parent": "02b35d5be96f775906dfeb981bf8e932dd4dd04313564258ae5dd6259baffb2d"
+    },
+    {
+      "description": "Route the two raw config.json readers through the migration-aware loader, preserving their degraded contracts, so no reader sees a different config shape than loadConfig once a shape-changing config migration ships. resolveOperationVocabulary (pi-agent-dispatch capability-composer, active substrate, fail-safe to TOOL_OPERATION_DEFAULTS) reads via loadConfigForDir inside its existing guards; loadConfigForDirBestEffort (pi-context context-sdk, foreign substrates feeding the porcelain id index, best-effort to null) delegates to loadConfigForDir in try/catch. Any load failure — absent, unparsable, unresolvable version, invalid — collapses to the same degraded value each contract already defines; a lagging-but-chained config now reads its migrated shape.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-agent-dispatch/src/capability-composer.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-agent-dispatch/src/capability-composer.test.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-agent-dispatch/CHANGELOG.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "resolveOperationVocabulary reads the active substrate's config through the migration-aware loader: a current valid config with tool_operations overrides yields those overrides; a config whose schema_version has no resolvable chain to the bundled schema yields TOOL_OPERATION_DEFAULTS (fail-safe), never the raw un-migrated shape.",
+        "loadConfigForDirBestEffort delegates to the migration-aware loader with the null contract preserved: an absent, unparsable, or unresolvable foreign config returns null and the foreign-index porcelain degrades without throwing; a valid foreign config returns its migrated shape.",
+        "Tests cover the unresolvable-version-to-degraded-value cell and the current-config-passthrough cell at both sites; build, check, and the full test suite pass at zero failures with the change in dist/."
+      ],
+      "notes": "Resolves the gap's filed determination toward migration-aware routing (not document-as-raw). Completes the milestone's no-split-brain-readers clause.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-079",
+      "oid": "c44ca0128eb668ae388905a98cfa6d68",
+      "content_hash": "1457bdd99f0af6f19186dccff8aa2d286a4f639fe550b8a54bd377aabc28aa86",
+      "content_parent": "256240f7a343b6fcb7b8448eb08446eca7351f91859c63f17890ca73ed5a8a31"
     }
   ],
   "schema_version": "1.0.1"

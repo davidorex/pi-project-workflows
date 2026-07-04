@@ -9,7 +9,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { describe, it } from "node:test";
+import { afterEach, beforeEach, describe, it } from "node:test";
 import { appendToBlock, updateItemInBlock } from "./block-api.js";
 import type { ConfigBlock, RelationTypeDecl } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
@@ -4239,5 +4239,77 @@ describe("validateContext: nested id-bearing array warning", () => {
 
 		const result = validateContext(tmpDir);
 		assert.ok(!result.issues.some((i) => i.code === "nested_id_bearing_array"));
+	});
+});
+
+// ── Substrate-wide block schema-validity sweep in validateContext ────────────
+
+describe("validateContext block schema-validity sweep", () => {
+	let cwd: string;
+	beforeEach(() => {
+		cwd = makeTmpDir("validity-sweep");
+		fs.mkdirSync(path.join(cwd, ".project", "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(cwd, ".project", "config.json"),
+			JSON.stringify({ schema_version: "1.8.0", root: ".project", block_kinds: [] }, null, 2),
+		);
+	});
+	afterEach(() => {
+		fs.rmSync(cwd, { recursive: true, force: true });
+	});
+
+	const THING_SCHEMA = {
+		version: "1.0.0",
+		type: "object",
+		required: ["things"],
+		additionalProperties: false,
+		properties: {
+			schema_version: { type: "string" },
+			things: {
+				type: "array",
+				items: {
+					type: "object",
+					additionalProperties: false,
+					required: ["id"],
+					properties: { id: { type: "string" }, note: { type: "string" } },
+				},
+			},
+		},
+	};
+
+	function writeThing(schema: unknown, block: unknown): void {
+		fs.writeFileSync(path.join(cwd, ".project", "schemas", "thing.schema.json"), JSON.stringify(schema, null, 2));
+		fs.writeFileSync(path.join(cwd, ".project", "thing.json"), JSON.stringify(block, null, 2));
+	}
+
+	it("a schema-valid block (unstamped envelope) produces no sweep findings", () => {
+		writeThing(THING_SCHEMA, { things: [{ id: "T-1", note: "ok" }] });
+		const result = validateContext(cwd);
+		assert.ok(!result.issues.some((i) => i.code === "block_schema_invalid"));
+	});
+
+	it("an item invalid against the installed schema surfaces as an ERROR naming block + item id + keyword", () => {
+		writeThing(THING_SCHEMA, { things: [{ id: "T-1", rogue_field: true }] });
+		const result = validateContext(cwd);
+		const finding = result.issues.find((i) => i.code === "block_schema_invalid");
+		assert.ok(finding, "sweep must surface the invalid block");
+		assert.equal(finding?.severity, "error");
+		assert.equal(finding?.block, "thing");
+		assert.equal(finding?.field, "T-1");
+		assert.match(finding?.message ?? "", /additionalProperties/);
+		assert.equal(result.status, "invalid");
+	});
+
+	it("a STAMPED envelope validates migration-aware: matching version passes; unresolvable version surfaces as an error", () => {
+		writeThing(THING_SCHEMA, { schema_version: "1.0.0", things: [{ id: "T-1" }] });
+		assert.ok(!validateContext(cwd).issues.some((i) => i.code === "block_schema_invalid"));
+		// Now claim a version with no chain to the schema's 1.0.0 — the sweep's
+		// migration-aware path throws (no path) and surfaces it, rather than
+		// silently skipping the block.
+		writeThing(THING_SCHEMA, { schema_version: "0.9.0", things: [{ id: "T-1" }] });
+		const result = validateContext(cwd);
+		const finding = result.issues.find((i) => i.code === "block_schema_invalid");
+		assert.ok(finding, "an unresolvable stamped version must surface, not skip");
+		assert.equal(finding?.severity, "error");
 	});
 });

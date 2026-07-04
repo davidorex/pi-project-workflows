@@ -36,8 +36,9 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { getLensValidators } from "./lens-validator.js";
 import { findReferencesInRepo } from "./lens-view.js";
+import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
-import { validateFromFile } from "./schema-validator.js";
+import { ValidationError, validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
 import { findNestedIdBearingArrays } from "./schema-write.js";
 import { resolveStateDerivation, resolveStatusVocabulary } from "./status-vocab.js";
 import { topoSort } from "./topo.js";
@@ -2582,12 +2583,89 @@ export function validateContext(cwd: string): ContextValidationResult {
 		}
 	}
 
+	// ── Substrate-wide block schema-validity sweep ────────────────────────────
+	// The composed verdict must cover schema validity, not only edge/invariant
+	// integrity: invalidity introduced WITHOUT a write to the block (a schema
+	// resync, a hand edit, catalog drift) previously sat behind a clean verdict
+	// until the next write to that block failed. For every block that has BOTH a
+	// schema in <substrateDir>/schemas/ AND a block file, validate the whole
+	// block against its installed schema — migration-aware when the envelope is
+	// stamped (validateBlockWithMigrationForDir walks a lagging version through
+	// the registered chain), raw otherwise (the same helper: absent version ⇒
+	// straight validate). Every failure surfaces as an ERROR naming the block,
+	// the failing item id (resolved from the AJV instancePath), and the
+	// field/keyword. Guarded per block so one unreadable file cannot mask the
+	// rest of the sweep; pointer-less projects degrade gracefully (no sweep —
+	// there is no substrate to validate), matching validateContext's class rule.
+	{
+		const substrateDir = tryResolveContextDir(cwd);
+		const schemasDir = substrateDir ? path.join(substrateDir, "schemas") : null;
+		if (substrateDir && schemasDir && fs.existsSync(schemasDir)) {
+			const registry = getProjectMigrationRegistryForDir(substrateDir);
+			for (const schemaFile of fs.readdirSync(schemasDir).filter((f) => f.endsWith(".schema.json"))) {
+				const blockName = schemaFile.slice(0, -".schema.json".length);
+				const blockFile = path.join(substrateDir, `${blockName}.json`);
+				if (!fs.existsSync(blockFile)) continue;
+				try {
+					const blockData = JSON.parse(fs.readFileSync(blockFile, "utf-8"));
+					validateBlockWithMigrationForDir(substrateDir, blockName, blockData, registry);
+				} catch (err) {
+					if (err instanceof ValidationError) {
+						for (const e of err.errors) {
+							const itemId = blockItemIdForInstancePath(cwd, blockName, e.instancePath);
+							issues.push({
+								severity: "error",
+								message:
+									`Block '${blockName}' fails its installed schema at ${e.instancePath || "(envelope)"}${itemId ? ` (item '${itemId}')` : ""}: ${e.keyword} ${e.message ?? ""}`.trimEnd(),
+								block: blockName,
+								...(itemId !== undefined ? { field: itemId } : {}),
+								code: "block_schema_invalid",
+							});
+						}
+					} else {
+						issues.push({
+							severity: "error",
+							message: `Block '${blockName}' failed schema-validity sweep: ${err instanceof Error ? err.message : String(err)}`,
+							block: blockName,
+							code: "block_schema_invalid",
+						});
+					}
+				}
+			}
+		}
+	}
+
 	const errorCount = issues.filter((i) => i.severity === "error").length;
 	const warningCount = issues.filter((i) => i.severity === "warning").length;
 	return {
 		status: errorCount > 0 ? "invalid" : warningCount > 0 ? "warnings" : "clean",
 		issues,
 	};
+}
+
+/**
+ * Resolve the failing block item's `id` from an AJV `instancePath` of the form
+ * `/<arrayKey>/<index>[/...]` by re-reading the block file. Returns undefined
+ * for envelope-level paths or when the item carries no string id.
+ */
+function blockItemIdForInstancePath(cwd: string, blockName: string, instancePath: string): string | undefined {
+	const m = /^\/([^/]+)\/(\d+)/.exec(instancePath);
+	if (!m) return undefined;
+	try {
+		const substrateDir = resolveContextDir(cwd);
+		const data = JSON.parse(fs.readFileSync(path.join(substrateDir, `${blockName}.json`), "utf-8")) as Record<
+			string,
+			unknown
+		>;
+		const arr = data[m[1]];
+		if (!Array.isArray(arr)) return undefined;
+		const item = arr[Number(m[2])];
+		if (!item || typeof item !== "object") return undefined;
+		const id = (item as Record<string, unknown>).id;
+		return typeof id === "string" ? id : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 // ── Verification-Gated Task Completion ─────────────────────────────────────

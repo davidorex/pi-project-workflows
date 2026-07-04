@@ -653,11 +653,13 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		const catVer = catalogTasksVersion();
 		tmpRoot = makeProject(["tasks"], []);
 		// Installed schema dest at the SAME version as the catalog but with a drifted
-		// description (so the bytes differ but no migration contract changes).
+		// description (so the bytes differ but no migration contract changes). The
+		// block item must be VALID against the incoming catalog body — the same-
+		// version arm now re-validates populated blocks before overwriting.
 		const dest = installSchemaFixture(tmpRoot, "tasks", catVer, { description: "DRIFTED LOCAL DESCRIPTION" });
 		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
 			schema_version: catVer,
-			tasks: [{ id: "TASK-001", description: "filed", status: "open" }],
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
 		});
 		const blockBefore = fs.readFileSync(blockDest);
 		const result = installContext(tmpRoot, { overwrite: true });
@@ -671,6 +673,84 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 			fs.readFileSync(blockDest).equals(blockBefore),
 			"block file must be byte-unchanged on a same-version resync",
 		);
+	});
+
+	it("same-version NARROWING catalog change over items that violate it → blocked (validation-failed), schema byte-unchanged", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		// Installed schema = catalog body WIDENED with an extra status enum value
+		// the catalog does not carry; the block item uses it. The same-version
+		// resync to the (narrower) catalog body would invalidate the item on the
+		// enum — must refuse, not overwrite.
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		const widened = JSON.parse(JSON.stringify(catalog)) as Record<string, unknown>;
+		(
+			(
+				(
+					((widened.properties as Record<string, unknown>).tasks as Record<string, unknown>).items as Record<
+						string,
+						unknown
+					>
+				).properties as Record<string, unknown>
+			).status as Record<string, unknown>
+		).enum = ["planned", "in-progress", "completed", "blocked", "cancelled", "parked"];
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		fs.writeFileSync(dest, JSON.stringify(widened, null, 2));
+		writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "parked" }],
+		});
+		// Record the install baseline over the EXISTING (widened) schema — skip-if-
+		// exists preserves it and fingerprints it, so checkStatus reads the drift as
+		// catalog-ahead (content-only) and update routes it through the resync arm.
+		installContext(tmpRoot);
+		const schemaBefore = fs.readFileSync(dest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.blocked, ["tasks"], "narrowing same-version resync must block");
+		assert.deepEqual(result.resynced, []);
+		assert.ok(fs.readFileSync(dest).equals(schemaBefore), "installed schema must be byte-unchanged on refusal");
+		const detail = result.blockedDetail.find((d) => d.name === "tasks");
+		assert.equal(detail?.reason, "validation-failed");
+		assert.ok(
+			detail?.failures?.some((f) => f.itemId === "TASK-001" && f.keyword === "enum"),
+			"per-item failure must name the violating item and keyword",
+		);
+	});
+
+	it("same-version NARROWING change: --dryRun predicts the same blocked outcome, writing nothing", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		const widened = JSON.parse(JSON.stringify(catalog)) as Record<string, unknown>;
+		(
+			(
+				(
+					((widened.properties as Record<string, unknown>).tasks as Record<string, unknown>).items as Record<
+						string,
+						unknown
+					>
+				).properties as Record<string, unknown>
+			).status as Record<string, unknown>
+		).enum = ["planned", "in-progress", "completed", "blocked", "cancelled", "parked"];
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		fs.writeFileSync(dest, JSON.stringify(widened, null, 2));
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "parked" }],
+		});
+		installContext(tmpRoot); // baseline over the existing widened schema (skip-if-exists)
+		const schemaBefore = fs.readFileSync(dest);
+		const blockBefore = fs.readFileSync(blockDest);
+		const plan = updateContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(plan.blocked, ["tasks"], "dryRun must predict the blocked outcome");
+		const detail = plan.blockedDetail.find((d) => d.name === "tasks");
+		assert.equal(detail?.reason, "validation-failed");
+		assert.ok(fs.readFileSync(dest).equals(schemaBefore), "dryRun must not touch the schema");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "dryRun must not touch the block");
 	});
 
 	// SKIPPED per DEC-0012: identity stamping is now unconditional on every write.
@@ -798,11 +878,13 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 	it("idempotent — re-run --update on an in-sync substrate yields no schema changes", () => {
 		const catVer = catalogTasksVersion();
 		tmpRoot = makeProject(["tasks"], []);
-		// First install lands the catalog schema (1.0.1) fresh.
+		// First install lands the catalog schema (1.0.1) fresh. The block item is
+		// VALID against the catalog body — the same-version arm re-validates
+		// populated blocks before the verbatim re-copy.
 		installContext(tmpRoot);
 		writeBlockFixture(tmpRoot, "tasks", {
 			schema_version: catVer,
-			tasks: [{ id: "TASK-001", description: "filed", status: "open" }],
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
 		});
 		const schemaDest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
 		const blockDest = path.join(tmpRoot, ".project", "tasks.json");

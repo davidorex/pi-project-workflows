@@ -152,7 +152,8 @@
       "display_name": "supersedes",
       "category": "ordering",
       "source_kinds": ["decisions"],
-      "target_kinds": ["decisions"]
+      "target_kinds": ["decisions"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "decision_relates_to_decision",
@@ -222,14 +223,16 @@
       "display_name": "depends on item",
       "category": "ordering",
       "source_kinds": ["features"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "feature_gated_by_item",
       "display_name": "gated by",
       "category": "ordering",
       "source_kinds": ["features"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "feature_resolves_issue",
@@ -250,35 +253,40 @@
       "display_name": "story depends on story",
       "category": "ordering",
       "source_kinds": ["story"],
-      "target_kinds": ["story"]
+      "target_kinds": ["story"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "story_gated_by_item",
       "display_name": "story gated by",
       "category": "ordering",
       "source_kinds": ["story"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "task_depends_on_task",
       "display_name": "depends on task",
       "category": "ordering",
       "source_kinds": ["tasks"],
-      "target_kinds": ["tasks"]
+      "target_kinds": ["tasks"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "requirement_depends_on_requirement",
       "display_name": "depends on requirement",
       "category": "ordering",
       "source_kinds": ["requirements"],
-      "target_kinds": ["requirements"]
+      "target_kinds": ["requirements"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "research_supersedes_research",
       "display_name": "research supersedes research",
       "category": "ordering",
       "source_kinds": ["research"],
-      "target_kinds": ["research"]
+      "target_kinds": ["research"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "research_informs_item",
@@ -313,35 +321,40 @@
       "display_name": "positioned in phase",
       "category": "membership",
       "source_kinds": ["tasks"],
-      "target_kinds": ["phase"]
+      "target_kinds": ["phase"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "phase_positioned_in_milestone",
       "display_name": "positioned in milestone",
       "category": "membership",
       "source_kinds": ["phase"],
-      "target_kinds": ["milestone"]
+      "target_kinds": ["milestone"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "milestone_precedes_milestone",
       "display_name": "precedes",
       "category": "ordering",
       "source_kinds": ["milestone"],
-      "target_kinds": ["milestone"]
+      "target_kinds": ["milestone"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "feature_contains_story",
       "display_name": "contains story",
       "category": "membership",
       "source_kinds": ["features"],
-      "target_kinds": ["story"]
+      "target_kinds": ["story"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "story_includes_item",
       "display_name": "includes item",
       "category": "membership",
       "source_kinds": ["story"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "rationale_supports_decision",
@@ -390,7 +403,8 @@
       "display_name": "derived from",
       "category": "data_flow",
       "source_kinds": ["*"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "decision_raises_gap",
@@ -404,7 +418,8 @@
       "display_name": "gated by",
       "category": "ordering",
       "source_kinds": ["decisions"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "gap_relates_to_gap",
@@ -418,7 +433,8 @@
       "display_name": "gated by",
       "category": "ordering",
       "source_kinds": ["tasks"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "session_touches_item",
@@ -432,7 +448,8 @@
       "display_name": "derived from",
       "category": "data_flow",
       "source_kinds": ["decisions"],
-      "target_kinds": ["*"]
+      "target_kinds": ["*"],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "decision_escalates_underdetermined",

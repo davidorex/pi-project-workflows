@@ -20,7 +20,7 @@ function makeProject(): { dir: string; substrate: string } {
 	writeBootstrapPointer(dir, substrateName);
 	// Seed a minimal config.json
 	const cfg = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: "substrate",
 		block_kinds: [],
 		tool_operations: [],

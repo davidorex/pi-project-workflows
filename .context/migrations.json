@@ -144,6 +144,14 @@
       "kind": "identity",
       "created_by": "davidryan@gmail.com",
       "created_at": "2026-07-02T03:17:11.811Z"
+    },
+    {
+      "schemaName": "config",
+      "fromVersion": "1.7.0",
+      "toVersion": "1.8.0",
+      "kind": "identity",
+      "created_by": "davidryan@gmail.com",
+      "created_at": "2026-07-04T03:16:58.162Z"
     }
   ]
 }

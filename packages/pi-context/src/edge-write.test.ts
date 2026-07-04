@@ -15,7 +15,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { appendRelation, appendRelations, type Edge, loadRelations } from "./context.js";
+import { appendRelation, appendRelations, type Edge, endpointKey, loadRelations } from "./context.js";
 import { writeBootstrapPointer } from "./context-dir.js";
 import {
 	appendRelationByRef,
@@ -168,7 +168,7 @@ function writeConfig(cwd: string, relationTypes: unknown[] = REL_TYPES): void {
 	fs.writeFileSync(
 		path.join(cwd, ".project", "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [],
 			relation_types: relationTypes,
@@ -461,10 +461,140 @@ describe("write-time ↔ validate-time parity (TASK-062)", () => {
 	});
 });
 
+// ── FGAP-113: role-typed authoring + ambiguous-bare-append reject ─────────────
+//
+// A role-bearing relation (one declaring role_direction) that is
+// orientation-ambiguous (its source_kinds ∩ target_kinds ≠ ∅, incl. "*") cannot
+// be reliably oriented from a bare {parent,child} append, so the porcelain
+// REJECTS the bare form and directs the author to --primary/--counter, mapping the
+// role to parent/child via role_direction. A disjoint-kind role-bearing relation
+// is self-orienting (the source/target-kind gate covers it) so its bare append
+// stays allowed.
+
+/** Same-kind (tasks↔tasks) role-bearing relation: ambiguous, role_direction as_parent. */
+const AMBIG_ROLE_REL = [
+	{
+		canonical_id: "task_before_task",
+		display_name: "before",
+		category: "ordering" as const,
+		source_kinds: ["tasks"],
+		target_kinds: ["tasks"],
+		role_direction: "as_parent" as const,
+	},
+];
+
+/** Disjoint-kind (phase→milestone) role-bearing relation: self-orienting, as_child. */
+const DISJOINT_ROLE_REL = [
+	{
+		canonical_id: "phase_in_milestone",
+		display_name: "positioned in",
+		category: "membership" as const,
+		source_kinds: ["phase"],
+		target_kinds: ["milestone"],
+		role_direction: "as_child" as const,
+	},
+];
+
+describe("role-typed authoring + ambiguous-bare-append reject (FGAP-113)", () => {
+	it("role-typed --primary/--counter maps to parent/child via role_direction (as_parent → primary=parent)", (t) => {
+		const cwd = makeTmpDir("role-typed-map");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, AMBIG_ROLE_REL);
+		writeKinded(cwd, { tasks: ["t1", "t2"] });
+
+		const r = appendRelationByRef(cwd, { primary: "t1", counter: "t2", relation_type: "task_before_task" });
+		assert.equal(r.appended, true);
+		const stored = loadRelations(cwd);
+		assert.equal(stored.length, 1);
+		// as_parent → primary at edge.parent, counter at edge.child.
+		assert.equal(endpointKey(stored[0].parent), "t1");
+		assert.equal(endpointKey(stored[0].child), "t2");
+	});
+
+	it("a bare --parent/--child append of a same-kind role-bearing relation is REJECTED, directing to --primary/--counter", (t) => {
+		const cwd = makeTmpDir("role-bare-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, AMBIG_ROLE_REL);
+		writeKinded(cwd, { tasks: ["t1", "t2"] });
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "t1", child: "t2", relation_type: "task_before_task" }),
+			/orientation-ambiguous[\s\S]*--primary\/--counter/,
+		);
+		// Nothing written — relations.json absent (no prior edge seeded).
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("a bare append of a DISJOINT-kind role-bearing relation still SUCCEEDS (the kind gate covers it)", (t) => {
+		const cwd = makeTmpDir("role-disjoint-ok");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, DISJOINT_ROLE_REL);
+		writeKinded(cwd, { phase: ["PHASE-1"], milestone: ["MILE-1"] });
+
+		// phase→milestone matches source/target kinds; disjoint kinds self-orient.
+		const r = appendRelationByRef(cwd, { parent: "PHASE-1", child: "MILE-1", relation_type: "phase_in_milestone" });
+		assert.equal(r.appended, true);
+		const stored = loadRelations(cwd);
+		assert.equal(stored.length, 1);
+		assert.equal(endpointKey(stored[0].parent), "PHASE-1");
+		assert.equal(endpointKey(stored[0].child), "MILE-1");
+	});
+
+	it("the role-typed form on a relation with NO role_direction throws (no role to map)", (t) => {
+		const cwd = makeTmpDir("role-none-throws");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, UNKINDED_REL); // "rel" has no role_direction
+		writeItems(cwd, ["p1", "c1"]);
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { primary: "p1", counter: "c1", relation_type: "rel" }),
+			/declares no role_direction/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("supplying BOTH a raw and a role-typed pair is rejected as mutually exclusive", (t) => {
+		const cwd = makeTmpDir("role-both-throws");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, AMBIG_ROLE_REL);
+		writeKinded(cwd, { tasks: ["t1", "t2"] });
+
+		assert.throws(
+			() =>
+				appendRelationByRef(cwd, {
+					parent: "t1",
+					child: "t2",
+					primary: "t1",
+					counter: "t2",
+					relation_type: "task_before_task",
+				}),
+			/mutually exclusive/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("bulk appendRelationsByRef rejects a bare same-kind role-bearing edge before any write (all-or-nothing)", (t) => {
+		const cwd = makeTmpDir("role-bulk-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, AMBIG_ROLE_REL);
+		writeKinded(cwd, { tasks: ["t1", "t2", "t3"] });
+
+		assert.throws(
+			() =>
+				appendRelationsByRef(cwd, [
+					{ primary: "t1", counter: "t2", relation_type: "task_before_task" },
+					{ parent: "t2", child: "t3", relation_type: "task_before_task" }, // bare ambiguous → rejects the batch
+				]),
+			/orientation-ambiguous/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+});
+
 /** Minimal ConfigBlock-shaped object carrying the kinded relation_type. */
 function KINDED_REL_CONFIG(): never {
 	return {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [],
 		relation_types: KINDED_REL,

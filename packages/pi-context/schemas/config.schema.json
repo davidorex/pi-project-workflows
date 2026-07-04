@@ -1,7 +1,7 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"$id": "pi-context://schemas/config",
-	"version": "1.7.0",
+	"version": "1.8.0",
 	"title": "pi-context substrate config",
 	"description": "Self-bootstrapping config block. Validates the config that configures the substrate. ConfigBlock is the canonical registry for block kinds, status buckets, relation types, display strings, layers, naming aliases, hierarchy declarations, lens specs, and the state-derivation registry that drives currentState (focus / in-flight / next-actions / blocked / milestone-rollup).",
 	"type": "object",
@@ -158,7 +158,8 @@
 					"category": { "type": "string", "enum": ["ordering", "data_flow", "membership"] },
 					"cycle_allowed": { "type": "boolean" },
 					"source_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's source (edge.parent) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." },
-					"target_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's target (edge.child) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." }
+					"target_kinds": { "type": "array", "items": { "type": "string" }, "description": "Block_kind canonical_ids this relation's target (edge.child) may be; literal \"*\" = any kind. Optional; absence => endpoint-kind unchecked." },
+					"role_direction": { "type": "string", "enum": ["as_parent", "as_child"], "description": "Which stored endpoint holds the relation's PRIMARY semantic role — the single orientation source of truth. Category interprets the role (ordering=antecedent, membership=container, data_flow=source); this names where it sits: as_parent=edge.parent, as_child=edge.child. Optional: set only for relations with a per-role consumer (deriver/rollup/roadmap/promote/write/read); role-less relations omit it." }
 				}
 			}
 		},

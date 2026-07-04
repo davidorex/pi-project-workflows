@@ -64,7 +64,7 @@ function readRelationsFile(cwd: string): Edge[] {
  * prefix-vs-block invariant. */
 function itemConfig(): ConfigBlock {
 	return {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [
 			{
@@ -125,7 +125,7 @@ describe("renameCanonicalId — relation_type", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -186,7 +186,7 @@ describe("renameCanonicalId — lens", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -227,7 +227,7 @@ describe("renameCanonicalId — layer", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			layers: [{ id: "L1", display_name: "Layer One" }],
 			block_kinds: [
@@ -308,7 +308,7 @@ describe("renameCanonicalId — collision", () => {
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
 		const cfg: ConfigBlock = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: itemConfig().block_kinds,
 			relation_types: [

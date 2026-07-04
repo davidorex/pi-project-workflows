@@ -13,6 +13,7 @@ import {
 	appendRelation,
 	appendRelations,
 	type ConfigBlock,
+	counterEndpoint,
 	type Edge,
 	type EdgeEndpoint,
 	endpointIdentity,
@@ -22,7 +23,9 @@ import {
 	isSkeletonConfig,
 	loadConfig,
 	loadRelations,
+	primaryEndpoint,
 	type RawEndpoint,
+	type RelationTypeDecl,
 	removeRelation,
 	validateRelations,
 	writeRelations,
@@ -46,6 +49,7 @@ export {
 	type ConfigBlock,
 	type ContextData,
 	type CurationSuggestion,
+	counterEndpoint,
 	displayName,
 	type Edge,
 	type EdgeEndpoint,
@@ -65,6 +69,7 @@ export {
 	loadRelations,
 	type NormalizedEndpoint,
 	normalizeEndpoint,
+	primaryEndpoint,
 	type RawEndpoint,
 	type RelationTypeDecl,
 	type StatusBucket,
@@ -792,22 +797,35 @@ export function currentState(cwd: string): CurrentState {
 	// DEPENDENCY direction (parent-of-edge-with-child=item). Which relations
 	// participate is gated on membership in `sd.blocked_by.relation_types`, so an
 	// empty/absent relation is simply not consulted.
+	// Partition the configured blocking relations into GATE-direction vs
+	// DEPENDENCY-direction by each relation's declared `role_direction` (FGAP-113),
+	// replacing the former single `task_gated_by_item` string literal:
+	//   • role_direction === "as_child" → GATE direction: the relation's PRIMARY
+	//     role (the gate) sits at edge.child and the waiting item at edge.parent, so
+	//     the item's gates are the CHILDREN of edges whose PARENT is the item.
+	//   • otherwise (as_parent OR unset) → DEPENDENCY direction: the item's
+	//     prerequisites are the PARENTS of edges whose CHILD is the item.
+	// For the stock set {task_depends_on_task (as_parent), task_gated_by_item
+	// (as_child)} this partition is identical to the pre-change literal split, so
+	// blocked / nextActions / blockedBy stay byte-identical; any *_gated_by_item
+	// sibling later added to blocked_by routes to the gate direction by
+	// construction (no literal to extend). A blocked_by relation the config does
+	// NOT register with a role_direction reads as the DEPENDENCY default.
 	const blockedByRels = new Set(sd.blocked_by.relation_types);
-	const depDirRels = new Set(
-		// task_gated_by_item is the one gate-direction relation; everything else in
-		// the configured set reads the dependency direction (incl. the default rule).
-		[...blockedByRels].filter((rt) => rt !== "task_gated_by_item"),
-	);
+	const roleDirection = new Map<string, "as_parent" | "as_child">();
+	for (const rt of loadConfig(cwd)?.relation_types ?? []) {
+		if (rt.role_direction !== undefined) roleDirection.set(rt.canonical_id, rt.role_direction);
+	}
+	const gateDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) === "as_child"));
+	const depDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) !== "as_child"));
 	const dependencyPredsOf = (itemId: string): string[] =>
 		edges
 			.filter((e) => depDirRels.has(e.relation_type) && endpointKey(e.child) === itemId)
 			.map((e) => endpointKey(e.parent));
 	const gatePredsOf = (itemId: string): string[] =>
-		blockedByRels.has("task_gated_by_item")
-			? edges
-					.filter((e) => e.relation_type === "task_gated_by_item" && endpointKey(e.parent) === itemId)
-					.map((e) => endpointKey(e.child))
-			: [];
+		edges
+			.filter((e) => gateDirRels.has(e.relation_type) && endpointKey(e.parent) === itemId)
+			.map((e) => endpointKey(e.child));
 	// All preds (deps ∪ gates) in discovery order — used by the topo ordering below.
 	const allPredsOf = (itemId: string): string[] => [...dependencyPredsOf(itemId), ...gatePredsOf(itemId)];
 	const incompletePreds = (itemId: string): string[] =>
@@ -911,20 +929,26 @@ export function currentState(cwd: string): CurrentState {
 	const cappedNextActions = nextActions.slice(0, sd.head_size);
 
 	// ── milestones: config-declared membership rollups ──────────────────────────
-	// For each `sd.rollups` entry, members are the PARENT items of
-	// `membership_relation` edges whose CHILD is the rollup item (the stock
-	// phase_positioned_in_milestone direction: parent=phase/child=milestone). The
-	// rollup emits `complete_status` when ≥1 member exists and every member id
-	// resolves to a known item bucketing to complete; else `incomplete_status`
-	// (covering no-members + any-incomplete). Every comparison routes through
-	// bucket() — no raw status literal.
+	// For each `sd.rollups` entry, orientation is read from the membership
+	// relation's declared `role_direction` (FGAP-113): the CONTAINER (the rollup
+	// item itself) sits at the PRIMARY endpoint, its MEMBERS at the COUNTER
+	// endpoint. `phase_positioned_in_milestone` is `as_child` (container=milestone
+	// at edge.child, member=phase at edge.parent), so `primaryEndpoint`===child /
+	// `counterEndpoint`===parent reproduces the prior filter-child / map-parent
+	// selection exactly. A membership relation the config does not register with a
+	// `role_direction` defaults to `as_child` (the pre-FGAP-113 container=child
+	// convention). The rollup emits `complete_status` when ≥1 member exists and
+	// every member id resolves to a known item bucketing to complete; else
+	// `incomplete_status` (covering no-members + any-incomplete). Every comparison
+	// routes through bucket() — no raw status literal.
 	const milestones: CurrentState["milestones"] = [];
 	for (const entry of sd.rollups) {
+		const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
 		for (const loc of index.byRefname.values()) {
 			if (loc.block !== entry.kind) continue;
 			const memberIds = edges
-				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(e.child) === loc.id)
-				.map((e) => endpointKey(e.parent));
+				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === loc.id)
+				.map((e) => endpointKey(counterEndpoint(e, dir)));
 			const phaseCount = memberIds.length;
 			const allComplete = memberIds.every((memberId) => isCompleted(memberId));
 			const reached = phaseCount >= 1 && allComplete;
@@ -1636,12 +1660,105 @@ function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
 }
 
 /**
- * Friendly-selector relation append (Cycle 5 porcelain). Resolves `parent` /
- * `child` STRING selectors to structured `EdgeEndpoint`s via
- * `resolveRelationSelector`, then delegates to the raw `appendRelation` plumbing
- * (atomic, AJV-validated, exact-duplicate no-op — same deferred-integrity
- * semantics). Keeps the string param surface its callers (the append-relation
- * Pi tool + the orchestrator CLI) already expose.
+ * Input to the relation-append porcelain: EITHER the raw `{parent, child}`
+ * endpoint selectors (the storage orientation directly) OR the role-typed
+ * `{primary, counter}` form (FGAP-113 — name the semantic roles, let the porcelain
+ * map them to parent/child via the relation's declared `role_direction`).
+ * `relation_type` + optional `ordinal` are common to both. The two orientation
+ * pairs are mutually exclusive.
+ */
+export interface RelationAppendInput {
+	parent?: string;
+	child?: string;
+	primary?: string;
+	counter?: string;
+	relation_type: string;
+	ordinal?: number;
+}
+
+/**
+ * Whether a role-bearing relation is orientation-AMBIGUOUS: its `source_kinds`
+ * and `target_kinds` overlap (a shared kind, or either side unconstrained / the
+ * `"*"` wildcard), so a bare `{parent, child}` append cannot be reliably oriented
+ * from the endpoint kinds alone. Disjoint-kind relations are self-orienting — the
+ * `validateEdgeAgainstRegistry` source/target-kind gate already rejects an
+ * inversion — so a bare append of them stays allowed.
+ */
+function relationKindsOverlap(rt: RelationTypeDecl | undefined): boolean {
+	const s = rt?.source_kinds;
+	const t = rt?.target_kinds;
+	if (!s || !t) return true; // an unconstrained endpoint is universal → overlaps everything
+	if (s.includes("*") || t.includes("*")) return true;
+	return s.some((k) => t.includes(k));
+}
+
+/**
+ * Resolve a {@link RelationAppendInput} (raw `{parent,child}` OR role-typed
+ * `{primary,counter}`) to the canonical `{parent, child}` STRING selectors the raw
+ * plumbing consumes, applying the FGAP-113 write-orientation rules:
+ *  - the raw and role-typed pairs are mutually exclusive; exactly one complete
+ *    pair must be supplied.
+ *  - the role-typed form maps `primary`/`counter` → `parent`/`child` via the
+ *    relation's declared `role_direction`; it throws when the relation declares no
+ *    `role_direction` (there is no primary/counter role to map).
+ *  - a bare `{parent,child}` append of a role-BEARING relation that is
+ *    orientation-ambiguous (same-kind / wildcard endpoints) is REJECTED, directing
+ *    the author to `--primary`/`--counter`. The porcelain never guesses or swaps.
+ *  - a bare append of a role-less relation, or of a role-bearing DISJOINT-kind
+ *    relation (self-orienting via the kind gate), passes through unchanged.
+ */
+function orientAppendInput(
+	config: ConfigBlock | null,
+	rel: RelationAppendInput,
+): { parent: string; child: string; relation_type: string; ordinal?: number } {
+	const hasRole = rel.primary !== undefined || rel.counter !== undefined;
+	const hasRaw = rel.parent !== undefined || rel.child !== undefined;
+	if (hasRole && hasRaw) {
+		throw new Error(
+			`Relation append for '${rel.relation_type}': --primary/--counter and --parent/--child are mutually exclusive; supply exactly one orientation pair.`,
+		);
+	}
+	const rt = (config?.relation_types ?? []).find((r) => r.canonical_id === rel.relation_type);
+	const roleDir = rt?.role_direction;
+	const ordinalPart = rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {};
+	if (hasRole) {
+		if (rel.primary === undefined || rel.counter === undefined) {
+			throw new Error(
+				`Relation append for '${rel.relation_type}': the role-typed form needs BOTH --primary and --counter.`,
+			);
+		}
+		if (roleDir === undefined) {
+			throw new Error(
+				`Relation '${rel.relation_type}' declares no role_direction, so it has no primary/counter role to map — author it with --parent/--child.`,
+			);
+		}
+		const parent = roleDir === "as_parent" ? rel.primary : rel.counter;
+		const child = roleDir === "as_parent" ? rel.counter : rel.primary;
+		return { parent, child, relation_type: rel.relation_type, ...ordinalPart };
+	}
+	if (rel.parent === undefined || rel.child === undefined) {
+		throw new Error(
+			`Relation append for '${rel.relation_type}': supply either --parent and --child, or --primary and --counter.`,
+		);
+	}
+	if (roleDir !== undefined && relationKindsOverlap(rt)) {
+		throw new Error(
+			`Relation '${rel.relation_type}' carries a declared role_direction and is orientation-ambiguous (its ` +
+				`source and target kinds overlap), so a bare --parent/--child append cannot be reliably oriented. Re-issue ` +
+				`with --primary/--counter (primary = the endpoint holding the relation's semantic role, stored at edge.${roleDir === "as_parent" ? "parent" : "child"}).`,
+		);
+	}
+	return { parent: rel.parent, child: rel.child, relation_type: rel.relation_type, ...ordinalPart };
+}
+
+/**
+ * Friendly-selector relation append (Cycle 5 porcelain). Accepts EITHER raw
+ * `{parent, child}` selectors OR the role-typed `{primary, counter}` form
+ * (FGAP-113), resolves the (possibly role-mapped) STRING selectors to structured
+ * `EdgeEndpoint`s via `resolveRelationSelector`, then delegates to the raw
+ * `appendRelation` plumbing (atomic, AJV-validated, exact-duplicate no-op — same
+ * deferred-integrity semantics). Keeps the string param surface its callers (the
+ * append-relation Pi tool + the orchestrator CLI) already expose.
  *
  * Returns `{ appended, edge }` where `edge` is the RESOLVED structured edge
  * actually written (so callers can report / dry-run-validate the structured
@@ -1649,15 +1766,16 @@ function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
  */
 export function appendRelationByRef(
 	cwd: string,
-	rel: { parent: string; child: string; relation_type: string; ordinal?: number },
+	rel: RelationAppendInput,
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: boolean; edge: Edge; dryRun?: boolean } {
+	const oriented = orientAppendInput(loadConfig(cwd), rel);
 	const edge: Edge = {
-		parent: resolveRelationSelector(cwd, rel.parent),
-		child: resolveRelationSelector(cwd, rel.child),
-		relation_type: rel.relation_type,
-		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+		parent: resolveRelationSelector(cwd, oriented.parent),
+		child: resolveRelationSelector(cwd, oriented.child),
+		relation_type: oriented.relation_type,
+		...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 	};
 	// Write-time edge-registry gate (TASK-062): reject an unregistered
 	// relation_type or a source/target-kind-violating endpoint BEFORE any write
@@ -1791,16 +1909,24 @@ export function replaceRelationByRef(
  */
 export function appendRelationsByRef(
 	cwd: string,
-	edges: { parent: string; child: string; relation_type: string; ordinal?: number }[],
+	edges: RelationAppendInput[],
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: number; skipped: number; edges: Edge[]; dryRun?: boolean } {
-	const resolved: Edge[] = edges.map((rel) => ({
-		parent: resolveRelationSelector(cwd, rel.parent),
-		child: resolveRelationSelector(cwd, rel.child),
-		relation_type: rel.relation_type,
-		...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-	}));
+	// Orient every input once against the loaded config (FGAP-113): a role-typed
+	// {primary,counter} edge maps to parent/child via role_direction; a bare
+	// {parent,child} append of an orientation-ambiguous role-bearing relation is
+	// rejected here (before any write), directing the author to --primary/--counter.
+	const config = loadConfig(cwd);
+	const resolved: Edge[] = edges.map((rel) => {
+		const oriented = orientAppendInput(config, rel);
+		return {
+			parent: resolveRelationSelector(cwd, oriented.parent),
+			child: resolveRelationSelector(cwd, oriented.child),
+			relation_type: oriented.relation_type,
+			...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
+		};
+	});
 	// Write-time edge-registry gate (TASK-062): every resolved edge in the batch
 	// is checked BEFORE any write (dryRun included). Build the validator once for
 	// the batch (config + active index built once) and reject if any edge fails —

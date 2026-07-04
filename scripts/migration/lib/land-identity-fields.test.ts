@@ -82,7 +82,7 @@ function buildScratchSubstrate(): string {
 	fs.writeFileSync(
 		path.join(sub, "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{

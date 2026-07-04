@@ -32,20 +32,29 @@ function makeProject(
 		issues?: Array<Record<string, unknown>>;
 		frameworkGaps?: Array<Record<string, unknown>>;
 		relations?: Array<{ parent: string; child: string; relation_type: string }>;
+		relation_types?: Array<Record<string, unknown>>;
+		// Extra block files keyed by block name → items; each is written as
+		// <block>.json = { [block]: items } so buildIdIndex resolves loc.block from
+		// the basename (block_kinds is empty in these fixtures).
+		blocks?: Record<string, Array<Record<string, unknown>>>;
 	} = {},
 ): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-lens-view-"));
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		block_kinds: [],
 		lenses: opts.lenses ?? [],
+		...(opts.relation_types ? { relation_types: opts.relation_types } : {}),
 		...(opts.hierarchy ? { hierarchy: opts.hierarchy } : {}),
 		...(opts.naming ? { naming: opts.naming } : {}),
 	};
 	fs.writeFileSync(path.join(dir, ".project", "config.json"), JSON.stringify(config, null, 2));
+	for (const [block, items] of Object.entries(opts.blocks ?? {})) {
+		fs.writeFileSync(path.join(dir, ".project", `${block}.json`), JSON.stringify({ [block]: items }, null, 2));
+	}
 	if (opts.issues) {
 		fs.writeFileSync(path.join(dir, ".project", "issues.json"), JSON.stringify({ issues: opts.issues }, null, 2));
 	}
@@ -381,6 +390,93 @@ describe("walkAncestorsByLens", () => {
 		tmpRoot = makeProject();
 		const result = walkAncestorsByLens(tmpRoot, "C", "blocks");
 		assert.deepEqual(result, []);
+	});
+});
+
+describe("walk wrong-orientation signal (FGAP-113)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// A DISJOINT-kind relation: source=phase, target=milestone.
+	const disjointFixture = () =>
+		makeProject({
+			relation_types: [
+				{
+					canonical_id: "phase_in_milestone",
+					display_name: "positioned in",
+					category: "membership",
+					source_kinds: ["phase"],
+					target_kinds: ["milestone"],
+					role_direction: "as_child",
+				},
+			],
+			blocks: { phase: [{ id: "PHASE-1" }], milestone: [{ id: "MILE-1" }] },
+			relations: [{ parent: "PHASE-1", child: "MILE-1", relation_type: "phase_in_milestone" }],
+		});
+
+	it("descendants walk from the TARGET-kind end of a disjoint relation THROWS naming walk-ancestors", () => {
+		tmpRoot = disjointFixture();
+		assert.throws(
+			() => walkLensDescendants(tmpRoot, "MILE-1", "phase_in_milestone"),
+			/TARGET endpoint[\s\S]*walk-ancestors/,
+		);
+	});
+
+	it("ancestors walk from the SOURCE-kind end of a disjoint relation THROWS naming context-walk-descendants", () => {
+		tmpRoot = disjointFixture();
+		assert.throws(
+			() => walkAncestorsByLens(tmpRoot, "PHASE-1", "phase_in_milestone"),
+			/SOURCE endpoint[\s\S]*context-walk-descendants/,
+		);
+	});
+
+	it("the CORRECTLY-oriented walk returns ids (no throw)", () => {
+		tmpRoot = disjointFixture();
+		// descendants from the SOURCE (phase) → the milestone it is positioned in.
+		assert.deepEqual(walkLensDescendants(tmpRoot, "PHASE-1", "phase_in_milestone"), ["MILE-1"]);
+		// ancestors from the TARGET (milestone) → the phase positioned in it.
+		assert.deepEqual(walkAncestorsByLens(tmpRoot, "MILE-1", "phase_in_milestone"), ["PHASE-1"]);
+	});
+
+	it("a SAME-kind relation returns [] (no throw) — structurally un-disambiguatable", () => {
+		tmpRoot = makeProject({
+			relation_types: [
+				{
+					canonical_id: "task_before_task",
+					display_name: "before",
+					category: "ordering",
+					source_kinds: ["tasks"],
+					target_kinds: ["tasks"],
+					role_direction: "as_parent",
+				},
+			],
+			blocks: { tasks: [{ id: "t1" }, { id: "t2" }] },
+			relations: [{ parent: "t1", child: "t2", relation_type: "task_before_task" }],
+		});
+		// Querying from EITHER end never throws for a same-kind relation.
+		assert.deepEqual(walkAncestorsByLens(tmpRoot, "t1", "task_before_task"), []); // t1 has no parents
+		assert.deepEqual(walkLensDescendants(tmpRoot, "t1", "task_before_task"), ["t2"]);
+	});
+
+	it("a WILDCARD-endpoint relation returns [] (no throw) — un-disambiguatable", () => {
+		tmpRoot = makeProject({
+			relation_types: [
+				{
+					canonical_id: "item_derived_from_item",
+					display_name: "derived from",
+					category: "data_flow",
+					source_kinds: ["*"],
+					target_kinds: ["*"],
+					role_direction: "as_child",
+				},
+			],
+			blocks: { tasks: [{ id: "t1" }], gaps: [{ id: "g1" }] },
+			relations: [{ parent: "t1", child: "g1", relation_type: "item_derived_from_item" }],
+		});
+		// "*" endpoints overlap → no orientation signal from either end.
+		assert.doesNotThrow(() => walkLensDescendants(tmpRoot, "g1", "item_derived_from_item"));
+		assert.deepEqual(walkLensDescendants(tmpRoot, "g1", "item_derived_from_item"), []);
 	});
 });
 

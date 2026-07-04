@@ -36,14 +36,16 @@ Update fields on an item in a project block array. Finds by predicate field matc
 </tool>
 
 <tool name="append-relation">
-Append a closure-table relation (edge: parent, child, relation_type, optional ordinal) to relations.json. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate after. Creates relations.json if absent.
+Append a closure-table relation (edge: relation_type, optional ordinal) to relations.json. Orient the edge with EITHER raw --parent/--child OR the role-typed --primary/--counter (which maps to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive. A bare --parent/--child append of a relation that is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap) is rejected — re-issue with --primary/--counter. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate after. Creates relations.json if absent.
 
-*Create a relation/edge between two items (parent→child under a relation_type)*
+*Create a relation/edge between two items (raw --parent/--child, or role-typed --primary/--counter mapped via role_direction)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `parent` | string | yes | Canonical id (or lens bin name) of the parent endpoint |
-| `child` | string | yes | Canonical id of the child endpoint |
+| `parent` | string | no | Parent-endpoint selector (canonical id / <alias>:<refname> / lens bin) — RAW orientation. Mutually exclusive with --primary/--counter. |
+| `child` | string | no | Child-endpoint selector — RAW orientation. Mutually exclusive with --primary/--counter. |
+| `primary` | string | no | Selector of the endpoint holding the relation's PRIMARY semantic role (ROLE-TYPED orientation; mapped to parent/child via the relation's declared role_direction). Requires --counter; the relation_type must declare role_direction. |
+| `counter` | string | no | Selector of the endpoint holding the relation's COUNTER role (ROLE-TYPED orientation). Requires --primary. |
 | `relation_type` | string | yes | Registered relation_type canonical_id / hierarchy edge type / lens id |
 | `ordinal` | integer | no | Optional sibling-ordering within (parent, relation_type) |
 | `dryRun` | boolean | no | Preview without writing relations.json |
@@ -63,7 +65,7 @@ Remove the single closure-table relation (edge) matching parent+child+relation_t
 </tool>
 
 <tool name="replace-relation">
-Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of the new edge. Reference integrity is NOT checked here — run context-validate after.
+Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of the new edge. This op takes RAW parent/child (old + new) and BYPASSES the write-time orientation gate that append-relation applies — it writes the endpoints verbatim, so it is the affordance for re-orienting an existing edge; reference integrity is NOT checked here — run context-validate after.
 
 *Atomically swap one relation/edge for another in a single write*
 
@@ -80,13 +82,13 @@ Atomically replace one closure-table relation with another in a SINGLE write (no
 </tool>
 
 <tool name="append-relations">
-Append MANY closure-table relations to relations.json in a single write. Each edge is an object { parent, child, relation_type, ordinal? }. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate after. Creates relations.json if absent.
+Append MANY closure-table relations to relations.json in a single write. Each edge is an object with { relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair (mapped to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive per edge, and a bare { parent, child } for an orientation-ambiguous role-bearing relation rejects the whole batch before any write. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate after. Creates relations.json if absent.
 
-*Create many relations/edges between items in one write*
+*Create many relations/edges between items in one write (raw or role-typed per edge)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `edges` | unknown | yes | JSON array of { parent, child, relation_type, ordinal? } selector objects (parent/child are id/lens-bin selectors) |
+| `edges` | unknown | yes | JSON array of edge objects. Each edge is { relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair (mapped to parent/child via the relation's declared role_direction); the two orientation pairs are mutually exclusive per edge. Selectors are id / <alias>:<refname> / lens-bin. |
 | `dryRun` | boolean | no | Preview without writing relations.json |
 </tool>
 
@@ -561,7 +563,7 @@ Project a config-declared lens (config.lenses[]) as a binned item-view. Without 
 </tool>
 
 <tool name="context-walk-descendants">
-Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent).
+Walk closure-table descendants of a parent id under a given relation_type. Returns string[] of descendant ids (may be empty if no children or relations.json absent). For a DISJOINT-kind relation, querying from the wrong (target-kind) end THROWS naming walk-ancestors instead of silently returning []; same-kind / wildcard relations return [] honestly.
 
 *Walk closure-table descendants under a relation_type*
 
@@ -572,7 +574,7 @@ Walk closure-table descendants of a parent id under a given relation_type. Retur
 </tool>
 
 <tool name="walk-ancestors">
-Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent).
+Walk closure-table ancestors of an item id under a given relation_type — reverse-direction counterpart to context-walk-descendants. Returns string[] of ancestor ids (may be empty if no parents or relations.json absent). For a DISJOINT-kind relation, querying from the wrong (source-kind) end THROWS naming context-walk-descendants instead of silently returning []; same-kind / wildcard relations return [] honestly.
 
 *Walk closure-table ancestors under a relation_type*
 
@@ -818,6 +820,8 @@ Schemas are draft-07 JSON-Schema, one per block kind, under `<substrate-dir>/sch
 Lenses are named projections over a target block. A lens declares `id`, `target` (block name), `relation_type`, `derived_from_field` (optional — synthesizes edges from a per-item field instead of requiring authored edges), `bins` (named groupings), and `render_uncategorized`.
 
 Edges live in `<substrate-dir>/relations.json` as a closure table — each row is `{ parent, child, relation_type, ordinal? }`. `relation_type` is a lens id, a hierarchy edge type, or a registered `relation_types[].canonical_id`; `ordinal` orders siblings within `(parent, relation_type)`. Endpoints (both `parent` and `child`) are dual-form: a legacy string (a canonical id, a lens bin name, or an `<alias>:<refname>` cross-substrate sentinel; disambiguation lives in `validateRelations`), OR a structured item endpoint `{ kind: "item", oid, refname?, substrate_id?, content_hash? }` where a present `substrate_id` marks a foreign endpoint and `content_hash` is carried for drift detection, OR a structured lens-bin endpoint `{ kind: "lens_bin", bin }` — a virtual parent that never resolves to an item.
+
+Edge orientation is declared once, read everywhere. Storage is uniform (`edge.parent` = source endpoint, `edge.child` = target endpoint); which endpoint holds a relation's PRIMARY semantic role (prerequisite/predecessor/gate for `ordering`, container for `membership`, source for `data_flow`) is `config.relation_types[].role_direction` — `as_parent` (primary at `edge.parent`) or `as_child` (primary at `edge.child`), optional and set only for relations with a per-role consumer. The `primaryEndpoint(edge, role_direction)` / `counterEndpoint(edge, role_direction)` helpers read the endpoint under that declaration, and the blocked/ready deriver (`state_derivation.blocked_by` gate-vs-dependency split), the milestone rollup, the derived roadmap (precedes + membership), and `promote-item`'s lineage edge all route through it rather than hardcoding parent/child. Authoring: `append-relation` / `append-relations` take EITHER raw `--parent`/`--child` OR role-typed `--primary`/`--counter` (mapped to parent/child via `role_direction`; mutually exclusive) — a bare `--parent`/`--child` append of a relation that is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap, incl. `"*"`) is rejected in favor of `--primary`/`--counter`, while a role-less or disjoint-kind relation appends bare unchanged. Reading: `context-walk-descendants` / `walk-ancestors` on a disjoint-kind relation queried from the wrong endpoint THROWS naming the correct op instead of returning an ambiguous `[]`. `replace-relation` writes raw endpoints verbatim (bypassing the orientation gate) — the re-orient affordance; run `context-validate` after.
 
 The single-form rule: ALL inter-item relationships are closure-table edges. Embedded nested id-bearing arrays and FK-as-field are forbidden — a nested id-bearing array in a schema is flagged `nested_id_bearing_array` by `validateContext` with the remediation "promote to a top-level entity + membership edge". Containment is a membership edge carrying `ordinal`; the nested id-bearing array → top-level entity block + ordinal-bearing membership edges promotion is performed by the canonicalizer (the context-dir-migration `canonicalizeSubstrate` machinery, run as a repo-side migration script under `scripts/migration/` — not a packaged pi-context tool). (Distinct from the `promote-item` tool, which is a cross-substrate derivation: it promotes a substrate item INTO another registered substrate as a new content-addressed item, recording an `item_derived_from_item` lineage edge in the destination.)
 

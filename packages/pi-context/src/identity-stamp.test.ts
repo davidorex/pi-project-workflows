@@ -42,7 +42,7 @@ function makeScratch(opts: { withSubstrateId?: boolean; identityFields?: boolean
 } {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "identity-stamp-"));
 	fs.mkdirSync(path.join(dir, "schemas"), { recursive: true });
-	const config: Record<string, unknown> = { schema_version: "1.7.0", block_kinds: [] };
+	const config: Record<string, unknown> = { schema_version: "1.8.0", block_kinds: [] };
 	if (opts.withSubstrateId !== false) config.substrate_id = SUB;
 	fs.writeFileSync(path.join(dir, "config.json"), JSON.stringify(config, null, 2), "utf-8");
 

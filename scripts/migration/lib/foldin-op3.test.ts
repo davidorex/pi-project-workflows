@@ -60,7 +60,7 @@ function writeSubstrate(
 	const dir = path.join(cwd, dirName);
 	fs.mkdirSync(path.join(dir, "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: dirName,
 		block_kinds: [
 			{

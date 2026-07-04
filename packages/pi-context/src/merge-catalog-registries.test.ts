@@ -37,7 +37,7 @@ function lens(id: string, bins = ["a"]) {
 }
 
 function cfg(partial: Partial<ConfigBlock>): ConfigBlock {
-	return { schema_version: "1.7.0", root: ".project", block_kinds: [], ...partial } as ConfigBlock;
+	return { schema_version: "1.8.0", root: ".project", block_kinds: [], ...partial } as ConfigBlock;
 }
 
 describe("mergeCatalogRegistries (TASK-038)", () => {

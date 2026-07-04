@@ -156,7 +156,8 @@
       ],
       "target_kinds": [
         "decisions"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "decision_relates_to_decision",
@@ -244,7 +245,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "feature_gated_by_item",
@@ -255,7 +257,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "feature_resolves_issue",
@@ -288,7 +291,8 @@
       ],
       "target_kinds": [
         "story"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "story_gated_by_item",
@@ -299,7 +303,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "task_depends_on_task",
@@ -310,7 +315,8 @@
       ],
       "target_kinds": [
         "tasks"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "requirement_depends_on_requirement",
@@ -321,7 +327,8 @@
       ],
       "target_kinds": [
         "requirements"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "research_supersedes_research",
@@ -332,7 +339,8 @@
       ],
       "target_kinds": [
         "research"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "research_informs_item",
@@ -387,7 +395,8 @@
       ],
       "target_kinds": [
         "phase"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "feature_contains_story",
@@ -398,7 +407,8 @@
       ],
       "target_kinds": [
         "story"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "rationale_supports_decision",
@@ -490,7 +500,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "item_derived_from_item",
@@ -501,7 +512,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "decision_derived_from_item",
@@ -512,7 +524,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "decision_escalates_underdetermined",
@@ -567,7 +580,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "gap_relates_to_gap",
@@ -589,7 +603,8 @@
       ],
       "target_kinds": [
         "milestone"
-      ]
+      ],
+      "role_direction": "as_child"
     },
     {
       "canonical_id": "story_includes_item",
@@ -600,7 +615,8 @@
       ],
       "target_kinds": [
         "*"
-      ]
+      ],
+      "role_direction": "as_parent"
     },
     {
       "canonical_id": "task_addresses_issue",
@@ -633,7 +649,8 @@
       ],
       "target_kinds": [
         "milestone"
-      ]
+      ],
+      "role_direction": "as_parent"
     }
   ],
   "lenses": [

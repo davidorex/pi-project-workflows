@@ -213,7 +213,7 @@ function buildSyntheticCwd(
 
 	// config.json — ≥2 block_kinds (each carrying the full required set incl. prefix), NO substrate_id, one registered relation_type. Schema-valid against config.schema.json.
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".context",
 		block_kinds: [
 			{

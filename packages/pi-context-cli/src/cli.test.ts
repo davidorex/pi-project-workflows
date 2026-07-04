@@ -658,7 +658,7 @@ function seedTasksSubstrate(): string {
 	writeFileSync(
 		path.join(sub, "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			// A schema-valid block_kinds entry: config.schema.json requires
 			// canonical_id/display_name/prefix/schema_path/array_key/data_path and
@@ -709,7 +709,7 @@ function seedOverCapTasksSubstrate(): string {
 	writeFileSync(
 		path.join(sub, "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [
 				{
@@ -1026,7 +1026,7 @@ function makeBothDivergedTasksSubstrate(): string {
 		path.join(dir, ".project", "config.json"),
 		JSON.stringify(
 			{
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [],
 				lenses: [],
@@ -1097,7 +1097,7 @@ function makeBlockedTasksSubstrate(): string {
 		path.join(dir, ".project", "config.json"),
 		JSON.stringify(
 			{
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [],
 				lenses: [],
@@ -1338,7 +1338,7 @@ test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ 
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -1649,7 +1649,7 @@ test("CLI --json: a schema-invalid append surfaces a field-named validation erro
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -1719,7 +1719,7 @@ test("CLI read-schema --path at an object node returns the full subtree, not a 5
 		mkdirSync(path.join(sub, "schemas"), { recursive: true });
 		writeFileSync(
 			path.join(sub, "config.json"),
-			JSON.stringify({ schema_version: "1.7.0", root: ".project", block_kinds: [] }),
+			JSON.stringify({ schema_version: "1.8.0", root: ".project", block_kinds: [] }),
 		);
 		// An object node (`properties.tasks.items`) that carries an array child (`required`)
 		// PLUS a sibling object (`properties`) — paging the node would lose the siblings.
@@ -1830,7 +1830,7 @@ test("CLI --show-schema on a block whose schema is absent exits 3 (FGAP-022)", a
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -1909,7 +1909,7 @@ test("CLI append-block-item --dry-run with a schema-invalid item exits 5 and wri
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -1971,7 +1971,7 @@ test("CLI append-block-item --dry-run --autoId names the prospective id (FGAP-02
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -2152,7 +2152,7 @@ test("CLI autoId append against a block whose schema file is absent exits 3 (sch
 		writeFileSync(
 			path.join(sub, "config.json"),
 			JSON.stringify({
-				schema_version: "1.7.0",
+				schema_version: "1.8.0",
 				root: ".project",
 				block_kinds: [
 					{
@@ -2291,7 +2291,7 @@ function seedLensSubstrate(): { cwd: string; lensId: string; bin: string } {
 	writeFileSync(
 		path.join(sub, "config.json"),
 		JSON.stringify({
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".project",
 			block_kinds: [],
 			lenses: [

@@ -27,7 +27,7 @@ describe("STATUS_VOCABULARY (default registry resolved with no config overrides)
 		fs.mkdirSync(path.join(dir, ".project"), { recursive: true });
 		fs.writeFileSync(
 			path.join(dir, ".project", "config.json"),
-			JSON.stringify({ schema_version: "1.7.0", root: ".project", lenses: [], block_kinds: [] }, null, 2),
+			JSON.stringify({ schema_version: "1.8.0", root: ".project", lenses: [], block_kinds: [] }, null, 2),
 		);
 		const result = resolveStatusVocabulary(dir);
 		fs.rmSync(dir, { recursive: true, force: true });
@@ -299,6 +299,12 @@ interface RoadmapFixture {
 	naming?: Record<string, string>;
 	status_buckets?: Record<string, StatusBucket>;
 	display_strings?: Record<string, string>;
+	// Optional relation_types registry — supplied only when a test needs to declare
+	// a non-default role_direction to exercise the config-driven roadmap orientation
+	// (FGAP-113). Absent → no registry, so every roadmap relation falls back to its
+	// stock orientation (milestone_precedes_milestone as_parent, the *_positioned_in_*
+	// membership relations as_child) and output is byte-identical to the pre-metadata deriver.
+	relation_types?: Array<Record<string, unknown>>;
 }
 
 function makeRoadmapProject(fixture: RoadmapFixture): string {
@@ -306,7 +312,7 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 	const config: Record<string, unknown> = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".project",
 		lenses: [],
 		block_kinds: [],
@@ -330,6 +336,7 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 			head_size: 15,
 		},
 	};
+	if (fixture.relation_types) config.relation_types = fixture.relation_types;
 	if (fixture.naming) config.naming = fixture.naming;
 	if (fixture.status_buckets) config.status_buckets = fixture.status_buckets;
 	if (fixture.display_strings) config.display_strings = fixture.display_strings;
@@ -428,6 +435,50 @@ describe("loadRoadmap", () => {
 		const result = loadRoadmap(roadmapTmpRoot);
 		assert.ok(!("error" in result));
 		assert.deepEqual(result, { milestones: [], order: [], cycles: [], edges: [] });
+	});
+
+	it("orientation is config-driven (FGAP-113): flipping role_direction reverses the precedes order and the membership side", () => {
+		// Declare the roadmap relations with the OPPOSITE role_direction from their
+		// stock fallbacks — precedes as_child (successor at parent) and membership
+		// as_parent (container at parent) — proving the roadmap reads orientation
+		// from config, not a hardcoded parent/child pick.
+		roadmapTmpRoot = makeRoadmapProject({
+			relation_types: [
+				{
+					canonical_id: "milestone_precedes_milestone",
+					display_name: "precedes",
+					category: "ordering",
+					role_direction: "as_child",
+				},
+				{
+					canonical_id: "phase_positioned_in_milestone",
+					display_name: "positioned in",
+					category: "membership",
+					role_direction: "as_parent",
+				},
+			],
+			milestones: [
+				{ id: "MILE-001", name: "One", status: "planned" },
+				{ id: "MILE-002", name: "Two", status: "planned" },
+			],
+			phases: [{ id: "PHASE-A", name: "A", intent: "a", status: "planned" }],
+			relations: [
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "milestone_precedes_milestone" },
+				{ parent: "PHASE-A", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+			],
+		});
+		const result = loadRoadmap(roadmapTmpRoot);
+		assert.ok(!("error" in result));
+		// as_child precedes: the CHILD (MILE-002) is the predecessor, so it topo-orders
+		// FIRST — the reverse of the as_parent fallback (which would order 001, 002).
+		assert.deepEqual(result.order, ["MILE-002", "MILE-001"]);
+		// as_parent membership: the CONTAINER is edge.parent (PHASE-A, not a milestone),
+		// so MILE-001 owns zero member phases — the reverse of the as_child fallback
+		// (which would give MILE-001 the phase PHASE-A).
+		const m1 = result.milestones.find((m) => m.id === "MILE-001");
+		assert.ok(m1);
+		assert.equal(m1.phaseCount, 0);
+		assert.equal(m1.phases.length, 0);
 	});
 
 	it("loads a linear 3-milestone chain with per-milestone phase/task rollups and both reached states", () => {

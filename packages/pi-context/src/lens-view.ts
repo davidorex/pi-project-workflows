@@ -9,6 +9,7 @@
  */
 import { readBlock } from "./block-api.js";
 import {
+	type ContextData,
 	type CurationSuggestion,
 	type Edge,
 	edgesForLens,
@@ -24,7 +25,7 @@ import {
 	walkAncestors,
 	walkDescendants,
 } from "./context.js";
-import { availableBlocks } from "./context-sdk.js";
+import { availableBlocks, buildIdIndex } from "./context-sdk.js";
 
 export interface LoadedLensView {
 	lens: LensSpec;
@@ -258,8 +259,56 @@ export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { erro
  * Returns the descendant id list (may be empty if parentId has no children
  * under the relation_type, or if relations.json is absent).
  */
+/**
+ * FGAP-113 read-side wrong-orientation signal. A closure-table walk under a
+ * DISJOINT-kind relation (its `source_kinds` and `target_kinds` share no kind and
+ * neither is the `"*"` wildcard) is meaningful only from the correct endpoint: a
+ * DESCENDANTS walk starts from a SOURCE-kind id (the `edge.parent` / from side); an
+ * ANCESTORS walk starts from a TARGET-kind id (the `edge.child` / to side). When
+ * the queried id resolves to a block sitting EXCLUSIVELY on the wrong end for the
+ * requested direction, THROW naming the correct op — rather than silently
+ * returning `[]`, which is indistinguishable from "no such edges". Anything not
+ * disjoint (an unregistered relation, an unconstrained/`"*"` endpoint, or
+ * overlapping source/target kinds) is structurally un-disambiguatable, as is an id
+ * that does not resolve to a block, so no signal fires (the walk returns `[]` as
+ * before). `find-references both` is symmetric and carries no signal.
+ */
+function assertWalkOrientation(
+	cwd: string,
+	ctx: ContextData,
+	queriedId: string,
+	relationType: string,
+	direction: "descendants" | "ancestors",
+): void {
+	const rt = ctx.config?.relation_types?.find((r) => r.canonical_id === relationType);
+	const source = rt?.source_kinds;
+	const target = rt?.target_kinds;
+	// Not disjoint-kind → un-disambiguatable, no signal.
+	if (!source || !target) return;
+	if (source.includes("*") || target.includes("*")) return;
+	if (source.some((k) => target.includes(k))) return;
+	// Disjoint kinds: resolve the queried id's block; an unresolved id stays honest [].
+	const block = buildIdIndex(cwd).byRefname.get(queriedId)?.block;
+	if (block === undefined) return;
+	const onSource = source.includes(block);
+	const onTarget = target.includes(block);
+	if (direction === "descendants" && onTarget && !onSource) {
+		throw new Error(
+			`'${queriedId}' (kind '${block}') is the TARGET endpoint of the disjoint-kind relation '${relationType}', ` +
+				`but walk-descendants traverses from its SOURCE endpoint. Use the walk-ancestors op to traverse ancestors from '${queriedId}'.`,
+		);
+	}
+	if (direction === "ancestors" && onSource && !onTarget) {
+		throw new Error(
+			`'${queriedId}' (kind '${block}') is the SOURCE endpoint of the disjoint-kind relation '${relationType}', ` +
+				`but walk-ancestors traverses from its TARGET endpoint. Use the context-walk-descendants op to traverse descendants from '${queriedId}'.`,
+		);
+	}
+}
+
 export function walkLensDescendants(cwd: string, parentId: string, relationType: string): string[] {
 	const ctx = loadContext(cwd);
+	assertWalkOrientation(cwd, ctx, parentId, relationType, "descendants");
 	return walkDescendants(parentId, relationType, ctx.relations);
 }
 
@@ -272,6 +321,7 @@ export function walkLensDescendants(cwd: string, parentId: string, relationType:
  */
 export function walkAncestorsByLens(cwd: string, itemId: string, relationType: string): string[] {
 	const ctx = loadContext(cwd);
+	assertWalkOrientation(cwd, ctx, itemId, relationType, "ancestors");
 	return walkAncestors(itemId, relationType, ctx.relations);
 }
 

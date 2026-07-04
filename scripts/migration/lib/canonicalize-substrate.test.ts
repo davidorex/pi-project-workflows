@@ -177,7 +177,7 @@ function makeFixture(): { cwd: string; work: string } {
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
@@ -283,7 +283,7 @@ function makeSynthIntermediateFixture(): { cwd: string; work: string } {
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
@@ -964,7 +964,7 @@ function makeRealShapeFixture(): { cwd: string; work: string } {
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
@@ -1316,7 +1316,7 @@ function makeOrphanFixture(): { cwd: string; work: string } {
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		// conventions deliberately ABSENT from block_kinds (the orphan).
@@ -1615,7 +1615,7 @@ function makeLayerPlansFixture(opts?: { withData?: boolean }): { cwd: string; wo
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		block_kinds: [
@@ -1823,7 +1823,7 @@ function makeEmptySchemaFixture(
 	const work = path.join(cwd, ".work");
 	fs.mkdirSync(path.join(work, "schemas"), { recursive: true });
 	const config = {
-		schema_version: "1.7.0",
+		schema_version: "1.8.0",
 		root: ".work",
 		substrate_id: uniqueSubstrateId(),
 		block_kinds: [

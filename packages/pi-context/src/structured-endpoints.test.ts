@@ -188,7 +188,7 @@ describe("structured-endpoints: lens-bin never reaches idIndex.get", () => {
 
 	it("validateRelations validates a lens_bin parent as a bin (never as an item)", () => {
 		const cfg = {
-			schema_version: "1.7.0",
+			schema_version: "1.8.0",
 			root: ".context",
 			block_kinds: [
 				{

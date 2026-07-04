@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/context-contracts",
-  "version": "1.0.1",
-  "title": "Context contracts",
-  "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
+  "$id": "pi-context://schemas/phase",
+  "version": "2.0.1",
+  "title": "Phases",
+  "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
   "type": "object",
   "required": [
-    "contracts"
+    "phases"
   ],
   "additionalProperties": false,
   "properties": {
@@ -14,77 +14,106 @@
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "contracts": {
+    "phases": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
-          "unit_kind",
-          "bundle_relation_types",
-          "created_by",
-          "created_at"
+          "name",
+          "intent",
+          "status"
         ],
         "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^CTX-\\d{3,}$"
+            "pattern": "^PHASE-[A-Z0-9-]+$",
+            "description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
           },
-          "unit_kind": {
+          "name": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          },
+          "goal": {
             "type": "string",
-            "description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (type tags are a carve-out from the edges-only constraint on inter-item relationships)."
+            "description": "What is true after this phase that was not true before"
           },
-          "bundle_relation_types": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "in-progress",
+              "completed"
+            ]
+          },
+          "success_criteria": {
             "type": "array",
             "items": {
               "type": "object",
               "required": [
-                "relation_type",
-                "direction",
-                "max_depth"
+                "criterion",
+                "verify_method"
               ],
-              "additionalProperties": false,
               "properties": {
-                "relation_type": {
+                "criterion": {
                   "type": "string"
                 },
-                "direction": {
+                "verify_method": {
                   "type": "string",
                   "enum": [
-                    "in",
-                    "out",
-                    "both"
+                    "command",
+                    "inspect",
+                    "human"
                   ]
-                },
-                "max_depth": {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                "applicability_predicate": {
-                  "type": "string",
-                  "description": "Optional relevance-scoping predicate; reserved for a future scoping language."
                 }
               }
             }
           },
-          "description": {
-            "type": "string"
+          "specs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "number",
+                "name",
+                "intent",
+                "status"
+              ],
+              "properties": {
+                "number": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "intent": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "in-progress",
+                    "completed"
+                  ]
+                },
+                "acceptance_criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
           },
-          "notes": {
-            "type": "string"
-          },
-          "created_by": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "modified_by": {
-            "type": "string"
-          },
-          "modified_at": {
-            "type": "string"
+          "artifacts_produced": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "oid": {
             "type": "string",

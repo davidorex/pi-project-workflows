@@ -1,81 +1,40 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/verification",
+  "$id": "pi-context://schemas/rationale",
   "version": "1.0.1",
-  "title": "Verification",
-  "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
+  "title": "Design Rationale",
+  "description": "The deeper reasoning behind decisions — why this approach over others, what constraints drove the choice, what tradeoffs were accepted.",
   "type": "object",
   "required": [
-    "verifications"
+    "rationales"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "verifications": {
+    "rationales": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
-          "status",
-          "method"
+          "title",
+          "narrative"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^VER-\\d{3,}$"
+            "pattern": "^RAT-\\d{3}$"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "passed",
-              "failed",
-              "partial",
-              "skipped"
-            ]
-          },
-          "method": {
-            "type": "string",
-            "enum": [
-              "command",
-              "inspect",
-              "test"
-            ]
-          },
-          "evidence": {
-            "type": "string",
-            "description": "What was checked and what was found"
-          },
-          "timestamp": {
+          "title": {
             "type": "string"
           },
-          "criteria_results": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "criterion",
-                "status"
-              ],
-              "properties": {
-                "criterion": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "passed",
-                    "failed",
-                    "skipped"
-                  ]
-                },
-                "evidence": {
-                  "type": "string"
-                }
-              }
-            }
+          "narrative": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "integer"
           },
           "oid": {
             "type": "string",

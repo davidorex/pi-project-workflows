@@ -1,81 +1,87 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/verification",
+  "$id": "pi-context://schemas/requirements",
   "version": "1.0.1",
-  "title": "Verification",
-  "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
+  "title": "Requirements",
+  "description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
   "type": "object",
   "required": [
-    "verifications"
+    "requirements"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "verifications": {
+    "requirements": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
+          "description",
+          "type",
           "status",
-          "method"
+          "priority"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^VER-\\d{3,}$"
+            "pattern": "^REQ-\\d{3,}$"
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "functional",
+              "non-functional",
+              "constraint",
+              "integration"
+            ]
           },
           "status": {
             "type": "string",
             "enum": [
-              "passed",
-              "failed",
-              "partial",
-              "skipped"
+              "proposed",
+              "accepted",
+              "deferred",
+              "implemented",
+              "verified"
             ]
           },
-          "method": {
+          "priority": {
             "type": "string",
             "enum": [
-              "command",
-              "inspect",
-              "test"
+              "must",
+              "should",
+              "could",
+              "wont"
             ]
           },
-          "evidence": {
-            "type": "string",
-            "description": "What was checked and what was found"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "criteria_results": {
+          "acceptance_criteria": {
             "type": "array",
             "items": {
-              "type": "object",
-              "required": [
-                "criterion",
-                "status"
-              ],
-              "properties": {
-                "criterion": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "passed",
-                    "failed",
-                    "skipped"
-                  ]
-                },
-                "evidence": {
-                  "type": "string"
-                }
+              "type": "string",
+              "x-prompt-budget": {
+                "tokens": 1000,
+                "words": 800
               }
             }
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent",
+              "analysis"
+            ],
+            "description": "How this requirement was created"
           },
           "oid": {
             "type": "string",

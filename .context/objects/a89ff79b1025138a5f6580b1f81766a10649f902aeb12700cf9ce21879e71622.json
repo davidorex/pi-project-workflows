@@ -1,87 +1,102 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/requirements",
+  "$id": "pi-context://schemas/issues",
   "version": "1.0.1",
-  "title": "Requirements",
-  "description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
+  "title": "Issues",
+  "description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
   "type": "object",
   "required": [
-    "requirements"
+    "issues"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "requirements": {
+    "issues": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
-          "description",
-          "type",
+          "title",
+          "body",
+          "location",
           "status",
-          "priority"
+          "category",
+          "priority",
+          "package"
         ],
+        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^REQ-\\d{3,}$"
+            "pattern": "^issue-\\d{3}$"
           },
-          "description": {
+          "title": {
             "type": "string",
+            "description": "Scannable one-liner (GitHub issue title pattern)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Full detail and context for downstream composition",
             "x-prompt-budget": {
               "tokens": 1000,
               "words": 800
             }
           },
-          "type": {
+          "location": {
             "type": "string",
-            "enum": [
-              "functional",
-              "non-functional",
-              "constraint",
-              "integration"
-            ]
+            "description": "File path + line number, e.g. src/module/file.ts:NNN"
           },
           "status": {
             "type": "string",
             "enum": [
-              "proposed",
-              "accepted",
-              "deferred",
-              "implemented",
-              "verified"
+              "open",
+              "resolved",
+              "deferred"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "primitive",
+              "issue",
+              "cleanup",
+              "capability",
+              "composition"
             ]
           },
           "priority": {
             "type": "string",
             "enum": [
-              "must",
-              "should",
-              "could",
-              "wont"
+              "low",
+              "medium",
+              "high",
+              "critical"
             ]
           },
-          "acceptance_criteria": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "x-prompt-budget": {
-                "tokens": 1000,
-                "words": 800
-              }
-            }
+          "package": {
+            "type": "string",
+            "description": "Which package/module this issue touches (e.g. package-a, package-b)"
           },
           "source": {
             "type": "string",
             "enum": [
               "human",
               "agent",
-              "analysis"
+              "monitor",
+              "workflow"
             ],
-            "description": "How this requirement was created"
+            "description": "How this issue was created"
+          },
+          "resolved_by": {
+            "type": "string",
+            "description": "Commit message or reference if resolved"
+          },
+          "resolved_at": {
+            "type": "string",
+            "description": "ISO-8601 timestamp when the issue was resolved"
           },
           "oid": {
             "type": "string",
@@ -101,5 +116,25 @@
         }
       }
     }
+  },
+  "x-lifecycle": {
+    "field": "status",
+    "states": [
+      "open",
+      "resolved",
+      "deferred"
+    ],
+    "transitions": [
+      {
+        "from": "open",
+        "to": "resolved",
+        "required_authority": "any"
+      },
+      {
+        "from": "open",
+        "to": "deferred",
+        "required_authority": "user"
+      }
+    ]
   }
 }

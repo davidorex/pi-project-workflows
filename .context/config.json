@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.8.0",
   "block_kinds": [
     {
       "canonical_id": "decisions",
@@ -948,74 +948,74 @@
   "installed_from": {
     "catalog": "@davidorex/pi-context@0.31.0",
     "catalog_version": "1.0.0",
-    "at": "2026-06-21T05:42:10.857Z",
+    "at": "2026-07-04T22:39:49.455Z",
     "assets": {
       "decisions": {
-        "content_hash": "f13db02aa4831b06b913405b7b21f2290c6f62ebc46c9ad1068cbbf62469c2d4",
+        "content_hash": "4f60e5b3c67ebdea2bac98b1bb3cb2b3ecccb516b68ab774f52a98713d9d5680",
         "version": "1.0.1"
       },
       "framework-gaps": {
-        "content_hash": "e31fd9ee2cf25d22113082a46439ef2db237be6ea8df48b93eb63d63d89e431c",
+        "content_hash": "de2c8ce89703847829364ae00dacbb681c610e7fa2ada58bbf2e3b436dabec89",
         "version": "1.1.1"
       },
       "tasks": {
-        "content_hash": "356672360541a4ab5d136514a35060a970b92f9cb40202ae133b5e81778bb809",
+        "content_hash": "6b9f21d346f4d89fcca2805bd9776d2da0da5a0098e4874f5e2d6685d952cf07",
         "version": "1.0.1"
       },
       "verification": {
-        "content_hash": "c61cb09a2a2f7eb55fc3abc43313a70560507db4883e1562dd19e01ac558fd89",
+        "content_hash": "6f913ea57d36623adbe1877dec24e18e805c6f461a169b98b0daebe921d66555",
         "version": "1.0.1"
       },
       "issues": {
-        "content_hash": "72e5f253393b32723905408facdf3a95340db1ec785c1fa09c79e41a93225db8",
+        "content_hash": "a89ff79b1025138a5f6580b1f81766a10649f902aeb12700cf9ce21879e71622",
         "version": "1.0.1"
       },
       "features": {
-        "content_hash": "e42a8d91a27a9d57c003596add1efc985369f0fcf9aa6f03460c5375d7fdfb87",
+        "content_hash": "79a1069ea11113a0e7e053f69570bf6f519cdeca53c60e5802136197d6fe2f00",
         "version": "1.0.1"
       },
       "research": {
-        "content_hash": "938354e06f60f756df238edc6512cc927dc11df7642afa02bc2dce0ee4d5f4d8",
+        "content_hash": "dea88db461cfbb9c7925a7a349c3053a11f17625d4c6b61f47bb5a830edc8531",
         "version": "1.0.1"
       },
       "rationale": {
-        "content_hash": "b1d0af8916f25e9481d6076d90b7b612687b334b1d1d27149f1c0c7d96617ed4",
+        "content_hash": "88f896564f42c9596442f191e38ece4f8b2ebc076122f74ad199486b0dc28e17",
         "version": "1.0.1"
       },
       "spec-reviews": {
-        "content_hash": "d0172db540175847f93e070f35a9f656e9315147d832085006b8fedbada1636a",
+        "content_hash": "262b0d4ffda8dc4760b41ded7e0ef52c5ae23cb1e3e42eb72578801e7471267b",
         "version": "1.0.1"
       },
       "layer-plans": {
-        "content_hash": "a1d26098b0280ce5fb63f0f6531c1fbc31f98940dac9535e1c5dfc938031e2cd",
+        "content_hash": "375131c8f824d3bc77244d4dd96c20e88f1242c5e8bf85bfa93d030dcd7164ae",
         "version": "1.0.1"
       },
       "requirements": {
-        "content_hash": "cf5f899797499c5ab9d4ba5a8eaabafc17b0d4e8da196245c1d4fd1fef734403",
+        "content_hash": "5bc545af8c0c7a84f060b25d81ac433a57823770f281af35373b5197a14b9797",
         "version": "1.0.1"
       },
       "conventions": {
-        "content_hash": "7b942691280b6e93b84f7735cbe0cdb61db00f49f05ca40527ce70a387a43e56",
+        "content_hash": "00c4af076955d6071e21169f0f09290aea06861c5010ee94ee3947a1728ea98a",
         "version": "1.0.1"
       },
       "context-contracts": {
-        "content_hash": "71fef26b0523bc4fa91f6fcc94047919fdbb0274a96f19f4508eabd14c6d8432",
+        "content_hash": "429f3fef9ac1869dd28513cbc149aafdcef38fc585e98cdd7a8dbb3488a0436d",
         "version": "1.0.1"
       },
       "phase": {
-        "content_hash": "b41a48cc8acb81090874cfd4e435eee97e30fe774943a23c30999c5e07a7fe4e",
+        "content_hash": "2b937001ea7b309b6fccd31893855084d3acb930ad4ce5044b4a0810f5f09f56",
         "version": "2.0.1"
       },
       "story": {
-        "content_hash": "c1e10bd05841c6617cb6992033133830355c682cd49e737438a1bb29cb851a3c",
+        "content_hash": "cddb136f5bae78b93c4dce8125660f505053d79da79cb29b9c477c3896500c35",
         "version": "1.0.1"
       },
       "work-orders": {
-        "content_hash": "200a6757d824b8d9e1c7cd3300d13b9cecee0184813f1a824a691504aa348b9d",
+        "content_hash": "47f7d2b3c184be802fa8c28319cc0bc9e2079ff5771b0aaeb5f52a3b0548e0a2",
         "version": "1.0.1"
       },
       "milestone": {
-        "content_hash": "7cec49ad5b3f51b48a9b0a42ff8ab2dcb3edac6c849f9b755890ac2b8ea33c4a",
+        "content_hash": "78c936c407a0b62a0a4a966132b49c1ad1cb1c9e7976cbfd20303cdc5c24d181",
         "version": "1.0.0"
       }
     }

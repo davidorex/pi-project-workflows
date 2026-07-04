@@ -1,20 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/story",
+  "$id": "pi-context://schemas/features",
   "version": "1.0.1",
-  "title": "Stories",
-  "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
+  "title": "Features",
+  "description": "L3 Work layer. Features with their own scope, acceptance criteria, and status lifecycle. A feature is atomically composable into prompt context as a self-contained unit of work.",
   "type": "object",
   "required": [
-    "stories"
+    "features"
   ],
-  "additionalProperties": false,
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "stories": {
+    "features": {
       "type": "array",
       "items": {
         "type": "object",
@@ -22,13 +21,17 @@
         "required": [
           "id",
           "title",
-          "status"
+          "status",
+          "layer",
+          "description",
+          "acceptance_criteria",
+          "created_by",
+          "created_at"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^STORY-\\d{3,}$",
-            "description": "Stable canonical id; STORY-NNN (3+ digits)."
+            "pattern": "^FEAT-\\d{3}$"
           },
           "title": {
             "type": "string"
@@ -37,15 +40,32 @@
             "type": "string",
             "enum": [
               "proposed",
-              "ready",
+              "approved",
               "in-progress",
               "in-review",
               "complete",
-              "blocked"
-            ],
-            "description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation deferred to a future status-schema unification."
+              "blocked",
+              "cancelled"
+            ]
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5"
+            ]
           },
           "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "motivation": {
             "type": "string",
             "x-prompt-budget": {
               "tokens": 1000,
@@ -70,6 +90,12 @@
           "modified_at": {
             "type": "string"
           },
+          "approved_by": {
+            "type": "string"
+          },
+          "approved_at": {
+            "type": "string"
+          },
           "oid": {
             "type": "string",
             "pattern": "^[0-9a-f]{32}$",
@@ -88,5 +114,58 @@
         }
       }
     }
+  },
+  "x-lifecycle": {
+    "feature": {
+      "field": "status",
+      "states": [
+        "proposed",
+        "approved",
+        "in-progress",
+        "in-review",
+        "complete",
+        "blocked",
+        "cancelled"
+      ],
+      "transitions": [
+        {
+          "from": "proposed",
+          "to": "approved",
+          "required_authority": "user",
+          "precondition": "all gates in terminal state"
+        },
+        {
+          "from": "approved",
+          "to": "in-progress",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "in-review",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-review",
+          "to": "complete",
+          "required_authority": "any"
+        },
+        {
+          "from": "in-progress",
+          "to": "blocked",
+          "required_authority": "any"
+        },
+        {
+          "from": "blocked",
+          "to": "in-progress",
+          "required_authority": "any"
+        },
+        {
+          "from": "proposed",
+          "to": "cancelled",
+          "required_authority": "user"
+        }
+      ]
+    },
+    "note": "AJV draft-07 cannot enforce transition validity; this block is metadata reserved for future framework-level state-machine validation."
   }
 }

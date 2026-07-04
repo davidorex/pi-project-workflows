@@ -9,6 +9,10 @@
     "issues"
   ],
   "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
+    },
     "issues": {
       "type": "array",
       "items": {
@@ -90,6 +94,10 @@
             "type": "string",
             "description": "Commit message or reference if resolved"
           },
+          "resolved_at": {
+            "type": "string",
+            "description": "ISO-8601 timestamp when the issue was resolved"
+          },
           "oid": {
             "type": "string",
             "pattern": "^[0-9a-f]{32}$",
@@ -108,5 +116,25 @@
         }
       }
     }
+  },
+  "x-lifecycle": {
+    "field": "status",
+    "states": [
+      "open",
+      "resolved",
+      "deferred"
+    ],
+    "transitions": [
+      {
+        "from": "open",
+        "to": "resolved",
+        "required_authority": "any"
+      },
+      {
+        "from": "open",
+        "to": "deferred",
+        "required_authority": "user"
+      }
+    ]
   }
 }

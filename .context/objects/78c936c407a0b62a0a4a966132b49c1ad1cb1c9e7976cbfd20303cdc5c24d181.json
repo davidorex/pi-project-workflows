@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/context-contracts",
-  "version": "1.0.1",
-  "title": "Context contracts",
-  "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
+  "$id": "pi-context://schemas/milestone",
+  "version": "1.0.0",
+  "title": "Milestones",
+  "description": "Array-block of project milestones. A milestone is a pure phase-rollup checkpoint with no work of its own: its `status` (planned | reached) is DERIVED, never authored — a milestone is `reached` iff at least one phase is positioned in it (a phase_positioned_in_milestone edge) and the parent phase of every such edge buckets to complete, else `planned`. Phase membership lives in relations.json phase_positioned_in_milestone edges (phase -> milestone), not inline. `release` is an optional grouping string pending the normalized release entity.",
   "type": "object",
   "required": [
-    "contracts"
+    "milestones"
   ],
   "additionalProperties": false,
   "properties": {
@@ -14,65 +14,36 @@
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "contracts": {
+    "milestones": {
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "id",
-          "unit_kind",
-          "bundle_relation_types",
-          "created_by",
-          "created_at"
+          "name",
+          "status"
         ],
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^CTX-\\d{3,}$"
+            "pattern": "^MILE-\\d{3,}$",
+            "description": "Stable canonical id; MILE-NNN (3+ digits), mirroring the STORY-/TASK-NNN convention."
           },
-          "unit_kind": {
+          "name": {
+            "type": "string"
+          },
+          "status": {
             "type": "string",
-            "description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (type tags are a carve-out from the edges-only constraint on inter-item relationships)."
+            "enum": [
+              "planned",
+              "reached"
+            ],
+            "description": "DERIVED phase-rollup, not authored: `reached` iff >=1 phase_positioned_in_milestone edge (in which the phase is the parent and the milestone the child) and the parent phase of every such edge buckets to complete; else `planned`. A milestone carries no work of its own; authored status is rejected by canon (substrate-derived-state)."
           },
-          "bundle_relation_types": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "relation_type",
-                "direction",
-                "max_depth"
-              ],
-              "additionalProperties": false,
-              "properties": {
-                "relation_type": {
-                  "type": "string"
-                },
-                "direction": {
-                  "type": "string",
-                  "enum": [
-                    "in",
-                    "out",
-                    "both"
-                  ]
-                },
-                "max_depth": {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                "applicability_predicate": {
-                  "type": "string",
-                  "description": "Optional relevance-scoping predicate; reserved for a future scoping language."
-                }
-              }
-            }
-          },
-          "description": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
+          "release": {
+            "type": "string",
+            "description": "Optional release grouping label. Interim flat string pending the normalized release entity, which will subsume / edge this field."
           },
           "created_by": {
             "type": "string"

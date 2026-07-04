@@ -1961,6 +1961,43 @@
       "id": "VER-062",
       "oid": "bf772ecf8a08afff30842de57f843ad0",
       "content_hash": "8c7e5cb67c86ecce1eefed1f422b07ad9ac9bd35e759965e5573bd0c2d8a60ee"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Envelope schema_version activation verified on merged main. Gates: npm run build / check / test all exit 0 (block-version-stamp.test.ts 9/9 + two pre-existing pass-through assertions updated to the convergent behavior). Live substrate: pi-context update resynced all 17 installed schemas (dryRun previewed, then applied, read-schema confirmed the property); unstamped-block read demonstrated backward-compat; this verification's own write is the live stamp demonstration (tasks.json/verification.json envelopes carry schema_version 1.0.1 after closure). Fold-locus determination recorded: the stamp lands generically in writeTypedFile, self-gated on the schema declaring the property + carrying a version.",
+      "criteria_results": [
+        {
+          "criterion": "Every block schema envelope declares optional schema_version; the relaxation is that one property only",
+          "status": "passed",
+          "evidence": "17 samples schemas gained exactly one optional property (session-notes already declared it); additionalProperties:false intact envelope+items; git diff shows +4 lines per schema"
+        },
+        {
+          "criterion": "Write path stamps the envelope to the current schema version on every block write — stamped, not passed through",
+          "status": "passed",
+          "evidence": "writeTypedFile stamps post-ctx-stamp/pre-validate; covers whole-block writes AND the append/update/upsert wrapper funnel (tested); stale claims overwritten after migration (tested); live: the closure writes stamp tasks.json + verification.json"
+        },
+        {
+          "criterion": "Read hook fires on the envelope and routes through validateBlockWithMigrationForDir",
+          "status": "passed",
+          "evidence": "read-gate tests exercise real readBlock against stamped fixtures (migrate + throw cells); live read of stamped blocks post-closure exercises the hook via the CLI"
+        },
+        {
+          "criterion": "Version-gap behavior is migrate AND throw at both gates, write-throw leaving the file byte-unchanged",
+          "status": "passed",
+          "evidence": "block-version-stamp.test.ts four cells: read-migrate, read-throw (no chain), write-migrate (persisted at current), write-throw with byte-identical file asserted"
+        },
+        {
+          "criterion": "The property reaches already-installed substrates via install/update",
+          "status": "passed",
+          "evidence": "pi-context update resynced 17 installed schemas on .context (backed up first); read-schema --schemaName tasks --path properties.schema_version returns the property from the installed body"
+        }
+      ],
+      "id": "VER-063",
+      "oid": "4cb1cc31a3e1e4038b81c070ad09082e",
+      "content_hash": "a88be970b979c736469f764925f48b12a548ffdbfff8020cc5d4bc270d1d8b44"
     }
-  ]
+  ],
+  "schema_version": "1.0.1"
 }

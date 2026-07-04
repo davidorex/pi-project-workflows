@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/context-contracts",
+  "$id": "pi-context://schemas/story",
   "version": "1.0.1",
-  "title": "Context contracts",
-  "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
+  "title": "Stories",
+  "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
   "type": "object",
   "required": [
-    "contracts"
+    "stories"
   ],
   "additionalProperties": false,
   "properties": {
@@ -14,65 +14,49 @@
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "contracts": {
+    "stories": {
       "type": "array",
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": [
           "id",
-          "unit_kind",
-          "bundle_relation_types",
-          "created_by",
-          "created_at"
+          "title",
+          "status"
         ],
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^CTX-\\d{3,}$"
+            "pattern": "^STORY-\\d{3,}$",
+            "description": "Stable canonical id; STORY-NNN (3+ digits)."
           },
-          "unit_kind": {
+          "title": {
+            "type": "string"
+          },
+          "status": {
             "type": "string",
-            "description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (type tags are a carve-out from the edges-only constraint on inter-item relationships)."
-          },
-          "bundle_relation_types": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "required": [
-                "relation_type",
-                "direction",
-                "max_depth"
-              ],
-              "additionalProperties": false,
-              "properties": {
-                "relation_type": {
-                  "type": "string"
-                },
-                "direction": {
-                  "type": "string",
-                  "enum": [
-                    "in",
-                    "out",
-                    "both"
-                  ]
-                },
-                "max_depth": {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                "applicability_predicate": {
-                  "type": "string",
-                  "description": "Optional relevance-scoping predicate; reserved for a future scoping language."
-                }
-              }
-            }
+            "enum": [
+              "proposed",
+              "ready",
+              "in-progress",
+              "in-review",
+              "complete",
+              "blocked"
+            ],
+            "description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation deferred to a future status-schema unification."
           },
           "description": {
-            "type": "string"
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
           },
-          "notes": {
-            "type": "string"
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "created_by": {
             "type": "string"

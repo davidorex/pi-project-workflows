@@ -1,80 +1,75 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/verification",
+  "$id": "pi-context://schemas/tasks",
   "version": "1.0.1",
-  "title": "Verification",
-  "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
+  "title": "Tasks",
+  "description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled). The operational layer between gaps/requirements and code changes.",
   "type": "object",
   "required": [
-    "verifications"
+    "tasks"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "verifications": {
+    "tasks": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
-          "status",
-          "method"
+          "description",
+          "status"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^VER-\\d{3,}$"
+            "pattern": "^TASK-\\d{3,}$"
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
           },
           "status": {
             "type": "string",
             "enum": [
-              "passed",
-              "failed",
-              "partial",
-              "skipped"
+              "planned",
+              "in-progress",
+              "completed",
+              "blocked",
+              "cancelled"
             ]
           },
-          "method": {
-            "type": "string",
-            "enum": [
-              "command",
-              "inspect",
-              "test"
-            ]
-          },
-          "evidence": {
-            "type": "string",
-            "description": "What was checked and what was found"
-          },
-          "timestamp": {
-            "type": "string"
-          },
-          "criteria_results": {
+          "files": {
             "type": "array",
             "items": {
-              "type": "object",
-              "required": [
-                "criterion",
-                "status"
-              ],
-              "properties": {
-                "criterion": {
-                  "type": "string"
-                },
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "passed",
-                    "failed",
-                    "skipped"
-                  ]
-                },
-                "evidence": {
-                  "type": "string"
-                }
+              "type": "string"
+            },
+            "description": "Files this task creates or modifies"
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "x-prompt-budget": {
+                "tokens": 1000,
+                "words": 800
               }
+            }
+          },
+          "assigned_agent": {
+            "type": "string",
+            "description": "Agent name if assigned"
+          },
+          "notes": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
             }
           },
           "oid": {

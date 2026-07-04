@@ -1,90 +1,81 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/context-contracts",
+  "$id": "pi-context://schemas/verification",
   "version": "1.0.1",
-  "title": "Context contracts",
-  "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
+  "title": "Verification",
+  "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
   "type": "object",
   "required": [
-    "contracts"
+    "verifications"
   ],
-  "additionalProperties": false,
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "contracts": {
+    "verifications": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
-          "unit_kind",
-          "bundle_relation_types",
-          "created_by",
-          "created_at"
+          "status",
+          "method"
         ],
-        "additionalProperties": false,
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^CTX-\\d{3,}$"
+            "pattern": "^VER-\\d{3,}$"
           },
-          "unit_kind": {
+          "status": {
             "type": "string",
-            "description": "Type tag for the unit kind this contract composes context for (e.g. 'task', 'decision', 'verification'). Plain-string keyed lookup — NOT a substrate-block-item reference (type tags are a carve-out from the edges-only constraint on inter-item relationships)."
+            "enum": [
+              "passed",
+              "failed",
+              "partial",
+              "skipped"
+            ]
           },
-          "bundle_relation_types": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "command",
+              "inspect",
+              "test"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "description": "What was checked and what was found"
+          },
+          "timestamp": {
+            "type": "string"
+          },
+          "criteria_results": {
             "type": "array",
             "items": {
               "type": "object",
               "required": [
-                "relation_type",
-                "direction",
-                "max_depth"
+                "criterion",
+                "status"
               ],
-              "additionalProperties": false,
               "properties": {
-                "relation_type": {
+                "criterion": {
                   "type": "string"
                 },
-                "direction": {
+                "status": {
                   "type": "string",
                   "enum": [
-                    "in",
-                    "out",
-                    "both"
+                    "passed",
+                    "failed",
+                    "skipped"
                   ]
                 },
-                "max_depth": {
-                  "type": "integer",
-                  "minimum": 1
-                },
-                "applicability_predicate": {
-                  "type": "string",
-                  "description": "Optional relevance-scoping predicate; reserved for a future scoping language."
+                "evidence": {
+                  "type": "string"
                 }
               }
             }
-          },
-          "description": {
-            "type": "string"
-          },
-          "notes": {
-            "type": "string"
-          },
-          "created_by": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string"
-          },
-          "modified_by": {
-            "type": "string"
-          },
-          "modified_at": {
-            "type": "string"
           },
           "oid": {
             "type": "string",

@@ -192,7 +192,7 @@
     },
     {
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
-      "status": "accepted",
+      "status": "closed",
       "package": "pi-context",
       "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:678-712). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a. History: the proposed_resolution's design (endpoint_roles metadata + write-time validate-or-normalize) was implemented on 2026-06-06 (a08e586; TASK-027 closed at 7968580) and reverted the same day at user direction (b80eea7/98b6413/fe676a5); the recorded verdict — 'worth running but a failure implementation wise' — carries no recorded articulation of what failed (analysis/2026-07-03-task-027-revert-archaeology.md + analysis/2026-07-03-task-027-context-supplement.md). Whether the failure was the design or its unisolated execution is an open user determination; the reverted implementation remains recoverable at a08e586.",
       "evidence": [
@@ -216,8 +216,10 @@
       "created_at": "2026-06-03T23:04:22.642Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
-      "content_hash": "d36311ceb1266eed9511d80e74734f9735a02d72067e8d0a291111e2f7eb7fc5",
-      "content_parent": "eb3c78bd021e5e3f5c6bb65692eeed4b3d4fd97de68450d3e5ee9ebdb9089164"
+      "content_hash": "425da968ae8233665debb8f34981d25790ef5b90e42974f7b54f8336e51d8ceb",
+      "content_parent": "d36311ceb1266eed9511d80e74734f9735a02d72067e8d0a291111e2f7eb7fc5",
+      "closed_by": "TASK-027 / VER-062 — the write-ordering instance of the FGAP-113 edge-orientation class. FGAP-007's proposed_resolution (explicit endpoint-role metadata on the relation_type + write-time direction enforcement so name and stored direction cannot diverge and a backwards edge is rejected at append) is implemented: task_depends_on_task carries role_direction as_parent, and append-relation/append-relations REJECT a bare ambiguous --parent/--child append of it (same-kind), directing the author to role-typed --primary/--counter that maps role->stored layout — never auto-oriented (the reverted a08e586 always-swap is not used). Live-verified: a bare task_depends_on_task append is rejected; the role-typed form stores canonical parent=prerequisite/child=dependent. Merged 3bc3d7a4; the same-kind ordering siblings (story_depends_on_story, requirement_depends_on_requirement, milestone_precedes_milestone, *_supersedes_*) are covered by the same mechanism.",
+      "closed_at": "2026-07-04"
     },
     {
       "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",
@@ -3650,7 +3652,7 @@
     },
     {
       "title": "Edge orientation (which endpoint is stored parent vs child) is carried by neither the relation_type name nor any queryable metadata, and no surface signals a wrong-orientation guess — backwards writes and empty reads both fail silently across ordering, membership, and wildcard relation_types",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "priority": "P1",
       "canonical_vocabulary": "edge-orientation transparency + symmetric wrong-orientation signaling (write-reject and read-signal)",
@@ -3696,7 +3698,10 @@
       "created_at": "2026-07-04",
       "id": "FGAP-113",
       "oid": "71ea617e989e45ab4c249dd7844670be",
-      "content_hash": "6be4ecab0165fcfbd9719dc5d4b846dadb95a35d1390436c4bfa0d28687532f5"
+      "content_hash": "d78215321ad5c340c1d8c2a40e9f65c9dff34f61a00208d7ca9af4ff8588c0f2",
+      "closed_by": "TASK-027 / VER-062 — role_direction ('as_parent'|'as_child') declared as the single orientation source of truth on the 17 role-bearing relation_types, consumed by the deriver / rollup / roadmap / promote (the task_gated_by_item + roadmap module-constant + item_derived_from_item string-literal hardcodes deleted); role-typed --primary/--counter write authoring with ambiguous-bare-append reject for same-kind/wildcard relations (never auto-oriented); read-side wrong-orientation walk signal for disjoint-kind relations (throws naming the counterpart op) with same-kind/wildcard honestly returning []; config schema advanced to 1.8.0 with the active .context substrate migrated (chain + role_direction). Merged 3bc3d7a4; build/check/test green; runtime demos + fresh-context adversarial probe PASS; deriver output byte-identical to the pre-change baseline; context-validate warnings-only baseline. FGAP-007 (write/ordering/same-kind) and the task_positioned_in_phase read silent-empty are the closed instances.",
+      "closed_at": "2026-07-04",
+      "content_parent": "6be4ecab0165fcfbd9719dc5d4b846dadb95a35d1390436c4bfa0d28687532f5"
     }
   ]
 }

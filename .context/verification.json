@@ -1900,6 +1900,67 @@
       "id": "VER-061",
       "oid": "efcffd910f30554f332f821b698035d3",
       "content_hash": "0d030a29de195c62ea5b13bc9f0892c9624c7ea68252c0023592b151151a06d6"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-04",
+      "evidence": "FGAP-113 edge-orientation class fix verified on merged main (3bc3d7a4). Gates: npm run build / check / test all exit 0 (pi-context 1211 tests pass). Runtime demos via the real global CLI against .context + scratch dryRun. Fresh-context adversarial probe independently re-derived all 10 criteria: PASS, zero defects. Orchestrator independently re-verified the load-bearing claims (deriver byte-identical, write reject, read signal, integrity).",
+      "criteria_results": [
+        {
+          "criterion": "Every orientation-bearing relation_type carries role metadata or is exempt",
+          "status": "passed",
+          "evidence": "read-config: exactly 17 relations carry role_direction (9 as_parent, 8 as_child), matching the catalog; the other 27 (no role consumer) omit it; catalog-lock test asserts the exact set + schema enum"
+        },
+        {
+          "criterion": "WRITE rejects a backwards orientation-bearing edge, never auto-orients, no false-positives",
+          "status": "passed",
+          "evidence": "dryRun: bare same-kind/wildcard appends (task_depends_on_task, story_depends_on_story, milestone_precedes_milestone, item_derived_from_item) REJECTED with orientation-naming message; disjoint task_positioned_in_phase + role-less task_addresses_gap bare appends ALLOWED; no orientOrderingEdge/swap path exists"
+        },
+        {
+          "criterion": "WRITE covers the wildcard item_derived_from_item",
+          "status": "passed",
+          "evidence": "item_derived_from_item (source/target *) bare append rejected; role-typed --primary/--counter accepted, maps as_child (source at child)"
+        },
+        {
+          "criterion": "READ signals wrong-end instead of silent-empty",
+          "status": "passed",
+          "evidence": "walk-ancestors on task_positioned_in_phase from a task threw naming context-walk-descendants; context-walk-descendants returned PHASE-M5-WRITE-INTEGRITY; same-kind task_depends_on_task walk returned ids, no false throw"
+        },
+        {
+          "criterion": "Membership container split reconciled",
+          "status": "passed",
+          "evidence": "contains/includes = as_parent (container=parent); positioned_in = as_child (container=child); encoded per-relation in the metadata + documented on the schema and context.ts surface"
+        },
+        {
+          "criterion": "Every existing edge remains valid, inverted ones migrated",
+          "status": "passed",
+          "evidence": "role_direction reverse-engineered from the stored convention so zero edges were inverted; migration commit 30e86f1a touched only config.json/migrations.json, no relations.json; context-validate-relations clean"
+        },
+        {
+          "criterion": "Deriver blocked/ready + lineage output UNCHANGED where edges correct",
+          "status": "passed",
+          "evidence": "context-current-state on merged main via the operator reconstructs the pre-change baseline byte-for-byte: focus in-flight TASK-027, 15 nextActions in order, 10 blocked with identical blockers"
+        },
+        {
+          "criterion": "context-validate + context-validate-relations pass, no new findings",
+          "status": "passed",
+          "evidence": "context-validate: exactly the 24 pre-existing warnings (17 decision-shows-derivation, 3 task-completed-gap-closed, 2 task-completed-feature-complete, 2 nested_id_bearing_array), zero errors; context-validate-relations clean"
+        },
+        {
+          "criterion": "Tests assert both sides + metadata-absent gate + same-kind honesty",
+          "status": "passed",
+          "evidence": "edge-orientation.test.ts + consumer tests: write reject asserts message AND nothing-written; role-mapping direction; no-role-direction throw; mutual-exclusion; read throw-from-wrong-end + correct-end ids + same-kind/wildcard [] no-throw; deriver regression snapshot; catalog lock"
+        },
+        {
+          "criterion": "Build, check, full test pass with the change in dist/",
+          "status": "passed",
+          "evidence": "npm run build exit 0; npm run check exit 0 (biome + tsc --noEmit); npm test exit 0; dist rebuilt on merged main + promote:cli refreshed the operator"
+        }
+      ],
+      "id": "VER-062",
+      "oid": "bf772ecf8a08afff30842de57f843ad0",
+      "content_hash": "8c7e5cb67c86ecce1eefed1f422b07ad9ac9bd35e759965e5573bd0c2d8a60ee"
     }
   ]
 }

@@ -1420,7 +1420,7 @@
     },
     {
       "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",
-      "status": "in-progress",
+      "status": "completed",
       "acceptance_criteria": [
         "A non-additive config.schema.json diff absent a paired migration fails the build-time gate.",
         "An additive diff (a new optional field) passes the gate.",
@@ -1439,8 +1439,8 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "TASK-072",
       "oid": "ad21875be7c7e6360f2508db948c8b06",
-      "content_hash": "b3e825bb0e9d8d0987dcb2f81a38e7b9d4f056fc4d8c255acbb22fa07df1954d",
-      "content_parent": "8657449c9563c376e0b60a5f748ec36a83be253db8fdeaa503a892bdde621462"
+      "content_hash": "18a0bcb1cad884adefca3efad77ad6e3cc159d29f0b4aad59b6714b704bc7151",
+      "content_parent": "b3e825bb0e9d8d0987dcb2f81a38e7b9d4f056fc4d8c255acbb22fa07df1954d"
     },
     {
       "description": "Stamp schema_version onto block data on the write path (block-api.ts:870-938, 1758-1767) and admit a single optional top-level schema_version on block schema envelopes, so the read-time AJV hook (block-api.ts:785-789) and the version-mismatch migration branch (schema-validator.ts:225-239) become active for all blocks. The stamp location is the block envelope (top-level schema_version); per-item stamping is out of scope (block-api.ts:782-784).",

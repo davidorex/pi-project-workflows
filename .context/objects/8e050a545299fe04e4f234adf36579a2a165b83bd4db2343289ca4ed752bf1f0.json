@@ -1,0 +1,22 @@
+{
+  "title": "No additive / expand-contract discipline for config-schema changes",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "Nothing prevents or flags a breaking (non-additive) config-schema shape change — a key removal/rename, or a new required field — before it ships. The config schema root is additionalProperties:false, so the moment a key is removed/renamed the existing config carries a now-unknown property and fails validation; a new required field strands a config that lacks it. This is an authoring/build-time gap, distinct from the runtime gaps FGAP-095 (no load-time migration) and FGAP-096 (no recovery path): even with migration and recovery in place, the absence of an additive discipline means every breaking change requires a migration rather than avoiding the break, and no gate catches a breaking config-schema diff before release. Distinct from FGAP-094, which is vocabulary/catalog-superset-config drift, not breaking-key discipline.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "lines": "8-9",
+      "reference": "root required:[\"schema_version\",\"block_kinds\"] + additionalProperties:false — a removed/renamed key or a new required field invalidates an existing config on the next load"
+    },
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "lines": "whole-file",
+      "reference": "no breaking-diff gate exists on config-schema edits: nothing in the build/release path compares an old->new config.schema.json shape and flags a non-additive change"
+    }
+  ],
+  "impact": "A breaking config-schema change can ship unflagged; combined with FGAP-095/096 it bricks the live substrate (the incident this set documents). An additive/expand-contract discipline would make most config bumps non-bricking by construction, independent of migration code — the cheapest structural mitigation of the brick class.",
+  "canonical_vocabulary": "expand-contract / parallel change (additive, backward-compatible schema evolution)",
+  "proposed_resolution": "Adopt an additive/expand-contract discipline for config-schema evolution — new fields land optional; existing fields are not removed/renamed until a later contract release — enforced by a build-time breaking-diff gate on config.schema.json that flags a non-additive change absent a paired migration. Pairs with FGAP-095 (load-time migration) and FGAP-096 (recovery path); build-time-gate family with FGAP-094.",
+  "priority": "P2"
+}

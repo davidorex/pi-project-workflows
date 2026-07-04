@@ -8160,5 +8160,18 @@
       "refname": "TASK-073"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "06290a21b37756724a59947cc09e107d",
+      "refname": "VER-064"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ad21875be7c7e6360f2508db948c8b06",
+      "refname": "TASK-072"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

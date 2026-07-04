@@ -3137,7 +3137,7 @@
     },
     {
       "title": "No additive / expand-contract discipline for config-schema changes",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "Nothing prevents or flags a breaking (non-additive) config-schema shape change — a key removal/rename, or a new required field — before it ships. The config schema root is additionalProperties:false, so the moment a key is removed/renamed the existing config carries a now-unknown property and fails validation; a new required field strands a config that lacks it. This is an authoring/build-time gap, distinct from the runtime gaps FGAP-095 (no load-time migration) and FGAP-096 (no recovery path): even with migration and recovery in place, the absence of an additive discipline means every breaking change requires a migration rather than avoiding the break, and no gate catches a breaking config-schema diff before release. Distinct from FGAP-094, which is vocabulary/catalog-superset-config drift, not breaking-key discipline.",
       "evidence": [
@@ -3159,9 +3159,11 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-097",
       "oid": "c515c2449f95a83c0fd2bbf477e60830",
-      "content_hash": "5c8b79bf9fcbb66e32ddd34ac474a9d54c628bfaa464b99bd751bb5d11813b03",
+      "content_hash": "8e050a545299fe04e4f234adf36579a2a165b83bd4db2343289ca4ed752bf1f0",
       "priority": "P2",
-      "content_parent": "60e843356eeadd515553a41eb5cbdb997390e6fa0d1ddc1db0dfcef6183ae720"
+      "content_parent": "5c8b79bf9fcbb66e32ddd34ac474a9d54c628bfaa464b99bd751bb5d11813b03",
+      "closed_by": "TASK-072 / VER-064 — the expand-contract discipline is enforced mechanically by the build-time breaking-diff gate scripts/check-config-schema.ts (pre-commit 5th line + pull_request CI step, staged and --base modes diffing against the prior git revision): a removed/renamed property key anywhere in the config.schema.json properties tree, or a new required entry on a pre-existing object, fails the gate unless the same change set advances the schema version AND declares a packaged config migration reaching that version in samples/migrations.json; additive changes (new optional fields, description/enum additions, a newly-added optional object's initial requireds) pass. Live-demonstrated: a staged removal of properties.lenses failed naming the JSON path; the same removal paired with a version bump + packaged decl passed; clean-tree runs pass in both modes. Merged b21089e8.",
+      "closed_at": "2026-07-05"
     },
     {
       "title": "Issues are not a gap-sibling first-class open-work kind — a task cannot focus on / address an issue as it can a gap",

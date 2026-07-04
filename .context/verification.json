@@ -1997,6 +1997,32 @@
       "id": "VER-063",
       "oid": "4cb1cc31a3e1e4038b81c070ad09082e",
       "content_hash": "a88be970b979c736469f764925f48b12a548ffdbfff8020cc5d4bc270d1d8b44"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Build-time config-schema breaking-diff gate verified on merged main. Gates: npm run build / check / test all exit 0 (check-config-schema.test.ts 13/13 via the root test:migration glob). Runtime demos with the real gate script pre-merge: clean staged + --base origin/main modes exit 0; a staged removal of properties.lenses exited 1 naming the JSON path and the expand-contract message; the same removal paired with a version bump to 2.0.0 + a packaged config migration declaration exited 0; files restored byte-clean. Wired as the 5th pre-commit line and a pull_request CI step; the introducing commit itself passed through the full hook including the new gate. Baseline determination recorded: prior git revision (staged HEAD vs working tree; --base ref vs HEAD for CI), mirroring check-changelog's two-mode model.",
+      "criteria_results": [
+        {
+          "criterion": "A non-additive config.schema.json diff absent a paired migration fails the build-time gate",
+          "status": "passed",
+          "evidence": "Live demo: staged removal of properties.lenses -> exit 1 naming $.properties.lenses + the unpaired reason; tests cover removed root/nested keys, renames-as-removals, new required on pre-existing objects, bump-without-decl, decl-without-bump"
+        },
+        {
+          "criterion": "An additive diff (a new optional field) passes the gate",
+          "status": "passed",
+          "evidence": "Tests: new optional property, description/enum additions, version-only change, and a newly-added optional object with initial requireds all produce zero findings; clean-tree live runs exit 0"
+        },
+        {
+          "criterion": "New config fields land optional; a removal or rename is gated to a contract release",
+          "status": "passed",
+          "evidence": "The discipline is mechanical: breaking findings pass only with a schema version advance plus a packaged config migration declaration reaching the new version (live-demonstrated); documented in the README schema-versioning paragraph, the CLAUDE.md gate enumeration, and the CHANGELOG entry"
+        }
+      ],
+      "id": "VER-064",
+      "oid": "06290a21b37756724a59947cc09e107d",
+      "content_hash": "796345a00f03e611b5c1b62c8e2d0a9c2b80c2ac34452c623e5ed9acc52261d0"
     }
   ],
   "schema_version": "1.0.1"

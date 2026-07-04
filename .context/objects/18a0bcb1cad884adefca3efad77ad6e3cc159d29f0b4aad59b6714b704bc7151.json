@@ -1,0 +1,18 @@
+{
+  "description": "Add a build-time gate that flags a non-additive config.schema.json diff — a removed or renamed key, or a new required field under the root additionalProperties:false — unless paired with a registered migration. Adopt the expand-contract discipline: new fields land optional; existing fields are not removed or renamed until a later contract release.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "A non-additive config.schema.json diff absent a paired migration fails the build-time gate.",
+    "An additive diff (a new optional field) passes the gate.",
+    "New config fields land optional; a field removal or rename is gated to a contract release."
+  ],
+  "files": [
+    "scripts/parity-check.ts",
+    "scripts/parity-check.test.ts",
+    ".husky/pre-commit",
+    ".github/workflows/ci.yml",
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "notes": "Build-time-gate family with FGAP-094 (TASK-067). Open parameter the plan step MUST fix explicitly before implementation: the diff BASELINE — what the additive gate compares config.schema.json against (prior git revision, a recorded baseline hash, or the published catalog copy); neither this task nor FGAP-097 specifies it, and criterion 1 is not executable until it is decided."
+}

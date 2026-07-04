@@ -3211,7 +3211,7 @@
     },
     {
       "title": "Block data carries no schema_version — read-time validation and migration are inert for all blocks",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "description": "Block data files carry no schema_version: the write path (writeTypedFile / writeBlockForDir) stamps only author/identity fields and never adds one, and no block schema defines a top-level schema_version (envelopes are additionalProperties:false, which rejects it). Version lives only in the schema file. With schema_version absent from every block's data, two safety mechanisms are inert for all blocks: the read-time AJV hook (gated on schema_version presence, block-api.ts:785-789) never fires, and the version-mismatch branch of validateBlockWithMigrationForDir (schema-validator.ts:225-239) never triggers. Block schema-evolution safety runs only via the explicit install/update path (baseline content_hash-tracked), never on read. The class: read-time validation and migration are inert whenever the versioned-data envelope is absent.",
@@ -3243,8 +3243,10 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-099",
       "oid": "202f544f1f6eacb06c13b407e5bb4a20",
-      "content_hash": "ff92f49ba8577784de6a3e33771e1cecbaab709de8b5d9577f72cb05dbc5b900",
-      "content_parent": "57df49135f92a35fc2543fd49116f7423f9b28c34a66baebee70a4f006a266db"
+      "content_hash": "7c3adb9dadef32af9cb75011133a8bda80c6282f122bdef727c52ed1c0e8d116",
+      "content_parent": "ff92f49ba8577784de6a3e33771e1cecbaab709de8b5d9577f72cb05dbc5b900",
+      "closed_by": "TASK-073 / VER-063 — the filed resolution shipped verbatim: every catalog block schema envelope admits a single optional top-level schema_version (named relaxation only; per-item objects unchanged), and the write path (writeTypedFile, generically, self-gated on the schema declaring the property + carrying a version) stamps the envelope to the schema's current version on every block write. The read-time AJV hook and the version-mismatch migration branch are thereby active for all blocks: a version gap walks the registered chain forward on read and write, and an unresolvable gap fails loud (read throws; write refused, block file byte-unchanged). Live on the active substrate: installed schemas resynced via update, tasks.json/verification.json envelopes stamped 1.0.1 by the closure writes, stamped reads routing through the hook. Per-item stamping remains out of scope as filed.",
+      "closed_at": "2026-07-05"
     },
     {
       "title": "A sub-element of a substrate item has no identity — meaningful parts held in a nested array cannot be referenced, related, verified, or tracked across content edits",
@@ -3453,7 +3455,7 @@
     },
     {
       "title": "Versioned substrate documents never converge their persisted schema_version at write time — config is the live instance: reads migrate in memory forever, writes persist the stale version back",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "description": "Read-time migration (loadConfigForDir, TASK-070) carries a lagging config forward in memory only; no write path stamps the current schema version, so the staleness is permanent: writeConfigForDir (context.ts:872-874) passes schema_version through verbatim, every sanctioned mutation writes 1.0.0 back (observed: amendConfigEntryForDir on a live-copy — on-disk 1.0.0 before load, after chain-walked load, and after the write), every load resolves the chain forever, and future bumps stack hops on every read. Fresh substrates are born lagging: writeSkeletonConfig writes a literal \"1.0.0\" (context.ts:948) and adoptConception writes conception.json's \"1.0.0\" against the 1.7.0 bundled schema. Scope hole confirmed against filed text: TASK-070 criterion 3 pins \"carried forward in memory\" (read half only); TASK-073 criterion 2 stamps \"the whole-block object ... on every block write\" (blocks only); no FEAT-010 criterion states persisted config version converges. Class: read-time in-memory migration without write-time version convergence — blocks (remedy filed, TASK-073, planned), config (this instance, unfiled until now), migrations.json (latent sibling: appendMigrationDeclForDir carries the loaded envelope version forward verbatim, migrations-store.ts:208-219, and loadMigrationsFileForDir has no migration path; benign while file and schema both sit at 1.0.0).",
@@ -3490,7 +3492,10 @@
       "created_at": "2026-07-02",
       "id": "FGAP-105",
       "oid": "23e1efb8f3c97f1b159111690174dfb8",
-      "content_hash": "b60cb1013acd89bbf45839ccc865d247dd964e1eed0b3054fb5435265bebf5ed"
+      "content_hash": "985c264e7219363992cd7a519654f3c7c223c7d175b095129170b08778729725",
+      "closed_by": "TASK-073 / VER-063 — the write-time stamp landed at the generic writeTypedFile locus (the fold disposition this gap's resolution named), self-gated on the schema declaring a top-level schema_version + carrying a version, so every versioned-document write converges: blocks, config.json (writeConfigForDir delegates to writeTypedFile against the bundled schema), and migrations.json (migrations-store writes via writeTypedFile against the bundled migrations schema). Live-proven on the active substrate: the first sanctioned post-stamp config write (the update run's baseline advance) converged on-disk config.json schema_version 1.0.0 -> 1.8.0, after which loads version-match and never consult the chain; a subsequent identical-content amend-config was a byte-identical no-op (convergence durable). Born-lagging fresh substrates are fixed by the same mechanism (writeSkeletonConfig and adoptConception write through writeConfigForDir, stamped current at write). Config-write convergence is regression-locked in block-version-stamp.test.ts.",
+      "closed_at": "2026-07-05",
+      "content_parent": "b60cb1013acd89bbf45839ccc865d247dd964e1eed0b3054fb5435265bebf5ed"
     },
     {
       "title": "An operator-filed partial config migration chain bricks every ceremony with no remediation hint; recovery path exists but is undocumented",
@@ -3704,6 +3709,41 @@
       "closed_by": "TASK-027 / VER-062 — role_direction ('as_parent'|'as_child') declared as the single orientation source of truth on the 17 role-bearing relation_types, consumed by the deriver / rollup / roadmap / promote (the task_gated_by_item + roadmap module-constant + item_derived_from_item string-literal hardcodes deleted); role-typed --primary/--counter write authoring with ambiguous-bare-append reject for same-kind/wildcard relations (never auto-oriented); read-side wrong-orientation walk signal for disjoint-kind relations (throws naming the counterpart op) with same-kind/wildcard honestly returning []; config schema advanced to 1.8.0 with the active .context substrate migrated (chain + role_direction). Merged 3bc3d7a4; build/check/test green; runtime demos + fresh-context adversarial probe PASS; deriver output byte-identical to the pre-change baseline; context-validate warnings-only baseline. FGAP-007 (write/ordering/same-kind) and the task_positioned_in_phase read silent-empty are the closed instances.",
       "closed_at": "2026-07-04",
       "content_parent": "6be4ecab0165fcfbd9719dc5d4b846dadb95a35d1390436c4bfa0d28687532f5"
+    },
+    {
+      "title": "context-validate performs no block-item schema validation — a substrate with schema-invalid items reports clean, so resync-introduced invalidity persists undetected until a write to that block fails",
+      "status": "identified",
+      "package": "pi-context",
+      "priority": "P1",
+      "canonical_vocabulary": "substrate-wide schema-validity sweep (validate-verdict coverage)",
+      "description": "validateContext (context-sdk.ts:2233) checks edge integrity (endpoint resolution, relation_type registration, kind membership, cycles via validateRelations), config-declared invariants (requires-edge, status-consistency), and SoT-registry drift — it never AJV-validates any block's items against the block's installed schema. Schema validity is enforced only at write time (writeTypedFile validates before landing) and by the per-block validate-block-items op, which no composed surface runs substrate-wide. Consequence: items that become invalid WITHOUT a write to their block — the live class instance is a same-version catalog resync that narrows the installed schema under an item set that no longer conforms — are invisible to context-validate, which reports clean/warnings while the block is invalid. The boundary is even documented as a known absence in STORY-005's filed text ('which update doesn't expose and context-validate doesn't do') but was never filed as a gap, and every closure/verification surface that cites a clean context-validate over-reads the verdict as covering schema validity. Live instance: after the catalog story-schema resync, validate-block-items --block story reports all 14 items invalid (additionalProperties: user_kind undeclared) while context-validate, run the same minute, reported warnings-only with zero story findings. With envelope schema_version stamping now live, the invalidity surfaces as a hard write failure at the NEXT story.json write — loud, but far from the resync that caused it and only when a write happens to occur.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "2214-2233",
+          "reference": "validateContext JSDoc + body enumerate its full coverage: edge integrity, config-declared invariants, SoT drift, merged validateRelations diagnostics — no block-item AJV pass exists anywhere in the function"
+        },
+        {
+          "file": ".context/story.json",
+          "reference": "live instance: validate-block-items --block story -> valid:false with 14 additionalProperties failures (every STORY item carries user_kind; the resynced installed schema does not declare it under additionalProperties:false), while context-validate run in the same session reported warnings-only with zero story findings"
+        },
+        {
+          "file": ".context/story.json",
+          "reference": "STORY-005 filed text documents the boundary as known: 'I can validate the block items directly against the target catalog schema and see what fails — which update doesn't expose and context-validate doesn't do'"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1066",
+          "reference": "the producing cause of the live instance is issue-005's same-version resync verbatim-overwrite arm (no item re-validation); this gap is the detection-side complement — the damage a silent producer creates is also invisible to the integrity verdict"
+        }
+      ],
+      "impact": "The substrate's one composed integrity verdict does not mean what its consumers take it to mean: closures, verification criteria, session gates, and CI-style checks cite 'context-validate clean' as substrate health, but a block can sit fully schema-invalid behind that clean. Invalidity introduced without a block write (schema resync, hand edits, catalog drift) accumulates undetected; with envelope version stamping live, it detonates at the next write to the affected block — a hard failure divorced in time and place from the cause. The live story block is currently in exactly this state: 14 invalid items, write-bricked, integrity verdict clean.",
+      "proposed_resolution": "Give the composed validate surface a substrate-wide schema-validity pass: for each installed block, validate the whole block (envelope + items) against its installed schema — migration-aware for stamped envelopes (the existing validateBlockWithMigrationForDir), raw for unstamped — and surface failures as errors in the context-validate result (per-item id/field/keyword, the validate-block-items shape). Whether the pass lives inside validateContext, or as a composed sibling the context-validate op always runs, is the implementing task's mechanism choice; the requirement is that a clean context-validate verdict actually covers schema validity. Pairs with issue-005 (the producer-side fix: same-version resync must re-validate like the bump path); the pair closes both ends of the class (silent introduction, silent persistence).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "FGAP-114",
+      "oid": "be37aff0e312f5ddddb526365564da4e",
+      "content_hash": "d720a743a7ae9ea21ea532d409df024b2700b7e90a82c58237972a26ef564637"
     }
   ]
 }

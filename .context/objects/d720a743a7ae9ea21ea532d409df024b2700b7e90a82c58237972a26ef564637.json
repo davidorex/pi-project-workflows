@@ -1,0 +1,30 @@
+{
+  "title": "context-validate performs no block-item schema validation — a substrate with schema-invalid items reports clean, so resync-introduced invalidity persists undetected until a write to that block fails",
+  "status": "identified",
+  "package": "pi-context",
+  "priority": "P1",
+  "canonical_vocabulary": "substrate-wide schema-validity sweep (validate-verdict coverage)",
+  "description": "validateContext (context-sdk.ts:2233) checks edge integrity (endpoint resolution, relation_type registration, kind membership, cycles via validateRelations), config-declared invariants (requires-edge, status-consistency), and SoT-registry drift — it never AJV-validates any block's items against the block's installed schema. Schema validity is enforced only at write time (writeTypedFile validates before landing) and by the per-block validate-block-items op, which no composed surface runs substrate-wide. Consequence: items that become invalid WITHOUT a write to their block — the live class instance is a same-version catalog resync that narrows the installed schema under an item set that no longer conforms — are invisible to context-validate, which reports clean/warnings while the block is invalid. The boundary is even documented as a known absence in STORY-005's filed text ('which update doesn't expose and context-validate doesn't do') but was never filed as a gap, and every closure/verification surface that cites a clean context-validate over-reads the verdict as covering schema validity. Live instance: after the catalog story-schema resync, validate-block-items --block story reports all 14 items invalid (additionalProperties: user_kind undeclared) while context-validate, run the same minute, reported warnings-only with zero story findings. With envelope schema_version stamping now live, the invalidity surfaces as a hard write failure at the NEXT story.json write — loud, but far from the resync that caused it and only when a write happens to occur.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2214-2233",
+      "reference": "validateContext JSDoc + body enumerate its full coverage: edge integrity, config-declared invariants, SoT drift, merged validateRelations diagnostics — no block-item AJV pass exists anywhere in the function"
+    },
+    {
+      "file": ".context/story.json",
+      "reference": "live instance: validate-block-items --block story -> valid:false with 14 additionalProperties failures (every STORY item carries user_kind; the resynced installed schema does not declare it under additionalProperties:false), while context-validate run in the same session reported warnings-only with zero story findings"
+    },
+    {
+      "file": ".context/story.json",
+      "reference": "STORY-005 filed text documents the boundary as known: 'I can validate the block items directly against the target catalog schema and see what fails — which update doesn't expose and context-validate doesn't do'"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1066",
+      "reference": "the producing cause of the live instance is issue-005's same-version resync verbatim-overwrite arm (no item re-validation); this gap is the detection-side complement — the damage a silent producer creates is also invisible to the integrity verdict"
+    }
+  ],
+  "impact": "The substrate's one composed integrity verdict does not mean what its consumers take it to mean: closures, verification criteria, session gates, and CI-style checks cite 'context-validate clean' as substrate health, but a block can sit fully schema-invalid behind that clean. Invalidity introduced without a block write (schema resync, hand edits, catalog drift) accumulates undetected; with envelope version stamping live, it detonates at the next write to the affected block — a hard failure divorced in time and place from the cause. The live story block is currently in exactly this state: 14 invalid items, write-bricked, integrity verdict clean.",
+  "proposed_resolution": "Give the composed validate surface a substrate-wide schema-validity pass: for each installed block, validate the whole block (envelope + items) against its installed schema — migration-aware for stamped envelopes (the existing validateBlockWithMigrationForDir), raw for unstamped — and surface failures as errors in the context-validate result (per-item id/field/keyword, the validate-block-items shape). Whether the pass lives inside validateContext, or as a composed sibling the context-validate op always runs, is the implementing task's mechanism choice; the requirement is that a clean context-validate verdict actually covers schema validity. Pairs with issue-005 (the producer-side fix: same-version resync must re-validate like the bump path); the pair closes both ends of the class (silent introduction, silent persistence)."
+}

@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Gate satisfaction in the state derivation consults a target kind's truth model: a kind declared in `state_derivation.rollups` (e.g. milestone) completes by its DERIVED membership rollup — recursively for nested rollup kinds, with a cycle guard deriving not-complete — instead of its stored status field, and the milestones facet reports the SAME verdict the gates consult, so a single `context-current-state` read can no longer simultaneously report a milestone reached and hold tasks blocked on it. Non-rollup kinds keep the shared status-bucket completeness unchanged, and a substrate without `state_derivation` is unaffected.
+
 ## [0.32.0] - 2026-07-05
 
 - Ceremony-entry identity establishment: the substrate-lifecycle ceremonies that reach identity-stamping writes — `update` (live runs), `install`, and `resolve-blocked` — establish substrate identity at entry when `config.json` carries no `substrate_id`: one is minted (the same mint init uses), persisted through the sanctioned config write, and registered in the project registry before the ceremony's first stamping write, and the ceremony result reports it under `substrateIdEstablished`. A pre-identity substrate thereby heals on the sanctioned ceremony instead of refusing its populated-block version bump (the former mislabeled refusal), dry and live update runs agree on the outcome, and the two previously-skipped migrate-path tests are re-greened. An established identity is never re-minted (the on-disk id stays immutable), `--dryRun` establishes nothing (a preview performs no stamping write), and the block writer's own identity guard stays load-bearing for any write reaching it without identity.

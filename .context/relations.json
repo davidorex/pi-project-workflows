@@ -8459,5 +8459,57 @@
       "refname": "FGAP-052"
     },
     "relation_type": "item_acknowledges_missing_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a7d8a2bbc45332e56236c4ac4ab48382",
+      "refname": "TASK-081"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a02e0f3d83a7f3fe85666035bef71a67",
+      "refname": "FGAP-115"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a7d8a2bbc45332e56236c4ac4ab48382",
+      "refname": "TASK-081"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a7d8a2bbc45332e56236c4ac4ab48382",
+      "refname": "TASK-081"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "daaf7371aa13765843464fdc031b0f84",
+      "refname": "DEC-0020"
+    },
+    "relation_type": "task_governed_by_decision"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a7d8a2bbc45332e56236c4ac4ab48382",
+      "refname": "TASK-081"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8ea214284ddcbc567897f2f640b0b470",
+      "refname": "PHASE-M3-DATA-CONVERGENCE"
+    },
+    "relation_type": "task_positioned_in_phase"
   }
 ]

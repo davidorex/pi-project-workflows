@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-07-05
+
 ### Added
 - `npm run promote:cli` (monorepo root) installs the operator `pi-context` binary as a publish-free LOCAL PACKED COPY of the working tree: it builds the tree, `npm pack`s the `@davidorex` workspace set, and co-installs that packed set into the global npm prefix in one `npm i -g --force`, so the operator resolves the current working-tree code (not the registry release) and a subsequent dev build (`rm -rf dist && tsc`) no longer affects the operator command. The target prefix is overridable via `--prefix <dir>` or the `PROMOTE_PREFIX` env var to promote into a throwaway directory without touching the real global binary.
 

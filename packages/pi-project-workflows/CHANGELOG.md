@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-07-05
+
 - Regenerated the aggregate `SKILL.md` for the pi-context roadmap rework: the roadmap is a derived view over the `milestone_precedes_milestone` relation — `context-roadmap-load`/`-render`/`-validate` take no parameters and derive from substrate state; `context-roadmap-list` is retired; see the `pi-context` changelog for the member-package detail.
 - Regenerated the aggregate pi-agent-dispatch `SKILL.md`, restoring the `<events>` section omitted by an earlier partial generation.
 

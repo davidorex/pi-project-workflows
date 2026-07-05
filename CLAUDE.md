@@ -109,7 +109,7 @@ Work is not complete until the runtime can load it. Pi loads from `dist/`, not s
 9. **Status cascade**: the Claude Code Task tool + the active substrate's own status blocks (via block-api)
 10. **Merge to main**: if on a feature branch
 11. **Release**: `npm run release:patch|minor|major` based on commit type
-12. **Credentialed verification (pre-publish for arc-completion releases)**: run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-05-02.md` (or successor) when the release ships new public surface; uses pi's `auth.json` directly (no separate env-var gate). Routine bumps don't require this — build/check/test catches breakage there.
+12. **Credentialed verification (pre-publish for arc-completion releases)**: run the canonical verification protocol at `docs/reports/pi-internal-verification-protocol-2026-07-05.md` (or its dated successor — always the newest dated protocol in `docs/reports/`; each gate run appends its executed record or writes a new dated successor when the surface has moved) when the release ships new public surface; uses pi's `auth.json` directly (no separate env-var gate). Routine bumps don't require this — build/check/test catches breakage there.
 13. **Publish**: requires interactive `npm login` + OTP — user action
 
 Steps 1-10 are the agent's responsibility. Step 12 applies to arc-completion releases only. Step 13 requires user action. Declaring work "done" before step 10 is a failure.

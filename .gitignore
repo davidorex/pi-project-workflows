@@ -10,6 +10,7 @@ node_modules/
 !.claude/skills/audit-task-resolution/
 !.claude/skills/run-pi-project-workflows/
 !.claude/skills/audit-substrate-currency/
+!.claude/skills/release/
 .pi/
 .workflow/
 .workflows/

@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "context-reconcile verified on merged main and exercised LIVE. Gates: build / skills / check / test exit 0 (the pi-agent-dispatch AUTH_REQUIRED_TOOLS canon-pin test intentionally grew to 21 names; the CLI help-group forcing function caught the initial omission and the op is grouped under Schema & config). Three new cells green: dryRun exact-prediction with bytes-unchanged, live-applies-exactly-the-predicted-set (identity established on the pre-identity fixture per DEC-0020, converged item at its derivation with a minted oid through the real catalog milestone schema, untouched sibling, clean no-op both ways), authored-status kinds structurally out of reach. Runtime demonstrations on the REAL substrate through the promoted operator: the auth gate refused without --yes; dryRun predicted exactly one delta (MILE-003 planned->reached, the audit's finding); the granted live run applied it (applied:1), the read-back shows stored 'reached' with content_parent chaining the prior version, and the post-repair dryRun is a clean no-op — the detect-repair loop closed live.",
+  "criteria_results": [
+    {
+      "criterion": "dryRun lists the exact delta set writing nothing; the live run applies exactly that set through the standard write path; converged substrate is a clean no-op both ways",
+      "status": "passed",
+      "evidence": "test cells assert dry===live delta sets and byte-unchanged dryRun; the live substrate sequence dryRun->live->dryRun observed [1 delta]->[applied 1]->[0 deltas]"
+    },
+    {
+      "criterion": "The op never writes authored-status kinds or prose; scope + residue stated on the op surface",
+      "status": "passed",
+      "evidence": "deltas derive only from rollup-declared kinds (inert-declaration cell); op description carries the scope and the flagged-for-review residue (FEAT-011 criterion 9)"
+    },
+    {
+      "criterion": "CLI reflection with parity; auth-gated; docs-surface-sync; CHANGELOG",
+      "status": "passed",
+      "evidence": "parity-check enumerates 81 writers clean; authGated joins the derived gated set (canon test 21); both READMEs + tool-families line + three package CHANGELOGs + SKILL regen"
+    },
+    {
+      "criterion": "Full suite 0 failures; runtime demo showing dryRun/live/no-op through the promoted CLI",
+      "status": "passed",
+      "evidence": "suite exit 0 on the branch and merged main; the live-substrate demo above ran through the promoted operator"
+    }
+  ]
+}

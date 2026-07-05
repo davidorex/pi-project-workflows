@@ -1757,7 +1757,7 @@
     },
     {
       "description": "New context-reconcile op (v1): compute every derived-status delta (the derived-status comparison from the invariant class, shared helpers — identical verdicts) and apply the convergence through the standard write path — identity-stamped, validated, attested to the invoking writer via DispatchContext. --dryRun predicts the live outcome exactly (the FGAP-066 in-memory-simulation standard): the previewed delta set equals what the live run writes. Reflected in the CLI (parity gate covers op<->CLI); auth-gated as a write ceremony. Scope v1 is derived-status deltas only; the op's sweep is designed for extension (the typed-staleness task extends it to fired conditions + pin drifts). The op surface states FEAT-011's residue: authored judgment and prose truth are never auto-repaired. Composed from FEAT-011 criteria 4 and 9 and the shape report S9 (LLM-composed under that basis).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/ops-registry.ts",
@@ -1778,8 +1778,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-086",
       "oid": "13a4c3b0c090c40f0cce3a2652762426",
-      "content_hash": "a5aaa9994128517cdd81537972a8a142311cb57ab56dd3e8fcce375f21f7e724",
-      "content_parent": "833ebae9aa337b670936db4fb3e848d1089b2934e1d4433b25ed978c7e0ff571"
+      "content_hash": "e51df613507f95e9c8f97c46858a0a0a8542e96c97548e9380d30e92f1d720a9",
+      "content_parent": "a5aaa9994128517cdd81537972a8a142311cb57ab56dd3e8fcce375f21f7e724"
     },
     {
       "description": "Converge-on-write for derived stored state (the schema_version template applied to rollup-kind status, FEAT-011 criterion 2 / shape S2): an engine write that changes a rollup INPUT — a member item's status, or a membership edge — recomputes the affected rollup items' derived status and stamps their stored status through the standard write path, at the block-api item-grain chokes or a shared post-write hook. The trigger set derives from state_derivation.rollups + role_direction (config-declared, kind-general). The stamp is convergence, not authoring — the identical argument writeTypedFile's schema_version stamp carries ('truthful by construction'); the milestone schema's authored-status prohibition is satisfied because the stamped value IS the derivation. Stamped items advance content_hash/content_parent (semantically correct: content changed) and attest the engine writer. Out-of-band divergence (hand edits, git merges) remains the invariant class + reconcile's territory. Composed from FEAT-011 criterion 2 and shape report S2 (LLM-composed under that basis).",

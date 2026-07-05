@@ -1,0 +1,20 @@
+{
+  "description": "New context-reconcile op (v1): compute every derived-status delta (the derived-status comparison from the invariant class, shared helpers — identical verdicts) and apply the convergence through the standard write path — identity-stamped, validated, attested to the invoking writer via DispatchContext. --dryRun predicts the live outcome exactly (the FGAP-066 in-memory-simulation standard): the previewed delta set equals what the live run writes. Reflected in the CLI (parity gate covers op<->CLI); auth-gated as a write ceremony. Scope v1 is derived-status deltas only; the op's sweep is designed for extension (the typed-staleness task extends it to fired conditions + pin drifts). The op surface states FEAT-011's residue: authored judgment and prose truth are never auto-repaired. Composed from FEAT-011 criteria 4 and 9 and the shape report S9 (LLM-composed under that basis).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/README.md",
+    "README.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "On a substrate with a stale rollup-kind stored status, context-reconcile --dryRun lists the exact delta set writing nothing, and the live run applies exactly that set through the standard write path (envelope stamped, items identity-stamped, writer attested); a converged substrate is a clean no-op both ways.",
+    "The op never writes an authored-status kind (feature/gap/issue/task buckets) and never touches prose — v1 scope is rollup-kind stored status only, stated on the op surface alongside the residue statement.",
+    "CLI reflection with parity green; auth-gated; docs-surface-sync across both READMEs + skill narrative + SKILL regen; CHANGELOG entry.",
+    "Full suite 0 failures; runtime demo on a scratch substrate showing dryRun/live/no-op through the promoted CLI."
+  ],
+  "notes": "FEAT-011 T3 (shape S9). Depends on the derived-status invariant class task (shared comparison helpers). Onboards existing substrates and merge-introduced drift."
+}

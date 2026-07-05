@@ -25,13 +25,14 @@
     {
       "id": "MILE-003",
       "name": "Versioned-data convergence — migration live on blocks, versions converge on write, no split-brain readers",
-      "status": "planned",
+      "status": "reached",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-02",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-02T10:03:46.783Z",
+      "modified_at": "2026-07-05T13:54:22.936Z",
       "oid": "814c410de5c0463957994eaad93e23dc",
-      "content_hash": "458f164e8d45d4b73d03ba83ef6d5809f56a53619c1a7550c26d345ada9a05a6"
+      "content_hash": "b920c93d82f1d4418d66b18aa0f470a439077ce33484781d0dbe83854d76c45d",
+      "content_parent": "458f164e8d45d4b73d03ba83ef6d5809f56a53619c1a7550c26d345ada9a05a6"
     },
     {
       "id": "MILE-004",
@@ -99,5 +100,6 @@
       "oid": "b33e3594f21231dc0b11dda100927dff",
       "content_hash": "c483740d3043f39cc7543a75f51e4d12b999f25f790ea0553efef579ab8c5afc"
     }
-  ]
+  ],
+  "schema_version": "1.0.0"
 }

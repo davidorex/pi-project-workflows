@@ -1,0 +1,20 @@
+{
+  "title": "Read surface has no field projection — item-metadata enumeration requires full-item reads the 50KB cap refuses, so substrate-wide currency audits are not cheaply repeatable",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "canonical_vocabulary": "field-projection reads",
+  "description": "No read op projects a subset of item fields: filter-block-items, read-block-page, resolve-items-by-id, and context-lens-view --bin all return whole items. Enumerating one field across a block (e.g. every research item's status + stale_conditions, or every gap's id + status + priority) therefore costs full-item payloads, and on populated blocks the 50KB read cap correctly refuses (observed in today's currency audit: filter-block-items on framework-gaps status-in refused at 127,873 bytes; on research status-eq refused at 135,562 bytes; read-block-page of 8 research items truncated at 59,257 bytes). The workarounds are per-item read-block-item loops (dozens of invocations) or table-format rendering (drops fields not in the fixed column set and falls back to full JSON on heterogeneous pages). Class: any substrate-wide sweep that needs one or two fields per item — currency audits, staleness-condition review, priority triage, the planned reconcile/staleness machinery's reporting — pays whole-item cost or is refused; the cap and the projection absence jointly make honest bulk enumeration impossible through the sanctioned surface. Distinct from FGAP-016 (which concerns the cap measuring the pretty form vs compact emission, not projection).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "filter-block-items / read-block-page / resolve-items-by-id declare no field-projection parameter; context-lens-view --bin pages whole items"
+    },
+    {
+      "file": "analysis/2026-07-05-currency-foreclosure-shape.md",
+      "reference": "the audit that hit the refusals; the recommended reconcile/staleness machinery needs cheap enumeration of status + condition fields across blocks"
+    }
+  ],
+  "impact": "Substrate-wide currency auditing degrades to per-item invocation loops or partial table renders; the exact sweeps the derivation-truthfulness machinery must run (stored-vs-derived status, fired stale_conditions) cannot be performed affordably through the read surface.",
+  "proposed_resolution": "Determination at task time: a --fields projection parameter on the item-returning read ops (projected server-side before the cap measures), or a dedicated enumeration op returning id + declared fields per item — either keeps the cap honest by shrinking the payload rather than truncating it."
+}

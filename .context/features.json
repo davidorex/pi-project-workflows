@@ -66,7 +66,7 @@
     {
       "id": "FEAT-004",
       "title": "Substrate-derived state — config-driven context-current-state / context-status",
-      "status": "proposed",
+      "status": "in-progress",
       "layer": "L1",
       "description": "Today these ops hardwire their derivation to the stock kinds — focus / in-flight / ranked-next are computed from `framework-gaps` + `tasks`. On a custom-vocabulary substrate (e.g. `.workshopping` with `prompt-fragment` + `prompt-spec`) they return empty/inert: the substrate has a real \"where are we / what's next,\" but the op can't see it because it's looking for kinds that aren't there.\n\nProposal: derive the derivation from active substrate's `config.json`, not from hardcoded kind names. The substrate declares its state-bearing vocabulary — which kind+predicate yields *focus*, which field gives *order/ranking*, which field+values mark *open/blocked/done*. Stock substrates declare `framework-gaps`+`tasks` (today's behavior preserved exactly); a custom substrate declares its own (e.g. `prompt-spec` ranked by `order`, blocked by unmet `deps`). With no declaration the op is a truthful \"not configured,\" not a silent empty.\n\n\"where are we / what's next\" becomes a capability *any* substrate opts into by declaring its own state fields, instead of a privilege of the stock project-management vocabulary.",
       "motivation": "context-current-state is fully inert on a custom-vocabulary substrate (confirmed: returns empty focus/inFlight/nextActions/blocked against .context-jit-spec-v2 whose state-bearing kinds are axioms/concepts/dispatch-modes, not tasks/framework-gaps), because currentState() hardcodes the stock kinds + the task_depends_on_task blocked-by relation + a P0-P3 rank. The where-are-we/what-next capability is thus a privilege of the stock PM vocabulary rather than something any substrate can opt into.",
@@ -79,9 +79,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-04T21:41:43.079Z",
+      "modified_at": "2026-07-05T06:53:39.170Z",
       "oid": "b5428784e8fbdb7524f7f5780c65dd69",
-      "content_hash": "8cca0f40e52ab550aad58cc6d26b2f0434b07de844b31b6c50abeb7b40aff9ff"
+      "content_hash": "84d467ba7cac0afca7dbf44a5f85b716b24fd6e7297c73f0c00fe43523a4133c",
+      "content_parent": "8cca0f40e52ab550aad58cc6d26b2f0434b07de844b31b6c50abeb7b40aff9ff"
     },
     {
       "id": "FEAT-005",
@@ -189,7 +190,7 @@
     },
     {
       "title": "Substrate evolution safety + currency — catalog/config/schema evolution and substrate read/repair/materialize never brick or silently corrupt an installed substrate",
-      "status": "proposed",
+      "status": "in-progress",
       "layer": "L1",
       "description": "Catalog, config, and schema evolution, and every read / repair / materialize of an already-installed substrate, preserve its loadability, the integrity of its install/validity signals, and its recoverability through sanctioned ops. Config carries a versioned envelope and migrates on load across a version gap; an invalid config is recoverable through a sanctioned repair that validates the result, not the pre-existing state; a non-additive config-schema diff is flagged at build time unless paired with a migration; block data carries schema_version so read-time validation and migration are active; a same-version schema resync re-validates existing items and refuses a narrowing change; a block kind declared after install is materialized into the existing substrate. Invariant: no evolution, read, repair, or materialize leaves the substrate bricked, silently corrupted, or unrecoverable through sanctioned ops.",
       "acceptance_criteria": [
@@ -204,10 +205,11 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "FEAT-010",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-01T07:30:44.999Z",
+      "modified_at": "2026-07-05T06:53:28.054Z",
       "oid": "f60e2e7c4b018b21c766bd482fb780b4",
-      "content_hash": "4cd7fc030bf38d8b0d3d9440bb39d909f6e4391a4e25654b01c0653444e7e503",
-      "content_parent": "97689dacb5ccc9dc0a3124dd7c5c8e863b1a76d72656851ca07bd0de87c143b1"
+      "content_hash": "fa8349c602a0ea0f01f5149896927d1f464c81166a9b6d9be13d8812d1eef85c",
+      "content_parent": "4cd7fc030bf38d8b0d3d9440bb39d909f6e4391a4e25654b01c0653444e7e503"
     }
-  ]
+  ],
+  "schema_version": "1.0.1"
 }

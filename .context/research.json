@@ -817,7 +817,7 @@
     },
     {
       "title": "pi-context update: dry-run/live outcome divergence + per-component transactional seam",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "empirical",
       "question": "Why does pi-context update preview a catalog-ahead schema as resynced under --dryRun but return blocked on the live run, and what is update's intended transactional contract when one schema blocks while additive config-registry vocabulary is propagated in the same run?",
@@ -868,9 +868,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:18:47.435Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-09T22:18:47.435Z",
+      "modified_at": "2026-07-05T06:53:18.292Z",
       "oid": "bd4314b1ececae87000027e9f73f7ca6",
-      "content_hash": "33fffb2cacd4794f47a24c3f1798f064981cdf23db20644a0787052fcc508045"
+      "content_hash": "6c50e234be1d10c08b2863b6d6720b3735078f390462bfb33ed82ac8819672ab",
+      "content_parent": "33fffb2cacd4794f47a24c3f1798f064981cdf23db20644a0787052fcc508045"
     },
     {
       "id": "R-0013",

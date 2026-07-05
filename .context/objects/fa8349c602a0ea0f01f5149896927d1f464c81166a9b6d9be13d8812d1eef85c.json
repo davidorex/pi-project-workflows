@@ -1,0 +1,14 @@
+{
+  "title": "Substrate evolution safety + currency — catalog/config/schema evolution and substrate read/repair/materialize never brick or silently corrupt an installed substrate",
+  "status": "in-progress",
+  "layer": "L1",
+  "description": "Catalog, config, and schema evolution, and every read / repair / materialize of an already-installed substrate, preserve its loadability, the integrity of its install/validity signals, and its recoverability through sanctioned ops. Config carries a versioned envelope and migrates on load across a version gap; an invalid config is recoverable through a sanctioned repair that validates the result, not the pre-existing state; a non-additive config-schema diff is flagged at build time unless paired with a migration; block data carries schema_version so read-time validation and migration are active; a same-version schema resync re-validates existing items and refuses a narrowing change; a block kind declared after install is materialized into the existing substrate. Invariant: no evolution, read, repair, or materialize leaves the substrate bricked, silently corrupted, or unrecoverable through sanctioned ops.",
+  "acceptance_criteria": [
+    "A config whose schema_version lags the bundled config schema is migrated forward on load and loads valid: loadConfigForDir migrates-then-validates via the schema-name-keyed config migration chain.",
+    "An invalid config.json is restored to validity through a sanctioned CLI repair path that validates the corrected result rather than refusing on the pre-existing invalid state; recovery needs no forbidden direct edit.",
+    "A non-additive config-schema diff (a removed/renamed key or a new required field) is flagged at build time unless paired with a registered migration.",
+    "Block data carries schema_version; the read-time validation hook and the version-mismatch migration branch fire for blocks, so a version-bump migration applies to existing block data on read.",
+    "A block kind declared in config after a substrate was installed is materialized into that substrate by a sanctioned op; context-bootstrap-state then reports ready and the block is writable.",
+    "A same-version catalog schema resync re-validates existing block items against the new body and refuses (blocked, byte-unchanged) when a narrowing change would invalidate them, symmetric with the version-bump path's migrate-then-revalidate-or-refuse."
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "title": "pi-context update: dry-run/live outcome divergence + per-component transactional seam",
+  "status": "stale",
+  "layer": "L2",
+  "type": "empirical",
+  "question": "Why does pi-context update preview a catalog-ahead schema as resynced under --dryRun but return blocked on the live run, and what is update's intended transactional contract when one schema blocks while additive config-registry vocabulary is propagated in the same run?",
+  "method": "code-inspection of updateContext + resyncSchema (packages/pi-context/src/index.ts) + empirical reproduction in a throwaway substrate (dry vs live update against a 1.0.0->1.0.1 catalog bump whose existing items fail the tightened schema) + substrate cross-check of what FEAT-006 and DEC-0017 already decide.",
+  "scope": [
+    "packages/pi-context/src/index.ts updateContext catalog-ahead arm (dry 1239-1262 vs live 1273) + resyncSchema 599-641 + registry propagation 1391-1421",
+    "reproduction: throwaway substrate, conventions 1.0.0 installed, catalog 1.0.1 adds required `rationale`, identity migration, item lacking the field",
+    "substrate: DEC-0017, issue-001, VER-025/026, FEAT-006 tasks TASK-034..039, FGAP-060/066"
+  ],
+  "findings_summary": "updateContext's catalog-ahead arm splits dry and live into non-equivalent paths. The DRY branch (index.ts:1239-1262) unconditionally pushes the schema onto `resynced` and computes the would-register migration decls read-only, with a code comment that the concrete resynced/migrated/blocked outcome is 'unknowable without running it'. The LIVE branch (index.ts:1273 -> resyncSchema:599-641) forward-migrates the block items (validateBlockWithMigrationForDir:601) and re-validates against the new schema; on an AJV failure it restores the schema bytes, restores/removes migrations.json, and returns blocked with empty registeredMigrations (:622-640) — byte-exact rollback. So a dry `resynced` asserts 'would act', not 'would succeed', and structurally cannot predict `blocked`. Reproduced: conventions installed 1.0.0, catalog 1.0.1 adds a required `rationale` the existing item lacks; dry -> resynced + migrationsRegistered[conventions 1.0.0->1.0.1]; live -> blocked + empty migrationsRegistered, schema/block byte-unchanged, installed version still 1.0.0; AJV `must have required property 'rationale'` at /rules/0. This is FGAP-066 (identified); its proposed_resolution is the in-memory forward-migrate + AJV-validate dry-run. Secondary, untracked: the post-loop config-registry propagation (index.ts:1391-1421) is NOT gated on the schema-loop outcome — it computes registryAdditions and, when !dryRun, calls writeConfig unconditionally; in the live reproduction (conventions blocked) registryAdditions was identical to the dry run (including item_derived_from_item) and writeConfig ran, so a live update reporting `blocked` still mutated config.json. The substrate is silent on whether update is atomic across the schema loop and the registry propagation: DEC-0017 decides per-schema independence across sibling schemas ('never hard-blocks the remaining schemas') but not the registry-vs-blocked coupling; issue-001 scopes resyncSchema's rollback to the single schema's file + migrations.json; VER-025 frames the propagation's try/catch as isolating the loop FROM the merge, never the inverse; FEAT-006's tasks (TASK-034..039) leave dry/live outcome parity, the registry-vs-schema coupling, and rollback scope all unspecified, and TASK-038's description frames the registry slice as a deliberate 'disjoint seam … Independent of the schema-merge slices'. General class: every other --dryRun site in packages/pi-context/src is faithful (validate the prospective result, gate only the write); the catalog-ahead arm is the single unfaithful preview. UX intention (the basis for the filed decision): update does two things with opposite risk profiles — additive vocabulary propagation (safe, wanted, can't corrupt) and schema migration (touches data, the only thing that can block) — so the plausible model is per-component, not whole-run-atomic: do not withhold safe vocabulary because an unrelated migration blocked (the literal extension of DEC-0017), keep the per-schema byte-exact rollback as the safety boundary, make the partial application LEGIBLE (a blocked result must surface what applied + what blocked so it never reads as no-op), and make the dry-run predict the live outcome since its purpose is risk-preview.",
+  "findings_document": "analysis/2026-06-10-update-dryrun-live-and-transactional-seams.md",
+  "grounding": {
+    "revisions": [
+      "pi-project-workflows context-jit-spec-v2 @ 2026-06-10 (post lens-view/check-changelog merge 80580bb)"
+    ]
+  },
+  "stale_conditions": [
+    "updateContext's catalog-ahead dry branch (index.ts:1239-1262) is changed to forward-migrate + re-validate in memory (FGAP-066 fix lands) — the dry/live divergence finding becomes historical",
+    "the post-loop registry propagation (index.ts:1391-1421) is gated on the schema-loop outcome — the per-component-by-construction finding changes",
+    "resyncSchema's rollback scope (index.ts:599-641) changes from per-schema to whole-run"
+  ],
+  "citations": [
+    {
+      "label": "dry branch: unconditional resynced + read-only would-register decls",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "1239-1262"
+    },
+    {
+      "label": "live branch: resyncSchema forward-migrate + re-validate + block/rollback",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "599-641"
+    },
+    {
+      "label": "post-loop registry propagation, ungated on schema outcome, !dryRun writeConfig",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "1391-1421"
+    },
+    {
+      "label": "FGAP-066 — dry-run over-reports the catalog-ahead outcome",
+      "path": ".context/framework-gaps.json"
+    },
+    {
+      "label": "DEC-0017 — never hard-blocks the remaining schemas (sibling independence)",
+      "path": ".context/decisions.json"
+    }
+  ]
+}

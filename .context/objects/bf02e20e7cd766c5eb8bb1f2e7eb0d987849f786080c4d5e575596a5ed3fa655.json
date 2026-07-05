@@ -1,0 +1,19 @@
+{
+  "description": "Fix the refusal-cause conflation class in the resync/resolve blocked pipeline. Classify at the catch, at BOTH catch sites (version-bump arm and same-version arm): err instanceof ValidationError keeps reason validation-failed with mapped per-item failures (unchanged); any other throw reports the new BlockedDetail reason write-failed with the failures array carrying the thrown message. Non-validation refusals inscribe NO failure markers into the block file and persist NO pending-blocked record (the resolve-blocked remedy addresses item validity, not write preconditions); renderBlocked gains a truthful write-failed branch whose guidance does not direct item fixes. resolveBlocked's commit sequence becomes all-or-nothing per the byte-exact refuse discipline: capture pre-commit bytes of every file the commit touches (installed schema, block file, migrations.json, pending-blocked.json), restore all captured bytes on any commit-phase throw, and return resolved:false carrying the truthful failure. simulateResyncOutcome is unchanged (validation-only model; the pre-identity dry/live parity instance is removed by the ceremony-entry identity establishment decision's implementation, not this task).",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/README.md",
+    "README.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "A non-validation throw at the resync write boundary reports blocked with reason write-failed carrying the thrown message, inscribes no markers into the block file, and persists no pending-blocked record — demonstrated live on the pre-identity reproduction fixture with the schema and block byte-unchanged.",
+    "Item-validation refusals are unchanged: reason validation-failed with per-item failures, markers and pending-blocked as today; the existing suite stays green without weakened assertions.",
+    "resolveBlocked's commit is all-or-nothing: a commit-phase throw restores every touched file byte-exact (installed schema, block, migrations.json, pending record intact) and returns resolved:false with the truthful failure — demonstrated on the pre-identity fixture that previously produced the partial commit.",
+    "renderBlocked renders write-failed with guidance that does not direct item fixes; the update and resolve-blocked op description/promptSnippet strings and both READMEs state the reason vocabulary truthfully; CHANGELOG carries the entry; build, check, and the full test suite pass at zero failures with the change in dist/."
+  ],
+  "notes": "Closes the refusal-cause conflation gap (its filed resolution); ordered before the ceremony-entry identity implementation so both fixes verify against the real pre-identity failure."
+}

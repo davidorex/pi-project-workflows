@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "Refusal-cause classification verified on merged main (1cf7f6ac). Gates: build / check / test exit 0 across the branch commits and the merge; full suite 0 failures. Runtime demonstrations against the fix: the two-cell issue reproduction re-run (tsx, built dist) shows cell A (no substrate_id) reporting reason write-failed with the stamping message, zero marker lines in the block file, no pending-blocked.json, and the partialApplication summary naming '(write-failed)', while cell B (substrate_id present) migrates cleanly unchanged; the promoted operator CLI's text surface renders the write-failed entry with the carried message and the do-not-edit-items guidance. The demo caught one in-loop divergence — the report's trailing guidance still directed item fixes on an all-write-failed report — fixed on the branch (trailing guidance now gated to reports with a pending-persisting entry), re-verified by fresh gates and a promoted-CLI re-demo ending at the precondition guidance.",
+  "criteria_results": [
+    {
+      "criterion": "A non-validation throw at the resync write boundary reports blocked with reason write-failed carrying the thrown message, inscribes no markers, persists no pending-blocked record — demonstrated live on the pre-identity fixture with schema and block byte-unchanged",
+      "status": "passed",
+      "evidence": "install-subcommand.test.ts pre-identity version-bump cell: reason write-failed, message includes substrate_id, premarker_hash undefined, both files byte-equal, pendingBlockedPathForDir absent; promoted-CLI live run shows the same on the real surface"
+    },
+    {
+      "criterion": "Item-validation refusals unchanged: validation-failed with per-item failures, markers and pending-blocked as today; existing suite green without weakened assertions",
+      "status": "passed",
+      "evidence": "all pre-existing narrowing/blocked/resolve cells untouched and green (full suite exit 0); the all-or-nothing cell's precondition asserts the genuine validation-failed flow still persists markers + pending"
+    },
+    {
+      "criterion": "resolveBlocked commit all-or-nothing: a commit-phase throw restores every touched file byte-exact and returns resolved:false with the truthful failure — demonstrated on the fixture that previously produced the partial commit",
+      "status": "passed",
+      "evidence": "real-flow cell (validation block → items fixed in place → resolveBlocked): resolved:false, failure message includes substrate_id, and schema/block/pending/migrations/config all byte-restored (the pre-fix behavior — schema advanced, markers stripped, pending stale — was observed and documented in the filed research)"
+    },
+    {
+      "criterion": "renderBlocked write-failed guidance does not direct item fixes; update + resolve-blocked op strings and both READMEs state the vocabulary truthfully; CHANGELOG entries; gates green in dist/",
+      "status": "passed",
+      "evidence": "promoted-CLI text report: per-entry 'write refused (not an item-validation failure)… do not edit items' with no contradictory trailing guidance; op description enumerates the three reasons and resolve-blocked states the all-or-nothing commit; both READMEs updated at both bullets ('A live validation-failed block also persists…'); two CHANGELOG bullets; SKILL.md regenerated; main rebuilt + operator promoted"
+    }
+  ]
+}

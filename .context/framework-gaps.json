@@ -3756,7 +3756,7 @@
     },
     {
       "title": "resync/resolve blocked pipeline classifies every throw as item-validation failure — non-validation refusals are mislabeled, mark valid blocks, dead-end the routed remedy, and break dry/live parity",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "canonical_vocabulary": "refusal-cause classification",
@@ -3783,7 +3783,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-115",
       "oid": "a02e0f3d83a7f3fe85666035bef71a67",
-      "content_hash": "7656f15d3f2c1c58b90a63e65bedbc1c9911f54508eb902cfa4678ffe99ba1c2"
+      "content_hash": "5ccd6247d4fa83e1e7901d5fee52b3994e4763d88a80ab5fef90fa89c21fe350",
+      "closed_by": "TASK-081 / VER-069 — refusal-cause classification landed at both resyncSchema catch sites: an AJV ValidationError keeps reason validation-failed (per-item failures, markers, pending record — unchanged); any other throw reports the new reason write-failed with the thrown message carried, and the validation-only consequences never fire (no markers inscribed into the block, no pending-blocked record persisted). renderBlocked renders write-failed truthfully (the items were not flagged invalid; address the precondition, re-run update) and its trailing fix-items guidance is gated to reports carrying a pending-persisting entry. resolveBlocked's commit is all-or-nothing: pre-commit bytes of every touched file (migrations.json, installed schema, block, config.json, pending record) captured and byte-restored on any commit-phase throw, returning resolved:false with the truthful failure — the partial-commit facet is closed. The dry/live parity facet for the pre-identity instance is deferred by design to the ceremony-entry identity establishment implementation (the enacted decision), which removes the instance; the classification stands for every other non-validation throw at the boundary. Merged 1cf7f6ac; both facets demonstrated on the promoted operator against the original reproduction.",
+      "closed_at": "2026-07-05",
+      "content_parent": "7656f15d3f2c1c58b90a63e65bedbc1c9911f54508eb902cfa4678ffe99ba1c2"
     }
   ]
 }

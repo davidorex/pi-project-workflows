@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- The reflected op surface gains `context-reconcile` (auth-gated): `--dryRun` previews the exact stored-vs-derived delta set for rollup-declared kinds; a live run converges them through the validated write path. Grouped under Schema & config in `--help`.
+
 ## [0.32.0] - 2026-07-05
 
 ### Added

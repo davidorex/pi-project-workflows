@@ -407,6 +407,16 @@ Bring the installed substrate model (schemas) current with the packaged catalog.
 | `dryRun` | boolean | no | Preview the per-schema action plan without writing anything. |
 </tool>
 
+<tool name="context-reconcile">
+Converge stored substrate state with its derivation (the repair half of the derived-status invariant class). For every block kind a derived-status invariant declares (paired with its state_derivation.rollups entry), computes each item's stored-vs-derived status delta using the SAME completeness helper the state derivation's gate satisfaction and context-validate use — the preview, the detector, and the repair cannot disagree. --dryRun returns the exact delta set a live run would apply (id, block, from stored value, to derived value, declaring invariant), writing nothing. A live run applies exactly that set through the standard validated write path — identity-stamped, envelope-stamped, attested to the invoking writer — and reports the applied count; a converge-write is not authoring, the written value IS the derivation. Scope: derived-status deltas ONLY — the op never writes an authored-status kind (feature/gap/issue/task buckets are human judgment) and never touches prose; those classes are flagged for review by context-validate, not auto-repaired. Ceremony discipline: seeds the catalog config migration declarations at entry, and a live run on a substrate with no substrate_id establishes the identity first (reported under substrateIdEstablished). A converged substrate is a clean no-op both ways.
+
+*Converge stored rollup-kind statuses with their derivation (--dryRun previews the exact delta set; live applies it through the validated write path; never touches authored statuses or prose)*
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `dryRun` | boolean | no | Preview the exact delta set without writing anything. |
+</tool>
+
 <tool name="validate-block-items">
 Validate a block's items against the catalog schema version — returns the per-item failures (item id, field, constraint) without writing. Resolves the block's catalog block_kind, loads the installed block, forward-migrates its items in memory through the shipped chain when the block lags the catalog version (a fresh registry; never warms the project's cache), and validates against the catalog schema body. Returns block / from (the block's declared version) / to (the catalog version) / valid / failures[] (each: itemId — the failing item's id when the instancePath resolves to one — instancePath, keyword, message). Read-only: never overwrites the schema, the block, or migrations.json. An unknown block or a missing installed block file throws.
 

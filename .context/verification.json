@@ -2328,6 +2328,37 @@
       "id": "VER-074",
       "oid": "cfc155fe5bb8ab9d65bad11d29688071",
       "content_hash": "eb3c0c7c351a56bc5391b4ccd45e1adf180e3e2b9c669fe9dcfdb5b63bbedf21"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-06",
+      "evidence": "Converge-on-write verified on merged main and demonstrated through the promoted operator. Gates: build / check / full test suite exit 0, wall-clock bounded (every tsx-runner package test script now carries --test-timeout=120000). Four cells green: a member-status op write converges the container on disk under sequential locks; a membership-edge op write (role-typed primary/counter, per the orientation guard) converges the affected container and the sweep matches reconcile's set; opt-in inertness is byte-identical without a derived-status invariant; a best-effort pre-identity convergence failure leaves the triggering write successful and the divergence for the invariant + reconcile. Promoted-CLI demo: on a scratch fixture, one update-block-item flipping the phase to completed left the milestone stored status 'reached' on disk, identity-stamped and writer-attested — the write carried the convergence. Honest defect record: the first-cut wrapper converged only on object results while these ops return success STRINGS, silently disabling the feature; the failing message-less assert this produced sent node:assert into an effectively unbounded acorn re-parse of tsx's single-line transform (the suite hang) — root-caused with V8-inspector stack evidence by a dispatched agent (analysis/2026-07-05-converge-hook-hang-rootcause.md), fixed to converge-on-non-throw (skipping --dryRun previews), and re-verified fresh.",
+      "criteria_results": [
+        {
+          "criterion": "Completing the last member of a rollup-kind container through a sanctioned write leaves the container's stored status equal to its derivation on disk — demonstrated live end-to-end",
+          "status": "passed",
+          "evidence": "member-status cell + the promoted-CLI scratch demo (phase completed -> milestone.json stored 'reached', oid minted, writer attested)"
+        },
+        {
+          "criterion": "A write that does not change any rollup input performs no extra stamping; substrates without state_derivation unchanged",
+          "status": "passed",
+          "evidence": "opt-in cell asserts the rollup block byte-identical without the invariant; the hook computes an empty set on non-declaring substrates (the previously-green full suite exercised exactly that across every op-calling test)"
+        },
+        {
+          "criterion": "Cross-file stamping runs under the per-file lock discipline without deadlock",
+          "status": "passed",
+          "evidence": "member write fans out to the container block in the cells and the CLI demo; locks are sequential (op lock released before the hook's), and the investigating agent exonerated the lock layer with stack evidence"
+        },
+        {
+          "criterion": "Stamped items carry advanced identity and attestation; full suite 0 failures; CHANGELOG entry",
+          "status": "passed",
+          "evidence": "the converged milestone carries oid/content_hash + modified_by attestation in the demo read-back; suite exit 0 bounded; CHANGELOG [Unreleased] bullet added"
+        }
+      ],
+      "id": "VER-075",
+      "oid": "7eeadd1e2312ec380f76aa870f0758c4",
+      "content_hash": "7ef0cadd0e6ade571a72a14bc9a8fa7fa5c70abe658ea091748109d084e78617"
     }
   ],
   "schema_version": "1.0.1"

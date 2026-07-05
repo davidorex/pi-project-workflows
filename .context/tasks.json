@@ -1609,6 +1609,30 @@
       "oid": "c44ca0128eb668ae388905a98cfa6d68",
       "content_hash": "e5f5edb9cb1374c8a6e00c5f913d14a2628ccb0878543d6ff62ea87144c6a4eb",
       "content_parent": "903adfc8a8ecd5297c76dfa26644981ae7f0ae075bfadc25c559f7d85a2a1833"
+    },
+    {
+      "description": "Make update's per-component partial application legible in one place: UpdateResult gains an optional partialApplication field — populated exactly when the run both refused something (blocked, refused, or conflicts non-empty) AND applied something (resynced, migrated, merged, migrationsRegistered, or any registryAdditions array non-empty) — carrying applied {resynced, migrated, merged, registryAdditions, migrationsRegistered}, notApplied {blocked, refused, conflicts}, and a one-line legible summary naming what was applied alongside what was refused and why, so a blocked run never reads as a no-op. Computed for live and dryRun runs (dryRun reports the predicted partiality). The update op's description/promptSnippet state the behavior.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/install-subcommand.test.ts",
+        "packages/pi-context/CHANGELOG.md",
+        "packages/pi-context/skill-narrative.md"
+      ],
+      "acceptance_criteria": [
+        "A live update that blocks (or refuses/conflicts) at least one schema while applying registry additions or other-schema resyncs returns partialApplication with both sides populated and a summary naming the blocked schema(s), the refusal reason, and the applied categories.",
+        "A fully-clean run (nothing refused, or nothing applied) carries no partialApplication field; existing result channels are unchanged.",
+        "--dryRun over the same fixture reports the predicted partiality in the same shape, writing nothing.",
+        "The update op's description and promptSnippet state the partial-application reporting; build, check, and the full test suite pass at zero failures with the change in dist/."
+      ],
+      "notes": "Closes the update-result legibility gap (its filed resolution verbatim); the milestone's last open member.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-080",
+      "oid": "11931fbbbaedaedbdb1e3c06f747c690",
+      "content_hash": "187aa379948d7f1a462ffbb7382670e592f0ec2159da1eafb087be588e0153d9",
+      "content_parent": "df50e5359b15cf3f587c09e0604e0fa7a9397e95ddf1380764b9abea30b4fbe5"
     }
   ],
   "schema_version": "1.0.1"

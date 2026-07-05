@@ -2867,7 +2867,12 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 		lines.push(
 			"Git-style failure markers were written INTO the block file(s): open each block file, fix the items between the `<<<<<<< BLOCKED …` / `>>>>>>> target: …` markers, then resolve-blocked --schemaName <name> --yes — it strips the markers, re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
 		);
-	} else {
+	} else if (blockedDetail.some((d) => d.reason !== "write-failed")) {
+		// The fix-items-then-resolve-blocked flow applies only to entries that
+		// persist a pending record (validation-failed / no-migration-chain). A
+		// report whose entries are ALL write-failed carries its own per-entry
+		// guidance (address the precondition, re-run update) — appending the
+		// item-fixing flow here would contradict it (FGAP-115).
 		lines.push(
 			"No markers were written (preview, or no migration chain to mark against). Resolve a validation-failed block by correcting the offending items in the block file, then resolve-blocked --schemaName <name> --yes — it re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
 		);

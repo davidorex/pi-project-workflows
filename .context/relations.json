@@ -8576,5 +8576,18 @@
       "refname": "PHASE-M3-DATA-CONVERGENCE"
     },
     "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a57dc6d12fc6e41dd7ecbb0ed7913fb7",
+      "refname": "VER-070"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "93a611911fe95e7edb187c6d5d0a3e8f",
+      "refname": "TASK-082"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

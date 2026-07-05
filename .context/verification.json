@@ -2173,6 +2173,37 @@
       "id": "VER-069",
       "oid": "d959ff4b23471499ef6411b1a80f99a0",
       "content_hash": "2935b4aca61e1418990ac7a00ef1bf9974611dcf071c617657f797c27fc3622f"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Ceremony-entry identity establishment verified on merged main (c50de724). Gates: build / check / test exit 0; full suite 0 failures with the two formerly-skipped S4 migrate-path tests re-greened and zero remaining skips on that path. Runtime demonstrations: (1) tsx re-run of the original two-cell issue reproduction — the pre-identity cell now matches the control cell exactly (dry predicts migrated, live migrates, substrate_id persisted on disk, zero marker lines, items identity-stamped); (2) promoted operator CLI on a fresh pre-identity fixture — context-install reports substrateIdEstablished sub-90e0410f1c34df6f end-to-end, and the subsequent live update MIGRATES the 1.0.0->1.0.1 populated-block version bump (the operation the original issue substrate could never complete), registering the chain. Live active substrate: all 17 assets in-sync, no establishment field (already established), channels unchanged.",
+      "criteria_results": [
+        {
+          "criterion": "update, install, and resolve-blocked on a substrate lacking a valid substrate_id establish identity at entry (minted, persisted via the sanctioned config write, registered) and report it; an established substrate is untouched",
+          "status": "passed",
+          "evidence": "establishment test cell: live update mints + persists + registers + reports; second run field absent with the on-disk id unchanged; dryRun establishes nothing and leaves the config identity-less; install + resolve-blocked wired at the same seam (install demonstrated live via the promoted CLI; resolve-blocked establishment exercised by the re-anchored all-or-nothing cell's entry path)"
+        },
+        {
+          "criterion": "The two previously-skipped S4 migrate-path tests re-greened: pre-identity version bump with a shipped chain migrates (items intact, envelope advanced) and check-status reports in-sync after; dry and live runs agree",
+          "status": "passed",
+          "evidence": "both cells un-skipped and green (migrated with item field values preserved, envelope at catalog version, baseline refreshed to in-sync); new dry/live-agreement cell green (both migrated, items stamped under the established id); tsx reproduction shows the same live"
+        },
+        {
+          "criterion": "The refusal-classification cells still pass against a ceremony-independent non-validation write-boundary throw",
+          "status": "passed",
+          "evidence": "both cells re-anchored to the block writer's duplicate-item-id guard (empirically probed before rewrite): write-failed reason with the thrown message, no markers, no pending record, files byte-unchanged; resolve-blocked commit-throw restores every touched file byte-exact"
+        },
+        {
+          "criterion": "Op strings, both READMEs, and the skill narrative state the establishment; CHANGELOG entry; gates green in dist/",
+          "status": "passed",
+          "evidence": "update / context-install / resolve-blocked descriptions gained the establishment sentence (update's stale write-failed example re-pointed to the duplicate-id guard, mirrored in both READMEs); package README ceremony + update prose and the three op bullets updated; monorepo README update bullet updated; skill-narrative ceremony paragraph extended; SKILL.md regenerated; CHANGELOG bullet added; main rebuilt + operator promoted"
+        }
+      ],
+      "id": "VER-070",
+      "oid": "a57dc6d12fc6e41dd7ecbb0ed7913fb7",
+      "content_hash": "78be8a43c93d81808d2f2a9cacb51a4c5db89983d4ab2bd1ee398fc4550f1c67"
     }
   ],
   "schema_version": "1.0.1"

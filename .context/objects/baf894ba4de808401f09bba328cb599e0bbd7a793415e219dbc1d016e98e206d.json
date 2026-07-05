@@ -1,0 +1,23 @@
+{
+  "title": "pre-identity substrate schema re-sync is unsupported — install --update refuses (blocks) a populated-block version bump on a substrate without an established substrate_id",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "DEC-0012 reverted the skipIdentityStamp escape hatch, restoring mandatory identity-stamping on every write. As a result, resyncSchema's migrate write (writeBlockForDir) now requires an established substrate_id: on a substrate that has none, stampWholeBlockIdentity's substrateIdForDir throws inside resyncSchema's try and is caught as the 'blocked' refuse path — the schema and block are left byte-unchanged and the version bump is refused rather than migrated. So /context install --update cannot forward-migrate a populated block on a pre-identity substrate. This is the deferred consequence DEC-0012 names ('Any genuine requirement for resync to support a pre-identity substrate will be designed via canonical process — a declared gap, a dedicated DEC, and a scoped plan'); this is that declared gap.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resyncSchema's migrate path calls writeBlockForDir(destRoot, name, migrated); on a pre-identity substrate the stamping throw is caught by the surrounding try/catch and the outcome becomes 'blocked' (verified by runtime demo: pre-identity -> blocked, schema+block byte-unchanged, no uncaught throw)"
+    },
+    {
+      "file": "packages/pi-context/src/context-dir.ts",
+      "reference": "substrateIdForDir throws when config.json carries no valid substrate_id (expected ^sub-[0-9a-f]{16}$) — the loud guard that now fires on the resync write path for a pre-identity substrate"
+    },
+    {
+      "file": "packages/pi-context/src/install-subcommand.test.ts",
+      "reference": "two S4 migrate-path tests ('version bump WITH a shipped identity migration ... -> migrated' and 'after a migrate, check-status reports the schema in-sync') are it.skip'd pending this work — both run on a pre-identity makeProject substrate"
+    }
+  ],
+  "impact": "A pre-identity substrate (no substrate_id) cannot use /context install --update to forward-migrate a populated block — the re-sync silently refuses (blocked) rather than migrating. No data loss (schema + block byte-unchanged), but the operation is unavailable for pre-identity substrates and the two skipped tests leave that path without green coverage. Identity-established substrates (the normal case; live .context carries a substrate_id) are unaffected.",
+  "proposed_resolution": "Design via canonical process (a dedicated DEC + scoped plan) how schema re-sync should behave for a pre-identity substrate — e.g. whether resync should establish/require identity first, persist items under an explicit pre-identity contract, or remain refused-by-design. Once decided, re-green (or replace per the chosen contract) the two skipped tests."
+}

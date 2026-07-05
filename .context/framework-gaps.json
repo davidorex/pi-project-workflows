@@ -1235,7 +1235,7 @@
     {
       "id": "FGAP-033",
       "title": "pre-identity substrate schema re-sync is unsupported — install --update refuses (blocks) a populated-block version bump on a substrate without an established substrate_id",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "DEC-0012 reverted the skipIdentityStamp escape hatch, restoring mandatory identity-stamping on every write. As a result, resyncSchema's migrate write (writeBlockForDir) now requires an established substrate_id: on a substrate that has none, stampWholeBlockIdentity's substrateIdForDir throws inside resyncSchema's try and is caught as the 'blocked' refuse path — the schema and block are left byte-unchanged and the version bump is refused rather than migrated. So /context install --update cannot forward-migrate a populated block on a pre-identity substrate. This is the deferred consequence DEC-0012 names ('Any genuine requirement for resync to support a pre-identity substrate will be designed via canonical process — a declared gap, a dedicated DEC, and a scoped plan'); this is that declared gap.",
@@ -1258,7 +1258,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
-      "content_hash": "74fcaa25d62dd5b5a3b65337139179fb607e91a72b55c5867b3f6a12b3258250"
+      "content_hash": "baf894ba4de808401f09bba328cb599e0bbd7a793415e219dbc1d016e98e206d",
+      "closed_by": "TASK-082 / VER-070, enacting DEC-0020 — the designed contract resolved to ceremony-entry identity establishment (heal, not refusal-by-design): update (live runs), install, and resolve-blocked establish substrate identity at entry when config.json carries no substrate_id — minted via mintSubstrateId, persisted through the sanctioned config write, registered via registerSubstrate, reported under substrateIdEstablished — before the ceremony's first identity-stamping write. A pre-identity substrate's populated-block version bump now migrates through the sanctioned ceremony (demonstrated on the promoted operator: install established and reported the id, the live update migrated 1.0.0->1.0.1 and registered the chain), the two DEC-0012-era skipped S4 migrate-path tests are re-greened, and dry/live update runs agree on the healed outcome. An established identity is never re-minted, dryRun establishes nothing, and writeBlockForDir's stamping guard stays load-bearing for any write reaching it without identity (no lazy mint inside block writes — DEC-0012 preserved). Merged c50de724.",
+      "closed_at": "2026-07-05",
+      "content_parent": "74fcaa25d62dd5b5a3b65337139179fb607e91a72b55c5867b3f6a12b3258250"
     },
     {
       "id": "FGAP-034",

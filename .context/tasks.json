@@ -1661,7 +1661,7 @@
     },
     {
       "description": "Enact the ceremony-entry identity establishment decision: a substrate-lifecycle ceremony that can reach an identity-stamping write (update, install, resolve-blocked) establishes substrate identity at entry when config.json lacks a valid substrate_id — mint via mintSubstrateId, persist through the sanctioned config write path, register via registerSubstrate — at the same entry seam as the config-migration seeding, before the first write that stamps identity; each ceremony's result reports the establishment (substrateIdEstablished carrying the minted id). Pre-identity substrates thereby heal on the sanctioned ceremony instead of refusing: the two skipped S4 migrate-path tests re-green (version bump with a shipped chain on a pre-identity substrate now migrates, and check-status reports it in-sync after), and dry/live parity is restored for the pre-identity class (both runs agree: migrated). The refusal-classification test cells that used the pre-identity substrate as their non-validation-throw trigger are re-anchored to a ceremony-independent write-boundary throw; the classification contract is unchanged. writeBlockForDir's stamping guard stays load-bearing for any write reaching it without identity (defense in depth; no lazy mint inside block writes).",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/install-subcommand.test.ts",
@@ -1682,8 +1682,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-082",
       "oid": "93a611911fe95e7edb187c6d5d0a3e8f",
-      "content_hash": "7dfc2d5f6798c144f5ab206af886404c9fce44555d550b67a879f6304edc4ad1",
-      "content_parent": "7c4602541c0e5f27631512df4cd968698a2f3dc66aa958fccbeaa42aa2eb96a7"
+      "content_hash": "84a187e6e7847e38397623c54dde5e283d508b4eecc610022c6501e097684ff8",
+      "content_parent": "7dfc2d5f6798c144f5ab206af886404c9fce44555d550b67a879f6304edc4ad1"
     }
   ],
   "schema_version": "1.0.1"

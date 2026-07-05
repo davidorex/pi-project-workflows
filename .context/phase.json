@@ -42,10 +42,10 @@
       "name": "Versioned-data convergence",
       "intent": "schema_version everywhere, every read migration-aware, every resync honest, versions converge on write. Members: TASK-073 (FGAP-099 block schema_version stamping), FGAP-105 (write-time config version convergence), FGAP-107 (raw config readers to the migration-aware loader), issue-005 (same-version resync re-validates), issue-003 (update over-refusal), TASK-072 (FGAP-097 config-schema additive gate), FGAP-092 (update transactional boundary), FGAP-076 (update partial-application legibility). Lane A spine position 1: ungated, first — defines the envelope everything downstream stamps and reads. FGAP-105 fold-locus (writeConfigForDir vs generic writeTypedFile) is decided at this phase plan step, before TASK-057 dispatches.",
       "goal": "FEAT-010 criteria 3, 4, and 6 met; no reader sees a different shape than the loader; persisted schema_version converges to current on write; update outcomes are legible and honor DEC-0018 per-component write boundary (never atomic).",
-      "status": "in-progress",
+      "status": "completed",
       "oid": "8ea214284ddcbc567897f2f640b0b470",
-      "content_hash": "f6039ae82beb718e8e709e95106b1b8a43acf122f4ec293aa3f7d775be7c852a",
-      "content_parent": "47e30d5731396f19707ab26794c1cf2b2767e3bf2f6df4246ce82e6c9e175f47"
+      "content_hash": "8a78847a906217ef3f8f58c38c8f4e9cfa54ba0a35c746d47208a071665e7203",
+      "content_parent": "f6039ae82beb718e8e709e95106b1b8a43acf122f4ec293aa3f7d775be7c852a"
     },
     {
       "id": "PHASE-M4-INSTALL-COMPLETENESS",

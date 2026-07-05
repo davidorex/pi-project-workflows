@@ -1407,7 +1407,7 @@
     },
     {
       "title": "issue-003 re-drive: pre-identity stamping throw is the update refusal's root cause; the blocked pipeline misattributes it as item-validation failure",
-      "status": "complete",
+      "status": "stale",
       "layer": "L4",
       "type": "empirical",
       "question": "Why did update refuse a conventions 1.0.0->1.0.1 forward-migration whose items satisfy the target schema by inspection, with dry-run predicting resynced while the live run refused (issue-003's filed residual: re-drive the reproduction with the shipped blockedDetail diagnostic and fix or retire on the evidence)?",
@@ -1454,9 +1454,10 @@
       "created_at": "2026-07-05",
       "id": "R-0025",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-05T01:07:08.014Z",
+      "modified_at": "2026-07-05T02:17:06.784Z",
       "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
-      "content_hash": "0a5a5c912b711279695a631d031d0671450d54246297cdee7517f0397b408634"
+      "content_hash": "2bbded9cafd32f6d29d7443fbd1878efa9bb2bb107539498c095501f78574e44",
+      "content_parent": "0a5a5c912b711279695a631d031d0671450d54246297cdee7517f0397b408634"
     }
   ],
   "schema_version": "1.0.1"

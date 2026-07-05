@@ -9,6 +9,10 @@
  * 2. Bump version via npm run version:xxx
  * 3. Update CHANGELOG.md files: [Unreleased] -> [version] - date
  * 4. Commit and tag
+ * 5. Promote the operator CLI (scripts/promote-cli.mjs) so the globally-
+ *    installed pi-context binary is at the released version by construction.
+ *    A promote failure does NOT un-release — the bump/changelog/commit/tag
+ *    are already durable; the script exits non-zero naming the manual remedy.
  *
  * After this script completes, the human must:
  *   npm publish --workspaces --access public   (requires npm login + OTP)
@@ -242,6 +246,30 @@ console.log();
 
 console.log(`=== Tagged v${version} ===`);
 console.log();
+
+// 5. Promote the operator CLI so the global pi-context binary is at the
+// released version by construction (the release run is the causal write that
+// moves the version; without this the operator silently lags every release).
+// A promote failure does NOT un-release — everything above is already durable
+// — so report it loudly, name the manual remedy, and exit non-zero.
+console.log("Promoting the operator CLI to the released version...");
+// silent:true pipes output so run() returns a string on success and null on
+// failure (stdio:"inherit" would return null either way, defeating the check).
+const promoted = run("npm run promote:cli", { silent: true, ignoreError: true });
+if (promoted === null) {
+	console.error(
+		`Error: operator promote failed — the release itself (bump/changelog/commit/tag v${version}) is intact.`,
+	);
+	console.error("Remedy: run `npm run promote:cli` manually, then continue with the human steps below.");
+	console.log();
+	console.log("Next steps (human):");
+	console.log(`  npm run promote:cli   (retry the failed promote)`);
+	console.log(`  npm publish --workspaces --access public`);
+	console.log(`  git push origin main && git push origin v${version}`);
+	process.exit(1);
+}
+console.log(`  Operator promoted to v${version}\n`);
+
 console.log("Next steps (human):");
 console.log(`  npm publish --workspaces --access public`);
 console.log(`  git push origin main && git push origin v${version}`);

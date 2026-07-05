@@ -1,0 +1,16 @@
+{
+  "description": "scripts/release.mjs ends by running the operator promote step (scripts/promote-cli.mjs) after the tag, printing the promoted version, so a release run leaves the globally-installed pi-context operator at the released version by construction. A promote failure at that point is reported loudly but does not un-release — the bump, CHANGELOG roll, commit, and tag are already durable; the script exits non-zero with the promote error and the manual remedy (npm run promote:cli) named. Docs audited for the seam: the pi-context-cli README promote section and CLAUDE.md's promote sentence state that release runs the promote automatically (manual promote remains the after-edit/build path).",
+  "status": "planned",
+  "files": [
+    "scripts/release.mjs",
+    "packages/pi-context-cli/README.md",
+    "CLAUDE.md"
+  ],
+  "acceptance_criteria": [
+    "A release run ends with the promote step: after the tag, scripts/release.mjs invokes the promote and prints the promoted version; the globally-installed operator's package.json version equals the just-released version when the script exits 0.",
+    "A promote failure does not un-release: the bump/CHANGELOG/commit/tag are intact, the script exits non-zero reporting the promote error and naming npm run promote:cli as the remedy.",
+    "Runtime demonstration reproduces today's seam and shows it closed: with the global operator set to a stale copy, the release-tail promote path converges it to the tree version (demonstrated without cutting a real release — the promote tail exercised directly against a version-bumped fixture state or the current tree).",
+    "packages/pi-context-cli/README.md and CLAUDE.md state the release-runs-promote behavior; build, check, and the full test suite pass at zero failures."
+  ],
+  "notes": "Closes the release-time operator-lag gap (its filed resolution verbatim; the fix leg quoted from the user's directive)."
+}

@@ -8602,5 +8602,31 @@
       "refname": "FGAP-103"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7dff2951f6abf52dee285935d4259fc6",
+      "refname": "TASK-083"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fb77630304d903238205a5ec49d8360c",
+      "refname": "FGAP-118"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7dff2951f6abf52dee285935d4259fc6",
+      "refname": "TASK-083"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

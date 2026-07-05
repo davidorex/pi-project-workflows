@@ -1,0 +1,20 @@
+{
+  "title": "release:* bumps versions but never re-promotes — the globally-installed operator CLI silently lags the tree after every release",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "canonical_vocabulary": "release-time operator convergence",
+  "description": "scripts/release.mjs bumps the lockstep versions, rolls the CHANGELOGs, commits, and tags — but never runs the operator promote step (scripts/promote-cli.mjs), so the globally-installed pi-context binary (a packed copy of the tree at promote time) is left at the pre-release version after every release run. The dogfooding discipline says re-promote after editing/building, but the release script is itself the causal write that moves the version, and nothing at that seam converges the operator. Observed live: immediately after the v0.32.0 release run the global operator reported 0.31.0 against tree 0.32.0 and required a manual promote.",
+  "evidence": [
+    {
+      "file": "scripts/release.mjs",
+      "reference": "steps end at commit + tag ('Next steps (human): npm publish … git push …'); no promote invocation"
+    },
+    {
+      "file": "scripts/promote-cli.mjs",
+      "reference": "the promote step — packs and installs the tree copy into the global npm prefix; only ever run manually"
+    }
+  ],
+  "impact": "Every release leaves the operator one version behind until someone remembers to promote; substrate reads/writes dogfood a stale binary and version-sensitive behavior (new ops, new reason vocabularies, migration chains) diverges silently between the released tree and the operator driving it.",
+  "proposed_resolution": "scripts/release.mjs ends by running the promote step after the tag, printing the promoted version, so a release run leaves the operator at the released version by construction. A promote failure at that point is reported loudly but does not un-release (the bump/tag are already committed)."
+}

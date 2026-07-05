@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import type { ErrorObject } from "ajv";
-import { forEachBlockArray, readBlock, readBlockForDir, writeBlockForDir } from "./block-api.js";
+import { forEachBlockArray, readBlock, readBlockForDir, updateItemInBlock, writeBlockForDir } from "./block-api.js";
 import { computeContentHash, computeFileContentHash } from "./content-hash.js";
 import {
 	type AdoptResult,
@@ -18,6 +18,7 @@ import {
 	installedSchemaDestPath,
 	loadConfig,
 	loadContext,
+	loadRelations,
 	mergeCatalogRegistries,
 	type RegistryAdditions,
 	reconcileActiveSubstrateRegistration,
@@ -37,7 +38,13 @@ import {
 	writeBootstrapPointer,
 } from "./context-dir.js";
 import { registerSubstrate } from "./context-registry.js";
-import { contextState, findAppendableBlocks, validateContext } from "./context-sdk.js";
+import {
+	buildIdIndex,
+	contextState,
+	derivedRollupComplete,
+	findAppendableBlocks,
+	validateContext,
+} from "./context-sdk.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { buildCurationSuggestions, loadLensView, renderLensView } from "./lens-view.js";
@@ -60,11 +67,13 @@ import {
 	type PendingBlockedEntry,
 	reconcilePendingBlockedForDir,
 } from "./pending-blocked-store.js";
+import { discoverArrayKey } from "./read-element.js";
 import { loadRoadmap, renderRoadmap, validateRoadmap } from "./roadmap-plan.js";
 import { mergeSchema, type SchemaConflict } from "./schema-merge.js";
 import { runMigrations } from "./schema-migrations.js";
 import { ValidationError, validate, validateBlockWithMigrationForDir } from "./schema-validator.js";
 import { writeSchemaCheckedForDir } from "./schema-write.js";
+import { resolveStateDerivation, resolveStatusVocabulary as resolveStatusVocab } from "./status-vocab.js";
 import { checkForUpdates } from "./update-check.js";
 
 // ── Command handlers ────────────────────────────────────────────────────────
@@ -2596,6 +2605,113 @@ export function resolveConflict(
 	}
 
 	return { schemaName: name, wroteSchema, baseAdvancedTo: catalogHash };
+}
+
+/**
+ * `context-reconcile` result (FEAT-011 — FGAP-116). `deltas` lists every
+ * rollup-kind item whose STORED status diverges from its DERIVED membership-
+ * rollup status (from → stored value, to → derived value, per the declaring
+ * derived-status invariant). Under `dryRun` the deltas are the exact set a
+ * live run would apply and nothing is written (`applied` 0); a live run
+ * applies exactly that set through the standard validated write path and
+ * reports `applied`. Scope v1 is derived-status deltas ONLY: the op never
+ * writes an authored-status kind (feature/gap/issue/task buckets are human
+ * judgment) and never touches prose — those classes are flagged for review by
+ * validate, not auto-repaired.
+ */
+export interface ReconcileResult {
+	error?: string;
+	dryRun: boolean;
+	deltas: Array<{ id: string; block: string; from: string; to: string; invariant: string }>;
+	applied: number;
+	/** Ceremony-entry identity establishment (DEC-0020), live runs only. */
+	substrateIdEstablished?: string;
+}
+
+/**
+ * `/context reconcile` engine (FEAT-011 — the repair half of the derived-status
+ * invariant class). Computes every stored-vs-derived status delta for the
+ * kinds the config's derived-status invariants declare (paired with their
+ * `state_derivation.rollups` entries), using the SAME shared completeness
+ * helper the state derivation and the invariant class use
+ * (`derivedRollupComplete`) — the preview, the detector, and the repair
+ * cannot disagree. A live run converges each delta through `updateItemInBlock`
+ * (identity-stamped, AJV-validated, envelope-stamped, attested to the invoking
+ * writer via `ctx`): a converge-write is not authoring — the written value IS
+ * the derivation (the schema_version stamp argument). Ceremony discipline:
+ * seeds the catalog config decls at entry, and a LIVE run establishes
+ * substrate identity when absent (it reaches identity-stamping writes;
+ * DEC-0020). Deltas are deduplicated per (block, id) across invariants.
+ */
+export function reconcileContext(
+	cwd: string,
+	{ dryRun = false }: { dryRun?: boolean } = {},
+	ctx?: DispatchContext,
+): ReconcileResult {
+	const result: ReconcileResult = { dryRun, deltas: [], applied: 0 };
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		result.error =
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.";
+		return result;
+	}
+	seedCatalogConfigMigrationDecls(destRoot);
+	if (!dryRun) {
+		const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
+		if (establishedId) result.substrateIdEstablished = establishedId;
+	}
+	const config = loadConfig(cwd);
+	if (!config) {
+		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
+		return result;
+	}
+	const sd = resolveStateDerivation(cwd);
+	const declared = (config.invariants ?? []).filter((inv) => inv.class === "derived-status");
+	if (sd === null || declared.length === 0) return result;
+
+	const index = buildIdIndex(cwd);
+	const edges = loadRelations(cwd);
+	const vocab = resolveStatusVocab(cwd);
+	const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+	const rollupByKind = new Map(sd.rollups.map((r) => [r.kind, r]));
+	const roleDir = new Map<string, "as_parent" | "as_child">();
+	for (const rt of config.relation_types ?? []) {
+		if (rt.role_direction !== undefined) roleDir.set(rt.canonical_id, rt.role_direction);
+	}
+	const seen = new Set<string>();
+	for (const inv of declared) {
+		const entry = rollupByKind.get(inv.block);
+		if (entry === undefined) continue; // inert declaration — nothing to derive against
+		for (const loc of index.byRefname.values()) {
+			if (loc.block !== inv.block) continue;
+			const key = `${inv.block} ${loc.id}`;
+			if (seen.has(key)) continue;
+			const derived = derivedRollupComplete(index, edges, roleDir, rollupByKind, bucketOf, loc.id)
+				? entry.complete_status
+				: entry.incomplete_status;
+			const stored = String(loc.item.status);
+			if (stored === derived) continue;
+			seen.add(key);
+			result.deltas.push({ id: loc.id, block: inv.block, from: stored, to: derived, invariant: inv.id });
+		}
+	}
+	if (dryRun) return result;
+
+	for (const delta of result.deltas) {
+		const arrayKey =
+			config.block_kinds?.find((bk) => bk.canonical_id === delta.block)?.array_key ??
+			(() => {
+				const data = readBlock(cwd, delta.block) as Record<string, unknown>;
+				const discovered = discoverArrayKey(data);
+				if (discovered === null) {
+					throw new Error(`context-reconcile: no array key discoverable for block '${delta.block}'`);
+				}
+				return discovered;
+			})();
+		updateItemInBlock(cwd, delta.block, arrayKey, (item) => String(item.id) === delta.id, { status: delta.to }, ctx);
+		result.applied += 1;
+	}
+	return result;
 }
 
 /**

@@ -74,6 +74,7 @@ import {
 	installContext,
 	listSubstrates,
 	readCatalogSchemaText,
+	reconcileContext,
 	resolveBlocked,
 	resolveConflict,
 	switchAndCreate,
@@ -1559,6 +1560,25 @@ export const ops: OpDefinition[] = [
 		surface: "use",
 		run(cwd: string, params: { dryRun?: boolean }): OpResult {
 			const result = updateContext(cwd, { dryRun: params.dryRun === true });
+			if (result.error) return result.error;
+			return { json: result };
+		},
+	},
+	{
+		name: "context-reconcile",
+		label: "Context Reconcile",
+		description:
+			"Converge stored substrate state with its derivation (the repair half of the derived-status invariant class). For every block kind a derived-status invariant declares (paired with its state_derivation.rollups entry), computes each item's stored-vs-derived status delta using the SAME completeness helper the state derivation's gate satisfaction and context-validate use — the preview, the detector, and the repair cannot disagree. --dryRun returns the exact delta set a live run would apply (id, block, from stored value, to derived value, declaring invariant), writing nothing. A live run applies exactly that set through the standard validated write path — identity-stamped, envelope-stamped, attested to the invoking writer — and reports the applied count; a converge-write is not authoring, the written value IS the derivation. Scope: derived-status deltas ONLY — the op never writes an authored-status kind (feature/gap/issue/task buckets are human judgment) and never touches prose; those classes are flagged for review by context-validate, not auto-repaired. Ceremony discipline: seeds the catalog config migration declarations at entry, and a live run on a substrate with no substrate_id establishes the identity first (reported under substrateIdEstablished). A converged substrate is a clean no-op both ways.",
+		promptSnippet:
+			"Converge stored rollup-kind statuses with their derivation (--dryRun previews the exact delta set; live applies it through the validated write path; never touches authored statuses or prose)",
+		examples: [`pi-context context-reconcile --dryRun true --json`],
+		parameters: Type.Object({
+			dryRun: Type.Optional(Type.Boolean({ description: "Preview the exact delta set without writing anything." })),
+		}),
+		surface: "use",
+		authGated: true,
+		run(cwd: string, params: { dryRun?: boolean }, ctx?: DispatchContext): OpResult {
+			const result = reconcileContext(cwd, { dryRun: params.dryRun === true }, ctx);
 			if (result.error) return result.error;
 			return { json: result };
 		},

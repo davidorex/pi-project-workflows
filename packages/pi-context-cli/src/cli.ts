@@ -807,6 +807,7 @@ const HELP_GROUPS: HelpGroup[] = [
 			"write-schema-migration",
 			"amend-config",
 			"update",
+			"context-reconcile",
 			"resolve-conflict",
 			"resolve-blocked",
 			"rename-canonical-id",

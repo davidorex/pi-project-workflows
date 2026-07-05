@@ -11,6 +11,7 @@ import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.j
 import {
 	checkStatus,
 	installContext,
+	reconcileContext,
 	renderBlocked,
 	renderCheckStatus,
 	resolveBlocked,
@@ -2912,5 +2913,163 @@ describe("op: context-install (reflected install ceremony)", () => {
 				`schemas/${name}.schema.json must exist after the reflected install ceremony`,
 			);
 		}
+	});
+});
+
+// ── context-reconcile (FEAT-011 — the repair half of derived-status) ─────────
+// The op converges stored rollup-kind statuses with their derivation: dryRun
+// predicts the EXACT delta set a live run applies (FGAP-066 discipline), the
+// live run writes through the standard validated path, and authored-status
+// kinds are structurally out of reach (only rollup-declared kinds derive).
+describe("reconcileContext (derived-status repair)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	function makeDivergentSubstrate(): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-reconcile-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		// Install the real catalog milestone schema so the converge-write runs the
+		// full validated path: AJV, envelope schema_version stamp, identity stamp.
+		fs.copyFileSync(
+			path.join(SAMPLES_DIR, "schemas", "milestone.schema.json"),
+			path.join(dir, ".project", "schemas", "milestone.schema.json"),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					{
+						canonical_id: "phase_positioned_in_milestone",
+						display_name: "in milestone",
+						category: "membership",
+						role_direction: "as_child",
+					},
+				],
+				invariants: [
+					{
+						id: "milestone-status-converges",
+						class: "derived-status",
+						block: "milestone",
+						severity: "warning",
+					},
+				],
+				state_derivation: {
+					in_flight: { kinds: ["tasks"], bucket: "in_progress" },
+					focus_fallback: { kind: "phase", bucket: "in_progress" },
+					next_ranked: [{ kind: "tasks", label: "task", bucket: "todo", reason_template: "x" }],
+					blocked_by: { relation_types: [] },
+					rollups: [
+						{
+							kind: "milestone",
+							membership_relation: "phase_positioned_in_milestone",
+							complete_status: "reached",
+							incomplete_status: "planned",
+						},
+					],
+					head_size: 15,
+				},
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "diverged", status: "planned" },
+					{ id: "MILE-002", name: "converged", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "phase.json"),
+			JSON.stringify({
+				phases: [
+					{ id: "PHASE-1", name: "done", intent: "i", status: "completed" },
+					{ id: "PHASE-2", name: "wip", intent: "i", status: "in-progress" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-2", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+			]),
+		);
+		return dir;
+	}
+
+	it("dryRun predicts the exact delta set, writing nothing", () => {
+		tmpRoot = makeDivergentSubstrate();
+		const before = fs.readFileSync(path.join(tmpRoot, ".project", "milestone.json"));
+		const plan = reconcileContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(plan.deltas, [
+			{ id: "MILE-001", block: "milestone", from: "planned", to: "reached", invariant: "milestone-status-converges" },
+		]);
+		assert.equal(plan.applied, 0);
+		assert.equal(plan.substrateIdEstablished, undefined, "dryRun must not establish identity");
+		assert.ok(
+			fs.readFileSync(path.join(tmpRoot, ".project", "milestone.json")).equals(before),
+			"dryRun must write nothing",
+		);
+	});
+
+	it("live applies exactly the predicted set through the validated write path (identity established, envelope stamped, oid minted)", () => {
+		tmpRoot = makeDivergentSubstrate();
+		const plan = reconcileContext(tmpRoot, { dryRun: true });
+		const live = reconcileContext(tmpRoot);
+		assert.deepEqual(live.deltas, plan.deltas, "dry and live must agree on the delta set");
+		assert.equal(live.applied, 1);
+		assert.match(
+			live.substrateIdEstablished ?? "",
+			/^sub-[0-9a-f]{16}$/,
+			"a live run on a pre-identity substrate establishes identity at entry (DEC-0020)",
+		);
+		const block = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "milestone.json"), "utf-8")) as {
+			milestones: Array<Record<string, unknown>>;
+		};
+		const m1 = block.milestones.find((m) => m.id === "MILE-001");
+		const m2 = block.milestones.find((m) => m.id === "MILE-002");
+		assert.equal(m1?.status, "reached", "the diverged item converges to its derivation");
+		assert.equal(m2?.status, "planned", "the converged item is untouched");
+		assert.match(String(m1?.oid ?? ""), /^[0-9a-f]{32}$/, "the converge-write identity-stamps the item");
+
+		// The reconciled substrate is a clean no-op both ways.
+		const again = reconcileContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(again.deltas, []);
+		const againLive = reconcileContext(tmpRoot);
+		assert.deepEqual(againLive.deltas, []);
+		assert.equal(againLive.applied, 0);
+	});
+
+	it("authored-status kinds are out of reach: a derived-status declaration over a non-rollup kind yields no deltas", () => {
+		tmpRoot = makeDivergentSubstrate();
+		// Add an inert declaration over framework-gaps (no rollups entry for it)
+		// plus a gap whose status could never be 'derived'.
+		const configPath = path.join(tmpRoot, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
+		(cfg.invariants as unknown[]).push({
+			id: "gaps-status-converges",
+			class: "derived-status",
+			block: "framework-gaps",
+			severity: "warning",
+		});
+		fs.writeFileSync(configPath, JSON.stringify(cfg));
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "authored", status: "identified" }] }),
+		);
+		const plan = reconcileContext(tmpRoot, { dryRun: true });
+		assert.ok(
+			plan.deltas.every((d) => d.block === "milestone"),
+			"only rollup-declared kinds can produce deltas",
+		);
 	});
 });

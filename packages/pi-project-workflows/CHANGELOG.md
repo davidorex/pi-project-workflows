@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Re-exported pi-context surface gains the `context-reconcile` op (derived-status repair: dry-run-exact preview, validated-write convergence of rollup-kind stored statuses).
+
 ## [0.32.0] - 2026-07-05
 
 - Regenerated the aggregate `SKILL.md` for the pi-context roadmap rework: the roadmap is a derived view over the `milestone_precedes_milestone` relation — `context-roadmap-load`/`-render`/`-validate` take no parameters and derive from substrate state; `context-roadmap-list` is retired; see the `pi-context` changelog for the member-package detail.

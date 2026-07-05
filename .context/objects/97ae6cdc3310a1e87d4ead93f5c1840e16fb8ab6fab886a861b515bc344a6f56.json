@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "inspect",
+  "timestamp": "2026-07-05",
+  "evidence": "Closure by verification against merged main (c81c06b2): every element of the filed resolution is stated on every named surface, audited element-by-element. Per-component boundary — the update op description now opens its partiality sentence with 'Because update applies per-component (a blocked schema rolls back only itself; the additive registry propagation writes regardless)…' (ops-registry.ts update op), and the same sentence ships in the package README (prose paragraph + op bullet) and the monorepo README (op bullet). Blocked rollback byte-exact — pre-existing on all three surfaces ('the schema and migrations.json stay byte-unchanged' in the op description; 'leaving BOTH the installed schema file AND the block file byte-unchanged' in both READMEs). Registry propagation + sibling schemas apply independently — stated by the shipped sentence ('…while applying registry additions or other-schema resyncs/migrations/merges'). CLI text surface — the reflecting CLI surfaces the op description, and the text-mode result renders the full result object (renderOpResultText, cli.ts:1147-1159) which carries the per-run partialApplication summary. SKILL.md regenerated from the built op strings. No implementation remains.",
+  "criteria_results": [
+    {
+      "criterion": "The context-update op description states the DEC-0018 per-component boundary",
+      "status": "passed",
+      "evidence": "ops-registry.ts update op description: per-component sentence shipped; byte-unchanged rollback pre-existing in the same description"
+    },
+    {
+      "criterion": "The CLI text surface states the contract",
+      "status": "passed",
+      "evidence": "op description is the CLI's surfaced text for the op; text-mode output renders the result object including the partiality summary line"
+    },
+    {
+      "criterion": "The README states the contract",
+      "status": "passed",
+      "evidence": "package README (prose + bullet) and monorepo README (bullet) carry the per-component sentence; byte-unchanged rollback statements pre-existing in both"
+    }
+  ]
+}

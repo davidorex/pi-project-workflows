@@ -2085,6 +2085,63 @@
       "id": "VER-066",
       "oid": "2c861a87965467119556109c83c71777",
       "content_hash": "a95e1be04d16a5d4fae8cfc8c4a133a4966babe3b5d9bf8d3c544cb1a2c3db18"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Partial-application legibility verified on merged main (c81c06b2). Gates: npm run build / check / test all exit 0 (full suite, 0 failures; the three new cells green). Runtime demonstration twice: tsx against built dist on a scratch narrowing fixture (live summary: registry additions 44 relation_types / 12 invariants / 18 block_kinds / 8 lenses applied while 'tasks' blocked validation-failed; refusal-only second run carries no field), then the promoted operator CLI end-to-end (pi-context update --dryRun true --json on the same fixture surfaces partialApplication with per-item blockedDetail and the preview-declaring summary). Live-substrate parity: the active substrate's dryRun update reports all 17 assets in-sync, no partialApplication, existing channels unchanged.",
+      "criteria_results": [
+        {
+          "criterion": "A live update that blocks at least one schema while applying registry additions returns partialApplication with both sides populated and a summary naming the blocked schema(s), the refusal reason, and the applied categories",
+          "status": "passed",
+          "evidence": "install-subcommand.test.ts partial-run cell: notApplied.blocked=['tasks'], applied.registryAdditions mirrors the channel, summary asserted to contain \"'tasks' (validation-failed)\" and 'registry additions'; runtime demo live summary observed with exactly those elements"
+        },
+        {
+          "criterion": "A fully-clean run (nothing refused, or nothing applied) carries no partialApplication field; existing result channels are unchanged",
+          "status": "passed",
+          "evidence": "clean-run cell: nothing-refused resync run has no field with resynced/blocked channels asserted at their prior values; partial-run cell's second run (refusal-only, registries already propagated) has no field; live active-substrate dryRun shows no field on the all-in-sync result"
+        },
+        {
+          "criterion": "--dryRun over the same fixture reports the predicted partiality in the same shape, writing nothing",
+          "status": "passed",
+          "evidence": "dryRun cell: predicted partialApplication with notApplied.blocked=['tasks'] and summary declaring 'dryRun preview'; schema, block, and config bytes verified unchanged; promoted-CLI dryRun output shows the same shape"
+        },
+        {
+          "criterion": "The update op's description and promptSnippet state the partial-application reporting; build, check, and the full test suite pass at zero failures with the change in dist/",
+          "status": "passed",
+          "evidence": "ops-registry.ts description + promptSnippet gained the partial-application sentence; SKILL.md regenerated from the built strings (2 occurrences); build/check/test exit 0 on the branch and main rebuilt post-merge with the operator promoted"
+        }
+      ],
+      "id": "VER-067",
+      "oid": "42e3ea406a8635e92a33839df42454fa",
+      "content_hash": "92b494c460e658690705367accdf3416d326557a2b5ef232d19df59df9695186"
+    },
+    {
+      "status": "passed",
+      "method": "inspect",
+      "timestamp": "2026-07-05",
+      "evidence": "Closure by verification against merged main (c81c06b2): every element of the filed resolution is stated on every named surface, audited element-by-element. Per-component boundary — the update op description now opens its partiality sentence with 'Because update applies per-component (a blocked schema rolls back only itself; the additive registry propagation writes regardless)…' (ops-registry.ts update op), and the same sentence ships in the package README (prose paragraph + op bullet) and the monorepo README (op bullet). Blocked rollback byte-exact — pre-existing on all three surfaces ('the schema and migrations.json stay byte-unchanged' in the op description; 'leaving BOTH the installed schema file AND the block file byte-unchanged' in both READMEs). Registry propagation + sibling schemas apply independently — stated by the shipped sentence ('…while applying registry additions or other-schema resyncs/migrations/merges'). CLI text surface — the reflecting CLI surfaces the op description, and the text-mode result renders the full result object (renderOpResultText, cli.ts:1147-1159) which carries the per-run partialApplication summary. SKILL.md regenerated from the built op strings. No implementation remains.",
+      "criteria_results": [
+        {
+          "criterion": "The context-update op description states the DEC-0018 per-component boundary",
+          "status": "passed",
+          "evidence": "ops-registry.ts update op description: per-component sentence shipped; byte-unchanged rollback pre-existing in the same description"
+        },
+        {
+          "criterion": "The CLI text surface states the contract",
+          "status": "passed",
+          "evidence": "op description is the CLI's surfaced text for the op; text-mode output renders the result object including the partiality summary line"
+        },
+        {
+          "criterion": "The README states the contract",
+          "status": "passed",
+          "evidence": "package README (prose + bullet) and monorepo README (bullet) carry the per-component sentence; byte-unchanged rollback statements pre-existing in both"
+        }
+      ],
+      "id": "VER-068",
+      "oid": "f9c3f046e894d4bd7f676a92dc38a358",
+      "content_hash": "97ae6cdc3310a1e87d4ead93f5c1840e16fb8ab6fab886a861b515bc344a6f56"
     }
   ],
   "schema_version": "1.0.1"

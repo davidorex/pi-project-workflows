@@ -2421,7 +2421,7 @@
     },
     {
       "title": "pi-context update result does not make partial application legible — a blocked run can read as a no-op while config.json was mutated",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "update applies per-component (a blocked schema rolls back only itself; the additive config-registry propagation writes regardless — affirmed by DEC-0018), but the result does not make that partiality legible. A live run that returns a schema under `blocked` still mutated config.json with the catalog-new registry vocabulary (relation_types/block_kinds/invariants/lenses), yet nothing in the result ties the two together: `blocked` and `registryAdditions` are independent channels, so a caller reading `blocked` can reasonably conclude nothing was applied while config.json in fact changed. General class: update's result reporting does not surface its per-component partial application across the independent seams (schema-loop outcomes + registry propagation); the registry-write-while-a-schema-blocked case is the triggering instance.",
@@ -2448,8 +2448,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:20:35.633Z",
       "oid": "ce550805023c174d4626b03da56911a7",
-      "content_hash": "116478a12df1cf509e30ae9ec362660242d4163b5abba36faa507f1c6f3612d7",
-      "content_parent": "aebd173ea918360a6ca541b3f12debe2d8b3ff4f25993da6152f2995d98b8af0"
+      "content_hash": "b42df58bfd4146871ecfe16b3fc98aa1019920e9f7c82b3390b206802b968061",
+      "content_parent": "116478a12df1cf509e30ae9ec362660242d4163b5abba36faa507f1c6f3612d7",
+      "closed_by": "TASK-080 / VER-067 — UpdateResult gains the optional partialApplication field, populated exactly when a run both refused something (blocked / refused / conflicts non-empty) and applied something (resynced / migrated / merged / migrationsRegistered / any registryAdditions array non-empty): applied/notApplied mirrors of the result channels plus a one-line summary naming what was applied alongside what was refused and why, computed last in updateContext as a pure derivation of the finished result for live and dryRun runs (the preview declares itself). A blocked run whose registry additions landed no longer reads as a no-op on either surface (the op returns the result object; text mode renders the same object). Merged c81c06b2; three test cells; promoted-CLI runtime demo shows the field end-to-end; live substrate stays a clean no-op.",
+      "closed_at": "2026-07-05"
     },
     {
       "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
@@ -2937,7 +2939,7 @@
     },
     {
       "title": "pi-context update's per-component write boundary (DEC-0018) is undocumented on the update surface — a blocked run's config mutation is contractual but nowhere stated",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "description": "update applies per-component by decision: DEC-0018 (enacted, decision_addresses_gap -> this gap) extends DEC-0017's sibling-schema independence to the registry-propagation seam — a blocked schema rolls back byte-exact (resyncSchema, index.ts:1023-1203) while the additive config-registry propagation (index.ts:2150-2169) writes regardless of the schema-loop outcome. The mechanism is decided and correct; the residual gap is that no surface DOCUMENTS the contract: the update op description, the CLI text, and the README state neither that the boundary is per-component nor that a blocked run still lands the additive vocabulary. Outcome LEGIBILITY (the result object tying blocked to registryAdditions) is FGAP-076's scope, not this gap's.",
       "evidence": [
@@ -2962,9 +2964,11 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T05:13:16.413Z",
       "oid": "6feabcc9ecd0d77f19956178ae19c93d",
-      "content_hash": "45758f3fb2164a32dab69380e925883990a91acc12492b90c3cd26c48a4533ef",
+      "content_hash": "b13ef34e6cbfb9905520a1c420b2487658d0a4ebb4c41b43bba1da82ca3ea367",
       "priority": "P2",
-      "content_parent": "2e71f94b608beb76895dcda0fbecf22c4697e2ee9decbcf170c146aab5e28eed"
+      "content_parent": "45758f3fb2164a32dab69380e925883990a91acc12492b90c3cd26c48a4533ef",
+      "closed_by": "TASK-080 docs deliverable / VER-068 — closure by verification: the filed resolution (document the DEC-0018 per-component contract on the update surface) is fully shipped. The update op description, the package README (prose + op bullet), and the monorepo README (op bullet) all state the per-component boundary ('a blocked schema rolls back only itself; the additive registry propagation writes regardless') and sibling-schema independence ('…while applying registry additions or other-schema resyncs/migrations/merges'); the byte-exact blocked rollback was already stated on all three surfaces. The CLI text surface carries the op description plus the rendered result object with its per-run partialApplication summary. Merged c81c06b2; result-object legibility itself landed as FGAP-076's closure in the same merge.",
+      "closed_at": "2026-07-05"
     },
     {
       "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",

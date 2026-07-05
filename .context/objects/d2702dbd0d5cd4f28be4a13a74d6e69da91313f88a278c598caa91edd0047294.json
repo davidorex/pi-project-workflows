@@ -1,0 +1,18 @@
+{
+  "description": "Make update's per-component partial application legible in one place: UpdateResult gains an optional partialApplication field — populated exactly when the run both refused something (blocked, refused, or conflicts non-empty) AND applied something (resynced, migrated, merged, migrationsRegistered, or any registryAdditions array non-empty) — carrying applied {resynced, migrated, merged, registryAdditions, migrationsRegistered}, notApplied {blocked, refused, conflicts}, and a one-line legible summary naming what was applied alongside what was refused and why, so a blocked run never reads as a no-op. Computed for live and dryRun runs (dryRun reports the predicted partiality). The update op's description/promptSnippet state the behavior.",
+  "status": "completed",
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/CHANGELOG.md",
+    "packages/pi-context/skill-narrative.md"
+  ],
+  "acceptance_criteria": [
+    "A live update that blocks (or refuses/conflicts) at least one schema while applying registry additions or other-schema resyncs returns partialApplication with both sides populated and a summary naming the blocked schema(s), the refusal reason, and the applied categories.",
+    "A fully-clean run (nothing refused, or nothing applied) carries no partialApplication field; existing result channels are unchanged.",
+    "--dryRun over the same fixture reports the predicted partiality in the same shape, writing nothing.",
+    "The update op's description and promptSnippet state the partial-application reporting; build, check, and the full test suite pass at zero failures with the change in dist/."
+  ],
+  "notes": "Closes the update-result legibility gap (its filed resolution verbatim); the milestone's last open member."
+}

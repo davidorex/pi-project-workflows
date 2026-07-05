@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "Partial-application legibility verified on merged main (c81c06b2). Gates: npm run build / check / test all exit 0 (full suite, 0 failures; the three new cells green). Runtime demonstration twice: tsx against built dist on a scratch narrowing fixture (live summary: registry additions 44 relation_types / 12 invariants / 18 block_kinds / 8 lenses applied while 'tasks' blocked validation-failed; refusal-only second run carries no field), then the promoted operator CLI end-to-end (pi-context update --dryRun true --json on the same fixture surfaces partialApplication with per-item blockedDetail and the preview-declaring summary). Live-substrate parity: the active substrate's dryRun update reports all 17 assets in-sync, no partialApplication, existing channels unchanged.",
+  "criteria_results": [
+    {
+      "criterion": "A live update that blocks at least one schema while applying registry additions returns partialApplication with both sides populated and a summary naming the blocked schema(s), the refusal reason, and the applied categories",
+      "status": "passed",
+      "evidence": "install-subcommand.test.ts partial-run cell: notApplied.blocked=['tasks'], applied.registryAdditions mirrors the channel, summary asserted to contain \"'tasks' (validation-failed)\" and 'registry additions'; runtime demo live summary observed with exactly those elements"
+    },
+    {
+      "criterion": "A fully-clean run (nothing refused, or nothing applied) carries no partialApplication field; existing result channels are unchanged",
+      "status": "passed",
+      "evidence": "clean-run cell: nothing-refused resync run has no field with resynced/blocked channels asserted at their prior values; partial-run cell's second run (refusal-only, registries already propagated) has no field; live active-substrate dryRun shows no field on the all-in-sync result"
+    },
+    {
+      "criterion": "--dryRun over the same fixture reports the predicted partiality in the same shape, writing nothing",
+      "status": "passed",
+      "evidence": "dryRun cell: predicted partialApplication with notApplied.blocked=['tasks'] and summary declaring 'dryRun preview'; schema, block, and config bytes verified unchanged; promoted-CLI dryRun output shows the same shape"
+    },
+    {
+      "criterion": "The update op's description and promptSnippet state the partial-application reporting; build, check, and the full test suite pass at zero failures with the change in dist/",
+      "status": "passed",
+      "evidence": "ops-registry.ts description + promptSnippet gained the partial-application sentence; SKILL.md regenerated from the built strings (2 occurrences); build/check/test exit 0 on the branch and main rebuilt post-merge with the operator promoted"
+    }
+  ]
+}

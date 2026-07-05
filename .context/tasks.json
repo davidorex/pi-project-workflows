@@ -1612,7 +1612,7 @@
     },
     {
       "description": "Make update's per-component partial application legible in one place: UpdateResult gains an optional partialApplication field — populated exactly when the run both refused something (blocked, refused, or conflicts non-empty) AND applied something (resynced, migrated, merged, migrationsRegistered, or any registryAdditions array non-empty) — carrying applied {resynced, migrated, merged, registryAdditions, migrationsRegistered}, notApplied {blocked, refused, conflicts}, and a one-line legible summary naming what was applied alongside what was refused and why, so a blocked run never reads as a no-op. Computed for live and dryRun runs (dryRun reports the predicted partiality). The update op's description/promptSnippet state the behavior.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/ops-registry.ts",
@@ -1631,8 +1631,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-080",
       "oid": "11931fbbbaedaedbdb1e3c06f747c690",
-      "content_hash": "187aa379948d7f1a462ffbb7382670e592f0ec2159da1eafb087be588e0153d9",
-      "content_parent": "df50e5359b15cf3f587c09e0604e0fa7a9397e95ddf1380764b9abea30b4fbe5"
+      "content_hash": "d2702dbd0d5cd4f28be4a13a74d6e69da91313f88a278c598caa91edd0047294",
+      "content_parent": "187aa379948d7f1a462ffbb7382670e592f0ec2159da1eafb087be588e0153d9"
     }
   ],
   "schema_version": "1.0.1"

@@ -165,7 +165,7 @@
 		},
 		"invariants": {
 			"type": "array",
-			"description": "Config-declared substrate invariants enforced generically by validateProject. Each names block kinds / relation_types / status values purely as DATA — no vocabulary literal lives in source. User-overridable: a project ships only the invariants its conception requires. Discriminated by `class`: requires-edge (item must occupy an endpoint on ≥1 edge of a given relation_type) or status-consistency (an item's status bucket must/must-not co-occur with a related item's status bucket across an edge).",
+			"description": "Config-declared substrate invariants enforced generically by validateProject. Each names block kinds / relation_types / status values purely as DATA — no vocabulary literal lives in source. User-overridable: a project ships only the invariants its conception requires. Discriminated by `class`: requires-edge (item must occupy an endpoint on ≥1 edge of a given relation_type), status-consistency (an item's status bucket must/must-not co-occur with a related item's status bucket across an edge), or derived-status (a rollup-declared kind's stored status must equal its derived membership-rollup status, both directions).",
 			"items": {
 				"oneOf": [
 					{
@@ -198,6 +198,18 @@
 							"forbid_target_bucket": { "type": "string", "enum": ["complete", "in_progress", "blocked", "todo", "unknown"], "description": "Violation when the target item's status bucket equals this. Mutually exclusive with require_target_bucket at runtime." },
 							"severity": { "type": "string", "enum": ["error", "warning"], "default": "error", "description": "Diagnostic severity when violated." },
 							"message": { "type": "string", "description": "Optional message template. Tokens {id} and {block} substitute. Absent → generic default." }
+						}
+					},
+					{
+						"type": "object",
+						"required": ["id", "class", "block"],
+						"additionalProperties": false,
+						"properties": {
+							"id": { "type": "string", "description": "Stable invariant id, surfaced in diagnostics + the issue code field." },
+							"class": { "type": "string", "const": "derived-status", "description": "Invariant class: for a block kind whose status is mechanically derivable (declared via state_derivation.rollups), each item's STORED status must equal its DERIVED membership-rollup status. Divergence in EITHER direction (stored behind or ahead of the derivation) violates. A declaration naming a block with no matching rollups entry is inert." },
+							"block": { "type": "string", "description": "Data-file basename of the rollup block kind whose items the invariant ranges over (must match a state_derivation.rollups[].kind to have effect)." },
+							"severity": { "type": "string", "enum": ["error", "warning"], "default": "warning", "description": "Diagnostic severity on divergence. Defaults to warning: until write-time convergence and the reconcile repair path operate on a substrate, stored/derived divergence is expected steady state, not a write-blocking error." },
+							"message": { "type": "string", "description": "Optional message template. Tokens {id}, {block}, {stored} and {derived} substitute. Absent → generic default." }
 						}
 					}
 				]

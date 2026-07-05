@@ -28,6 +28,7 @@ import {
 	BootstrapNotFoundError,
 	flipBootstrapPointer,
 	migrationsPathForDir,
+	mintSubstrateId,
 	pendingBlockedPathForDir,
 	resolveContextDir,
 	SCHEMAS_DIR,
@@ -35,6 +36,7 @@ import {
 	tryResolveContextDir,
 	writeBootstrapPointer,
 } from "./context-dir.js";
+import { registerSubstrate } from "./context-registry.js";
 import { contextState, findAppendableBlocks, validateContext } from "./context-sdk.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
@@ -366,6 +368,12 @@ export interface InstallResult {
 	resynced: string[];
 	migrated: string[];
 	blocked: string[];
+	/**
+	 * Ceremony-entry identity establishment (DEC-0020): the `substrate_id` this
+	 * run minted + persisted + registered because the config lacked one. Absent
+	 * when identity was already established (never re-minted).
+	 */
+	substrateIdEstablished?: string;
 }
 
 /**
@@ -1321,6 +1329,41 @@ function resyncSchema(
  *   - Sources missing from the samples catalog are reported as "notFound".
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
+/**
+ * Ceremony-entry identity establishment (DEC-0020 — FGAP-033). When the
+ * substrate's config.json lacks a `substrate_id`, mint one (the SAME
+ * `mintSubstrateId` init uses), persist it through the sanctioned config write
+ * path, and register it in the project registry (the SAME `registerSubstrate`
+ * call init/accept-all make) — BEFORE the ceremony's first write that stamps
+ * identity, so a pre-identity substrate HEALS on the sanctioned ceremony
+ * instead of refusing at the stamping guard. Called at the entry of every
+ * substrate-lifecycle ceremony that can reach an identity-stamping write
+ * (update, install, resolve-blocked), at the same seam as the config-migration
+ * seeding. Returns the minted id when establishment happened (the ceremony
+ * reports it in its result), undefined when identity was already established
+ * (never re-mints — the on-disk id is immutable) or no config is loadable (the
+ * ceremony's own config handling reports that). This is explicit
+ * ceremony-boundary provisioning, not a lazy mint inside a block write —
+ * `substrateIdForDir`'s loud guard stays load-bearing for any write reaching
+ * it without identity (defense in depth, DEC-0012 preserved).
+ */
+function establishSubstrateIdentityAtEntry(cwd: string, destRoot: string): string | undefined {
+	let config: ConfigBlock | null;
+	try {
+		config = loadConfig(cwd);
+	} catch {
+		return undefined; // unloadable config — the ceremony's own path surfaces it
+	}
+	if (!config) return undefined;
+	const existing = config.substrate_id;
+	if (typeof existing === "string" && /^sub-[0-9a-f]{16}$/.test(existing)) return undefined;
+	const substrate_id = mintSubstrateId();
+	config.substrate_id = substrate_id;
+	writeConfig(cwd, config);
+	registerSubstrate(cwd, substrate_id, path.relative(cwd, destRoot) || ".", []);
+	return substrate_id;
+}
+
 export function installContext(cwd: string, options: { overwrite?: boolean } = {}): InstallResult {
 	const result: InstallResult = {
 		installed: [],
@@ -1345,6 +1388,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	// — so a blocked-resync rollback restores to the seeded state, preserving the
 	// seed.
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Ceremony-entry identity establishment (DEC-0020) — before any write that
+	// stamps identity (the --update resync path's writeBlockForDir).
+	const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
+	if (establishedId) result.substrateIdEstablished = establishedId;
 	const config: ConfigBlock | null = loadConfig(cwd);
 	if (!config) {
 		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
@@ -1917,6 +1964,14 @@ export interface UpdateResult {
 		};
 		summary: string;
 	};
+	/**
+	 * Ceremony-entry identity establishment (DEC-0020): the `substrate_id` this
+	 * LIVE run minted + persisted + registered because the config lacked one, so
+	 * the run's stamping writes proceed instead of refusing. Absent when
+	 * identity was already established (never re-minted) and always absent under
+	 * `dryRun` (a preview performs no stamping write, so nothing is established).
+	 */
+	substrateIdEstablished?: string;
 }
 
 /**
@@ -1998,6 +2053,18 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// read below — every ceremony entry point seeds before its first config read,
 	// so a version-lagging legacy substrate heals on update instead of throwing.
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Ceremony-entry identity establishment (DEC-0020) — before any write that
+	// stamps identity (the version-bump resync's writeBlockForDir), so a
+	// pre-identity substrate heals here instead of refusing at the stamping
+	// guard. LIVE runs only: a dryRun performs no stamping write, so there is
+	// nothing to establish ahead of — the preview keeps its writes-nothing
+	// contract (beyond the idempotent ceremony seed), and its predicted
+	// per-schema plan already matches the healed live outcome (the in-memory
+	// simulation never consults the stamping precondition).
+	if (!dryRun) {
+		const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
+		if (establishedId) result.substrateIdEstablished = establishedId;
+	}
 	const config = loadConfig(cwd);
 	if (!config) {
 		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
@@ -2570,12 +2637,13 @@ export function resolveBlocked(
 	name: string,
 	ctx?: DispatchContext,
 ):
-	| { schemaName: string; resolved: false; failures: BlockValidationFailure[] }
+	| { schemaName: string; resolved: false; failures: BlockValidationFailure[]; substrateIdEstablished?: string }
 	| {
 			schemaName: string;
 			resolved: true;
 			registeredMigrations: Array<{ schema: string; from: string; to: string }>;
 			baseAdvancedTo: string | null;
+			substrateIdEstablished?: string;
 	  } {
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
@@ -2586,6 +2654,10 @@ export function resolveBlocked(
 	// config read (here reached via stampBaselineFromBody's loadConfig on the
 	// pass path).
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Ceremony-entry identity establishment (DEC-0020) — before the commit's
+	// writeBlockForDir stamping write, so a pre-identity substrate's resolution
+	// heals identity instead of refusing mid-commit.
+	const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
 	const pending = loadPendingBlockedForDir(destRoot);
 	const entry = pending?.entries.find((e) => e.name === name);
 	if (!entry) {
@@ -2632,6 +2704,7 @@ export function resolveBlocked(
 			schemaName: name,
 			resolved: false,
 			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+			...(establishedId ? { substrateIdEstablished: establishedId } : {}),
 		};
 	}
 
@@ -2670,7 +2743,12 @@ export function resolveBlocked(
 			err instanceof ValidationError
 				? mapValidationFailures(err.errors, blockData)
 				: [{ instancePath: "", keyword: "error", message: String(err) }];
-		return { schemaName: name, resolved: false, failures };
+		return {
+			schemaName: name,
+			resolved: false,
+			failures,
+			...(establishedId ? { substrateIdEstablished: establishedId } : {}),
+		};
 	}
 
 	// PASS — commit the resolution, ALL-OR-NOTHING (FGAP-115). The commit touches
@@ -2746,7 +2824,13 @@ export function resolveBlocked(
 		const remaining = (pending?.entries ?? []).filter((e) => e.name !== name);
 		reconcilePendingBlockedForDir(destRoot, remaining, ctx);
 
-		return { schemaName: name, resolved: true, registeredMigrations, baseAdvancedTo };
+		return {
+			schemaName: name,
+			resolved: true,
+			registeredMigrations,
+			baseAdvancedTo,
+			...(establishedId ? { substrateIdEstablished: establishedId } : {}),
+		};
 	} catch (err) {
 		for (const [f, bytes] of preCommitBytes) {
 			if (bytes === null) {
@@ -2760,6 +2844,7 @@ export function resolveBlocked(
 			schemaName: name,
 			resolved: false,
 			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+			...(establishedId ? { substrateIdEstablished: establishedId } : {}),
 		};
 	}
 }

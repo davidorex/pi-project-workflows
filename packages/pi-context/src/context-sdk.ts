@@ -780,13 +780,42 @@ export function currentState(cwd: string): CurrentState {
 		});
 	}
 
-	// A target is complete when it resolves to a known item whose status buckets to
-	// "complete" — the SHARED status-vocab completeness notion (as TASK-065 left it,
-	// the same check the status-consistency invariant engine uses), kind-general and
-	// not a per-derivation literal.
-	const isCompleted = (itemId: string): boolean => {
+	// Per-relation role_direction declarations (FGAP-113) — consulted by the
+	// rollup-aware completeness check below, the blocking partition, and the
+	// milestones rollup. Hoisted above isCompleted so all three read ONE map.
+	const roleDirection = new Map<string, "as_parent" | "as_child">();
+	for (const rt of loadConfig(cwd)?.relation_types ?? []) {
+		if (rt.role_direction !== undefined) roleDirection.set(rt.canonical_id, rt.role_direction);
+	}
+
+	// A target is complete when it resolves to a known item that IS complete under
+	// its kind's truth model (FEAT-011 criterion 1 — FGAP-116):
+	//   • a kind declared in `sd.rollups` is DERIVED-status — its stored status
+	//     field is canon-forbidden to author and may lag, so completeness is the
+	//     membership rollup itself (≥1 member, every member complete), recursively
+	//     rollup-aware for nested rollup kinds, with a visiting-set guard so a
+	//     membership cycle derives not-complete instead of recursing forever;
+	//   • every other kind keeps the SHARED status-vocab bucketing (as TASK-065
+	//     left it, the same check the status-consistency invariant engine uses),
+	//     byte-identical to the prior behavior.
+	// The milestones[] rollup below consumes THIS function for its reached
+	// verdict, so gate satisfaction and the reported milestone status agree by
+	// construction within a single read — the two can no longer split-brain.
+	// Kind set + membership relation come from config (`sd.rollups` +
+	// role_direction); no kind / relation literal here (DEC-0025).
+	const rollupEntryByKind = new Map(sd.rollups.map((entry) => [entry.kind, entry]));
+	const isCompleted = (itemId: string, visiting: Set<string> = new Set()): boolean => {
 		const loc = index.byRefname.get(itemId);
-		return loc !== undefined && bucket(loc.item) === "complete";
+		if (loc === undefined) return false;
+		const entry = rollupEntryByKind.get(loc.block);
+		if (entry === undefined) return bucket(loc.item) === "complete";
+		if (visiting.has(itemId)) return false;
+		visiting.add(itemId);
+		const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
+		const memberIds = edges
+			.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === itemId)
+			.map((e) => endpointKey(counterEndpoint(e, dir)));
+		return memberIds.length >= 1 && memberIds.every((memberId) => isCompleted(memberId, visiting));
 	};
 
 	// Blocking-relation adjacency, driven by `sd.blocked_by.relation_types`. The
@@ -814,10 +843,6 @@ export function currentState(cwd: string): CurrentState {
 	// construction (no literal to extend). A blocked_by relation the config does
 	// NOT register with a role_direction reads as the DEPENDENCY default.
 	const blockedByRels = new Set(sd.blocked_by.relation_types);
-	const roleDirection = new Map<string, "as_parent" | "as_child">();
-	for (const rt of loadConfig(cwd)?.relation_types ?? []) {
-		if (rt.role_direction !== undefined) roleDirection.set(rt.canonical_id, rt.role_direction);
-	}
 	const gateDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) === "as_child"));
 	const depDirRels = new Set([...blockedByRels].filter((rt) => roleDirection.get(rt) !== "as_child"));
 	const dependencyPredsOf = (itemId: string): string[] =>
@@ -952,8 +977,10 @@ export function currentState(cwd: string): CurrentState {
 				.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === loc.id)
 				.map((e) => endpointKey(counterEndpoint(e, dir)));
 			const phaseCount = memberIds.length;
-			const allComplete = memberIds.every((memberId) => isCompleted(memberId));
-			const reached = phaseCount >= 1 && allComplete;
+			// The reached verdict IS the rollup-aware isCompleted — the same function
+			// gate satisfaction consults — so the reported milestone status and the
+			// gates it releases cannot diverge within this read (FEAT-011 criterion 1).
+			const reached = isCompleted(loc.id);
 			milestones.push({
 				id: loc.id,
 				status: reached ? entry.complete_status : entry.incomplete_status,

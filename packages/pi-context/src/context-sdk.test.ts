@@ -2880,6 +2880,140 @@ describe("currentState", () => {
 		assert.deepStrictEqual(xEntry2!.blockedBy, ["FGAP-1"]);
 	});
 
+	it("rollup-kind gate: releases on member completion regardless of stored status, and milestones[] agrees in the same read", (t) => {
+		// The FGAP-116 live case: milestone stored status lags at the incomplete
+		// value while its members are all complete. Gate satisfaction must consult
+		// the rollup (released), and the milestones[] entry must report the SAME
+		// verdict — no split-brain within one currentState payload.
+		const tmpDir = makeTmpDir("cs-rollup-gate");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated on milestone", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "done", intent: "i", status: "completed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: "planned" }] }), // stored value LAGS
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "TASK-G", child: "MILE-001", relation_type: "task_gated_by_item" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		assert.ok(!state.blocked.some((b) => b.id === "TASK-G"), "the rollup-complete milestone must release the gate");
+		assert.ok(
+			state.nextActions.some((a) => a.id === "TASK-G" && a.kind === "task"),
+			"TASK-G should be a ready next-action",
+		);
+		assert.deepStrictEqual(
+			state.milestones,
+			[{ id: "MILE-001", status: "reached", phaseCount: 1 }],
+			"milestones[] must report the same rollup verdict the gate consulted",
+		);
+	});
+
+	it("rollup-kind gate: held while members are incomplete even when stored status claims complete; zero members never complete", (t) => {
+		// No over-release: the stored value lying AHEAD (stored 'reached', member
+		// in-progress) must not satisfy the gate — the rollup is the truth. A
+		// member-less rollup item is likewise never complete (>=1 rule).
+		const tmpDir = makeTmpDir("cs-rollup-held");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-G", description: "gated on lagging milestone", status: "planned" },
+					{ id: "TASK-H", description: "gated on member-less milestone", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "wip", intent: "i", status: "in-progress" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "m", status: "reached" }, // stored value lies AHEAD
+					{ id: "MILE-002", name: "empty", status: "reached" }, // zero members
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "TASK-G", child: "MILE-001", relation_type: "task_gated_by_item" },
+				{ parent: "TASK-H", child: "MILE-002", relation_type: "task_gated_by_item" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(
+			state.blocked.find((b) => b.id === "TASK-G")?.blockedBy,
+			["MILE-001"],
+			"an incomplete rollup must hold the gate despite the stored 'reached'",
+		);
+		assert.deepStrictEqual(
+			state.blocked.find((b) => b.id === "TASK-H")?.blockedBy,
+			["MILE-002"],
+			"a member-less rollup item is never complete",
+		);
+		assert.deepStrictEqual(
+			state.milestones.map((m) => m.status),
+			["planned", "planned"],
+			"milestones[] agrees with the gate verdicts",
+		);
+	});
+
+	it("rollup-kind membership cycle: derives not-complete (guarded), never recurses forever", (t) => {
+		// Two rollup-kind items each a member of the other — the visiting-set guard
+		// must terminate the recursion and derive both not-complete.
+		const tmpDir = makeTmpDir("cs-rollup-cycle");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setup(tmpDir);
+		fs.writeFileSync(
+			path.join(projectDir, "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated on cyclic milestone", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "a", status: "planned" },
+					{ id: "MILE-002", name: "b", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "MILE-002", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "MILE-001", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "TASK-G", child: "MILE-001", relation_type: "task_gated_by_item" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(
+			state.blocked.find((b) => b.id === "TASK-G")?.blockedBy,
+			["MILE-001"],
+			"a cyclic rollup derives not-complete and holds the gate",
+		);
+		assert.deepStrictEqual(state.milestones.map((m) => m.status).sort(), ["planned", "planned"]);
+	});
+
 	it("task_gated_by_item: a dangling gate target (unknown id) is treated as satisfied (non-blocking)", (t) => {
 		const tmpDir = makeTmpDir("cs-gate-dangling");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

@@ -16,6 +16,8 @@
  * phase (the auth-gate at the pi-agent-dispatch layer remains the enforcement
  * point, unchanged by this relocation).
  */
+
+import fs from "node:fs";
 import path from "node:path";
 import type {
 	AgentToolResult,
@@ -37,16 +39,18 @@ import {
 	upsertItemInBlock,
 	writeBlock,
 } from "./block-api.js";
-import { type AdoptResult, adoptConception, amendConfigEntry, loadConfig } from "./context.js";
+import { type AdoptResult, adoptConception, amendConfigEntry, loadConfig, loadRelations } from "./context.js";
 import { BootstrapNotFoundError, schemaPath, tryResolveContextDir } from "./context-dir.js";
 import {
 	appendRelationByRef,
 	appendRelationsByRef,
+	buildIdIndex,
 	completeTask,
 	contextState,
 	currentState,
 	deriveBootstrapState,
 	endpointKey,
+	evaluateConfigInvariants,
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
@@ -2380,30 +2384,128 @@ const CONVERGE_AFTER_OPS = new Set([
 	"rename-canonical-id",
 	"promote-item",
 ]);
+
+/**
+ * Evaluate every config invariant against the substrate's current state,
+ * keyed per violation instance (`code|field`) for delta comparison. Returns
+ * null when the substrate is unreadable or declares no invariants — the gate
+ * is config-driven opt-in and NEVER breaks a write on legacy/undeclared
+ * substrates. Uses the SAME evaluateConfigInvariants path validateContext
+ * runs, so write-side and validate-side verdicts are identical (TASK-062
+ * lift pattern).
+ */
+function invariantSnapshot(cwd: string): Map<string, { severity: string; message: string }> | null {
+	try {
+		const config = loadConfig(cwd);
+		if (!config || (config.invariants ?? []).length === 0) return null;
+		const index = buildIdIndex(cwd);
+		const relations = loadRelations(cwd);
+		const issues = evaluateConfigInvariants(cwd, config, index, relations);
+		return new Map(issues.map((i) => [`${i.code}|${i.field ?? ""}`, { severity: i.severity, message: i.message }]));
+	} catch {
+		return null;
+	}
+}
+
+/** Snapshot every top-level substrate *.json for a byte-exact refusal restore. */
+function substrateJsonSnapshot(cwd: string): { dir: string; files: Map<string, Buffer> } | null {
+	try {
+		const dir = tryResolveContextDir(cwd);
+		if (dir === null) return null;
+		const files = new Map<string, Buffer>();
+		for (const name of fs.readdirSync(dir)) {
+			if (!name.endsWith(".json")) continue;
+			files.set(name, fs.readFileSync(path.join(dir, name)));
+		}
+		return { dir, files };
+	} catch {
+		return null;
+	}
+}
+
+function restoreSubstrateJson(snapshot: { dir: string; files: Map<string, Buffer> }): void {
+	for (const name of fs.readdirSync(snapshot.dir)) {
+		if (!name.endsWith(".json")) continue;
+		if (!snapshot.files.has(name)) fs.unlinkSync(path.join(snapshot.dir, name));
+	}
+	for (const [name, bytes] of snapshot.files) {
+		fs.writeFileSync(path.join(snapshot.dir, name), bytes);
+	}
+}
+
+/** Attach write-side warnings to an op result without disturbing its shape class. */
+function attachWriteWarnings(result: OpResult, warnings: string[]): OpResult {
+	if (typeof result === "string") {
+		return `${result}\n${warnings.map((w) => `write-warning: ${w}`).join("\n")}`;
+	}
+	if (result !== null && typeof result === "object" && "json" in result) {
+		const jsonValue = (result as { json: unknown }).json;
+		if (jsonValue !== null && typeof jsonValue === "object" && !Array.isArray(jsonValue)) {
+			return { ...result, json: { ...(jsonValue as Record<string, unknown>), writeWarnings: warnings } };
+		}
+	}
+	return result;
+}
+
+/**
+ * The write pipeline (FEAT-011 criteria 2 + 5 — one module-init pass over the
+ * ops DATA; both consumers — registerAll pi tools and the reflecting CLI —
+ * execute the wrapped run):
+ *
+ *  1. CONVERGE-ON-WRITE: after the op's write lands, rollup-kind stored
+ *     statuses are converged with their derivation (config-driven opt-in;
+ *     best-effort — see convergeDerivedStatusAfterWrite). Runs BEFORE the
+ *     gate evaluation so the gate judges the final converged state and a
+ *     divergence the convergence itself repairs is never flagged.
+ *  2. DELTA-SCOPED WRITE-TIME INVARIANT GATE: the config invariants are
+ *     evaluated before and after the write through the SAME helper
+ *     validateContext uses. Only violations ABSENT before and PRESENT after
+ *     (newly introduced by this write) act: error severity REFUSES the write
+ *     — every top-level substrate *.json is byte-restored from the pre-write
+ *     snapshot and the op throws naming the violations; warning severity is
+ *     surfaced on the op result (appended `write-warning:` lines on string
+ *     results; a `writeWarnings` array inside {json} object payloads).
+ *     Pre-existing violations never block or warn — legacy substrates stay
+ *     fully writable (the delta scope IS the expand-contract analogue).
+ *
+ * dryRun invocations (append-relations --dryRun) preview without writing and
+ * bypass the pipeline entirely. Ops THROW on failure and return success
+ * strings / {json} on success, so any settled return means the write landed;
+ * sync/async contracts are preserved per op. Nested-item ops are excluded
+ * (item statuses are top-level fields).
+ */
 for (const op of ops) {
 	if (!CONVERGE_AFTER_OPS.has(op.name)) continue;
 	const inner = op.run.bind(op);
-	// Preserve each op's sync/async contract: a sync op stays sync (its direct
-	// callers — tests, embedders — receive the value, not a Promise); an async
-	// op converges after its promise settles. Converge on NON-THROW: these ops
-	// THROW on failure and return a success STRING (e.g. "Appended item …") or
-	// a {json} payload on success, so any settled return means the write landed
-	// (or was an idempotent no-op) — a result-shape check would silently skip
-	// the string-returning majority. A dryRun invocation (append-relations
-	// --dryRun) previews without writing, so it must not trigger convergence
-	// writes either.
 	op.run = (cwd, params, ctx) => {
 		const isDryRun = (params as { dryRun?: unknown }).dryRun === true;
+		const pre = isDryRun ? null : invariantSnapshot(cwd);
+		const snapshot = pre === null ? null : substrateJsonSnapshot(cwd);
+		const finish = (settled: OpResult): OpResult => {
+			if (isDryRun) return settled;
+			convergeDerivedStatusAfterWrite(cwd, ctx);
+			if (pre === null) return settled;
+			const post = invariantSnapshot(cwd);
+			if (post === null) return settled;
+			const fresh = [...post].filter(([key]) => !pre.has(key));
+			if (fresh.length === 0) return settled;
+			const freshErrors = fresh.filter(([, v]) => v.severity === "error");
+			if (freshErrors.length > 0 && snapshot !== null) {
+				restoreSubstrateJson(snapshot);
+				throw new Error(
+					`${op.name} refused — the write would introduce ${freshErrors.length} invariant violation(s) (substrate restored byte-exact): ${freshErrors
+						.map(([, v]) => v.message)
+						.join("; ")}`,
+				);
+			}
+			const freshWarnings = fresh.filter(([, v]) => v.severity !== "error").map(([, v]) => v.message);
+			return freshWarnings.length > 0 ? attachWriteWarnings(settled, freshWarnings) : settled;
+		};
 		const result = inner(cwd, params, ctx);
-		if (result instanceof Promise) {
-			return result.then((settled) => {
-				if (!isDryRun) convergeDerivedStatusAfterWrite(cwd, ctx);
-				return settled;
-			});
-		}
-		if (!isDryRun) convergeDerivedStatusAfterWrite(cwd, ctx);
-		return result;
+		return result instanceof Promise ? result.then(finish) : finish(result);
 	};
+	op.description +=
+		" Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.";
 }
 
 /**

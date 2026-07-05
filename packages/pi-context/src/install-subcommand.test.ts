@@ -6,8 +6,9 @@ import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import { readBlock, writeBlockForDir } from "./block-api.js";
 import { computeContentHash } from "./content-hash.js";
-import { loadConfig } from "./context.js";
+import { loadConfig, loadRelations } from "./context.js";
 import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.js";
+import { buildIdIndex, evaluateConfigInvariants, validateContext } from "./context-sdk.js";
 import {
 	checkStatus,
 	installContext,
@@ -3243,5 +3244,194 @@ describe("converge-on-write (op-surface rollup convergence)", () => {
 			"planned",
 			"the divergence stays (left for the invariant + reconcile), never a caller failure",
 		);
+	});
+});
+
+// ── delta-scoped write-time invariant gate (FEAT-011 criterion 5) ────────────
+// Newly-introduced violations act at the causal write (error refuses with a
+// byte-exact restore; warning surfaces on the result); pre-existing violations
+// never block — verdicts come from the SAME evaluateConfigInvariants path
+// validateContext runs.
+describe("write-time invariant gate (delta-scoped)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	const op = (name: string): OpDefinition => {
+		const found = ops.find((o) => o.name === name);
+		assert.ok(found, `op '${name}' must be registered`);
+		return found;
+	};
+
+	function makeGatedSubstrate(): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-gate-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				substrate_id: "sub-00000000000000aa",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					{ canonical_id: "verification_verifies_item", display_name: "verifies", category: "data_flow" },
+					{ canonical_id: "task_addresses_feature", display_name: "addresses feature", category: "data_flow" },
+				],
+				invariants: [
+					{
+						id: "completed-task-has-verification",
+						class: "requires-edge",
+						block: "tasks",
+						where: { status: "completed" },
+						relation_types: ["verification_verifies_item"],
+						direction: "as_child",
+						severity: "error",
+						message: "Completed task '{id}' has no verification edge",
+					},
+					{
+						id: "task-completed-feature-complete",
+						class: "status-consistency",
+						block: "tasks",
+						relation_types: ["task_addresses_feature"],
+						direction: "as_parent",
+						when_bucket: "complete",
+						require_target_bucket: "complete",
+						severity: "warning",
+						message: "Completed task '{id}' addresses a feature that is not complete",
+					},
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "clean", status: "planned" },
+					{ id: "TASK-B", description: "will complete", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "features.json"),
+			JSON.stringify({ features: [{ id: "FEAT-1", title: "open feature", status: "proposed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "relations.json"),
+			JSON.stringify([{ parent: "TASK-B", child: "FEAT-1", relation_type: "task_addresses_feature" }]),
+		);
+		return dir;
+	}
+
+	it("a write that INTRODUCES an error-severity violation is refused with every substrate file byte-restored", () => {
+		tmpRoot = makeGatedSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = new Map<string, Buffer>();
+		for (const name of fs.readdirSync(substrateDir)) {
+			if (name.endsWith(".json")) before.set(name, fs.readFileSync(path.join(substrateDir, name)));
+		}
+		assert.throws(
+			() =>
+				op("update-block-item").run(tmpRoot, {
+					block: "tasks",
+					arrayKey: "tasks",
+					match: { id: "TASK-A" },
+					updates: { status: "completed" },
+				}),
+			/refused.*completed-task-has-verification|refused.*Completed task 'TASK-A' has no verification edge/i,
+			"completing a task with no verification edge must be refused at the write",
+		);
+		for (const [name, bytes] of before) {
+			assert.ok(
+				fs.readFileSync(path.join(substrateDir, name)).equals(bytes),
+				`${name} must be byte-restored on the refused write`,
+			);
+		}
+	});
+
+	it("pre-existing violations never block: the same state written out-of-band stays fully writable", () => {
+		tmpRoot = makeGatedSubstrate();
+		// Introduce the violation OUT-OF-BAND (direct file write — no op, no gate).
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "clean", status: "completed" },
+					{ id: "TASK-B", description: "will complete", status: "planned" },
+				],
+			}),
+		);
+		// An unrelated op write on the SAME substrate proceeds — the pre-existing
+		// error is in both the pre and post snapshots, so the delta is empty.
+		const result = op("update-block-item").run(tmpRoot, {
+			block: "tasks",
+			arrayKey: "tasks",
+			match: { id: "TASK-B" },
+			updates: { description: "renamed" },
+		});
+		assert.equal(
+			typeof result,
+			"string",
+			"a write introducing nothing new must proceed on a legacy-violating substrate",
+		);
+		assert.ok(!String(result).includes("write-warning"), "no warning for a pre-existing violation");
+	});
+
+	it("a write that introduces a warning-severity violation succeeds with the warning surfaced on the result", () => {
+		tmpRoot = makeGatedSubstrate();
+		// TASK-B addresses proposed FEAT-1; completing it introduces the WARNING
+		// invariant. It must NOT introduce the error one — give it a verification
+		// edge first (out-of-band, so the gate only sees the completing write).
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "relations.json"),
+			JSON.stringify([
+				{ parent: "TASK-B", child: "FEAT-1", relation_type: "task_addresses_feature" },
+				{ parent: "VER-1", child: "TASK-B", relation_type: "verification_verifies_item" },
+			]),
+		);
+		const result = op("update-block-item").run(tmpRoot, {
+			block: "tasks",
+			arrayKey: "tasks",
+			match: { id: "TASK-B" },
+			updates: { status: "completed" },
+		});
+		assert.equal(typeof result, "string", "a warning-severity introduction must not refuse the write");
+		assert.ok(
+			String(result).includes("write-warning:") && String(result).includes("TASK-B"),
+			"the newly-introduced warning is surfaced on the op result",
+		);
+		const block = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "tasks.json"), "utf-8")) as {
+			tasks: Array<Record<string, unknown>>;
+		};
+		assert.equal(block.tasks.find((t) => t.id === "TASK-B")?.status, "completed", "the write landed");
+	});
+
+	it("gate verdicts match validateContext for the same state (shared-helper pin)", () => {
+		tmpRoot = makeGatedSubstrate();
+		// Out-of-band: complete TASK-A with no verification edge → one error issue.
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "clean", status: "completed" },
+					{ id: "TASK-B", description: "will complete", status: "planned" },
+				],
+			}),
+		);
+		const validateIssues = validateContext(tmpRoot)
+			.issues.filter(
+				(i) => i.code === "completed-task-has-verification" || i.code === "task-completed-feature-complete",
+			)
+			.map((i) => `${i.code}|${i.field ?? ""}`)
+			.sort();
+		const config = loadConfig(tmpRoot);
+		assert.ok(config, "fixture config loads");
+		const gateIssues = evaluateConfigInvariants(tmpRoot, config, buildIdIndex(tmpRoot), loadRelations(tmpRoot))
+			.map((i) => `${i.code}|${i.field ?? ""}`)
+			.sort();
+		assert.deepEqual(gateIssues, validateIssues, "write-side and validate-side classifications must be identical");
 	});
 });

@@ -2281,6 +2281,146 @@ function matchesWhere(item: Record<string, unknown>, where?: Record<string, stri
 }
 
 /**
+ * Evaluate every config-declared invariant (requires-edge, status-consistency,
+ * derived-status) against the given substrate state, returning the issue set.
+ * The ONE evaluation path shared by `validateContext` (read-side sweep) and
+ * the ops-layer write-time gate (delta-scoped surfacing/refusal of newly-
+ * introduced violations) — the two consumers cannot classify differently.
+ * Unknown invariant classes are skipped (forward-compat).
+ */
+export function evaluateConfigInvariants(
+	cwd: string,
+	config: ConfigBlock,
+	index: SubstrateIndex,
+	relations: Edge[],
+): ContextValidationIssue[] {
+	const issues: ContextValidationIssue[] = [];
+	// ── Config-declared invariants (DEC-0025: vocabulary-neutral) ─────────
+	// Replaces the two previously-hardcoded invariants (completed-task-has-
+	// verification, decision-cites-forcing-artifact). Every block / status /
+	// relation_type / direction literal comes from config.invariants[] DATA;
+	// this loop contains no vocabulary literal. Each requires-edge invariant:
+	// items in `block` matching `where` must occupy `direction`'s endpoint on
+	// ≥1 edge whose relation_type ∈ relation_types — else a diagnostic.
+	for (const inv of config.invariants ?? []) {
+		if (inv.class !== "requires-edge") continue; // forward-compat: skip unknown classes
+		const relTypeSet = new Set(inv.relation_types);
+		const satisfied = new Set<string>();
+		for (const edge of relations) {
+			if (!relTypeSet.has(edge.relation_type)) continue;
+			satisfied.add(inv.direction === "as_parent" ? endpointKey(edge.parent) : endpointKey(edge.child));
+		}
+		for (const loc of index.byRefname.values()) {
+			const id = loc.id;
+			if (loc.block !== inv.block) continue;
+			if (!matchesWhere(loc.item, inv.where)) continue;
+			if (satisfied.has(id)) continue;
+			issues.push({
+				severity: inv.severity ?? "error",
+				message: (inv.message ?? `Item '{id}' in block '{block}' violates invariant '${inv.id}'`)
+					.replaceAll("{id}", id)
+					.replaceAll("{block}", inv.block),
+				block: inv.block,
+				field: `${id}.${inv.id}`,
+				code: inv.id,
+			});
+		}
+	}
+
+	// ── status-consistency invariants (DEC-0040 / FGAP-073) ──────────────
+	// Cross-block status drift: for each item in inv.block (optionally gated
+	// by when_bucket on the item's own status bucket), inspect edges whose
+	// relation_type ∈ inv.relation_types and whose inv.direction endpoint is
+	// the item; the OTHER endpoint is the target. Violation when the target's
+	// status bucket differs from require_target_bucket, or equals
+	// forbid_target_bucket. Vocabulary-free — every literal comes from `inv`
+	// or the config-resolved status vocabulary; no block/status/relation
+	// string is hardcoded. vocab resolved once, outside the loop.
+	const vocab = resolveStatusVocabulary(cwd);
+	const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+	for (const inv of config.invariants ?? []) {
+		if (inv.class !== "status-consistency") continue;
+		const relSet = new Set(inv.relation_types);
+		for (const loc of index.byRefname.values()) {
+			const id = loc.id;
+			if (loc.block !== inv.block) continue;
+			if (inv.when_bucket && bucketOf(loc.item) !== inv.when_bucket) continue;
+			for (const edge of relations) {
+				if (!relSet.has(edge.relation_type)) continue;
+				const selfIsParent = inv.direction === "as_parent";
+				if ((selfIsParent ? endpointKey(edge.parent) : endpointKey(edge.child)) !== id) continue;
+				const otherId = selfIsParent ? endpointKey(edge.child) : endpointKey(edge.parent);
+				const otherLoc = index.byRefname.get(otherId);
+				if (!otherLoc) continue; // dangling endpoint handled by edge-integrity above
+				const otherBucket = bucketOf(otherLoc.item);
+				const violateRequire = inv.require_target_bucket !== undefined && otherBucket !== inv.require_target_bucket;
+				const violateForbid = inv.forbid_target_bucket !== undefined && otherBucket === inv.forbid_target_bucket;
+				if (violateRequire || violateForbid) {
+					issues.push({
+						severity: inv.severity ?? "error",
+						message: (inv.message ?? `Item '{id}' (block '{block}') status-consistency '${inv.id}'`)
+							.replaceAll("{id}", id)
+							.replaceAll("{block}", inv.block),
+						block: inv.block,
+						field: `${id}.${inv.id}`,
+						code: inv.id,
+					});
+				}
+			}
+		}
+	}
+
+	// ── derived-status invariants (FEAT-011 — FGAP-116) ───────────────────
+	// For a rollup-declared kind (state_derivation.rollups), each item's
+	// STORED status must equal its DERIVED membership-rollup status —
+	// divergence in EITHER direction (stored behind or ahead of the
+	// derivation) is reported. Completeness comes from the SAME shared
+	// helper currentState's gate satisfaction uses (derivedRollupComplete),
+	// so validate-side verdicts match the derivation by construction. A
+	// declaration naming a block with no matching rollups entry is inert
+	// (the invariant has nothing to derive against). Vocabulary-free: kind,
+	// membership relation, and the status strings all come from config.
+	{
+		const sdInv = resolveStateDerivation(cwd);
+		const declared = (config.invariants ?? []).filter((inv) => inv.class === "derived-status");
+		if (sdInv !== null && declared.length > 0) {
+			const rollupByKind = new Map(sdInv.rollups.map((r) => [r.kind, r]));
+			const roleDir = new Map<string, "as_parent" | "as_child">();
+			for (const rt of config.relation_types ?? []) {
+				if (rt.role_direction !== undefined) roleDir.set(rt.canonical_id, rt.role_direction);
+			}
+			for (const inv of declared) {
+				const entry = rollupByKind.get(inv.block);
+				if (entry === undefined) continue;
+				for (const loc of index.byRefname.values()) {
+					if (loc.block !== inv.block) continue;
+					const derived = derivedRollupComplete(index, relations, roleDir, rollupByKind, bucketOf, loc.id)
+						? entry.complete_status
+						: entry.incomplete_status;
+					const stored = String(loc.item.status);
+					if (stored === derived) continue;
+					issues.push({
+						severity: inv.severity ?? "warning",
+						message: (
+							inv.message ??
+							`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
+						)
+							.replaceAll("{id}", loc.id)
+							.replaceAll("{block}", inv.block)
+							.replaceAll("{stored}", stored)
+							.replaceAll("{derived}", derived),
+						block: inv.block,
+						field: `${loc.id}.${inv.id}`,
+						code: inv.id,
+					});
+				}
+			}
+		}
+	}
+	return issues;
+}
+
+/**
  * Validate cross-block referential integrity against the EDGE model
  * (DEC-0013: `relations.json` closure-table edges are THE reference surface).
  * Returns structured issues rather than throwing.
@@ -2484,128 +2624,11 @@ export function validateContext(cwd: string): ContextValidationResult {
 			   must not mask the authoritative edge-integrity issues collected above. */
 		}
 
-		// ── Config-declared invariants (DEC-0025: vocabulary-neutral) ─────────
-		// Replaces the two previously-hardcoded invariants (completed-task-has-
-		// verification, decision-cites-forcing-artifact). Every block / status /
-		// relation_type / direction literal comes from config.invariants[] DATA;
-		// this loop contains no vocabulary literal. Each requires-edge invariant:
-		// items in `block` matching `where` must occupy `direction`'s endpoint on
-		// ≥1 edge whose relation_type ∈ relation_types — else a diagnostic.
-		for (const inv of config.invariants ?? []) {
-			if (inv.class !== "requires-edge") continue; // forward-compat: skip unknown classes
-			const relTypeSet = new Set(inv.relation_types);
-			const satisfied = new Set<string>();
-			for (const edge of relations) {
-				if (!relTypeSet.has(edge.relation_type)) continue;
-				satisfied.add(inv.direction === "as_parent" ? endpointKey(edge.parent) : endpointKey(edge.child));
-			}
-			for (const loc of index.byRefname.values()) {
-				const id = loc.id;
-				if (loc.block !== inv.block) continue;
-				if (!matchesWhere(loc.item, inv.where)) continue;
-				if (satisfied.has(id)) continue;
-				issues.push({
-					severity: inv.severity ?? "error",
-					message: (inv.message ?? `Item '{id}' in block '{block}' violates invariant '${inv.id}'`)
-						.replaceAll("{id}", id)
-						.replaceAll("{block}", inv.block),
-					block: inv.block,
-					field: `${id}.${inv.id}`,
-					code: inv.id,
-				});
-			}
-		}
-
-		// ── status-consistency invariants (DEC-0040 / FGAP-073) ──────────────
-		// Cross-block status drift: for each item in inv.block (optionally gated
-		// by when_bucket on the item's own status bucket), inspect edges whose
-		// relation_type ∈ inv.relation_types and whose inv.direction endpoint is
-		// the item; the OTHER endpoint is the target. Violation when the target's
-		// status bucket differs from require_target_bucket, or equals
-		// forbid_target_bucket. Vocabulary-free — every literal comes from `inv`
-		// or the config-resolved status vocabulary; no block/status/relation
-		// string is hardcoded. vocab resolved once, outside the loop.
-		const vocab = resolveStatusVocabulary(cwd);
-		const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
-		for (const inv of config.invariants ?? []) {
-			if (inv.class !== "status-consistency") continue;
-			const relSet = new Set(inv.relation_types);
-			for (const loc of index.byRefname.values()) {
-				const id = loc.id;
-				if (loc.block !== inv.block) continue;
-				if (inv.when_bucket && bucketOf(loc.item) !== inv.when_bucket) continue;
-				for (const edge of relations) {
-					if (!relSet.has(edge.relation_type)) continue;
-					const selfIsParent = inv.direction === "as_parent";
-					if ((selfIsParent ? endpointKey(edge.parent) : endpointKey(edge.child)) !== id) continue;
-					const otherId = selfIsParent ? endpointKey(edge.child) : endpointKey(edge.parent);
-					const otherLoc = index.byRefname.get(otherId);
-					if (!otherLoc) continue; // dangling endpoint handled by edge-integrity above
-					const otherBucket = bucketOf(otherLoc.item);
-					const violateRequire = inv.require_target_bucket !== undefined && otherBucket !== inv.require_target_bucket;
-					const violateForbid = inv.forbid_target_bucket !== undefined && otherBucket === inv.forbid_target_bucket;
-					if (violateRequire || violateForbid) {
-						issues.push({
-							severity: inv.severity ?? "error",
-							message: (inv.message ?? `Item '{id}' (block '{block}') status-consistency '${inv.id}'`)
-								.replaceAll("{id}", id)
-								.replaceAll("{block}", inv.block),
-							block: inv.block,
-							field: `${id}.${inv.id}`,
-							code: inv.id,
-						});
-					}
-				}
-			}
-		}
-
-		// ── derived-status invariants (FEAT-011 — FGAP-116) ───────────────────
-		// For a rollup-declared kind (state_derivation.rollups), each item's
-		// STORED status must equal its DERIVED membership-rollup status —
-		// divergence in EITHER direction (stored behind or ahead of the
-		// derivation) is reported. Completeness comes from the SAME shared
-		// helper currentState's gate satisfaction uses (derivedRollupComplete),
-		// so validate-side verdicts match the derivation by construction. A
-		// declaration naming a block with no matching rollups entry is inert
-		// (the invariant has nothing to derive against). Vocabulary-free: kind,
-		// membership relation, and the status strings all come from config.
-		{
-			const sdInv = resolveStateDerivation(cwd);
-			const declared = (config.invariants ?? []).filter((inv) => inv.class === "derived-status");
-			if (sdInv !== null && declared.length > 0) {
-				const rollupByKind = new Map(sdInv.rollups.map((r) => [r.kind, r]));
-				const roleDir = new Map<string, "as_parent" | "as_child">();
-				for (const rt of config.relation_types ?? []) {
-					if (rt.role_direction !== undefined) roleDir.set(rt.canonical_id, rt.role_direction);
-				}
-				for (const inv of declared) {
-					const entry = rollupByKind.get(inv.block);
-					if (entry === undefined) continue;
-					for (const loc of index.byRefname.values()) {
-						if (loc.block !== inv.block) continue;
-						const derived = derivedRollupComplete(index, relations, roleDir, rollupByKind, bucketOf, loc.id)
-							? entry.complete_status
-							: entry.incomplete_status;
-						const stored = String(loc.item.status);
-						if (stored === derived) continue;
-						issues.push({
-							severity: inv.severity ?? "warning",
-							message: (
-								inv.message ??
-								`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
-							)
-								.replaceAll("{id}", loc.id)
-								.replaceAll("{block}", inv.block)
-								.replaceAll("{stored}", stored)
-								.replaceAll("{derived}", derived),
-							block: inv.block,
-							field: `${loc.id}.${inv.id}`,
-							code: inv.id,
-						});
-					}
-				}
-			}
-		}
+		// ── Config-declared invariants — the three classes evaluate through the
+		// SHARED evaluateConfigInvariants helper (also consumed by the write-time
+		// gate at the ops layer), so validate-side and write-side verdicts are
+		// identical by construction (the TASK-062 edge-gate lift pattern).
+		issues.push(...evaluateConfigInvariants(cwd, config, index, relations));
 	}
 
 	// Cross-block status-vocabulary check (FGAP-025): an item status value absent

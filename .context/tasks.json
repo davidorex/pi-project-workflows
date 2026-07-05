@@ -1658,6 +1658,32 @@
       "oid": "a7d8a2bbc45332e56236c4ac4ab48382",
       "content_hash": "bf02e20e7cd766c5eb8bb1f2e7eb0d987849f786080c4d5e575596a5ed3fa655",
       "content_parent": "da53dd4ee222718fb17af1a2b9320064bb1c6bb479fec284585ddc66597e9e10"
+    },
+    {
+      "description": "Enact the ceremony-entry identity establishment decision: a substrate-lifecycle ceremony that can reach an identity-stamping write (update, install, resolve-blocked) establishes substrate identity at entry when config.json lacks a valid substrate_id — mint via mintSubstrateId, persist through the sanctioned config write path, register via registerSubstrate — at the same entry seam as the config-migration seeding, before the first write that stamps identity; each ceremony's result reports the establishment (substrateIdEstablished carrying the minted id). Pre-identity substrates thereby heal on the sanctioned ceremony instead of refusing: the two skipped S4 migrate-path tests re-green (version bump with a shipped chain on a pre-identity substrate now migrates, and check-status reports it in-sync after), and dry/live parity is restored for the pre-identity class (both runs agree: migrated). The refusal-classification test cells that used the pre-identity substrate as their non-validation-throw trigger are re-anchored to a ceremony-independent write-boundary throw; the classification contract is unchanged. writeBlockForDir's stamping guard stays load-bearing for any write reaching it without identity (defense in depth; no lazy mint inside block writes).",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/install-subcommand.test.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "update, install, and resolve-blocked on a substrate whose config.json lacks a valid substrate_id establish identity at entry (minted, persisted via the sanctioned config write, registered in the project registry) and report it in the ceremony result; a substrate with an established identity is untouched (no re-mint, result field absent).",
+        "The two previously-skipped S4 migrate-path tests are re-greened as written or replaced per the contract: a pre-identity version bump with a shipped chain migrates (items intact, envelope advanced) and a follow-up check-status reports the schema in-sync; dry and live runs of the former pre-identity reproduction agree (both migrated).",
+        "The refusal-classification cells still pass against a ceremony-independent non-validation write-boundary throw (write-failed reason, no markers, no pending record; resolve-blocked all-or-nothing restore).",
+        "The update, install, and resolve-blocked op description/promptSnippet strings, both READMEs, and the skill narrative state the establishment behavior; CHANGELOG carries the entry; build, check, and the full test suite pass at zero failures with the change in dist/."
+      ],
+      "notes": "Closes the pre-identity resync gap per the enacted ceremony-entry identity decision; the milestone's last open member path.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-082",
+      "oid": "93a611911fe95e7edb187c6d5d0a3e8f",
+      "content_hash": "7dfc2d5f6798c144f5ab206af886404c9fce44555d550b67a879f6304edc4ad1",
+      "content_parent": "7c4602541c0e5f27631512df4cd968698a2f3dc66aa958fccbeaa42aa2eb96a7"
     }
   ],
   "schema_version": "1.0.1"

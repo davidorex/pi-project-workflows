@@ -1848,6 +1848,38 @@ export interface UpdateResult {
 	 * same-version resync or a `blocked` (rolled-back) outcome contributes nothing.
 	 */
 	migrationsRegistered: Array<{ schema: string; from: string; to: string }>;
+	/**
+	 * Partial-application legibility (FGAP-076). Present EXACTLY when this run
+	 * both refused something (`blocked` / `refused` / `conflicts` non-empty) AND
+	 * applied something (`resynced` / `migrated` / `merged` /
+	 * `migrationsRegistered` / any `registryAdditions` array non-empty) — the
+	 * per-component decision model (a blocked schema rolls back only itself; the
+	 * additive registry propagation writes regardless) means those can co-occur
+	 * in one run, and without this field a caller reading `blocked` can conclude
+	 * nothing was applied while config.json in fact changed. `applied` /
+	 * `notApplied` mirror the underlying channels (`notApplied.conflicts` carries
+	 * the conflicted schema NAMES; per-path detail stays on `conflicts`);
+	 * `summary` is the one-line operator-legible statement naming what was
+	 * applied alongside what was refused and why. Computed for live AND `dryRun`
+	 * runs — under `dryRun` it is the predicted partiality of the previewed plan
+	 * (nothing written), which the summary states explicitly. A fully-clean or
+	 * fully-refused run carries no field.
+	 */
+	partialApplication?: {
+		applied: {
+			resynced: string[];
+			migrated: string[];
+			merged: string[];
+			registryAdditions: RegistryAdditions;
+			migrationsRegistered: Array<{ schema: string; from: string; to: string }>;
+		};
+		notApplied: {
+			blocked: string[];
+			refused: string[];
+			conflicts: string[];
+		};
+		summary: string;
+	};
 }
 
 /**
@@ -2237,6 +2269,71 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	} catch {
 		// Catalog read / parse / config-load failure: leave registryAdditions empty
 		// (its initialized value) and return the schema-update result unchanged.
+	}
+
+	// Partial-application legibility (FGAP-076): computed LAST, after every
+	// channel above is final (the registry propagation just ran), so the field is
+	// a pure derivation of the finished result. Populated exactly when the run
+	// both refused something and applied something; a blocked run whose registry
+	// additions (or other-schema resyncs) landed must never read as a no-op.
+	// dryRun runs derive the same shape from the predicted plan.
+	const ra = result.registryAdditions;
+	const registryAdditionCount =
+		ra.relation_types.length + ra.invariants.length + ra.block_kinds.length + ra.lenses.length;
+	const refusedSomething = result.blocked.length > 0 || result.refused.length > 0 || result.conflicts.length > 0;
+	const appliedSomething =
+		result.resynced.length > 0 ||
+		result.migrated.length > 0 ||
+		result.merged.length > 0 ||
+		result.migrationsRegistered.length > 0 ||
+		registryAdditionCount > 0;
+	if (refusedSomething && appliedSomething) {
+		const appliedParts: string[] = [];
+		if (registryAdditionCount > 0) {
+			const perRegistry = (["relation_types", "invariants", "block_kinds", "lenses"] as const)
+				.filter((k) => ra[k].length > 0)
+				.map((k) => `${ra[k].length} ${k}`)
+				.join(", ");
+			appliedParts.push(`registry additions (${perRegistry})`);
+		}
+		if (result.resynced.length > 0) appliedParts.push(`resynced: ${result.resynced.join(", ")}`);
+		if (result.migrated.length > 0) appliedParts.push(`migrated: ${result.migrated.join(", ")}`);
+		if (result.merged.length > 0) appliedParts.push(`merged: ${result.merged.join(", ")}`);
+		if (result.migrationsRegistered.length > 0)
+			appliedParts.push(
+				`migration declarations registered: ${result.migrationsRegistered.map((m) => `${m.schema} ${m.from}->${m.to}`).join(", ")}`,
+			);
+		const notAppliedParts: string[] = [];
+		if (result.blocked.length > 0)
+			notAppliedParts.push(
+				`blocked: ${result.blocked
+					.map((name) => {
+						const detail = result.blockedDetail.find((d) => d.name === name);
+						return detail ? `'${name}' (${detail.reason})` : `'${name}'`;
+					})
+					.join(", ")}`,
+			);
+		if (result.refused.length > 0)
+			notAppliedParts.push(
+				`refused (local modifications preserved): ${result.refused.map((n) => `'${n}'`).join(", ")}`,
+			);
+		if (result.conflicts.length > 0)
+			notAppliedParts.push(`merge conflicts: ${result.conflicts.map((c) => `'${c.name}'`).join(", ")}`);
+		result.partialApplication = {
+			applied: {
+				resynced: [...result.resynced],
+				migrated: [...result.migrated],
+				merged: [...result.merged],
+				registryAdditions: ra,
+				migrationsRegistered: [...result.migrationsRegistered],
+			},
+			notApplied: {
+				blocked: [...result.blocked],
+				refused: [...result.refused],
+				conflicts: result.conflicts.map((c) => c.name),
+			},
+			summary: `PARTIAL APPLICATION${dryRun ? " (dryRun preview)" : ""}: applied — ${appliedParts.join("; ")}. Not applied — ${notAppliedParts.join("; ")}. The applied portion ${dryRun ? "WOULD change" : "changed"} the substrate even though schemas were refused${dryRun ? " (nothing written in this preview)" : ""}.`,
+		};
 	}
 
 	return result;

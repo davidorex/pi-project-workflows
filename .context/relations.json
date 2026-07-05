@@ -8368,5 +8368,96 @@
       "refname": "PHASE-M3-DATA-CONVERGENCE"
     },
     "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
+      "refname": "FGAP-033"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "112cebdeb44629475e8e58999a9905e8",
+      "refname": "issue-003"
+    },
+    "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a02e0f3d83a7f3fe85666035bef71a67",
+      "refname": "FGAP-115"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "112cebdeb44629475e8e58999a9905e8",
+      "refname": "issue-003"
+    },
+    "relation_type": "gap_relates_to_issue"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
+      "refname": "R-0025"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "112cebdeb44629475e8e58999a9905e8",
+      "refname": "issue-003"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
+      "refname": "R-0025"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a02e0f3d83a7f3fe85666035bef71a67",
+      "refname": "FGAP-115"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "daaf7371aa13765843464fdc031b0f84",
+      "refname": "DEC-0020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
+      "refname": "FGAP-033"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "daaf7371aa13765843464fdc031b0f84",
+      "refname": "DEC-0020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
+      "refname": "R-0025"
+    },
+    "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "daaf7371aa13765843464fdc031b0f84",
+      "refname": "DEC-0020"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "195bbb09301a60a50dbf0d6e1e0f5a07",
+      "refname": "FGAP-052"
+    },
+    "relation_type": "item_acknowledges_missing_convention"
   }
 ]

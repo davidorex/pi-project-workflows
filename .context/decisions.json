@@ -674,6 +674,24 @@
       "oid": "7c1cb00e531c94c4831f4c64bf1a6ce1",
       "content_hash": "72c2d8640b36d4978cb7b4dc8350da2395d269dfa77d5a041b2c93724747dab9",
       "content_parent": "c81ac7d11d3a63462ac00c409fe222e2c49c3be31a4d6a5f46707974c29128f6"
+    },
+    {
+      "title": "Pre-identity substrates are healed at ceremony entry — update (and the ceremony family) establishes substrate identity: mint + register + report",
+      "status": "enacted",
+      "context": "FGAP-033: mandatory identity stamping (DEC-0012, no lazy mint on write) makes resyncSchema's migrate write throw on a substrate whose config.json carries no substrate_id; the throw is caught as a blocked refusal, so /context update cannot forward-migrate a populated block on a pre-identity substrate, and two S4 migrate-path tests are skipped pending this design. DEC-0012 required the pre-identity behavior to be designed via a dedicated DEC. Empirical grounding: R-0025 (the issue-003 re-drive) confirmed the stamping throw as the refusal's root cause by single-variable reproduction.",
+      "decision": "Ceremonies establish identity at entry. On a substrate whose config.json lacks a valid substrate_id, the substrate-lifecycle ceremonies (update; the same entry seam the ceremony family shares) mint a substrate_id, register it in the project registry, and report the establishment in the ceremony's result — before the first write that stamps identity. Derived from uniform project precedent, not status-quo preference: every other lagging-state class is HEALED by the sanctioned ceremony (config-version migration decls seeded at every ceremony entry per the TASK-070 class rule; pre-envelope blocks converge on update; catalog-new vocabulary propagates additively on update), and substrate_id minting is already a sanctioned ceremony action (init mints + registers; accept-all preserves-or-mints). DEC-0012's no-lazy-mint rule bans implicit minting inside arbitrary block writes; ceremony-entry establishment is explicit, auth-gated, writer-stamped provisioning at the same trust boundary where init already mints — the rule is preserved, not weakened. Refusal-by-design is rejected: it would make pre-identity the sole lagging-state class the ceremony refuses to heal, contradicting the heal-at-ceremony class rule and best-of-breed operability.",
+      "consequences": [
+        "update on a pre-identity substrate becomes a healing run instead of a mislabeled refusal: identity established at entry (loudly reported in the ceremony result), then the normal drift-routed model update proceeds and the populated-block version bump migrates.",
+        "writeBlockForDir's stamping guard stays load-bearing for any write that reaches it without identity (defense in depth); DEC-0012's no-lazy-mint rule is preserved — establishment is explicit ceremony-boundary provisioning, never implicit minting inside a block write.",
+        "Implementation lands via a scoped task addressing FGAP-033: the ceremony-entry establishment step, its result reporting, and re-greening (or replacing per this contract) the two skipped S4 migrate-path tests on a substrate that now self-establishes.",
+        "FGAP-115's refusal-cause classification remains independently necessary — this decision removes the pre-identity instance from the blocked path, not the conflation class."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "DEC-0020",
+      "oid": "daaf7371aa13765843464fdc031b0f84",
+      "content_hash": "dd8d0cd5124bade383046f16b5ac7367d4187710549ae2a860498a9845d20522"
     }
-  ]
+  ],
+  "schema_version": "1.0.1"
 }

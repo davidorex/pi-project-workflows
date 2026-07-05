@@ -18,7 +18,7 @@ For the operator `pi-context` binary in this monorepo, install a publish-free pa
 npm run promote:cli
 ```
 
-`promote:cli` (`scripts/promote-cli.mjs`) builds the working tree, packs the `@davidorex` workspace set into tarballs, and installs the whole set into the global npm prefix as a real copy (one `npm i -g <tarball...>`). The installed binary resolves its `@davidorex/*` dependencies from the co-installed packed siblings — current working-tree code, not the registry release — and because it is a copy, a subsequent repo `npm run build` cannot touch it. It uses no `npm link`. Pass `--prefix <dir>` (or `PROMOTE_PREFIX=<dir>`) to install into a throwaway prefix instead of the real global.
+`promote:cli` (`scripts/promote-cli.mjs`) builds the working tree, packs the `@davidorex` workspace set into tarballs, and installs the whole set into the global npm prefix as a real copy (one `npm i -g <tarball...>`). The installed binary resolves its `@davidorex/*` dependencies from the co-installed packed siblings — current working-tree code, not the registry release — and because it is a copy, a subsequent repo `npm run build` cannot touch it. It uses no `npm link`. Pass `--prefix <dir>` (or `PROMOTE_PREFIX=<dir>`) to install into a throwaway prefix instead of the real global. A release run promotes automatically: `scripts/release.mjs` ends with this step, so after any `npm run release:*` the global operator is at the released version; the manual command remains the after-edit/build refresh path.
 
 Either path provides a `pi-context` binary.
 

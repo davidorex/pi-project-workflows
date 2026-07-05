@@ -1,0 +1,18 @@
+{
+  "description": "Route the two raw config.json readers through the migration-aware loader, preserving their degraded contracts, so no reader sees a different config shape than loadConfig once a shape-changing config migration ships. resolveOperationVocabulary (pi-agent-dispatch capability-composer, active substrate, fail-safe to TOOL_OPERATION_DEFAULTS) reads via loadConfigForDir inside its existing guards; loadConfigForDirBestEffort (pi-context context-sdk, foreign substrates feeding the porcelain id index, best-effort to null) delegates to loadConfigForDir in try/catch. Any load failure — absent, unparsable, unresolvable version, invalid — collapses to the same degraded value each contract already defines; a lagging-but-chained config now reads its migrated shape.",
+  "status": "completed",
+  "files": [
+    "packages/pi-agent-dispatch/src/capability-composer.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-agent-dispatch/src/capability-composer.test.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-agent-dispatch/CHANGELOG.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "resolveOperationVocabulary reads the active substrate's config through the migration-aware loader: a current valid config with tool_operations overrides yields those overrides; a config whose schema_version has no resolvable chain to the bundled schema yields TOOL_OPERATION_DEFAULTS (fail-safe), never the raw un-migrated shape.",
+    "loadConfigForDirBestEffort prefers the migration-aware loader with a two-tier degraded contract: a lagging-but-chained foreign config is read in its migrated shape; when the migration-aware load fails (unresolvable version, invalid) the prior raw parse is the fallback so the foreign prefix invariant stays fed and a mis-filed foreign id keeps degrading to dangling rather than resolving; an absent or unparsable config returns null and the porcelain degrades without throwing.",
+    "Tests cover the unresolvable-version-to-degraded-value cell and the current-config-passthrough cell at both sites; build, check, and the full test suite pass at zero failures with the change in dist/."
+  ],
+  "notes": "Resolves the gap's filed determination toward migration-aware routing (not document-as-raw). Completes the milestone's no-split-brain-readers clause."
+}

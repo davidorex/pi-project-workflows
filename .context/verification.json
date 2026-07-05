@@ -2059,6 +2059,32 @@
       "id": "VER-065",
       "oid": "213e5b27137c92ac580d8fb8b710d9b5",
       "content_hash": "7f14acfd8d0a683708c1983eac84b24a4568597cd97fae49f545df2c81b8e675"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Migration-aware config readers verified on merged main (fe9af165). Gates: npm run build / check / test all exit 0. The first cut of the sdk change was caught by the existing resolve-ref suite as a real safety regression (null-on-unresolvable silently disabled the foreign prefix invariant, letting a mis-filed foreign id resolve 'foreign' instead of degrading 'dangling') and corrected to the two-tier contract before merge — the guarded property held by the suite is preserved. Live parity: context-check-status on the converged active substrate reports all 17 assets in-sync through the promoted operator.",
+      "criteria_results": [
+        {
+          "criterion": "resolveOperationVocabulary reads via the migration-aware loader: current config -> overrides; unresolvable schema_version -> TOOL_OPERATION_DEFAULTS, never the raw un-migrated shape",
+          "status": "passed",
+          "evidence": "capability-composer.test.ts: new fail-safe test (schema_version 0.0.1 with tool_operations -> exact defaults, override does not surface); existing tests pin pointer-less -> defaults and current-config -> merged overrides"
+        },
+        {
+          "criterion": "loadConfigForDirBestEffort two-tier: migrated shape where a chain resolves; raw-parse fallback on unresolvable/invalid preserving the dangling guarantee; null on absent/unparsable",
+          "status": "passed",
+          "evidence": "resolve-ref.test.ts foreign-build-failure suite green (mis-filed foreign id still degrades to dangling via the raw-fallback-fed prefix invariant); structured-endpoints.test.ts new cell: unresolvable foreign config forms the alias endpoint without throwing"
+        },
+        {
+          "criterion": "Tests cover both cells at both sites; gates green in dist/",
+          "status": "passed",
+          "evidence": "8/8 capability-composer, 18/18 structured-endpoints, full suite exit 0; dist rebuilt + operator promoted on merged main"
+        }
+      ],
+      "id": "VER-066",
+      "oid": "2c861a87965467119556109c83c71777",
+      "content_hash": "a95e1be04d16a5d4fae8cfc8c4a133a4966babe3b5d9bf8d3c544cb1a2c3db18"
     }
   ],
   "schema_version": "1.0.1"

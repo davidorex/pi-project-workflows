@@ -1588,7 +1588,7 @@
     },
     {
       "description": "Route the two raw config.json readers through the migration-aware loader, preserving their degraded contracts, so no reader sees a different config shape than loadConfig once a shape-changing config migration ships. resolveOperationVocabulary (pi-agent-dispatch capability-composer, active substrate, fail-safe to TOOL_OPERATION_DEFAULTS) reads via loadConfigForDir inside its existing guards; loadConfigForDirBestEffort (pi-context context-sdk, foreign substrates feeding the porcelain id index, best-effort to null) delegates to loadConfigForDir in try/catch. Any load failure — absent, unparsable, unresolvable version, invalid — collapses to the same degraded value each contract already defines; a lagging-but-chained config now reads its migrated shape.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-agent-dispatch/src/capability-composer.ts",
         "packages/pi-context/src/context-sdk.ts",
@@ -1599,7 +1599,7 @@
       ],
       "acceptance_criteria": [
         "resolveOperationVocabulary reads the active substrate's config through the migration-aware loader: a current valid config with tool_operations overrides yields those overrides; a config whose schema_version has no resolvable chain to the bundled schema yields TOOL_OPERATION_DEFAULTS (fail-safe), never the raw un-migrated shape.",
-        "loadConfigForDirBestEffort delegates to the migration-aware loader with the null contract preserved: an absent, unparsable, or unresolvable foreign config returns null and the foreign-index porcelain degrades without throwing; a valid foreign config returns its migrated shape.",
+        "loadConfigForDirBestEffort prefers the migration-aware loader with a two-tier degraded contract: a lagging-but-chained foreign config is read in its migrated shape; when the migration-aware load fails (unresolvable version, invalid) the prior raw parse is the fallback so the foreign prefix invariant stays fed and a mis-filed foreign id keeps degrading to dangling rather than resolving; an absent or unparsable config returns null and the porcelain degrades without throwing.",
         "Tests cover the unresolvable-version-to-degraded-value cell and the current-config-passthrough cell at both sites; build, check, and the full test suite pass at zero failures with the change in dist/."
       ],
       "notes": "Resolves the gap's filed determination toward migration-aware routing (not document-as-raw). Completes the milestone's no-split-brain-readers clause.",
@@ -1607,8 +1607,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-079",
       "oid": "c44ca0128eb668ae388905a98cfa6d68",
-      "content_hash": "1457bdd99f0af6f19186dccff8aa2d286a4f639fe550b8a54bd377aabc28aa86",
-      "content_parent": "256240f7a343b6fcb7b8448eb08446eca7351f91859c63f17890ca73ed5a8a31"
+      "content_hash": "e5f5edb9cb1374c8a6e00c5f913d14a2628ccb0878543d6ff62ea87144c6a4eb",
+      "content_parent": "903adfc8a8ecd5297c76dfa26644981ae7f0ae075bfadc25c559f7d85a2a1833"
     }
   ],
   "schema_version": "1.0.1"

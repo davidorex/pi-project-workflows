@@ -3524,7 +3524,7 @@
     },
     {
       "title": "Raw config.json readers bypass the config migration layer — silent shape divergence once the first shape-changing config migration ships",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "Two readers parse config.json raw, skipping loadConfigForDir's migrate-then-validate: resolveOperationVocabulary (pi-agent-dispatch/src/capability-composer.ts:26, active substrate, fail-safe) and loadConfigForDirBestEffort (pi-context/src/context-sdk.ts:1443, non-active substrates). Harmless while only identity chains exist; the day a shape-changing `config` migration ships (map_each's declared consumer: the state_derivation delta), these see the un-migrated shape while loadConfig sees the migrated one — divergent reads of the same file, no throw, no signal. Class member of FGAP-105's raw-readers-cannot-tell-stale-from-current observation; distinct defect: these paths never migrate at all.",
@@ -3546,8 +3546,10 @@
       "created_at": "2026-07-02",
       "id": "FGAP-107",
       "oid": "f9bfeb7ad8e0807ca765357ba4284fd5",
-      "content_hash": "ecfd6ab3f8e9e3c77dec3ea478a331aa6b869f90aadc23bf133722ec148fe84f",
-      "content_parent": "240c538709c5dc2192b8d4a0ba7d99a9b5bf041ac64f263dc8f62ddd17a32263"
+      "content_hash": "70c21d6cc877723a2c21439aba512255ee5d16a7cf36edc73968b9816e474334",
+      "content_parent": "ecfd6ab3f8e9e3c77dec3ea478a331aa6b869f90aadc23bf133722ec148fe84f",
+      "closed_by": "TASK-079 / VER-066 — the filed determination resolved to migration-aware routing (not document-as-raw), and both named readers were converted: resolveOperationVocabulary (pi-agent-dispatch capability-composer) reads the active substrate's config via loadConfigForDir with its fail-safe tightened to alignment (any load failure yields TOOL_OPERATION_DEFAULTS; a raw AJV-invalid config's tool_operations no longer apply), and loadConfigForDirBestEffort (pi-context context-sdk, foreign substrates) prefers loadConfigForDir with a two-tier degraded contract — raw-parse fallback on unresolvable/invalid so the foreign prefix invariant stays fed (mis-filed foreign ids keep degrading to dangling; the resolve-ref suite caught and forced this tier during implementation), null on absent/unparsable. No reader of config.json sees a different shape than loadConfig wherever a chain resolves. Merged fe9af165; both cells tested at both sites; live parity confirmed on the converged active substrate.",
+      "closed_at": "2026-07-05"
     },
     {
       "title": "context-switch declares target_dir schema-required while --to_previous ignores it — the CLI refuses the flag-omitted form the op description implies",

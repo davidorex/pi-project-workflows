@@ -101,6 +101,15 @@
       "status": "planned",
       "oid": "a22a230271dbf57792e712080369a104",
       "content_hash": "8d30f7ae4ba75d34a62a19987bcf1a3612d9422a42b2465a06dbbc21bb8e1078"
+    },
+    {
+      "id": "PHASE-M6-CURRENCY-CONVERGENCE",
+      "name": "Currency by construction",
+      "intent": "FEAT-011's member set: stored substrate state converges with derivable truth through the engine's own machinery. Members, in dependency order: TASK for rollup-consulting gate satisfaction (isCompleted unification, the FGAP-116 mechanism fix), derived-status invariant class, context-reconcile op v1, converge-on-write rollup stamping, delta-scoped write-time invariant evaluation, typed stale_conditions + citation content-pins, always-on drift surfacing in currentState, and the substrate-derived-state convention (resolving the milestone schema's dangling canon citation). Invariant every member preserves: the engine never fabricates authored judgment, and pre-existing substrates stay loadable/writable (expand-contract; legacy degrades, never breaks). Design basis composed verbatim from FEAT-011 + analysis/2026-07-05-currency-foreclosure-shape.md.",
+      "goal": "FEAT-011 criteria 1-8 met (criterion 9's residue statement rides the surfacing/reconcile tasks' docs); FGAP-116 closed; a currentState read never self-contradicts; divergence a write would create is surfaced at that write; fired research staleness is machine-flagged.",
+      "status": "planned",
+      "oid": "6a6a6fac8e546f97514066dd2c096a3e",
+      "content_hash": "56fb386f668b6dbf54a7eea8c89a1ef6cf4978fb0d9ef14843fe89450c8d1679"
     }
   ],
   "schema_version": "2.0.1"

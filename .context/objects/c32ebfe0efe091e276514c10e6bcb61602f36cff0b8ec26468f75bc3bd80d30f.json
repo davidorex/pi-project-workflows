@@ -1,0 +1,16 @@
+{
+  "description": "Author the substrate-derived-state convention and resolve the engine's dangling canon citation (FEAT-011 criterion 8 / shape report §f bonus finding): the packaged milestone schema's status description cites 'canon (substrate-derived-state)' but no such convention exists in the conventions block. File the convention (conventions block, live substrate AND any catalog starter the conception ships): a block kind whose status is declared mechanically derivable is never authored — reads derive it, engine writes converge it, and repair flows through reconcile; authored writes to a derived field are refused. Audit the milestone schema text (samples + installed) so the citation resolves to the filed convention id; audit for any other dangling convention citations in shipped schema text (the class, not the instance). Dual-surface discipline: no live-only vocabulary (FGAP-102). On completion, flip FEAT-011's item_acknowledges_missing_convention edge to item_governed_by_convention against the new convention. Composed from FEAT-011 criterion 8 and shape report §f (LLM-composed under that basis).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/samples/schemas/milestone.schema.json",
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "The substrate-derived-state convention exists in the live conventions block with the derived-status rule stated as above; the milestone schema's canon citation names the filed convention id and resolves.",
+    "A shipped-schema-text sweep finds zero other dangling convention citations (or each found instance is corrected in the same task — the class, not the one symptom).",
+    "Vocabulary lands dual-surface (live + catalog); a fresh accept-all/install substrate carries the convention.",
+    "FEAT-011's convention edge flipped from acknowledges-missing to governed-by; gates green; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T8 (shape §f). No code dependency; ordered beside the invariant-class task's vocabulary work."
+}

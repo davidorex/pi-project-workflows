@@ -1,0 +1,17 @@
+{
+  "description": "Gate satisfaction consults the derived rollup for rollup kinds, so a currentState read never self-contradicts (FGAP-116's mechanism, FEAT-011 criterion 1). currentState's isCompleted (packages/pi-context/src/context-sdk.ts:787-790) buckets the STORED status of the gate target; for any kind declared in state_derivation.rollups (config-declared — no kind or relation literals in the deriver) it must instead bucket the DERIVED rollup status, the same computation milestones[] (:946-963) performs, so task_gated_by_item gates on a milestone release the moment its phases complete, within the same read. Non-rollup kinds keep the stored-status bucketing byte-identical. Substrates with no state_derivation keep the existing not-configured behavior. Composed from FEAT-011 criterion 1 and analysis/2026-07-05-currency-foreclosure-shape.md §4 Class A (LLM-composed under that basis).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "On the live substrate, one context-current-state read reports MILE-003 reached in milestones[] AND absent from every blocked[].blockedBy — TASK-021/068/074 derive unblocked (runtime demo through the promoted CLI).",
+    "A rollup-kind gate target whose members are NOT complete still blocks (no over-release); a non-rollup gate target's behavior is byte-identical to before (stored-status bucketing).",
+    "The rollup-kind set comes from state_derivation.rollups — no kind/relation literals added to the deriver; a substrate without state_derivation is unchanged.",
+    "Tests cover: rollup-kind gate released by member completion, rollup-kind gate held by incomplete members, non-rollup target regression, no-state_derivation regression; full suite 0 failures; op description/promptSnippet updated if they state gate semantics; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T1; addresses FGAP-116 jointly with the invariant-class, reconcile, and converge tasks. First member through the pipeline after the milestone-validity gate."
+}

@@ -1,0 +1,17 @@
+{
+  "description": "Always-on drift surfacing in currentState (FEAT-011 criteria 7 and 9 / shape S7): a rollup-kind item whose stored status differs from its derivation carries BOTH values in the currentState payload (derived status primary, stored_status alongside when they differ), and a driftWarnings head rides the result — the invariant subset computable from the derivation's own already-loaded working set (index + edges) — so divergence and bucket-lag are visible in every /context status read, not only in an on-demand validate run. Additive result-shape extension: consumers of the JSON shape (HTML view builder, orchestrator scripts) tolerate additions; the context-current-state/context-status op surfaces state the new fields and the residue (drift surfacing flags authored-judgment lag for review, it never asserts the authored bucket is wrong). Composed from FEAT-011 criteria 7 and 9 and shape report S7 (LLM-composed under that basis).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "On a substrate with a stored/derived divergence, one context-current-state read carries both values on the affected milestones[] entry and a non-empty driftWarnings head; a fully-converged substrate carries no stored_status fields and an absent/empty head (additive — prior shape otherwise byte-identical).",
+    "driftWarnings is computed from the derivation's working set (no second full validate pass); its entries classify per invariant code, matching validateContext's classification for the same state.",
+    "Op description/promptSnippet + skill narrative state the fields and the review-not-assertion residue; SKILL regen; full suite 0 failures; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T7 (shape S7). Depends on the derived-status invariant class task (classification vocabulary)."
+}

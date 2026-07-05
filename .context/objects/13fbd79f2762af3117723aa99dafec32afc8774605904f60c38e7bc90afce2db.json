@@ -1,0 +1,17 @@
+{
+  "description": "Converge-on-write for derived stored state (the schema_version template applied to rollup-kind status, FEAT-011 criterion 2 / shape S2): an engine write that changes a rollup INPUT — a member item's status, or a membership edge — recomputes the affected rollup items' derived status and stamps their stored status through the standard write path, at the block-api item-grain chokes or a shared post-write hook. The trigger set derives from state_derivation.rollups + role_direction (config-declared, kind-general). The stamp is convergence, not authoring — the identical argument writeTypedFile's schema_version stamp carries ('truthful by construction'); the milestone schema's authored-status prohibition is satisfied because the stamped value IS the derivation. Stamped items advance content_hash/content_parent (semantically correct: content changed) and attest the engine writer. Out-of-band divergence (hand edits, git merges) remains the invariant class + reconcile's territory. Composed from FEAT-011 criterion 2 and shape report S2 (LLM-composed under that basis).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/block-api.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "Completing the last member of a rollup-kind container through a sanctioned write leaves the container's stored status equal to its derivation on disk (e.g. a phase completing flips the stored milestone status to reached) — demonstrated live end-to-end.",
+    "A write that does not change any rollup input performs no extra stamping (byte-identical behavior); substrates without state_derivation are unchanged.",
+    "Cross-file stamping runs under the per-file lock discipline without deadlock (sequential lock acquisition; test covers a member write fanning out to its container block).",
+    "Stamped items carry advanced content_hash/content_parent and engine-writer attestation; full suite 0 failures; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T4 (shape S2). Depends on the derived-status invariant class task (its detection is the safety net for what this task's stamping might miss)."
+}

@@ -1706,6 +1706,191 @@
       "oid": "7dff2951f6abf52dee285935d4259fc6",
       "content_hash": "50d8735cc3d47710143f34056860e36ca8c5ad8c0f939bd06dc18ec35b567a1d",
       "content_parent": "b686af946a1af751d16dea84ef0264c7af91729c93a064c4ec05fd5c1e7188e4"
+    },
+    {
+      "description": "Gate satisfaction consults the derived rollup for rollup kinds, so a currentState read never self-contradicts (FGAP-116's mechanism, FEAT-011 criterion 1). currentState's isCompleted (packages/pi-context/src/context-sdk.ts:787-790) buckets the STORED status of the gate target; for any kind declared in state_derivation.rollups (config-declared — no kind or relation literals in the deriver) it must instead bucket the DERIVED rollup status, the same computation milestones[] (:946-963) performs, so task_gated_by_item gates on a milestone release the moment its phases complete, within the same read. Non-rollup kinds keep the stored-status bucketing byte-identical. Substrates with no state_derivation keep the existing not-configured behavior. Composed from FEAT-011 criterion 1 and analysis/2026-07-05-currency-foreclosure-shape.md §4 Class A (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "On the live substrate, one context-current-state read reports MILE-003 reached in milestones[] AND absent from every blocked[].blockedBy — TASK-021/068/074 derive unblocked (runtime demo through the promoted CLI).",
+        "A rollup-kind gate target whose members are NOT complete still blocks (no over-release); a non-rollup gate target's behavior is byte-identical to before (stored-status bucketing).",
+        "The rollup-kind set comes from state_derivation.rollups — no kind/relation literals added to the deriver; a substrate without state_derivation is unchanged.",
+        "Tests cover: rollup-kind gate released by member completion, rollup-kind gate held by incomplete members, non-rollup target regression, no-state_derivation regression; full suite 0 failures; op description/promptSnippet updated if they state gate semantics; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T1; addresses FGAP-116 jointly with the invariant-class, reconcile, and converge tasks. First member through the pipeline after the milestone-validity gate.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-084",
+      "oid": "aa657ef79953b6e0e93fbcd75b203bc5",
+      "content_hash": "0ae38fcc9648b6001b09b0a570d1f22a6bc0d901bc63d675bd4ed4aedca380fe"
+    },
+    {
+      "description": "New config-declared invariant class derived-status: for a block kind whose status is mechanically derivable (declared via state_derivation.rollups), validateContext compares each item's STORED status against its DERIVED rollup status and reports divergence in BOTH directions (stored-behind and stored-ahead — the existing reached-milestone-phases-complete invariant guards only the stored-reached direction). Additive schema evolution: a new oneOf branch in config.schema.json's invariants (version/migration handling per the expand-contract gate's own verdict at implementation), the InvariantDecl union (packages/pi-context/src/context.ts:316-328), and an evaluation loop in validateContext beside the existing two (context-sdk.ts:2435-2501; old engines skip unknown classes via the established forward-compat skip). The class declaration registers DUAL-SURFACE: live .context config AND samples/conception.json (FGAP-102 discipline — no live-only vocabulary). Composed from FEAT-011 criterion 3 and the shape report S4 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/schemas/config.schema.json",
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "A rollup-kind item whose stored status lags its derivation (the MILE-003 stored-planned case) is reported by context-validate under the new class; the converse direction (stored-ahead of the derivation) is reported too.",
+        "The class is config DATA: declared in live config AND the packaged catalog; a substrate not declaring it validates exactly as before; an old engine reading a config that declares it skips it without failing.",
+        "config.schema.json's change passes the expand-contract build gate (additive branch; any required version advance + packaged migration decl per that gate's verdict).",
+        "Tests cover both divergence directions, the no-declaration no-op, and the forward-compat skip; full suite 0 failures; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T2 (shape S4). The out-of-band safety net under converge-on-write; write-time gate and reconcile share its comparison helpers.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-085",
+      "oid": "cb73f9ba68cb73fe3159aa4e123ff434",
+      "content_hash": "39f5698dae3f380c25a84294b656fb08f54b6ea3db466d3494e60eb436f3f5d7"
+    },
+    {
+      "description": "New context-reconcile op (v1): compute every derived-status delta (the derived-status comparison from the invariant class, shared helpers — identical verdicts) and apply the convergence through the standard write path — identity-stamped, validated, attested to the invoking writer via DispatchContext. --dryRun predicts the live outcome exactly (the FGAP-066 in-memory-simulation standard): the previewed delta set equals what the live run writes. Reflected in the CLI (parity gate covers op<->CLI); auth-gated as a write ceremony. Scope v1 is derived-status deltas only; the op's sweep is designed for extension (the typed-staleness task extends it to fired conditions + pin drifts). The op surface states FEAT-011's residue: authored judgment and prose truth are never auto-repaired. Composed from FEAT-011 criteria 4 and 9 and the shape report S9 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/install-subcommand.test.ts",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/README.md",
+        "README.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "On a substrate with a stale rollup-kind stored status, context-reconcile --dryRun lists the exact delta set writing nothing, and the live run applies exactly that set through the standard write path (envelope stamped, items identity-stamped, writer attested); a converged substrate is a clean no-op both ways.",
+        "The op never writes an authored-status kind (feature/gap/issue/task buckets) and never touches prose — v1 scope is rollup-kind stored status only, stated on the op surface alongside the residue statement.",
+        "CLI reflection with parity green; auth-gated; docs-surface-sync across both READMEs + skill narrative + SKILL regen; CHANGELOG entry.",
+        "Full suite 0 failures; runtime demo on a scratch substrate showing dryRun/live/no-op through the promoted CLI."
+      ],
+      "notes": "FEAT-011 T3 (shape S9). Depends on the derived-status invariant class task (shared comparison helpers). Onboards existing substrates and merge-introduced drift.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-086",
+      "oid": "13a4c3b0c090c40f0cce3a2652762426",
+      "content_hash": "833ebae9aa337b670936db4fb3e848d1089b2934e1d4433b25ed978c7e0ff571"
+    },
+    {
+      "description": "Converge-on-write for derived stored state (the schema_version template applied to rollup-kind status, FEAT-011 criterion 2 / shape S2): an engine write that changes a rollup INPUT — a member item's status, or a membership edge — recomputes the affected rollup items' derived status and stamps their stored status through the standard write path, at the block-api item-grain chokes or a shared post-write hook. The trigger set derives from state_derivation.rollups + role_direction (config-declared, kind-general). The stamp is convergence, not authoring — the identical argument writeTypedFile's schema_version stamp carries ('truthful by construction'); the milestone schema's authored-status prohibition is satisfied because the stamped value IS the derivation. Stamped items advance content_hash/content_parent (semantically correct: content changed) and attest the engine writer. Out-of-band divergence (hand edits, git merges) remains the invariant class + reconcile's territory. Composed from FEAT-011 criterion 2 and shape report S2 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/block-api.test.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "Completing the last member of a rollup-kind container through a sanctioned write leaves the container's stored status equal to its derivation on disk (e.g. a phase completing flips the stored milestone status to reached) — demonstrated live end-to-end.",
+        "A write that does not change any rollup input performs no extra stamping (byte-identical behavior); substrates without state_derivation are unchanged.",
+        "Cross-file stamping runs under the per-file lock discipline without deadlock (sequential lock acquisition; test covers a member write fanning out to its container block).",
+        "Stamped items carry advanced content_hash/content_parent and engine-writer attestation; full suite 0 failures; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T4 (shape S2). Depends on the derived-status invariant class task (its detection is the safety net for what this task's stamping might miss).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-087",
+      "oid": "c6262fe5cce035e57115e7e535bb2612",
+      "content_hash": "13fbd79f2762af3117723aa99dafec32afc8774605904f60c38e7bc90afce2db"
+    },
+    {
+      "description": "Delta-scoped write-time invariant evaluation at the item-grain write chokes (FEAT-011 criterion 5 / shape S3, the TASK-062 edge-gate lift pattern): when a sanctioned item write lands, evaluate the config invariants scoped to the written block using the SAME helpers validateContext uses (identical-verdict guarantee), and compare against the pre-write verdict — a write that INTRODUCES a violation absent before it surfaces the new violation on the op result (warning severity) or is refused (error severity); pre-existing violations never block writes, so every legacy substrate stays fully writable (the expand-contract analogue). Per-write cost is bounded to block-scoped invariants (the edge gate already pays buildIdIndex on relation appends). The ops result shape gains the write-side warning channel; severity semantics documented on the write-op surfaces. Composed from FEAT-011 criterion 5 and shape report S3 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/README.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "Completing a task that addresses a non-complete feature surfaces the task-completed-feature-complete warning ON THE WRITE'S RESULT at the moment of the write (demonstrated live); an error-severity invariant violation newly introduced by a write refuses the write with the file byte-unchanged.",
+        "Delta-scoping proven: the same write against a substrate already carrying that violation class proceeds un-warned/un-refused for the pre-existing instances — only the newly-introduced violation surfaces.",
+        "Write-side and validateContext verdicts are produced by shared helpers — a divergence test pins identical classification.",
+        "Full suite 0 failures; op-surface docs state the severity semantics; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T5 (shape S3). Depends on the derived-status invariant class task (shared helper extraction lands there).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-088",
+      "oid": "6a08e8a70c39e0fc959c18e1d9a253f8",
+      "content_hash": "69270fe4b6475bc8c3d6dec23e9fbd81c7eb8af2d18b9717aa40cd30a880674f"
+    },
+    {
+      "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', id, bucket} (fires when the named item's status buckets there), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (computeFileContentHash; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/samples/schemas/research.schema.json",
+        "packages/pi-context/samples/schemas/framework-gaps.schema.json",
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "A complete research item carrying {kind:'item-status', id, bucket} whose named item buckets there is flagged by context-validate as a staleness candidate; a bare-string condition is never machine-judged; the R-0012 case ({item-status, FGAP-066, complete}) is expressible and fires against the live substrate.",
+        "A path-bearing citation written through the sanctioned path carries a content pin; validate flags a pinned citation whose file hash drifted; items without pins validate unchanged (additive; no data migration).",
+        "context-reconcile's sweep includes fired conditions + pin drifts, applying the complete-to-stale transition only there or by hand — validate itself never mutates.",
+        "Both schema changes pass the expand-contract/narrowing gates and land dual-surface; full suite 0 failures; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T6 (shape S5+S6). Depends on the reconcile op task (extends its sweep).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-089",
+      "oid": "08622fb992f8e636914d4d73500cb53f",
+      "content_hash": "d9dd1d1eab1dfc16098a48fdced9d2e415f6ea2618fc6e2ec2836e105395980d"
+    },
+    {
+      "description": "Always-on drift surfacing in currentState (FEAT-011 criteria 7 and 9 / shape S7): a rollup-kind item whose stored status differs from its derivation carries BOTH values in the currentState payload (derived status primary, stored_status alongside when they differ), and a driftWarnings head rides the result — the invariant subset computable from the derivation's own already-loaded working set (index + edges) — so divergence and bucket-lag are visible in every /context status read, not only in an on-demand validate run. Additive result-shape extension: consumers of the JSON shape (HTML view builder, orchestrator scripts) tolerate additions; the context-current-state/context-status op surfaces state the new fields and the residue (drift surfacing flags authored-judgment lag for review, it never asserts the authored bucket is wrong). Composed from FEAT-011 criteria 7 and 9 and shape report S7 (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/context-sdk.test.ts",
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/skill-narrative.md",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "On a substrate with a stored/derived divergence, one context-current-state read carries both values on the affected milestones[] entry and a non-empty driftWarnings head; a fully-converged substrate carries no stored_status fields and an absent/empty head (additive — prior shape otherwise byte-identical).",
+        "driftWarnings is computed from the derivation's working set (no second full validate pass); its entries classify per invariant code, matching validateContext's classification for the same state.",
+        "Op description/promptSnippet + skill narrative state the fields and the review-not-assertion residue; SKILL regen; full suite 0 failures; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T7 (shape S7). Depends on the derived-status invariant class task (classification vocabulary).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-090",
+      "oid": "52c3314b9405df388c8905d78199ec07",
+      "content_hash": "77f5561534b01b7a1919b08e84242302aaeb06d3f3c502ba2cd68a7bb96076dd"
+    },
+    {
+      "description": "Author the substrate-derived-state convention and resolve the engine's dangling canon citation (FEAT-011 criterion 8 / shape report §f bonus finding): the packaged milestone schema's status description cites 'canon (substrate-derived-state)' but no such convention exists in the conventions block. File the convention (conventions block, live substrate AND any catalog starter the conception ships): a block kind whose status is declared mechanically derivable is never authored — reads derive it, engine writes converge it, and repair flows through reconcile; authored writes to a derived field are refused. Audit the milestone schema text (samples + installed) so the citation resolves to the filed convention id; audit for any other dangling convention citations in shipped schema text (the class, not the instance). Dual-surface discipline: no live-only vocabulary (FGAP-102). On completion, flip FEAT-011's item_acknowledges_missing_convention edge to item_governed_by_convention against the new convention. Composed from FEAT-011 criterion 8 and shape report §f (LLM-composed under that basis).",
+      "status": "planned",
+      "files": [
+        "packages/pi-context/samples/schemas/milestone.schema.json",
+        "packages/pi-context/samples/conception.json",
+        "packages/pi-context/CHANGELOG.md"
+      ],
+      "acceptance_criteria": [
+        "The substrate-derived-state convention exists in the live conventions block with the derived-status rule stated as above; the milestone schema's canon citation names the filed convention id and resolves.",
+        "A shipped-schema-text sweep finds zero other dangling convention citations (or each found instance is corrected in the same task — the class, not the one symptom).",
+        "Vocabulary lands dual-surface (live + catalog); a fresh accept-all/install substrate carries the convention.",
+        "FEAT-011's convention edge flipped from acknowledges-missing to governed-by; gates green; CHANGELOG entry."
+      ],
+      "notes": "FEAT-011 T8 (shape §f). No code dependency; ordered beside the invariant-class task's vocabulary work.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "TASK-091",
+      "oid": "c51fc9752674605e3c26966d88cd4001",
+      "content_hash": "c32ebfe0efe091e276514c10e6bcb61602f36cff0b8ec26468f75bc3bd80d30f"
     }
   ],
   "schema_version": "1.0.1"

@@ -1,0 +1,20 @@
+{
+  "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', id, bucket} (fires when the named item's status buckets there), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (computeFileContentHash; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis).",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/samples/schemas/research.schema.json",
+    "packages/pi-context/samples/schemas/framework-gaps.schema.json",
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "A complete research item carrying {kind:'item-status', id, bucket} whose named item buckets there is flagged by context-validate as a staleness candidate; a bare-string condition is never machine-judged; the R-0012 case ({item-status, FGAP-066, complete}) is expressible and fires against the live substrate.",
+    "A path-bearing citation written through the sanctioned path carries a content pin; validate flags a pinned citation whose file hash drifted; items without pins validate unchanged (additive; no data migration).",
+    "context-reconcile's sweep includes fired conditions + pin drifts, applying the complete-to-stale transition only there or by hand — validate itself never mutates.",
+    "Both schema changes pass the expand-contract/narrowing gates and land dual-surface; full suite 0 failures; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T6 (shape S5+S6). Depends on the reconcile op task (extends its sweep)."
+}

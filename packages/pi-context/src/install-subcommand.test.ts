@@ -753,6 +753,93 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "dryRun must not touch the block");
 	});
 
+	// Build the same-version NARROWING fixture (widened installed schema + a block
+	// item using the widened enum value) with its install baseline recorded — the
+	// update run over it blocks 'tasks' while the registry propagation (against
+	// makeProject's empty-registry config) still applies, i.e. a partial run.
+	function makeNarrowedTasksFixture(): { dest: string; blockDest: string; configDest: string } {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"),
+		) as Record<string, unknown>;
+		const widened = JSON.parse(JSON.stringify(catalog)) as Record<string, unknown>;
+		(
+			(
+				(
+					((widened.properties as Record<string, unknown>).tasks as Record<string, unknown>).items as Record<
+						string,
+						unknown
+					>
+				).properties as Record<string, unknown>
+			).status as Record<string, unknown>
+		).enum = ["planned", "in-progress", "completed", "blocked", "cancelled", "parked"];
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		fs.writeFileSync(dest, JSON.stringify(widened, null, 2));
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "parked" }],
+		});
+		installContext(tmpRoot); // baseline over the existing widened schema (skip-if-exists)
+		return { dest, blockDest, configDest: path.join(tmpRoot, ".project", "config.json") };
+	}
+
+	it("partial run (blocked schema + applied registry additions) → partialApplication populated both sides with a legible summary", () => {
+		makeNarrowedTasksFixture();
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.blocked, ["tasks"], "precondition: the narrowing resync blocks");
+		const ra = result.registryAdditions;
+		const additionCount = ra.relation_types.length + ra.invariants.length + ra.block_kinds.length + ra.lenses.length;
+		assert.ok(additionCount > 0, "precondition: registry additions applied against the empty-registry config");
+		const pa = result.partialApplication;
+		assert.ok(pa, "a run that both refused and applied must carry partialApplication");
+		assert.deepEqual(pa.notApplied.blocked, ["tasks"]);
+		assert.deepEqual(pa.notApplied.refused, []);
+		assert.deepEqual(pa.notApplied.conflicts, []);
+		assert.deepEqual(pa.applied.registryAdditions, ra, "applied side must mirror the registryAdditions channel");
+		assert.deepEqual(pa.applied.resynced, []);
+		assert.ok(pa.summary.includes("'tasks' (validation-failed)"), "summary must name the blocked schema + reason");
+		assert.ok(pa.summary.includes("registry additions"), "summary must name the applied category");
+		assert.ok(!pa.summary.includes("dryRun"), "a live summary must not read as a preview");
+		// A SECOND run over the same substrate refuses again but applies nothing
+		// (registries already propagated) — refusal-only is not partial application.
+		const second = updateContext(tmpRoot);
+		assert.deepEqual(second.blocked, ["tasks"], "the block persists on the second run");
+		assert.equal(second.partialApplication, undefined, "a nothing-applied run must carry no partialApplication");
+	});
+
+	it("clean run (nothing refused) → no partialApplication; existing channels unchanged", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", catVer, { description: "DRIFTED LOCAL DESCRIPTION" });
+		writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+		});
+		installContext(tmpRoot); // baseline over the existing drifted schema (skip-if-exists)
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.resynced, ["tasks"], "precondition: the same-version drift resyncs");
+		assert.deepEqual(result.blocked, []);
+		assert.equal(result.partialApplication, undefined, "a nothing-refused run must carry no partialApplication");
+	});
+
+	it("partial run under --dryRun → predicted partialApplication in the same shape, writing nothing", () => {
+		const { dest, blockDest, configDest } = makeNarrowedTasksFixture();
+		const schemaBefore = fs.readFileSync(dest);
+		const blockBefore = fs.readFileSync(blockDest);
+		const configBefore = fs.readFileSync(configDest);
+		const plan = updateContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(plan.blocked, ["tasks"], "precondition: dryRun predicts the block");
+		const pa = plan.partialApplication;
+		assert.ok(pa, "dryRun must predict the partiality in the same shape");
+		assert.deepEqual(pa.notApplied.blocked, ["tasks"]);
+		assert.deepEqual(pa.applied.registryAdditions, plan.registryAdditions);
+		assert.ok(pa.summary.includes("dryRun preview"), "the predicted summary must declare itself a preview");
+		assert.ok(fs.readFileSync(dest).equals(schemaBefore), "dryRun must not touch the schema");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "dryRun must not touch the block");
+		assert.ok(fs.readFileSync(configDest).equals(configBefore), "dryRun must not write the registry additions");
+	});
+
 	// SKIPPED per DEC-0012: identity stamping is now unconditional on every write.
 	// On this pre-identity substrate (makeProject writes no substrate_id), stamping's
 	// substrateIdForDir throws inside resyncSchema's try and is caught as the "blocked"

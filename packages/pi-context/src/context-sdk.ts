@@ -27,6 +27,7 @@ import {
 	primaryEndpoint,
 	type RawEndpoint,
 	type RelationTypeDecl,
+	type RollupDecl,
 	removeRelation,
 	validateRelations,
 	writeRelations,
@@ -74,6 +75,7 @@ export {
 	primaryEndpoint,
 	type RawEndpoint,
 	type RelationTypeDecl,
+	type RollupDecl,
 	type StatusBucket,
 	type SubstrateValidationIssue,
 	type SubstrateValidationResult,
@@ -733,6 +735,45 @@ function renderReasonTemplate(template: string | undefined, tokens: Record<strin
 	});
 }
 
+/**
+ * Rollup-aware completeness — the ONE truth model for "is this item complete"
+ * (FEAT-011 — FGAP-116). A kind declared in `state_derivation.rollups` is
+ * DERIVED-status: complete iff it has ≥1 member (via the rollup's membership
+ * relation, oriented by `role_direction`) and every member is complete under
+ * this same function (recursively rollup-aware; a `visiting` guard makes a
+ * membership cycle derive not-complete instead of recursing forever). Every
+ * other kind is complete iff its status buckets to "complete". SHARED by
+ * `currentState` (gate satisfaction + the milestones facet) and the
+ * `derived-status` invariant class in `validateContext`, so the derivation and
+ * the divergence detector cannot disagree.
+ */
+export function derivedRollupComplete(
+	index: SubstrateIndex,
+	edges: Edge[],
+	roleDirection: ReadonlyMap<string, "as_parent" | "as_child">,
+	rollupByKind: ReadonlyMap<string, RollupDecl>,
+	bucketOf: (item: Record<string, unknown>) => string,
+	itemId: string,
+	visiting: Set<string> = new Set(),
+): boolean {
+	const loc = index.byRefname.get(itemId);
+	if (loc === undefined) return false;
+	const entry = rollupByKind.get(loc.block);
+	if (entry === undefined) return bucketOf(loc.item) === "complete";
+	if (visiting.has(itemId)) return false;
+	visiting.add(itemId);
+	const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
+	const memberIds = edges
+		.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === itemId)
+		.map((e) => endpointKey(counterEndpoint(e, dir)));
+	return (
+		memberIds.length >= 1 &&
+		memberIds.every((memberId) =>
+			derivedRollupComplete(index, edges, roleDirection, rollupByKind, bucketOf, memberId, visiting),
+		)
+	);
+}
+
 export function currentState(cwd: string): CurrentState {
 	// Tolerate any substrate-read failure (no .project, malformed config, etc.)
 	// by collapsing to the empty state — this is a pure read surface.
@@ -800,23 +841,14 @@ export function currentState(cwd: string): CurrentState {
 	//     byte-identical to the prior behavior.
 	// The milestones[] rollup below consumes THIS function for its reached
 	// verdict, so gate satisfaction and the reported milestone status agree by
-	// construction within a single read — the two can no longer split-brain.
+	// construction within a single read — the two can no longer split-brain. The
+	// derived-status invariant class evaluates the SAME shared helper, so
+	// validate-side divergence verdicts match the derivation too.
 	// Kind set + membership relation come from config (`sd.rollups` +
 	// role_direction); no kind / relation literal here (DEC-0025).
 	const rollupEntryByKind = new Map(sd.rollups.map((entry) => [entry.kind, entry]));
-	const isCompleted = (itemId: string, visiting: Set<string> = new Set()): boolean => {
-		const loc = index.byRefname.get(itemId);
-		if (loc === undefined) return false;
-		const entry = rollupEntryByKind.get(loc.block);
-		if (entry === undefined) return bucket(loc.item) === "complete";
-		if (visiting.has(itemId)) return false;
-		visiting.add(itemId);
-		const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
-		const memberIds = edges
-			.filter((e) => e.relation_type === entry.membership_relation && endpointKey(primaryEndpoint(e, dir)) === itemId)
-			.map((e) => endpointKey(counterEndpoint(e, dir)));
-		return memberIds.length >= 1 && memberIds.every((memberId) => isCompleted(memberId, visiting));
-	};
+	const isCompleted = (itemId: string): boolean =>
+		derivedRollupComplete(index, edges, roleDirection, rollupEntryByKind, bucket, itemId);
 
 	// Blocking-relation adjacency, driven by `sd.blocked_by.relation_types`. The
 	// two stock relations use OPPOSITE endpoint directions, preserved exactly:
@@ -2520,6 +2552,54 @@ export function validateContext(cwd: string): ContextValidationResult {
 								.replaceAll("{block}", inv.block),
 							block: inv.block,
 							field: `${id}.${inv.id}`,
+							code: inv.id,
+						});
+					}
+				}
+			}
+		}
+
+		// ── derived-status invariants (FEAT-011 — FGAP-116) ───────────────────
+		// For a rollup-declared kind (state_derivation.rollups), each item's
+		// STORED status must equal its DERIVED membership-rollup status —
+		// divergence in EITHER direction (stored behind or ahead of the
+		// derivation) is reported. Completeness comes from the SAME shared
+		// helper currentState's gate satisfaction uses (derivedRollupComplete),
+		// so validate-side verdicts match the derivation by construction. A
+		// declaration naming a block with no matching rollups entry is inert
+		// (the invariant has nothing to derive against). Vocabulary-free: kind,
+		// membership relation, and the status strings all come from config.
+		{
+			const sdInv = resolveStateDerivation(cwd);
+			const declared = (config.invariants ?? []).filter((inv) => inv.class === "derived-status");
+			if (sdInv !== null && declared.length > 0) {
+				const rollupByKind = new Map(sdInv.rollups.map((r) => [r.kind, r]));
+				const roleDir = new Map<string, "as_parent" | "as_child">();
+				for (const rt of config.relation_types ?? []) {
+					if (rt.role_direction !== undefined) roleDir.set(rt.canonical_id, rt.role_direction);
+				}
+				for (const inv of declared) {
+					const entry = rollupByKind.get(inv.block);
+					if (entry === undefined) continue;
+					for (const loc of index.byRefname.values()) {
+						if (loc.block !== inv.block) continue;
+						const derived = derivedRollupComplete(index, relations, roleDir, rollupByKind, bucketOf, loc.id)
+							? entry.complete_status
+							: entry.incomplete_status;
+						const stored = String(loc.item.status);
+						if (stored === derived) continue;
+						issues.push({
+							severity: inv.severity ?? "warning",
+							message: (
+								inv.message ??
+								`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
+							)
+								.replaceAll("{id}", loc.id)
+								.replaceAll("{block}", inv.block)
+								.replaceAll("{stored}", stored)
+								.replaceAll("{derived}", derived),
+							block: inv.block,
+							field: `${loc.id}.${inv.id}`,
 							code: inv.id,
 						});
 					}

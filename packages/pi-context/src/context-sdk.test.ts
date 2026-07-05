@@ -4051,6 +4051,107 @@ describe("expectedBlockForId", () => {
 
 // ── validateContext cross-block status-vocabulary check (FGAP-025) ────────────
 
+// ── derived-status invariants (FEAT-011 — FGAP-116) ──────────────────────────
+// Stored-vs-derived divergence for rollup-declared kinds, both directions, via
+// the shared derivedRollupComplete helper (identical verdicts with currentState).
+describe("derived-status invariants", () => {
+	const DS_INVARIANT = [
+		{
+			id: "milestone-status-converges",
+			class: "derived-status",
+			block: "milestone",
+			severity: "warning",
+		},
+	];
+
+	function projDir(tmpDir: string): string {
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		return projectDir;
+	}
+
+	function writeRollupFixture(projectDir: string, milestoneStatus: string, phaseStatus: string): void {
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: milestoneStatus }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "p", intent: "i", status: phaseStatus }] }),
+		);
+		writeRelations(projectDir, [
+			{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+		]);
+	}
+
+	it("stored-BEHIND fires: stored planned while every member completes (derived reached)", (t) => {
+		const tmpDir = makeTmpDir("ds-behind");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, REL_TYPES, DS_INVARIANT);
+		writeRollupFixture(projectDir, "planned", "completed");
+
+		const result = validateContext(tmpDir);
+		const issue = result.issues.find((i) => i.code === "milestone-status-converges");
+		assert.ok(issue, "stored-behind divergence must fire");
+		assert.strictEqual(issue!.severity, "warning");
+		assert.ok(
+			issue!.message.includes("'planned'") && issue!.message.includes("'reached'"),
+			"message carries both values",
+		);
+	});
+
+	it("stored-AHEAD fires: stored reached while a member is incomplete (derived planned)", (t) => {
+		const tmpDir = makeTmpDir("ds-ahead");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, REL_TYPES, DS_INVARIANT);
+		writeRollupFixture(projectDir, "reached", "in-progress");
+
+		const result = validateContext(tmpDir);
+		const issue = result.issues.find((i) => i.code === "milestone-status-converges");
+		assert.ok(
+			issue,
+			"stored-ahead divergence must fire (the direction the reached-milestone invariant already covers is not the only one)",
+		);
+		assert.ok(issue!.message.includes("'reached'") && issue!.message.includes("'planned'"));
+	});
+
+	it("converged is silent in both states", (t) => {
+		const tmpDir = makeTmpDir("ds-converged");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, REL_TYPES, DS_INVARIANT);
+		// reached + complete member: converged.
+		writeRollupFixture(projectDir, "reached", "completed");
+		let result = validateContext(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "milestone-status-converges"), "converged reached must be silent");
+		// planned + incomplete member: converged.
+		writeRollupFixture(projectDir, "planned", "in-progress");
+		result = validateContext(tmpDir);
+		assert.ok(!result.issues.some((i) => i.code === "milestone-status-converges"), "converged planned must be silent");
+	});
+
+	it("inert when the named block has no state_derivation.rollups entry", (t) => {
+		const tmpDir = makeTmpDir("ds-inert");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = projDir(tmpDir);
+		writeConfig(projectDir, REL_TYPES, [
+			{ id: "gaps-status-converges", class: "derived-status", block: "framework-gaps", severity: "warning" },
+		]);
+		fs.writeFileSync(
+			path.join(projectDir, "framework-gaps.json"),
+			JSON.stringify({ gaps: [{ id: "FGAP-1", title: "g", status: "identified" }] }),
+		);
+
+		const result = validateContext(tmpDir);
+		assert.ok(
+			!result.issues.some((i) => i.code === "gaps-status-converges"),
+			"a derived-status declaration over a non-rollup kind is inert",
+		);
+	});
+});
+
 describe("validateContext status-vocabulary", () => {
 	it("warns on a status value absent from the vocabulary; clean for known statuses", (t) => {
 		const tmpDir = makeTmpDir("validate-status-vocab");

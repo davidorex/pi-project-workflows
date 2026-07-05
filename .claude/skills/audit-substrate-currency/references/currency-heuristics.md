@@ -18,7 +18,7 @@ It IS a finding when the addressed item's own criteria/legs shipped without the 
 </honest_partial_vs_stale>
 
 <known_baseline>
-The healthy steady state of this substrate's `context-validate` is `warnings` consisting of: the `decision-shows-derivation` advisory backlog for pre-invariant decisions (DEC-0001..DEC-0017), the honest-partial `task-completed-*` trio (TASK-064/065/075) plus feature-lag entries until their features complete, and the two `layer-plans` `nested_id_bearing_array` structural warnings (issue-002). Anything OUTSIDE this set — any ERROR, any new code, any new item id — is a finding. Update this baseline paragraph when granted corrections change it.
+The healthy steady state of this substrate's `context-validate` is `warnings` consisting of: the `decision-shows-derivation` advisory backlog for pre-invariant decisions (DEC-0001..DEC-0017), the honest-partial `task-completed-*` trio (TASK-064/065/075) plus feature-lag entries until their features complete, the two `layer-plans` `nested_id_bearing_array` structural warnings (issue-002), and — since the `derived-status` invariant class landed (TASK-085) — `milestone-status-converges` warnings for any milestone whose stored status lags its derivation, EXPECTED until the reconcile op (TASK-086) and converge-on-write (TASK-087) ship the repair path (the warning is the detector working, not a defect; never author the stored milestone status to silence it). Anything OUTSIDE this set — any ERROR, any new code, any new item id — is a finding. Update this baseline paragraph when granted corrections change it.
 </known_baseline>
 
 <known_frictions>

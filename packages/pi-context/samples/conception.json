@@ -822,6 +822,13 @@
       "direction": "as_parent",
       "severity": "warning",
       "message": "Decision '{id}' shows no derivation basis — add a decision_derived_from_item edge to the fact its resolution derives from, or a decision_escalates_underdetermined edge to the framework-gap capturing a genuinely-underdetermined escalated choice (derive-decisions-from-facts)"
+    },
+    {
+      "id": "milestone-status-converges",
+      "class": "derived-status",
+      "block": "milestone",
+      "severity": "warning",
+      "message": "Milestone '{id}' stored status '{stored}' diverges from its derived phase-rollup status '{derived}' — milestone status is derived, never authored; converge via the sanctioned repair path, not a status write"
     }
   ],
   "tool_operations": [],

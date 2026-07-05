@@ -315,11 +315,13 @@ export interface HierarchyDecl {
  */
 export interface InvariantDecl {
 	id: string;
-	class: "requires-edge" | "status-consistency";
+	class: "requires-edge" | "status-consistency" | "derived-status";
 	block: string;
 	where?: Record<string, string | number | boolean>;
-	relation_types: string[];
-	direction: "as_parent" | "as_child";
+	/** Required by the requires-edge / status-consistency classes; absent on derived-status. */
+	relation_types?: string[];
+	/** Required by the requires-edge / status-consistency classes; absent on derived-status. */
+	direction?: "as_parent" | "as_child";
 	when_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";
 	require_target_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";
 	forbid_target_bucket?: "complete" | "in_progress" | "blocked" | "todo" | "unknown";

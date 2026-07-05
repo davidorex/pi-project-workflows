@@ -59,7 +59,7 @@
 		"clean": "rm -rf dist",
 		"build": "rm -rf dist && tsc -p tsconfig.build.json",
 		"prepublishOnly": "npm run clean && npm run build",
-		"test": "tsx --test src/*.test.ts"
+		"test": "tsx --test --test-timeout=120000 src/*.test.ts"
 	},
 	"dependencies": {
 		"@davidorex/pi-context": "^0.32.0",

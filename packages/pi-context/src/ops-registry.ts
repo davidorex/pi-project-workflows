@@ -70,6 +70,7 @@ import { gatherExecutionContext } from "./execution-context.js";
 import {
 	archiveSubstrate,
 	checkStatus,
+	convergeDerivedStatusAfterWrite,
 	initProject,
 	installContext,
 	listSubstrates,
@@ -2184,6 +2185,11 @@ export interface UnexposedWriter {
  * covered when its cwd-form sibling is covered.
  */
 export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
+	{
+		libraryFn: "convergeDerivedStatusAfterWrite",
+		reason:
+			"post-write convergence hook, invoked by the CONVERGE_AFTER_OPS module-init wrapper around every rollup-input-mutating op's run() — op-backed transitively at runtime, but the static classifier cannot see a wrapper-installed call; its explicit ceremony surface is context-reconcile",
+	},
 	{ libraryFn: "writeConfig", safeOp: "amend-config", reason: "scoped guarded config mutation" },
 	{ libraryFn: "writeSchema", safeOp: "write-schema", reason: "raw bypasses the create/replace + migration check" },
 	{ libraryFn: "updateSchema", safeOp: "write-schema", reason: "no mutator-scripting surface" },
@@ -2344,6 +2350,60 @@ export function buildDispatchContextFromExecute(
 	}
 	const modelId = extCtx.model?.id;
 	return { writer: { kind: "agent", agent_id: modelId && modelId.length > 0 ? modelId : "pi-agent" } };
+}
+
+/**
+ * Converge-on-write (FEAT-011 criterion 2 — FGAP-116): the sanctioned mutating
+ * ops that can change a rollup INPUT (a member item's status; a membership
+ * edge; an id every edge keys on) run the derived-status convergence hook
+ * AFTER their own write lands — so every op-surface write leaves rollup-kind
+ * stored statuses equal to their derivation. The hook is config-driven
+ * opt-in (no derived-status invariant → empty set → no writes) and
+ * best-effort (its failure never fails the landed write; the invariant +
+ * context-reconcile remain the net — see convergeDerivedStatusAfterWrite).
+ * Nested-item ops are excluded: item statuses are top-level fields, so a
+ * nested write cannot change a rollup input. Wrapping happens ONCE here at
+ * module init, over the ops DATA — no per-op body edits, no dispatch-path
+ * fork; both consumers (registerAll pi tools + the reflecting CLI) execute
+ * the wrapped run.
+ */
+const CONVERGE_AFTER_OPS = new Set([
+	"append-block-item",
+	"update-block-item",
+	"remove-block-item",
+	"write-block",
+	"complete-task",
+	"append-relation",
+	"append-relations",
+	"remove-relation",
+	"replace-relation",
+	"rename-canonical-id",
+	"promote-item",
+]);
+for (const op of ops) {
+	if (!CONVERGE_AFTER_OPS.has(op.name)) continue;
+	const inner = op.run.bind(op);
+	// Preserve each op's sync/async contract: a sync op stays sync (its direct
+	// callers — tests, embedders — receive the value, not a Promise); an async
+	// op converges after its promise settles. Converge on NON-THROW: these ops
+	// THROW on failure and return a success STRING (e.g. "Appended item …") or
+	// a {json} payload on success, so any settled return means the write landed
+	// (or was an idempotent no-op) — a result-shape check would silently skip
+	// the string-returning majority. A dryRun invocation (append-relations
+	// --dryRun) previews without writing, so it must not trigger convergence
+	// writes either.
+	op.run = (cwd, params, ctx) => {
+		const isDryRun = (params as { dryRun?: unknown }).dryRun === true;
+		const result = inner(cwd, params, ctx);
+		if (result instanceof Promise) {
+			return result.then((settled) => {
+				if (!isDryRun) convergeDerivedStatusAfterWrite(cwd, ctx);
+				return settled;
+			});
+		}
+		if (!isDryRun) convergeDerivedStatusAfterWrite(cwd, ctx);
+		return result;
+	};
 }
 
 /**

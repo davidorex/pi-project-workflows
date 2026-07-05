@@ -2921,90 +2921,93 @@ describe("op: context-install (reflected install ceremony)", () => {
 // predicts the EXACT delta set a live run applies (FGAP-066 discipline), the
 // live run writes through the standard validated path, and authored-status
 // kinds are structurally out of reach (only rollup-declared kinds derive).
+// makeDivergentSubstrate sits at module scope — shared by the reconcile suite
+// and the converge-on-write suite below.
+function makeDivergentSubstrate(withSubstrateId = false): string {
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-reconcile-"));
+	writeBootstrapPointer(dir, ".project");
+	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+	// Install the real catalog milestone schema so the converge-write runs the
+	// full validated path: AJV, envelope schema_version stamp, identity stamp.
+	fs.copyFileSync(
+		path.join(SAMPLES_DIR, "schemas", "milestone.schema.json"),
+		path.join(dir, ".project", "schemas", "milestone.schema.json"),
+	);
+	fs.writeFileSync(
+		path.join(dir, ".project", "config.json"),
+		JSON.stringify({
+			schema_version: "1.8.0",
+			root: ".project",
+			...(withSubstrateId ? { substrate_id: "sub-00000000000000ab" } : {}),
+			block_kinds: [],
+			lenses: [],
+			installed_schemas: [],
+			installed_blocks: [],
+			relation_types: [
+				{
+					canonical_id: "phase_positioned_in_milestone",
+					display_name: "in milestone",
+					category: "membership",
+					role_direction: "as_child",
+				},
+			],
+			invariants: [
+				{
+					id: "milestone-status-converges",
+					class: "derived-status",
+					block: "milestone",
+					severity: "warning",
+				},
+			],
+			state_derivation: {
+				in_flight: { kinds: ["tasks"], bucket: "in_progress" },
+				focus_fallback: { kind: "phase", bucket: "in_progress" },
+				next_ranked: [{ kind: "tasks", label: "task", bucket: "todo", reason_template: "x" }],
+				blocked_by: { relation_types: [] },
+				rollups: [
+					{
+						kind: "milestone",
+						membership_relation: "phase_positioned_in_milestone",
+						complete_status: "reached",
+						incomplete_status: "planned",
+					},
+				],
+				head_size: 15,
+			},
+		}),
+	);
+	fs.writeFileSync(
+		path.join(dir, ".project", "milestone.json"),
+		JSON.stringify({
+			milestones: [
+				{ id: "MILE-001", name: "diverged", status: "planned" },
+				{ id: "MILE-002", name: "converged", status: "planned" },
+			],
+		}),
+	);
+	fs.writeFileSync(
+		path.join(dir, ".project", "phase.json"),
+		JSON.stringify({
+			phases: [
+				{ id: "PHASE-1", name: "done", intent: "i", status: "completed" },
+				{ id: "PHASE-2", name: "wip", intent: "i", status: "in-progress" },
+			],
+		}),
+	);
+	fs.writeFileSync(
+		path.join(dir, ".project", "relations.json"),
+		JSON.stringify([
+			{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+			{ parent: "PHASE-2", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+		]),
+	);
+	return dir;
+}
+
 describe("reconcileContext (derived-status repair)", () => {
 	afterEach(() => {
 		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
 	});
-
-	function makeDivergentSubstrate(): string {
-		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-reconcile-"));
-		writeBootstrapPointer(dir, ".project");
-		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
-		// Install the real catalog milestone schema so the converge-write runs the
-		// full validated path: AJV, envelope schema_version stamp, identity stamp.
-		fs.copyFileSync(
-			path.join(SAMPLES_DIR, "schemas", "milestone.schema.json"),
-			path.join(dir, ".project", "schemas", "milestone.schema.json"),
-		);
-		fs.writeFileSync(
-			path.join(dir, ".project", "config.json"),
-			JSON.stringify({
-				schema_version: "1.8.0",
-				root: ".project",
-				block_kinds: [],
-				lenses: [],
-				installed_schemas: [],
-				installed_blocks: [],
-				relation_types: [
-					{
-						canonical_id: "phase_positioned_in_milestone",
-						display_name: "in milestone",
-						category: "membership",
-						role_direction: "as_child",
-					},
-				],
-				invariants: [
-					{
-						id: "milestone-status-converges",
-						class: "derived-status",
-						block: "milestone",
-						severity: "warning",
-					},
-				],
-				state_derivation: {
-					in_flight: { kinds: ["tasks"], bucket: "in_progress" },
-					focus_fallback: { kind: "phase", bucket: "in_progress" },
-					next_ranked: [{ kind: "tasks", label: "task", bucket: "todo", reason_template: "x" }],
-					blocked_by: { relation_types: [] },
-					rollups: [
-						{
-							kind: "milestone",
-							membership_relation: "phase_positioned_in_milestone",
-							complete_status: "reached",
-							incomplete_status: "planned",
-						},
-					],
-					head_size: 15,
-				},
-			}),
-		);
-		fs.writeFileSync(
-			path.join(dir, ".project", "milestone.json"),
-			JSON.stringify({
-				milestones: [
-					{ id: "MILE-001", name: "diverged", status: "planned" },
-					{ id: "MILE-002", name: "converged", status: "planned" },
-				],
-			}),
-		);
-		fs.writeFileSync(
-			path.join(dir, ".project", "phase.json"),
-			JSON.stringify({
-				phases: [
-					{ id: "PHASE-1", name: "done", intent: "i", status: "completed" },
-					{ id: "PHASE-2", name: "wip", intent: "i", status: "in-progress" },
-				],
-			}),
-		);
-		fs.writeFileSync(
-			path.join(dir, ".project", "relations.json"),
-			JSON.stringify([
-				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
-				{ parent: "PHASE-2", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
-			]),
-		);
-		return dir;
-	}
 
 	it("dryRun predicts the exact delta set, writing nothing", () => {
 		tmpRoot = makeDivergentSubstrate();
@@ -3070,6 +3073,175 @@ describe("reconcileContext (derived-status repair)", () => {
 		assert.ok(
 			plan.deltas.every((d) => d.block === "milestone"),
 			"only rollup-declared kinds can produce deltas",
+		);
+	});
+});
+
+// ── converge-on-write (FEAT-011 criterion 2 — FGAP-116's last mechanism) ─────
+// The rollup-input-mutating ops run the derived-status convergence hook after
+// their write lands, so an op-surface write leaves rollup-kind stored statuses
+// equal to their derivation — no reconcile run needed for engine writes.
+describe("converge-on-write (op-surface rollup convergence)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	const op = (name: string): OpDefinition => {
+		const found = ops.find((o) => o.name === name);
+		assert.ok(found, `op '${name}' must be registered`);
+		return found;
+	};
+
+	function makeConvergedSubstrate(): string {
+		// The reconcile fixture, identity-established, with the divergence REMOVED:
+		// milestone planned + phase in-progress derives planned (converged start).
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-converge-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		fs.copyFileSync(
+			path.join(SAMPLES_DIR, "schemas", "milestone.schema.json"),
+			path.join(dir, ".project", "schemas", "milestone.schema.json"),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				substrate_id: "sub-00000000000000cd",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					{
+						canonical_id: "phase_positioned_in_milestone",
+						display_name: "in milestone",
+						category: "membership",
+						role_direction: "as_child",
+					},
+				],
+				invariants: [
+					{ id: "milestone-status-converges", class: "derived-status", block: "milestone", severity: "warning" },
+				],
+				state_derivation: {
+					in_flight: { kinds: ["tasks"], bucket: "in_progress" },
+					focus_fallback: { kind: "phase", bucket: "in_progress" },
+					next_ranked: [{ kind: "tasks", label: "task", bucket: "todo", reason_template: "x" }],
+					blocked_by: { relation_types: [] },
+					rollups: [
+						{
+							kind: "milestone",
+							membership_relation: "phase_positioned_in_milestone",
+							complete_status: "reached",
+							incomplete_status: "planned",
+						},
+					],
+					head_size: 15,
+				},
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "m", status: "planned" },
+					{ id: "MILE-002", name: "memberless", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "p", intent: "i", status: "in-progress" }] }),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "relations.json"),
+			JSON.stringify([{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" }]),
+		);
+		return dir;
+	}
+
+	function milestoneStatus(dir: string, id: string): unknown {
+		const block = JSON.parse(fs.readFileSync(path.join(dir, ".project", "milestone.json"), "utf-8")) as {
+			milestones: Array<Record<string, unknown>>;
+		};
+		return block.milestones.find((m) => m.id === id)?.status;
+	}
+
+	it("a member-status op write converges the container on disk (member write fans out under sequential locks)", () => {
+		tmpRoot = makeConvergedSubstrate();
+		const result = op("update-block-item").run(tmpRoot, {
+			block: "phase",
+			arrayKey: "phases",
+			match: { id: "PHASE-1" },
+			updates: { status: "completed" },
+		});
+		assert.equal(typeof result, "string", "update-block-item returns its success line on a landed write");
+		assert.equal(milestoneStatus(tmpRoot, "MILE-001"), "reached", "the container converged with the write");
+		assert.equal(milestoneStatus(tmpRoot, "MILE-002"), "planned", "the member-less sibling is untouched");
+	});
+
+	it("a membership-edge op write converges the affected container", () => {
+		tmpRoot = makeConvergedSubstrate();
+		// Complete the phase FIRST via a direct file write (no op → no convergence),
+		// so only the edge append triggers the hook.
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "p", intent: "i", status: "completed" }] }),
+		);
+		assert.equal(milestoneStatus(tmpRoot, "MILE-002"), "planned");
+		// phase_positioned_in_milestone is role-bearing (as_child) with wildcard
+		// endpoint kinds in this fixture — the orientation guard demands the
+		// role-typed form: primary = the container (milestone, at edge.child).
+		const result = op("append-relation").run(tmpRoot, {
+			primary: "MILE-002",
+			counter: "PHASE-1",
+			relation_type: "phase_positioned_in_milestone",
+		});
+		assert.equal(typeof result, "string", "append-relation returns its success line on a landed write");
+		assert.equal(milestoneStatus(tmpRoot, "MILE-002"), "reached", "the newly-membered container converged");
+		// MILE-001 also converges (its member completed out-of-band; the hook's
+		// sweep is substrate-wide, matching reconcile's set exactly).
+		assert.equal(milestoneStatus(tmpRoot, "MILE-001"), "reached");
+	});
+
+	it("opt-in: without a derived-status invariant the hook writes nothing (byte-identical rollup block)", () => {
+		tmpRoot = makeConvergedSubstrate();
+		// Strip the invariant; keep everything else (rollups still declared).
+		const configPath = path.join(tmpRoot, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
+		cfg.invariants = [];
+		fs.writeFileSync(configPath, JSON.stringify(cfg));
+		const before = fs.readFileSync(path.join(tmpRoot, ".project", "milestone.json"));
+		const result = op("update-block-item").run(tmpRoot, {
+			block: "phase",
+			arrayKey: "phases",
+			match: { id: "PHASE-1" },
+			updates: { status: "completed" },
+		});
+		assert.equal(typeof result, "string", "the member write succeeds");
+		assert.ok(
+			fs.readFileSync(path.join(tmpRoot, ".project", "milestone.json")).equals(before),
+			"no derived-status invariant → the hook is inert",
+		);
+	});
+
+	it("best-effort: a convergence failure never fails the triggering write (pre-identity stamping guard)", () => {
+		tmpRoot = makeDivergentSubstrate(); // pre-identity + already divergent (MILE-001 lags)
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "t1", description: "d", status: "planned" }] }),
+		);
+		const result = op("update-block-item").run(tmpRoot, {
+			block: "tasks",
+			arrayKey: "tasks",
+			match: { id: "t1" },
+			updates: { status: "completed" },
+		});
+		assert.equal(typeof result, "string", "the triggering write must succeed despite the convergence failure");
+		assert.equal(
+			milestoneStatus(tmpRoot, "MILE-001"),
+			"planned",
+			"the divergence stays (left for the invariant + reconcile), never a caller failure",
 		);
 	});
 });

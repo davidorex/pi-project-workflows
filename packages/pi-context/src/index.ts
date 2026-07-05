@@ -2665,9 +2665,24 @@ export function reconcileContext(
 		result.error = "No config.json found in substrate dir — run /context init <substrate-dir> first.";
 		return result;
 	}
+	result.deltas = computeDerivedStatusDeltas(cwd, config);
+	if (dryRun) return result;
+	result.applied = applyDerivedStatusDeltas(cwd, config, result.deltas, ctx);
+	return result;
+}
+
+/**
+ * Read-only core of the derived-status repair: the stored-vs-derived delta set
+ * for every kind a `derived-status` invariant declares (paired with its
+ * `state_derivation.rollups` entry), deduplicated per (block, id). Shared by
+ * `reconcileContext` and the post-write convergence hook so the ceremony and
+ * the hook compute the identical set.
+ */
+function computeDerivedStatusDeltas(cwd: string, config: ConfigBlock): ReconcileResult["deltas"] {
+	const deltas: ReconcileResult["deltas"] = [];
 	const sd = resolveStateDerivation(cwd);
 	const declared = (config.invariants ?? []).filter((inv) => inv.class === "derived-status");
-	if (sd === null || declared.length === 0) return result;
+	if (sd === null || declared.length === 0) return deltas;
 
 	const index = buildIdIndex(cwd);
 	const edges = loadRelations(cwd);
@@ -2692,12 +2707,21 @@ export function reconcileContext(
 			const stored = String(loc.item.status);
 			if (stored === derived) continue;
 			seen.add(key);
-			result.deltas.push({ id: loc.id, block: inv.block, from: stored, to: derived, invariant: inv.id });
+			deltas.push({ id: loc.id, block: inv.block, from: stored, to: derived, invariant: inv.id });
 		}
 	}
-	if (dryRun) return result;
+	return deltas;
+}
 
-	for (const delta of result.deltas) {
+/** Apply a computed delta set through the standard validated write path. */
+function applyDerivedStatusDeltas(
+	cwd: string,
+	config: ConfigBlock,
+	deltas: ReconcileResult["deltas"],
+	ctx?: DispatchContext,
+): number {
+	let applied = 0;
+	for (const delta of deltas) {
 		const arrayKey =
 			config.block_kinds?.find((bk) => bk.canonical_id === delta.block)?.array_key ??
 			(() => {
@@ -2709,9 +2733,45 @@ export function reconcileContext(
 				return discovered;
 			})();
 		updateItemInBlock(cwd, delta.block, arrayKey, (item) => String(item.id) === delta.id, { status: delta.to }, ctx);
-		result.applied += 1;
+		applied += 1;
 	}
-	return result;
+	return applied;
+}
+
+/**
+ * Converge-on-write hook (FEAT-011 criterion 2 — FGAP-116's last mechanism,
+ * the schema_version template applied to rollup-kind stored status). Invoked
+ * AFTER a sanctioned mutating op's write lands (the op's own lock is already
+ * released — sequential lock acquisition, no nesting): recomputes the
+ * derived-status delta set with the SAME core the reconcile ceremony uses and
+ * stamps every affected rollup item's stored status through the standard
+ * validated write path — a converge-stamp is not authoring; the written value
+ * IS the derivation. Config-driven opt-in: a substrate with no
+ * `derived-status` invariant (or no `state_derivation.rollups`) computes an
+ * empty set and performs no writes, so non-declaring and legacy substrates
+ * are byte-identical to before. BEST-EFFORT by design: it never establishes
+ * identity (a convergence side-effect minting a substrate_id would be a lazy
+ * mint, DEC-0012) and never fails the caller's already-landed write — an
+ * apply failure leaves the divergence for the `derived-status` invariant to
+ * detect and `context-reconcile` (the ceremony with the establishment +
+ * error surface) to repair. Returns the converged set, or null when there was
+ * nothing to converge or the hook could not run.
+ */
+export function convergeDerivedStatusAfterWrite(cwd: string, ctx?: DispatchContext): ReconcileResult["deltas"] | null {
+	try {
+		const config = loadConfig(cwd);
+		if (!config) return null;
+		const deltas = computeDerivedStatusDeltas(cwd, config);
+		if (deltas.length === 0) return null;
+		applyDerivedStatusDeltas(cwd, config, deltas, ctx);
+		return deltas;
+	} catch {
+		// Best-effort: the caller's write already landed; a convergence failure
+		// (pre-identity stamping guard, unreadable sibling block) leaves the
+		// divergence detectable by the derived-status invariant and repairable by
+		// context-reconcile — never a failure of the triggering write.
+		return null;
+	}
 }
 
 /**

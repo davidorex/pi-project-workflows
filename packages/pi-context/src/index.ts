@@ -28,6 +28,7 @@ import {
 	BootstrapNotFoundError,
 	flipBootstrapPointer,
 	migrationsPathForDir,
+	pendingBlockedPathForDir,
 	resolveContextDir,
 	SCHEMAS_DIR,
 	schemasDir,
@@ -391,14 +392,21 @@ export interface BlockValidationFailure {
  * item failures naming id / field / constraint.
  *   - `no-migration-chain`: no shipped chain reaches `to` from `from`; the
  *     version pair is carried, `failures` omitted.
- *   - `validation-failed`: the in-memory forward-migrate + re-validate threw; the
- *     version pair is carried, `failures` lists the per-item constraint failures
- *     (a single synthetic `{instancePath:"", keyword:"error", …}` entry when the
- *     throw was not an AJV ValidationError).
+ *   - `validation-failed`: the in-memory forward-migrate + re-validate threw an
+ *     AJV ValidationError; the version pair is carried, `failures` lists the
+ *     per-item constraint failures.
+ *   - `write-failed`: a NON-validation throw at the resync write boundary (e.g.
+ *     the mandatory identity stamp refusing a substrate with no `substrate_id`,
+ *     or an unreadable catalog body) — FGAP-115. The items were NOT flagged
+ *     invalid; `failures` carries a single `{instancePath:"", keyword:"error"}`
+ *     entry whose `message` is the thrown error. A `write-failed` refusal
+ *     inscribes NO failure markers and persists NO pending-blocked record —
+ *     those are validation-only consequences (the resolve-blocked remedy fixes
+ *     items, which is not the problem here).
  */
 export interface BlockedDetail {
 	name: string;
-	reason: "no-migration-chain" | "validation-failed";
+	reason: "no-migration-chain" | "validation-failed" | "write-failed";
 	from?: string;
 	to?: string;
 	failures?: BlockValidationFailure[];
@@ -1127,15 +1135,29 @@ function resyncSchema(
 					const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
 					validate(catalogSchema, sameVersionBlockData, name);
 				} catch (err) {
-					const failures =
-						err instanceof ValidationError
-							? mapValidationFailures(err.errors, sameVersionBlockData)
-							: [{ instancePath: "", keyword: "error", message: String(err) }];
+					// Classify the refusal (FGAP-115): only an AJV ValidationError is an
+					// item-validation failure; any other throw (unreadable catalog body,
+					// a write-boundary precondition) is `write-failed` — no pending entry,
+					// so the marker/pending pipeline (validation-only consequences) never
+					// fires for it.
+					if (err instanceof ValidationError) {
+						const failures = mapValidationFailures(err.errors, sameVersionBlockData);
+						return {
+							status: "blocked",
+							registeredMigrations: [],
+							blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+							pendingEntry: buildPendingEntry("validation-failed", [], failures),
+						};
+					}
 					return {
 						status: "blocked",
 						registeredMigrations: [],
-						blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
-						pendingEntry: buildPendingEntry("validation-failed", [], failures),
+						blockedDetail: {
+							reason: "write-failed",
+							from: installedVersion,
+							to: catalogVersion,
+							failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+						},
 					};
 				}
 			}
@@ -1260,15 +1282,30 @@ function resyncSchema(
 		// blocked detail records the validation-failed reason + the version pair + the
 		// per-item failures (a single synthetic failure for a non-AJV throw) so the
 		// caller surfaces WHY the resync refused (TASK-048).
-		const failures =
-			err instanceof ValidationError
-				? mapValidationFailures(err.errors, blockData)
-				: [{ instancePath: "", keyword: "error", message: String(err) }];
+		// Classify the refusal (FGAP-115): only an AJV ValidationError means the
+		// migrated items fail the catalog schema. Any other throw — the mandatory
+		// identity stamp refusing a substrate with no substrate_id, an I/O failure —
+		// is `write-failed`: the items were never flagged invalid, so no pending
+		// entry is built and the marker/pending pipeline (validation-only
+		// consequences) never fires.
+		if (err instanceof ValidationError) {
+			const failures = mapValidationFailures(err.errors, blockData);
+			return {
+				status: "blocked",
+				registeredMigrations: [],
+				blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
+				pendingEntry: buildPendingEntry("validation-failed", chain, failures),
+			};
+		}
 		return {
 			status: "blocked",
 			registeredMigrations: [],
-			blockedDetail: { reason: "validation-failed", from: installedVersion, to: catalogVersion, failures },
-			pendingEntry: buildPendingEntry("validation-failed", chain, failures),
+			blockedDetail: {
+				reason: "write-failed",
+				from: installedVersion,
+				to: catalogVersion,
+				failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+			},
 		};
 	}
 }
@@ -2636,58 +2673,95 @@ export function resolveBlocked(
 		return { schemaName: name, resolved: false, failures };
 	}
 
-	// PASS — commit the resolution. (1) Register the chain decls not already on
-	// disk (the resyncSchema dedup), collecting the registered set.
-	const existing = loadMigrationsFileForDir(destRoot);
-	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
-	const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
-	for (const decl of entry.chain) {
-		const key = `${decl.schemaName} ${decl.fromVersion}`;
-		if (present.has(key)) continue;
-		appendMigrationDeclForDir(destRoot, decl, ctx);
-		present.add(key);
-		registeredMigrations.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
+	// PASS — commit the resolution, ALL-OR-NOTHING (FGAP-115). The commit touches
+	// up to five files; a throw partway (e.g. the mandatory identity stamp inside
+	// writeBlockForDir refusing a substrate with no substrate_id) previously
+	// stranded a partial commit — schema advanced, markers stripped, block
+	// unwritten, pending entry stale. Capture the raw pre-commit bytes of every
+	// touched file up front; on any commit-phase throw restore them byte-exact
+	// (per-component byte-exact refuse discipline, DEC-0017/DEC-0018), invalidate
+	// the migration-registry cache warmed by the reverted decl appends, and
+	// return resolved:false carrying the truthful failure. Object-store putObject
+	// entries are content-addressed and harmless to leave behind.
+	const commitFiles = [
+		migrationsPathForDir(destRoot),
+		installedSchemaDestPath(destRoot, name),
+		blockFile,
+		path.join(destRoot, "config.json"),
+		pendingBlockedPathForDir(destRoot),
+	];
+	const preCommitBytes = new Map<string, Buffer | null>();
+	for (const f of commitFiles) {
+		preCommitBytes.set(f, fs.existsSync(f) ? fs.readFileSync(f) : null);
 	}
-
-	// (2) Write the target schema (replace — meta-validated, nested-id-guarded, atomic).
-	writeSchemaCheckedForDir(destRoot, name, targetBody, "replace", ctx);
-
-	// (3) Advance the migrated block's schema_version envelope to the target + persist
-	// it (skip when the block had no items — schema still written, base still advanced,
-	// mirroring the live no-items handling). Identity stamping re-runs on the write.
-	if (hasItems) {
-		// TASK-052 / FGAP-081 (oid stability): when the on-disk block carried markers,
-		// raw-write the STRIPPED text to the block file (tmp+rename) BEFORE
-		// writeBlockForDir, so the identity-stamp prior-read parses the marker-free
-		// on-disk file and preserves each item's oid (no re-mint; content_parent advances
-		// only on genuinely changed items).
-		if (wasMarked && strippedText !== undefined) {
-			const tmpPath = `${blockFile}.unmark-${process.pid}.tmp`;
-			fs.writeFileSync(tmpPath, strippedText);
-			fs.renameSync(tmpPath, blockFile);
+	try {
+		// (1) Register the chain decls not already on disk (the resyncSchema dedup),
+		// collecting the registered set.
+		const existing = loadMigrationsFileForDir(destRoot);
+		const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+		const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
+		for (const decl of entry.chain) {
+			const key = `${decl.schemaName} ${decl.fromVersion}`;
+			if (present.has(key)) continue;
+			appendMigrationDeclForDir(destRoot, decl, ctx);
+			present.add(key);
+			registeredMigrations.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
 		}
-		if (
-			migrated &&
-			typeof migrated === "object" &&
-			!Array.isArray(migrated) &&
-			typeof (migrated as Record<string, unknown>).schema_version === "string" &&
-			typeof targetVersion === "string"
-		) {
-			(migrated as Record<string, unknown>).schema_version = targetVersion;
+
+		// (2) Write the target schema (replace — meta-validated, nested-id-guarded, atomic).
+		writeSchemaCheckedForDir(destRoot, name, targetBody, "replace", ctx);
+
+		// (3) Advance the migrated block's schema_version envelope to the target + persist
+		// it (skip when the block had no items — schema still written, base still advanced,
+		// mirroring the live no-items handling). Identity stamping re-runs on the write.
+		if (hasItems) {
+			// TASK-052 / FGAP-081 (oid stability): when the on-disk block carried markers,
+			// raw-write the STRIPPED text to the block file (tmp+rename) BEFORE
+			// writeBlockForDir, so the identity-stamp prior-read parses the marker-free
+			// on-disk file and preserves each item's oid (no re-mint; content_parent advances
+			// only on genuinely changed items).
+			if (wasMarked && strippedText !== undefined) {
+				const tmpPath = `${blockFile}.unmark-${process.pid}.tmp`;
+				fs.writeFileSync(tmpPath, strippedText);
+				fs.renameSync(tmpPath, blockFile);
+			}
+			if (
+				migrated &&
+				typeof migrated === "object" &&
+				!Array.isArray(migrated) &&
+				typeof (migrated as Record<string, unknown>).schema_version === "string" &&
+				typeof targetVersion === "string"
+			) {
+				(migrated as Record<string, unknown>).schema_version = targetVersion;
+			}
+			writeBlockForDir(destRoot, name, migrated);
 		}
-		writeBlockForDir(destRoot, name, migrated);
+
+		// (4) Advance the merge base to the target body so a subsequent update converges
+		// (base === catalog) instead of re-deriving drift.
+		const baseAdvancedTo = stampBaselineFromBody(cwd, name, targetBody, targetVersion ?? "");
+
+		// (5) Clear the resolved entry from pending-blocked.json (remove the file when
+		// it becomes empty — no stale empty sidecar).
+		const remaining = (pending?.entries ?? []).filter((e) => e.name !== name);
+		reconcilePendingBlockedForDir(destRoot, remaining, ctx);
+
+		return { schemaName: name, resolved: true, registeredMigrations, baseAdvancedTo };
+	} catch (err) {
+		for (const [f, bytes] of preCommitBytes) {
+			if (bytes === null) {
+				if (fs.existsSync(f)) fs.unlinkSync(f);
+			} else {
+				fs.writeFileSync(f, bytes);
+			}
+		}
+		invalidateMigrationRegistryForDir(destRoot);
+		return {
+			schemaName: name,
+			resolved: false,
+			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+		};
 	}
-
-	// (4) Advance the merge base to the target body so a subsequent update converges
-	// (base === catalog) instead of re-deriving drift.
-	const baseAdvancedTo = stampBaselineFromBody(cwd, name, targetBody, targetVersion ?? "");
-
-	// (5) Clear the resolved entry from pending-blocked.json (remove the file when
-	// it becomes empty — no stale empty sidecar).
-	const remaining = (pending?.entries ?? []).filter((e) => e.name !== name);
-	reconcilePendingBlockedForDir(destRoot, remaining, ctx);
-
-	return { schemaName: name, resolved: true, registeredMigrations, baseAdvancedTo };
 }
 
 /**
@@ -2763,6 +2837,17 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 		lines.push(`  blocked: ${d.name} (${from} -> ${to})`);
 		if (d.reason === "no-migration-chain") {
 			lines.push(`    no migration chain reaches ${to} from ${from}`);
+			continue;
+		}
+		if (d.reason === "write-failed") {
+			// FGAP-115: a non-validation refusal at the write boundary. The items were
+			// NOT flagged invalid — do not direct the operator at them.
+			for (const f of d.failures ?? []) {
+				lines.push(`    ${f.message}`);
+			}
+			lines.push(
+				"    write refused (not an item-validation failure) — the block's items were not flagged invalid; do not edit items. Address the named precondition, then re-run update.",
+			);
 			continue;
 		}
 		// validation-failed

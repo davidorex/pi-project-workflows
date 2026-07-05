@@ -823,6 +823,75 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.equal(result.partialApplication, undefined, "a nothing-refused run must carry no partialApplication");
 	});
 
+	it("pre-identity version bump → blocked with reason write-failed: message carried, NO markers, NO pending record, files byte-unchanged", () => {
+		// makeProject writes no substrate_id, so the migrate arm's writeBlockForDir
+		// identity stamp throws — a NON-validation refusal. The classification must
+		// say so (write-failed), and the validation-only consequences (markers,
+		// pending-blocked) must not fire.
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", "1.0.0"); // installed at the older version
+		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "1.0.0",
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+		});
+		installContext(tmpRoot); // baseline over the existing 1.0.0 schema (skip-if-exists)
+		const schemaBefore = fs.readFileSync(dest);
+		const blockBefore = fs.readFileSync(blockDest);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.blocked, ["tasks"], "the pre-identity migrate write must refuse");
+		const detail = result.blockedDetail.find((d) => d.name === "tasks");
+		assert.equal(detail?.reason, "write-failed", "a non-validation throw must not be labeled validation-failed");
+		assert.ok(
+			detail?.failures?.some((f) => f.keyword === "error" && f.message.includes("substrate_id")),
+			"the failures entry must carry the thrown write-boundary message",
+		);
+		assert.equal(detail?.premarker_hash, undefined, "a write-failed refusal must not inscribe markers");
+		assert.ok(fs.readFileSync(dest).equals(schemaBefore), "installed schema must be byte-unchanged");
+		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "block file must be byte-unchanged (no markers)");
+		assert.equal(
+			fs.existsSync(pendingBlockedPathForDir(path.join(tmpRoot, ".project"))),
+			false,
+			"a write-failed refusal must not persist a pending-blocked record",
+		);
+	});
+
+	it("resolveBlocked commit throw → all-or-nothing: every touched file byte-restored, pending intact, resolved:false with the truthful failure", () => {
+		// Real flow to the pending state: a genuine validation-failed block (in-memory,
+		// pre-write) on a PRE-IDENTITY substrate persists markers + pending. Fix the
+		// items in place (marker lines retained; resolveBlocked strips them), then
+		// resolve: re-validation passes, the commit reaches writeBlockForDir, the
+		// identity stamp throws — and the commit must restore everything it touched.
+		makeNarrowedTasksFixture();
+		const blocked = updateContext(tmpRoot);
+		assert.deepEqual(blocked.blocked, ["tasks"], "precondition: the narrowing resync validation-blocks");
+		const substrateDir = path.join(tmpRoot, ".project");
+		const dest = path.join(substrateDir, "schemas", "tasks.schema.json");
+		const blockDest = path.join(substrateDir, "tasks.json");
+		const pendingPath = pendingBlockedPathForDir(substrateDir);
+		assert.ok(fs.existsSync(pendingPath), "precondition: a validation-failed block persists pending");
+		// Fix the offending item IN PLACE (marker lines retained for the strip path).
+		fs.writeFileSync(blockDest, fs.readFileSync(blockDest, "utf-8").replace('"parked"', '"planned"'));
+		const migrationsPath = path.join(substrateDir, "migrations.json");
+		const before = new Map<string, Buffer | null>();
+		for (const f of [dest, blockDest, pendingPath, migrationsPath, path.join(substrateDir, "config.json")]) {
+			before.set(f, fs.existsSync(f) ? fs.readFileSync(f) : null);
+		}
+		const r = resolveBlocked(tmpRoot, "tasks");
+		assert.equal(r.resolved, false, "the pre-identity commit must refuse, not partially commit");
+		assert.ok(
+			!r.resolved && r.failures.some((f) => f.message.includes("substrate_id")),
+			"the refusal must carry the truthful write-boundary failure",
+		);
+		for (const [f, bytes] of before) {
+			if (bytes === null) {
+				assert.equal(fs.existsSync(f), false, `${path.basename(f)} must not be created by a refused commit`);
+			} else {
+				assert.ok(fs.readFileSync(f).equals(bytes), `${path.basename(f)} must be byte-restored on the refused commit`);
+			}
+		}
+	});
+
 	it("partial run under --dryRun → predicted partialApplication in the same shape, writing nothing", () => {
 		const { dest, blockDest, configDest } = makeNarrowedTasksFixture();
 		const schemaBefore = fs.readFileSync(dest);

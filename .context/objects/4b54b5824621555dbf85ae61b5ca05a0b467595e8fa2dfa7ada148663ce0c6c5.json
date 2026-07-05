@@ -1,0 +1,19 @@
+{
+  "description": "Delta-scoped write-time invariant evaluation at the item-grain write chokes (FEAT-011 criterion 5 / shape S3, the TASK-062 edge-gate lift pattern): when a sanctioned item write lands, evaluate the config invariants scoped to the written block using the SAME helpers validateContext uses (identical-verdict guarantee), and compare against the pre-write verdict — a write that INTRODUCES a violation absent before it surfaces the new violation on the op result (warning severity) or is refused (error severity); pre-existing violations never block writes, so every legacy substrate stays fully writable (the expand-contract analogue). Per-write cost is bounded to block-scoped invariants (the edge gate already pays buildIdIndex on relation appends). The ops result shape gains the write-side warning channel; severity semantics documented on the write-op surfaces. Composed from FEAT-011 criterion 5 and shape report S3 (LLM-composed under that basis).",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/README.md",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "Completing a task that addresses a non-complete feature surfaces the task-completed-feature-complete warning ON THE WRITE'S RESULT at the moment of the write (demonstrated live); an error-severity invariant violation newly introduced by a write refuses the write with the file byte-unchanged.",
+    "Delta-scoping proven: the same write against a substrate already carrying that violation class proceeds un-warned/un-refused for the pre-existing instances — only the newly-introduced violation surfaces.",
+    "Write-side and validateContext verdicts are produced by shared helpers — a divergence test pins identical classification.",
+    "Full suite 0 failures; op-surface docs state the severity semantics; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T5 (shape S3). Depends on the derived-status invariant class task (shared helper extraction lands there)."
+}

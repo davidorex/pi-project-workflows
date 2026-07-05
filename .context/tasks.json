@@ -1806,7 +1806,7 @@
     },
     {
       "description": "Delta-scoped write-time invariant evaluation at the item-grain write chokes (FEAT-011 criterion 5 / shape S3, the TASK-062 edge-gate lift pattern): when a sanctioned item write lands, evaluate the config invariants scoped to the written block using the SAME helpers validateContext uses (identical-verdict guarantee), and compare against the pre-write verdict — a write that INTRODUCES a violation absent before it surfaces the new violation on the op result (warning severity) or is refused (error severity); pre-existing violations never block writes, so every legacy substrate stays fully writable (the expand-contract analogue). Per-write cost is bounded to block-scoped invariants (the edge gate already pays buildIdIndex on relation appends). The ops result shape gains the write-side warning channel; severity semantics documented on the write-op surfaces. Composed from FEAT-011 criterion 5 and shape report S3 (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/block-api.ts",
         "packages/pi-context/src/context-sdk.ts",
@@ -1826,7 +1826,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-088",
       "oid": "6a08e8a70c39e0fc959c18e1d9a253f8",
-      "content_hash": "69270fe4b6475bc8c3d6dec23e9fbd81c7eb8af2d18b9717aa40cd30a880674f"
+      "content_hash": "4b54b5824621555dbf85ae61b5ca05a0b467595e8fa2dfa7ada148663ce0c6c5",
+      "content_parent": "69270fe4b6475bc8c3d6dec23e9fbd81c7eb8af2d18b9717aa40cd30a880674f"
     },
     {
       "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', id, bucket} (fires when the named item's status buckets there), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (computeFileContentHash; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis).",

@@ -26,7 +26,7 @@ pi install npm:@davidorex/pi-context
 
 ## How It Works
 
-Project data lives under the substrate root (the dir chosen at init and recorded in `config.json`'s `root` field by accept-all; no default is shipped) as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted.
+Project data lives under the substrate root (the dir chosen at init and recorded in `config.json`'s `root` field by accept-all; no default is shipped) as typed JSON block files. Each block has a corresponding JSON Schema that defines its shape. All writes — whether from tools, workflows, or agents — are validated against the schema before data hits disk. Invalid data is never persisted. Mutating ops additionally run a write pipeline: rollup-kind stored statuses converge with their derivation after the write, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by the write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity; pre-existing violations never block.
 
 After `/context init <substrate-dir>` the substrate skeleton is the dirs plus a minimal skeleton `config.json` (schema-valid, empty of vocabulary, carrying a minted/registered `substrate_id`) — no schemas, no blocks:
 

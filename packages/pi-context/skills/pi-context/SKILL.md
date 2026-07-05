@@ -10,7 +10,7 @@ description: >
 
 <tools_reference>
 <tool name="append-block-item">
-Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id.
+Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Append items to project blocks (issues, decisions, or any user-defined block)*
 
@@ -23,7 +23,7 @@ Append an item to an array in a project block file. Schema validation is automat
 </tool>
 
 <tool name="update-block-item">
-Update fields on an item in a project block array. Finds by predicate field match.
+Update fields on an item in a project block array. Finds by predicate field match. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Update items in project blocks — change status, add details, mark resolved*
 
@@ -36,7 +36,7 @@ Update fields on an item in a project block array. Finds by predicate field matc
 </tool>
 
 <tool name="append-relation">
-Append a closure-table relation (edge: relation_type, optional ordinal) to relations.json. Orient the edge with EITHER raw --parent/--child OR the role-typed --primary/--counter (which maps to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive. A bare --parent/--child append of a relation that is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap) is rejected — re-issue with --primary/--counter. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate after. Creates relations.json if absent.
+Append a closure-table relation (edge: relation_type, optional ordinal) to relations.json. Orient the edge with EITHER raw --parent/--child OR the role-typed --primary/--counter (which maps to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive. A bare --parent/--child append of a relation that is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap) is rejected — re-issue with --primary/--counter. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run context-validate after. Creates relations.json if absent. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Create a relation/edge between two items (raw --parent/--child, or role-typed --primary/--counter mapped via role_direction)*
 
@@ -52,7 +52,7 @@ Append a closure-table relation (edge: relation_type, optional ordinal) to relat
 </tool>
 
 <tool name="remove-relation">
-Remove the single closure-table relation (edge) matching parent+child+relation_type from relations.json. Matches on the SAME (parent, child, relation_type) dedup identity append-relation uses, so it is the symmetric inverse of append-relation (ordinal is NOT part of identity). An absent edge is an idempotent no-op. Reference integrity is NOT checked here — run context-validate after if the removal changes resolvability.
+Remove the single closure-table relation (edge) matching parent+child+relation_type from relations.json. Matches on the SAME (parent, child, relation_type) dedup identity append-relation uses, so it is the symmetric inverse of append-relation (ordinal is NOT part of identity). An absent edge is an idempotent no-op. Reference integrity is NOT checked here — run context-validate after if the removal changes resolvability. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Remove a relation/edge between two items (the inverse of append-relation)*
 
@@ -65,7 +65,7 @@ Remove the single closure-table relation (edge) matching parent+child+relation_t
 </tool>
 
 <tool name="replace-relation">
-Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of the new edge. This op takes RAW parent/child (old + new) and BYPASSES the write-time orientation gate that append-relation applies — it writes the endpoints verbatim, so it is the affordance for re-orienting an existing edge; reference integrity is NOT checked here — run context-validate after.
+Atomically replace one closure-table relation with another in a SINGLE write (no half-state: the old edge and the new edge never coexist on disk). The old edge is matched on the (parent, child, relation_type) dedup identity; the new edge is written with its optional ordinal. If the old edge is absent the call is effectively an append of the new edge. This op takes RAW parent/child (old + new) and BYPASSES the write-time orientation gate that append-relation applies — it writes the endpoints verbatim, so it is the affordance for re-orienting an existing edge; reference integrity is NOT checked here — run context-validate after. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Atomically swap one relation/edge for another in a single write*
 
@@ -82,7 +82,7 @@ Atomically replace one closure-table relation with another in a SINGLE write (no
 </tool>
 
 <tool name="append-relations">
-Append MANY closure-table relations to relations.json in a single write. Each edge is an object with { relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair (mapped to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive per edge, and a bare { parent, child } for an orientation-ambiguous role-bearing relation rejects the whole batch before any write. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate after. Creates relations.json if absent.
+Append MANY closure-table relations to relations.json in a single write. Each edge is an object with { relation_type, ordinal? } plus EITHER a raw { parent, child } pair OR the role-typed { primary, counter } pair (mapped to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive per edge, and a bare { parent, child } for an orientation-ambiguous role-bearing relation rejects the whole batch before any write. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate after. Creates relations.json if absent. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Create many relations/edges between items in one write (raw or role-typed per edge)*
 
@@ -107,7 +107,7 @@ Append-or-replace an item in a project block array by id: if an item with the sa
 </tool>
 
 <tool name="promote-item">
-Promote a substrate item into another (registered) substrate as a NEW content-addressed item, recording the 'item_derived_from_item' lineage edge in the destination relations.json (parent = the new derived item, child = the source, carrying the source content_hash). The destination write-path mints a fresh oid + content_hash + content object. When the source block's status enum supports it, the source is marked superseded. Preconditions (unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname collision) throw. Pass dryRun to compute the destination without writing.
+Promote a substrate item into another (registered) substrate as a NEW content-addressed item, recording the 'item_derived_from_item' lineage edge in the destination relations.json (parent = the new derived item, child = the source, carrying the source content_hash). The destination write-path mints a fresh oid + content_hash + content object. When the source block's status enum supports it, the source is marked superseded. Preconditions (unresolvable/non-item source, unregistered destination alias, unregistered destination relation_type, refname collision) throw. Pass dryRun to compute the destination without writing. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Promote an item into another substrate as a derived copy with a lineage edge*
 
@@ -150,7 +150,7 @@ Update fields on a nested-array item inside a parent-array item in a project blo
 </tool>
 
 <tool name="remove-block-item">
-Remove items matching a predicate from a top-level array in a project block. Idempotent — returns { removed: 0 } on no match without throwing. Schema validation runs after removal.
+Remove items matching a predicate from a top-level array in a project block. Idempotent — returns { removed: 0 } on no match without throwing. Schema validation runs after removal. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Remove items from project blocks — prune retracted issues, dedupe entries*
 
@@ -196,7 +196,7 @@ Read a project block file as structured JSON.
 </tool>
 
 <tool name="write-block">
-Write or replace an entire project block with schema validation.
+Write or replace an entire project block with schema validation. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Write or replace a project block with schema validation*
 
@@ -283,7 +283,7 @@ Derive the substrate bootstrap state for the cwd, purely from the filesystem: 'n
 </tool>
 
 <tool name="rename-canonical-id">
-Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing.
+Rename a canonical_id (kind: item | relation_type | lens | layer) from oldId to newId across all substrate surfaces that carry it as DATA — item home block + relations.json edges, or the relevant config registries. Out-of-substrate occurrences (analysis MDs, git history) are REPORTED, never rewritten. block_kind renames are unsupported (filesystem cascade). Use dryRun to preview the would-change counts without writing. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Rename a canonical_id (item/relation_type/lens/layer) across substrate; dryRun to preview*
 
@@ -532,7 +532,7 @@ Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a sin
 </tool>
 
 <tool name="complete-task">
-Complete a task with verification gate — requires a passing verification entry targeting the task.
+Complete a task with verification gate — requires a passing verification entry targeting the task. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
 *Complete a task — gates on passing verification before updating status*
 

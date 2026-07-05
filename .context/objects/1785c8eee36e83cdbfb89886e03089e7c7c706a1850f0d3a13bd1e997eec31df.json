@@ -1,0 +1,19 @@
+{
+  "description": "New config-declared invariant class derived-status: for a block kind whose status is mechanically derivable (declared via state_derivation.rollups), validateContext compares each item's STORED status against its DERIVED rollup status and reports divergence in BOTH directions (stored-behind and stored-ahead — the existing reached-milestone-phases-complete invariant guards only the stored-reached direction). Additive schema evolution: a new oneOf branch in config.schema.json's invariants (version/migration handling per the expand-contract gate's own verdict at implementation), the InvariantDecl union (packages/pi-context/src/context.ts:316-328), and an evaluation loop in validateContext beside the existing two (context-sdk.ts:2435-2501; old engines skip unknown classes via the established forward-compat skip). The class declaration registers DUAL-SURFACE: live .context config AND samples/conception.json (FGAP-102 discipline — no live-only vocabulary). Composed from FEAT-011 criterion 3 and the shape report S4 (LLM-composed under that basis).",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/schemas/config.schema.json",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-sdk.test.ts",
+    "packages/pi-context/samples/conception.json",
+    "packages/pi-context/CHANGELOG.md"
+  ],
+  "acceptance_criteria": [
+    "A rollup-kind item whose stored status lags its derivation (the MILE-003 stored-planned case) is reported by context-validate under the new class; the converse direction (stored-ahead of the derivation) is reported too.",
+    "The class is config DATA: declared in live config AND the packaged catalog; a substrate not declaring it validates exactly as before; an old engine reading a config that declares it skips it without failing.",
+    "config.schema.json's change passes the expand-contract build gate (additive branch; any required version advance + packaged migration decl per that gate's verdict).",
+    "Tests cover both divergence directions, the no-declaration no-op, and the forward-compat skip; full suite 0 failures; CHANGELOG entry."
+  ],
+  "notes": "FEAT-011 T2 (shape S4). The out-of-band safety net under converge-on-write; write-time gate and reconcile share its comparison helpers."
+}

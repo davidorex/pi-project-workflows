@@ -1732,7 +1732,7 @@
     },
     {
       "description": "New config-declared invariant class derived-status: for a block kind whose status is mechanically derivable (declared via state_derivation.rollups), validateContext compares each item's STORED status against its DERIVED rollup status and reports divergence in BOTH directions (stored-behind and stored-ahead — the existing reached-milestone-phases-complete invariant guards only the stored-reached direction). Additive schema evolution: a new oneOf branch in config.schema.json's invariants (version/migration handling per the expand-contract gate's own verdict at implementation), the InvariantDecl union (packages/pi-context/src/context.ts:316-328), and an evaluation loop in validateContext beside the existing two (context-sdk.ts:2435-2501; old engines skip unknown classes via the established forward-compat skip). The class declaration registers DUAL-SURFACE: live .context config AND samples/conception.json (FGAP-102 discipline — no live-only vocabulary). Composed from FEAT-011 criterion 3 and the shape report S4 (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/schemas/config.schema.json",
         "packages/pi-context/src/context.ts",
@@ -1752,7 +1752,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-085",
       "oid": "cb73f9ba68cb73fe3159aa4e123ff434",
-      "content_hash": "39f5698dae3f380c25a84294b656fb08f54b6ea3db466d3494e60eb436f3f5d7"
+      "content_hash": "1785c8eee36e83cdbfb89886e03089e7c7c706a1850f0d3a13bd1e997eec31df",
+      "content_parent": "39f5698dae3f380c25a84294b656fb08f54b6ea3db466d3494e60eb436f3f5d7"
     },
     {
       "description": "New context-reconcile op (v1): compute every derived-status delta (the derived-status comparison from the invariant class, shared helpers — identical verdicts) and apply the convergence through the standard write path — identity-stamped, validated, attested to the invoking writer via DispatchContext. --dryRun predicts the live outcome exactly (the FGAP-066 in-memory-simulation standard): the previewed delta set equals what the live run writes. Reflected in the CLI (parity gate covers op<->CLI); auth-gated as a write ceremony. Scope v1 is derived-status deltas only; the op's sweep is designed for extension (the typed-staleness task extends it to fired conditions + pin drifts). The op surface states FEAT-011's residue: authored judgment and prose truth are never auto-repaired. Composed from FEAT-011 criteria 4 and 9 and the shape report S9 (LLM-composed under that basis).",

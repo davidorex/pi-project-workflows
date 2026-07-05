@@ -3850,7 +3850,7 @@
     },
     {
       "title": "release:* bumps versions but never re-promotes — the globally-installed operator CLI silently lags the tree after every release",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context-cli",
       "canonical_vocabulary": "release-time operator convergence",
@@ -3871,7 +3871,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-118",
       "oid": "fb77630304d903238205a5ec49d8360c",
-      "content_hash": "a31155cedaab7497411885b1886189a0fde310d6b1e4fb1c073e2c5bda1410ef"
+      "content_hash": "9d0fbe49e625f851cdc1a6c73801644da8de3522580b9cbff7fc15b1434cdcf9",
+      "closed_by": "TASK-083 / VER-071 — scripts/release.mjs step 5: after the tag, the release run promotes the operator CLI (npm run promote:cli via the script's run() helper, silent+ignoreError so a string return means success and null means failure) and prints the promoted version, so a release leaves the globally-installed pi-context at the released version by construction. A promote failure does not un-release: the bump/CHANGELOG/commit/tag are already durable; the script reports the release intact, names npm run promote:cli as the manual remedy, reprints the human next steps, and exits non-zero. Both legs runtime-demonstrated (throwaway-prefix convergence to the tree version; unwritable-prefix promote failure). README + CLAUDE.md state the behavior. Merged e1647eef.",
+      "closed_at": "2026-07-05",
+      "content_parent": "a31155cedaab7497411885b1886189a0fde310d6b1e4fb1c073e2c5bda1410ef"
     }
   ]
 }

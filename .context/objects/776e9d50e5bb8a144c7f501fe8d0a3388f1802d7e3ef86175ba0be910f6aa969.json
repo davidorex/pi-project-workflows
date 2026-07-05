@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "Release-runs-promote verified on merged main (e1647eef). Gates: check + full test suite exit 0. Runtime demonstrations of both legs without cutting a release: success — the tail's exact command (npm run promote:cli) with PROMOTE_PREFIX at a throwaway prefix exited 0 and the prefix's installed pi-context-cli package.json read back 0.32.0, equal to the tree; failure — an unwritable PROMOTE_PREFIX made the promote exit 1, the exact input the tail's null branch receives, whose behavior (report release-intact, name npm run promote:cli as remedy, reprint human steps, exit non-zero) is inline in the committed script. Implementation caught and fixed a real discriminator hazard: run() with stdio inherit returns null on success AND failure, so the tail calls it silent+ignoreError, where a string return means success and null means failure.",
+  "criteria_results": [
+    {
+      "criterion": "A release run ends with the promote step and the global operator equals the released version on exit 0",
+      "status": "passed",
+      "evidence": "step 5 appended after the tag in scripts/release.mjs; the identical command demonstrated live into a throwaway prefix converging to the tree version 0.32.0"
+    },
+    {
+      "criterion": "A promote failure does not un-release; the script exits non-zero naming npm run promote:cli as the remedy",
+      "status": "passed",
+      "evidence": "the tail runs strictly after commit+tag (nothing above it is rolled back); the failure branch prints release-intact + remedy + human steps and exits 1; the promote-failure input demonstrated live (exit 1 on unwritable prefix)"
+    },
+    {
+      "criterion": "Runtime demonstration reproduces the seam and shows it closed",
+      "status": "passed",
+      "evidence": "the observed v0.32.0 seam (global 0.31.0 post-release) is exactly what step 5 forecloses; the throwaway-prefix run demonstrates the convergence the tail performs"
+    },
+    {
+      "criterion": "README + CLAUDE.md state the behavior; gates green",
+      "status": "passed",
+      "evidence": "pi-context-cli README promote section and CLAUDE.md promote sentence both state a release run promotes automatically; check + npm test exit 0; scripts/ is not published package surface so no package CHANGELOG entry applies"
+    }
+  ]
+}

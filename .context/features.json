@@ -209,6 +209,31 @@
       "oid": "f60e2e7c4b018b21c766bd482fb780b4",
       "content_hash": "fa8349c602a0ea0f01f5149896927d1f464c81166a9b6d9be13d8812d1eef85c",
       "content_parent": "4cd7fc030bf38d8b0d3d9440bb39d909f6e4391a4e25654b01c0653444e7e503"
+    },
+    {
+      "title": "Currency by construction — stored substrate state cannot silently diverge from derivable/current truth",
+      "status": "proposed",
+      "layer": "L1",
+      "description": "Permanently foreclose non-currency within pi-context using only its own machinery (no external harness), by generalizing the engine's proven schema_version construction — read-normalize + write-converge + fail-loud at the existing write chokes — to substrate state at large, stratified by truth-class: (A) mechanically derivable stored state (milestone status; any state_derivation.rollups kind) converges by construction — gate satisfaction consults the rollup within the same read, engine writes that change a rollup input stamp the affected items' stored status (a converge-stamp is not authoring, the schema_version argument), a derived-status invariant class detects both divergence directions out-of-band, and a context-reconcile op repairs existing substrates with a dry-run-exact preview; (B) authored lifecycle state (feature/gap/issue/task buckets) is never fabricated by the engine — instead the write-time invariant gate, delta-scoped, surfaces a newly-introduced violation at the causal write, and currentState carries always-on drift surfacing; (C) declared-baseline currency (research stale_conditions, citations) becomes machine-evaluable via typed condition variants and content-hash pins captured at the write choke, flagged by validateContext, transitioned via reconcile or human confirmation; (D) free prose gets anchor-drift flags only. Explicit residue, stated not hidden: semantic prose truth, acceptance-criteria judgment, off-repo conditions, and engine-bypassing writes are detectable, never preventable, by any state engine.",
+      "motivation": "The 2026-07-05 currency audit found the classes live: currentState simultaneously derived MILE-003 reached and reported it as an unsatisfied gate (the stored field, forbidden to author, fed gate satisfaction); R-0012 sat complete 25 days after its own filed stale condition fired; FEAT-004/FEAT-010 sat proposed with most criteria shipped; filed gap text overstated after partial fixes. Detection existed only in an on-demand validate run nobody is forced to execute. Design basis: analysis/2026-07-05-currency-foreclosure-shape.md (unprejudiced code-derived seam map, nine candidate shapes with an events/TTL rejection, and this composed recommendation).",
+      "acceptance_criteria": [
+        "Within a single currentState read, gate satisfaction and the milestones[] rollup agree by construction: isCompleted consults the derived rollup for every config-declared rollup kind (state_derivation.rollups), no kind or relation literals in the deriver; a milestone whose phases complete releases its task_gated_by_item gates in the same derivation.",
+        "Converge-on-write: an engine write that changes a rollup input (member status, membership edge) recomputes and stamps the affected rollup items' stored status through the standard write path (identity-stamped, validated, attested); the stamp is convergence, not authoring — the stored value equals the derivation after every engine write.",
+        "A derived-status invariant class (additive config-schema oneOf branch + engine loop beside the existing two, old engines skip unknown classes) reports stored-vs-derived divergence in BOTH directions for declared rollup kinds; registered dual-surface (live config + samples/conception.json).",
+        "A context-reconcile op computes all derived-status deltas, fired typed staleness conditions, and citation-pin drifts; --dryRun predicts the live outcome exactly; the live run applies through the standard write path attested to the invoking writer; reflected in the CLI with parity.",
+        "Write-time invariant evaluation at the item-grain chokes, delta-scoped: a write that INTRODUCES a violation absent before it surfaces on the op result (warning severity) or is refused (error severity); pre-existing violations never block writes on legacy substrates; verdicts share the validateContext helpers (identical-verdict, the edge-gate precedent).",
+        "Research stale_conditions admit typed variants alongside free strings (item-status / file-changed / revision-moved shapes), and path-bearing citations capture a content-hash pin at write; validateContext flags complete research whose typed condition fired or whose pin drifted as a staleness candidate; the complete-to-stale transition is applied by reconcile or a human, never silently.",
+        "currentState surfaces drift always-on: a rollup item whose stored status differs from its derivation carries both values in the result, and a driftWarnings head rides the payload computed from the derivation's own working set — no separate validate run required to see the divergence.",
+        "The substrate-derived-state convention is authored in the conventions block (resolving the milestone schema's currently-dangling canon citation) and every new vocabulary lands dual-surface (live config + packaged catalog) — no live-only vocabulary.",
+        "The residue is stated on the feature's surfaces: prose truth, criteria judgment, off-repo conditions, and bypass-writes are flagged-for-review classes, not foreclosed classes; no surface claims total foreclosure of semantic currency."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-05",
+      "id": "FEAT-011",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-05T08:40:56.243Z",
+      "oid": "dd370874702b2c722dfbc13c41dbaeb3",
+      "content_hash": "e91e5e4f6acd3a3f4ddeb53430316627a316f6c98f5121c04f7f0cd87efd754d"
     }
   ],
   "schema_version": "1.0.1"

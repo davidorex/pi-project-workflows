@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-05",
+  "evidence": "Rollup-consulting gate satisfaction verified on merged main. Gates: build / skills / check / test all exit 0; the three new currentState cells green and every pre-existing gate/dependency/rollup cell passed unmodified. Runtime demonstrations: tsx against built dist on the live substrate (one read: MILE-003 reached, zero items blocked on it, TASK-021/068/074 ready), then the promoted operator CLI end-to-end (context-current-state reports MILE-003 reached in milestones[], TASK-021/068/074 in nextActions, TASK-003/004 blockedBy reduced to MILE-005 only, MILE-003 absent from every blockedBy) — the FGAP-116 self-contradiction gone from the real surface.",
+  "criteria_results": [
+    {
+      "criterion": "One live context-current-state read reports MILE-003 reached AND absent from every blockedBy; TASK-021/068/074 derive unblocked (promoted-CLI demo)",
+      "status": "passed",
+      "evidence": "promoted-CLI output: milestones[] MILE-003 reached; nextActions carries TASK-021/068/074; no blocked[].blockedBy contains MILE-003"
+    },
+    {
+      "criterion": "No over-release: incomplete-member rollup target still blocks; non-rollup targets byte-identical",
+      "status": "passed",
+      "evidence": "new cell: stored-'reached' milestone with an in-progress member holds the gate and milestones[] agrees ('planned'); zero-member rollup never completes; all pre-existing non-rollup gate cells pass unmodified"
+    },
+    {
+      "criterion": "Rollup-kind set from state_derivation.rollups — no kind/relation literals; no-state_derivation substrates unchanged",
+      "status": "passed",
+      "evidence": "isCompleted resolves via rollupEntryByKind built from sd.rollups + the hoisted role_direction map; the existing not-configured cell passes unchanged"
+    },
+    {
+      "criterion": "Test coverage + docs: released-by-members, held-despite-stored, cycle guard, regressions; op description states the truth-model rule; SKILL regenerated; CHANGELOG entry; full suite 0 failures",
+      "status": "passed",
+      "evidence": "three new cells named in the commit; context-current-state description updated (completeness follows the target kind's truth model); skills regen ran; CHANGELOG [Unreleased] bullet added"
+    }
+  ]
+}

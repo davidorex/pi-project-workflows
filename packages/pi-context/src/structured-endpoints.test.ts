@@ -324,6 +324,26 @@ describe("structured-endpoints: porcelain resolution", () => {
 		assert.equal((ep as { refname?: string }).refname, "FGAP-9");
 	});
 
+	it("<alias>:<refname> with an UNRESOLVABLE foreign config degrades to the null-config contract (no throw)", () => {
+		const cwd = tmpProject("porcelain-alias-badcfg");
+		adoptConception(cwd);
+		const foreignId = "sub-bbbbbbbbbbbbbbbb";
+		registry.registerSubstrate(cwd, foreignId, ".context-foreign", ["spec"]);
+		fs.mkdirSync(path.join(cwd, ".context-foreign"), { recursive: true });
+		// A foreign config whose schema_version has no registered chain to the
+		// bundled schema: the migration-aware best-effort read collapses to null
+		// (the same degraded contract an absent config has) — the selector still
+		// forms the endpoint rather than throwing.
+		fs.writeFileSync(
+			path.join(cwd, ".context-foreign", "config.json"),
+			JSON.stringify({ schema_version: "0.0.1", block_kinds: [] }),
+		);
+		const ep = resolveRelationSelector(cwd, "spec:FGAP-9") as EdgeEndpoint;
+		assert.equal(ep.kind, "item");
+		assert.equal((ep as { substrate_id?: string }).substrate_id, foreignId);
+		assert.equal((ep as { refname?: string }).refname, "FGAP-9");
+	});
+
 	it("a selector matching a declared lens bin → lens_bin endpoint", () => {
 		const cwd = tmpProject("porcelain-bin");
 		adoptConception(cwd);

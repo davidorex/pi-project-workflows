@@ -73,4 +73,25 @@ describe("resolveOperationVocabulary", () => {
 		// Defaults still present for un-overridden operations
 		assert.equal(result["amend-config"]?.canonical_id, "amend-config");
 	});
+
+	it("fail-safe: a config with an unresolvable schema_version yields defaults, never the raw un-migrated overrides", () => {
+		const substrateName = "substrate";
+		const substrateDir = path.join(tmpDir, substrateName);
+		fs.mkdirSync(substrateDir, { recursive: true });
+		writeBootstrapPointer(tmpDir, substrateName);
+		// schema_version 0.0.1 has no registered chain to the bundled config
+		// schema — the migration-aware read throws and the reader must collapse
+		// to the defaults rather than surface the raw tool_operations.
+		fs.writeFileSync(
+			path.join(substrateDir, "config.json"),
+			JSON.stringify({
+				schema_version: "0.0.1",
+				root: "substrate",
+				block_kinds: [],
+				tool_operations: [{ canonical_id: "custom-op", display_name: "Should Not Surface", category: "custom" }],
+			}),
+		);
+		const result = resolveOperationVocabulary(tmpDir);
+		assert.deepEqual(result, { ...TOOL_OPERATION_DEFAULTS });
+	});
 });

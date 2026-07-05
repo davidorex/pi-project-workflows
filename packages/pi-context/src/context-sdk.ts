@@ -22,6 +22,7 @@ import {
 	type ItemRecord,
 	isSkeletonConfig,
 	loadConfig,
+	loadConfigForDir,
 	loadRelations,
 	primaryEndpoint,
 	type RawEndpoint,
@@ -1459,20 +1460,28 @@ export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemL
 // ── Relation porcelain (selector → structured EdgeEndpoint → raw append) ─────
 
 /**
- * Load + JSON-parse a foreign substrate dir's config.json WITHOUT pointer
- * resolution or AJV validation — best-effort, returns null on absence/parse
- * failure. Used only to feed `expectedBlockForId`'s prefix invariant when
- * indexing a foreign substrate in the porcelain; the foreign substrate's own
- * write path already AJV-validated its config, so a re-validate here would only
- * add a failure mode to a read.
+ * Load a foreign substrate dir's config.json PREFERRING the migration-aware
+ * loader (`loadConfigForDir`: migrate-then-validate) so this reader sees the
+ * SAME config shape `loadConfig` sees once a shape-changing config migration
+ * exists (no split-brain read of the same file). Best-effort in two tiers:
+ * when the migration-aware load fails (unresolvable version, invalid), fall
+ * back to the prior raw parse — the consumer is `expectedBlockForId`'s prefix
+ * invariant, which is better fed an unvalidated `block_kinds` than none (a
+ * null config would silently disable the invariant and let a mis-filed
+ * foreign id resolve instead of degrading). Absent or unparsable → null,
+ * exactly the prior contract.
  */
 function loadConfigForDirBestEffort(substrateDir: string): ConfigBlock | null {
 	const p = path.join(substrateDir, "config.json");
 	if (!fs.existsSync(p)) return null;
 	try {
-		return JSON.parse(fs.readFileSync(p, "utf-8")) as ConfigBlock;
+		return loadConfigForDir(substrateDir);
 	} catch {
-		return null;
+		try {
+			return JSON.parse(fs.readFileSync(p, "utf-8")) as ConfigBlock;
+		} catch {
+			return null;
+		}
 	}
 }
 

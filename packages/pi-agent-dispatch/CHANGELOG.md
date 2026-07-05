@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- `resolveOperationVocabulary` reads the active substrate's `config.json` through pi-context's migration-aware loader instead of a raw parse: a config whose `schema_version` lags the bundled schema is walked forward through the registered chain before its `tool_operations` overrides apply, so the vocabulary can never diverge from the shape `loadConfig` sees. The fail-safe contract is unchanged — any load failure (absent, unparsable, unresolvable version, invalid) yields `TOOL_OPERATION_DEFAULTS`.
 - Removed `context-roadmap-list` from `TOOL_OPERATION_DEFAULTS` — the pi-context op is retired with the roadmap's rework as a derived view (the pi-context contribution to the vocabulary is 39 operations).
 - Regenerated `SKILL.md`, restoring the `<events>` section (`tool_call`, `tool_result`) omitted by an earlier partial generation; the generated surface again matches the package's registrations.
 

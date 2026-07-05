@@ -2266,6 +2266,37 @@
       "id": "VER-072",
       "oid": "354b4a88f6ace05a46ca18fe185d8437",
       "content_hash": "ae85d12a0d836aecb701594b4c88947e746e138d093d6554a1e8db5eed7bdc52"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-05",
+      "evidence": "Derived-status invariant class verified on merged main. Gates: build / check / test exit 0 (the config-schema expand-contract gate passed the additive oneOf branch with no version advance, per the milestone-validity gate's pre-delivered determination). Four new validateContext cells green; full suite 0 failures with every pre-existing invariant cell unmodified. Runtime demonstrations: tsx against built dist on a scratch divergent fixture (warning fires with stored 'planned' vs derived 'reached' in the message), then the promoted operator end-to-end on the LIVE substrate — after the dual-surface registration (samples/conception.json + live config via amend-config, which correctly REFUSED pre-promote against the operator's older bundled schema and succeeded post-promote), context-validate now surfaces 'Milestone MILE-003 stored status planned diverges from its derived phase-rollup status reached' automatically: the exact divergence this morning's manual audit had to find by hand.",
+      "criteria_results": [
+        {
+          "criterion": "A rollup-kind item whose stored status lags its derivation is reported; the converse direction is reported too",
+          "status": "passed",
+          "evidence": "stored-BEHIND and stored-AHEAD cells both fire with {stored}/{derived} values in the message; the live MILE-003 instance fires through the promoted operator"
+        },
+        {
+          "criterion": "The class is config DATA, dual-surfaced; a non-declaring substrate validates as before; old engines skip the unknown class",
+          "status": "passed",
+          "evidence": "milestone-status-converges registered in samples/conception.json AND live config (amend-config read back via the validate run); the inert cell covers a declaration over a non-rollup kind; the evaluation loop filters class === 'derived-status' so the existing loops' forward-compat skips are untouched"
+        },
+        {
+          "criterion": "config.schema.json passes the expand-contract gate",
+          "status": "passed",
+          "evidence": "additive oneOf branch; diffSchemaShapes walks properties/items only (gate determination re-verified by the orchestrator); pre-commit check-config-schema passed on the implementation commit"
+        },
+        {
+          "criterion": "Tests cover both directions, the no-declaration no-op, and forward-compat; full suite 0 failures; CHANGELOG entry",
+          "status": "passed",
+          "evidence": "four cells named in the commit; CHANGELOG [Unreleased] bullet; the audit-skill known-warnings baseline updated to expect the new warning class until the repair path ships"
+        }
+      ],
+      "id": "VER-073",
+      "oid": "8e54c298e97b99ffb18bd70314dcc4c3",
+      "content_hash": "bdee8d9b282a6c825b17b20c530e38e93a0a5e3a5d7bfe0962dc0287e0701016"
     }
   ],
   "schema_version": "1.0.1"

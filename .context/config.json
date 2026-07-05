@@ -939,6 +939,13 @@
       "require_target_bucket": "complete",
       "severity": "warning",
       "message": "Completed task '{id}' addresses an issue that is not resolved"
+    },
+    {
+      "id": "milestone-status-converges",
+      "class": "derived-status",
+      "block": "milestone",
+      "severity": "warning",
+      "message": "Milestone '{id}' stored status '{stored}' diverges from its derived phase-rollup status '{derived}' — milestone status is derived, never authored; converge via the sanctioned repair path, not a status write"
     }
   ],
   "tool_operations": [],

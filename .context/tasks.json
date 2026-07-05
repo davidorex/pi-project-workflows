@@ -1783,7 +1783,7 @@
     },
     {
       "description": "Converge-on-write for derived stored state (the schema_version template applied to rollup-kind status, FEAT-011 criterion 2 / shape S2): an engine write that changes a rollup INPUT — a member item's status, or a membership edge — recomputes the affected rollup items' derived status and stamps their stored status through the standard write path, at the block-api item-grain chokes or a shared post-write hook. The trigger set derives from state_derivation.rollups + role_direction (config-declared, kind-general). The stamp is convergence, not authoring — the identical argument writeTypedFile's schema_version stamp carries ('truthful by construction'); the milestone schema's authored-status prohibition is satisfied because the stamped value IS the derivation. Stamped items advance content_hash/content_parent (semantically correct: content changed) and attest the engine writer. Out-of-band divergence (hand edits, git merges) remains the invariant class + reconcile's territory. Composed from FEAT-011 criterion 2 and shape report S2 (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/src/block-api.ts",
         "packages/pi-context/src/context-sdk.ts",
@@ -1801,7 +1801,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-087",
       "oid": "c6262fe5cce035e57115e7e535bb2612",
-      "content_hash": "13fbd79f2762af3117723aa99dafec32afc8774605904f60c38e7bc90afce2db"
+      "content_hash": "e867234f3edf03e49ea6c5ef888e9a7c57dce57d455d823ee982facecf7f59a4",
+      "content_parent": "13fbd79f2762af3117723aa99dafec32afc8774605904f60c38e7bc90afce2db"
     },
     {
       "description": "Delta-scoped write-time invariant evaluation at the item-grain write chokes (FEAT-011 criterion 5 / shape S3, the TASK-062 edge-gate lift pattern): when a sanctioned item write lands, evaluate the config invariants scoped to the written block using the SAME helpers validateContext uses (identical-verdict guarantee), and compare against the pre-write verdict — a write that INTRODUCES a violation absent before it surfaces the new violation on the op result (warning severity) or is refused (error severity); pre-existing violations never block writes, so every legacy substrate stays fully writable (the expand-contract analogue). Per-write cost is bounded to block-scoped invariants (the edge gate already pays buildIdIndex on relation appends). The ops result shape gains the write-side warning channel; severity semantics documented on the write-op surfaces. Composed from FEAT-011 criterion 5 and shape report S3 (LLM-composed under that basis).",

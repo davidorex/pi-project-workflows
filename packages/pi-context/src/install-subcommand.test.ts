@@ -823,27 +823,33 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.equal(result.partialApplication, undefined, "a nothing-refused run must carry no partialApplication");
 	});
 
-	it("pre-identity version bump → blocked with reason write-failed: message carried, NO markers, NO pending record, files byte-unchanged", () => {
-		// makeProject writes no substrate_id, so the migrate arm's writeBlockForDir
-		// identity stamp throws — a NON-validation refusal. The classification must
-		// say so (write-failed), and the validation-only consequences (markers,
-		// pending-blocked) must not fire.
+	it("non-validation write-boundary throw on a version bump → blocked with reason write-failed: message carried, NO markers, NO pending record, files byte-unchanged", () => {
+		// Two items sharing an id pass AJV (no uniqueness constraint) and the
+		// in-memory identity migration, so the refusal fires at the WRITE boundary
+		// (the block writer's duplicate-id guard) — a NON-validation throw. The
+		// classification must say so (write-failed), and the validation-only
+		// consequences (markers, pending-blocked) must not fire. (Formerly this
+		// cell used a pre-identity substrate's stamping throw as the trigger; the
+		// ceremony-entry identity establishment now heals that at entry.)
 		tmpRoot = makeProject(["tasks"], []);
 		installSchemaFixture(tmpRoot, "tasks", "1.0.0"); // installed at the older version
 		const dest = path.join(tmpRoot, ".project", "schemas", "tasks.schema.json");
 		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
 			schema_version: "1.0.0",
-			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+			tasks: [
+				{ id: "TASK-001", description: "alpha", status: "planned" },
+				{ id: "TASK-001", description: "beta", status: "planned" },
+			],
 		});
-		installContext(tmpRoot); // baseline over the existing 1.0.0 schema (skip-if-exists)
+		installContext(tmpRoot); // baseline over the existing 1.0.0 schema (skip-if-exists); establishes identity
 		const schemaBefore = fs.readFileSync(dest);
 		const blockBefore = fs.readFileSync(blockDest);
 		const result = updateContext(tmpRoot);
-		assert.deepEqual(result.blocked, ["tasks"], "the pre-identity migrate write must refuse");
+		assert.deepEqual(result.blocked, ["tasks"], "the write-boundary throw must refuse the resync");
 		const detail = result.blockedDetail.find((d) => d.name === "tasks");
 		assert.equal(detail?.reason, "write-failed", "a non-validation throw must not be labeled validation-failed");
 		assert.ok(
-			detail?.failures?.some((f) => f.keyword === "error" && f.message.includes("substrate_id")),
+			detail?.failures?.some((f) => f.keyword === "error" && f.message.includes("already exists")),
 			"the failures entry must carry the thrown write-boundary message",
 		);
 		assert.equal(detail?.premarker_hash, undefined, "a write-failed refusal must not inscribe markers");
@@ -856,12 +862,87 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		);
 	});
 
+	it("ceremony-entry identity establishment: a live update on a pre-identity substrate mints + persists + registers + reports; already-established is untouched; dryRun establishes nothing", () => {
+		const catVer = catalogTasksVersion();
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", catVer);
+		writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: catVer,
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+		});
+		installContext(tmpRoot); // records the baseline AND establishes identity at its own entry
+		const configDest = path.join(tmpRoot, ".project", "config.json");
+		const installedConfig = JSON.parse(fs.readFileSync(configDest, "utf-8")) as Record<string, unknown>;
+		assert.match(
+			String(installedConfig.substrate_id),
+			/^sub-[0-9a-f]{16}$/,
+			"install must establish identity at its entry",
+		);
+		// Strip the id back off to model a pre-identity substrate reaching update.
+		delete installedConfig.substrate_id;
+		fs.writeFileSync(configDest, JSON.stringify(installedConfig, null, 2));
+		// dryRun: preview writes establish nothing.
+		const plan = updateContext(tmpRoot, { dryRun: true });
+		assert.equal(plan.substrateIdEstablished, undefined, "dryRun must not establish identity");
+		const afterDry = JSON.parse(fs.readFileSync(configDest, "utf-8")) as Record<string, unknown>;
+		assert.equal(afterDry.substrate_id, undefined, "dryRun must leave the config identity-less");
+		// Live: establishes, persists, registers, reports.
+		const live = updateContext(tmpRoot);
+		assert.match(
+			live.substrateIdEstablished ?? "",
+			/^sub-[0-9a-f]{16}$/,
+			"a live update on a pre-identity substrate must report the established id",
+		);
+		const afterLive = JSON.parse(fs.readFileSync(configDest, "utf-8")) as Record<string, unknown>;
+		assert.equal(afterLive.substrate_id, live.substrateIdEstablished, "the established id must be persisted");
+		const registry = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".pi-context-registry.json"), "utf-8")) as {
+			substrates: Record<string, unknown>;
+		};
+		assert.ok(
+			registry.substrates[live.substrateIdEstablished as string],
+			"the established id must be registered in the project registry",
+		);
+		// Already-established: never re-minted, field absent.
+		const second = updateContext(tmpRoot);
+		assert.equal(second.substrateIdEstablished, undefined, "an established substrate is untouched (no re-mint)");
+		const afterSecond = JSON.parse(fs.readFileSync(configDest, "utf-8")) as Record<string, unknown>;
+		assert.equal(afterSecond.substrate_id, live.substrateIdEstablished, "the on-disk id is immutable");
+	});
+
+	it("pre-identity version bump heals: dry predicts migrated and the live run migrates (dry/live agreement)", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installSchemaFixture(tmpRoot, "tasks", "1.0.0");
+		const blockDest = writeBlockFixture(tmpRoot, "tasks", {
+			schema_version: "1.0.0",
+			tasks: [{ id: "TASK-001", description: "filed", status: "planned" }],
+		});
+		installContext(tmpRoot); // baseline (skip-if-exists) + identity establishment at install's entry
+		const configDest = path.join(tmpRoot, ".project", "config.json");
+		const cfg = JSON.parse(fs.readFileSync(configDest, "utf-8")) as Record<string, unknown>;
+		delete cfg.substrate_id; // model the pre-identity operator substrate reaching update
+		fs.writeFileSync(configDest, JSON.stringify(cfg, null, 2));
+		const plan = updateContext(tmpRoot, { dryRun: true });
+		assert.deepEqual(plan.migrated, ["tasks"], "dry must predict the migrate");
+		assert.deepEqual(plan.blocked, []);
+		const live = updateContext(tmpRoot);
+		assert.deepEqual(live.migrated, ["tasks"], "the healed live run must agree with the prediction");
+		assert.deepEqual(live.blocked, [], "the former pre-identity refusal must not fire");
+		assert.match(live.substrateIdEstablished ?? "", /^sub-[0-9a-f]{16}$/);
+		const block = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { tasks: Array<Record<string, unknown>> };
+		assert.ok(
+			block.tasks.every((t) => typeof t.oid === "string"),
+			"the migrated items are identity-stamped under the established id",
+		);
+	});
+
 	it("resolveBlocked commit throw → all-or-nothing: every touched file byte-restored, pending intact, resolved:false with the truthful failure", () => {
-		// Real flow to the pending state: a genuine validation-failed block (in-memory,
-		// pre-write) on a PRE-IDENTITY substrate persists markers + pending. Fix the
-		// items in place (marker lines retained; resolveBlocked strips them), then
-		// resolve: re-validation passes, the commit reaches writeBlockForDir, the
-		// identity stamp throws — and the commit must restore everything it touched.
+		// Real flow to the pending state: a genuine validation-failed block persists
+		// markers + pending. Rewrite the block marker-free with the enum fixed but a
+		// DUPLICATED item id (passes the target re-validation — no uniqueness
+		// constraint — but the commit's writeBlockForDir duplicate-id guard throws
+		// at the write boundary), so the commit must restore everything it touched.
+		// (Formerly this cell used a pre-identity substrate's stamping throw; the
+		// ceremony-entry identity establishment now heals that at entry.)
 		makeNarrowedTasksFixture();
 		const blocked = updateContext(tmpRoot);
 		assert.deepEqual(blocked.blocked, ["tasks"], "precondition: the narrowing resync validation-blocks");
@@ -870,17 +951,30 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		const blockDest = path.join(substrateDir, "tasks.json");
 		const pendingPath = pendingBlockedPathForDir(substrateDir);
 		assert.ok(fs.existsSync(pendingPath), "precondition: a validation-failed block persists pending");
-		// Fix the offending item IN PLACE (marker lines retained for the strip path).
-		fs.writeFileSync(blockDest, fs.readFileSync(blockDest, "utf-8").replace('"parked"', '"planned"'));
+		const catVer = catalogTasksVersion();
+		fs.writeFileSync(
+			blockDest,
+			JSON.stringify(
+				{
+					schema_version: catVer,
+					tasks: [
+						{ id: "TASK-001", description: "filed", status: "planned" },
+						{ id: "TASK-001", description: "twin", status: "planned" },
+					],
+				},
+				null,
+				2,
+			),
+		);
 		const migrationsPath = path.join(substrateDir, "migrations.json");
 		const before = new Map<string, Buffer | null>();
 		for (const f of [dest, blockDest, pendingPath, migrationsPath, path.join(substrateDir, "config.json")]) {
 			before.set(f, fs.existsSync(f) ? fs.readFileSync(f) : null);
 		}
 		const r = resolveBlocked(tmpRoot, "tasks");
-		assert.equal(r.resolved, false, "the pre-identity commit must refuse, not partially commit");
+		assert.equal(r.resolved, false, "the write-boundary throw must refuse the commit, not partially commit");
 		assert.ok(
-			!r.resolved && r.failures.some((f) => f.message.includes("substrate_id")),
+			!r.resolved && r.failures.some((f) => f.message.includes("already exists")),
 			"the refusal must carry the truthful write-boundary failure",
 		);
 		for (const [f, bytes] of before) {
@@ -909,13 +1003,11 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.ok(fs.readFileSync(configDest).equals(configBefore), "dryRun must not write the registry additions");
 	});
 
-	// SKIPPED per DEC-0012: identity stamping is now unconditional on every write.
-	// On this pre-identity substrate (makeProject writes no substrate_id), stamping's
-	// substrateIdForDir throws inside resyncSchema's try and is caught as the "blocked"
-	// refuse path — so installContext returns with this schema in result.blocked (block
-	// and schema left byte-unchanged), and the migrate assertion no longer holds.
-	// Re-greening it is the separate, canonically-planned pre-identity-re-sync implementation.
-	it.skip("version bump WITH a shipped identity migration + populated block → migrated, item fields intact", () => {
+	// Re-greened per the ceremony-entry identity establishment decision (DEC-0020 —
+	// FGAP-033): installContext establishes a substrate_id at entry on this
+	// pre-identity substrate (makeProject writes none), so the migrate write's
+	// identity stamp proceeds instead of refusing.
+	it("version bump WITH a shipped identity migration + populated block → migrated, item fields intact", () => {
 		const catVer = catalogTasksVersion(); // 1.0.1 — catalog ships the 1.0.0→1.0.1 identity decl
 		tmpRoot = makeProject(["tasks"], []);
 		installSchemaFixture(tmpRoot, "tasks", "1.0.0"); // installed at the older version
@@ -927,6 +1019,11 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 			],
 		});
 		const result = installContext(tmpRoot, { overwrite: true });
+		assert.match(
+			result.substrateIdEstablished ?? "",
+			/^sub-[0-9a-f]{16}$/,
+			"the ceremony must establish + report the substrate identity it minted",
+		);
 		assert.deepEqual(result.migrated, ["schemas/tasks.schema.json"], "version bump with a shipped chain must migrate");
 		assert.deepEqual(result.blocked, []);
 		assert.deepEqual(result.resynced, []);
@@ -1056,13 +1153,10 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "block bytes unchanged on an in-sync re-run");
 	});
 
-	// SKIPPED per DEC-0012: identity stamping is now unconditional on every write.
-	// On this pre-identity substrate (makeProject writes no substrate_id), the migrate's
-	// stamping throws inside resyncSchema and is caught as the "blocked" refuse path — so
-	// the schema lands in result.blocked, the baseline is not refreshed, and check-status
-	// does not report in-sync. Re-greening is the separate, canonically-planned
-	// pre-identity-re-sync implementation.
-	it.skip("after a migrate, check-status reports the schema in-sync (baseline refreshed)", () => {
+	// Re-greened per the ceremony-entry identity establishment decision (DEC-0020 —
+	// FGAP-033): the ceremony establishes identity at entry, the migrate proceeds,
+	// and the refreshed baseline reports in-sync.
+	it("after a migrate, check-status reports the schema in-sync (baseline refreshed)", () => {
 		tmpRoot = makeProject(["tasks"], []);
 		installSchemaFixture(tmpRoot, "tasks", "1.0.0");
 		writeBlockFixture(tmpRoot, "tasks", {
@@ -2784,7 +2878,15 @@ describe("op: context-install (reflected install ceremony)", () => {
 		const directRoot = makeProject(["tasks", "decisions"], ["tasks"]);
 		try {
 			const direct = installContext(directRoot, { overwrite: false });
-			assert.deepEqual(opResult.json, direct, "the op result must equal a direct installContext call (no fork)");
+			// Ceremony-entry identity establishment mints a UNIQUE substrate_id per
+			// substrate, so that one field legitimately diverges between the two
+			// runs — assert both establish, then compare with it normalized out.
+			const opJson = opResult.json as typeof direct;
+			assert.match(opJson.substrateIdEstablished ?? "", /^sub-[0-9a-f]{16}$/);
+			assert.match(direct.substrateIdEstablished ?? "", /^sub-[0-9a-f]{16}$/);
+			const { substrateIdEstablished: _op, ...opRest } = opJson;
+			const { substrateIdEstablished: _direct, ...directRest } = direct;
+			assert.deepEqual(opRest, directRest, "the op result must equal a direct installContext call (no fork)");
 		} finally {
 			fs.rmSync(directRoot, { recursive: true, force: true });
 		}

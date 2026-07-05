@@ -1,0 +1,8 @@
+{
+  "timestamp": "2026-07-05T00:00:00Z",
+  "focus": "v0.32.0 credentialed verification write probe",
+  "current_status": "sandbox probe item; removed by the same protocol run",
+  "next_steps": [
+    "remove this probe item"
+  ]
+}

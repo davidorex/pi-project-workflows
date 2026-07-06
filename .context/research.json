@@ -865,23 +865,21 @@
         },
         {
           "label": "FGAP-066 — dry-run over-reports the catalog-ahead outcome",
-          "path": ".context/framework-gaps.json",
-          "content_pin": "7edbe76eee4cab874e1e9123a9cccd698860250d7d6db43bd5eee5d0c53db9f3"
+          "path": ".context/framework-gaps.json"
         },
         {
           "label": "DEC-0017 — never hard-blocks the remaining schemas (sibling independence)",
-          "path": ".context/decisions.json",
-          "content_pin": "d7f0dbddd16495e868e3ae924e71aba18caefb9424fa7c48bb102042fc8977b3"
+          "path": ".context/decisions.json"
         }
       ],
       "id": "R-0012",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:18:47.435Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-06T07:19:08.670Z",
+      "modified_at": "2026-07-06T07:36:15.966Z",
       "oid": "bd4314b1ececae87000027e9f73f7ca6",
-      "content_hash": "f5db2c277c3c76d1712d29a1cfab18b86d0590900e90c0fbb87ff0647a93a4ff",
-      "content_parent": "6c50e234be1d10c08b2863b6d6720b3735078f390462bfb33ed82ac8819672ab"
+      "content_hash": "9acb3ff94c4a2b45b160fc99a2cf6116bb822d1f9e278e1fa1d7b2556a2309cd",
+      "content_parent": "f5db2c277c3c76d1712d29a1cfab18b86d0590900e90c0fbb87ff0647a93a4ff"
     },
     {
       "id": "R-0013",

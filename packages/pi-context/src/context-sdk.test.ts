@@ -24,6 +24,7 @@ import {
 	contextState,
 	currentState,
 	deriveBootstrapState,
+	endpointKey,
 	expectedBlockForId,
 	filterBlockItems,
 	findAppendableBlocks,
@@ -1178,12 +1179,17 @@ describe("validateContext lens-validator dispatch", () => {
 // ── completeTask ───────────────────────────────────────────────────────────
 
 describe("completeTask", () => {
-	// FGAP-014: completeTask gates on the verification_verifies_item closure-table
-	// edge (verification=parent, task=child), NOT the removed verification.target/
-	// target_type fields. Seeds therefore (a) write schema-valid verifications with
-	// no removed fields, (b) write a config.json registering verification_verifies_item
-	// so appendRelationByRef + findReferencesInRepo operate against a real relation_type,
-	// and (c) file the linking edge via appendRelationByRef — the real porcelain path.
+	// completeTask is the closure transition ATOM: it validates the verification
+	// (exists + passed) and the task (exists + completable), then FILES the
+	// verification_verifies_item edge itself (verification=parent, task=child;
+	// idempotent — an exact pre-existing edge is a no-op) and flips status in one
+	// call. The prior "no edge → throw, go run append-relation first" contract was
+	// deleted: under the write-time invariant gate an error-severity closure
+	// invariant PAIR forbids both intermediate resting states, so the two-op
+	// sequence that error text instructed is refused — only the atom is legal.
+	// Seeds: (a) schema-valid verifications with no removed target/target_type
+	// fields, (b) a config.json registering verification_verifies_item so
+	// appendRelationByRef operates against a real relation_type.
 
 	/** Helper: write a minimal tasks block */
 	function writeTasks(dir: string, tasks: Record<string, unknown>[]) {
@@ -1236,12 +1242,18 @@ describe("completeTask", () => {
 		assert.strictEqual(result.verificationId, "v1");
 		assert.strictEqual(result.verificationStatus, "passed");
 		assert.strictEqual(result.previousStatus, "planned");
+		assert.strictEqual(result.edgeAppended, false, "pre-existing exact edge must be a dedup no-op, not a duplicate");
 
 		// Read back: task completed, and NO verification field embedded (the edge is the linkage).
 		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
 		const task = data.tasks.find((t: Record<string, unknown>) => t.id === "t1");
 		assert.strictEqual(task.status, "completed");
 		assert.ok(!("verification" in task), "no verification field should be embedded — the edge is the linkage");
+
+		// Read back: exactly ONE v1→t1 edge — the atom's idempotent append did not duplicate it.
+		const rels = JSON.parse(fs.readFileSync(path.join(projectDir, "relations.json"), "utf-8"));
+		const edges = rels.filter((e: { relation_type: string }) => e.relation_type === "verification_verifies_item");
+		assert.strictEqual(edges.length, 1, "idempotent edge filing must not duplicate a pre-existing edge");
 	});
 
 	it("throws when verification entry does not exist", (t) => {
@@ -1264,7 +1276,35 @@ describe("completeTask", () => {
 		);
 	});
 
-	it("throws when no verifies edge links this verification to this task", (t) => {
+	it("files the missing verifies edge itself and completes (the closure atom — no prior append-relation)", (t) => {
+		const tmpDir = makeTmpDir("ct-no-edge");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeEdgeConfig(projectDir);
+
+		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
+		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
+		// NO edge filed — the atom files it (the prior contract threw here and
+		// instructed a standalone append-relation, a sequence the write-time
+		// invariant gate now refuses).
+
+		const result = completeTask(tmpDir, "t1", "v1");
+		assert.strictEqual(result.edgeAppended, true, "the atom must file the missing edge itself");
+
+		const data = JSON.parse(fs.readFileSync(path.join(projectDir, "tasks.json"), "utf-8"));
+		const task = data.tasks.find((tk: Record<string, unknown>) => tk.id === "t1");
+		assert.strictEqual(task.status, "completed");
+
+		const rels = JSON.parse(fs.readFileSync(path.join(projectDir, "relations.json"), "utf-8"));
+		const edges = rels.filter((e: { relation_type: string }) => e.relation_type === "verification_verifies_item");
+		assert.strictEqual(edges.length, 1, "exactly the one filed edge");
+		assert.strictEqual(endpointKey(edges[0].parent), "v1", "verification is the parent endpoint");
+		assert.strictEqual(endpointKey(edges[0].child), "t1", "task is the child endpoint");
+	});
+
+	it("files an ADDITIONAL edge when the verification verifies a different task (edges accumulate, not exclusive)", (t) => {
 		const tmpDir = makeTmpDir("ct-edge-elsewhere");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -1277,38 +1317,16 @@ describe("completeTask", () => {
 			{ id: "t-other", description: "other", status: "planned" },
 		]);
 		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
-		// v1 verifies a DIFFERENT task — no edge links v1→t1.
+		// v1 already verifies a DIFFERENT task; completing t1 against v1 files the
+		// v1→t1 edge alongside (an edge to another task is not exclusive).
 		fileVerifiesEdge(tmpDir, "v1", "t-other");
 
-		assert.throws(
-			() => completeTask(tmpDir, "t1", "v1"),
-			(err: Error) => {
-				assert.ok(err.message.includes("does not verify task"));
-				assert.ok(err.message.includes("verification_verifies_item"));
-				return true;
-			},
-		);
-	});
+		const result = completeTask(tmpDir, "t1", "v1");
+		assert.strictEqual(result.edgeAppended, true, "the v1→t1 edge is new and must be filed");
 
-	it("throws when a passing verification has NO verifies edge at all (FGAP-014 real-substrate scenario)", (t) => {
-		const tmpDir = makeTmpDir("ct-no-edge");
-		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-
-		const projectDir = path.join(tmpDir, ".project");
-		fs.mkdirSync(projectDir, { recursive: true });
-		writeEdgeConfig(projectDir);
-
-		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
-		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
-		// No edge filed at all — the old field-smuggling tests masked exactly this.
-
-		assert.throws(
-			() => completeTask(tmpDir, "t1", "v1"),
-			(err: Error) => {
-				assert.ok(err.message.includes("does not verify task"));
-				return true;
-			},
-		);
+		const rels = JSON.parse(fs.readFileSync(path.join(projectDir, "relations.json"), "utf-8"));
+		const edges = rels.filter((e: { relation_type: string }) => e.relation_type === "verification_verifies_item");
+		assert.strictEqual(edges.length, 2, "both edges present — the pre-existing v1→t-other and the new v1→t1");
 	});
 
 	it("throws when verification status is failed", (t) => {

@@ -37,7 +37,6 @@ import { loadRegistry, resolveAlias, resolveSubstrateDir } from "./context-regis
 import type { DispatchContext } from "./dispatch-context.js";
 import { cleanGitEnv } from "./git-env.js";
 import { getLensValidators } from "./lens-validator.js";
-import { findReferencesInRepo } from "./lens-view.js";
 import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { addressInto, discoverArrayKey, pageArray } from "./read-element.js";
 import { ValidationError, validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
@@ -2814,16 +2813,24 @@ export interface CompleteTaskResult {
 	verificationId: string;
 	verificationStatus: string;
 	previousStatus: string;
+	/** true when this call filed the verification_verifies_item edge; false when an exact edge pre-existed (no-op dedup). */
+	edgeAppended: boolean;
 }
 
 /**
- * Gate task completion on verification. Reads the verification block to confirm
- * a passing verification entry exists, asserts a `verification_verifies_item`
- * closure-table edge links that verification (parent) to this task (child), then
- * atomically updates the task status to "completed". The edge IS the linkage —
- * no `verification` field is embedded on the task (the verification → task
+ * Verification-gated task completion — the closure transition ATOM. Reads the
+ * verification block to confirm a passing verification entry exists, FILES the
+ * `verification_verifies_item` closure-table edge itself (verification as
+ * parent, task as child; idempotent — an exact pre-existing edge is a no-op via
+ * appendRelation's dedup), then updates the task status to "completed", all in
+ * one call. Filing the edge here rather than requiring a prior append-relation
+ * is load-bearing: an error-severity invariant pair (passed-verification-
+ * verifies-completed-task / completed-task-has-verification) forbids BOTH
+ * intermediate resting states, so no two-op sequence can thread the write-time
+ * gate — only the joint end-state is legal. The edge IS the linkage — no
+ * `verification` field is embedded on the task (the verification → task
  * `verification.target`/`target_type` fields were removed from the verification
- * schema in favor of the edge; this gate reads the edge, not the removed fields).
+ * schema in favor of the edge).
  */
 export function completeTask(
 	cwd: string,
@@ -2873,18 +2880,18 @@ export function completeTask(
 		throw new Error(`Task '${taskId}' is already cancelled`);
 	}
 
-	// 3. Assert the verification_verifies_item edge: verification (parent) →
-	// task (child). The closure-table edge — not a verification field — is the
-	// canonical linkage. Inbound edges point AT the task; compare the parent
-	// endpoint via endpointKey (the codebase's endpoint-comparison idiom).
-	const verifiesEdge = findReferencesInRepo(cwd, taskId, "inbound").find(
-		(e) => e.relation_type === "verification_verifies_item" && endpointKey(e.parent) === verificationId,
+	// 3. File the verification_verifies_item edge: verification (parent) →
+	// task (child), through the same porcelain a standalone append-relation
+	// uses (registered-type + endpoint-kind validation, atomic write,
+	// exact-duplicate no-op). The closure-table edge — not a verification
+	// field — is the canonical linkage; filing it in the SAME call that flips
+	// status makes closure a single transition atom under the write-time
+	// invariant gate.
+	const { appended } = appendRelationByRef(
+		cwd,
+		{ parent: verificationId, child: taskId, relation_type: "verification_verifies_item" },
+		ctx,
 	);
-	if (!verifiesEdge) {
-		throw new Error(
-			`verification '${verificationId}' does not verify task '${taskId}' — no verification_verifies_item edge; file the link (append-relation parent=${verificationId} child=${taskId} relation_type=verification_verifies_item) before completing`,
-		);
-	}
 
 	// 4. Update task status. The edge is the linkage — no `verification` field is
 	// embedded (a populated additionalProperties:false tasks schema would reject it).
@@ -2895,5 +2902,6 @@ export function completeTask(
 		verificationId,
 		verificationStatus: String(verification.status),
 		previousStatus: currentStatus,
+		edgeAppended: appended,
 	};
 }

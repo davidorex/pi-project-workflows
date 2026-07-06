@@ -10,9 +10,9 @@ description: >
 
 <tools_reference>
 <tool name="append-block-item">
-Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
+Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id. Optional relations file the item's BIRTH edges in the same op run, after id allocation — each entry names the relation_type, which endpoint the new item occupies (direction: as_parent | as_child), and the other endpoint's selector. Filing item + edges as one atom lets a new item satisfy error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that would refuse the bare item under the write-time gate. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
-*Append items to project blocks (issues, decisions, or any user-defined block)*
+*Append items to project blocks (issues, decisions, or any user-defined block), with optional atomic birth edges*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -20,6 +20,7 @@ Append an item to an array in a project block file. Schema validation is automat
 | `arrayKey` | string | yes | Array key in the block (e.g., 'issues', 'decisions') |
 | `item` | unknown | yes | Item object to append — must conform to block schema |
 | `autoId` | boolean | no | When true and the item has no id, allocate the next id from the block's id pattern |
+| `relations` | array | no | Birth edges filed atomically with the item, after id allocation, via the same validated append-relation porcelain |
 </tool>
 
 <tool name="update-block-item">
@@ -93,9 +94,9 @@ Append MANY closure-table relations to relations.json in a single write. Each ed
 </tool>
 
 <tool name="upsert-block-item">
-Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is appended. Schema validation is automatic. idField defaults to 'id'.
+Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is appended. Schema validation is automatic. idField defaults to 'id'. Optional relations file BIRTH edges in the same op run when the upsert resolves to an APPEND (each entry: relation_type, the endpoint the new item occupies as direction: as_parent | as_child, and the other endpoint's selector) — one atom under the write-time gate, so a new filing can satisfy error-severity birth-edge invariants. When the upsert resolves to a REPLACE, supplying relations refuses the write (birth edges are for new items; file edges on an existing item via append-relation). Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
-*Append-or-replace a full block item by id (replacement, not merge)*
+*Append-or-replace a full block item by id (replacement, not merge), with optional atomic birth edges*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
@@ -104,6 +105,7 @@ Append-or-replace an item in a project block array by id: if an item with the sa
 | `item` | unknown | yes | Full item object to upsert — must conform to block schema |
 | `idField` | string | no | Field used as the upsert key (default 'id') |
 | `dryRun` | boolean | no | Preview the upsert without writing |
+| `relations` | array | no | Birth edges filed atomically with an APPEND-mode upsert (refused on replace mode — use append-relation for existing items) |
 </tool>
 
 <tool name="promote-item">
@@ -532,14 +534,14 @@ Bulk variant of resolve-item-by-id — resolve N kind-prefixed ids against a sin
 </tool>
 
 <tool name="complete-task">
-Complete a task with verification gate — requires a passing verification entry targeting the task. Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
+Complete a task with verification gate — the closure ATOM. Requires a passing verification entry, then FILES the verification_verifies_item edge itself (idempotent — a pre-existing exact edge is a no-op) and flips the task status to completed in one op run, so the write-time invariant gate judges the joint end-state. No prior append-relation step is needed (a standalone edge or status write would be refused by error-severity closure invariants; this op IS the legal transition). Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.
 
-*Complete a task — gates on passing verification before updating status*
+*Complete a task — gates on passing verification, files the verification edge itself, then flips status (one atom)*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `taskId` | string | yes | Task ID to complete |
-| `verificationId` | string | yes | Verification entry ID (must target this task with status 'passed') |
+| `verificationId` | string | yes | Verification entry ID (must have status 'passed'; the op files the linking edge itself) |
 </tool>
 
 <tool name="context-validate-relations">
@@ -807,7 +809,7 @@ The installable catalog IS the packaged conception (`samples/conception.json`): 
 <substrate_config>
 `<substrate-dir>/config.json` is the substrate bootstrap. Its `root` field declares where every other block, schema, agent, and template lives — consumers resolve that dir via the `.pi-context.json` pointer plus `config.root`, never by assuming a fixed directory name. Its `substrate_id` field is the per-substrate root identity (pattern `sub-` followed by 16 hex), minted once and immutable on disk; it salts oid minting and identifies the substrate in the project-root registry. `naming` aliases canonical block ids to display names (used by `/context view` rendering). `hierarchy` declares legal closure-table edges (parent block → child block via relation_type). `lenses` declares named projections over a target block. `installed_schemas` / `installed_blocks` are the install manifest consumed by `/context install`. `installed_from` is the optional install baseline `/context install` records — the catalog source plus a per-schema content fingerprint of the installed schemas — for installed-vs-catalog drift detection.
 
-A fresh substrate adopted via `/context accept-all` carries advisory (severity-`warning`) convention-articulation invariants: every decision, feature, and task should carry an `item_governed_by_convention` edge to a convention it follows, or an `item_acknowledges_missing_convention` edge to a missing-convention gap. `context-validate` reports an artifact that articulates neither as a warning (it does not error), so the advice surfaces without blocking writes; satisfy it by adding one of those two edges (`append-relation`) when filing or amending the artifact.
+A fresh substrate adopted via `/context accept-all` carries advisory (severity-`warning`) convention-articulation invariants: every decision, feature, and task should carry an `item_governed_by_convention` edge to a convention it follows, or an `item_acknowledges_missing_convention` edge to a missing-convention gap. `context-validate` reports an artifact that articulates neither as a warning (it does not error), so the advice surfaces without blocking writes; satisfy it by filing one of those two edges as a birth relation on the filing itself (`append-block-item --relations`) or by `append-relation` when amending an existing artifact. On a substrate that raises a birth-edge invariant to `error`, the atomic filing form is the only path the write-time gate accepts — a bare filing is refused, and the edge cannot be added afterward because the intermediate state is itself the violation. Task closure has the same shape: `complete-task` files the `verification_verifies_item` edge itself and flips the task status in one gate-judged run, so no standalone `append-relation` precedes it.
 
 `config.json` and `relations.json` are exempt from `config.root` redirection — they always live at the substrate-dir root (the dir chosen at bootstrap, resolved via the `.pi-context.json` pointer, suggested `.context`) because they are the substrate that defines `root`. The substrate-dir root is whatever was chosen at bootstrap, not necessarily `.project`. All other state lives under `<config.root>/...` per `resolveContextDir(cwd)`. The package ships their schemas in `schemas/` (config.schema.json, relations.schema.json) and resolves them via three-tier search: project override > user override > package-shipped.
 

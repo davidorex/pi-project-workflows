@@ -835,6 +835,11 @@
         ]
       },
       "stale_conditions": [
+        {
+          "kind": "item-status",
+          "item": "FGAP-066",
+          "bucket": "complete"
+        },
         "updateContext's catalog-ahead dry branch (index.ts:1239-1262) is changed to forward-migrate + re-validate in memory (FGAP-066 fix lands) — the dry/live divergence finding becomes historical",
         "the post-loop registry propagation (index.ts:1391-1421) is gated on the schema-loop outcome — the per-component-by-construction finding changes",
         "resyncSchema's rollback scope (index.ts:599-641) changes from per-schema to whole-run"
@@ -843,35 +848,40 @@
         {
           "label": "dry branch: unconditional resynced + read-only would-register decls",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1239-1262"
+          "lines": "1239-1262",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "live branch: resyncSchema forward-migrate + re-validate + block/rollback",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "599-641"
+          "lines": "599-641",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "post-loop registry propagation, ungated on schema outcome, !dryRun writeConfig",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1391-1421"
+          "lines": "1391-1421",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "FGAP-066 — dry-run over-reports the catalog-ahead outcome",
-          "path": ".context/framework-gaps.json"
+          "path": ".context/framework-gaps.json",
+          "content_pin": "7edbe76eee4cab874e1e9123a9cccd698860250d7d6db43bd5eee5d0c53db9f3"
         },
         {
           "label": "DEC-0017 — never hard-blocks the remaining schemas (sibling independence)",
-          "path": ".context/decisions.json"
+          "path": ".context/decisions.json",
+          "content_pin": "d7f0dbddd16495e868e3ae924e71aba18caefb9424fa7c48bb102042fc8977b3"
         }
       ],
       "id": "R-0012",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:18:47.435Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-05T06:53:18.292Z",
+      "modified_at": "2026-07-06T07:19:08.670Z",
       "oid": "bd4314b1ececae87000027e9f73f7ca6",
-      "content_hash": "6c50e234be1d10c08b2863b6d6720b3735078f390462bfb33ed82ac8819672ab",
-      "content_parent": "33fffb2cacd4794f47a24c3f1798f064981cdf23db20644a0787052fcc508045"
+      "content_hash": "f5db2c277c3c76d1712d29a1cfab18b86d0590900e90c0fbb87ff0647a93a4ff",
+      "content_parent": "6c50e234be1d10c08b2863b6d6720b3735078f390462bfb33ed82ac8819672ab"
     },
     {
       "id": "R-0013",

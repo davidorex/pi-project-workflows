@@ -1830,8 +1830,8 @@
       "content_parent": "4b54b5824621555dbf85ae61b5ca05a0b467595e8fa2dfa7ada148663ce0c6c5"
     },
     {
-      "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', id, bucket} (fires when the named item's status buckets there), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (computeFileContentHash; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis).",
-      "status": "in-progress",
+      "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', item, bucket} (fires when the watched item's status buckets there; the reference field is deliberately named 'item', not 'id' — a nested 'id' declaration is the Phase-H nested_id_bearing_array trigger and the condition is a reference predicate, not an embedded entity), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (raw-bytes sha-256; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis; condition-shape field name corrected id→item by user grant 2026-07-06 after the Phase-H detector conflict surfaced at implementation).",
+      "status": "completed",
       "files": [
         "packages/pi-context/samples/schemas/research.schema.json",
         "packages/pi-context/samples/schemas/framework-gaps.schema.json",
@@ -1842,7 +1842,7 @@
         "packages/pi-context/CHANGELOG.md"
       ],
       "acceptance_criteria": [
-        "A complete research item carrying {kind:'item-status', id, bucket} whose named item buckets there is flagged by context-validate as a staleness candidate; a bare-string condition is never machine-judged; the R-0012 case ({item-status, FGAP-066, complete}) is expressible and fires against the live substrate.",
+        "A complete research item carrying {kind:'item-status', item, bucket} whose watched item buckets there is flagged by context-validate as a staleness candidate; a bare-string condition is never machine-judged; the R-0012 case ({item-status, FGAP-066, complete}) is expressible and fires against the live substrate.",
         "A path-bearing citation written through the sanctioned path carries a content pin; validate flags a pinned citation whose file hash drifted; items without pins validate unchanged (additive; no data migration).",
         "context-reconcile's sweep includes fired conditions + pin drifts, applying the complete-to-stale transition only there or by hand — validate itself never mutates.",
         "Both schema changes pass the expand-contract/narrowing gates and land dual-surface; full suite 0 failures; CHANGELOG entry."
@@ -1852,8 +1852,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-089",
       "oid": "08622fb992f8e636914d4d73500cb53f",
-      "content_hash": "f9011520c49f1f31c8bdbda49c39169b558abaa8ea9cd73b0c87b5f341b6f2b4",
-      "content_parent": "d9dd1d1eab1dfc16098a48fdced9d2e415f6ea2618fc6e2ec2836e105395980d"
+      "content_hash": "0e6be9304d1c714e641d1c364c2417f4897e2fcc798ddab2a5e4a953c362dbfa",
+      "content_parent": "2ab265e41b2e11eaa28b4af299baf6c50574cecbd0bf749134c5e5c73042b47c"
     },
     {
       "description": "Always-on drift surfacing in currentState (FEAT-011 criteria 7 and 9 / shape S7): a rollup-kind item whose stored status differs from its derivation carries BOTH values in the currentState payload (derived status primary, stored_status alongside when they differ), and a driftWarnings head rides the result — the invariant subset computable from the derivation's own already-loaded working set (index + edges) — so divergence and bucket-lag are visible in every /context status read, not only in an on-demand validate run. Additive result-shape extension: consumers of the JSON shape (HTML view builder, orchestrator scripts) tolerate additions; the context-current-state/context-status op surfaces state the new fields and the residue (drift surfacing flags authored-judgment lag for review, it never asserts the authored bucket is wrong). Composed from FEAT-011 criteria 7 and 9 and shape report S7 (LLM-composed under that basis).",

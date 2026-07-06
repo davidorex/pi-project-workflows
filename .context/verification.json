@@ -2426,6 +2426,37 @@
       "id": "VER-077",
       "oid": "9bfcc746118d995ef9c2464b58e996d2",
       "content_hash": "0926efac358a80d434d75cbea7917f1862c098327763837a88d9c3dacd4e84e4"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-06",
+      "evidence": "Typed staleness conditions + content pins verified on merged main. Gates: build / skills / check / full bounded suite exit 0 (1265 tests). Dual-surface landing through the sanctioned ceremony: pi-context update resynced research + framework-gaps live (catalog-ahead, additive — dryRun predicted the exact outcome). Runtime demonstration through the promoted operator: the R-0012 typed condition {item-status, FGAP-066, complete} was expressed on the LIVE substrate through the write choke (which also stamped every path-bearing R-0012 citation with a raw-bytes content pin in the same write, covered by the fresh content_hash); on a full COPY of the live substrate with R-0012 restored to complete, context-reconcile --dryRun previewed exactly one stalenessTransition (complete→stale, reasons naming the fired FGAP-066 condition and the copy's unresolvable pins as drift) and the live run applied it (stalenessApplied 1, status read back stale). Live validate after the writes: pre-existing warning classes only — no false staleness or anchor-drift flags (R-0012 is already stale and its just-stamped pins are current), and the research schema does NOT trip the Phase-H nested-id detector (the item-status reference field is named item by granted correction).",
+      "criteria_results": [
+        {
+          "criterion": "A complete research item carrying {kind:'item-status', item, bucket} whose watched item buckets there is flagged as a staleness candidate; bare strings never machine-judged; the R-0012 case is expressible and fires against the live substrate",
+          "status": "passed",
+          "evidence": "the three-condition firing cell (item-status + file-changed + revision-moved all fired against a real git fixture, bare string untouched, validate flag asserted warning); the R-0012 typed condition expressed live and fired on the live-copy reconcile with the exact reason string"
+        },
+        {
+          "criterion": "A path-bearing citation written through the sanctioned path carries a content pin; validate flags drifted pins; unpinned items validate unchanged (additive, no migration)",
+          "status": "passed",
+          "evidence": "write-choke cell (pin = raw-bytes sha-256 of the cited file, path-less entry unpinned, pre-existing pin never overwritten); drift flags asserted in the firing cell; live R-0012 citations pinned in the expressibility write; full suite green with the schemas resynced and zero data migration"
+        },
+        {
+          "criterion": "context-reconcile's sweep includes fired conditions + pin drifts, applying the complete-to-stale transition only there or by hand — validate never mutates",
+          "status": "passed",
+          "evidence": "reconcile cell (dryRun-exact preview, live apply, anchor-drift item never transitions) + the validate-never-mutates byte check + the live-copy end-to-end run (stalenessApplied 1); converge-on-write deliberately excludes staleness"
+        },
+        {
+          "criterion": "Both schema changes pass the gates and land dual-surface; full suite 0 failures; CHANGELOG entry",
+          "status": "passed",
+          "evidence": "additive oneOf + optional pin fields (Cycle-9.2 shipped-schema pin stays {layer-plans}); live update resync of both schemas; suite 1265/0; CHANGELOG [Unreleased] bullet"
+        }
+      ],
+      "id": "VER-078",
+      "oid": "84fb8c374a5c89e07fed4f4d40300159",
+      "content_hash": "bb9bafb925e3cf6a15ec583d2a08b97654aecce9d58a6c252e666f314f2b5acd"
     }
   ],
   "schema_version": "1.0.1"

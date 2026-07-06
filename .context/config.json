@@ -955,14 +955,14 @@
   "installed_from": {
     "catalog": "@davidorex/pi-context@0.31.0",
     "catalog_version": "1.0.0",
-    "at": "2026-07-04T23:33:29.679Z",
+    "at": "2026-07-06T07:18:13.534Z",
     "assets": {
       "decisions": {
         "content_hash": "4f60e5b3c67ebdea2bac98b1bb3cb2b3ecccb516b68ab774f52a98713d9d5680",
         "version": "1.0.1"
       },
       "framework-gaps": {
-        "content_hash": "de2c8ce89703847829364ae00dacbb681c610e7fa2ada58bbf2e3b436dabec89",
+        "content_hash": "0ecc8e221ed9f22e6bd4ff74e3cb9fc2429b4efb2c35cf4756e501a115d7b804",
         "version": "1.1.1"
       },
       "tasks": {
@@ -982,7 +982,7 @@
         "version": "1.0.1"
       },
       "research": {
-        "content_hash": "dea88db461cfbb9c7925a7a349c3053a11f17625d4c6b61f47bb5a830edc8531",
+        "content_hash": "f68023a9d1c65b56624117563206ce2f1368496a1aa88401631018449f53af5f",
         "version": "1.0.1"
       },
       "rationale": {

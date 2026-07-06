@@ -1775,7 +1775,7 @@ function relationKindsOverlap(rt: RelationTypeDecl | undefined): boolean {
  *  - a bare append of a role-less relation, or of a role-bearing DISJOINT-kind
  *    relation (self-orienting via the kind gate), passes through unchanged.
  */
-function orientAppendInput(
+export function orientAppendInput(
 	config: ConfigBlock | null,
 	rel: RelationAppendInput,
 ): { parent: string; child: string; relation_type: string; ordinal?: number } {

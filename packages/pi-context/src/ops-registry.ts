@@ -54,6 +54,7 @@ import {
 	filterBlockItems,
 	type ItemLocation,
 	joinBlocks,
+	orientAppendInput,
 	type RelationAppendInput,
 	readBlockItem,
 	readBlockPage,
@@ -241,10 +242,19 @@ export interface OpDefinition<P = any> {
 	surface: "use" | "process";
 }
 
-/** One birth edge on a filing op: the new item occupies `direction`'s endpoint. */
+/**
+ * One birth edge on a filing op. Exactly ONE orientation form per entry:
+ * `direction` (raw — the new item occupies that raw endpoint) or `role`
+ * (role-typed — the new item holds that semantic role, mapped to parent/child
+ * via the relation's declared role_direction, exactly as the standalone
+ * append-relation --primary/--counter flags map). The role form is REQUIRED
+ * for role-bearing orientation-ambiguous relation_types (same-kind or
+ * wildcard endpoints), where the porcelain rejects a bare raw append.
+ */
 interface BirthRelation {
 	relation_type: string;
-	direction: "as_parent" | "as_child";
+	direction?: "as_parent" | "as_child";
+	role?: "primary" | "counter";
 	other: string;
 	ordinal?: number;
 }
@@ -253,7 +263,9 @@ interface BirthRelation {
  * Coerce a filing op's optional `relations` param (may arrive as a JSON string
  * from the CLI, like Type.Unknown item payloads) and shape-check each entry
  * before any write happens — a malformed entry must refuse the filing BEFORE
- * the item lands, not mid-edge-loop.
+ * the item lands, not mid-edge-loop. Enforces the direction/role mutual
+ * exclusion (exactly one per entry), mirroring the standalone porcelain's
+ * parent/child vs primary/counter pair exclusion.
  */
 function coerceBirthRelations(raw: unknown): BirthRelation[] {
 	let value = raw;
@@ -268,49 +280,111 @@ function coerceBirthRelations(raw: unknown): BirthRelation[] {
 	if (!Array.isArray(value)) throw new Error("relations parameter must be a JSON array");
 	return value.map((entry, i) => {
 		const e = entry as Partial<BirthRelation> | null;
-		if (
-			e === null ||
-			typeof e !== "object" ||
-			typeof e.relation_type !== "string" ||
-			(e.direction !== "as_parent" && e.direction !== "as_child") ||
-			typeof e.other !== "string"
-		) {
-			throw new Error(
-				`relations[${i}] must be {relation_type: string, direction: "as_parent"|"as_child", other: string, ordinal?: integer}`,
+		const shapeError = () =>
+			new Error(
+				`relations[${i}] must be {relation_type: string, other: string, ordinal?: integer} plus EXACTLY ONE of direction: "as_parent"|"as_child" (raw form) or role: "primary"|"counter" (role-typed form)`,
 			);
+		if (e === null || typeof e !== "object" || typeof e.relation_type !== "string" || typeof e.other !== "string") {
+			throw shapeError();
 		}
+		const hasDirection = e.direction !== undefined;
+		const hasRole = e.role !== undefined;
+		if (hasDirection === hasRole) throw shapeError(); // both or neither
+		if (hasDirection && e.direction !== "as_parent" && e.direction !== "as_child") throw shapeError();
+		if (hasRole && e.role !== "primary" && e.role !== "counter") throw shapeError();
 		return {
 			relation_type: e.relation_type,
-			direction: e.direction,
 			other: e.other,
+			...(hasDirection ? { direction: e.direction } : {}),
+			...(hasRole ? { role: e.role } : {}),
 			...(e.ordinal !== undefined ? { ordinal: e.ordinal } : {}),
 		};
 	});
 }
 
 /**
+ * Map one coerced birth entry to the {@link appendRelationByRef} input, with
+ * the new item at the entry's endpoint: the raw form fills parent/child, the
+ * role form fills primary/counter (the SAME role-typed pair the standalone
+ * append-relation flags fill), so orientAppendInput applies its mapping and
+ * guards verbatim — no orientation logic lives here.
+ */
+function birthRelationToAppendInput(
+	itemId: string,
+	rel: BirthRelation,
+): {
+	relation_type: string;
+	parent?: string;
+	child?: string;
+	primary?: string;
+	counter?: string;
+	ordinal?: number;
+} {
+	const ordinalPart = rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {};
+	if (rel.role !== undefined) {
+		return {
+			relation_type: rel.relation_type,
+			...(rel.role === "primary" ? { primary: itemId, counter: rel.other } : { primary: rel.other, counter: itemId }),
+			...ordinalPart,
+		};
+	}
+	return {
+		relation_type: rel.relation_type,
+		parent: rel.direction === "as_parent" ? itemId : rel.other,
+		child: rel.direction === "as_parent" ? rel.other : itemId,
+		...ordinalPart,
+	};
+}
+
+/**
  * File a new item's birth edges through the same validated porcelain a
  * standalone append-relation uses (registered-type + endpoint-kind gate,
- * atomic write, exact-duplicate no-op), with the new item at each entry's
- * `direction` endpoint. Runs AFTER the item write (its id must resolve as an
- * endpoint) inside the same op run, so the write-time invariant gate judges
- * item + edges as one transition atom; a throw here is byte-restored by the
- * pipeline wrapper (all-or-nothing).
+ * role-direction mapping + orientation-ambiguity guard, atomic write,
+ * exact-duplicate no-op), with the new item at each entry's endpoint. Runs
+ * AFTER the item write (its id must resolve as an endpoint) inside the same
+ * op run, so the write-time invariant gate judges item + edges as one
+ * transition atom; a throw here is byte-restored by the pipeline wrapper
+ * (all-or-nothing).
  */
 function appendBirthRelations(cwd: string, itemId: string, relations: BirthRelation[], ctx?: DispatchContext): void {
 	for (const rel of relations) {
-		appendRelationByRef(
-			cwd,
-			{
-				parent: rel.direction === "as_parent" ? itemId : rel.other,
-				child: rel.direction === "as_parent" ? rel.other : itemId,
-				relation_type: rel.relation_type,
-				...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
-			},
-			ctx,
-		);
+		appendRelationByRef(cwd, birthRelationToAppendInput(itemId, rel), ctx);
 	}
 }
+
+/**
+ * Preview-parity orientation check for dryRun filings: run the SAME
+ * role-mapping + ambiguity guard the live edge write applies
+ * (orientAppendInput), against the registry only — endpoint resolution stays
+ * out because the item is unwritten under a preview. A preview thereby
+ * refuses exactly the entries the live run would orientation-refuse.
+ */
+function assertBirthRelationsOrientable(cwd: string, itemId: string, relations: BirthRelation[]): void {
+	if (relations.length === 0) return;
+	const config = loadConfig(cwd);
+	for (const rel of relations) {
+		orientAppendInput(config, birthRelationToAppendInput(itemId, rel));
+	}
+}
+
+/** Shared birth-relations entry schema for the filing ops (append + upsert). */
+const BIRTH_RELATION_ENTRY = Type.Object({
+	relation_type: Type.String({ description: "Registered relation_type canonical_id" }),
+	direction: Type.Optional(
+		Type.Union([Type.Literal("as_parent"), Type.Literal("as_child")], {
+			description:
+				"RAW orientation — which edge endpoint the NEW item occupies. Exactly one of direction/role per entry.",
+		}),
+	),
+	role: Type.Optional(
+		Type.Union([Type.Literal("primary"), Type.Literal("counter")], {
+			description:
+				"ROLE-TYPED orientation — the semantic role the NEW item holds, mapped to parent/child via the relation's declared role_direction (same mapping as append-relation --primary/--counter). REQUIRED for role-bearing orientation-ambiguous relation_types (same-kind or wildcard endpoints), where the raw form is rejected. Exactly one of direction/role per entry.",
+		}),
+	),
+	other: Type.String({ description: "Selector of the other endpoint (canonical id / <alias>:<refname>)" }),
+	ordinal: Type.Optional(Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" })),
+});
 
 export const ops: OpDefinition[] = [
 	{
@@ -319,15 +393,18 @@ export const ops: OpDefinition[] = [
 		description:
 			"Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate " +
 			"the next id from the block's id pattern when the item has no id. Optional relations file the item's BIRTH edges " +
-			"in the same op run, after id allocation — each entry names the relation_type, which endpoint the new item " +
-			"occupies (direction: as_parent | as_child), and the other endpoint's selector. Filing item + edges as one atom " +
-			"lets a new item satisfy error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that " +
-			"would refuse the bare item under the write-time gate.",
+			"in the same op run, after id allocation — each entry names the relation_type, the other endpoint's selector, and " +
+			"EXACTLY ONE orientation: direction (as_parent | as_child — the raw endpoint the new item occupies) or role " +
+			"(primary | counter — the semantic role the new item holds, mapped via the relation's declared role_direction; " +
+			"required for role-bearing orientation-ambiguous relation_types such as the gated-by / derived-from / supersedes " +
+			"/ depends families, where the raw form is rejected). Filing item + edges as one atom lets a new item satisfy " +
+			"error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that would refuse the bare " +
+			"item under the write-time gate.",
 		promptSnippet:
 			"Append items to project blocks (issues, decisions, or any user-defined block), with optional atomic birth edges",
 		examples: [
 			`pi-context append-block-item --block framework-gaps --arrayKey gaps --autoId true --item @/tmp/fgap.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
-			`pi-context append-block-item --block decisions --arrayKey decisions --autoId true --item @/tmp/dec.json --relations '[{"relation_type":"decision_cites_forcing_artifact","direction":"as_parent","other":"FGAP-001"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,
+			`pi-context append-block-item --block decisions --arrayKey decisions --autoId true --item @/tmp/dec.json --relations '[{"relation_type":"decision_addresses_gap","direction":"as_parent","other":"FGAP-001"},{"relation_type":"decision_derived_from_item","role":"counter","other":"TASK-001"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
@@ -339,24 +416,10 @@ export const ops: OpDefinition[] = [
 				}),
 			),
 			relations: Type.Optional(
-				Type.Array(
-					Type.Object({
-						relation_type: Type.String({ description: "Registered relation_type canonical_id" }),
-						direction: Type.Union([Type.Literal("as_parent"), Type.Literal("as_child")], {
-							description: "Which edge endpoint the NEW item occupies",
-						}),
-						other: Type.String({
-							description: "Selector of the other endpoint (canonical id / <alias>:<refname>)",
-						}),
-						ordinal: Type.Optional(
-							Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" }),
-						),
-					}),
-					{
-						description:
-							"Birth edges filed atomically with the item, after id allocation, via the same validated append-relation porcelain",
-					},
-				),
+				Type.Array(BIRTH_RELATION_ENTRY, {
+					description:
+						"Birth edges filed atomically with the item, after id allocation, via the same validated append-relation porcelain (each entry oriented by direction OR role)",
+				}),
 			),
 		}),
 		surface: "use",
@@ -367,12 +430,7 @@ export const ops: OpDefinition[] = [
 				arrayKey: string;
 				item: Record<string, unknown>;
 				autoId?: boolean;
-				relations?: Array<{
-					relation_type: string;
-					direction: "as_parent" | "as_child";
-					other: string;
-					ordinal?: number;
-				}>;
+				relations?: unknown;
 			},
 			ctx?: DispatchContext,
 		): OpResult {
@@ -731,10 +789,14 @@ export const ops: OpDefinition[] = [
 			"Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is " +
 			"REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is " +
 			"appended. Schema validation is automatic. idField defaults to 'id'. Optional relations file BIRTH edges in the " +
-			"same op run when the upsert resolves to an APPEND (each entry: relation_type, the endpoint the new item occupies " +
-			"as direction: as_parent | as_child, and the other endpoint's selector) — one atom under the write-time gate, so " +
-			"a new filing can satisfy error-severity birth-edge invariants. When the upsert resolves to a REPLACE, supplying " +
-			"relations refuses the write (birth edges are for new items; file edges on an existing item via append-relation).",
+			"same op run when the upsert resolves to an APPEND — each entry names the relation_type, the other endpoint's " +
+			"selector, and EXACTLY ONE orientation: direction (as_parent | as_child, raw) or role (primary | counter, mapped " +
+			"via the relation's declared role_direction; required for role-bearing orientation-ambiguous relation_types) — " +
+			"one atom under the write-time gate, so a new filing can satisfy error-severity birth-edge invariants. dryRun " +
+			"previews the upsert AND runs the same orientation guard over the entries (a preview refuses what the live run " +
+			"would orientation-refuse; endpoint resolution stays out — the item is unwritten). When the upsert resolves to a " +
+			"REPLACE, supplying relations refuses the write (birth edges are for new items; file edges on an existing item " +
+			"via append-relation).",
 		promptSnippet:
 			"Append-or-replace a full block item by id (replacement, not merge), with optional atomic birth edges",
 		examples: [
@@ -747,24 +809,10 @@ export const ops: OpDefinition[] = [
 			idField: Type.Optional(Type.String({ description: "Field used as the upsert key (default 'id')" })),
 			dryRun: Type.Optional(Type.Boolean({ description: "Preview the upsert without writing" })),
 			relations: Type.Optional(
-				Type.Array(
-					Type.Object({
-						relation_type: Type.String({ description: "Registered relation_type canonical_id" }),
-						direction: Type.Union([Type.Literal("as_parent"), Type.Literal("as_child")], {
-							description: "Which edge endpoint the NEW item occupies",
-						}),
-						other: Type.String({
-							description: "Selector of the other endpoint (canonical id / <alias>:<refname>)",
-						}),
-						ordinal: Type.Optional(
-							Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" }),
-						),
-					}),
-					{
-						description:
-							"Birth edges filed atomically with an APPEND-mode upsert (refused on replace mode — use append-relation for existing items)",
-					},
-				),
+				Type.Array(BIRTH_RELATION_ENTRY, {
+					description:
+						"Birth edges filed atomically with an APPEND-mode upsert, each entry oriented by direction OR role (refused on replace mode — use append-relation for existing items)",
+				}),
 			),
 		}),
 		surface: "use",
@@ -776,12 +824,7 @@ export const ops: OpDefinition[] = [
 				item: Record<string, unknown>;
 				idField?: string;
 				dryRun?: boolean;
-				relations?: Array<{
-					relation_type: string;
-					direction: "as_parent" | "as_child";
-					other: string;
-					ordinal?: number;
-				}>;
+				relations?: unknown;
 			},
 			ctx?: DispatchContext,
 		): OpResult {
@@ -816,8 +859,11 @@ export const ops: OpDefinition[] = [
 			}
 			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
 			if (params.dryRun) {
-				// The item is unwritten under dryRun, so its id cannot resolve as an
-				// edge endpoint — report the would-file count without endpoint validation.
+				// Preview parity: run the SAME role-mapping + orientation-ambiguity
+				// guard the live edge write applies, against the registry only — the
+				// item is unwritten, so endpoint resolution stays out. A preview
+				// refuses exactly the entries the live run would orientation-refuse.
+				assertBirthRelationsOrientable(cwd, String(idVal), relations);
 				const edgePreview = relations.length > 0 ? `; would file ${relations.length} birth relation(s)` : "";
 				return `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}${edgePreview}`;
 			}

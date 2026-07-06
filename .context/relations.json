@@ -9330,5 +9330,31 @@
       "refname": "FGAP-022"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "72b8f34cb3f7e45186905f244146b9f9",
+      "refname": "TASK-092"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4e456b445663b2e6edc5e44b6891e90c",
+      "refname": "FGAP-121"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "72b8f34cb3f7e45186905f244146b9f9",
+      "refname": "TASK-092"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fbf16a2e8a8e0bd11e380154bdcaa66f",
+      "refname": "error-invariant-transition-atom"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

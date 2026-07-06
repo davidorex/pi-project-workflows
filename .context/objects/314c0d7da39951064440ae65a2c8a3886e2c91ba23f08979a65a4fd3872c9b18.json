@@ -1,0 +1,22 @@
+{
+  "title": "Birth-relations entries afford the role-typed orientation form — filing atoms usable for all 17 role-bearing relation_types, with preview parity",
+  "description": "Give the birth-relations entry both orientation forms, single-sourcing guard + mapping in orientAppendInput (per FGAP-121 proposed_resolution): each entry carries {relation_type, other, ordinal?} plus EITHER direction: as_parent|as_child (raw form, unchanged semantics — the NEW item occupies that endpoint) OR role: primary|counter (role form — the NEW item holds that role; other holds the complement), mutually exclusive per entry, enforced at coerceBirthRelations before any write. appendBirthRelations maps role entries to the role-typed RelationAppendInput (primary → {primary: itemId, counter: other}; counter → {primary: other, counter: itemId}) and delegates to appendRelationByRef unchanged, so the existing orientAppendInput errors apply verbatim: role on a role-less relation → the existing no-role_direction throw; direction on an ambiguous role-bearing relation → the existing re-issue throw, now followable in-shape. Preview parity: upsert-block-item --dryRun runs the orientation mapping/guard over coerced entries (orientation needs only the registry; endpoint resolution stays out — the item is unwritten), so a preview refuses what the live run refuses. Docs-surface-sync: both op strings in ops-registry.ts (descriptions + relations param/entry descriptions), packages/pi-context/README.md write-pipeline + Block CRUD prose, skill-narrative.md atomic-filing paragraph (both entry forms stated), SKILL.md regen, CHANGELOG [Unreleased], CLAUDE.md canonical filing pattern in lockstep.",
+  "status": "in-progress",
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/README.md",
+    "packages/pi-context/skill-narrative.md",
+    "packages/pi-context/CHANGELOG.md",
+    "CLAUDE.md"
+  ],
+  "acceptance_criteria": [
+    "A birth entry with role: primary|counter files an orientation-ambiguous role-typed relation (e.g. decision_derived_from_item) atomically with the item, and the stored edge orientation matches the relation's declared role_direction (read back and asserted).",
+    "Guard-path regression locks: ambiguous relation + direction form → refused with the existing re-issue error; role form on a role-less relation → refused with the existing no-role_direction error; an entry carrying both or neither of direction/role → refused at coercion before any write; all refusals byte-restored (mid-composite all-or-nothing).",
+    "The error-severity deadlock demonstration from analysis/2026-07-06-birth-relations-orientation-subset.md (bare filing gate-refused, atom orientation-refused, two-op sequence gate-refused) passes post-fix via the role form, pinned as a test.",
+    "Preview parity: upsert-block-item --dryRun refuses an entry the live run would orientation-refuse, and previews a valid role entry as would-file.",
+    "Full suite 0 failures; docs-surface-sync complete: both op strings, package README prose, skill-narrative both-forms statement, SKILL regenerated, CHANGELOG [Unreleased], CLAUDE.md filing pattern updated in lockstep."
+  ],
+  "notes": "FGAP-121 (P1) class fix; makes error-invariant-transition-atom rule 2 satisfiable for the 14 affected relation_types and unblocks the decision-shows-derivation backfill-then-raise trajectory."
+}

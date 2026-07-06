@@ -42,6 +42,7 @@ import {
 	buildIdIndex,
 	contextState,
 	derivedRollupComplete,
+	evaluateStalenessCandidates,
 	findAppendableBlocks,
 	validateContext,
 } from "./context-sdk.js";
@@ -2624,6 +2625,16 @@ export interface ReconcileResult {
 	dryRun: boolean;
 	deltas: Array<{ id: string; block: string; from: string; to: string; invariant: string }>;
 	applied: number;
+	/**
+	 * Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089):
+	 * every stale_conditions-bearing item whose status buckets complete and
+	 * whose typed condition fired or whose content pin drifted, transitioned
+	 * to `stale`. Under dryRun the exact set a live run would apply; a live
+	 * run applies it through the standard validated write path. Flag-only
+	 * anchor-drift items (no transition shape) are validate's, not here.
+	 */
+	stalenessTransitions: Array<{ id: string; block: string; from: string; to: string; reasons: string[] }>;
+	stalenessApplied: number;
 	/** Ceremony-entry identity establishment (DEC-0020), live runs only. */
 	substrateIdEstablished?: string;
 }
@@ -2648,7 +2659,7 @@ export function reconcileContext(
 	{ dryRun = false }: { dryRun?: boolean } = {},
 	ctx?: DispatchContext,
 ): ReconcileResult {
-	const result: ReconcileResult = { dryRun, deltas: [], applied: 0 };
+	const result: ReconcileResult = { dryRun, deltas: [], applied: 0, stalenessTransitions: [], stalenessApplied: 0 };
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
 		result.error =
@@ -2666,9 +2677,55 @@ export function reconcileContext(
 		return result;
 	}
 	result.deltas = computeDerivedStatusDeltas(cwd, config);
+	result.stalenessTransitions = computeStalenessTransitions(cwd);
 	if (dryRun) return result;
 	result.applied = applyDerivedStatusDeltas(cwd, config, result.deltas, ctx);
+	result.stalenessApplied = applyStalenessTransitions(cwd, config, result.stalenessTransitions, ctx);
 	return result;
+}
+
+/**
+ * The transition slice of the declared-baseline staleness sweep: candidates
+ * from the SAME evaluateStalenessCandidates helper validate flags with,
+ * restricted to the transition-eligible kind, each becoming a stored-status
+ * delta to `stale`. Flag-only anchor-drift candidates never transition.
+ */
+function computeStalenessTransitions(cwd: string): ReconcileResult["stalenessTransitions"] {
+	const index = buildIdIndex(cwd);
+	return evaluateStalenessCandidates(cwd, index)
+		.filter((c) => c.kind === "staleness-candidate")
+		.map((c) => ({
+			id: c.id,
+			block: c.block,
+			from: String(index.byRefname.get(c.id)?.item.status ?? ""),
+			to: "stale",
+			reasons: c.reasons,
+		}));
+}
+
+/** Apply the complete-to-stale transitions through the standard validated write path. */
+function applyStalenessTransitions(
+	cwd: string,
+	config: ConfigBlock,
+	transitions: ReconcileResult["stalenessTransitions"],
+	ctx?: DispatchContext,
+): number {
+	let applied = 0;
+	for (const t of transitions) {
+		const arrayKey =
+			config.block_kinds?.find((bk) => bk.canonical_id === t.block)?.array_key ??
+			(() => {
+				const data = readBlock(cwd, t.block) as Record<string, unknown>;
+				const discovered = discoverArrayKey(data);
+				if (discovered === null) {
+					throw new Error(`context-reconcile: no array key discoverable for block '${t.block}'`);
+				}
+				return discovered;
+			})();
+		updateItemInBlock(cwd, t.block, arrayKey, (item) => String(item.id) === t.id, { status: t.to }, ctx);
+		applied += 1;
+	}
+	return applied;
 }
 
 /**

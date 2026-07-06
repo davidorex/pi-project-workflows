@@ -8,7 +8,8 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readBlock, readBlockForDir, updateItemInBlock } from "./block-api.js";
+import { readBlock, readBlockForDir, resolveGitRefOrNull, updateItemInBlock } from "./block-api.js";
+import { computeFileBytesHash } from "./content-hash.js";
 import {
 	appendRelation,
 	appendRelations,
@@ -2419,6 +2420,118 @@ export function evaluateConfigInvariants(
 	return issues;
 }
 
+/** One item flagged by the declared-baseline staleness sweep. */
+export interface StalenessCandidate {
+	id: string;
+	block: string;
+	/**
+	 * `staleness-candidate`: a stale_conditions-bearing item whose status
+	 * buckets complete and whose typed condition fired or whose pinned
+	 * citation drifted — eligible for the complete-to-stale transition
+	 * (applied ONLY by context-reconcile or a human, never by validate).
+	 * `anchor-drift`: a pinned path-bearing entry whose file changed on an
+	 * item outside that transition shape — a re-review flag, never rewritten.
+	 */
+	kind: "staleness-candidate" | "anchor-drift";
+	reasons: string[];
+}
+
+/**
+ * Declared-baseline currency sweep (FEAT-011 criterion 6 — TASK-089), the ONE
+ * evaluation path shared by `validateContext` (flags) and `reconcileContext`
+ * (the complete-to-stale transition) — detector and repair cannot disagree.
+ * Field-driven and vocabulary-neutral: no block-name literals — any item
+ * carrying a `stale_conditions` array is condition-evaluable, and any
+ * array-of-object field entry carrying a `content_pin` beside a `path`/`file`
+ * is drift-checkable. Bare-string conditions are never machine-judged. Typed
+ * conditions are judged only on items whose status buckets `complete` (the
+ * transition's precondition); pin drift elsewhere degrades to the flag-only
+ * `anchor-drift` kind. Unstamped baselines (no `baseline_hash`/`baseline_sha`
+ * — e.g. the file/ref was unreadable at write) are never judged.
+ */
+export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex): StalenessCandidate[] {
+	const out: StalenessCandidate[] = [];
+	const ctxRoot = tryResolveContextDir(cwd);
+	if (ctxRoot === null) return out;
+	const projectRoot = path.dirname(ctxRoot);
+	const idx = index ?? buildIdIndex(cwd);
+	const vocab = resolveStatusVocabulary(cwd);
+	const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+	const fileHashOrNull = (rel: string): string | null => {
+		const abs = path.resolve(projectRoot, rel);
+		try {
+			if (!fs.statSync(abs).isFile()) return null;
+			return computeFileBytesHash(abs);
+		} catch {
+			return null;
+		}
+	};
+
+	for (const loc of idx.byRefname.values()) {
+		const item = loc.item;
+		const hasConditions = Array.isArray(item.stale_conditions);
+		const completeBucket = bucketOf(item) === "complete";
+
+		const firedReasons: string[] = [];
+		if (hasConditions && completeBucket) {
+			for (const cond of item.stale_conditions as unknown[]) {
+				if (!cond || typeof cond !== "object" || Array.isArray(cond)) continue; // bare strings stay human-only
+				const c = cond as Record<string, unknown>;
+				if (c.kind === "item-status" && typeof c.item === "string" && typeof c.bucket === "string") {
+					const target = idx.byRefname.get(c.item);
+					if (target !== undefined && bucketOf(target.item) === c.bucket) {
+						firedReasons.push(`stale condition fired: item '${c.item}' bucketed '${c.bucket}'`);
+					}
+				} else if (c.kind === "file-changed" && typeof c.path === "string" && typeof c.baseline_hash === "string") {
+					const now = fileHashOrNull(c.path);
+					if (now === null) {
+						firedReasons.push(`stale condition fired: file '${c.path}' is gone`);
+					} else if (now !== c.baseline_hash) {
+						firedReasons.push(`stale condition fired: file '${c.path}' changed from its baseline`);
+					}
+				} else if (c.kind === "revision-moved" && typeof c.ref === "string" && typeof c.baseline_sha === "string") {
+					const now = resolveGitRefOrNull(projectRoot, c.ref);
+					if (now !== null && now !== c.baseline_sha) {
+						firedReasons.push(
+							`stale condition fired: ref '${c.ref}' moved from '${(c.baseline_sha as string).slice(0, 12)}'`,
+						);
+					}
+				}
+			}
+		}
+
+		const driftReasons: string[] = [];
+		for (const [field, value] of Object.entries(item)) {
+			if (!Array.isArray(value)) continue;
+			for (const el of value) {
+				if (!el || typeof el !== "object" || Array.isArray(el)) continue;
+				const rec = el as Record<string, unknown>;
+				if (typeof rec.content_pin !== "string") continue;
+				const rel = typeof rec.path === "string" ? rec.path : typeof rec.file === "string" ? rec.file : null;
+				if (rel === null) continue;
+				const now = fileHashOrNull(rel);
+				if (now === null) {
+					driftReasons.push(`pin drift: '${field}' entry file '${rel}' is gone`);
+				} else if (now !== rec.content_pin) {
+					driftReasons.push(`pin drift: '${field}' entry file '${rel}' changed since pinned`);
+				}
+			}
+		}
+
+		if (hasConditions && completeBucket && (firedReasons.length > 0 || driftReasons.length > 0)) {
+			out.push({
+				id: loc.id,
+				block: loc.block,
+				kind: "staleness-candidate",
+				reasons: [...firedReasons, ...driftReasons],
+			});
+		} else if (driftReasons.length > 0) {
+			out.push({ id: loc.id, block: loc.block, kind: "anchor-drift", reasons: driftReasons });
+		}
+	}
+	return out;
+}
+
 /**
  * Validate cross-block referential integrity against the EDGE model
  * (DEC-0013: `relations.json` closure-table edges are THE reference surface).
@@ -2652,6 +2765,24 @@ export function validateContext(cwd: string): ContextValidationResult {
 				});
 			}
 		}
+	}
+
+	// ── Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089) ──
+	// Fired typed stale_conditions and drifted content pins, through the SAME
+	// evaluateStalenessCandidates helper context-reconcile's transition sweep
+	// uses (identical verdicts). Warning-only, and validate NEVER mutates — the
+	// complete-to-stale transition belongs to reconcile or a human.
+	for (const cand of evaluateStalenessCandidates(cwd, index)) {
+		issues.push({
+			severity: "warning",
+			message:
+				cand.kind === "staleness-candidate"
+					? `Item '${cand.id}' (block '${cand.block}') is a staleness candidate — ${cand.reasons.join("; ")}. Apply the complete-to-stale transition via context-reconcile or by hand; validate never mutates.`
+					: `Item '${cand.id}' (block '${cand.block}') has drifted anchors — ${cand.reasons.join("; ")}. Re-review the cited locations; the flag never rewrites.`,
+			block: cand.block,
+			field: `${cand.id}.${cand.kind}`,
+			code: cand.kind,
+		});
 	}
 
 	// ── Nested id-bearing array warning (content-addressed substrate identity,

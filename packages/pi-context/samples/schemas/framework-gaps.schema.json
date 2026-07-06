@@ -101,6 +101,11 @@
                     "tokens": 1000,
                     "words": 800
                   }
+                },
+                "content_pin": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$",
+                  "description": "SHA-256 of the referenced file at write time. Stamped by the write path when `file` names a readable file and no pin exists; context-validate flags a pinned evidence entry whose current file hash drifted (anchor drift — re-review, never rewritten)."
                 }
               }
             }

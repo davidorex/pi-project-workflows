@@ -1,0 +1,35 @@
+{
+  "title": "Harness exemplars characterized — WASC's deterministic prompt pipeline and SYNTH's failure-derived deny surface, with the portable pattern set",
+  "status": "complete",
+  "layer": "L1",
+  "type": "comparative",
+  "question": "What enforcement mechanisms made the WASC and MUSE/SYNTH harnesses predictable and non-bypassable, what does each exemplar's model consist of, and which mechanisms are portable patterns for a process harness in this project?",
+  "method": "Read-only characterization of both exemplar projects (hooks, renderers, gate scripts, ledgers, mandates, state files, templates — load-bearing lines quoted verbatim), per-exemplar analysis of shape / enforcement points / bypass surface / operator experience, and a comparison treating the variant's delta as design intent.",
+  "findings_summary": "Both exemplars share one architecture: an LLM orchestrator whose canonical process lives in committed text/code, whose subagent inputs are built by deterministic renderers with mandates inlined (subagents do not receive the UserPromptSubmit injection), whose commits are gated by the full test suite running INSIDE a PreToolUse hook, whose progress lives in append-only ledgers plus derived synthesis, and whose completion claims are verified by a separate adversarial agent and exit codes, with the human as scope authority. WASC (the first model): the phase is the enforced unit; a judgment-free renderer ('cat + sed. No judgment. No LLM.') compiles phase MDs + inlined mandates into IMPL/AUDIT contracts; AUDIT ends with a literally-parsed 'Total findings: N' line and GO/NO-GO is computed, not judged; only the commit is hard-gated — sequencing is codified but obeyed. SYNTH (the variant): enforcement moved upstream to five tool boundaries — plan entry gated on an advance-only-on-clean spec-audit watermark, dispatch serialized one-unit-per-prompt by renderer contract, ledger writes triple-shielded, and implementation commits BLOCKED-BY-DEFAULT without a user-opened, git-ancestry-anchored, expiring authorization grant; every guard traces to a mined failure ID with historical counts; every hook declares its fail-open (absent infrastructure) / fail-closed (gated condition) split; where prevention is impossible (hooks cannot prove authorship) the design pairs the bypass with forensic detection (a state-currency auditor cross-checking claude-history) and user-only self-expiring overrides; the harness regression-tests its own necessity. The variant's delta = the design intent: procedure-as-refusal over procedure-as-prose, authorization as a first-class mechanical object, rules justified by mined incident data, honest threat modeling with detection where prevention fails, and a self-auditing harness.",
+  "findings_document": "analysis/2026-07-06-harness-exemplars-wasc-synth.md",
+  "grounding": {
+    "revisions": [
+      "wasc-school-wide-improvement-plan @ 2026-07-06 (read-only)",
+      "MUSE/SYNTH @ 2026-07-06 (read-only)"
+    ]
+  },
+  "stale_conditions": [
+    "Either exemplar's harness mechanisms change materially after 2026-07-06",
+    "FEAT-013 reaches implementation (the design decisions supersede the exemplar survey as the operative reference)"
+  ],
+  "citations": [
+    {
+      "label": "WASC renderer, templates, hooks, checklist, state spine",
+      "path": "../wasc-school-wide-improvement-plan"
+    },
+    {
+      "label": "SYNTH hooks, gate/grant/spec-gate scripts, mandates, templates, ledgers",
+      "path": "../MUSE/SYNTH"
+    },
+    {
+      "label": "findings document with verbatim quoted anchors",
+      "path": "analysis/2026-07-06-harness-exemplars-wasc-synth.md",
+      "content_pin": "0f4f2feb429c57a57667868988691c6cbc23e4e660f43725022a9ef68f8f3f72"
+    }
+  ]
+}

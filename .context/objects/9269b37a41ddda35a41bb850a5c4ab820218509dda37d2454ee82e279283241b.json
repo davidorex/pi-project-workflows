@@ -1,0 +1,45 @@
+{
+  "title": "pi CLI command-form convention — bare-subcommand vs flag heuristic, applied to pi-context",
+  "status": "complete",
+  "layer": "L2",
+  "type": "investigative",
+  "question": "What is pi's operative convention for making a capability a bare subcommand (pi update, pi config) versus a flag (--model, --export), and what does that heuristic prescribe for pi-context's surface — pi-context update, the reflected ops, and the currently flag-framed --pi-bound?",
+  "method": "Read-only audit of the installed pi CLI (pi --help + pi <subcommand> --help + dist/cli.js) enumerating every command form and its kind-of-capability; the heuristic was derived from that enumeration and applied to pi-context's cli.ts dispatch and the planned FEAT-005/FEAT-006 surface.",
+  "scope": [
+    "@earendil-works/pi-coding-agent installed at /opt/homebrew/lib/node_modules (pi --help command surface)",
+    "packages/pi-context-cli/src/cli.ts dispatch + the reflected surface:use op set",
+    "FEAT-005 (--pi-bound), FEAT-006 (pi-context update), DEC-0014"
+  ],
+  "findings_summary": "pi's command surface separates bare verbs from flags by the nature of the capability. Bare verbs: install <source>, remove/uninstall <source>, update [source|self|pi], list, config (config opens a TUI yet is a bare verb, never --config). Flags: modifiers and one-shot mode-selectors of the DEFAULT run — --model, --print/-p, --tools, --export, --list-models, etc. Verbs take positionals for their target (update self|pi); a how-it-runs modifier of a verb is a flag on that verb.\n\nDerived heuristic (first match wins): (1) a distinct self-completing action that is NOT the default run (does its thing and exits) -> bare verb, interactive or not (config is the precedent); (2) the object/target the verb acts on -> positional; (3) a modifier of HOW a verb runs -> flag on that verb (e.g. update --self/--force, the planned update --dry-run); (4) a modifier / mode-selector / one-shot short-circuit of the DEFAULT run -> top-level flag. Litmus: 'its own run-and-exit action, or an option/mode of an existing action?'\n\nApplied to pi-context: the reflected surface:use ops are bare verbs (conformant, rule 1); pi-context update (FEAT-006) is a bare verb mirroring pi update, with --dry-run a verb-flag (conformant, rules 1+3). pi-context --pi-bound (DEC-0014) is MISFRAMED: launching a bounded pi subprocess and exiting is a distinct self-completing action — the exact analogue of pi's bare config verb — so under the heuristic it should be the bare subcommand pi-context pi-bound, not a flag. The recast is pi-faithful (config-as-bare-verb precedent), consistent with update being bare, and easier to type. Routing is unaffected: DEC-0014's load-bearing requirements (route in main() before op resolution; exclude from the reflected surface:use set at cli.ts:44) hold for a bare verb — main() tests first === 'pi-bound' instead of first === '--pi-bound'; the pi-bound module is otherwise unchanged. DEC-0014's decision + consequences are token-agnostic and survive verbatim; only its title/context spelling and the spec md's --pi-bound token need revising. That revision is a separate user decision; this research only establishes the bare-verb form as the heuristic-correct, pi-conformant choice.",
+  "findings_document": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md",
+  "grounding": {
+    "dependencies": [
+      "@earendil-works/pi-coding-agent — its pi --help command surface is the convention exemplar"
+    ],
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-07"
+    ]
+  },
+  "stale_conditions": [
+    "pi (@earendil-works/pi-coding-agent) changes its command surface — adds/removes bare verbs or restructures flags — so the derived convention must be re-audited.",
+    "pi-context adopts the bare pi-context pi-bound form (revising DEC-0014) — the application verdict is realized and the 'misframed' framing is superseded.",
+    "pi-context's cli.ts dispatch changes how it routes bare verbs vs flags (the cli.ts:44 reflected-op seam)."
+  ],
+  "citations": [
+    {
+      "label": "pi command surface — bare verbs (install/remove/update/list/config) vs top-level flags",
+      "path": "pi --help (installed @earendil-works/pi-coding-agent)"
+    },
+    {
+      "label": "full audit + heuristic derivation (deep read)",
+      "path": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md",
+      "content_pin": "4961dc6ccf85aae4c9986c9f8b090b35ba200f7f7e8f2f006ec360a6d8197aa4"
+    },
+    {
+      "label": "pi-context reflects surface:use ops as bare verbs; --pi-bound routed before op resolution",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "44",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    }
+  ]
+}

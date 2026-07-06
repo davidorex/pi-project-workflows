@@ -1,0 +1,78 @@
+{
+  "title": "CLI write-path UX — actionable AJV validation errors + --show-schema field hint: root cause, fix seams, and existing-filing map",
+  "status": "complete",
+  "layer": "L3",
+  "type": "investigative",
+  "question": "What is the root cause of (1) non-actionable pi-context validation errors and (2) the absence of an inline block-field preview on write ops; where do the fixes live; and are they already filed?",
+  "method": "Two read-only Explore code investigations tracing the write/validation path (the ValidationError constructor + the validate funnels) and the schema-derivation surface (read-schema/readSchema/resolveBlockItemSchema + the block_kinds array_key mapping), plus substrate read ops (driven through the global pi-context command) enumerating existing gaps/tasks, cross-checked against the live CLI.",
+  "scope": [
+    "packages/pi-context/src/schema-validator.ts",
+    "packages/pi-context-cli/src/cli.ts + bin.ts",
+    "packages/pi-context/src/ops-registry.ts (read-schema / read-config)",
+    "packages/pi-context/src/schema-write.ts + block-api.ts (resolveBlockItemSchema, validate funnels)",
+    "scripts/orchestrator/file-block-item.ts (formatAjvError, contract-preview)",
+    ".context FGAP-022 / FGAP-023 / TASK-016 / TASK-017"
+  ],
+  "findings_summary": "Two write-path frictions in the pi-context CLI, both grounded to root cause and both ALREADY FILED (FGAP-023 -> TASK-016; FGAP-022 -> TASK-017, cli-parity release-group orders 2/5 and 3/5; do not refile).\n\n(1) Non-actionable validation errors. The string 'Validation failed for <block>: <instancePath>: <message>' is built at one shared site — the ValidationError constructor, schema-validator.ts:88 — which maps each AJV ErrorObject to instancePath+message and DISCARDS e.params. AJV runs with allErrors:true (schema-validator.ts:13) and the constructor both receives and stores the full errors[] on this.errors (:92), so the actionable data is present but dropped: params.additionalProperty names the offending field (e.g. 'reproduction'), params.missingProperty the missing required field, params.allowedValues the enum set. Every write op (append/update/upsert/nested block items, write-block, append-relation, amend-config, schema writes) funnels through this one constructor via validate()/validateFromFile()/validateBlockWithMigrationForDir()/validateSchemaAgainstMeta() — so a single change makes all of them actionable. The CLI is a pure err.message passthrough (cli.ts:511-523, bin.ts:8-9) reading neither err.errors nor params. Two fix locations: (a) library-side at schema-validator.ts:88 — fixes every surface incl. the in-pi pi -p tool dispatch, but changes the in-pi op message; (b) CLI-side reading err.errors[].params in the cli.ts catch — keeps in-pi byte-unchanged. TASK-016 chooses (b): lift formatAjvError from scripts/orchestrator/file-block-item.ts:184-205 into the catch + a new render.ts.\n\n(2) No inline block-field preview. The derivation primitive already exists: read-schema (ops-registry.ts:1140-1181) -> readSchema (schema-write.ts:327) addresses any schema node via --path; resolveBlockItemSchema (block-api.ts:2266-2295) returns {arrayKey, itemSchema}, resolving the array property + items $ref. The friction is a 3-step indirection: know schemaName==block; resolve array_key from config.block_kinds (read-config --registry block_kinds, ops-registry.ts:896-942); then read-schema --path properties.<array_key>.items and hand-read required+properties. --show-schema (TASK-017) collapses this into one early-return branch in main() mirroring the parsed.help branch (cli.ts:469-472), before op.run, reusing readConfig+readSchema+resolveBlockItemSchema — confined to pi-context-cli/src/cli.ts.\n\nThe two are sibling/complementary (reactive error-time vs proactive pre-write), both from the 2026-06-05 cli-ops-scripts-parity-survey (GAP-5, GAP-4), both honoring 'in-pi ops byte-unchanged'. Open decision: the in-pi pi -p tool surface keeps raw AJV under the CLI-scoped fix; covering it requires the library-side option (a) at schema-validator.ts:88, which TASK-016 deliberately avoids to keep in-pi output stable.",
+  "findings_document": "analysis/2026-06-07-cli-write-path-ux-research.md",
+  "grounding": {
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-07"
+    ]
+  },
+  "stale_conditions": [
+    "schema-validator.ts ValidationError message builder (:88) is changed to surface AJV params — the root-cause claim is realized.",
+    "TASK-016 / TASK-017 land — the 'not yet implemented' framing and the library-vs-CLI fix-location choice are superseded by the shipped behavior.",
+    "cli.ts dispatch/catch region is restructured (the :469-472 help-branch seam or :511-523 catch) — the seam file:line references drift.",
+    "read-schema / resolveBlockItemSchema / read-config block_kinds derivation surface changes — the --show-schema reuse path shifts."
+  ],
+  "citations": [
+    {
+      "label": "validation-error message collapse (root cause) — maps to instancePath+message, discards params",
+      "path": "packages/pi-context/src/schema-validator.ts",
+      "lines": "88",
+      "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+    },
+    {
+      "label": "AJV allErrors:true; full errors[] stored on this.errors",
+      "path": "packages/pi-context/src/schema-validator.ts",
+      "lines": "13,92",
+      "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+    },
+    {
+      "label": "CLI is pure err.message passthrough (reads neither errors nor params)",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "511-523",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "label": "read-schema op — on-demand schema-node addressing (derivation primitive)",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1140-1181",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "label": "resolveBlockItemSchema — array_key + items + $ref resolution",
+      "path": "packages/pi-context/src/block-api.ts",
+      "lines": "2266-2295",
+      "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+    },
+    {
+      "label": "--show-schema seam: parsed.help early-return branch in main()",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "469-472",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "label": "formatAjvError + contract-preview bodies to lift",
+      "path": "scripts/orchestrator/file-block-item.ts",
+      "lines": "113-142,184-205",
+      "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+    },
+    {
+      "label": "full grounded findings",
+      "path": "analysis/2026-06-07-cli-write-path-ux-research.md",
+      "content_pin": "f628765b71cb4aeb97e448c5c86d255a7db612a6e2ca59dfe0fe99161914e1da"
+    }
+  ]
+}

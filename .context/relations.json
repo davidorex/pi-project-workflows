@@ -9382,5 +9382,44 @@
       "refname": "TASK-089"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e02a8292bd4223ea6f3680f49b2f08e6",
+      "refname": "FEAT-013"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9e6cd15f8176b0ea9160737217f09e9a",
+      "refname": "R-0027"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e02a8292bd4223ea6f3680f49b2f08e6",
+      "refname": "FEAT-013"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "861067089e8da02e57f164ca594c5e97",
+      "refname": "R-0028"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e02a8292bd4223ea6f3680f49b2f08e6",
+      "refname": "FEAT-013"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

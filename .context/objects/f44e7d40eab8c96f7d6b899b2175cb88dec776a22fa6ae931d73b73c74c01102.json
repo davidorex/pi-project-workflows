@@ -1,0 +1,70 @@
+{
+  "title": "Best-of-breed CLI --help + UX for an agent-invoked reflecting CLI — landscape + reusable elements",
+  "status": "complete",
+  "layer": "L4",
+  "type": "landscape",
+  "question": "What do best-of-breed CLIs do for --help and overall CLI UX, and which concrete, reusable elements should a globally-installed, agent-invoked reflecting CLI (pi-context <op>, ~48 ops auto-derived from a typed op-registry) adopt to up-level help across ALL commands — primary consumer an LLM agent reading terminal output, secondary a human.",
+  "method": "grounded online research (WebSearch + WebFetch of canonical guidelines, exemplar CLIs, and help-generation frameworks; every external claim cited with URL + retrieval date; two fetch failures disclosed not fabricated) plus pattern synthesis for the reflection-over-op-registry case.",
+  "scope": [
+    "clig.dev",
+    "12-factor CLI apps",
+    "docopt",
+    "bettercli.org",
+    "exemplars: gh / kubectl / docker / cargo / git / stripe-heroku-salesforce(oclif)",
+    "frameworks: clap / cobra / oclif / click-typer",
+    "agent-facing CLI UX practitioner sources",
+    "retrieved 2026-06-09"
+  ],
+  "findings_summary": "Every loved CLI's help converges on the SAME reusable 3-part architecture, which maps directly onto a reflection-over-op-registry CLI: (1) a render TEMPLATE with fixed slots (synopsis -> summary -> flags -> examples -> related -> footer; clap help_template, cobra SetUsageTemplate, bettercli); (2) a GROUP registry mapping each command to a named, ordered group (cobra AddGroup/GroupID — the gh CORE COMMANDS engine; note clap canNOT group subcommands, so op-grouping is custom render work, not a free framework feature); (3) a per-op EXAMPLES field surfaced verbatim (oclif examples, clap after_help, click epilog). Highest-leverage reusable elements to build ONCE and apply across all ~48 ops + every <op> --help: a grouped top-level listing using the SHORT one-liner (our currently-unused promptSnippet) instead of the multi-sentence description dump (gh/kubectl/docker/cobra; fixes today's flat unscannable help); a fixed per-op template with required-vs-optional TYPED flags and a docopt-notation SYNOPSIS line (an LLM already reads docopt); copy-pasteable common-first EXAMPLES (clig.dev 'lead with examples'; the single highest-value element for an agent caller); a RELATED/see-also hint (the natural surface for the currently-undiscoverable pi-bound); --version (+ -V); help-on-no-args and -h-after-anything -> STDOUT; and machine-readable help rendered through the same --format knob. The agent-primary framing is load-bearing, not secondary: practitioner sources state 'agents read --help before docs' and 'agents learn patterns faster from examples than flag descriptions', and require required-vs-optional shown explicitly ('agents will not guess'), structured/parseable help, stdout-for-data/stderr-for-messages, meaningful exit codes (0/1/2/3/4/5) paired with a parseable error_type + recovery hint, and token-economy output (--raw/--compact). clig.dev + 12-factor supply the baseline rules (-h everywhere idempotently; concise help when args missing; format for scannability with TTY-degradation honoring NO_COLOR/TERM=dumb/--no-color; --json/--plain; help to stdout). ALL SIX points once framed as open design forks are DERIVABLE from the CLI/pi-context facts, NOT user-calls: (a) group labels + ordering derive from the op-name partition — Read/Query (read-*/resolve-*/find-references/filter-*/join-*/walk-*), Block-writes (append/update/upsert/remove-block-item + nested, write-block), Relations (append/remove/replace-relation(s)), Schema&config (read/write-schema*/amend-config/read-config/rename-canonical-id), Substrate-lifecycle (context-*/update), Workflow (complete-task/resolve-conflict/promote-item), Process-mode (pi-bound) — ordered read-before-mutate -> vocabulary -> lifecycle -> process-mode last, implemented as a PURE CLASSIFIER over the op name (a new op auto-slots; never a hardcoded curated list, which is the drift-prone parallel list gap-arc-coherence + the parity gate exist to prevent); (b) color defaults PLAIN (agent-primary caller; honor NO_COLOR/TERM=dumb/--no-color); (c) machine help renders through the EXISTING --format (text|json|table, already shipped) — no parallel --help --json; (d) the one-liner reuses the existing promptSnippet (audit the ~48, fix any that read poorly; no new field); (e) all ~48 examples are hand-authored now (best-of-breed/no-deferral mandate; a synthetic floor is the rejected ship-after tier); (f) pi-bound is its own discoverable group entry with authored help (process-mode, not a reflected op). The circulating ~10-32x CLI-vs-MCP token/reliability multiplier is unverified landscape signal, not load-bearing.",
+  "findings_document": "analysis/2026-06-09-cli-help-ux-research.md",
+  "grounding": {
+    "external_refs": [
+      "https://clig.dev/ (2026-06-09)",
+      "https://jdxcode.medium.com/12-factor-cli-apps-dd3c227a0e46 (2026-06-09)",
+      "https://bettercli.org/design/cli-help-page/ (2026-06-09)",
+      "https://docopt.readthedocs.io/en/0.4.0/ (2026-06-09; docopt.org direct fetch FAILED, TLS cert)",
+      "https://cli.github.com/manual/ (2026-06-09; group strings via secondary sources)",
+      "https://kubernetes.io/docs/reference/kubectl/ (2026-06-09)",
+      "https://doc.rust-lang.org/cargo/commands/cargo.html (2026-06-09)",
+      "https://docs.rs/clap/latest/clap/_derive/index.html (2026-06-09)",
+      "https://pkg.go.dev/github.com/spf13/cobra (2026-06-09)",
+      "https://oclif.io/docs/topic_separator/ (2026-06-09)",
+      "https://dev.to/uenyioha/writing-cli-tools-that-ai-agents-actually-want-to-use-39no (2026-06-09)",
+      "https://archit15singh.github.io/posts/2026-02-28-designing-cli-tools-for-ai-agents/ (2026-06-09)"
+    ]
+  },
+  "grounded_at": "2026-06-09T00:00:00.000Z",
+  "stale_conditions": [
+    "the cited web sources change or a fetched guideline/exemplar revises its recommendations",
+    "the derived design (group-by-name-prefix classifier; plain color default; help through --format; promptSnippet one-liner; per-op examples; pi-bound as an authored discoverable entry) is superseded by a different decided design",
+    "clap/cobra/oclif help-generation APIs change such that the mirrored template/group/examples mechanisms differ",
+    "pi-context's op-registry gains a native help-grouping or summary/examples field that supersedes the render-layer approach"
+  ],
+  "citations": [
+    {
+      "label": "full research with per-claim guideline/exemplar/synthesis tags + source list",
+      "path": "analysis/2026-06-09-cli-help-ux-research.md",
+      "content_pin": "d8eff82cb0aff83af2f0d68ac3bd911868b059f025d844db4455e5ece8b88b72"
+    },
+    {
+      "label": "clig.dev Command Line Interface Guidelines",
+      "url": "https://clig.dev/",
+      "retrieved_at": "2026-06-09"
+    },
+    {
+      "label": "12-Factor CLI Apps (Jeff Dickey / oclif)",
+      "url": "https://jdxcode.medium.com/12-factor-cli-apps-dd3c227a0e46",
+      "retrieved_at": "2026-06-09"
+    },
+    {
+      "label": "cobra AddGroup (the gh command-group engine)",
+      "url": "https://pkg.go.dev/github.com/spf13/cobra",
+      "retrieved_at": "2026-06-09"
+    },
+    {
+      "label": "writing CLI tools that AI agents actually want to use",
+      "url": "https://dev.to/uenyioha/writing-cli-tools-that-ai-agents-actually-want-to-use-39no",
+      "retrieved_at": "2026-06-09"
+    }
+  ]
+}

@@ -34,37 +34,45 @@
       "citations": [
         {
           "label": "pi-context-cli generic reflection engine (parse/coerce/flags/auth/envelope)",
-          "path": "packages/pi-context-cli/src/cli.ts"
+          "path": "packages/pi-context-cli/src/cli.ts",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "OpDefinition contract — pi-context-internal, not shared",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "201-210"
+          "lines": "201-210",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "output cap machinery: OpResult / renderOpResultText / boundedJsonOutput / 50KB boundary cap",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "104-210"
+          "lines": "104-210",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "DispatchContext / WriterIdentity — package-specific run-context",
-          "path": "packages/pi-context/src/dispatch-context.ts"
+          "path": "packages/pi-context/src/dispatch-context.ts",
+          "content_pin": "ef9aa014e29cb9eed034922567d37b2d60249e35637a9549ae0c51b3c4cf4bae"
         },
         {
           "label": "pi-workflows direct pi.registerTool registration + long-running executors (divergent model)",
-          "path": "packages/pi-workflows/src/index.ts"
+          "path": "packages/pi-workflows/src/index.ts",
+          "content_pin": "e345ae80bb9ac391d1bf928f92859da5e3e7cd9fbdcf1d2c36109a8a2c3f8d7f"
         },
         {
           "label": "pi-jit-agents is a library, not an extension (no CLI surface)",
-          "path": "packages/pi-jit-agents/README.md"
+          "path": "packages/pi-jit-agents/README.md",
+          "content_pin": "50fb074b20c159f3f382cb86dcd789742c7727319dd959682f9eaf57c7f45a82"
         },
         {
           "label": "per-package-CLI decision (1c)",
-          "path": "analysis/2026-06-03-pi-context-cli-design-ledger.md"
+          "path": "analysis/2026-06-03-pi-context-cli-design-ledger.md",
+          "content_pin": "7b2b101762c828363445532a862cc495378982caa3df5165be8a4e16f4822e88"
         },
         {
           "label": "full design doc (deep read)",
-          "path": "analysis/2026-06-05-shared-cli-core-design.md"
+          "path": "analysis/2026-06-05-shared-cli-core-design.md",
+          "content_pin": "84261f2b959cdf0461ec977a806f641ac83a268d6d7c04890428db85b12bd6f6"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -72,7 +80,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-04T21:57:33.590Z",
       "oid": "a0c0c826114705c8bf5bfb50d4f5189e",
-      "content_hash": "98c0b0c6cc1f700fb0f673a4e7e648cdb701f18edd2e4787f15b577f79a3a992"
+      "content_hash": "81661f130901ff8d9168a319232a34bdab6ea55684139adcdc8f09e43c90ad90",
+      "content_parent": "98c0b0c6cc1f700fb0f673a4e7e648cdb701f18edd2e4787f15b577f79a3a992"
     },
     {
       "id": "R-0002",
@@ -113,75 +122,90 @@
         {
           "label": "ConfigBlock interface — model vs instance fields",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "39-64"
+          "lines": "39-64",
+          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
         },
         {
           "label": "REGISTRY_DESCRIPTORS — the portable registries",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "942"
+          "lines": "942",
+          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
         },
         {
           "label": "adoptConception — reads hardcoded samples/conception.json, never-clobber guard",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "873-909"
+          "lines": "873-909",
+          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
         },
         {
           "label": "installContext — copies installed_schemas/blocks from samples/ with skip-if-exists",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "334-410"
+          "lines": "334-410",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "initProject — bootstrap pointer + skeleton config + substrate_id",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "250"
+          "lines": "250",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "resolveContextDir — unconditional path.join(cwd, contextDir), no isAbsolute (Fork 2 blocker)",
           "path": "packages/pi-context/src/context-dir.ts",
-          "lines": "104-143"
+          "lines": "104-143",
+          "content_pin": "0088d1013ec7466540271ebd0cd06d9cf9aa9a9dd42ce2fb474fa311f2ee4483"
         },
         {
           "label": "listSubstrates — cwd-bound bare-name discovery",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "675-712"
+          "lines": "675-712",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "withBlockLock — per-block lock; no substrate-global lock for config/relations/migrations",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "45-55"
+          "lines": "45-55",
+          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
         },
         {
           "label": "mintOid — substrate-scoped oid",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "624-627"
+          "lines": "624-627",
+          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
         },
         {
           "label": "computeContentHash — globally stable content hash",
           "path": "packages/pi-context/src/content-hash.ts",
-          "lines": "65-67"
+          "lines": "65-67",
+          "content_pin": "cedf5482fdb59eb42c382940fea0d0c93b5f96e6a989ab0c0b1d67781d3a3283"
         },
         {
           "label": "OpResult + 50KB cap at the output boundary",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "118-199"
+          "lines": "118-199",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "CLI reflection — useOps filters surface:'use'",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44"
+          "lines": "44",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "parity-check gates — classification / ctx-forwarding / {json}-content-cap / dual-surface params",
           "path": "scripts/parity-check.ts",
-          "lines": "423-827"
+          "lines": "423-827",
+          "content_pin": "5b7ec0aa1ec162aec394cc958ba588dafbccb1c389ebba3472a755d188915ded"
         },
         {
           "label": "workflow-discovery — directory-scan, the real 'import workflows' prior art",
-          "path": "packages/pi-workflows/src/workflow-discovery.ts"
+          "path": "packages/pi-workflows/src/workflow-discovery.ts",
+          "content_pin": "6beef2155c8a27ac77b93c79ae430358bf42b8edb7bbc32bba024f9fa79c69ac"
         },
         {
           "label": "full design doc (deep read)",
-          "path": "analysis/2026-06-05-substrate-portability-export-import.md"
+          "path": "analysis/2026-06-05-substrate-portability-export-import.md",
+          "content_pin": "e129dcd11bb0c69495fc70be94b515db4624caf20aea8d926f00888f9cd18a9e"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -189,7 +213,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-04T22:19:52.083Z",
       "oid": "8e68cdb846eaf93da1751ec989d11a9d",
-      "content_hash": "34a477b940a36cdf8cf6233aa278959d3b4b47526b0e63a7a1ac11d63126796d"
+      "content_hash": "abf1be6bf9833b7ce96552b5b7b8975ae1afbdfb8bc18e721b761aed2b810898",
+      "content_parent": "34a477b940a36cdf8cf6233aa278959d3b4b47526b0e63a7a1ac11d63126796d"
     },
     {
       "id": "R-0003",
@@ -228,42 +253,50 @@
       "citations": [
         {
           "label": "full survey (deep read)",
-          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md"
+          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+          "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
         },
         {
           "label": "CLI reflects ops 1:1 (useOps filter)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44"
+          "lines": "44",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "CLI required-flag check + writer exemption (GAP-1 pre-call seam)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "277-303"
+          "lines": "277-303",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "read-schema op wraps addressed node in structureForRead (GAP-2 root locus / the op-change point)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1166"
+          "lines": "1166",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "structureForRead collection-paging that projects an object node (FGAP-020)",
           "path": "packages/pi-context/src/read-element.ts",
-          "lines": "266-285"
+          "lines": "266-285",
+          "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
         },
         {
           "label": "script derives array_key (FGAP-019 contrast)",
           "path": "scripts/orchestrator/file-block-item.ts",
-          "lines": "89-107"
+          "lines": "89-107",
+          "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
         },
         {
           "label": "script returns full schema subtree directly (FGAP-020 contrast)",
           "path": "scripts/orchestrator/read-schema.ts",
-          "lines": "181"
+          "lines": "181",
+          "content_pin": "0f3255c819e2b5ce735ec6069162f13042be38d4893b070f7c7a63795737dc66"
         },
         {
           "label": "parity-check dual-surface guard keys twin by exact op-name (the 29/48 blind spot)",
           "path": "scripts/parity-check.ts",
-          "lines": "738-748"
+          "lines": "738-748",
+          "content_pin": "5b7ec0aa1ec162aec394cc958ba588dafbccb1c389ebba3472a755d188915ded"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -271,8 +304,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-04T23:35:40.314Z",
       "oid": "3e5f5d547f6e3d1ce9ee1c34924f38f4",
-      "content_hash": "d2e94f6d02b8be0ab2828ce152f8290b9238e4d16f1f1128d755d4dd4bfd14df",
-      "content_parent": "edab0e7169bd81795ec3f90cbd6b1d8106d889cffcbff81826f592507d145394"
+      "content_hash": "68a077fc862b9e21c2cc9218cc6ff4f1664f0865108ef2cc65523fcd706b57a1",
+      "content_parent": "d2e94f6d02b8be0ab2828ce152f8290b9238e4d16f1f1128d755d4dd4bfd14df"
     },
     {
       "id": "R-0004",
@@ -306,30 +339,36 @@
       "citations": [
         {
           "label": "the spec (deep read)",
-          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
+          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
+          "content_pin": "6d115a303931bc792cb353587ed92bfed9db326b9736f402982db9bbfbcd1e6e"
         },
         {
           "label": "unknown-command exit 2 — two-armed conditional (process-only arm + unknown arm)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "444-450"
+          "lines": "444-450",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "--grant parse is a bare shift 2 (no validation; aborts under set -euo pipefail)",
           "path": "scripts/launch-constrained-pi.sh",
-          "lines": "61,77"
+          "lines": "61,77",
+          "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
         },
         {
           "label": "script context pipeline the port collapses in-process (tsx emit + python3 JSON->CSV)",
           "path": "scripts/launch-constrained-pi.sh",
-          "lines": "104-109"
+          "lines": "104-109",
+          "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
         },
         {
           "label": "first evaluation report",
-          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation.md"
+          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation.md",
+          "content_pin": "57245abc43d87b3b4aa9ec91a393e0ef01e089058215805b1ed5672262a9cead"
         },
         {
           "label": "second evaluation report (post-edit)",
-          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation-v2.md"
+          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation-v2.md",
+          "content_pin": "c604dc2172bab3d95ab2242d07008d58df77d2fb48328238d9c71750c58e79e2"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -337,7 +376,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-06T22:07:25.817Z",
       "oid": "a6b0683bc10fe3094a3953d7d8e120e1",
-      "content_hash": "d288a1b96ba997266a2b7d298769f8259f77808b858b886002fa3bea0afed028"
+      "content_hash": "1bb01c6771c8d95edd9251d47e9300cad38ec333e9d908d09559435ae4368f7e",
+      "content_parent": "d288a1b96ba997266a2b7d298769f8259f77808b858b886002fa3bea0afed028"
     },
     {
       "id": "R-0005",
@@ -388,16 +428,19 @@
         {
           "label": "pi-context-cli build — no chmod +x (FGAP-047)",
           "path": "packages/pi-context-cli/package.json",
-          "lines": "31"
+          "lines": "31",
+          "content_pin": "f55e6c95a53910b70a0b837ce8bccba2e8c3969bf245f16e268a1811ccaef6a9"
         },
         {
           "label": "pi-context-cli deps lack the meta-package (FGAP-048)",
           "path": "packages/pi-context-cli/package.json",
-          "lines": "35-38"
+          "lines": "35-38",
+          "content_pin": "f55e6c95a53910b70a0b837ce8bccba2e8c3969bf245f16e268a1811ccaef6a9"
         },
         {
           "label": "full analysis (deep read)",
-          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md"
+          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md",
+          "content_pin": "212a0c66240f6523bb3d457fe5fbdd194fafb845eef5f5388df82b80d4ba93db"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -405,7 +448,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-06T22:29:48.981Z",
       "oid": "e072cd74684d58d1ea83b4c8704491d3",
-      "content_hash": "a134a90ee305dd3f7449a0874e42b3840d7ab5273d752f5ae46c8b019178de0c"
+      "content_hash": "0870fef6195fe8e62759c889c9f6a6a5cda3fa599976f7c2455ece930d20e1c2",
+      "content_parent": "a134a90ee305dd3f7449a0874e42b3840d7ab5273d752f5ae46c8b019178de0c"
     },
     {
       "id": "R-0006",
@@ -442,12 +486,14 @@
         },
         {
           "label": "full audit + heuristic derivation (deep read)",
-          "path": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md"
+          "path": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md",
+          "content_pin": "4961dc6ccf85aae4c9986c9f8b090b35ba200f7f7e8f2f006ec360a6d8197aa4"
         },
         {
           "label": "pi-context reflects surface:use ops as bare verbs; --pi-bound routed before op resolution",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44"
+          "lines": "44",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -455,7 +501,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-06T23:02:11.224Z",
       "oid": "fbb9f0764e97850f64402839bfd97f7a",
-      "content_hash": "37f7663e3d71bb6f3e42807900c963c441b629ac8a1efc03e4cd325a6d5d4740"
+      "content_hash": "9269b37a41ddda35a41bb850a5c4ab820218509dda37d2454ee82e279283241b",
+      "content_parent": "37f7663e3d71bb6f3e42807900c963c441b629ac8a1efc03e4cd325a6d5d4740"
     },
     {
       "id": "R-0007",
@@ -490,41 +537,49 @@
         {
           "label": "validation-error message collapse (root cause) — maps to instancePath+message, discards params",
           "path": "packages/pi-context/src/schema-validator.ts",
-          "lines": "88"
+          "lines": "88",
+          "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
         },
         {
           "label": "AJV allErrors:true; full errors[] stored on this.errors",
           "path": "packages/pi-context/src/schema-validator.ts",
-          "lines": "13,92"
+          "lines": "13,92",
+          "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
         },
         {
           "label": "CLI is pure err.message passthrough (reads neither errors nor params)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "511-523"
+          "lines": "511-523",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "read-schema op — on-demand schema-node addressing (derivation primitive)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1140-1181"
+          "lines": "1140-1181",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "resolveBlockItemSchema — array_key + items + $ref resolution",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "2266-2295"
+          "lines": "2266-2295",
+          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
         },
         {
           "label": "--show-schema seam: parsed.help early-return branch in main()",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "469-472"
+          "lines": "469-472",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "formatAjvError + contract-preview bodies to lift",
           "path": "scripts/orchestrator/file-block-item.ts",
-          "lines": "113-142,184-205"
+          "lines": "113-142,184-205",
+          "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
         },
         {
           "label": "full grounded findings",
-          "path": "analysis/2026-06-07-cli-write-path-ux-research.md"
+          "path": "analysis/2026-06-07-cli-write-path-ux-research.md",
+          "content_pin": "f628765b71cb4aeb97e448c5c86d255a7db612a6e2ca59dfe0fe99161914e1da"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -532,7 +587,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-07T03:40:34.167Z",
       "oid": "e96de2ff2f1387f4eb3a2862455ad7aa",
-      "content_hash": "42796d7ce25618cbde2289d5e233dc6073e49228e3933cd29c4ed4db812fa432"
+      "content_hash": "ea5f2e6483c7212596bfdbdf0e8e65878dd8bdac78e588229b8e578f46f54e79",
+      "content_parent": "42796d7ce25618cbde2289d5e233dc6073e49228e3933cd29c4ed4db812fa432"
     },
     {
       "id": "R-0008",
@@ -568,42 +624,50 @@
         {
           "label": "resyncSchema overwrites; reads only version, never the installed body",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "464-583"
+          "lines": "464-583",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "checkStatus 3-way HASH compare; locally-modified verdict; baseline content_hash",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "858-949"
+          "lines": "858-949",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "installed_from.assets stores {content_hash, version} only — base body not retained",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "71-80"
+          "lines": "71-80",
+          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
         },
         {
           "label": "content-addressed object store (putObject/getObject; dormant) — the base-stamping vehicle",
           "path": "packages/pi-context/src/object-store.ts",
-          "lines": "59-110"
+          "lines": "59-110",
+          "content_pin": "42a5d1d72e9e99688d49f5d3c2ef3c06e08d2cb1901abe3bfbcdb970f5de4aae"
         },
         {
           "label": "baseline write — the base-stamping target",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "738-754"
+          "lines": "738-754",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "write-schema op (dryRun + authGated) — the R2 resolver write path",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1183-1201"
+          "lines": "1183-1201",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "auth-gate non-interactive refusal / interactive confirm",
           "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
-          "lines": "148-211"
+          "lines": "148-211",
+          "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
         },
         {
           "label": "pi-bound bounded session (R2 vehicle)",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "298-305"
+          "lines": "298-305",
+          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
         },
         {
           "label": "DEC-0004 §6 names config/schema 3-way but does not author the schema strategy",
@@ -613,7 +677,8 @@
         {
           "label": "full reframed findings (deep read)",
           "path": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
-          "lines": ""
+          "lines": "",
+          "content_pin": "9da6ec6a05493038b300a98508fa9ef90b4d822e4688b748885acbd770b8bde0"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -621,7 +686,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-07T05:35:36.864Z",
       "oid": "47f24dbd5fdd704b40e61c2d4ab751bd",
-      "content_hash": "a43b0cbea8bb01668125f8dfadab8666486c223ca5d8c64f7458740c8da16cd1"
+      "content_hash": "d5a72fd87130baa01cd85b6bca2bb23dfddbfdc97b0a19341b2e7cfb05afa943",
+      "content_parent": "a43b0cbea8bb01668125f8dfadab8666486c223ca5d8c64f7458740c8da16cd1"
     },
     {
       "id": "R-0009",
@@ -653,24 +719,29 @@
       "citations": [
         {
           "label": "Legacy compilation path — used by all workflow step execution (no anti-injection, no budget, no recursion, no per-item resolution)",
-          "path": "packages/pi-workflows/src/step-shared.ts"
+          "path": "packages/pi-workflows/src/step-shared.ts",
+          "content_pin": "a34370316e19d3782f974d65984f326f30cbcc5efb68abc418cd011b368a9fee"
         },
         {
           "label": "Modern compilation path — used only by renderItemById (anti-injection wrap, budget, recursion, renderer registry, tool-grant clamping)",
-          "path": "packages/pi-jit-agents/src/compile.ts"
+          "path": "packages/pi-jit-agents/src/compile.ts",
+          "content_pin": "7ed94e88176d9f5afdc31d4b73d76aad042904bba2756c248b545f94d4da4cd5"
         },
         {
           "label": "Template validation — computes only the _<name> form; INJECTED_VARIABLES = {output_schema, loop} only",
-          "path": "packages/pi-workflows/src/template-validation.ts"
+          "path": "packages/pi-workflows/src/template-validation.ts",
+          "content_pin": "e188f7aae02e1c1e9793eb4bb9cc9ffab006b0b309d71b84113befc714b7631d"
         },
         {
           "label": "Workflow SDK validation treats every contextBlocks entry as a block filename (crashes on object-form)",
           "path": "packages/pi-workflows/src/workflow-sdk.ts",
-          "lines": "576"
+          "lines": "576",
+          "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
         },
         {
           "label": "pi-workflows contextBlocks type is string[] only; pi-jit-agents has (string | ContextBlockRef)[]",
-          "path": "packages/pi-jit-agents/src/types.ts"
+          "path": "packages/pi-jit-agents/src/types.ts",
+          "content_pin": "4f2d21763d4a52ff2c8e7448f727fbe2244efcd033459b563f333adaa4915436"
         },
         {
           "label": "render-id-list helpers pass IDs to resolve() and silently fall back to bare-ID text on a miss",
@@ -682,7 +753,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-07T11:56:18.852Z",
       "oid": "7ae0c774789722c30b31af55d518cb9f",
-      "content_hash": "8aeb7017a6c3c3df25a3c1b475cb5f956e8c1848d42e9e110462fdd8db5ec3a4"
+      "content_hash": "33463fbb417b99917c833a1b08cddd436498c5b7b98202a769049ee9d62e3eb2",
+      "content_parent": "8aeb7017a6c3c3df25a3c1b475cb5f956e8c1848d42e9e110462fdd8db5ec3a4"
     },
     {
       "title": "What pi-context is — the framework's generative model (organizing principles, audited)",
@@ -714,12 +786,14 @@
       "citations": [
         {
           "label": "full per-section explainer + embedded audit",
-          "path": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md"
+          "path": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md",
+          "content_pin": "92aa05577b35630c70258e3f461f533dbb7bf289fdf9228f3bbbaf0033d5642b"
         },
         {
           "label": "status bucket vocabulary + defaults",
           "path": "packages/pi-context/src/status-vocab.ts",
-          "lines": "55-116"
+          "lines": "55-116",
+          "content_pin": "8cf22573e7985d3b6f9aa991834847ce82589a3816628544847adb91c126eea6"
         },
         {
           "label": "block_kinds / relation_types / lenses registries (live counts)",
@@ -736,7 +810,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-08T11:36:09.364Z",
       "oid": "219737d47d31f299a5e212d924289359",
-      "content_hash": "521c02fb728eb395b9987f40c3c9001883960cb184b08a3792157ae29c7c1c05"
+      "content_hash": "4df54ddcc436a36f78d16357a82c09a1d16ac97bae5d2344c98daf912a4f050c",
+      "content_parent": "521c02fb728eb395b9987f40c3c9001883960cb184b08a3792157ae29c7c1c05"
     },
     {
       "title": "Best-of-breed CLI --help + UX for an agent-invoked reflecting CLI — landscape + reusable elements",
@@ -783,7 +858,8 @@
       "citations": [
         {
           "label": "full research with per-claim guideline/exemplar/synthesis tags + source list",
-          "path": "analysis/2026-06-09-cli-help-ux-research.md"
+          "path": "analysis/2026-06-09-cli-help-ux-research.md",
+          "content_pin": "d8eff82cb0aff83af2f0d68ac3bd911868b059f025d844db4455e5ece8b88b72"
         },
         {
           "label": "clig.dev Command Line Interface Guidelines",
@@ -812,8 +888,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-09T01:45:21.940Z",
       "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
-      "content_hash": "f36c5abca8ca470bcfc3c79fd21e27fa85ec88e9ccb434d2f8973720c987b84b",
-      "content_parent": "b1732c35b459bfc765ee5e5beb796c9f8b0905949a97a80dcc07588492de7598"
+      "content_hash": "f44e7d40eab8c96f7d6b899b2175cb88dec776a22fa6ae931d73b73c74c01102",
+      "content_parent": "f36c5abca8ca470bcfc3c79fd21e27fa85ec88e9ccb434d2f8973720c987b84b"
     },
     {
       "title": "pi-context update: dry-run/live outcome divergence + per-component transactional seam",
@@ -914,32 +990,38 @@
         {
           "label": "allowlist composition — union of static SKILL tools, read-only built-ins, composites",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "161-170"
+          "lines": "161-170",
+          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
         },
         {
           "label": "launch — pi --tools <csv> ...passthrough child process",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "305"
+          "lines": "305",
+          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
         },
         {
           "label": "unconditional read-only built-ins read,ls,grep,find",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "32"
+          "lines": "32",
+          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
         },
         {
           "label": "bare pi-bound verb dispatch before resolveOp",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "963-965"
+          "lines": "963-965",
+          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
         },
         {
           "label": "execution-time auth-gate — blocks gated tools when ctx.hasUI=false",
           "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
-          "lines": "148-161"
+          "lines": "148-161",
+          "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
         },
         {
           "label": "list-tools surface:process introspection op (live tool enumeration)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1034-1058"
+          "lines": "1034-1058",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -947,7 +1029,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-13T09:37:29.278Z",
       "oid": "c8dfb42f2ed93b1994758c6e470f2e72",
-      "content_hash": "7aae967c719be6687a6fff889acb3dfa026e3c282e04631f74fe8d69414c65e3"
+      "content_hash": "3a6a2122a46315dc8530cf3aae64775b1e38ef02fd9aa85c15291bc5d00424f3",
+      "content_parent": "7aae967c719be6687a6fff889acb3dfa026e3c282e04631f74fe8d69414c65e3"
     },
     {
       "id": "R-0014",
@@ -980,27 +1063,32 @@
         {
           "label": "installContext engine + the /context install slash-command handler",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1211, 3098-3149"
+          "lines": "1211, 3098-3149",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "the --autoId append throw on an unmaterialized substrate (nextId before block read)",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "2311"
+          "lines": "2311",
+          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
         },
         {
           "label": "INTENTIONALLY_UNEXPOSED_WRITERS installContext entry (removed by TASK-059)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "2172-2175"
+          "lines": "2172-2175",
+          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
         },
         {
           "label": "gap-register-guard.sh — op-name + block-name match, no --cwd inspection",
           "path": ".claude/hooks/gap-register-guard.sh",
-          "lines": "20-21"
+          "lines": "20-21",
+          "content_pin": "e20f90aecba64e883c2a786eb508e45a9b1ae5ecc45b2c53184baa0f43dd3bc7"
         },
         {
           "label": "block-pi-context-glue.sh — CLI-invocation-shape match, no --cwd inspection (the confirmed sibling)",
           "path": ".claude/hooks/block-pi-context-glue.sh",
-          "lines": "22"
+          "lines": "22",
+          "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1008,7 +1096,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-13T09:40:40.203Z",
       "oid": "105c8dad04eef47ef75ee80a77d5a86c",
-      "content_hash": "c6c4de6471c6d6bd434e7076fc7a91c99f181259ff6411b0d6076f736d4fcf95"
+      "content_hash": "8b1aa189685b7d9673ade748aa2f6c9b7beea8b4010d9f3505c032c7b7125fe9",
+      "content_parent": "c6c4de6471c6d6bd434e7076fc7a91c99f181259ff6411b0d6076f736d4fcf95"
     },
     {
       "title": "pi-context leverage audit: how fully pi-project-workflows dogfoods the tool for its own PM, and the shipped-but-unused vs blocked-on-tracked-gap leverage gaps",
@@ -1042,11 +1131,13 @@
       "citations": [
         {
           "label": "the full leverage audit (capability surface inventory, current-usage inventory, prioritized leverage gaps, the discipline-vs-tracked-gap split)",
-          "path": "analysis/2026-06-15-pi-context-leverage-audit.md"
+          "path": "analysis/2026-06-15-pi-context-leverage-audit.md",
+          "content_pin": "f7d4199b8b34db855aa63813f63aa0cab9f79aa1e0c419e3b8bde1986bbd20f1"
         },
         {
           "label": "gap-task-feature coverage + release-pinnability audit (45 open gaps, sparse coverage, 4 release-pinnable features)",
-          "path": "analysis/2026-06-14-gap-task-feature-coverage-audit.md"
+          "path": "analysis/2026-06-14-gap-task-feature-coverage-audit.md",
+          "content_pin": "0d6ad71985480a11e4c8623651331254e29a5feb6598afcbd9b8b5d50964627c"
         },
         {
           "label": "FGAP-011 — no release/version vocabulary (accepted)",
@@ -1071,7 +1162,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-14T23:36:55.610Z",
       "oid": "602ad155df54de2092304a24eab8e610",
-      "content_hash": "888989bf0a8b5b63e2e87b54c67ed6a2c7375bbe82f73297e5ded735d291c532"
+      "content_hash": "2c507b8c77a6fa27fee1857ad72135d422834272933189ec21097dc2dec51b66",
+      "content_parent": "888989bf0a8b5b63e2e87b54c67ed6a2c7375bbe82f73297e5ded735d291c532"
     },
     {
       "title": "Forensic accuracy evaluation of the Context Contracts leverage plan: core thesis sound, 5 inaccuracies (3 material — nonexistent work_order_dispatches_task, wrong decision-shows-derivation severity, unimplemented bundle->contextBlocks injection)",
@@ -1105,7 +1197,8 @@
       "citations": [
         {
           "label": "the full forensic evaluation (claim-by-claim verdict table A/B/C/D)",
-          "path": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md"
+          "path": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md",
+          "content_pin": "8e84de2ec0cb933aedff7f9cd7abab9565ba070088b0cff3bf69b5aea55df5c1"
         },
         {
           "label": "relation_types registry — work_order_dispatches_task absent",
@@ -1134,7 +1227,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-15T00:03:00.405Z",
       "oid": "f59b05a894f00fe796d321bf50d094cb",
-      "content_hash": "72953425b6a44ac29bac8d9624114121462963c2fa6378c667e4ec575fbc8dad"
+      "content_hash": "5848d6c4983afc14813aa6d0ddf2e870e96ad146639827d66e9526652abe13ec",
+      "content_parent": "72953425b6a44ac29bac8d9624114121462963c2fa6378c667e4ec575fbc8dad"
     },
     {
       "title": "Catalog↔config relation_type drift: task_gated_by_item consumed by a shipped derivation but missing from the packaged catalog — a class with no parity forcing-function",
@@ -1169,11 +1263,13 @@
       "citations": [
         {
           "label": "the full investigation (root-cause git evidence, shape, repro, prior-art table, 6-member live-only diff)",
-          "path": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md"
+          "path": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md",
+          "content_pin": "d41c51872c0c66ca24ead32e16ee97b4d77369fcbbd2c98f4c40d81553e05f17"
         },
         {
           "label": "catalog relation_types[] — task_gated_by_item absent",
-          "path": "packages/pi-context/samples/conception.json"
+          "path": "packages/pi-context/samples/conception.json",
+          "content_pin": "ebe4d94272a91f5ad05222dfd639fa1dd85fa03f23b6ede01b7003d8b4fb911d"
         },
         {
           "label": "live config relation_types[] — task_gated_by_item present (669890c), strict superset",
@@ -1181,7 +1277,8 @@
         },
         {
           "label": "registration-first write-time edge validator (unwritable on fresh substrate)",
-          "path": "packages/pi-context/src/context-sdk.ts"
+          "path": "packages/pi-context/src/context-sdk.ts",
+          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
         },
         {
           "label": "FGAP-094 — the class-level gap this audit grounds",
@@ -1198,7 +1295,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-15T22:53:06.399Z",
       "oid": "a2a807f3e45e551c0024bb9a94c43403",
-      "content_hash": "ba59422dc18598544b079845baf40bd7c40a2618100825fa88a6e124ed022d7d"
+      "content_hash": "c980b91e3c9806ce9b47b1db33e09c052869d9cc407fa735b774bf7b6b90d61d",
+      "content_parent": "ba59422dc18598544b079845baf40bd7c40a2618100825fa88a6e124ed022d7d"
     },
     {
       "title": "Phase-block dev-process control plane: forensic validation of the proposal — the phase block and the roadmap layer are distinct surfaces, and the zero-code core vs named-code-dependency split",
@@ -1231,19 +1329,23 @@
       "citations": [
         {
           "label": "the full register-compliant validated control-plane writeup (shipped-today vs gated-on-named-code)",
-          "path": "analysis/2026-06-16-phase-block-dev-process-control-plane.md"
+          "path": "analysis/2026-06-16-phase-block-dev-process-control-plane.md",
+          "content_pin": "7448326dee71158e111dfdd598f3ea5c9138796d4531be31b5726553a78ebf74"
         },
         {
           "label": "currentState reads the phase block only for the focus fallback",
-          "path": "packages/pi-context/src/context-sdk.ts"
+          "path": "packages/pi-context/src/context-sdk.ts",
+          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
         },
         {
           "label": "the roadmap layer reads roadmap.json + aggregates via lens (distinct from the phase block)",
-          "path": "packages/pi-context/src/roadmap-plan.ts"
+          "path": "packages/pi-context/src/roadmap-plan.ts",
+          "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
         },
         {
           "label": "gatherExecutionContext is context-contracts-driven",
-          "path": "packages/pi-context/src/execution-context.ts"
+          "path": "packages/pi-context/src/execution-context.ts",
+          "content_pin": "0cdb965f0f8a0a770d2ddbfe539702887fea895e8e4fe6279c590ccd9013261a"
         },
         {
           "label": "TASK-066 back-ports phase_depends_on (roadmap ordering dependency)",
@@ -1260,7 +1362,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-15T23:11:10.619Z",
       "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
-      "content_hash": "69d4b4fca3c5e1a3e7169ebd6458a867f58115db5b84f650afe4ba4527826500"
+      "content_hash": "fb8c7e1fba2d4c3c5911ec030ed4a9b0fb2d11a572f0e61595c4b8031af94c10",
+      "content_parent": "69d4b4fca3c5e1a3e7169ebd6458a867f58115db5b84f650afe4ba4527826500"
     },
     {
       "title": "Best-next-steps sequencing determination, validated to substrate truth: re-derived counts/dependencies, the FGAP-061 NOW-slice-shipped correction, and the zero-code vs gated-on-unshipped-code split",
@@ -1292,7 +1395,8 @@
       "citations": [
         {
           "label": "the full register-compliant validated sequencing determination (advisory order + DAG + zero-code/code/gated split)",
-          "path": "analysis/2026-06-16-best-next-steps-determination.md"
+          "path": "analysis/2026-06-16-best-next-steps-determination.md",
+          "content_pin": "d17b9451ffba2255991b79854287236f8b9df605d543b284f87cd520bac3f245"
         },
         {
           "label": "FEAT-007 already carries the four task_addresses_feature edges (1c premise false)",
@@ -1317,7 +1421,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-16T05:13:34.095Z",
       "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
-      "content_hash": "1f876696f3eafb70660c9e6f4c74700a7f3d66600927735698c95de945a0e2e2"
+      "content_hash": "a5a1253cf348ba4a322c82c431bb5680c9af91075b7dd9162141fd6ac37c2f48",
+      "content_parent": "1f876696f3eafb70660c9e6f4c74700a7f3d66600927735698c95de945a0e2e2"
     },
     {
       "title": "WASC operation framework — the canonical run process",
@@ -1331,11 +1436,13 @@
       "citations": [
         {
           "label": "last complete run step sequence",
-          "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md"
+          "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md",
+          "content_pin": "91bd9d8218c77418daba4e6c119d7579c19b597691c5a14ae7e08e65d5aa5099"
         },
         {
           "label": "loop run step sequence (iterate-to-zero)",
-          "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md"
+          "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md",
+          "content_pin": "b646b6b1b1ddec19e11a16e54c3c705a24e7700ba19a3b078e9aa6254d586f71"
         }
       ],
       "created_by": "orchestrator",
@@ -1344,7 +1451,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-06-26T22:45:07.333Z",
       "oid": "725476a9d3697f024c4e0a174006250d",
-      "content_hash": "bcadcd933a7ebd901e1030ba7f2e4d0086a73985acb8b0c038262488a3d026e0"
+      "content_hash": "62a993f86d6733dbe7c5037281bf9ac037b0f9ffeebf467201f95350130b48b5",
+      "content_parent": "bcadcd933a7ebd901e1030ba7f2e4d0086a73985acb8b0c038262488a3d026e0"
     },
     {
       "title": "WASC out-of-scope STOP — firing rate across the record",
@@ -1441,22 +1549,26 @@
       "citations": [
         {
           "label": "two-cell reproduction outputs (dry/live per cell)",
-          "path": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md"
+          "path": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md",
+          "content_pin": "bca74f7df896119e6aee78c6a3cc1d4fe832c95f7794e7d5840674eec0d0c86e"
         },
         {
           "label": "version-bump catch: all throws -> blocked/validation-failed",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1242-1270"
+          "lines": "1242-1270",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "resolveBlocked commit sequence outside the validation try",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "2652-2688"
+          "lines": "2652-2688",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "substrateIdForDir loud guard (no lazy mint on write)",
           "path": "packages/pi-context/src/context-dir.ts",
-          "lines": "486-491"
+          "lines": "486-491",
+          "content_pin": "0088d1013ec7466540271ebd0cd06d9cf9aa9a9dd42ce2fb474fa311f2ee4483"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1465,8 +1577,8 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-07-05T02:17:06.784Z",
       "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
-      "content_hash": "2bbded9cafd32f6d29d7443fbd1878efa9bb2bb107539498c095501f78574e44",
-      "content_parent": "0a5a5c912b711279695a631d031d0671450d54246297cdee7517f0397b408634"
+      "content_hash": "9136e12e00a21e3cdd0de1c0430cb9dad75a77b57635acc4127ec416f41ac354",
+      "content_parent": "2bbded9cafd32f6d29d7443fbd1878efa9bb2bb107539498c095501f78574e44"
     },
     {
       "title": "Foreign-status derivation blindness — mechanism, per-surface class inventory, and resolution shapes for cross-substrate consumption",
@@ -1495,26 +1607,31 @@
         {
           "label": "gate filters + derivedRollupComplete + status-consistency skip + edge-integrity resolveRef loop + joinBlocks",
           "path": "packages/pi-context/src/context-sdk.ts",
-          "lines": "889-892, 758-759, 2352-2353, 2513-2557, 1253"
+          "lines": "889-892, 758-759, 2352-2353, 2513-2557, 1253",
+          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
         },
         {
           "label": "normalizeEndpoint bare-refname foreign keying + walks",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "405-413, 1586-1638"
+          "lines": "405-413, 1586-1638",
+          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
         },
         {
           "label": "reconcile/converge stamping via the shared completeness helper",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "2704, 2760"
+          "lines": "2704, 2760",
+          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
         },
         {
           "label": "roadmap rollup member lookups",
           "path": "packages/pi-context/src/roadmap-plan.ts",
-          "lines": "340, 345"
+          "lines": "340, 345",
+          "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
         },
         {
           "label": "findings document: reproduction transcripts, class inventory, prior-art sweep, resolution shapes",
-          "path": "analysis/2026-07-06-foreign-status-derivation-blindness.md"
+          "path": "analysis/2026-07-06-foreign-status-derivation-blindness.md",
+          "content_pin": "437fb07276fe94bada551a8f7d3cf63953e9ab8e1d0c34c1334108a32da7bdfe"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1523,7 +1640,102 @@
       "modified_by": "human/davidryan@gmail.com",
       "modified_at": "2026-07-06T01:39:15.801Z",
       "oid": "afc95bbdfee7a8fa15bf9540a711edf8",
-      "content_hash": "4e00c682a6c76d365d26813ab70ccc77b6a8cc7761fe50490dc5716371708598"
+      "content_hash": "edd2a60fbb901f6f8b5d0b62c1000de6d80d1cf3827a35bb5ca4b86130fe32bc",
+      "content_parent": "4e00c682a6c76d365d26813ab70ccc77b6a8cc7761fe50490dc5716371708598"
+    },
+    {
+      "title": "Harness exemplars characterized — WASC's deterministic prompt pipeline and SYNTH's failure-derived deny surface, with the portable pattern set",
+      "status": "complete",
+      "layer": "L1",
+      "type": "comparative",
+      "question": "What enforcement mechanisms made the WASC and MUSE/SYNTH harnesses predictable and non-bypassable, what does each exemplar's model consist of, and which mechanisms are portable patterns for a process harness in this project?",
+      "method": "Read-only characterization of both exemplar projects (hooks, renderers, gate scripts, ledgers, mandates, state files, templates — load-bearing lines quoted verbatim), per-exemplar analysis of shape / enforcement points / bypass surface / operator experience, and a comparison treating the variant's delta as design intent.",
+      "findings_summary": "Both exemplars share one architecture: an LLM orchestrator whose canonical process lives in committed text/code, whose subagent inputs are built by deterministic renderers with mandates inlined (subagents do not receive the UserPromptSubmit injection), whose commits are gated by the full test suite running INSIDE a PreToolUse hook, whose progress lives in append-only ledgers plus derived synthesis, and whose completion claims are verified by a separate adversarial agent and exit codes, with the human as scope authority. WASC (the first model): the phase is the enforced unit; a judgment-free renderer ('cat + sed. No judgment. No LLM.') compiles phase MDs + inlined mandates into IMPL/AUDIT contracts; AUDIT ends with a literally-parsed 'Total findings: N' line and GO/NO-GO is computed, not judged; only the commit is hard-gated — sequencing is codified but obeyed. SYNTH (the variant): enforcement moved upstream to five tool boundaries — plan entry gated on an advance-only-on-clean spec-audit watermark, dispatch serialized one-unit-per-prompt by renderer contract, ledger writes triple-shielded, and implementation commits BLOCKED-BY-DEFAULT without a user-opened, git-ancestry-anchored, expiring authorization grant; every guard traces to a mined failure ID with historical counts; every hook declares its fail-open (absent infrastructure) / fail-closed (gated condition) split; where prevention is impossible (hooks cannot prove authorship) the design pairs the bypass with forensic detection (a state-currency auditor cross-checking claude-history) and user-only self-expiring overrides; the harness regression-tests its own necessity. The variant's delta = the design intent: procedure-as-refusal over procedure-as-prose, authorization as a first-class mechanical object, rules justified by mined incident data, honest threat modeling with detection where prevention fails, and a self-auditing harness.",
+      "findings_document": "analysis/2026-07-06-harness-exemplars-wasc-synth.md",
+      "grounding": {
+        "revisions": [
+          "wasc-school-wide-improvement-plan @ 2026-07-06 (read-only)",
+          "MUSE/SYNTH @ 2026-07-06 (read-only)"
+        ]
+      },
+      "stale_conditions": [
+        "Either exemplar's harness mechanisms change materially after 2026-07-06",
+        "FEAT-013 reaches implementation (the design decisions supersede the exemplar survey as the operative reference)"
+      ],
+      "citations": [
+        {
+          "label": "WASC renderer, templates, hooks, checklist, state spine",
+          "path": "../wasc-school-wide-improvement-plan"
+        },
+        {
+          "label": "SYNTH hooks, gate/grant/spec-gate scripts, mandates, templates, ledgers",
+          "path": "../MUSE/SYNTH"
+        },
+        {
+          "label": "findings document with verbatim quoted anchors",
+          "path": "analysis/2026-07-06-harness-exemplars-wasc-synth.md",
+          "content_pin": "0f4f2feb429c57a57667868988691c6cbc23e4e660f43725022a9ef68f8f3f72"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "R-0027",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-06T14:04:31.553Z",
+      "oid": "9e6cd15f8176b0ea9160737217f09e9a",
+      "content_hash": "2e861a7fd17969775636bd65d5fcf587fd5135238626c16c444258fa8a4d4a47"
+    },
+    {
+      "title": "Harness requirements for this project — the canonical process as a state machine, the enforcement-surface audit, and the twenty-requirement set",
+      "status": "complete",
+      "layer": "L1",
+      "type": "audit",
+      "question": "What canonical process must a non-bypassable harness encode for this project, which steps are already mechanically enforced versus honor-system, which observed failure modes must it foreclose at which Claude Code enforcement points, and what requirement set follows?",
+      "method": "Corpus derivation: CLAUDE.md (pipeline 0-7, Completion Sequence 1-13, Experience-Gap Handling, dispatch fit), all 14 enforced conventions read in full via the CLI, the 9 injected mandates and their UserPromptSubmit delivery, the 15-file memory feedback corpus, the 3 live repo hooks + registrations, husky's 5 commit gates, the substrate's 13 invariants and op surface; per-state classification MECHANICAL/PARTIAL/HONOR; failure modes mapped to observable signals and hook points.",
+      "findings_summary": "The canonical process distills to a single-track per-task state machine — SURFACED → INVESTIGATED → FILED(provenance) → GATE-VALIDATED → EXPLORED → PLANNED → BASELINED → IMPLEMENTED(subagent) → GATED → DEMOED → PROBED → findings-loop(class-scoped) → DOCS-SYNCED → MERGED → CLOSED → HELD(RELEASED → PUBLISHED) — with exactly three legitimate exits to the user: provenance grants, honestly-underdetermined scope/value escalations, HELD actions. Current mechanical enforcement concentrates at exactly two chokepoints: the substrate op write path (AJV + write-time invariant gate + complete-task atom + attestation) and the husky commit boundary (5 gates) — plus three PreToolUse guards. Honor-system holes: direct Edit/Write on substrate JSON (a parallel ungated path making the op gates bypassable), the ENTIRE verify layer (runtime demo, adversarial probe, iterate-to-zero, subagent-claim verification), plan-mode/subagent-primary implementation discipline, the release hold (nothing blocks npm run release:*), the turn-boundary ask gate (no Stop hook exists anywhere — the observed chaos driver is invisible to every mechanism), and the wiring itself (hook registrations live in untracked settings.local.json; the project mandates.jsonl slot is empty). Failure modes with observable signals: turn-boundary relitigation (Stop hook), skipped pipeline steps (PreToolUse Edit/Write + phase state), self-adjudicated experience gaps (filing-payload investigation citation), deferred findings (findings ledger at merge/close), unverified subagent relays (PostToolUse Agent + turn-end sequence shape), scope reduction (lexical nudge). Twenty requirements: R1-R10 enforceable today as new hook scripts over proven in-repo patterns (substrate-edit block; --no-verify/destructive-git, pipe-masking, and release-hold chokepoints; same-turn sentinel fix; filing-completeness checks; project mandates file; subagent-relay nudge); R11-R17 need one new state layer — phase-state file, Stop-hook ask/convergence gates, findings ledger, session driver — so hooks check 'is this action legal in this state'; R18-R20 cover the milestone gate, status cascade, and tracking the wiring. Design principles: lazy-cooperative threat model, no parallel ungated paths, preserve the three stops, deterministic predicates block while lexical heuristics nudge, filing-pipeline-first before new hooks.",
+      "findings_document": "analysis/2026-07-06-harness-requirements.md",
+      "grounding": {
+        "revisions": [
+          "workflowsPiExtension main @ be3ff25e (2026-07-06)"
+        ]
+      },
+      "stale_conditions": [
+        {
+          "kind": "item-status",
+          "item": "FEAT-013",
+          "bucket": "complete"
+        },
+        "Any hook added to or removed from .claude/hooks/ or its registrations",
+        "The conventions block or injected mandates change materially"
+      ],
+      "citations": [
+        {
+          "label": "canonical pipeline + completion sequence + gap handling",
+          "path": "CLAUDE.md",
+          "content_pin": "3cbdd7a491e76884b6a22687309444a1bcf3dce43f980f175cccede0326fa3a8"
+        },
+        {
+          "label": "the three live repo hooks",
+          "path": ".claude/hooks"
+        },
+        {
+          "label": "husky commit gates",
+          "path": ".husky/pre-commit",
+          "content_pin": "39dea4d0f43810d4a11a2f0561b81a9a761046c3340788e0fc736c230c4bd1a1"
+        },
+        {
+          "label": "findings document: state machine, enforcement classification table, failure-mode signal map, R1-R20",
+          "path": "analysis/2026-07-06-harness-requirements.md",
+          "content_pin": "58cd85af0f3f8d053edef3f4e9fa12d875822355c00e263527eea40f096678f0"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "R-0028",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-06T14:05:14.915Z",
+      "oid": "861067089e8da02e57f164ca594c5e97",
+      "content_hash": "b40ee6d92cc4c01f1891edcd87ea8bee579be58137b926afa4b8b6f926d59245"
     }
   ],
   "schema_version": "1.0.1"

@@ -1,0 +1,50 @@
+{
+  "title": "issue-003 re-drive: pre-identity stamping throw is the update refusal's root cause; the blocked pipeline misattributes it as item-validation failure",
+  "status": "stale",
+  "layer": "L4",
+  "type": "empirical",
+  "question": "Why did update refuse a conventions 1.0.0->1.0.1 forward-migration whose items satisfy the target schema by inspection, with dry-run predicting resynced while the live run refused (issue-003's filed residual: re-drive the reproduction with the shipped blockedDetail diagnostic and fix or retire on the evidence)?",
+  "method": "empirical-test + code-inspection: two-cell scratch-substrate reproduction (conventions schema installed at 1.0.0 against the 1.0.1 catalog, 45 rules valid against 1.0.1 by construction, install baseline recorded) differing in exactly one variable — presence of config.substrate_id — driven through the real built updateContext dry + live per cell; follow-through resolveBlocked run on the blocked cell's post-block state; corroborating read of resyncSchema's catch and resolveBlocked's commit sequence.",
+  "scope": [
+    "workflowsPiExtension main at f7d6f819 (pi-context 0.31.0 working tree)",
+    "scratchpad/issue003-redrive.ts fixture (deterministic, re-runnable)"
+  ],
+  "findings_summary": "The refusal is infrastructure, not validation. Cell A (no substrate_id): dry-run predicts migrated; the live run returns blocked with reason validation-failed whose synthetic failure (keyword 'error') carries the real message — substrateIdForDir: config.json has no valid substrate_id — thrown by writeBlockForDir's mandatory identity stamping inside resyncSchema's catch. Cell B (identical fixture with a substrate_id): live migrates cleanly. Single-variable isolation confirms issue-003's root cause is the pre-identity resync limitation already filed as FGAP-033 (DEC-0012's named deferred consequence); the conventions items were never invalid, and no validation defect exists. Dry-run diverges because simulateResyncOutcome models migration + AJV re-validation in memory only and never exercises write preconditions. The re-drive also surfaced an untracked class, filed as FGAP-115 (refusal-cause conflation): the catch classifies EVERY throw as validation-failed, so blockedDetail directs the operator to fix valid items; git-style failure markers are inscribed into the fully-valid block file with a pending-blocked record persisted; the routed remedy resolve-blocked re-validates (passes) then throws uncaught mid-commit on the same stamping precondition, leaving partial state (schema advanced to 1.0.1, markers stripped, block unwritten, pending entry stale) — a violation of the per-component byte-exact refusal discipline; and the closed FGAP-066 dry-predicts-precisely guarantee is silently violated for this class. Disposition enacted: issue-003 resolved with this evidence; FGAP-033 related as the mechanism; FGAP-115 filed for the conflation class; the pre-identity design question is resolved by derivation from project precedent (ceremonies heal lagging substrates — config-version seeding, envelope convergence, registry propagation — and ceremonies already mint substrate_id at init/accept-all) toward ceremony-entry identity establishment, to be enacted per DEC-0012's requirement of a dedicated DEC.",
+  "findings_document": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md",
+  "grounding": {
+    "revisions": [
+      "f7d6f819789fef1465138b5a0ee10514ca379b5f"
+    ]
+  },
+  "grounded_at": "2026-07-05",
+  "stale_conditions": [
+    "resyncSchema's version-bump catch (index.ts:1242-1270) gains refusal-cause classification (FGAP-115's resolution) — the misattribution findings describe superseded behavior",
+    "a ceremony-entry identity-establishment decision lands (FGAP-033 resolution) — pre-identity substrates no longer reach the stamping throw via update",
+    "resolveBlocked's commit sequence gains all-or-nothing discipline — the partial-commit finding describes superseded behavior"
+  ],
+  "citations": [
+    {
+      "label": "two-cell reproduction outputs (dry/live per cell)",
+      "path": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md",
+      "content_pin": "bca74f7df896119e6aee78c6a3cc1d4fe832c95f7794e7d5840674eec0d0c86e"
+    },
+    {
+      "label": "version-bump catch: all throws -> blocked/validation-failed",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "1242-1270",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "label": "resolveBlocked commit sequence outside the validation try",
+      "path": "packages/pi-context/src/index.ts",
+      "lines": "2652-2688",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "label": "substrateIdForDir loud guard (no lazy mint on write)",
+      "path": "packages/pi-context/src/context-dir.ts",
+      "lines": "486-491",
+      "content_pin": "0088d1013ec7466540271ebd0cd06d9cf9aa9a9dd42ce2fb474fa311f2ee4483"
+    }
+  ]
+}

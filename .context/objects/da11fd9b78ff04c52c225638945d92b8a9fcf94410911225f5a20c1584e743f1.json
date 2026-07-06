@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-06",
+  "evidence": "Delta-scoped write-time invariant gate verified on merged main. Gates: build / skills / check / full bounded test suite exit 0 — notably, the gate went live across every op-calling test in the suite with ZERO regressions, which is the delta scope proving itself against pre-existing fixture states. Four cells green: error-introduction refused with EVERY top-level substrate *.json byte-restored; a pre-existing violation on a legacy-shaped substrate never blocks an unrelated write; warning-introduction succeeds with the warning surfaced on the result and the write landed; and the shared-helper pin (the gate's classification deepEqual to validateContext's for the same state — the identical-verdict guarantee enforced by test). Runtime demonstration on the LIVE substrate (tsx against built dist): update-block-item attempting TASK-021 -> completed with no verification edge was REFUSED naming completed-task-has-verification and tasks.json read back byte-identical — the canonical verification-before-completion discipline enforced by the engine at the causal write.",
+  "criteria_results": [
+    {
+      "criterion": "Completing a task that addresses a non-complete feature surfaces the warning ON THE WRITE'S RESULT; an error-severity introduction refuses the write with the file byte-unchanged",
+      "status": "passed",
+      "evidence": "warning cell (write-warning line on the success string, write landed) + error cell (refusal message names the violation, all files byte-restored) + the live-substrate refusal demo"
+    },
+    {
+      "criterion": "Delta-scoping proven: pre-existing instances never warn or block; only newly-introduced violations act",
+      "status": "passed",
+      "evidence": "the pre-existing cell (out-of-band violation, unrelated write proceeds clean) and the full suite passing unmodified with the gate live across every fixture"
+    },
+    {
+      "criterion": "Write-side and validateContext verdicts produced by shared helpers with a divergence test pinning identical classification",
+      "status": "passed",
+      "evidence": "the three invariant-class loops extracted into evaluateConfigInvariants consumed by BOTH validateContext and the gate; the shared-helper pin cell deepEquals the two classifications"
+    },
+    {
+      "criterion": "Full suite 0 failures; op-surface docs state the severity semantics; CHANGELOG entry",
+      "status": "passed",
+      "evidence": "suite exit 0 bounded; the eleven wrapped op descriptions carry the pipeline semantics via the same module-init pass (SKILL regenerated); package README write-pipeline sentence; CHANGELOG [Unreleased] bullet"
+    }
+  ]
+}

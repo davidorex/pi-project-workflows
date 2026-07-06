@@ -1,0 +1,11 @@
+{
+  "title": "Source-edit gate: branch / plan-stamp / delegation checks + investigation-read nudge (FEAT-013 pillar 1, state-consulting)",
+  "description": "PreToolUse(Edit|Write) hook over packages/** (test-fixture dirs a plan names excepted): block on the integration branch (git rev-parse --abbrev-ref HEAD) or without a plan-approval stamp this session; block orchestrator source edits while the phase state says implementation is delegated to a coding subagent (subagent sessions carry their own hook context, so the block scopes to the orchestrator); user-sentinel escape for genuinely plan-exempt / user-directed-direct edits (mandate-005 carve-out). PreToolUse(Grep|Read) nudge on orchestrator investigation-reads over packages/** outside the post-Agent-return claim-verification window (feedback_process_pipeline: all investigation via explore agents). Depends on the phase-state layer. FEAT-013 R5, R15, R16.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A packages/** source edit on the integration branch (main) or without a plan-approval stamp this session is blocked; a feature-branch edit with an approved plan passes.",
+    "An orchestrator source edit while the TASK-096 phase-state `delegation` field marks implementation delegated to a coding subagent is blocked (subagent sessions carry their own hook context, so the block scopes to the orchestrator); the mandate-005 user-sentinel escape passes and SETS the guard-fired marker.",
+    "An orchestrator Grep/Read burst over packages/** outside the post-Agent-return claim-verification window draws a nudge; a read inside the window passes.",
+    "Regression cells for each guard path."
+  ]
+}

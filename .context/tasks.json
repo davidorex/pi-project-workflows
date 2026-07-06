@@ -1965,27 +1965,31 @@
         "git --no-verify and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
         "npm test|run check|run build piped or tailed is blocked; the bare command passes; a set -o pipefail form is permitted.",
         "npm run release:*, npm publish, and non-authorized git push are blocked without a user-minted grant object; a covered grant passes.",
-        "Regression cells for each true-positive block and each legitimate pass."
+        "On a sentinel-required refusal this guard SETS the guard-fired marker (the TASK-096 phase-state datum); TASK-098's Stop hook clears it at turn boundary, so a same-turn sentinel-bearing re-issue is blocked.",
+        "Regression cells for each true-positive block, each legitimate pass, and the marker set-on-refusal."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "740f1f000da1d48d8e6c26376cba856d",
-      "content_hash": "11b6deab0b5bdcb4815de53ae35afbbe17a22b5725bff79cc90f447dfc70a524"
+      "content_hash": "52874f6147188937a0420af55df9cc817ff556c22419a8902ef2309010b12690",
+      "content_parent": "11b6deab0b5bdcb4815de53ae35afbbe17a22b5725bff79cc90f447dfc70a524"
     },
     {
       "id": "TASK-096",
       "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
-      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), branch, planStamp, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status), never from narrative (derive-don't-cache). Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status) for the coarse pipeline POSITION only (task status, verification edges, branch); the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are NOT substrate-native (R-0028 R14 defers substrate-native evidence) and persist in the phase-state file itself across sessions, so TASK-099's closure gates read a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The guard-fired marker is a phase-state datum written by the sentinel-bearing guards (TASK-095 git/release, TASK-097 source-edit, and the existing gap-register-guard provenance surface) and cleared by TASK-098's Stop hook at turn boundary. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
       "status": "planned",
       "acceptance_criteria": [
-        "A SessionStart hook seeds/reconciles the phase-state file from substrate truth (context-status), not from any narrative cache.",
+        "A SessionStart hook seeds/reconciles the phase-state file: the coarse pipeline position (state, branch, task status) from substrate truth (context-status), never from any narrative cache.",
+        "The session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) persist in the phase-state file across sessions — they are not substrate-native, and a mid-pipeline session restart preserves them so TASK-099's closure gates keep a stable source.",
         "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
-        "The state file is machine-readable and queryable cheaply by downstream hooks; a fresh session reconstructs the true state from substrate truth alone."
+        "The state file is machine-readable and queryable cheaply by the downstream deny hooks."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "abcd0a0706eac0b2aa45487f85e27dee",
-      "content_hash": "3385f4490522d688f525c01b6c88ac34f432a3696e2a82130e018e94ee13a1b1"
+      "content_hash": "70cc1cd8cb8a69e915ee6176caa517442fd1d90ba6d21043156331e132fbcfcf",
+      "content_parent": "3385f4490522d688f525c01b6c88ac34f432a3696e2a82130e018e94ee13a1b1"
     },
     {
       "id": "TASK-097",
@@ -1993,15 +1997,16 @@
       "description": "PreToolUse(Edit|Write) hook over packages/** (test-fixture dirs a plan names excepted): block on the integration branch (git rev-parse --abbrev-ref HEAD) or without a plan-approval stamp this session; block orchestrator source edits while the phase state says implementation is delegated to a coding subagent (subagent sessions carry their own hook context, so the block scopes to the orchestrator); user-sentinel escape for genuinely plan-exempt / user-directed-direct edits (mandate-005 carve-out). PreToolUse(Grep|Read) nudge on orchestrator investigation-reads over packages/** outside the post-Agent-return claim-verification window (feedback_process_pipeline: all investigation via explore agents). Depends on the phase-state layer. FEAT-013 R5, R15, R16.",
       "status": "planned",
       "acceptance_criteria": [
-        "A packages/** source edit on the integration branch or without a plan-approval stamp is blocked; a feature-branch edit with an approved plan passes.",
-        "An orchestrator-session source edit while state = implementation-delegated is blocked; the user-sentinel escape passes.",
-        "An orchestrator Grep/Read burst over packages/** outside the claim-verification window draws a nudge; a read inside the post-Agent-return window passes.",
+        "A packages/** source edit on the integration branch (main) or without a plan-approval stamp this session is blocked; a feature-branch edit with an approved plan passes.",
+        "An orchestrator source edit while the TASK-096 phase-state `delegation` field marks implementation delegated to a coding subagent is blocked (subagent sessions carry their own hook context, so the block scopes to the orchestrator); the mandate-005 user-sentinel escape passes and SETS the guard-fired marker.",
+        "An orchestrator Grep/Read burst over packages/** outside the post-Agent-return claim-verification window draws a nudge; a read inside the window passes.",
         "Regression cells for each guard path."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "8771d45500a0b0838ed42489a28629dd",
-      "content_hash": "bb6e23ed7c1dd03d0c1581e6a8545751a5e10db8526004abc590e15282390b12"
+      "content_hash": "be39fd1cfcbcac9d285920e0af4170481d93c19742443ebc6237df044b99cc77",
+      "content_parent": "bb6e23ed7c1dd03d0c1581e6a8545751a5e10db8526004abc590e15282390b12"
     },
     {
       "id": "TASK-098",
@@ -2011,13 +2016,14 @@
       "acceptance_criteria": [
         "A turn ending on an ask that fails the three-stops filter is blocked with stderr naming the governing rule; the work proceeds instead.",
         "Each of the three legitimate stops passes the gate (a pending provenance table, an underdetermined-escalation ask, a HELD-action authorization ask).",
-        "The Stop hook clears the guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue before the boundary is blocked (with TASK-095's Bash guard reading the marker).",
-        "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle."
+        "The Stop hook clears the TASK-096 guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue on ANY sentinel surface (gap-register-guard provenance, TASK-095 git/release, TASK-097 source-edit) is blocked before the boundary.",
+        "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle across the sentinel surfaces."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "19444dbb7d56d6f9cbe2a67d51b3fe5f",
-      "content_hash": "fe075096b71d7cfc0f4e77fd5cc4991e638dbbc33de6913e600f669671c299ed"
+      "content_hash": "a73cbed8a5a4f7fc6dfa8b4e1901a395dc6f9b640a1958f7d71c7f1f6f636c68",
+      "content_parent": "fe075096b71d7cfc0f4e77fd5cc4991e638dbbc33de6913e600f669671c299ed"
     },
     {
       "id": "TASK-099",
@@ -2027,13 +2033,14 @@
       "acceptance_criteria": [
         "git merge into the integration branch and complete-task are blocked while the findings ledger holds open entries; a user-recorded deprioritization or a fix-commit + re-audit entry closes them.",
         "complete-task is blocked without recorded demoEvidence and a fresh-context probeVerdict on the phase-state; both present lets it proceed.",
-        "A milestone-member task entering PLANNED without a milestone-gate record is blocked once the record type exists.",
+        "One per-milestone gate record is built and checked whenever any member task enters PLANNED; a milestone whose first member enters PLANNED without the record is blocked.",
         "Regression cells for each gate."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "ff43a54db9e8de4bcb826d43fe736f07",
-      "content_hash": "a237277a97dbf0d82b169918bf5e086ba93ce71571f7ae088680ea5111850a47"
+      "content_hash": "3399f72e8e7997155993deeae6dbca3d691b06411811fc07c5f7b224e9c3c441",
+      "content_parent": "a237277a97dbf0d82b169918bf5e086ba93ce71571f7ae088680ea5111850a47"
     },
     {
       "id": "TASK-100",
@@ -2059,12 +2066,13 @@
       "acceptance_criteria": [
         "The driver walks a sample work unit SURFACED..CLOSED, prompting each state's required action and dispatching the state-appropriate agent kind.",
         "The driver mints phase-state transitions and runs the npm gates itself; an out-of-order action is refused.",
-        "Running the driver is demonstrably the lowest-friction path through the pipeline (compliance by construction, not by recall)."
+        "The driver performs each state's required dispatch and gate without the operator issuing the underlying commands manually (compliance by construction, observed on the sample walk)."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "b3246d7a7b695f028f448b55c57956c4",
-      "content_hash": "079dcd1163258e13a1a21933216cb97ab591d921b2334dda7e9164fb22cd6bec"
+      "content_hash": "5fd1cf2b2a74f5faa02fac35912de91228187f67b668bf86bfc98a1509c8d0d3",
+      "content_parent": "079dcd1163258e13a1a21933216cb97ab591d921b2334dda7e9164fb22cd6bec"
     }
   ],
   "schema_version": "1.0.1"

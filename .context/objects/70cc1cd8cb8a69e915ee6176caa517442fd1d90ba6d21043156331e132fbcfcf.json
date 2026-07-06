@@ -1,0 +1,11 @@
+{
+  "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
+  "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status) for the coarse pipeline POSITION only (task status, verification edges, branch); the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are NOT substrate-native (R-0028 R14 defers substrate-native evidence) and persist in the phase-state file itself across sessions, so TASK-099's closure gates read a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The guard-fired marker is a phase-state datum written by the sentinel-bearing guards (TASK-095 git/release, TASK-097 source-edit, and the existing gap-register-guard provenance surface) and cleared by TASK-098's Stop hook at turn boundary. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A SessionStart hook seeds/reconciles the phase-state file: the coarse pipeline position (state, branch, task status) from substrate truth (context-status), never from any narrative cache.",
+    "The session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) persist in the phase-state file across sessions — they are not substrate-native, and a mid-pipeline session restart preserves them so TASK-099's closure gates keep a stable source.",
+    "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
+    "The state file is machine-readable and queryable cheaply by the downstream deny hooks."
+  ]
+}

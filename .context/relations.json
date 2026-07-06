@@ -9915,5 +9915,18 @@
       "refname": "correctness-over-cost"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "19444dbb7d56d6f9cbe2a67d51b3fe5f",
+      "refname": "TASK-098"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "740f1f000da1d48d8e6c26376cba856d",
+      "refname": "TASK-095"
+    },
+    "relation_type": "task_depends_on_task"
   }
 ]

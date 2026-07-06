@@ -8,7 +8,7 @@ import { readBlock, writeBlockForDir } from "./block-api.js";
 import { computeContentHash } from "./content-hash.js";
 import { loadConfig, loadRelations } from "./context.js";
 import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.js";
-import { buildIdIndex, evaluateConfigInvariants, validateContext } from "./context-sdk.js";
+import { buildIdIndex, endpointKey, evaluateConfigInvariants, validateContext } from "./context-sdk.js";
 import {
 	checkStatus,
 	installContext,
@@ -3630,6 +3630,192 @@ describe("write-time invariant gate (delta-scoped)", () => {
 		assert.ok(
 			fs.readFileSync(path.join(substrateDir, "gaps.json")).equals(gapsBefore),
 			"the replacement must not persist (all-or-nothing restore)",
+		);
+	});
+
+	// ── birth-relations role-typed orientation form (FGAP-121 / TASK-092) ──────
+	// The birth entry affords BOTH orientation vocabularies the standalone
+	// porcelain affords: direction (raw) and role (primary/counter, mapped via
+	// role_direction in orientAppendInput — the single guard source). A
+	// role-bearing relation with undeclared/overlapping endpoint kinds is
+	// orientation-AMBIGUOUS: the raw form is rejected with a re-issue error that
+	// the role form makes followable in-shape.
+
+	/** decisions block + an ERROR derivation invariant demanding a role-typed ambiguous edge. */
+	function makeRoleSubstrate(): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-role-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				substrate_id: "sub-00000000000000ac",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					// role-bearing + undeclared endpoint kinds → orientation-ambiguous
+					// (relationKindsOverlap treats an undeclared kind set as universal).
+					{
+						canonical_id: "decision_derived_from_item",
+						display_name: "derived from",
+						category: "data_flow",
+						role_direction: "as_child",
+					},
+					// role-less → the bare direction form is its only and correct form.
+					{ canonical_id: "decision_addresses_gap", display_name: "addresses gap", category: "data_flow" },
+				],
+				invariants: [
+					{
+						id: "decision-shows-derivation",
+						class: "requires-edge",
+						block: "decisions",
+						relation_types: ["decision_derived_from_item"],
+						direction: "as_parent",
+						severity: "error",
+						message: "Decision '{id}' shows no derivation basis",
+					},
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-X", description: "derivation source", status: "completed" }] }),
+		);
+		fs.writeFileSync(path.join(dir, ".project", "decisions.json"), JSON.stringify({ decisions: [] }));
+		fs.writeFileSync(path.join(dir, ".project", "relations.json"), JSON.stringify([]));
+		return dir;
+	}
+
+	it("role-form birth entry files an orientation-ambiguous role-typed edge atomically — threading an ERROR derivation invariant no other filing path can satisfy", () => {
+		tmpRoot = makeRoleSubstrate();
+		// Bare filing: gate-refused (the error invariant demands the edge at birth).
+		assert.throws(
+			() =>
+				op("append-block-item").run(tmpRoot, {
+					block: "decisions",
+					arrayKey: "decisions",
+					item: { id: "DEC-1", title: "underived decision", status: "proposed" },
+				}),
+			/refused.*shows no derivation basis/i,
+			"the bare filing must be gate-refused (deadlock demo, path 1)",
+		);
+		// Raw-direction birth entry: orientation-refused (deadlock demo, path 2).
+		assert.throws(
+			() =>
+				op("append-block-item").run(tmpRoot, {
+					block: "decisions",
+					arrayKey: "decisions",
+					item: { id: "DEC-1", title: "raw-oriented decision", status: "proposed" },
+					relations: [{ relation_type: "decision_derived_from_item", direction: "as_parent", other: "TASK-X" }],
+				}),
+			/orientation-ambiguous.*--primary\/--counter/is,
+			"the raw form must keep the porcelain's re-issue refusal",
+		);
+		// Role-form birth entry: the atom passes — the new decision holds the
+		// COUNTER role (role_direction as_child puts the primary/derivation
+		// source at edge.child), so parent=DEC-1, child=TASK-X.
+		const result = op("append-block-item").run(tmpRoot, {
+			block: "decisions",
+			arrayKey: "decisions",
+			item: { id: "DEC-1", title: "derived decision", status: "proposed" },
+			relations: [{ relation_type: "decision_derived_from_item", role: "counter", other: "TASK-X" }],
+		});
+		assert.ok(String(result).includes("1 birth relation"), "the role-form atomic filing must pass the gate");
+		const rels = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "relations.json"), "utf-8")) as Array<{
+			parent: unknown;
+			child: unknown;
+			relation_type: string;
+		}>;
+		assert.equal(rels.length, 1, "exactly the one birth edge landed");
+		assert.equal(endpointKey(rels[0].parent as never), "DEC-1", "decision (counter role) stored at edge.parent");
+		assert.equal(
+			endpointKey(rels[0].child as never),
+			"TASK-X",
+			"derivation source (primary role) stored at edge.child",
+		);
+	});
+
+	it("role form on a role-less relation keeps the porcelain's no-role_direction refusal, byte-restored", () => {
+		tmpRoot = makeRoleSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = new Map<string, Buffer>();
+		for (const name of fs.readdirSync(substrateDir)) {
+			if (name.endsWith(".json")) before.set(name, fs.readFileSync(path.join(substrateDir, name)));
+		}
+		assert.throws(
+			() =>
+				op("append-block-item").run(tmpRoot, {
+					block: "tasks",
+					arrayKey: "tasks",
+					item: { id: "TASK-Y", description: "new task", status: "planned" },
+					relations: [{ relation_type: "decision_addresses_gap", role: "primary", other: "TASK-X" }],
+				}),
+			/declares no role_direction/,
+			"a role entry on a role-less relation must keep the existing refusal",
+		);
+		for (const [name, bytes] of before) {
+			assert.ok(
+				fs.readFileSync(path.join(substrateDir, name)).equals(bytes),
+				`${name} must be byte-restored after the mid-composite refusal`,
+			);
+		}
+	});
+
+	it("an entry carrying both or neither of direction/role is refused at coercion, before any write", () => {
+		tmpRoot = makeRoleSubstrate();
+		const decisionsBefore = fs.readFileSync(path.join(tmpRoot, ".project", "decisions.json"));
+		for (const badEntry of [
+			{ relation_type: "decision_derived_from_item", direction: "as_parent", role: "counter", other: "TASK-X" },
+			{ relation_type: "decision_derived_from_item", other: "TASK-X" },
+		]) {
+			assert.throws(
+				() =>
+					op("append-block-item").run(tmpRoot, {
+						block: "decisions",
+						arrayKey: "decisions",
+						item: { id: "DEC-2", title: "bad entry", status: "proposed" },
+						relations: [badEntry],
+					}),
+				/EXACTLY ONE of direction/,
+				"the mutual exclusion must refuse at coercion",
+			);
+		}
+		assert.ok(
+			fs.readFileSync(path.join(tmpRoot, ".project", "decisions.json")).equals(decisionsBefore),
+			"coercion refusal precedes the item write — nothing landed",
+		);
+	});
+
+	it("upsert --dryRun runs the orientation guard over birth entries (preview refuses what the live run refuses; valid role entry previews as would-file)", () => {
+		tmpRoot = makeRoleSubstrate();
+		const decisionsBefore = fs.readFileSync(path.join(tmpRoot, ".project", "decisions.json"));
+		assert.throws(
+			() =>
+				op("upsert-block-item").run(tmpRoot, {
+					block: "decisions",
+					arrayKey: "decisions",
+					item: { id: "DEC-3", title: "previewed decision", status: "proposed" },
+					dryRun: true,
+					relations: [{ relation_type: "decision_derived_from_item", direction: "as_parent", other: "TASK-X" }],
+				}),
+			/orientation-ambiguous/,
+			"the preview must refuse an entry the live run would orientation-refuse",
+		);
+		const preview = op("upsert-block-item").run(tmpRoot, {
+			block: "decisions",
+			arrayKey: "decisions",
+			item: { id: "DEC-3", title: "previewed decision", status: "proposed" },
+			dryRun: true,
+			relations: [{ relation_type: "decision_derived_from_item", role: "counter", other: "TASK-X" }],
+		});
+		assert.ok(String(preview).includes("would file 1 birth relation"), "a valid role entry must preview as would-file");
+		assert.ok(
+			fs.readFileSync(path.join(tmpRoot, ".project", "decisions.json")).equals(decisionsBefore),
+			"dryRun wrote nothing either way",
 		);
 	});
 });

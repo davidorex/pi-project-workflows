@@ -2457,6 +2457,14 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 	const idx = index ?? buildIdIndex(cwd);
 	const vocab = resolveStatusVocabulary(cwd);
 	const bucketOf = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
+	const substrateAbs = path.resolve(ctxRoot);
+	// Substrate-internal paths are living state, not groundable artifacts — the
+	// write choke never stamps them, and a hand-authored pin/baseline on one is
+	// never judged here (it would drift on every substrate write and flag forever).
+	const isSubstrateInternal = (rel: string): boolean => {
+		const abs = path.resolve(projectRoot, rel);
+		return abs === substrateAbs || abs.startsWith(substrateAbs + path.sep);
+	};
 	const fileHashOrNull = (rel: string): string | null => {
 		const abs = path.resolve(projectRoot, rel);
 		try {
@@ -2482,7 +2490,12 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 					if (target !== undefined && bucketOf(target.item) === c.bucket) {
 						firedReasons.push(`stale condition fired: item '${c.item}' bucketed '${c.bucket}'`);
 					}
-				} else if (c.kind === "file-changed" && typeof c.path === "string" && typeof c.baseline_hash === "string") {
+				} else if (
+					c.kind === "file-changed" &&
+					typeof c.path === "string" &&
+					typeof c.baseline_hash === "string" &&
+					!isSubstrateInternal(c.path)
+				) {
 					const now = fileHashOrNull(c.path);
 					if (now === null) {
 						firedReasons.push(`stale condition fired: file '${c.path}' is gone`);
@@ -2508,7 +2521,7 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 				const rec = el as Record<string, unknown>;
 				if (typeof rec.content_pin !== "string") continue;
 				const rel = typeof rec.path === "string" ? rec.path : typeof rec.file === "string" ? rec.file : null;
-				if (rel === null) continue;
+				if (rel === null || isSubstrateInternal(rel)) continue;
 				const now = fileHashOrNull(rel);
 				if (now === null) {
 					driftReasons.push(`pin drift: '${field}' entry file '${rel}' is gone`);

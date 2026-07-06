@@ -210,7 +210,7 @@
                 "content_pin": {
                   "type": "string",
                   "pattern": "^[0-9a-f]{64}$",
-                  "description": "SHA-256 of the cited file at write time. Stamped by the write path when `path` is present, the file is readable, and no pin exists; context-validate flags a pinned citation whose current file hash drifted."
+                  "description": "SHA-256 of the cited file at write time. Stamped by the write path when `path` names a readable file OUTSIDE the substrate dir (substrate-internal paths are living state, never pinned) and no pin exists; context-validate flags a pinned citation whose current file hash drifted."
                 }
               }
             }

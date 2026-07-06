@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "method": "test",
+  "timestamp": "2026-07-06",
+  "evidence": "Birth-relations role-typed orientation form verified on merged main (f96d920d). Gates: build / skills / check / full bounded suite exit 0 (pi-context 1262 tests, 0 failures). Runtime demonstration through the PROMOTED operator CLI on a scratch fixture declaring a role-bearing kind-undeclared (orientation-ambiguous) relation plus an ERROR-severity requires-edge invariant demanding it at birth: the direction-form filing was refused with the porcelain's re-issue instruction; the role-form filing landed atomically ('with 1 birth relation(s)') threading the error invariant; find-references read back the stored edge with the new item at edge.parent and the derivation source at edge.child, exactly per role_direction as_child; upsert --dryRun refused the direction-form entry a live run would refuse.",
+  "criteria_results": [
+    {
+      "criterion": "A birth entry with role: primary|counter files an orientation-ambiguous role-typed relation atomically with the item, stored edge orientation matching the relation's declared role_direction",
+      "status": "passed",
+      "evidence": "role-substrate pin cell (role form lands, endpointKey(parent)=new item, endpointKey(child)=derivation source asserted) + the live CLI demo with find-references read-back"
+    },
+    {
+      "criterion": "Guard-path regression locks: ambiguous+direction re-issue refusal; role on role-less relation no-role_direction refusal; both/neither coercion refusal pre-write; all byte-restored",
+      "status": "passed",
+      "evidence": "three dedicated pin cells: raw-form refusal inside the deadlock cell, role-on-role-less refusal with every substrate file byte-compared, both/neither loop refused at coercion with decisions.json byte-identical"
+    },
+    {
+      "criterion": "The error-severity deadlock demonstration passes post-fix via the role form, pinned as a test",
+      "status": "passed",
+      "evidence": "the role-substrate cell replays all three refused paths (bare filing gate-refused, direction form orientation-refused) and the role form threading the same ERROR invariant in one gate-judged run"
+    },
+    {
+      "criterion": "Preview parity: upsert --dryRun refuses an entry the live run would orientation-refuse and previews a valid role entry as would-file",
+      "status": "passed",
+      "evidence": "the dryRun pin cell (refusal + would-file + decisions.json byte-unchanged both ways) and the live CLI dryRun refusal demo through the promoted operator"
+    },
+    {
+      "criterion": "Full suite 0 failures; docs-surface-sync complete (op strings, README, skill-narrative, SKILL regen, CHANGELOG, CLAUDE.md lockstep)",
+      "status": "passed",
+      "evidence": "suite exit 0 bounded; both op descriptions + shared entry schema strings + both-forms example; README Block CRUD prose; skill-narrative both-forms statement; SKILL.md regenerated; CHANGELOG [Unreleased] bullet; CLAUDE.md filing pattern names the role form"
+    }
+  ]
+}

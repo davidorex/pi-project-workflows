@@ -3952,7 +3952,7 @@
     },
     {
       "title": "Birth-relations entries afford only the raw direction form — the 14 orientation-ambiguous role-typed relation_types cannot be filed as birth edges, so the filing transition atom is unusable exactly where FGAP-113's write guard demands the role form",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "canonical_vocabulary": "birth-relations role-typed orientation parity (filing-atom entry shape affords primary/counter)",
@@ -3985,7 +3985,10 @@
       "created_at": "2026-07-06",
       "id": "FGAP-121",
       "oid": "4e456b445663b2e6edc5e44b6891e90c",
-      "content_hash": "e723ef3b106f33315b79130cd926a723370ed4a3a1ac11a308879fd80ae74590"
+      "content_hash": "1bc7a76d3c9cec206ffc3153261ada642b275c253ccf2f93f8824aa5ce583c1b",
+      "closed_by": "TASK-092 (VER-077) — the birth-relations entry shape affords both orientation forms: role: primary|counter maps to the role-typed append input and delegates to the same porcelain, so orientAppendInput's mapping + ambiguity guard apply verbatim and its re-issue instruction is followable in-shape; the direction/role mutual exclusion refuses at coercion before any write; upsert --dryRun runs the same orientation guard over entries (preview refuses what the live run refuses — the second class cell). The error-severity deadlock demonstration passes via the role form, pinned as a test; demonstrated live through the promoted CLI (direction form refused, role form threading an error derivation invariant atomically, stored orientation read back per role_direction). error-invariant-transition-atom rule 2 is satisfiable for all 17 role-bearing relation_types.",
+      "closed_at": "2026-07-06",
+      "content_parent": "e723ef3b106f33315b79130cd926a723370ed4a3a1ac11a308879fd80ae74590"
     },
     {
       "title": "Derivation is foreign-blind: every edge-consuming derived surface resolves endpoints against the active index only, so valid foreign endpoints are silently dropped (gates derive ready), defaulted (rollups never complete), or collision-mis-resolved to same-refname local items — while validate certifies the same edges as fine",

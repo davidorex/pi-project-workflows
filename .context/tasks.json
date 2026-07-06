@@ -1900,7 +1900,7 @@
     {
       "title": "Birth-relations entries afford the role-typed orientation form — filing atoms usable for all 17 role-bearing relation_types, with preview parity",
       "description": "Give the birth-relations entry both orientation forms, single-sourcing guard + mapping in orientAppendInput (per FGAP-121 proposed_resolution): each entry carries {relation_type, other, ordinal?} plus EITHER direction: as_parent|as_child (raw form, unchanged semantics — the NEW item occupies that endpoint) OR role: primary|counter (role form — the NEW item holds that role; other holds the complement), mutually exclusive per entry, enforced at coerceBirthRelations before any write. appendBirthRelations maps role entries to the role-typed RelationAppendInput (primary → {primary: itemId, counter: other}; counter → {primary: other, counter: itemId}) and delegates to appendRelationByRef unchanged, so the existing orientAppendInput errors apply verbatim: role on a role-less relation → the existing no-role_direction throw; direction on an ambiguous role-bearing relation → the existing re-issue throw, now followable in-shape. Preview parity: upsert-block-item --dryRun runs the orientation mapping/guard over coerced entries (orientation needs only the registry; endpoint resolution stays out — the item is unwritten), so a preview refuses what the live run refuses. Docs-surface-sync: both op strings in ops-registry.ts (descriptions + relations param/entry descriptions), packages/pi-context/README.md write-pipeline + Block CRUD prose, skill-narrative.md atomic-filing paragraph (both entry forms stated), SKILL.md regen, CHANGELOG [Unreleased], CLAUDE.md canonical filing pattern in lockstep.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/context-sdk.ts",
@@ -1922,7 +1922,8 @@
       "created_at": "2026-07-06",
       "id": "TASK-092",
       "oid": "72b8f34cb3f7e45186905f244146b9f9",
-      "content_hash": "314c0d7da39951064440ae65a2c8a3886e2c91ba23f08979a65a4fd3872c9b18"
+      "content_hash": "84e8cd3aa9e48ba3c0ccd2ef7fa26b88efe8a44b0f5ccce491daaf533699a1e4",
+      "content_parent": "314c0d7da39951064440ae65a2c8a3886e2c91ba23f08979a65a4fd3872c9b18"
     }
   ],
   "schema_version": "1.0.1"

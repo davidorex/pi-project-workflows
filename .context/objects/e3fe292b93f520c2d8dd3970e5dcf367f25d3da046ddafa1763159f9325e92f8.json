@@ -1,0 +1,10 @@
+{
+  "title": "Track the harness wiring + populate the project mandates slot (FEAT-013 pillar 5)",
+  "description": "Move hook registrations from untracked .claude/settings.local.json into tracked .claude/settings.json (permissions-allowlist stays local); populate .claude/mandates.jsonl with the project-shaped mandates (pipeline-first, explore-agents-only, three-stops ask gate, iterate-to-zero) so the existing UserPromptSubmit injection carries them every prompt; reconcile the yolo-approve.py auto-approve path with the harness (disable here or fold its blacklist into the R2/R4 chokepoints). Foundation task: the wiring home every subsequent hook registers into. FEAT-013 R20, R9.",
+  "status": "in-progress",
+  "acceptance_criteria": [
+    "Hook registrations live in git-tracked .claude/settings.json and a fresh checkout arms the same guards; permissions allowlist remains machine-local.",
+    ".claude/mandates.jsonl exists and its mandates inject into every prompt via the existing UserPromptSubmit hook.",
+    "The yolo auto-approve parallel path is disabled in this project or its blacklist is subsumed by the deny chokepoints (no standing ungated permission-widening path)."
+  ]
+}

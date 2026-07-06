@@ -1831,7 +1831,7 @@
     },
     {
       "description": "Declared-baseline currency made machine-evaluable (FEAT-011 criterion 6 / shape S5+S6): (i) research stale_conditions items additively admit typed variants alongside bare strings — at minimum {kind:'item-status', id, bucket} (fires when the named item's status buckets there), {kind:'file-changed', path, baseline_hash} and {kind:'revision-moved', ref} shapes — free text stays legal and human-only; (ii) path-bearing citations (research citations[], gap evidence[]) capture a content_hash pin at the write choke (computeFileContentHash; self-gated on field presence, mirroring identity-stamp gating); (iii) validateContext flags a complete research item whose typed condition fired or whose citation pin drifted as a staleness CANDIDATE (warning) — the complete-to-stale transition is applied by context-reconcile (whose sweep this task extends) or a human, never silently; (iv) anchor-drift flagging for gap evidence pins is the same mechanism (prose residue: the flag says re-review, never rewrites). Schema changes are additive (oneOf on condition items; optional pin fields) — existing data validates unchanged; dual-surfaced live + catalog. Composed from FEAT-011 criteria 6 and 9 and shape report S5/S6 (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "in-progress",
       "files": [
         "packages/pi-context/samples/schemas/research.schema.json",
         "packages/pi-context/samples/schemas/framework-gaps.schema.json",
@@ -1852,7 +1852,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-089",
       "oid": "08622fb992f8e636914d4d73500cb53f",
-      "content_hash": "d9dd1d1eab1dfc16098a48fdced9d2e415f6ea2618fc6e2ec2836e105395980d"
+      "content_hash": "f9011520c49f1f31c8bdbda49c39169b558abaa8ea9cd73b0c87b5f341b6f2b4",
+      "content_parent": "d9dd1d1eab1dfc16098a48fdced9d2e415f6ea2618fc6e2ec2836e105395980d"
     },
     {
       "description": "Always-on drift surfacing in currentState (FEAT-011 criteria 7 and 9 / shape S7): a rollup-kind item whose stored status differs from its derivation carries BOTH values in the currentState payload (derived status primary, stored_status alongside when they differ), and a driftWarnings head rides the result — the invariant subset computable from the derivation's own already-loaded working set (index + edges) — so divergence and bucket-lag are visible in every /context status read, not only in an on-demand validate run. Additive result-shape extension: consumers of the JSON shape (HTML view builder, orchestrator scripts) tolerate additions; the context-current-state/context-status op surfaces state the new fields and the residue (drift surfacing flags authored-judgment lag for review, it never asserts the authored bucket is wrong). Composed from FEAT-011 criteria 7 and 9 and shape report S7 (LLM-composed under that basis).",

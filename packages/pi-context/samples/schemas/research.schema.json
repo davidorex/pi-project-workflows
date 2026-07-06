@@ -144,9 +144,43 @@
           "stale_conditions": {
             "type": "array",
             "items": {
-              "type": "string"
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "item", "bucket"],
+                  "properties": {
+                    "kind": { "const": "item-status" },
+                    "item": { "type": "string", "description": "Selector of the substrate item whose status this condition watches (a reference predicate, not an embedded entity — deliberately not named 'id')." },
+                    "bucket": { "type": "string", "description": "Status bucket that fires the condition when the watched item's status maps to it." }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "path"],
+                  "properties": {
+                    "kind": { "const": "file-changed" },
+                    "path": { "type": "string", "description": "Project-root-relative path whose content change fires the condition." },
+                    "baseline_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the file at grounding time. Stamped by the write path when absent and the file is readable; the condition fires when the current hash differs (or the file is gone)." }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["kind", "ref"],
+                  "properties": {
+                    "kind": { "const": "revision-moved" },
+                    "ref": { "type": "string", "description": "Git ref whose movement fires the condition." },
+                    "baseline_sha": { "type": "string", "description": "Commit the ref pointed at when grounding was current. Stamped by the write path when absent and the ref resolves; the condition fires when the ref moves." }
+                  }
+                }
+              ]
             },
-            "description": "Explicit list of conditions under which the research is no longer authoritative. A future staleness engine will read this to transition status from complete to stale automatically."
+            "description": "Conditions under which the research is no longer authoritative. Bare strings are human-judged only. Typed variants are machine-evaluated: context-validate flags a complete item whose condition fired as a staleness candidate, and context-reconcile (or a human) applies the complete-to-stale transition — never silently."
           },
           "citations": {
             "type": "array",
@@ -172,6 +206,11 @@
                 },
                 "retrieved_at": {
                   "type": "string"
+                },
+                "content_pin": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$",
+                  "description": "SHA-256 of the cited file at write time. Stamped by the write path when `path` is present, the file is readable, and no pin exists; context-validate flags a pinned citation whose current file hash drifted."
                 }
               }
             }

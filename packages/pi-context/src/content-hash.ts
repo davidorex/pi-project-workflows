@@ -82,3 +82,15 @@ export function computeContentHash(content: Record<string, unknown>): string {
 export function computeFileContentHash(filePath: string): string {
 	return sha256Hex(canonicalJson(JSON.parse(fs.readFileSync(filePath, "utf8"))));
 }
+
+/**
+ * Raw-bytes hash of the file at `filePath`: sha-256 over the exact bytes on
+ * disk. The pin/baseline fingerprint for ARBITRARY referenced files (source,
+ * markdown, text) — unlike {@link computeFileContentHash}, which parses the
+ * file as JSON and hashes its canonical form (and therefore throws on
+ * non-JSON). Byte-exact by design: a pinned citation is grounded in the file
+ * as it stood, not in a normalization of it.
+ */
+export function computeFileBytesHash(filePath: string): string {
+	return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
+}

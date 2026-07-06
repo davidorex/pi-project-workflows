@@ -3434,4 +3434,202 @@ describe("write-time invariant gate (delta-scoped)", () => {
 			.sort();
 		assert.deepEqual(gateIssues, validateIssues, "write-side and validate-side classifications must be identical");
 	});
+
+	// ── closure-atom + birth-edge pins (the invariant transition-deadlock class) ──
+	// An error-severity invariant PAIR (requires-edge on the completed task +
+	// status-consistency on the passed verification) forbids BOTH intermediate
+	// resting states of the old two-op closure sequence — neither standalone
+	// append-relation nor standalone status flip can thread the gate. The legal
+	// transitions are the ATOMS: complete-task files edge + flips status in one
+	// op run; append-block-item files item + birth edges in one op run.
+
+	/** The live-substrate incident shape: both closure invariants at ERROR. */
+	function makePincerSubstrate(): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-pincer-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				substrate_id: "sub-00000000000000ab",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					{ canonical_id: "verification_verifies_item", display_name: "verifies", category: "data_flow" },
+					{ canonical_id: "decision_cites_forcing_artifact", display_name: "cites", category: "data_flow" },
+				],
+				invariants: [
+					{
+						id: "completed-task-has-verification",
+						class: "requires-edge",
+						block: "tasks",
+						where: { status: "completed" },
+						relation_types: ["verification_verifies_item"],
+						direction: "as_child",
+						severity: "error",
+						message: "Completed task '{id}' has no verification edge",
+					},
+					{
+						id: "verification-passed-task-complete",
+						class: "status-consistency",
+						block: "verification",
+						relation_types: ["verification_verifies_item"],
+						direction: "as_parent",
+						when_bucket: "complete",
+						require_target_bucket: "complete",
+						severity: "error",
+						message: "Passed verification '{id}' verifies a task that is not completed",
+					},
+					{
+						id: "decision-cites-forcing-artifact",
+						class: "requires-edge",
+						block: "decisions",
+						relation_types: ["decision_cites_forcing_artifact"],
+						direction: "as_parent",
+						severity: "error",
+						message: "Decision '{id}' cites no forcing artifact",
+					},
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-A", description: "to close", status: "planned" }] }),
+		);
+		fs.writeFileSync(path.join(dir, ".project", "verification.json"), JSON.stringify({ verifications: [] }));
+		fs.writeFileSync(
+			path.join(dir, ".project", "gaps.json"),
+			JSON.stringify({ gaps: [{ id: "GAP-X", title: "forcing artifact", status: "identified" }] }),
+		);
+		fs.writeFileSync(path.join(dir, ".project", "decisions.json"), JSON.stringify({ decisions: [] }));
+		fs.writeFileSync(path.join(dir, ".project", "relations.json"), JSON.stringify([]));
+		return dir;
+	}
+
+	it("the old two-op closure sequence is refused in BOTH orders under the error pincer (the incident, pinned as correct enforcement)", () => {
+		tmpRoot = makePincerSubstrate();
+		const r = op("append-block-item").run(tmpRoot, {
+			block: "verification",
+			arrayKey: "verifications",
+			item: { id: "VER-1", status: "passed", method: "test" },
+		});
+		assert.equal(typeof r, "string", "filing a passed verification with no edges is gate-clean (vacuous invariant)");
+		// Order 1: edge first — the passed verification now verifies a non-completed task.
+		assert.throws(
+			() =>
+				op("append-relation").run(tmpRoot, {
+					parent: "VER-1",
+					child: "TASK-A",
+					relation_type: "verification_verifies_item",
+				}),
+			/refused.*verifies a task that is not completed/i,
+			"standalone edge append must be refused (verification-passed-task-complete)",
+		);
+		// Order 2: status first — the completed task has no verification edge.
+		assert.throws(
+			() =>
+				op("update-block-item").run(tmpRoot, {
+					block: "tasks",
+					arrayKey: "tasks",
+					match: { id: "TASK-A" },
+					updates: { status: "completed" },
+				}),
+			/refused.*has no verification edge/i,
+			"standalone status flip must be refused (completed-task-has-verification)",
+		);
+	});
+
+	it("the 2-op closure (file verification → complete-task) threads the pincer: the atom files the edge and flips status in one gate-judged run", () => {
+		tmpRoot = makePincerSubstrate();
+		op("append-block-item").run(tmpRoot, {
+			block: "verification",
+			arrayKey: "verifications",
+			item: { id: "VER-1", status: "passed", method: "test" },
+		});
+		const result = op("complete-task").run(tmpRoot, { taskId: "TASK-A", verificationId: "VER-1" });
+		assert.ok(String(result).includes("completed"), "the closure atom must pass the gate");
+		assert.ok(String(result).includes("edge filed"), "the atom filed the linkage itself");
+		const tasks = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "tasks.json"), "utf-8")) as {
+			tasks: Array<Record<string, unknown>>;
+		};
+		assert.equal(tasks.tasks[0]?.status, "completed", "status landed");
+		const rels = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "relations.json"), "utf-8")) as unknown[];
+		assert.equal(rels.length, 1, "the verification_verifies_item edge landed in the same run");
+	});
+
+	it("append-block-item WITHOUT relations is refused under a birth-edge error invariant; WITH relations the filing passes as one atom", () => {
+		tmpRoot = makePincerSubstrate();
+		assert.throws(
+			() =>
+				op("append-block-item").run(tmpRoot, {
+					block: "decisions",
+					arrayKey: "decisions",
+					item: { id: "DEC-1", title: "bare decision", status: "proposed" },
+				}),
+			/refused.*cites no forcing artifact/i,
+			"a bare decision filing must be refused (decision-cites-forcing-artifact at error)",
+		);
+		const result = op("append-block-item").run(tmpRoot, {
+			block: "decisions",
+			arrayKey: "decisions",
+			item: { id: "DEC-1", title: "grounded decision", status: "proposed" },
+			relations: [{ relation_type: "decision_cites_forcing_artifact", direction: "as_parent", other: "GAP-X" }],
+		});
+		assert.ok(String(result).includes("1 birth relation"), "the atomic filing with its birth edge must pass");
+		const rels = JSON.parse(fs.readFileSync(path.join(tmpRoot, ".project", "relations.json"), "utf-8")) as Array<{
+			relation_type: string;
+		}>;
+		assert.equal(rels[0]?.relation_type, "decision_cites_forcing_artifact", "the birth edge landed");
+	});
+
+	it("a throw MID-COMPOSITE (birth edge fails after the item landed) byte-restores every substrate file", () => {
+		tmpRoot = makePincerSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = new Map<string, Buffer>();
+		for (const name of fs.readdirSync(substrateDir)) {
+			if (name.endsWith(".json")) before.set(name, fs.readFileSync(path.join(substrateDir, name)));
+		}
+		assert.throws(
+			() =>
+				op("append-block-item").run(tmpRoot, {
+					block: "gaps",
+					arrayKey: "gaps",
+					item: { id: "GAP-Y", title: "new gap", status: "identified" },
+					relations: [{ relation_type: "not_a_registered_type", direction: "as_parent", other: "GAP-X" }],
+				}),
+			/not_a_registered_type/,
+			"the unregistered birth edge must throw",
+		);
+		for (const [name, bytes] of before) {
+			assert.ok(
+				fs.readFileSync(path.join(substrateDir, name)).equals(bytes),
+				`${name} must be byte-restored after the mid-composite throw (the item write must not persist)`,
+			);
+		}
+	});
+
+	it("upsert-block-item resolving to REPLACE refuses supplied relations and byte-restores (birth edges are new-item only)", () => {
+		tmpRoot = makePincerSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const gapsBefore = fs.readFileSync(path.join(substrateDir, "gaps.json"));
+		assert.throws(
+			() =>
+				op("upsert-block-item").run(tmpRoot, {
+					block: "gaps",
+					arrayKey: "gaps",
+					item: { id: "GAP-X", title: "replacement body", status: "identified" },
+					relations: [{ relation_type: "decision_cites_forcing_artifact", direction: "as_parent", other: "GAP-X" }],
+				}),
+			/resolved to REPLACE/,
+			"replace-mode upsert with relations must refuse",
+		);
+		assert.ok(
+			fs.readFileSync(path.join(substrateDir, "gaps.json")).equals(gapsBefore),
+			"the replacement must not persist (all-or-nothing restore)",
+		);
+	});
 });

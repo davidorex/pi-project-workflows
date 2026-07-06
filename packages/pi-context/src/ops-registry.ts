@@ -241,15 +241,93 @@ export interface OpDefinition<P = any> {
 	surface: "use" | "process";
 }
 
+/** One birth edge on a filing op: the new item occupies `direction`'s endpoint. */
+interface BirthRelation {
+	relation_type: string;
+	direction: "as_parent" | "as_child";
+	other: string;
+	ordinal?: number;
+}
+
+/**
+ * Coerce a filing op's optional `relations` param (may arrive as a JSON string
+ * from the CLI, like Type.Unknown item payloads) and shape-check each entry
+ * before any write happens — a malformed entry must refuse the filing BEFORE
+ * the item lands, not mid-edge-loop.
+ */
+function coerceBirthRelations(raw: unknown): BirthRelation[] {
+	let value = raw;
+	if (typeof value === "string") {
+		try {
+			value = JSON.parse(value);
+		} catch {
+			throw new Error("relations parameter must be a JSON array, got unparseable string");
+		}
+	}
+	if (value === undefined || value === null) return [];
+	if (!Array.isArray(value)) throw new Error("relations parameter must be a JSON array");
+	return value.map((entry, i) => {
+		const e = entry as Partial<BirthRelation> | null;
+		if (
+			e === null ||
+			typeof e !== "object" ||
+			typeof e.relation_type !== "string" ||
+			(e.direction !== "as_parent" && e.direction !== "as_child") ||
+			typeof e.other !== "string"
+		) {
+			throw new Error(
+				`relations[${i}] must be {relation_type: string, direction: "as_parent"|"as_child", other: string, ordinal?: integer}`,
+			);
+		}
+		return {
+			relation_type: e.relation_type,
+			direction: e.direction,
+			other: e.other,
+			...(e.ordinal !== undefined ? { ordinal: e.ordinal } : {}),
+		};
+	});
+}
+
+/**
+ * File a new item's birth edges through the same validated porcelain a
+ * standalone append-relation uses (registered-type + endpoint-kind gate,
+ * atomic write, exact-duplicate no-op), with the new item at each entry's
+ * `direction` endpoint. Runs AFTER the item write (its id must resolve as an
+ * endpoint) inside the same op run, so the write-time invariant gate judges
+ * item + edges as one transition atom; a throw here is byte-restored by the
+ * pipeline wrapper (all-or-nothing).
+ */
+function appendBirthRelations(cwd: string, itemId: string, relations: BirthRelation[], ctx?: DispatchContext): void {
+	for (const rel of relations) {
+		appendRelationByRef(
+			cwd,
+			{
+				parent: rel.direction === "as_parent" ? itemId : rel.other,
+				child: rel.direction === "as_parent" ? rel.other : itemId,
+				relation_type: rel.relation_type,
+				...(rel.ordinal !== undefined ? { ordinal: rel.ordinal } : {}),
+			},
+			ctx,
+		);
+	}
+}
+
 export const ops: OpDefinition[] = [
 	{
 		name: "append-block-item",
 		label: "Append Block Item",
 		description:
-			"Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate the next id from the block's id pattern when the item has no id.",
-		promptSnippet: "Append items to project blocks (issues, decisions, or any user-defined block)",
+			"Append an item to an array in a project block file. Schema validation is automatic. Set autoId:true to allocate " +
+			"the next id from the block's id pattern when the item has no id. Optional relations file the item's BIRTH edges " +
+			"in the same op run, after id allocation — each entry names the relation_type, which endpoint the new item " +
+			"occupies (direction: as_parent | as_child), and the other endpoint's selector. Filing item + edges as one atom " +
+			"lets a new item satisfy error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that " +
+			"would refuse the bare item under the write-time gate.",
+		promptSnippet:
+			"Append items to project blocks (issues, decisions, or any user-defined block), with optional atomic birth edges",
 		examples: [
 			`pi-context append-block-item --block framework-gaps --arrayKey gaps --autoId true --item @/tmp/fgap.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
+			`pi-context append-block-item --block decisions --arrayKey decisions --autoId true --item @/tmp/dec.json --relations '[{"relation_type":"decision_cites_forcing_artifact","direction":"as_parent","other":"FGAP-001"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
 		parameters: Type.Object({
 			block: Type.String({ description: "Block name (e.g., 'issues', 'decisions')" }),
@@ -260,11 +338,42 @@ export const ops: OpDefinition[] = [
 					description: "When true and the item has no id, allocate the next id from the block's id pattern",
 				}),
 			),
+			relations: Type.Optional(
+				Type.Array(
+					Type.Object({
+						relation_type: Type.String({ description: "Registered relation_type canonical_id" }),
+						direction: Type.Union([Type.Literal("as_parent"), Type.Literal("as_child")], {
+							description: "Which edge endpoint the NEW item occupies",
+						}),
+						other: Type.String({
+							description: "Selector of the other endpoint (canonical id / <alias>:<refname>)",
+						}),
+						ordinal: Type.Optional(
+							Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" }),
+						),
+					}),
+					{
+						description:
+							"Birth edges filed atomically with the item, after id allocation, via the same validated append-relation porcelain",
+					},
+				),
+			),
 		}),
 		surface: "use",
 		run(
 			cwd: string,
-			params: { block: string; arrayKey: string; item: Record<string, unknown>; autoId?: boolean },
+			params: {
+				block: string;
+				arrayKey: string;
+				item: Record<string, unknown>;
+				autoId?: boolean;
+				relations?: Array<{
+					relation_type: string;
+					direction: "as_parent" | "as_child";
+					other: string;
+					ordinal?: number;
+				}>;
+			},
 			ctx?: DispatchContext,
 		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed
@@ -275,17 +384,29 @@ export const ops: OpDefinition[] = [
 					throw new Error(`item parameter must be a JSON object, got unparseable string`);
 				}
 			}
+			const relations = coerceBirthRelations(params.relations);
 			// Auto-id allocation (FGAP-084 dual-surface twin of file-block-item --auto-id)
 			if (params.autoId && params.item && typeof params.item === "object" && !params.item.id) {
 				params.item.id = nextId(cwd, params.block);
+			}
+			if (relations.length > 0 && (typeof params.item?.id !== "string" || params.item.id.length === 0)) {
+				throw new Error(
+					"relations requires the appended item to carry an id (supply item.id or set autoId:true) — birth edges need the new item's endpoint selector",
+				);
 			}
 			// Id-uniqueness is enforced atomically inside appendToBlock's
 			// withBlockLock critical section (block-api assertAppendIdUnique) —
 			// the single enforcement point. The prior racy readBlock-then-append
 			// tool-layer check was removed in favour of that library guard.
 			appendToBlock(cwd, params.block, params.arrayKey, params.item, ctx);
+			// Birth edges AFTER the item lands (its id must resolve as an endpoint),
+			// inside the same op run so the write-time gate judges item + edges as
+			// one transition atom; a failed edge throws and the pipeline wrapper
+			// byte-restores the whole write (all-or-nothing).
+			appendBirthRelations(cwd, String(params.item.id), relations, ctx);
 			const id = params.item?.id ? ` '${params.item.id}'` : "";
-			return `Appended item${id} to ${params.block}.${params.arrayKey}`;
+			const edges = relations.length > 0 ? ` with ${relations.length} birth relation(s)` : "";
+			return `Appended item${id} to ${params.block}.${params.arrayKey}${edges}`;
 		},
 	},
 	{
@@ -609,8 +730,13 @@ export const ops: OpDefinition[] = [
 		description:
 			"Append-or-replace an item in a project block array by id: if an item with the same idField value exists it is " +
 			"REPLACED (full-shape replacement, not shallow-merge — use update-block-item for merge); otherwise the item is " +
-			"appended. Schema validation is automatic. idField defaults to 'id'.",
-		promptSnippet: "Append-or-replace a full block item by id (replacement, not merge)",
+			"appended. Schema validation is automatic. idField defaults to 'id'. Optional relations file BIRTH edges in the " +
+			"same op run when the upsert resolves to an APPEND (each entry: relation_type, the endpoint the new item occupies " +
+			"as direction: as_parent | as_child, and the other endpoint's selector) — one atom under the write-time gate, so " +
+			"a new filing can satisfy error-severity birth-edge invariants. When the upsert resolves to a REPLACE, supplying " +
+			"relations refuses the write (birth edges are for new items; file edges on an existing item via append-relation).",
+		promptSnippet:
+			"Append-or-replace a full block item by id (replacement, not merge), with optional atomic birth edges",
 		examples: [
 			`pi-context upsert-block-item --block tasks --arrayKey tasks --item @/tmp/task.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
@@ -620,11 +746,43 @@ export const ops: OpDefinition[] = [
 			item: Type.Unknown({ description: "Full item object to upsert — must conform to block schema" }),
 			idField: Type.Optional(Type.String({ description: "Field used as the upsert key (default 'id')" })),
 			dryRun: Type.Optional(Type.Boolean({ description: "Preview the upsert without writing" })),
+			relations: Type.Optional(
+				Type.Array(
+					Type.Object({
+						relation_type: Type.String({ description: "Registered relation_type canonical_id" }),
+						direction: Type.Union([Type.Literal("as_parent"), Type.Literal("as_child")], {
+							description: "Which edge endpoint the NEW item occupies",
+						}),
+						other: Type.String({
+							description: "Selector of the other endpoint (canonical id / <alias>:<refname>)",
+						}),
+						ordinal: Type.Optional(
+							Type.Integer({ description: "Optional sibling-ordering within (parent, relation_type)" }),
+						),
+					}),
+					{
+						description:
+							"Birth edges filed atomically with an APPEND-mode upsert (refused on replace mode — use append-relation for existing items)",
+					},
+				),
+			),
 		}),
 		surface: "use",
 		run(
 			cwd: string,
-			params: { block: string; arrayKey: string; item: Record<string, unknown>; idField?: string; dryRun?: boolean },
+			params: {
+				block: string;
+				arrayKey: string;
+				item: Record<string, unknown>;
+				idField?: string;
+				dryRun?: boolean;
+				relations?: Array<{
+					relation_type: string;
+					direction: "as_parent" | "as_child";
+					other: string;
+					ordinal?: number;
+				}>;
+			},
 			ctx?: DispatchContext,
 		): OpResult {
 			// Type.Unknown() params may arrive as JSON strings — parse if needed.
@@ -635,17 +793,37 @@ export const ops: OpDefinition[] = [
 					throw new Error(`item parameter must be a JSON object, got unparseable string`);
 				}
 			}
+			const relations = coerceBirthRelations(params.relations);
 			const idField = params.idField ?? "id";
+			const idVal = params.item?.[idField];
+			if (relations.length > 0 && (typeof idVal !== "string" || idVal.length === 0)) {
+				throw new Error(
+					`relations requires the upserted item to carry a string '${idField}' — birth edges need the new item's endpoint selector`,
+				);
+			}
 			// Under dryRun upsertItemInBlock computes mode + builds + validates the prospective
 			// whole block, writing nothing (TASK-011 shared preview path).
 			const { mode } = upsertItemInBlock(cwd, params.block, params.arrayKey, params.item, idField, ctx, {
 				dryRun: params.dryRun,
 			});
-			const idVal = params.item?.[idField];
+			if (relations.length > 0 && mode === "updated") {
+				// Birth edges are a NEW-item affordance. Throwing here (post-write) is
+				// safe: the pipeline wrapper byte-restores the substrate on inner-op
+				// throw, so the replacement never persists (all-or-nothing).
+				throw new Error(
+					`relations was supplied but the upsert resolved to REPLACE for '${idVal}' — birth edges are for new items; file edges on an existing item via append-relation`,
+				);
+			}
 			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
-			return params.dryRun
-				? `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}`
-				: `Upserted item${idDesc} (${mode}) to ${params.block}.${params.arrayKey}`;
+			if (params.dryRun) {
+				// The item is unwritten under dryRun, so its id cannot resolve as an
+				// edge endpoint — report the would-file count without endpoint validation.
+				const edgePreview = relations.length > 0 ? `; would file ${relations.length} birth relation(s)` : "";
+				return `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}${edgePreview}`;
+			}
+			appendBirthRelations(cwd, String(idVal), relations, ctx);
+			const edges = relations.length > 0 ? ` with ${relations.length} birth relation(s)` : "";
+			return `Upserted item${idDesc} (${mode}) to ${params.block}.${params.arrayKey}${edges}`;
 		},
 	},
 	{
@@ -1918,21 +2096,28 @@ export const ops: OpDefinition[] = [
 	{
 		name: "complete-task",
 		label: "Complete Task",
-		description: "Complete a task with verification gate — requires a passing verification entry targeting the task.",
-		promptSnippet: "Complete a task — gates on passing verification before updating status",
+		description:
+			"Complete a task with verification gate — the closure ATOM. Requires a passing verification entry, then FILES " +
+			"the verification_verifies_item edge itself (idempotent — a pre-existing exact edge is a no-op) and flips the " +
+			"task status to completed in one op run, so the write-time invariant gate judges the joint end-state. No prior " +
+			"append-relation step is needed (a standalone edge or status write would be refused by error-severity closure " +
+			"invariants; this op IS the legal transition).",
+		promptSnippet:
+			"Complete a task — gates on passing verification, files the verification edge itself, then flips status (one atom)",
 		examples: [
 			`pi-context complete-task --taskId TASK-001 --verificationId VER-001 --writer '{"kind":"human","user":"you@example.com"}' --json`,
 		],
 		parameters: Type.Object({
 			taskId: Type.String({ description: "Task ID to complete" }),
 			verificationId: Type.String({
-				description: "Verification entry ID (must target this task with status 'passed')",
+				description: "Verification entry ID (must have status 'passed'; the op files the linking edge itself)",
 			}),
 		}),
 		surface: "use",
 		run(cwd: string, params: { taskId: string; verificationId: string }, ctx?: DispatchContext): OpResult {
 			const result = completeTask(cwd, params.taskId, params.verificationId, ctx);
-			return `Task '${result.taskId}' completed (was '${result.previousStatus}'). Verification: ${result.verificationId} (${result.verificationStatus})`;
+			const edge = result.edgeAppended ? "edge filed" : "edge pre-existing";
+			return `Task '${result.taskId}' completed (was '${result.previousStatus}'). Verification: ${result.verificationId} (${result.verificationStatus}, ${edge})`;
 		},
 	},
 	{
@@ -2373,6 +2558,7 @@ export function buildDispatchContextFromExecute(
  */
 const CONVERGE_AFTER_OPS = new Set([
 	"append-block-item",
+	"upsert-block-item",
 	"update-block-item",
 	"remove-block-item",
 	"write-block",
@@ -2468,6 +2654,12 @@ function attachWriteWarnings(result: OpResult, warnings: string[]): OpResult {
  *     Pre-existing violations never block or warn — legacy substrates stay
  *     fully writable (the delta scope IS the expand-contract analogue).
  *
+ *  3. ALL-OR-NOTHING ON THROW: an inner-op throw mid-composite (a birth edge
+ *     failing after the item landed; complete-task's status flip failing
+ *     after its edge landed) byte-restores the substrate from the same
+ *     pre-write snapshot before rethrowing, so a composite op never persists
+ *     a partial write the gate did not judge.
+ *
  * dryRun invocations (append-relations --dryRun) preview without writing and
  * bypass the pipeline entirely. Ops THROW on failure and return success
  * strings / {json} on success, so any settled return means the write landed;
@@ -2501,8 +2693,24 @@ for (const op of ops) {
 			const freshWarnings = fresh.filter(([, v]) => v.severity !== "error").map(([, v]) => v.message);
 			return freshWarnings.length > 0 ? attachWriteWarnings(settled, freshWarnings) : settled;
 		};
-		const result = inner(cwd, params, ctx);
-		return result instanceof Promise ? result.then(finish) : finish(result);
+		// Op-level all-or-nothing: an inner-op throw MID-COMPOSITE (e.g. a birth
+		// edge or the complete-task status flip failing after an earlier write in
+		// the same run landed) byte-restores the whole substrate before
+		// rethrowing — without this, partial writes persist in states the gate
+		// never judged. Restore is snapshot-gated like the refusal path (null on
+		// dryRun / no-invariant substrates) and idempotent if finish() already
+		// restored on a gate refusal.
+		const restoreAndRethrow = (err: unknown): never => {
+			if (snapshot !== null) restoreSubstrateJson(snapshot);
+			throw err;
+		};
+		let result: OpResult | Promise<OpResult>;
+		try {
+			result = inner(cwd, params, ctx);
+		} catch (err) {
+			return restoreAndRethrow(err);
+		}
+		return result instanceof Promise ? result.then(finish, restoreAndRethrow) : finish(result);
 	};
 	op.description +=
 		" Write pipeline: after this op's write, rollup-kind stored statuses converge with their derivation, and the config invariants are re-evaluated delta-scoped — a violation newly introduced by this write refuses it at error severity (substrate byte-restored) or is surfaced on the result at warning severity (write-warning lines / writeWarnings); pre-existing violations never block.";

@@ -110,6 +110,29 @@
       "status": "planned",
       "oid": "6a6a6fac8e546f97514066dd2c096a3e",
       "content_hash": "56fb386f668b6dbf54a7eea8c89a1ef6cf4978fb0d9ef14843fe89450c8d1679"
+    },
+    {
+      "id": "PHASE-M7-PROCESS-HARNESS",
+      "name": "Process harness — the canonical pipeline as a mechanical deny surface",
+      "intent": "Implement FEAT-013: convert the honor-system stretches of the canonical process into refusals the harness issues — the deny hooks, the phase-state layer with the findings ledger, the Stop-hook ask gate, user-minted authorization objects for HELD actions, and tracked self-tested wiring — so llm laziness and chaos-producing relitigation are foreclosed mechanistically while the three legitimate stops (provenance grants, honest scope/value escalations, HELD actions) are preserved everywhere.",
+      "goal": "Every FEAT-013 acceptance criterion is live: deviation from the canonical pipeline fails at a tool boundary with the governing rule named, turn-boundary relitigation is blocked by the Stop-hook three-stops filter, iterate-to-zero and closure evidence are mechanical, the release hold is impossible to breach without a user-minted grant, and the harness wiring is git-tracked with its own regression cells.",
+      "status": "planned",
+      "success_criteria": [
+        {
+          "criterion": "Each of FEAT-013's eleven acceptance criteria demonstrated live (true-positive refusal + legitimate-work pass per guard)",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "The three legitimate stops pass every gate (provenance ceremony, underdetermined-escalation ask, HELD-action ask)",
+          "verify_method": "command"
+        },
+        {
+          "criterion": "Hook wiring tracked in .claude/settings.json and reproducible on a fresh checkout",
+          "verify_method": "inspect"
+        }
+      ],
+      "oid": "8bd901ab4fd5b61b63ee85e376ef7c5a",
+      "content_hash": "393d0ab15ae4053e93eb9e9c44c0d7b73e688845a3e0b041dcc7bce12bc603b9"
     }
   ],
   "schema_version": "2.0.1"

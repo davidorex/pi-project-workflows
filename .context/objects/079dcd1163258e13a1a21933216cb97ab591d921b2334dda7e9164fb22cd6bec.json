@@ -1,0 +1,10 @@
+{
+  "title": "Session driver: walk a work unit through the state machine as the path of least resistance (FEAT-013 pillar 2 — the predictable half)",
+  "description": "A driver skill/command (precedent: .claude/skills/run-pi-project-workflows/driver.mjs; the workflow executor's control-plane/subordinate-subprocess architecture) that walks a work unit through the canonical state machine: prompts the current state's required action, dispatches the right agent kind per state (Explore for EXPLORED, general-purpose for IMPLEMENTED, fresh-context for PROBED), runs the npm gates itself, mints phase-state transitions, and refuses out-of-order actions. With the phase-state layer it makes the state machine the interface rather than a policy the model recalls — the 'predictable' half of the directive (hooks make deviation fail; the driver makes compliance the path of least resistance). Depends on the full deny surface + state layer. FEAT-013 R17.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "The driver walks a sample work unit SURFACED..CLOSED, prompting each state's required action and dispatching the state-appropriate agent kind.",
+    "The driver mints phase-state transitions and runs the npm gates itself; an out-of-order action is refused.",
+    "Running the driver is demonstrably the lowest-friction path through the pipeline (compliance by construction, not by recall)."
+  ]
+}

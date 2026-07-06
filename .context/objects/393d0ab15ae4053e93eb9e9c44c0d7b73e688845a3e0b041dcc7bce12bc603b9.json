@@ -1,0 +1,20 @@
+{
+  "name": "Process harness — the canonical pipeline as a mechanical deny surface",
+  "intent": "Implement FEAT-013: convert the honor-system stretches of the canonical process into refusals the harness issues — the deny hooks, the phase-state layer with the findings ledger, the Stop-hook ask gate, user-minted authorization objects for HELD actions, and tracked self-tested wiring — so llm laziness and chaos-producing relitigation are foreclosed mechanistically while the three legitimate stops (provenance grants, honest scope/value escalations, HELD actions) are preserved everywhere.",
+  "goal": "Every FEAT-013 acceptance criterion is live: deviation from the canonical pipeline fails at a tool boundary with the governing rule named, turn-boundary relitigation is blocked by the Stop-hook three-stops filter, iterate-to-zero and closure evidence are mechanical, the release hold is impossible to breach without a user-minted grant, and the harness wiring is git-tracked with its own regression cells.",
+  "status": "planned",
+  "success_criteria": [
+    {
+      "criterion": "Each of FEAT-013's eleven acceptance criteria demonstrated live (true-positive refusal + legitimate-work pass per guard)",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "The three legitimate stops pass every gate (provenance ceremony, underdetermined-escalation ask, HELD-action ask)",
+      "verify_method": "command"
+    },
+    {
+      "criterion": "Hook wiring tracked in .claude/settings.json and reproducible on a fresh checkout",
+      "verify_method": "inspect"
+    }
+  ]
+}

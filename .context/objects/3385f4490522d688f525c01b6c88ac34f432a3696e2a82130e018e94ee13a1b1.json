@@ -1,0 +1,10 @@
+{
+  "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
+  "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), branch, planStamp, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status), never from narrative (derive-don't-cache). Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A SessionStart hook seeds/reconciles the phase-state file from substrate truth (context-status), not from any narrative cache.",
+    "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
+    "The state file is machine-readable and queryable cheaply by downstream hooks; a fresh session reconstructs the true state from substrate truth alone."
+  ]
+}

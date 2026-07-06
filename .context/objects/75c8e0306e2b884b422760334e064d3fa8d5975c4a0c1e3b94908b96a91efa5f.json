@@ -1,0 +1,11 @@
+{
+  "title": "Guard extensions + nudges: filing-completeness, deferral scan, subagent-relay checklist, status-cascade reminder (FEAT-013 pillar 5)",
+  "description": "Extend gap-register-guard: block a framework-gaps append without an investigation-report citation in its evidence (Experience-Gap Handling); nudge on missing class verdict / priority (gap-explore-surfaces-class, feedback_substrate_pm). Deferral/scope-reduction lexical scan ('later', 'for at least', 'minimal', 'polish', 'out of scope') on filing payloads + ExitPlanMode plan text -> nudge naming the governing mandate (P4: high false-positive class, nudge not block). PostToolUse(Agent) injects the subagent-claim verification checklist (git log for commit claims, grep for code-presence, read-back for filings; 'deviation/minor/had to' = hard pause). PostToolUse(Bash git commit) status-cascade reminder. All nudge-severity per the block-vs-nudge principle. FEAT-013 R7, R8, R10, R19.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A framework-gaps append without an investigation-report citation is blocked; one with the citation passes.",
+    "Deferral/scope-reduction lexical markers in a filing payload or plan text draw a nudge naming the mandate; clean text passes silently.",
+    "A PostToolUse(Agent) return injects the verification checklist; a PostToolUse(git commit) injects the status-cascade reminder.",
+    "Regression cells for the block path and each nudge."
+  ]
+}

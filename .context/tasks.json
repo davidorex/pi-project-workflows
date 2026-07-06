@@ -1925,6 +1925,146 @@
       "oid": "72b8f34cb3f7e45186905f244146b9f9",
       "content_hash": "84e8cd3aa9e48ba3c0ccd2ef7fa26b88efe8a44b0f5ccce491daaf533699a1e4",
       "content_parent": "314c0d7da39951064440ae65a2c8a3886e2c91ba23f08979a65a4fd3872c9b18"
+    },
+    {
+      "id": "TASK-093",
+      "title": "Track the harness wiring + populate the project mandates slot (FEAT-013 pillar 5)",
+      "description": "Move hook registrations from untracked .claude/settings.local.json into tracked .claude/settings.json (permissions-allowlist stays local); populate .claude/mandates.jsonl with the project-shaped mandates (pipeline-first, explore-agents-only, three-stops ask gate, iterate-to-zero) so the existing UserPromptSubmit injection carries them every prompt; reconcile the yolo-approve.py auto-approve path with the harness (disable here or fold its blacklist into the R2/R4 chokepoints). Foundation task: the wiring home every subsequent hook registers into. FEAT-013 R20, R9.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "Hook registrations live in git-tracked .claude/settings.json and a fresh checkout arms the same guards; permissions allowlist remains machine-local.",
+        ".claude/mandates.jsonl exists and its mandates inject into every prompt via the existing UserPromptSubmit hook.",
+        "The yolo auto-approve parallel path is disabled in this project or its blacklist is subsumed by the deny chokepoints (no standing ungated permission-widening path)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "6b876ab0eb94db2c1188fba1e1b9456d",
+      "content_hash": "4e8ff7d9b7d5166efc27a06fb78de0ed10119f75a467e6c58651553425d44fdd"
+    },
+    {
+      "id": "TASK-094",
+      "title": "Substrate direct-write deny hook (FEAT-013 pillar 1)",
+      "description": "PreToolUse(Edit|Write|NotebookEdit) hook that blocks any write whose file_path resolves under the active substrate dir (named by .pi-context.json contextDir): *.json and schemas/*.json. No escape — substrate repair flows through the CLI ops (a genuinely missing op is an FGAP, not a bypass). Closes the parallel ungated path around the op-layer's AJV/invariant/complete-task gates (feedback_architecture_enforcement: no parallel ungated paths). FEAT-013 R1.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A direct Edit/Write/NotebookEdit targeting the active substrate's *.json or schemas/*.json is blocked at PreToolUse with stderr naming the ops-only rule; a write outside the substrate dir passes.",
+        "The block reads the active substrate dir from .pi-context.json contextDir, not a hardcoded name.",
+        "Regression cells: true-positive block on a .context/*.json edit; pass on a packages/** source edit and on an analysis/*.md write."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "6dd24572418b41dad91b84457e4bcdc4",
+      "content_hash": "fe3dd172aadf195ec437a0ecf07c47dfdac470646160b7a463e14eeff91f63e9"
+    },
+    {
+      "id": "TASK-095",
+      "title": "Bash chokepoint hook: destructive-git / --no-verify sentinel, gate-command pipe-masking, release/push hold (FEAT-013 pillar 1 + 4)",
+      "description": "PreToolUse(Bash) chokepoint (segment-split on ;&| so chained commands are caught): block git --no-verify and destructive git ops (reset --hard, rebase, push --force, tag -d, unmerged branch-delete) without a per-invocation user-granted sentinel; block gate commands (npm test / run check / run build) piped or truncated (exit-code masking); block npm run release:*, npm publish, and non-durably-authorized git push without a user-minted hold-release grant object. Escapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "git --no-verify and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
+        "npm test|run check|run build piped or tailed is blocked; the bare command passes; a set -o pipefail form is permitted.",
+        "npm run release:*, npm publish, and non-authorized git push are blocked without a user-minted grant object; a covered grant passes.",
+        "Regression cells for each true-positive block and each legitimate pass."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "740f1f000da1d48d8e6c26376cba856d",
+      "content_hash": "11b6deab0b5bdcb4815de53ae35afbbe17a22b5725bff79cc90f447dfc70a524"
+    },
+    {
+      "id": "TASK-096",
+      "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
+      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), branch, planStamp, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status), never from narrative (derive-don't-cache). Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A SessionStart hook seeds/reconciles the phase-state file from substrate truth (context-status), not from any narrative cache.",
+        "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
+        "The state file is machine-readable and queryable cheaply by downstream hooks; a fresh session reconstructs the true state from substrate truth alone."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "abcd0a0706eac0b2aa45487f85e27dee",
+      "content_hash": "3385f4490522d688f525c01b6c88ac34f432a3696e2a82130e018e94ee13a1b1"
+    },
+    {
+      "id": "TASK-097",
+      "title": "Source-edit gate: branch / plan-stamp / delegation checks + investigation-read nudge (FEAT-013 pillar 1, state-consulting)",
+      "description": "PreToolUse(Edit|Write) hook over packages/** (test-fixture dirs a plan names excepted): block on the integration branch (git rev-parse --abbrev-ref HEAD) or without a plan-approval stamp this session; block orchestrator source edits while the phase state says implementation is delegated to a coding subagent (subagent sessions carry their own hook context, so the block scopes to the orchestrator); user-sentinel escape for genuinely plan-exempt / user-directed-direct edits (mandate-005 carve-out). PreToolUse(Grep|Read) nudge on orchestrator investigation-reads over packages/** outside the post-Agent-return claim-verification window (feedback_process_pipeline: all investigation via explore agents). Depends on the phase-state layer. FEAT-013 R5, R15, R16.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A packages/** source edit on the integration branch or without a plan-approval stamp is blocked; a feature-branch edit with an approved plan passes.",
+        "An orchestrator-session source edit while state = implementation-delegated is blocked; the user-sentinel escape passes.",
+        "An orchestrator Grep/Read burst over packages/** outside the claim-verification window draws a nudge; a read inside the post-Agent-return window passes.",
+        "Regression cells for each guard path."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "8771d45500a0b0838ed42489a28629dd",
+      "content_hash": "bb6e23ed7c1dd03d0c1581e6a8545751a5e10db8526004abc590e15282390b12"
+    },
+    {
+      "id": "TASK-098",
+      "title": "Stop-hook ask gate: three-stops filter + guard-fired marker lifecycle (FEAT-013 pillar 3 — the chaos-driver foreclosure)",
+      "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter: a pending provenance grant (guard-fired marker set), an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape), or a HELD action awaiting authorization all PASS; every other ask-shaped closer ('on your go', 'now or later', 'shall I', 'want me to') is relitigation, blocked with the governing convention/mandate named. Regex first; invokeMonitor classification if regex is too blunt. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A turn ending on an ask that fails the three-stops filter is blocked with stderr naming the governing rule; the work proceeds instead.",
+        "Each of the three legitimate stops passes the gate (a pending provenance table, an underdetermined-escalation ask, a HELD-action authorization ask).",
+        "The Stop hook clears the guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue before the boundary is blocked (with TASK-095's Bash guard reading the marker).",
+        "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "19444dbb7d56d6f9cbe2a67d51b3fe5f",
+      "content_hash": "fe075096b71d7cfc0f4e77fd5cc4991e638dbbc33de6913e600f669671c299ed"
+    },
+    {
+      "id": "TASK-099",
+      "title": "Findings ledger + closure evidence + milestone-gate record (FEAT-013 pillar 2, closure-side)",
+      "description": "Probe/demo findings land in a findings ledger (in the phase-state file, schema-shaped). Gates: PreToolUse(Bash) blocks git merge into the integration branch and pi-context complete-task while the ledger holds open entries; entries close only by fix-commit + fresh re-audit or by a user-recorded deprioritization (mandate-007: user decides scope). Closure additionally requires recorded demoEvidence (the real invocation + output pointer) and a fresh-context probeVerdict before complete-task runs. The milestone-validity-gate record type is added and checked at plan approval for milestone-member tasks (currently enforcement: manual). Depends on the phase-state layer. FEAT-013 R13, R14, R18.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "git merge into the integration branch and complete-task are blocked while the findings ledger holds open entries; a user-recorded deprioritization or a fix-commit + re-audit entry closes them.",
+        "complete-task is blocked without recorded demoEvidence and a fresh-context probeVerdict on the phase-state; both present lets it proceed.",
+        "A milestone-member task entering PLANNED without a milestone-gate record is blocked once the record type exists.",
+        "Regression cells for each gate."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "ff43a54db9e8de4bcb826d43fe736f07",
+      "content_hash": "a237277a97dbf0d82b169918bf5e086ba93ce71571f7ae088680ea5111850a47"
+    },
+    {
+      "id": "TASK-100",
+      "title": "Guard extensions + nudges: filing-completeness, deferral scan, subagent-relay checklist, status-cascade reminder (FEAT-013 pillar 5)",
+      "description": "Extend gap-register-guard: block a framework-gaps append without an investigation-report citation in its evidence (Experience-Gap Handling); nudge on missing class verdict / priority (gap-explore-surfaces-class, feedback_substrate_pm). Deferral/scope-reduction lexical scan ('later', 'for at least', 'minimal', 'polish', 'out of scope') on filing payloads + ExitPlanMode plan text -> nudge naming the governing mandate (P4: high false-positive class, nudge not block). PostToolUse(Agent) injects the subagent-claim verification checklist (git log for commit claims, grep for code-presence, read-back for filings; 'deviation/minor/had to' = hard pause). PostToolUse(Bash git commit) status-cascade reminder. All nudge-severity per the block-vs-nudge principle. FEAT-013 R7, R8, R10, R19.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "A framework-gaps append without an investigation-report citation is blocked; one with the citation passes.",
+        "Deferral/scope-reduction lexical markers in a filing payload or plan text draw a nudge naming the mandate; clean text passes silently.",
+        "A PostToolUse(Agent) return injects the verification checklist; a PostToolUse(git commit) injects the status-cascade reminder.",
+        "Regression cells for the block path and each nudge."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "a41ede2610fc72498f2c8cf1a798019a",
+      "content_hash": "75c8e0306e2b884b422760334e064d3fa8d5975c4a0c1e3b94908b96a91efa5f"
+    },
+    {
+      "id": "TASK-101",
+      "title": "Session driver: walk a work unit through the state machine as the path of least resistance (FEAT-013 pillar 2 — the predictable half)",
+      "description": "A driver skill/command (precedent: .claude/skills/run-pi-project-workflows/driver.mjs; the workflow executor's control-plane/subordinate-subprocess architecture) that walks a work unit through the canonical state machine: prompts the current state's required action, dispatches the right agent kind per state (Explore for EXPLORED, general-purpose for IMPLEMENTED, fresh-context for PROBED), runs the npm gates itself, mints phase-state transitions, and refuses out-of-order actions. With the phase-state layer it makes the state machine the interface rather than a policy the model recalls — the 'predictable' half of the directive (hooks make deviation fail; the driver makes compliance the path of least resistance). Depends on the full deny surface + state layer. FEAT-013 R17.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "The driver walks a sample work unit SURFACED..CLOSED, prompting each state's required action and dispatching the state-appropriate agent kind.",
+        "The driver mints phase-state transitions and runs the npm gates itself; an out-of-order action is refused.",
+        "Running the driver is demonstrably the lowest-friction path through the pipeline (compliance by construction, not by recall)."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "oid": "b3246d7a7b695f028f448b55c57956c4",
+      "content_hash": "079dcd1163258e13a1a21933216cb97ab591d921b2334dda7e9164fb22cd6bec"
     }
   ],
   "schema_version": "1.0.1"

@@ -1,0 +1,11 @@
+{
+  "title": "Findings ledger + closure evidence + milestone-gate record (FEAT-013 pillar 2, closure-side)",
+  "description": "Probe/demo findings land in a findings ledger (in the phase-state file, schema-shaped). Gates: PreToolUse(Bash) blocks git merge into the integration branch and pi-context complete-task while the ledger holds open entries; entries close only by fix-commit + fresh re-audit or by a user-recorded deprioritization (mandate-007: user decides scope). Closure additionally requires recorded demoEvidence (the real invocation + output pointer) and a fresh-context probeVerdict before complete-task runs. The milestone-validity-gate record type is added and checked at plan approval for milestone-member tasks (currently enforcement: manual). Depends on the phase-state layer. FEAT-013 R13, R14, R18.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "git merge into the integration branch and complete-task are blocked while the findings ledger holds open entries; a user-recorded deprioritization or a fix-commit + re-audit entry closes them.",
+    "complete-task is blocked without recorded demoEvidence and a fresh-context probeVerdict on the phase-state; both present lets it proceed.",
+    "A milestone-member task entering PLANNED without a milestone-gate record is blocked once the record type exists.",
+    "Regression cells for each gate."
+  ]
+}

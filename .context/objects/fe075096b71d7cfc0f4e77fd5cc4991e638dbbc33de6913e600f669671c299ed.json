@@ -1,0 +1,11 @@
+{
+  "title": "Stop-hook ask gate: three-stops filter + guard-fired marker lifecycle (FEAT-013 pillar 3 — the chaos-driver foreclosure)",
+  "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter: a pending provenance grant (guard-fired marker set), an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape), or a HELD action awaiting authorization all PASS; every other ask-shaped closer ('on your go', 'now or later', 'shall I', 'want me to') is relitigation, blocked with the governing convention/mandate named. Regex first; invokeMonitor classification if regex is too blunt. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A turn ending on an ask that fails the three-stops filter is blocked with stderr naming the governing rule; the work proceeds instead.",
+    "Each of the three legitimate stops passes the gate (a pending provenance table, an underdetermined-escalation ask, a HELD-action authorization ask).",
+    "The Stop hook clears the guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue before the boundary is blocked (with TASK-095's Bash guard reading the marker).",
+    "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle."
+  ]
+}

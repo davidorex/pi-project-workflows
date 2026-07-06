@@ -1,0 +1,11 @@
+{
+  "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
+  "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Two field classes. Coarse position (state, task status, verification edges, branch) is SessionStart-reconciled from substrate truth (context-status), never from narrative. Session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are not substrate-native (requirements report R14, in R-0028's findings doc, defers that) and persist in the phase-state file across sessions, giving TASK-099's closure gates a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). Guard-fired marker: set by any sentinel-bearing guard on a sentinel-required refusal, cleared by TASK-098's Stop hook at turn boundary; blocks same-turn sentinel re-issue. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "A SessionStart hook seeds/reconciles the phase-state file: the coarse pipeline position (state, branch, task status) from substrate truth (context-status), never from any narrative cache.",
+    "A mid-pipeline session restart preserves the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]), so TASK-099's closure gates keep a stable source.",
+    "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
+    "The state file is machine-readable and queryable cheaply by the downstream deny hooks."
+  ]
+}

@@ -1960,37 +1960,37 @@
     {
       "id": "TASK-095",
       "title": "Bash chokepoint hook: destructive-git / --no-verify sentinel, gate-command pipe-masking, release/push hold (FEAT-013 pillar 1 + 4)",
-      "description": "PreToolUse(Bash) chokepoint (segment-split on ;&| so chained commands are caught): block git --no-verify and destructive git ops (reset --hard, rebase, push --force, tag -d, unmerged branch-delete) without a per-invocation user-granted sentinel; block gate commands (npm test / run check / run build) piped or truncated (exit-code masking); block npm run release:*, npm publish, and non-durably-authorized git push without a user-minted hold-release grant object. Escapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
+      "description": "PreToolUse(Bash) chokepoint, segment-split on ;&| so chained commands are caught. Three blocks:\n- Destructive git (--no-verify, reset --hard, rebase, push --force, tag -d, unmerged branch-delete) — blocked without a per-invocation user sentinel.\n- Gate-command masking (npm test / run check / run build piped or truncated) — blocked.\n- HELD actions (npm run release:*, npm publish, non-durably-authorized git push) — blocked without a user-minted grant object.\nEscapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
       "status": "planned",
       "acceptance_criteria": [
         "git --no-verify and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
         "npm test|run check|run build piped or tailed is blocked; the bare command passes; a set -o pipefail form is permitted.",
         "npm run release:*, npm publish, and non-authorized git push are blocked without a user-minted grant object; a covered grant passes.",
-        "On a sentinel-required refusal this guard SETS the guard-fired marker (the TASK-096 phase-state datum); TASK-098's Stop hook clears it at turn boundary, so a same-turn sentinel-bearing re-issue is blocked.",
+        "On a sentinel-required refusal this guard sets the TASK-096 guard-fired marker (lifecycle per TASK-096).",
         "Regression cells for each true-positive block, each legitimate pass, and the marker set-on-refusal."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "740f1f000da1d48d8e6c26376cba856d",
-      "content_hash": "52874f6147188937a0420af55df9cc817ff556c22419a8902ef2309010b12690",
-      "content_parent": "11b6deab0b5bdcb4815de53ae35afbbe17a22b5725bff79cc90f447dfc70a524"
+      "content_hash": "6c3c3dc5a2a4bc43ff7fa7c348b80a6e1ed5bcd1d0489752f1e3fb78df04b84c",
+      "content_parent": "52874f6147188937a0420af55df9cc817ff556c22419a8902ef2309010b12690"
     },
     {
       "id": "TASK-096",
       "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
-      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Seeded/reconciled at SessionStart from substrate truth (context-status) for the coarse pipeline POSITION only (task status, verification edges, branch); the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are NOT substrate-native (R-0028 R14 defers substrate-native evidence) and persist in the phase-state file itself across sessions, so TASK-099's closure gates read a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The guard-fired marker is a phase-state datum written by the sentinel-bearing guards (TASK-095 git/release, TASK-097 source-edit, and the existing gap-register-guard provenance surface) and cleared by TASK-098's Stop hook at turn boundary. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Two field classes. Coarse position (state, task status, verification edges, branch) is SessionStart-reconciled from substrate truth (context-status), never from narrative. Session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are not substrate-native (requirements report R14, in R-0028's findings doc, defers that) and persist in the phase-state file across sessions, giving TASK-099's closure gates a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). Guard-fired marker: set by any sentinel-bearing guard on a sentinel-required refusal, cleared by TASK-098's Stop hook at turn boundary; blocks same-turn sentinel re-issue. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
       "status": "planned",
       "acceptance_criteria": [
         "A SessionStart hook seeds/reconciles the phase-state file: the coarse pipeline position (state, branch, task status) from substrate truth (context-status), never from any narrative cache.",
-        "The session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) persist in the phase-state file across sessions — they are not substrate-native, and a mid-pipeline session restart preserves them so TASK-099's closure gates keep a stable source.",
+        "A mid-pipeline session restart preserves the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]), so TASK-099's closure gates keep a stable source.",
         "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
         "The state file is machine-readable and queryable cheaply by the downstream deny hooks."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "abcd0a0706eac0b2aa45487f85e27dee",
-      "content_hash": "70cc1cd8cb8a69e915ee6176caa517442fd1d90ba6d21043156331e132fbcfcf",
-      "content_parent": "3385f4490522d688f525c01b6c88ac34f432a3696e2a82130e018e94ee13a1b1"
+      "content_hash": "b680e6ef5fc934a3ed1148936dd7c645dadb586103e04ff0b3908683fc7153a9",
+      "content_parent": "70cc1cd8cb8a69e915ee6176caa517442fd1d90ba6d21043156331e132fbcfcf"
     },
     {
       "id": "TASK-097",
@@ -1999,32 +1999,32 @@
       "status": "planned",
       "acceptance_criteria": [
         "A packages/** source edit on the integration branch (main) or without a plan-approval stamp this session is blocked; a feature-branch edit with an approved plan passes.",
-        "An orchestrator source edit while the TASK-096 phase-state `delegation` field marks implementation delegated to a coding subagent is blocked (subagent sessions carry their own hook context, so the block scopes to the orchestrator); the mandate-005 user-sentinel escape passes and SETS the guard-fired marker.",
+        "An orchestrator source edit while the TASK-096 `delegation` field marks implementation delegated is blocked; the mandate-005 user-sentinel escape passes and sets the guard-fired marker (lifecycle per TASK-096).",
         "An orchestrator Grep/Read burst over packages/** outside the post-Agent-return claim-verification window draws a nudge; a read inside the window passes.",
         "Regression cells for each guard path."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "8771d45500a0b0838ed42489a28629dd",
-      "content_hash": "be39fd1cfcbcac9d285920e0af4170481d93c19742443ebc6237df044b99cc77",
-      "content_parent": "bb6e23ed7c1dd03d0c1581e6a8545751a5e10db8526004abc590e15282390b12"
+      "content_hash": "0c5cfb3fea8a37bb05da8f1de17d81b6052e07dc1408ac08ebd8dbfa81fbda40",
+      "content_parent": "be39fd1cfcbcac9d285920e0af4170481d93c19742443ebc6237df044b99cc77"
     },
     {
       "id": "TASK-098",
       "title": "Stop-hook ask gate: three-stops filter + guard-fired marker lifecycle (FEAT-013 pillar 3 — the chaos-driver foreclosure)",
-      "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter: a pending provenance grant (guard-fired marker set), an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape), or a HELD action awaiting authorization all PASS; every other ask-shaped closer ('on your go', 'now or later', 'shall I', 'want me to') is relitigation, blocked with the governing convention/mandate named. Regex first; invokeMonitor classification if regex is too blunt. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
+      "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter. Three stops PASS: a pending provenance grant (guard-fired marker set); an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape); a HELD action awaiting authorization. Every other ask-shaped closer (\"on your go\", \"now or later\", \"shall I\", \"want me to\") is relitigation — blocked, governing rule named. Regex first; invokeMonitor classification if regex is too blunt. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
       "status": "planned",
       "acceptance_criteria": [
         "A turn ending on an ask that fails the three-stops filter is blocked with stderr naming the governing rule; the work proceeds instead.",
         "Each of the three legitimate stops passes the gate (a pending provenance table, an underdetermined-escalation ask, a HELD-action authorization ask).",
-        "The Stop hook clears the TASK-096 guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue on ANY sentinel surface (gap-register-guard provenance, TASK-095 git/release, TASK-097 source-edit) is blocked before the boundary.",
+        "The Stop hook clears the TASK-096 guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue on any sentinel surface is blocked (lifecycle per TASK-096).",
         "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle across the sentinel surfaces."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "19444dbb7d56d6f9cbe2a67d51b3fe5f",
-      "content_hash": "a73cbed8a5a4f7fc6dfa8b4e1901a395dc6f9b640a1958f7d71c7f1f6f636c68",
-      "content_parent": "fe075096b71d7cfc0f4e77fd5cc4991e638dbbc33de6913e600f669671c299ed"
+      "content_hash": "956a28d6a21ce614c79efd121b571692130652bd45a67262237661279c1917e9",
+      "content_parent": "a73cbed8a5a4f7fc6dfa8b4e1901a395dc6f9b640a1958f7d71c7f1f6f636c68"
     },
     {
       "id": "TASK-099",

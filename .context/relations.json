@@ -9317,5 +9317,18 @@
       "refname": "FGAP-122"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "331f2959c5d630673f4387c1800f4249",
+      "refname": "FGAP-123"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ba04c442d72fcaa8655338fba491263e",
+      "refname": "FGAP-022"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

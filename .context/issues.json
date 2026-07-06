@@ -146,6 +146,19 @@
       "id": "issue-010",
       "oid": "2fea91136efa95a1a219c57abf0646b5",
       "content_hash": "f103c353d0196771b0c939acdfc6f159219468d29d884e30bbba43cbb8782436"
+    },
+    {
+      "title": "workflows extension ctrl+j shortcut shadows pi built-in newline (tui.input.newLine); ctrl+h byte-aliases legacy Backspace — chords registered with no built-in-set check",
+      "body": "pi-workflows registers two editor-global shortcuts (packages/pi-workflows/src/index.ts:1034,1042; shipped via the meta-package's workflows-extension.ts re-export): ctrl+h = pause running workflow, ctrl+j = resume paused workflow. pi's built-in tui.input.newLine defaults to [shift+enter, ctrl+j] (pi-tui keybindings.js:66). pi's loader resolves non-reserved collisions extension-wins with a startup diagnostic (pi-coding-agent runner.js:309), and the editor checks extension shortcuts before all built-in handling (custom-editor.js:26), so with the extension loaded ctrl+j triggers workflow-resume instead of inserting a newline. On terminals without Kitty/modifyOtherKeys, shift+enter is indistinguishable from enter, making ctrl+j the only newline chord — keyboard newline entry is lost entirely there; an accidental ctrl+j can also silently resume a stale incomplete run. Sibling (latent, not loader-flagged — loader compares chord strings only): ctrl+h emits 0x08, which pi-tui matchesRawBackspace (keys.js:544) treats as plain Backspace on non-Windows-Terminal setups, so terminals whose Backspace sends raw 0x08 trigger the pause handler on Backspace. Class: both chords were authored with no check against pi's default binding set; pi affords no registration-time conflict query (registerShortcut returns void, types.d.ts:859). Resolution: rebind resume to alt+r and pause to alt+p (absent from all pi defaults, no control-byte alias; ctrl+q rejected: XON), sweep the advertised chord strings (workflow-executor.ts:627,839,966; step-pause.ts docstring; pausable-analysis.workflow.yaml:20; README/SKILL surfaces), and comment the registration site with the chord-selection constraint (defaults-free + no control-byte alias: ctrl+h=BS, ctrl+i=Tab, ctrl+j=LF, ctrl+m=CR). Note /workflow has a resume subcommand but no pause subcommand — ctrl+h is the only pause surface. Investigation: analysis/2026-07-06-workflows-extension-ctrlj-shortcut-conflict.md.",
+      "location": "packages/pi-workflows/src/index.ts:1042",
+      "status": "open",
+      "category": "issue",
+      "priority": "medium",
+      "package": "pi-workflows",
+      "source": "agent",
+      "id": "issue-011",
+      "oid": "d27f556813187382fc6ba07c0f8e6d2e",
+      "content_hash": "95aa6225a77adad326b0e239e9200113412b0690964459227e07d9f1cba70fd3"
     }
   ],
   "schema_version": "1.0.1"

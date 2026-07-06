@@ -9226,5 +9226,18 @@
       "refname": "TASK-041"
     },
     "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e664356314c6ef76901640c61a2d88e1",
+      "refname": "FGAP-120"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
+      "refname": "FGAP-089"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

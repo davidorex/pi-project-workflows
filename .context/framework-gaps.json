@@ -3832,7 +3832,7 @@
       "priority": "P2",
       "package": "pi-context-cli",
       "canonical_vocabulary": "field-projection reads",
-      "description": "No read op projects a subset of item fields: filter-block-items, read-block-page, resolve-items-by-id, and context-lens-view --bin all return whole items. Enumerating one field across a block (e.g. every research item's status + stale_conditions, or every gap's id + status + priority) therefore costs full-item payloads, and on populated blocks the 50KB read cap correctly refuses (observed in today's currency audit: filter-block-items on framework-gaps status-in refused at 127,873 bytes; on research status-eq refused at 135,562 bytes; read-block-page of 8 research items truncated at 59,257 bytes). The workarounds are per-item read-block-item loops (dozens of invocations) or table-format rendering (drops fields not in the fixed column set and falls back to full JSON on heterogeneous pages). Class: any substrate-wide sweep that needs one or two fields per item — currency audits, staleness-condition review, priority triage, the planned reconcile/staleness machinery's reporting — pays whole-item cost or is refused; the cap and the projection absence jointly make honest bulk enumeration impossible through the sanctioned surface. Distinct from FGAP-016 (which concerns the cap measuring the pretty form vs compact emission, not projection).",
+      "description": "No read op projects a subset of item fields: filter-block-items, read-block-page, resolve-items-by-id, and context-lens-view --bin all return whole items. Enumerating one field across a block (e.g. every research item's status + stale_conditions, or every gap's id + status + priority) therefore costs full-item payloads, and on populated blocks the 50KB read cap correctly refuses (observed in the 2026-07-05 currency audit: filter-block-items on framework-gaps status-in refused at 127,873 bytes; on research status-eq refused at 135,562 bytes; read-block-page of 8 research items truncated at 59,257 bytes). The workarounds are per-item read-block-item loops (dozens of invocations) or table-format rendering (drops fields not in the fixed column set and falls back to full JSON on heterogeneous pages). Class: any substrate-wide sweep that needs one or two fields per item — currency audits, staleness-condition review, priority triage, the planned reconcile/staleness machinery's reporting — pays whole-item cost or is refused; the cap and the projection absence jointly make honest bulk enumeration impossible through the sanctioned surface. Over-cap filter queries additionally fail as count-without-ids: the fail-closed envelope preserves total/totalBytes but bounds data to null, so the surface answers how-many-match while refusing which (observed 2026-07-06: filter-block-items framework-gaps description-matches 'substrate' → data:null, total:37, totalBytes:137380, complete:false); the op's overCapDirective names read-block-page / refine-the-predicate — both row-narrowing, neither reaches the match set's ids, and read-block-page's own floor (--limit 1) is bounded by the widest single item. Under-cap queries wanting only ids pay whole-body cost (observed 2026-07-06: conventions match-all → 14 items, 22,541 bytes of full rule bodies for ~400 bytes of wanted ids; --fields rejected as unknown flag). Survey completes the class enumeration: join-blocks, read-block, read-block-dir, and gather-execution-context also return whole item bodies; the only narrow shapes on the surface — context-lens-view's bin→count summary, walk-ancestors/context-walk-descendants id-chains, find-references Edge[] — are hardcoded, not parameterized, and cover only their own axes. Distinct from FGAP-016 (which concerns the cap measuring the pretty form vs compact emission, not projection).",
       "evidence": [
         {
           "file": "packages/pi-context/src/ops-registry.ts",
@@ -3841,15 +3841,28 @@
         {
           "file": "analysis/2026-07-05-currency-foreclosure-shape.md",
           "reference": "the audit that hit the refusals; the recommended reconcile/staleness machinery needs cheap enumeration of status + condition fields across blocks"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "reference": "structureForRead bounds data to null on over-cap (line 313) while total/totalBytes survive — the count-without-ids envelope; pageArray (182-193) is the one-implementation precedent a projectFields primitive would sit beside"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "filter-block-items overCapDirective names read-block-page + refine-the-predicate — row-narrowing only; join-blocks whereField/whereOp/whereValue trio and resolve-items-by-id ids Type.Array(Type.String()) are the replicated-parameter and array-parameter precedents for a fields parameter"
+        },
+        {
+          "file": "analysis/2026-07-06-block-query-projection-gap.md",
+          "reference": "the 2026-07-06 investigation: both failure shapes reproduced with envelopes pasted, full read-surface survey table, prior-art triage"
         }
       ],
       "impact": "Substrate-wide currency auditing degrades to per-item invocation loops or partial table renders; the exact sweeps the derivation-truthfulness machinery must run (stored-vs-derived status, fired stale_conditions) cannot be performed affordably through the read surface.",
-      "proposed_resolution": "Determination at task time: a --fields projection parameter on the item-returning read ops (projected server-side before the cap measures), or a dedicated enumeration op returning id + declared fields per item — either keeps the cap honest by shrinking the payload rather than truncating it.",
+      "proposed_resolution": "A shared projectFields primitive beside pageArray in read-element.ts, applied to item bodies BEFORE structureForRead serializes (truncateHead measures the projected payload — the cap shrinks rather than truncates), surfaced as an optional fields: string[] parameter (Type.Optional(Type.Array(Type.String())), reflecting to --fields) on the item-returning query ops — primary: filter-block-items, read-block-page, context-lens-view --bin; secondary: join-blocks, resolve-items-by-id. id always retained; a named field absent on an item is absent in the projected row; omitted fields = whole-item (additive, backward-compatible). Parameter-shape precedents: resolve-items-by-id ids (array param), join-blocks where* trio (one narrowing set replicated across ops).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-05",
       "id": "FGAP-117",
       "oid": "264d39cc77f44ab98deb2227d610b0b9",
-      "content_hash": "a20a62decc7e110a62fa066ed2c12c2b2196da16be58d95f340ce7d80c39eb2f"
+      "content_hash": "0f478daa6f043c3fb87c5286bb8afe88497571e7f03b88b88f45ace285398b4a",
+      "content_parent": "a20a62decc7e110a62fa066ed2c12c2b2196da16be58d95f340ce7d80c39eb2f"
     },
     {
       "title": "release:* bumps versions but never re-promotes — the globally-installed operator CLI silently lags the tree after every release",
@@ -3903,6 +3916,76 @@
       "id": "FGAP-119",
       "oid": "6c45c842b187852cca617dd239236976",
       "content_hash": "dca6ff47638e2e8f956d0e91cfaa0ae5e87268e5433dc0e7c359ecc60336ca56"
+    },
+    {
+      "title": "block-pi-context-glue.sh pattern-matches shell metacharacters inside QUOTED argument values as shell syntax — regex alternation in --value is blocked as piping, and every heuristic false-positives on quoted-payload text",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "canonical_vocabulary": "quote-aware hook pattern matching",
+      "description": ".claude/hooks/block-pi-context-glue.sh runs all four block heuristics (pipe/stderr-silence line 25, for/while-do loop line 30, stdout-redirect line 38, echo/$? line 43) and the pi-context invocation recognizer (line 22) as grep -E over the RAW tool_input.command string with no quote-span awareness, so metacharacters that are DATA inside quoted argument values match as shell syntax. Confirmed false-positive matrix (scratchpad hook copy + one live block): | inside a quoted --value (single- and double-quoted, incl. escaped \\\") blocks as piping; literal 2>/dev/null text in a quoted payload blocks as stderr-silence; prose 'for … do' in a quoted value blocks as a loop; ' > ' inside a quoted JSON payload blocks as redirect; $? in a quoted payload blocks as exit-capture; '; echo ' inside a quoted value satisfies the echo anchor from inside the quotes; and the recognizer fires on a NON-pi-context command (git commit -m) whose quoted message mentions 'pi-context … |'. Non-members confirming the boundary: bare word 'echo' in a value passes (command-position anchor holds); '#' in a payload passes (no comment heuristic). Class: any hook pattern element not lexically confined to inter-token shell syntax matches identical characters occurring as data inside quoted values. Distinct from FGAP-089 (same hooks, sibling class: target-substrate scope-blindness; this gap is command-string quote-blindness — fixing one does not fix the other).",
+      "evidence": [
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "reference": "line 25: (pi-context |bin\\.js )[^;&|]*\\| — [^;&|]* crosses into the quoted value and \\| matches a data pipe; the 2>/dev/null alternative is fully unanchored"
+        },
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "reference": "lines 30, 38, 43: loop / redirect / $?-capture patterns each matched inside quoted payload text in the probe matrix; the echo alternative's (^|[;&|]) anchor is satisfiable from inside quotes ('; echo ')"
+        },
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "reference": "line 22: recognizer (^|[;&|]| )pi-context  matches a quoted MENTION of pi-context in an unrelated command, pulling it into the guard"
+        },
+        {
+          "file": "analysis/2026-07-06-glue-hook-quoted-value-false-positive.md",
+          "reference": "the investigation: live block transcript for filter-block-items --value '\"hook|guard\"', 15-case FP/TP/CLEAN probe matrix against a scratchpad hook copy, class verdict, prior-art sweep (FGAP-089 sibling-not-duplicate), and a validated one-line quote-span-stripping prototype (all 5 TPs still block, all 9 FPs pass)"
+        }
+      ],
+      "impact": "Substrate search via filter-block-items --op matches cannot use regex alternation — the guard blocks the exact narrowing remedy its own block message prescribes — degrading every multi-term substrate query (incl. the mandatory prior-art sweep before any filing) to one term per invocation. Any inline --item/--updates payload whose text discusses shell glue (which gap filings about this discipline necessarily do) trips the redirect/pipe/exit-capture checks. Observed blocking live work at least three times (two prior sessions + this investigation's live repro).",
+      "proposed_resolution": "Make the hook quote-aware at the chokepoint, closing the class for all five pattern sites at once: strip quoted spans from the command string with a single left-to-right combined substitution (perl -pe \"s/'[^']*'|\\\"(?:\\\\\\\\.|[^\\\"\\\\\\\\])*\\\"/Q/g\") immediately after extracting tool_input.command, then run the existing regexes unchanged against the stripped skeleton. Prototyped on a scratchpad copy: all 5 true-positive glue forms still exit 2 with the correct message, all 3 clean forms and all 9 false-positive forms exit 0; left-to-right combined matching is required (two-pass stripping mishandles interleaved quotes and \\\" escapes — the escaped-double-quote case stayed blocked under a naive two-pass sed and passed only after the combined-pattern upgrade). Degradation on exotic quoting is fail-closed (over-block, never under-block), proportionate to the cooperative-agent enforcement target. Fallback if under-blocking ever surfaces: tokenize with a real shell lexer and inspect only inter-token operators. Acceptance test = the investigation's probe matrix (every TP row exit 2, every CLEAN and FP row exit 0). Develop against a COPY, never the live guard; relate to FGAP-089 as sibling class on the same artifact. Grounding: analysis/2026-07-06-glue-hook-quoted-value-false-positive.md.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "FGAP-120",
+      "oid": "e664356314c6ef76901640c61a2d88e1",
+      "content_hash": "ddd1a27f5c84aa76c6fcfb608472b4ad068ac77f19a2848657b0601c492446e9"
+    },
+    {
+      "title": "Birth-relations entries afford only the raw direction form — the 14 orientation-ambiguous role-typed relation_types cannot be filed as birth edges, so the filing transition atom is unusable exactly where FGAP-113's write guard demands the role form",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "canonical_vocabulary": "birth-relations role-typed orientation parity (filing-atom entry shape affords primary/counter)",
+      "description": "The relations filing parameter on append-block-item / append-mode upsert-block-item (244e3d43) shape-locks each entry to {relation_type, direction: as_parent|as_child, other, ordinal?} (BirthRelation, ops-registry.ts; coerceBirthRelations refuses any other key set) and appendBirthRelations translates every entry into a bare {parent, child} appendRelationByRef call. orientAppendInput (context-sdk.ts, the FGAP-113 guard) REJECTS a bare append of any relation that declares role_direction and is orientation-ambiguous per relationKindsOverlap (shared kind, '*' wildcard, or undeclared kind set), instructing re-issue with --primary/--counter — an instruction the birth shape cannot express. Affected: 14 of the 17 role-bearing relation_types in the live registry (all six same-kind ordering relations: decision_supersedes_decision, task_depends_on_task, story_depends_on_story, requirement_depends_on_requirement, research_supersedes_research, milestone_precedes_milestone; all wildcard gated-by/derived-from/includes/depends: feature_depends_on_item, story_includes_item, task_gated_by_item, feature_gated_by_item, story_gated_by_item, decision_gated_by_item, item_derived_from_item, decision_derived_from_item); the 3 disjoint-kind role-bearing relations and all 27 role-less relations are unaffected. Class, not one symptom: the birth entry shape affords a strict subset of the standalone append-relation/append-relations porcelain — no role-typed pair, and no preview parity (upsert --dryRun reports would-file for birth entries without running the orientation guard, so preview passes what the live run refuses; append-block-item has no dryRun). Severity interaction: the error-invariant-transition-atom convention names filing-with-relations as the birth-edge atom; for the 14 types the atom cannot express the edge, so an error-severity requires-edge invariant demanding one deadlocks filings on that block (empirically demonstrated: at error severity the bare filing is gate-refused, the atom is orientation-refused, and the two-op sequence's first op is gate-refused), and convention rule 2 (name the atom before raising to error) is unsatisfiable for those types.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "BirthRelation shape (direction-only) + coerceBirthRelations key-set refusal + appendBirthRelations building unconditionally-bare {parent, child} appendRelationByRef calls"
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "reference": "relationKindsOverlap overlap definition ('*' or shared kind or undeclared set) + orientAppendInput ambiguous-bare-append reject whose remedy (--primary/--counter) has no birth-shape expression"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "upsert-block-item dryRun reports a would-file birth-relation count without orientation validation — preview passes an entry the live run refuses (the second subset cell)"
+        },
+        {
+          "file": ".context/config.json",
+          "reference": "read-config --registry relation_types: 44 registered, 17 role-bearing, 14 orientation-ambiguous (computed 2026-07-06); read-config --registry invariants: 13 declared — only decision-shows-derivation (warning) demands an affected type (decision_derived_from_item), no error invariant does"
+        },
+        {
+          "file": "analysis/2026-07-06-birth-relations-orientation-subset.md",
+          "reference": "investigation of record: root-cause trace, affected-set computation, library-level reproduction transcripts (refusal + byte-identical restore on an invariant-declaring fixture; standalone primary/counter success; error-severity three-path deadlock demo), prior-art map (FGAP-113 closed origin, uncovered surface), class characterization"
+        }
+      ],
+      "impact": "Every birth filing carrying one of the 14 affected relation_types is refused with an unfollowable instruction, forcing the edge into a second standalone op — a non-atomic sequence that survives today only because the sole live invariant demanding an affected type (decision-shows-derivation) is warning severity. The affected set is the gated-by / derived-from / supersedes / depends families — the relation_types most natural as birth edges. Under any error-severity requires-edge invariant demanding one of the 14 (the documented backfill-then-raise trajectory for decision-shows-derivation is the nearest case), filings on that block deadlock: bare filing gate-refused, atom orientation-refused, two-op sequence gate-refused — the exact class the error-invariant-transition-atom convention exists to prevent, and the skill narrative's stated guarantee (the atomic filing form is the path the gate accepts) becomes no-path. The upsert dryRun preview additionally false-passes such entries.",
+      "proposed_resolution": "Give the birth entry both orientation forms, single-sourcing guard + mapping in orientAppendInput: each entry carries {relation_type, other, ordinal?} plus EITHER direction: as_parent|as_child (raw, unchanged) OR role: primary|counter (the NEW item holds that role; other holds the complement), mutually exclusive per entry (coerceBirthRelations enforces). appendBirthRelations maps role entries to the role-typed RelationAppendInput (primary → {primary: itemId, counter: other}; counter → {primary: other, counter: itemId}) and delegates unchanged, so the existing orientAppendInput errors apply verbatim (role on a role-less relation → existing no-role_direction throw; direction on an ambiguous role-bearing relation → existing re-issue throw, now followable in-shape). Preview parity: run the orientation mapping/guard over coerced entries under upsert --dryRun (endpoint resolution may stay out; orientation needs only the registry). Regression locks per guard path plus the error-severity deadlock demo passing post-fix via the role form. Docs-surface-sync: both op strings in ops-registry.ts, packages/pi-context/README.md write-pipeline + Block CRUD prose, skill-narrative.md atomic-filing paragraph, SKILL.md regen, CHANGELOG [Unreleased].",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "FGAP-121",
+      "oid": "4e456b445663b2e6edc5e44b6891e90c",
+      "content_hash": "e723ef3b106f33315b79130cd926a723370ed4a3a1ac11a308879fd80ae74590"
     }
   ]
 }

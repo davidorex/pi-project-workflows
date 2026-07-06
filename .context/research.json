@@ -1459,6 +1459,63 @@
       "oid": "1dbc4592e6bca7160d2f4c744d9c9972",
       "content_hash": "2bbded9cafd32f6d29d7443fbd1878efa9bb2bb107539498c095501f78574e44",
       "content_parent": "0a5a5c912b711279695a631d031d0671450d54246297cdee7517f0397b408634"
+    },
+    {
+      "title": "Foreign-status derivation blindness — mechanism, per-surface class inventory, and resolution shapes for cross-substrate consumption",
+      "status": "complete",
+      "layer": "L1",
+      "type": "empirical",
+      "question": "Does pi-context's derived state consume foreign (cross-substrate) edge endpoints — and if not, where exactly does each derivation surface drop them, what is the blast radius, and what fix shapes does the shipped architecture afford?",
+      "method": "Fresh-agent upstream verification of a downstream two-substrate report: every claim re-derived against current source (v0.32.0 + Unreleased, HEAD aafc8dc); two registered scratchpad substrates driven through built dist via the sanctioned porcelain (appendRelationByRef with alias:refname selectors, currentState, validateContext); per-surface code trace of every edge-consuming join; prior-art sweep of framework-gaps/features/decisions/research; design-record archaeology of the 2026-05-31 identity spec.",
+      "findings_summary": "Every edge-consuming derivation surface resolves endpoints via endpointKey (bare refname, substrate_id discarded) against the ACTIVE substrate's byRefname index only, while the write path and validateContext's edge-integrity accept and certify foreign endpoints as valid — a split-brain with zero diagnostics on any derivation path. Per-surface polarity: gate/dependency satisfaction silently drops foreign blockers (a task gated on an OPEN foreign item derives ready and enters nextActions — empirically reproduced, validate clean even with a covering status-consistency invariant declared); derivedRollupComplete returns false for foreign members (a milestone with every member complete derives planned; reconcile/converge STAMP that false status durably); the status-consistency invariant skips foreign targets; requires-edge satisfaction never resolves the counter-endpoint; joinBlocks and roadmap rollups drop foreign counterparts; walks erase the substrate qualifier. Aggravator: foreign keys are bare refnames, so a same-refname local item (the expected case across catalog-installed substrates) silently substitutes its status for the foreign item's — reproduced: a local closed gB satisfied a gate pointing at foreign-open gB. findReferences is the only non-blind edge-read surface. The claimed single seam is partially true: derivedRollupComplete converges its three consumers, but gates, invariants, joinBlocks, roadmap, and walks carry independent active-index joins — the real seam is the endpointKey+byRefname join convention; resolveRef (registry-aware, per-pass cached, shipped v0.28.0) exists and is wired only into validation. The 2026-05-31 identity spec designed §J3 foreign-aware status-consistency (compare-if-readable, warn-if-unreadable — never implemented) and contains no derivation design. Resolution shapes the architecture affords: resolve-at-derive (registry resolution at every join, recommended), derive-as-blocked-until-resolved, flagged-exclusion floor — a genuine DEC-shaped semantics choice (freshness/cost/offline trade-offs); in every variant silent dropping and refname-collision aliasing must be eliminated and the dangling-vs-foreign conflation split.",
+      "findings_document": "analysis/2026-07-06-foreign-status-derivation-blindness.md",
+      "grounding": {
+        "dependencies": [
+          "@davidorex/pi-context@0.32.0 (working tree, Unreleased included)"
+        ],
+        "revisions": [
+          "workflowsPiExtension main HEAD aafc8dc at verification; dist built 2026-07-06 08:12, current with source"
+        ]
+      },
+      "stale_conditions": [
+        "Any change to normalizeEndpoint/endpointKey in packages/pi-context/src/context.ts (the foreign-key derivation and the collision-aliasing root)",
+        "Any change to the gate/dependency filters at packages/pi-context/src/context-sdk.ts incompletePreds/unsatisfiedGates or to derivedRollupComplete's membership lookup",
+        "FEAT-012 reaching implementation (any surface beginning to resolve foreign endpoints through the registry supersedes the per-surface inventory)",
+        "FGAP-122 closed"
+      ],
+      "citations": [
+        {
+          "label": "gate filters + derivedRollupComplete + status-consistency skip + edge-integrity resolveRef loop + joinBlocks",
+          "path": "packages/pi-context/src/context-sdk.ts",
+          "lines": "889-892, 758-759, 2352-2353, 2513-2557, 1253"
+        },
+        {
+          "label": "normalizeEndpoint bare-refname foreign keying + walks",
+          "path": "packages/pi-context/src/context.ts",
+          "lines": "405-413, 1586-1638"
+        },
+        {
+          "label": "reconcile/converge stamping via the shared completeness helper",
+          "path": "packages/pi-context/src/index.ts",
+          "lines": "2704, 2760"
+        },
+        {
+          "label": "roadmap rollup member lookups",
+          "path": "packages/pi-context/src/roadmap-plan.ts",
+          "lines": "340, 345"
+        },
+        {
+          "label": "findings document: reproduction transcripts, class inventory, prior-art sweep, resolution shapes",
+          "path": "analysis/2026-07-06-foreign-status-derivation-blindness.md"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "R-0026",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-06T01:39:15.801Z",
+      "oid": "afc95bbdfee7a8fa15bf9540a711edf8",
+      "content_hash": "4e00c682a6c76d365d26813ab70ccc77b6a8cc7761fe50490dc5716371708598"
     }
   ],
   "schema_version": "1.0.1"

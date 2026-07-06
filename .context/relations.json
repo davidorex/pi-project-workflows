@@ -9239,5 +9239,83 @@
       "refname": "FGAP-089"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1c757ef05120985d60f89543452baa36",
+      "refname": "FEAT-012"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1c05acbdcc5cd1cace7c398fa7de6dde",
+      "refname": "FGAP-122"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1c757ef05120985d60f89543452baa36",
+      "refname": "FEAT-012"
+    },
+    "relation_type": "gap_addressed_by_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1c05acbdcc5cd1cace7c398fa7de6dde",
+      "refname": "FGAP-122"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "aeffe68d922894375b46f7f0f1121056",
+      "refname": "FGAP-061"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1c05acbdcc5cd1cace7c398fa7de6dde",
+      "refname": "FGAP-122"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "02be67a9f744e7e13a28a24c382a3cbb",
+      "refname": "FGAP-002"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "afc95bbdfee7a8fa15bf9540a711edf8",
+      "refname": "R-0026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1c757ef05120985d60f89543452baa36",
+      "refname": "FEAT-012"
+    },
+    "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "afc95bbdfee7a8fa15bf9540a711edf8",
+      "refname": "R-0026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1c05acbdcc5cd1cace7c398fa7de6dde",
+      "refname": "FGAP-122"
+    },
+    "relation_type": "research_informs_item"
   }
 ]

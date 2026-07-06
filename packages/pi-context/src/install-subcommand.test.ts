@@ -4072,4 +4072,45 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 			"a transitioned substrate is a clean no-op (stale is not complete)",
 		);
 	});
+
+	it("substrate-internal paths are living state: never pinned at the choke, never judged by the evaluator", (t) => {
+		staleRoot = makeStalenessProject();
+		const root = staleRoot;
+		t.after(() => undefined);
+		// Citation pointing INSIDE the substrate dir: the choke must not pin it.
+		appendToBlock(
+			root,
+			"research",
+			"research",
+			researchItem("R-0004", "complete", {
+				citations: [{ label: "living substrate block", path: ".project/research.json" }],
+				stale_conditions: [{ kind: "file-changed", path: ".project/research.json" }],
+			}),
+		);
+		const data = readBlock(root, "research") as { research: Array<Record<string, unknown>> };
+		const item = data.research.find((r) => r.id === "R-0004") as Record<string, unknown>;
+		const cits = item.citations as Array<Record<string, unknown>>;
+		assert.equal(cits[0].content_pin, undefined, "substrate-internal citation never pinned at the choke");
+		const conds = item.stale_conditions as Array<Record<string, unknown>>;
+		assert.equal(conds[0].baseline_hash, undefined, "substrate-internal file-changed condition never baselined");
+		// Even a HAND-AUTHORED pin/baseline on a substrate-internal path is never
+		// judged — it would drift on every substrate write and flag forever.
+		appendToBlock(
+			root,
+			"research",
+			"research",
+			researchItem("R-0005", "complete", {
+				citations: [
+					{ label: "authored pin on living state", path: ".project/research.json", content_pin: "ab".repeat(32) },
+				],
+				stale_conditions: [{ kind: "file-changed", path: ".project/research.json", baseline_hash: "cd".repeat(32) }],
+			}),
+		);
+		const cands = evaluateStalenessCandidates(root);
+		assert.equal(
+			cands.find((c) => c.id === "R-0005"),
+			undefined,
+			"authored pin/baseline on a substrate-internal path is never judged",
+		);
+	});
 });

@@ -706,8 +706,13 @@ function stampDeclaredBaselines(
 	}
 	if (!itemProps) return;
 	const projectRoot = path.dirname(substrateDir);
+	const substrateAbs = path.resolve(substrateDir);
 	const fileHashOrNull = (rel: string): string | null => {
 		const abs = path.resolve(projectRoot, rel);
+		// Substrate-internal paths are LIVING STATE, not groundable artifacts: a
+		// pin/baseline on a block file would drift on every subsequent substrate
+		// write and flag forever. Never stamped — such references stay human-only.
+		if (abs === substrateAbs || abs.startsWith(substrateAbs + path.sep)) return null;
 		try {
 			if (!fs.statSync(abs).isFile()) return null;
 			return computeFileBytesHash(abs);

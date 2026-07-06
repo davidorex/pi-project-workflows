@@ -107,6 +107,15 @@
       "severity": "error",
       "oid": "0893eca1bfd670d02a579a13a59060cc",
       "content_hash": "93b84a351d7b39abbd13026caad1466a5f53326b04470a5548ba1784c43101bb"
+    },
+    {
+      "id": "error-invariant-transition-atom",
+      "description": "An invariant is declared at error severity ONLY when a single op performs the complete transition that satisfies it — the transition atom. Apply at every invariant declaration, severity raise, and catalog authoring.\n1. The write-time gate refuses any write that introduces an error-severity violation. An error invariant whose satisfying state change spans multiple ops makes every intermediate resting state a violation: the transition becomes impossible through the ops layer. Error severity therefore presupposes an atom.\n2. Before declaring at error or raising to error, NAME the op that affords the atom. Current atoms: complete-task (files the verification_verifies_item edge and flips task status in one run); append-block-item and append-mode upsert-block-item with relations (file an item and its birth edges in one run).\n3. No atom → either build the atom first, or declare at warning (observe-only: the divergence surfaces on validate and on write results without refusing transitions).\n4. A severity raise follows backfill-then-raise (TASK-041 pattern) AND requires the atom: the backfill makes existing items compliant; the atom keeps future transitions possible.\n5. A cross-item error atom no single op should own (two items' statuses changing together, mutually-edged multi-item births) triggers a batch/transaction-op decision — the invariant stays warning until that affordance exists.\nEnforcement: review at every invariant declaration and severity raise; a structural check at amend-config/update time is a future affordance.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "fbf16a2e8a8e0bd11e380154bdcaa66f",
+      "content_hash": "921c5314abcfdaa0f61f1f81c935526490291bc54b6c9b9f83a48639f2a4c5c5"
     }
-  ]
+  ],
+  "schema_version": "1.0.1"
 }

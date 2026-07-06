@@ -691,6 +691,22 @@
       "id": "DEC-0020",
       "oid": "daaf7371aa13765843464fdc031b0f84",
       "content_hash": "dd8d0cd5124bade383046f16b5ac7367d4187710549ae2a860498a9845d20522"
+    },
+    {
+      "title": "The packaged catalog ships the convention-articulation trio at warning; error severity is a per-substrate raise, not a catalog default",
+      "status": "enacted",
+      "context": "The live substrate declares decision/feature/task-articulates-convention at error (the FEAT-007 backfill-then-raise end-state); the packaged catalog (samples/conception.json) declares the same trio at warning. update's registry propagation is additive-only and never overwrites a locally-diverged severity, so the divergence persists by construction and needs a recorded disposition: raise the catalog, or record the divergence as designed.",
+      "decision": "The catalog keeps warning; the live/catalog divergence is the designed relationship, not drift. Derivation: on an empty substrate the trio at error refuses the very first decision/feature/task filing until a convention item or missing-convention gap exists to be cited — a forced filing ceremony before first real use, contradicting the catalog's offer-don't-impose ethos (accept-all is idempotent never-clobber; the advisory tier surfaces the advice without blocking writes). Error severity is a per-substrate maturity step taken when the substrate's existing items are compliant: backfill-then-raise (the TASK-041 pattern; FEAT-007's end-state on this substrate). Any raise — catalog or local — additionally requires the satisfying transition atom per error-invariant-transition-atom.",
+      "consequences": [
+        "New substrates adopt the trio as advisory and raise locally when mature; update's additive-only registry merge preserves the local raise on every subsequent update.",
+        "Catalog invariant severities are authored per this rule: advisory in the catalog; error by substrate-local backfill-then-raise with the transition atom in place.",
+        "No code or catalog change; the divergence needs no reconciliation and is not re-opened by future substrate-currency audits."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-06",
+      "id": "DEC-0021",
+      "oid": "778b32ece9f2a7a7f9b3b012e941a93c",
+      "content_hash": "cfb4e6cb419ceeabc184e2dfb3ee60b911ca7fdecc1d4a3f8e6d9a42d91971ae"
     }
   ],
   "schema_version": "1.0.1"

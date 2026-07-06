@@ -1,0 +1,12 @@
+{
+  "title": "Session driver: walk a work unit through the state machine as the path of least resistance (FEAT-013 pillar 2 — the predictable half)",
+  "description": "A driver skill/command (precedent: .claude/skills/run-pi-project-workflows/driver.mjs; the workflow executor's control-plane/subordinate-subprocess architecture) that walks a work unit through the canonical state machine: prompts the current state's required action, dispatches the right agent kind per state (Explore for EXPLORED, general-purpose for IMPLEMENTED, fresh-context for PROBED), runs the npm gates itself, mints phase-state transitions, and refuses out-of-order actions. The driver composes each dispatch prompt deterministically (WASC renderer pattern), inlining the project mandates and the role contracts (stop-on-ambiguity for implementing agents; the machine-parsed output contract for probe/audit agents), since subagents do not receive the UserPromptSubmit injection. Autonomous re-dispatch loops carry a hard iteration cap (then STOP and escalate per mandate-008) and terminate only on deterministic signals (gate exit codes; the parsed findings count). With the phase-state layer it makes the state machine the interface rather than a policy the model recalls — the 'predictable' half of the directive (hooks make deviation fail; the driver makes compliance the path of least resistance). Depends on the full deny surface + state layer. FEAT-013 R17.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "The driver walks a sample work unit SURFACED..CLOSED, prompting each state's required action and dispatching the state-appropriate agent kind.",
+    "The driver mints phase-state transitions and runs the npm gates itself; an out-of-order action is refused.",
+    "The driver performs each state's required dispatch and gate without the operator issuing the underlying commands manually (compliance by construction, observed on the sample walk).",
+    "Dispatch prompts are composed deterministically with mandates and role contracts inlined (stop-on-ambiguity; probe output contract); identical inputs produce identical prompts.",
+    "Autonomous re-dispatch loops carry a hard iteration cap (then STOP and escalate per mandate-008) and terminate only on deterministic signals (gate exit codes; the parsed findings count)."
+  ]
+}

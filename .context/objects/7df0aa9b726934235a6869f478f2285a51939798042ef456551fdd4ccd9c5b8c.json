@@ -1,0 +1,13 @@
+{
+  "title": "Bash chokepoint hook: destructive-git / --no-verify sentinel, gate-command pipe-masking, release/push hold (FEAT-013 pillar 1 + 4)",
+  "description": "PreToolUse(Bash) chokepoint, segment-split on ;&| so chained commands are caught. Three blocks:\n- Destructive git (the commit-gate evasion class — --no-verify, -n (its short form), a HUSKY= env prefix, -c core.hooksPath= — plus reset --hard, rebase, push --force, tag -d, unmerged branch-delete) — blocked without a per-invocation user sentinel.\n- Gate-command masking (npm test / run check / run build piped or truncated) — blocked.\n- HELD actions (npm run release:*, npm publish, non-durably-authorized git push) — blocked without a user-minted grant object.\nThe grant object is itself write-shielded: direct Edit/Write/NotebookEdit and Bash write-forms targeting it are denied except via the granting flow (the TASK-094 pattern applied to the harness's files); paired detection: a periodic cross-check that each grant open corresponds to a user message (claude-history) — natural home the audit-substrate-currency skill or a sibling.\nEscapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
+  "status": "planned",
+  "acceptance_criteria": [
+    "The commit-gate evasion class (--no-verify, -n, a HUSKY= env prefix, -c core.hooksPath=) and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
+    "npm test|run check|run build piped or tailed is blocked; the bare command passes; a set -o pipefail form is permitted.",
+    "npm run release:*, npm publish, and non-authorized git push are blocked without a user-minted grant object; a covered grant passes.",
+    "On a sentinel-required refusal this guard sets the TASK-096 guard-fired marker (lifecycle per TASK-096).",
+    "The grant object is write-shielded (deniable paths only via the granting flow) and grant opens are cross-checkable against user messages.",
+    "Regression cells for each true-positive block, each legitimate pass, and the marker set-on-refusal."
+  ]
+}

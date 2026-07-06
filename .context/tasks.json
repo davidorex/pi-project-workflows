@@ -1960,37 +1960,39 @@
     {
       "id": "TASK-095",
       "title": "Bash chokepoint hook: destructive-git / --no-verify sentinel, gate-command pipe-masking, release/push hold (FEAT-013 pillar 1 + 4)",
-      "description": "PreToolUse(Bash) chokepoint, segment-split on ;&| so chained commands are caught. Three blocks:\n- Destructive git (--no-verify, reset --hard, rebase, push --force, tag -d, unmerged branch-delete) — blocked without a per-invocation user sentinel.\n- Gate-command masking (npm test / run check / run build piped or truncated) — blocked.\n- HELD actions (npm run release:*, npm publish, non-durably-authorized git push) — blocked without a user-minted grant object.\nEscapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
+      "description": "PreToolUse(Bash) chokepoint, segment-split on ;&| so chained commands are caught. Three blocks:\n- Destructive git (the commit-gate evasion class — --no-verify, -n (its short form), a HUSKY= env prefix, -c core.hooksPath= — plus reset --hard, rebase, push --force, tag -d, unmerged branch-delete) — blocked without a per-invocation user sentinel.\n- Gate-command masking (npm test / run check / run build piped or truncated) — blocked.\n- HELD actions (npm run release:*, npm publish, non-durably-authorized git push) — blocked without a user-minted grant object.\nThe grant object is itself write-shielded: direct Edit/Write/NotebookEdit and Bash write-forms targeting it are denied except via the granting flow (the TASK-094 pattern applied to the harness's files); paired detection: a periodic cross-check that each grant open corresponds to a user message (claude-history) — natural home the audit-substrate-currency skill or a sibling.\nEscapes are user-attributed per the provenance-ceremony shape (same-turn re-issue forbidden). FEAT-013 R2, R3, R4.",
       "status": "planned",
       "acceptance_criteria": [
-        "git --no-verify and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
+        "The commit-gate evasion class (--no-verify, -n, a HUSKY= env prefix, -c core.hooksPath=) and each destructive git op are blocked without the user sentinel; a granted sentinel passes; a routine non-destructive git op passes.",
         "npm test|run check|run build piped or tailed is blocked; the bare command passes; a set -o pipefail form is permitted.",
         "npm run release:*, npm publish, and non-authorized git push are blocked without a user-minted grant object; a covered grant passes.",
         "On a sentinel-required refusal this guard sets the TASK-096 guard-fired marker (lifecycle per TASK-096).",
+        "The grant object is write-shielded (deniable paths only via the granting flow) and grant opens are cross-checkable against user messages.",
         "Regression cells for each true-positive block, each legitimate pass, and the marker set-on-refusal."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "740f1f000da1d48d8e6c26376cba856d",
-      "content_hash": "6c3c3dc5a2a4bc43ff7fa7c348b80a6e1ed5bcd1d0489752f1e3fb78df04b84c",
-      "content_parent": "52874f6147188937a0420af55df9cc817ff556c22419a8902ef2309010b12690"
+      "content_hash": "7df0aa9b726934235a6869f478f2285a51939798042ef456551fdd4ccd9c5b8c",
+      "content_parent": "6c3c3dc5a2a4bc43ff7fa7c348b80a6e1ed5bcd1d0489752f1e3fb78df04b84c"
     },
     {
       "id": "TASK-096",
       "title": "Phase-state layer: per-work-unit pipeline state, SessionStart seed/reconcile, event-minted transitions (FEAT-013 pillar 2 — the keystone)",
-      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Two field classes. Coarse position (state, task status, verification edges, branch) is SessionStart-reconciled from substrate truth (context-status), never from narrative. Session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are not substrate-native (requirements report R14, in R-0028's findings doc, defers that) and persist in the phase-state file across sessions, giving TASK-099's closure gates a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). Guard-fired marker: set by any sentinel-bearing guard on a sentinel-required refusal, cleared by TASK-098's Stop hook at turn boundary; blocks same-turn sentinel re-issue. The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
+      "description": "A machine-readable per-work-unit pipeline state (.claude/state/pipeline.json or a substrate-native work-order): {taskId, state (SURFACED..CLOSED), delegation (orchestrator | subagent-session role marker distinguishing who owns the current edit), branch, planStamp, guardFiredMarker, demoEvidence, probeVerdict, findings[]}. Two field classes. Coarse position (state, task status, verification edges, branch) is SessionStart-reconciled from substrate truth (context-status), never from narrative. Session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]) are not substrate-native (requirements report R14, in R-0028's findings doc, defers that) and persist in the phase-state file across sessions, giving TASK-099's closure gates a stable source. Transitions minted only by hook-verified events (PostToolUse(ExitPlanMode) -> PLANNED via the plan-archive pattern; feature-branch commit -> IMPLEMENTED; complete-task -> CLOSED). The delegation field is SET on Agent-dispatch of a coding subagent and CLEARED on its return (PostToolUse(Agent) — one of the unverified hook events; verify-first). Guard-fired marker: set by any sentinel-bearing guard on a sentinel-required refusal, cleared by TASK-098's Stop hook at turn boundary; blocks same-turn sentinel re-issue. The phase-state file is itself write-shielded: direct Edit/Write/NotebookEdit and Bash write-forms targeting .claude/state/* are denied except via the minting hooks/driver (the TASK-094 pattern applied to the harness's files). The state hooks consult so they check 'is this tool call legal in this state' instead of re-deriving process. Keystone for the source-edit gate, the ask gate, and the findings ledger. FEAT-013 R11.",
       "status": "planned",
       "acceptance_criteria": [
         "A SessionStart hook seeds/reconciles the phase-state file: the coarse pipeline position (state, branch, task status) from substrate truth (context-status), never from any narrative cache.",
         "A mid-pipeline session restart preserves the session-local fields (planStamp, delegation, guardFiredMarker, demoEvidence, probeVerdict, findings[]), so TASK-099's closure gates keep a stable source.",
-        "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated.",
+        "State transitions are minted by hook-verified events (ExitPlanMode, feature-branch commit, complete-task), each demonstrated, and the delegation field is set on coding-subagent dispatch and cleared on return.",
+        "Direct Edit/Write/NotebookEdit and Bash write-forms targeting .claude/state/* are denied except via the minting hooks/driver.",
         "The state file is machine-readable and queryable cheaply by the downstream deny hooks."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "abcd0a0706eac0b2aa45487f85e27dee",
-      "content_hash": "b680e6ef5fc934a3ed1148936dd7c645dadb586103e04ff0b3908683fc7153a9",
-      "content_parent": "70cc1cd8cb8a69e915ee6176caa517442fd1d90ba6d21043156331e132fbcfcf"
+      "content_hash": "25e5b017182cdac88a99c228df8ad1488d6f6adec7a85a10980738fe16628fd1",
+      "content_parent": "b680e6ef5fc934a3ed1148936dd7c645dadb586103e04ff0b3908683fc7153a9"
     },
     {
       "id": "TASK-097",
@@ -2012,27 +2014,29 @@
     {
       "id": "TASK-098",
       "title": "Stop-hook ask gate: three-stops filter + guard-fired marker lifecycle (FEAT-013 pillar 3 — the chaos-driver foreclosure)",
-      "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter. Three stops PASS: a pending provenance grant (guard-fired marker set); an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape); a HELD action awaiting authorization. Every other ask-shaped closer (\"on your go\", \"now or later\", \"shall I\", \"want me to\") is relitigation — blocked, governing rule named. Regex first; invokeMonitor classification if regex is too blunt. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
+      "description": "A Stop hook (the only mechanical point that sees a turn's final message; currently unused) that blocks turn-end on an ask failing the three-legitimate-stops filter. Three stops PASS: a pending provenance grant (guard-fired marker set); an escalation naming why the choice is underdetermined (decision_escalates_underdetermined shape); a HELD action awaiting authorization. Every other ask-shaped closer (\"on your go\", \"now or later\", \"shall I\", \"want me to\") is relitigation — blocked, governing rule named. Regex first; invokeMonitor classification if regex is too blunt. On heuristic/classifier uncertainty the gate fails OPEN (nudge, not block), per the block-vs-nudge principle — a false positive here would block a legitimate stop. Also clears the guard-fired marker at a genuine turn boundary (closing the same-turn sentinel self-attestation hole with the guard). FEAT-013 R6, R12.",
       "status": "planned",
       "acceptance_criteria": [
         "A turn ending on an ask that fails the three-stops filter is blocked with stderr naming the governing rule; the work proceeds instead.",
         "Each of the three legitimate stops passes the gate (a pending provenance table, an underdetermined-escalation ask, a HELD-action authorization ask).",
+        "On classifier/heuristic uncertainty the gate fails open (nudge), never blocking a legitimate stop.",
         "The Stop hook clears the TASK-096 guard-fired marker at turn boundary; a same-turn sentinel-bearing re-issue on any sentinel surface is blocked (lifecycle per TASK-096).",
         "Regression cells: relitigation-ask blocked, each legitimate stop passed, marker-lifecycle across the sentinel surfaces."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "19444dbb7d56d6f9cbe2a67d51b3fe5f",
-      "content_hash": "956a28d6a21ce614c79efd121b571692130652bd45a67262237661279c1917e9",
-      "content_parent": "a73cbed8a5a4f7fc6dfa8b4e1901a395dc6f9b640a1958f7d71c7f1f6f636c68"
+      "content_hash": "3e0fcaaae9fca9976a16b3a98ef28ae2ab06896de6d6f1427a8b59d44ef3caf5",
+      "content_parent": "956a28d6a21ce614c79efd121b571692130652bd45a67262237661279c1917e9"
     },
     {
       "id": "TASK-099",
       "title": "Findings ledger + closure evidence + milestone-gate record (FEAT-013 pillar 2, closure-side)",
-      "description": "Probe/demo findings land in a findings ledger (in the phase-state file, schema-shaped). Gates: PreToolUse(Bash) blocks git merge into the integration branch and pi-context complete-task while the ledger holds open entries; entries close only by fix-commit + fresh re-audit or by a user-recorded deprioritization (mandate-007: user decides scope). Closure additionally requires recorded demoEvidence (the real invocation + output pointer) and a fresh-context probeVerdict before complete-task runs. The milestone-validity-gate record type is added and checked at plan approval for milestone-member tasks (currently enforcement: manual). Depends on the phase-state layer. FEAT-013 R13, R14, R18.",
+      "description": "Probe/demo findings land in a findings ledger (in the phase-state file, schema-shaped). Probe/demo/audit agents emit a compiled output contract (a literal terminal `Total findings: N` line or a JSON verdict object); the findings ledger is populated by PARSING that artifact (driver or hook), never by orchestrator transcription; closure GO/NO-GO is computed from the parsed count. Gates: PreToolUse(Bash) blocks git merge into the integration branch and pi-context complete-task while the ledger holds open entries; entries close only by fix-commit + fresh re-audit or by a user-recorded deprioritization (mandate-007: user decides scope). Closure additionally requires recorded demoEvidence (the real invocation + output pointer) and a fresh-context probeVerdict before complete-task runs. The milestone-validity-gate record type is added and checked at plan approval for milestone-member tasks (currently enforcement: manual). Depends on the phase-state layer. FEAT-013 R13, R14, R18.",
       "status": "planned",
       "acceptance_criteria": [
-        "git merge into the integration branch and complete-task are blocked while the findings ledger holds open entries; a user-recorded deprioritization or a fix-commit + re-audit entry closes them.",
+        "git merge into the integration branch and complete-task are blocked while the findings ledger holds open entries; a user-recorded deprioritization or a fix-commit + re-audit entry closes them; loop convergence is judged on the parsed findings count reaching zero, never an LLM read.",
+        "The findings ledger is populated by parsing the probe/audit agent's machine-readable verdict (terminal `Total findings: N` line or JSON verdict); an orchestrator-transcribed entry path does not exist; closure GO/NO-GO is computed from the parsed count.",
         "complete-task is blocked without recorded demoEvidence and a fresh-context probeVerdict on the phase-state; both present lets it proceed.",
         "One per-milestone gate record is built and checked whenever any member task enters PLANNED; a milestone whose first member enters PLANNED without the record is blocked.",
         "Regression cells for each gate."
@@ -2040,8 +2044,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "ff43a54db9e8de4bcb826d43fe736f07",
-      "content_hash": "3399f72e8e7997155993deeae6dbca3d691b06411811fc07c5f7b224e9c3c441",
-      "content_parent": "a237277a97dbf0d82b169918bf5e086ba93ce71571f7ae088680ea5111850a47"
+      "content_hash": "d076dda7f3da0226fbfa51b94a1f64c196ea5af2bfc8f3d29dc0b90b0ad0bd3f",
+      "content_parent": "3399f72e8e7997155993deeae6dbca3d691b06411811fc07c5f7b224e9c3c441"
     },
     {
       "id": "TASK-100",
@@ -2062,18 +2066,20 @@
     {
       "id": "TASK-101",
       "title": "Session driver: walk a work unit through the state machine as the path of least resistance (FEAT-013 pillar 2 — the predictable half)",
-      "description": "A driver skill/command (precedent: .claude/skills/run-pi-project-workflows/driver.mjs; the workflow executor's control-plane/subordinate-subprocess architecture) that walks a work unit through the canonical state machine: prompts the current state's required action, dispatches the right agent kind per state (Explore for EXPLORED, general-purpose for IMPLEMENTED, fresh-context for PROBED), runs the npm gates itself, mints phase-state transitions, and refuses out-of-order actions. With the phase-state layer it makes the state machine the interface rather than a policy the model recalls — the 'predictable' half of the directive (hooks make deviation fail; the driver makes compliance the path of least resistance). Depends on the full deny surface + state layer. FEAT-013 R17.",
+      "description": "A driver skill/command (precedent: .claude/skills/run-pi-project-workflows/driver.mjs; the workflow executor's control-plane/subordinate-subprocess architecture) that walks a work unit through the canonical state machine: prompts the current state's required action, dispatches the right agent kind per state (Explore for EXPLORED, general-purpose for IMPLEMENTED, fresh-context for PROBED), runs the npm gates itself, mints phase-state transitions, and refuses out-of-order actions. The driver composes each dispatch prompt deterministically (WASC renderer pattern), inlining the project mandates and the role contracts (stop-on-ambiguity for implementing agents; the machine-parsed output contract for probe/audit agents), since subagents do not receive the UserPromptSubmit injection. Autonomous re-dispatch loops carry a hard iteration cap (then STOP and escalate per mandate-008) and terminate only on deterministic signals (gate exit codes; the parsed findings count). With the phase-state layer it makes the state machine the interface rather than a policy the model recalls — the 'predictable' half of the directive (hooks make deviation fail; the driver makes compliance the path of least resistance). Depends on the full deny surface + state layer. FEAT-013 R17.",
       "status": "planned",
       "acceptance_criteria": [
         "The driver walks a sample work unit SURFACED..CLOSED, prompting each state's required action and dispatching the state-appropriate agent kind.",
         "The driver mints phase-state transitions and runs the npm gates itself; an out-of-order action is refused.",
-        "The driver performs each state's required dispatch and gate without the operator issuing the underlying commands manually (compliance by construction, observed on the sample walk)."
+        "The driver performs each state's required dispatch and gate without the operator issuing the underlying commands manually (compliance by construction, observed on the sample walk).",
+        "Dispatch prompts are composed deterministically with mandates and role contracts inlined (stop-on-ambiguity; probe output contract); identical inputs produce identical prompts.",
+        "Autonomous re-dispatch loops carry a hard iteration cap (then STOP and escalate per mandate-008) and terminate only on deterministic signals (gate exit codes; the parsed findings count)."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "b3246d7a7b695f028f448b55c57956c4",
-      "content_hash": "5fd1cf2b2a74f5faa02fac35912de91228187f67b668bf86bfc98a1509c8d0d3",
-      "content_parent": "079dcd1163258e13a1a21933216cb97ab591d921b2334dda7e9164fb22cd6bec"
+      "content_hash": "bbb56cc832251b7979eb61e7cd4eec95215caa18df534398eeedc9f8035bfdcc",
+      "content_parent": "5fd1cf2b2a74f5faa02fac35912de91228187f67b668bf86bfc98a1509c8d0d3"
     }
   ],
   "schema_version": "1.0.1"

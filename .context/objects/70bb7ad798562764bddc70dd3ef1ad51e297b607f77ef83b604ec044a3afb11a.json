@@ -1,0 +1,27 @@
+{
+  "title": "In-process jit dispatch cannot execute tools — executeAgent is a single-turn completion primitive, so the grant machinery clamps a capability that does not exist",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-jit-agents",
+  "canonical_vocabulary": "executable tool binding in jit dispatch",
+  "description": "executeAgent (packages/pi-jit-agents/src/jit-runtime.ts:432-738) makes one completeFn call and extracts output; it never binds tool implementations. compiled.tools is consumed at exactly one point — the DEC-0047 grant-subset clamp (computeGrantViolation, :488) — gating NAMES, materializing nothing; the only tool ever passed to the LLM is the phantom output-schema tool (:566-570), never executed by design; DispatchContext (types.ts:195-234) has no channel for tool implementations. Empirically demonstrated (instrumented completeFn against built dist with the WO-001 spec): grant ['write','bash'] passes the clamp and is discarded — toolsPassedToLLM: UNDEFINED. The primitive fits its original consumers (monitor classifiers, structured-output workflow steps — output, never action); the work-order loop is the first consumer dispatching an agent whose job is to ACT, and reused the act-less primitive. Class: every in-process jit dispatch (call-agent, run-work-order-loop, future consumers reading .agent.yaml tools: as capability); real tool execution exists only in a pi subprocess. Structural sibling: FGAP-008 (closed — a contract lacking the channel its consumers assume). Severity within the surface: CRITICAL — every honest work-order must fail; the surface is currently unexercised (zero live WOs), hence P2 not P1.",
+  "evidence": [
+    {
+      "file": "packages/pi-jit-agents/src/jit-runtime.ts",
+      "reference": "432-738 executeAgent: single completeFn call (:572); context.tools populated only by the phantom output-schema tool (:566-570); grant clamp consumes compiled.tools at :488 and nothing else does",
+      "content_pin": "2f87a8ee64833591867a8d7720a09d8089a5f335b3f75d95cb99840cf6f63a11"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/types.ts",
+      "reference": "195-234 DispatchContext — no tool-implementation channel; 188-189 CompiledAgent.tools documented as grant vocabulary",
+      "content_pin": "4f2d21763d4a52ff2c8e7448f727fbe2244efcd033459b563f333adaa4915436"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 2: instrumented reproduction (SPEC tools ['write','bash'] → toolsPassedToLLM UNDEFINED), class inventory, why-it-is-shaped-this-way archaeology",
+      "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+    }
+  ],
+  "impact": "The work-order loop's core promise is void: a dispatched target agent cannot produce any side-effect, so iteration 0 can never pass a real check requiring one — every real work-order fails or aborts. call-agent consumers inherit the same ceiling. The deterministic real-check surfaced this as a clean failure rather than a false pass.",
+  "proposed_resolution": "Decided under FEAT-014's dispatch-architecture decision: (a) dispatch acting agents as pi subprocesses (tools exist there; executeAgent stays the classify/structured-output primitive), (b) grow executeAgent a bound tool-execution loop, or (c) re-scope work-orders to output-only. Whichever is decided, the grant machinery must clamp a capability that actually exists on the dispatch path, and the WO-001 probe recipe becomes the regression pin."
+}

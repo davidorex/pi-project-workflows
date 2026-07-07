@@ -166,12 +166,13 @@
       "location": "packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts:4",
       "status": "open",
       "category": "issue",
-      "priority": "low",
+      "priority": "critical",
       "package": "pi-agent-dispatch",
       "source": "agent",
       "id": "issue-012",
       "oid": "fdc481c689f5a2ea137bc58b16b50ab4",
-      "content_hash": "f2dce2ad7378b59239908b45a06f4377a828918910a79acd75163eaae8a3c3da"
+      "content_hash": "dd4f44f0edb9995ab354d79dfa0e9908bf60dd37e0cef0b056ca3ca3c2c0d5d4",
+      "content_parent": "f2dce2ad7378b59239908b45a06f4377a828918910a79acd75163eaae8a3c3da"
     }
   ],
   "schema_version": "1.0.1"

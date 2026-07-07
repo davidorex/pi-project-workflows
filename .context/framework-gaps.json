@@ -4441,7 +4441,7 @@
     {
       "title": "In-process jit dispatch cannot execute tools — executeAgent is a single-turn completion primitive, so the grant machinery clamps a capability that does not exist",
       "status": "identified",
-      "priority": "P2",
+      "priority": "P1",
       "package": "pi-jit-agents",
       "canonical_vocabulary": "executable tool binding in jit dispatch",
       "description": "executeAgent (packages/pi-jit-agents/src/jit-runtime.ts:432-738) makes one completeFn call and extracts output; it never binds tool implementations. compiled.tools is consumed at exactly one point — the DEC-0047 grant-subset clamp (computeGrantViolation, :488) — gating NAMES, materializing nothing; the only tool ever passed to the LLM is the phantom output-schema tool (:566-570), never executed by design; DispatchContext (types.ts:195-234) has no channel for tool implementations. Empirically demonstrated (instrumented completeFn against built dist with the WO-001 spec): grant ['write','bash'] passes the clamp and is discarded — toolsPassedToLLM: UNDEFINED. The primitive fits its original consumers (monitor classifiers, structured-output workflow steps — output, never action); the work-order loop is the first consumer dispatching an agent whose job is to ACT, and reused the act-less primitive. Class: every in-process jit dispatch (call-agent, run-work-order-loop, future consumers reading .agent.yaml tools: as capability); real tool execution exists only in a pi subprocess. Structural sibling: FGAP-008 (closed — a contract lacking the channel its consumers assume). Severity within the surface: CRITICAL — every honest work-order must fail; the surface is currently unexercised (zero live WOs), hence P2 not P1.",
@@ -4468,12 +4468,13 @@
       "created_at": "2026-07-07",
       "id": "FGAP-124",
       "oid": "cbd7f44870e46657ee61ebca3aa5b501",
-      "content_hash": "6198a1e0010f90066475e0e61685d51be04087b354a79a87ece0f31430939a6e"
+      "content_hash": "70bb7ad798562764bddc70dd3ef1ad51e297b607f77ef83b604ec044a3afb11a",
+      "content_parent": "6198a1e0010f90066475e0e61685d51be04087b354a79a87ece0f31430939a6e"
     },
     {
       "title": "Work-order schema is a v1 contract whose engine implements a demo subset — four required fields never consumed, and the catalog schema asserts a scope clamp that does not run",
       "status": "identified",
-      "priority": "P2",
+      "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "work-order contract-engine parity",
       "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop consumes none of their semantics: WorkOrderRecord (work-order-loop.ts:73-78) omits three of the four; input is hardcoded {work_order_id} (:119); context_blocks and output_contract have zero references in pi-agent-dispatch; the capability clamp intersects the tool param agent_grant with spec.tools (:134) — wo.scope.operations is never an operand (WO-001 demonstrated: scope.operations ['write'] while the invocation granted ['write','bash']; bash survived). The schema's own scope description asserts present-tense engine behavior — 'Used by the capability composer to clamp the agent's grant at dispatch' — that does not exist, and the schema ships in the installable catalog. Direction settled by git dates: schema 2026-05-27 (7d06f616) one day ahead of the loop 2026-05-28 (494357ac). Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts:77-80 — that one at least documents the deferral; this one asserts falsely).",
@@ -4500,12 +4501,13 @@
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "ab2cd114c4aa76c6d8203dac435b86c4fc2367fb48a1ba62916cb799c0cacf9c"
+      "content_hash": "892ab053675877c83351f6cde26cbc0cb67e15206ff912444b816403959fd6c0",
+      "content_parent": "ab2cd114c4aa76c6d8203dac435b86c4fc2367fb48a1ba62916cb799c0cacf9c"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
       "status": "identified",
-      "priority": "P3",
+      "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "non-interactive completion path for gated ceremonies",
       "description": "The auth gate refuses unconditionally when ctx.hasUI === false (auth-gate.ts:156-161) — deliberate, documented ('closes the JSON-mode / workflow-subprocess bypass', :22-25). The gap is compositional, two facets: (1) the 13 pi-context auth-gated ops are also reflected on the pi-context CLI with --yes pre-authorization, but the 8 pi-only gated tools (author-agent-spec, author-tool-grant, commit-attested, workflow-execute/resume/init, monitors-control/rules) exist only as pi tools — zero non-interactive route; hand-writing the artifact (what the WO-001 probe did for the agent spec) is the only workaround and bypasses the sanctioned ceremony entirely. (2) Gate-coverage inconsistency: the gate operates on tool NAMES; run-work-order-loop is ungated and invokes the commit path as a library call (work-order-loop.ts:171 _internals.attestedCommit), not via the gated commit-attested tool — a passing pi -p run would produce an attested commit with no operator confirm while the less consequential spec authoring is refused. Class: instance of the FGAP-068/069 hasUI=false refusal class (tracked-closed for the schema-conflict instance; resolution vocabulary caller-as-reconciler); this instance and the coverage inconsistency are untracked.",
@@ -4532,12 +4534,13 @@
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "c8f253a1a9c0ca1ed7390e1b9b51f04027a66c2a3839b2204ea16d1e0e0d057d"
+      "content_hash": "f76d7bdf134532c8b987c1ca3ba4f401ba79fa29a90c7165a6bbd70625801a2f",
+      "content_parent": "c8f253a1a9c0ca1ed7390e1b9b51f04027a66c2a3839b2204ea16d1e0e0d057d"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
       "status": "identified",
-      "priority": "P3",
+      "priority": "P1",
       "package": "pi-context",
       "canonical_vocabulary": "agents-tier seeding in the install ceremony",
       "description": "The jit agent loader's project tier is <contextDir>/agents/ (pi-jit-agents agent-spec.ts:219-243; ~/.pi/agent/agents/ second; builtinDir third only when the caller supplies one). The work-order loop and call-agent construct the loader with cwd only (work-order-loop.ts:116, call-agent-tool.ts:73) — no builtinDir — so the 30+ packaged specs in pi-workflows/agents/ and pi-behavior-monitors/agents/ (resolved by those packages' own loaders) are unreachable for work-order dispatch. Nothing creates or seeds <contextDir>/agents/: context-init/accept-all/install materialize config, schemas, and starter blocks only; no agents concept exists in the install ceremony or samples catalog. The only in-band materializer is author-agent-spec (mkdirs on first authoring, author-agent-spec-tool.ts:82-83) — which is interactively gated (FGAP-126), so on a fresh substrate driven from pi -p the loop's precondition is unproducible. Class: the install ceremony seeds a subset of the surfaces the runtime resolves from (schemas and blocks seeded; agents not; templates similar but package-defaulted).",
@@ -4564,12 +4567,13 @@
       "created_at": "2026-07-07",
       "id": "FGAP-127",
       "oid": "c2bc490c5b917dcbca4c4065002a1a42",
-      "content_hash": "49463c7e7c968862d6b2bb48881f3a457d6e820c9ec8443c585f7c8960911489"
+      "content_hash": "66eb4bf1f6d8d94c5d4bfe22282b55fdcb9af260e254f8c1de5faf69d5f23f38",
+      "content_parent": "49463c7e7c968862d6b2bb48881f3a457d6e820c9ec8443c585f7c8960911489"
     },
     {
       "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
       "status": "identified",
-      "priority": "P3",
+      "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "hasUI-aware confirm gating",
       "description": "On real-check failure before the last iteration the loop calls ctx.ui.confirm and maps a falsy answer to final_status 'aborted-by-human' (work-order-loop.ts:200-209). In a pi -p session ctx.ui is the runner's noOpUIContext whose confirm resolves false (runner.js:59-61; hasUI() = uiContext !== noOpUIContext, :211-213), so the gate silently auto-declines. Two defects share the line: (1) semantic mislabel — no human was consulted, an environment default is recorded as a human decision in the loop's durable verdict (a candidate harness/phase-state input); the auth gate by contrast checks hasUI FIRST and emits a structurally distinct non-interactive reason, the loop never inspects hasUI before asking; (2) the retry path (max_iterations > 1) is dead weight in exactly the context a harness would drive the loop from — every non-interactive run is single-shot abort-on-first-failure, with no way to opt into non-interactive bounded retry. The fail direction is fail-SAFE (never burns iterations unmonitored), so the default is defensible — but it is neither chosen nor reported as policy. Class: FGAP-068 interactivity-dependence-in-a-non-interactively-drivable-surface, plus a distinguishable sub-class — any ctx.ui.confirm call site that does not pre-check hasUI treats the no-UI default as an operator decline (a call-site sweep is fix-time work).",
@@ -4591,7 +4595,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-128",
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
-      "content_hash": "974cae754a32cae01b4f7ca025b71f74eb6fbc94d93f7283bd216ad1dd60a473"
+      "content_hash": "aea29fdfd983569313b8d613672d2d1975d1a6d516c726eef8068ec4d1b0875b",
+      "content_parent": "974cae754a32cae01b4f7ca025b71f74eb6fbc94d93f7283bd216ad1dd60a473"
     }
   ]
 }

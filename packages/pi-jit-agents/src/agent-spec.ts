@@ -207,7 +207,9 @@ export function parseAgentYaml(filePath: string): AgentSpec {
  * Create an agent loader bound to a LoadContext.
  *
  * The returned function searches three tiers in order (first match wins):
- *   1. {cwd}/.project/agents/{name}.agent.yaml
+ *   1. {contextDir}/agents/{name}.agent.yaml — the active substrate dir
+ *      resolved from {cwd}'s .pi-context.json pointer via
+ *      tryResolveContextDir(cwd); tier omitted when no pointer resolves
  *   2. {userDir ?? ~/.pi/agent/agents/}/{name}.agent.yaml
  *   3. {builtinDir}/{name}.agent.yaml   (only when builtinDir supplied)
  *

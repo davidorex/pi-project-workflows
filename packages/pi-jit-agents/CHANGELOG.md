@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Docblock alignment only (no behavior change): the `createAgentLoader` / `LoadContext` docs now describe the loader's actual first tier — the active substrate dir resolved from the project's `.pi-context.json` pointer via `tryResolveContextDir(cwd)`, plus `/agents`, with the tier omitted when no pointer resolves — replacing the stale `{cwd}/.project/agents/` wording. The D3 statement (`.pi/agents/` is never searched) stands unchanged.
+
 ## [0.32.0] - 2026-07-05
 
 ## [0.31.0] - 2026-06-13

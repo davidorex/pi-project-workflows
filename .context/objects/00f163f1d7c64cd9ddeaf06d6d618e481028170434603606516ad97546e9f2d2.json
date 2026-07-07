@@ -1,0 +1,32 @@
+{
+  "title": "block-pi-context-glue.sh pattern-matches shell metacharacters inside QUOTED argument values as shell syntax — regex alternation in --value is blocked as piping, and every heuristic false-positives on quoted-payload text",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "quote-aware hook pattern matching",
+  "description": ".claude/hooks/block-pi-context-glue.sh runs all four block heuristics (pipe/stderr-silence line 25, for/while-do loop line 30, stdout-redirect line 38, echo/$? line 43) and the pi-context invocation recognizer (line 22) as grep -E over the RAW tool_input.command string with no quote-span awareness, so metacharacters that are DATA inside quoted argument values match as shell syntax. Confirmed false-positive matrix (scratchpad hook copy + one live block): | inside a quoted --value (single- and double-quoted, incl. escaped \\\") blocks as piping; literal 2>/dev/null text in a quoted payload blocks as stderr-silence; prose 'for … do' in a quoted value blocks as a loop; ' > ' inside a quoted JSON payload blocks as redirect; $? in a quoted payload blocks as exit-capture; '; echo ' inside a quoted value satisfies the echo anchor from inside the quotes; and the recognizer fires on a NON-pi-context command (git commit -m) whose quoted message mentions 'pi-context … |'. Non-members confirming the boundary: bare word 'echo' in a value passes (command-position anchor holds); '#' in a payload passes (no comment heuristic). Class: any hook pattern element not lexically confined to inter-token shell syntax matches identical characters occurring as data inside quoted values. Distinct from FGAP-089 (same hooks, sibling class: target-substrate scope-blindness; this gap is command-string quote-blindness — fixing one does not fix the other).",
+  "evidence": [
+    {
+      "file": ".claude/hooks/block-pi-context-glue.sh",
+      "reference": "line 25: (pi-context |bin\\.js )[^;&|]*\\| — [^;&|]* crosses into the quoted value and \\| matches a data pipe; the 2>/dev/null alternative is fully unanchored",
+      "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
+    },
+    {
+      "file": ".claude/hooks/block-pi-context-glue.sh",
+      "reference": "lines 30, 38, 43: loop / redirect / $?-capture patterns each matched inside quoted payload text in the probe matrix; the echo alternative's (^|[;&|]) anchor is satisfiable from inside quotes ('; echo ')",
+      "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
+    },
+    {
+      "file": ".claude/hooks/block-pi-context-glue.sh",
+      "reference": "line 22: recognizer (^|[;&|]| )pi-context  matches a quoted MENTION of pi-context in an unrelated command, pulling it into the guard",
+      "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
+    },
+    {
+      "file": "analysis/2026-07-06-glue-hook-quoted-value-false-positive.md",
+      "reference": "the investigation: live block transcript for filter-block-items --value '\"hook|guard\"', 15-case FP/TP/CLEAN probe matrix against a scratchpad hook copy, class verdict, prior-art sweep (FGAP-089 sibling-not-duplicate), and a validated one-line quote-span-stripping prototype (all 5 TPs still block, all 9 FPs pass)",
+      "content_pin": "a609c8de9e86dd8074fd0325212f624d1457eccf4c6223fe53ac561a3cfbab52"
+    }
+  ],
+  "impact": "Substrate search via filter-block-items --op matches cannot use regex alternation — the guard blocks the exact narrowing remedy its own block message prescribes — degrading every multi-term substrate query (incl. the mandatory prior-art sweep before any filing) to one term per invocation. Any inline --item/--updates payload whose text discusses shell glue (which gap filings about this discipline necessarily do) trips the redirect/pipe/exit-capture checks. Observed blocking live work at least three times (two prior sessions + this investigation's live repro).",
+  "proposed_resolution": "Make the hook quote-aware at the chokepoint, closing the class for all five pattern sites at once: strip quoted spans from the command string with a single left-to-right combined substitution (perl -pe \"s/'[^']*'|\\\"(?:\\\\\\\\.|[^\\\"\\\\\\\\])*\\\"/Q/g\") immediately after extracting tool_input.command, then run the existing regexes unchanged against the stripped skeleton. Prototyped on a scratchpad copy: all 5 true-positive glue forms still exit 2 with the correct message, all 3 clean forms and all 9 false-positive forms exit 0; left-to-right combined matching is required (two-pass stripping mishandles interleaved quotes and \\\" escapes — the escaped-double-quote case stayed blocked under a naive two-pass sed and passed only after the combined-pattern upgrade). Degradation on exotic quoting is fail-closed (over-block, never under-block), proportionate to the cooperative-agent enforcement target. Fallback if under-blocking ever surfaces: tokenize with a real shell lexer and inspect only inter-token operators. Acceptance test = the investigation's probe matrix (every TP row exit 2, every CLEAN and FP row exit 0). Develop against a COPY, never the live guard; relate to FGAP-089 as sibling class on the same artifact. Grounding: analysis/2026-07-06-glue-hook-quoted-value-false-positive.md."
+}

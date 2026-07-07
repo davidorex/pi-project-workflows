@@ -1087,17 +1087,17 @@
         {
           "label": "block-pi-context-glue.sh — CLI-invocation-shape match, no --cwd inspection (the confirmed sibling)",
           "path": ".claude/hooks/block-pi-context-glue.sh",
-          "lines": "22",
-          "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
+          "lines": "35",
+          "content_pin": "fd4870211fea46b022c705013d19b537169f951c49e1acc233c89f7c68b26f32"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-13T09:40:40.203Z",
+      "modified_at": "2026-07-07T04:51:29.473Z",
       "oid": "105c8dad04eef47ef75ee80a77d5a86c",
-      "content_hash": "8b1aa189685b7d9673ade748aa2f6c9b7beea8b4010d9f3505c032c7b7125fe9",
-      "content_parent": "c6c4de6471c6d6bd434e7076fc7a91c99f181259ff6411b0d6076f736d4fcf95"
+      "content_hash": "95a2c622fd79eab419f30ed70f16b12e37d2a70fe2f9c1746e43ff2cfe8ee715",
+      "content_parent": "8b1aa189685b7d9673ade748aa2f6c9b7beea8b4010d9f3505c032c7b7125fe9"
     },
     {
       "title": "pi-context leverage audit: how fully pi-project-workflows dogfoods the tool for its own PM, and the shipped-but-unused vs blocked-on-tracked-gap leverage gaps",

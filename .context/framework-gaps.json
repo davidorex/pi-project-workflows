@@ -3076,9 +3076,9 @@
         },
         {
           "file": ".claude/hooks/block-pi-context-glue.sh",
-          "lines": "22",
+          "lines": "35",
           "reference": "the confirmed sibling: matches the pi-context CLI invocation shape alone; its block tests inspect only command-string glue, never --cwd or the active substrate",
-          "content_pin": "c47370be31ff23ffbae29d8f444236c8863360cf4d8257ad051af7cf96a8e00f"
+          "content_pin": "fd4870211fea46b022c705013d19b537169f951c49e1acc233c89f7c68b26f32"
         },
         {
           "file": "analysis/2026-06-13-install-surface-and-guard-scope-gaps.md",
@@ -3092,8 +3092,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:18.108Z",
       "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
-      "content_hash": "ab0dc90a4c5ef03e932c2188eb5b5533b1eda2194d672e3112bcc88697fe7a5c",
-      "content_parent": "e6af966270fded2a8d2263a5b8e20e7025a0aca90983ad6e4c467f0b168d33e0"
+      "content_hash": "8ebf50030876a30bb54b44bacec5e21ec6a5d56a532d235bf6835cc5dae723a7",
+      "content_parent": "ab0dc90a4c5ef03e932c2188eb5b5533b1eda2194d672e3112bcc88697fe7a5c"
     },
     {
       "title": "relation_type registry coverage is incomplete and edge direction is unenforced: a decision raising a gap, a decision gated by an item, and a gap related to a gap are all unexpressible, and raise-edges are mistyped as the resolve-direction decision_addresses_gap",
@@ -4262,7 +4262,7 @@
     },
     {
       "title": "block-pi-context-glue.sh pattern-matches shell metacharacters inside QUOTED argument values as shell syntax — regex alternation in --value is blocked as piping, and every heuristic false-positives on quoted-payload text",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "canonical_vocabulary": "quote-aware hook pattern matching",
@@ -4295,8 +4295,10 @@
       "created_at": "2026-07-06",
       "id": "FGAP-120",
       "oid": "e664356314c6ef76901640c61a2d88e1",
-      "content_hash": "3aa66ffd5aa122aa514e080172402be1357b1571c9a0c84c69adb1eb2eab2bcb",
-      "content_parent": "ddd1a27f5c84aa76c6fcfb608472b4ad068ac77f19a2848657b0601c492446e9"
+      "content_hash": "00f163f1d7c64cd9ddeaf06d6d618e481028170434603606516ad97546e9f2d2",
+      "content_parent": "3aa66ffd5aa122aa514e080172402be1357b1571c9a0c84c69adb1eb2eab2bcb",
+      "closed_by": "Quote-blindness closed by making the guard quote-aware: a single left-to-right COMBINED perl substitution (block-pi-context-glue.sh line 32) strips each single- and double-quoted span (honoring \\\" escapes) to a placeholder 'Q' immediately after tool_input.command extraction, BEFORE the recognizer and all four block heuristics — so shell metacharacters that are DATA inside quoted argument values are no longer visible as shell syntax, while inter-token operators outside quotes survive (genuine glue still blocks) and degradation on exotic quoting is fail-closed (over-block, never under-block). Composes with the pipe-evasion fix already in the file (block-1/block-3 redirect-tolerant bridges); the strip runs on a skeleton the existing regexes consume unchanged. Verified against the live deployed guard: the extended harness (.claude/hooks/block-pi-context-glue.test.sh) 28/28 — every pre-existing pipe-evasion case plus the quote-FP rows (single/double-quoted | in --value, literal 2>/dev/null and ' > ' and $? and '; echo ' and prose 'for x do' inside quoted payloads, and a non-pi-context git commit -m mentioning the CLI); raw checks — filter-block-items --value '\"hook|guard\"' passes (rc=0), the same command with a genuine trailing | head blocks (rc=2). Sibling on the same artifact: FGAP-089 (target-substrate scope-blindness, still open — a distinct class the quote fix does not address). Grounding: analysis/2026-07-06-glue-hook-quoted-value-false-positive.md (landing note appended).",
+      "closed_at": "2026-07-07"
     },
     {
       "title": "Birth-relations entries afford only the raw direction form — the 14 orientation-ambiguous role-typed relation_types cannot be filed as birth edges, so the filing transition atom is unusable exactly where FGAP-113's write guard demands the role form",

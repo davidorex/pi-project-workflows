@@ -226,3 +226,29 @@ Scratchpad artifacts (session-local, not repo files): `hook-copy.sh` (verbatim c
 	"proposed_resolution": "Make the hook quote-aware at the chokepoint, closing the class for all five pattern sites at once: strip quoted spans from the command string with a single left-to-right combined substitution (perl -pe \"s/'[^']*'|\\\"(?:\\\\\\\\.|[^\\\"\\\\\\\\])*\\\"/Q/g\") immediately after extracting tool_input.command, then run the existing regexes unchanged against the stripped skeleton. Prototyped on a scratchpad copy: all 5 true-positive glue forms still exit 2 with the correct message, all 3 clean forms and all 9 false-positive forms exit 0; left-to-right combined matching is required (two-pass stripping mishandles interleaved quotes and \\\" escapes — the escaped-double-quote case stayed blocked under a naive two-pass sed and passed only after the combined-pattern upgrade). Degradation on exotic quoting is fail-closed (over-block, never under-block), proportionate to the cooperative-agent enforcement target. Fallback if under-blocking ever surfaces: tokenize with a real shell lexer and inspect only inter-token operators. Acceptance test = the investigation's probe matrix (every TP row exit 2, every CLEAN and FP row exit 0). Develop against a COPY, never the live guard; relate to FGAP-089 as sibling class on the same artifact. Grounding: analysis/2026-07-06-glue-hook-quoted-value-false-positive.md."
 }
 ```
+
+---
+
+## 7. Implementation landed (2026-07-07)
+
+Shape A (the prototyped quote-span strip) was implemented, verified, and deployed to the live guard `.claude/hooks/block-pi-context-glue.sh`.
+
+**Deployed stripping line** — inserted immediately after the `tool_input.command` extraction + empty-check (between `[ -z "$cmd" ] && exit 0` and the line-22 recognizer), reassigning `cmd` to the stripped skeleton so ALL FIVE pattern sites (recognizer + the four block heuristics) match the skeleton:
+
+```sh
+cmd=$(printf '%s' "$cmd" | perl -pe "s/'[^']*'|\"(?:\\\\.|[^\"\\\\])*\"/Q/g")
+```
+
+Under the hook's `bash`/`env` the double-quoted shell literal delivers this exact regex to perl: `s/'[^']*'|"(?:\\.|[^"\\])*"/Q/g` — a single left-to-right COMBINED alternation of (single-quoted span) | (double-quoted span with `\"`-escape handling), each replaced by placeholder `Q`. perl is present (`/usr/bin/perl`, v5.34.1); the hook already depended on `jq`, so no new dependency class.
+
+**Adaptation vs the prototype: none required.** The prototype was authored against the pre-pipe-evasion regexes; the live regexes changed since (block-1 and block-3 bridges are now `([^;&|<>]|>>?&?[0-9-]?|<<?)*` and block 1 terminates on `\|($|[^|])`). The strip is orthogonal — it runs BEFORE the heuristics on a skeleton in which quoted metacharacters are already gone — so it composed with the current (post-pipe-evasion-fix) regexes verbatim, with no change to the stripping expression or to any block regex. The recognizer, both redirect-tolerant bridges, and the block-1 `\|($|[^|])` single-pipe terminator are all intact and unmodified.
+
+**Verification — one combined suite, both defect classes.** The existing harness `.claude/hooks/block-pi-context-glue.test.sh` was EXTENDED (not forked): 2 new MUST-BLOCK rows (genuine unquoted pipe-to-grep and `2>&1 | tsx` confirmed to survive the strip) + 8 new MUST-PASS quote-FP rows (single- and double-quoted alternation in `--value`; literal `2>/dev/null`, ` > `, `$?`, `; echo `, and prose `for x do` inside quoted payloads; and a non-pi-context `git commit -m` whose quoted text mentions `pi-context … |`). Full matrix result:
+
+- Against the scratchpad COPY (`GLUE_HOOK=…/glue-copy.sh`): **28 passed, 0 failed** (all 18 pre-existing pipe-evasion cases green + all 10 new cases green).
+- Against the DEPLOYED live guard (default `GLUE_HOOK`): **28 passed, 0 failed** — identical.
+- Live end-to-end through the real PreToolUse hook: `pi-context filter-block-items … --value '"hook|guard"' --json` (the original §2 live-repro block) now EXECUTES (op returns its JSON) instead of being blocked; adding a genuine `| head` to that same command is still correctly BLOCKED — confirming the strip fixes the FP without under-blocking real glue.
+
+**Pipe-evasion fix confirmed intact.** All 18 original pipe-evasion cases (incl. the two verbatim `2>&1 |` evasion strings, `|&`, `1>&2 |`, `2>&1 1>/tmp/x`, stdout-to-file, for-loop, echo-banner, `$?`) remain exit-2 after the strip lands; the block-1/block-3 bridges and the `\|($|[^|])` terminator were not touched.
+
+Scratchpad artifacts (session-local): `glue-copy.sh` (working copy the strip was developed on), `strip-test.sh` (raw stripping-expression probe).

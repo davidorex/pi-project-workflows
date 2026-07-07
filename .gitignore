@@ -5,6 +5,7 @@ node_modules/
 !.claude/hooks/
 !.claude/settings.json
 !.claude/agents/
+!.claude/commands/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/audit-task-resolution/

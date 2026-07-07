@@ -1,0 +1,45 @@
+{
+  "title": "Harness requirements for this project — the canonical process as a state machine, the enforcement-surface audit, and the twenty-requirement set",
+  "status": "stale",
+  "layer": "L1",
+  "type": "audit",
+  "question": "What canonical process must a non-bypassable harness encode for this project, which steps are already mechanically enforced versus honor-system, which observed failure modes must it foreclose at which Claude Code enforcement points, and what requirement set follows?",
+  "method": "Corpus derivation: CLAUDE.md (pipeline 0-7, Completion Sequence 1-13, Experience-Gap Handling, dispatch fit), all 14 enforced conventions read in full via the CLI, the 9 injected mandates and their UserPromptSubmit delivery, the 15-file memory feedback corpus, the 3 live repo hooks + registrations, husky's 5 commit gates, the substrate's 13 invariants and op surface; per-state classification MECHANICAL/PARTIAL/HONOR; failure modes mapped to observable signals and hook points.",
+  "findings_summary": "The canonical process distills to a single-track per-task state machine — SURFACED → INVESTIGATED → FILED(provenance) → GATE-VALIDATED → EXPLORED → PLANNED → BASELINED → IMPLEMENTED(subagent) → GATED → DEMOED → PROBED → findings-loop(class-scoped) → DOCS-SYNCED → MERGED → CLOSED → HELD(RELEASED → PUBLISHED) — with exactly three legitimate exits to the user: provenance grants, honestly-underdetermined scope/value escalations, HELD actions. Current mechanical enforcement concentrates at exactly two chokepoints: the substrate op write path (AJV + write-time invariant gate + complete-task atom + attestation) and the husky commit boundary (5 gates) — plus three PreToolUse guards. Honor-system holes: direct Edit/Write on substrate JSON (a parallel ungated path making the op gates bypassable), the ENTIRE verify layer (runtime demo, adversarial probe, iterate-to-zero, subagent-claim verification), plan-mode/subagent-primary implementation discipline, the release hold (nothing blocks npm run release:*), the turn-boundary ask gate (no Stop hook exists anywhere — the observed chaos driver is invisible to every mechanism), and the wiring itself (hook registrations live in untracked settings.local.json; the project mandates.jsonl slot is empty). Failure modes with observable signals: turn-boundary relitigation (Stop hook), skipped pipeline steps (PreToolUse Edit/Write + phase state), self-adjudicated experience gaps (filing-payload investigation citation), deferred findings (findings ledger at merge/close), unverified subagent relays (PostToolUse Agent + turn-end sequence shape), scope reduction (lexical nudge). Twenty requirements: R1-R10 enforceable today as new hook scripts over proven in-repo patterns (substrate-edit block; --no-verify/destructive-git, pipe-masking, and release-hold chokepoints; same-turn sentinel fix; filing-completeness checks; project mandates file; subagent-relay nudge); R11-R17 need one new state layer — phase-state file, Stop-hook ask/convergence gates, findings ledger, session driver — so hooks check 'is this action legal in this state'; R18-R20 cover the milestone gate, status cascade, and tracking the wiring. Design principles: lazy-cooperative threat model, no parallel ungated paths, preserve the three stops, deterministic predicates block while lexical heuristics nudge, filing-pipeline-first before new hooks.",
+  "findings_document": "analysis/2026-07-06-harness-requirements.md",
+  "grounding": {
+    "revisions": [
+      "workflowsPiExtension main @ be3ff25e (2026-07-06)"
+    ]
+  },
+  "stale_conditions": [
+    {
+      "kind": "item-status",
+      "item": "FEAT-013",
+      "bucket": "complete"
+    },
+    "Any hook added to or removed from .claude/hooks/ or its registrations",
+    "The conventions block or injected mandates change materially"
+  ],
+  "citations": [
+    {
+      "label": "canonical pipeline + completion sequence + gap handling",
+      "path": "CLAUDE.md",
+      "content_pin": "3cbdd7a491e76884b6a22687309444a1bcf3dce43f980f175cccede0326fa3a8"
+    },
+    {
+      "label": "the three live repo hooks",
+      "path": ".claude/hooks"
+    },
+    {
+      "label": "husky commit gates",
+      "path": ".husky/pre-commit",
+      "content_pin": "39dea4d0f43810d4a11a2f0561b81a9a761046c3340788e0fc736c230c4bd1a1"
+    },
+    {
+      "label": "findings document: state machine, enforcement classification table, failure-mode signal map, R1-R20",
+      "path": "analysis/2026-07-06-harness-requirements.md",
+      "content_pin": "58cd85af0f3f8d053edef3f4e9fa12d875822355c00e263527eea40f096678f0"
+    }
+  ]
+}

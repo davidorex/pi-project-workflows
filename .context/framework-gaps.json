@@ -1632,7 +1632,7 @@
         {
           "file": "CLAUDE.md",
           "reference": "the 'Rhetorical situation for every block write' rule lives only as operating-doc prose — not encoded per-schema, not enforced on write",
-          "content_pin": "3cbdd7a491e76884b6a22687309444a1bcf3dce43f980f175cccede0326fa3a8"
+          "content_pin": "51f853e967df9a865b9ca2a19a3711729965bfef56012646dc939c1afc762687"
         },
         {
           "file": "packages/pi-context/samples/schemas/issues.schema.json",
@@ -1646,8 +1646,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "d6404ed099120d34ebdb1798356982efab2a2effa0fd4883e4a900f5e4ad9310",
-      "content_parent": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a"
+      "content_hash": "a9524c65b676e4d2e3331ba5ff2980b270ab9d7cf425a4b3ccc50d4bb3fde887",
+      "content_parent": "d6404ed099120d34ebdb1798356982efab2a2effa0fd4883e4a900f5e4ad9310"
     },
     {
       "id": "FGAP-044",

@@ -10110,5 +10110,44 @@
       "refname": "derive-decisions-from-facts"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bc980c4281ec80f4222dfc2c8782f594",
+      "refname": "TASK-102"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e02a8292bd4223ea6f3680f49b2f08e6",
+      "refname": "FEAT-013"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bc980c4281ec80f4222dfc2c8782f594",
+      "refname": "TASK-102"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8bd901ab4fd5b61b63ee85e376ef7c5a",
+      "refname": "PHASE-M7-PROCESS-HARNESS"
+    },
+    "relation_type": "task_positioned_in_phase"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bc980c4281ec80f4222dfc2c8782f594",
+      "refname": "TASK-102"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

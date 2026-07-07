@@ -277,16 +277,17 @@
         "Implementation discipline is enforced (R15-R16, R10): orchestrator source edits while the phase state says implementation is delegated are blocked (user-sentinel escape per mandate-005's explicit-direction carve-out); orchestrator investigation-reads outside the claim-verification window draw a nudge; a PostToolUse(Agent) hook injects the subagent-claim verification checklist.",
         "HELD actions are mechanically held (R4): npm run release:*, npm publish, and non-durably-authorized git push are blocked without a user-minted grant object; the grant is user-attributed and expires with its scope.",
         "The harness itself is predictable (R17-R20): hook registrations live in tracked .claude/settings.json; a session driver walks a work unit through the state machine as the path of least resistance; the milestone-validity-gate check fires at plan approval for milestone-member tasks once its record type exists; every guard's refusal text names the rule and the failure class it forecloses; the deny surface carries its own regression cells (true-positives still block, legitimate work passes).",
-        "The three legitimate stops are preserved everywhere: no mechanism auto-grants a provenance ceremony, auto-decides an honestly-underdetermined scope/value judgment, or auto-proceeds a HELD action."
+        "The three legitimate stops are preserved everywhere: no mechanism auto-grants a provenance ceremony, auto-decides an honestly-underdetermined scope/value judgment, or auto-proceeds a HELD action.",
+        "The detection half is live (the WASC exemplar's dropped complement, TASK-102): a read-only currency auditor runs on an interval (/loop convention) with an advance-only-on-clean watermark — a non-clean verdict never advances the baseline, so every finding recurs each cycle until fixed and notifies the user exactly once per run; a clean run is silent and advances the baseline; the loop detects missing REQUIRED actions (unclosed shipped work, unflipped buckets, fired stale-conditions, skipped prerequisite filings) that refusal hooks structurally cannot see. Basis: analysis/2026-07-07-wasc-harness-delta-why-requisite-steps-still-optional.md."
       ],
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "id": "FEAT-013",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-07T11:00:17.905Z",
+      "modified_at": "2026-07-07T21:11:59.522Z",
       "oid": "e02a8292bd4223ea6f3680f49b2f08e6",
-      "content_hash": "ea52ee64a1a988bb12b8f622c11e51b5da28a7f0d66606ac05e332344fe77e11",
-      "content_parent": "c9b1aa3c31de5826e030ee03af960429b9689768005f30656203634a44545100"
+      "content_hash": "0230251d3e26adbbec59b0f3d59517fa8778537ad9264faaa1bec977a047876f",
+      "content_parent": "ea52ee64a1a988bb12b8f622c11e51b5da28a7f0d66606ac05e332344fe77e11"
     },
     {
       "title": "Work-order dispatch executes real work-orders — the v1 schema contract gets its engine",

@@ -2098,6 +2098,25 @@
       "oid": "bc980c4281ec80f4222dfc2c8782f594",
       "content_hash": "39448426095510aa89fe4d11ef56eb593d739be283dda6b08b688cc47db65ee7",
       "content_parent": "741882038b5e66671f2b60bd83ef171e8ab475f95ed61a0cc632b959d395c71c"
+    },
+    {
+      "title": "Wire a bundled builtin agents tier into the pi-agent-dispatch loaders (FGAP-127, bundled-builtinDir disjunct)",
+      "description": "The pi-jit-agents-family loaders at call-agent-tool.ts:73 and work-order-loop.ts:164 are constructed { cwd }-only; the jit loader searches its builtin tier only when the consumer supplies ctx.builtinDir, so on a fresh substrate every target_agent throws AgentNotFoundError while pi-workflows' 26 bundled specs are unreachable. Fix per FGAP-127's proposed_resolution second disjunct: (1) pi-workflows package.json exports gains './bundled-dirs' (named-subpath pattern; bundledDir stays out of the barrel per its own docblock); (2) new pi-agent-dispatch src/dispatch-loader.ts exporting dispatchLoadContext(cwd) = { cwd, builtinDir: bundledDir('agents') } imported from @davidorex/pi-workflows/bundled-dirs (dependency edge exists), used by BOTH call sites — tier order preserved (contextDir/agents, user tier, bundled last; project overrides win); (3) pi-jit-agents docblock alignment only (agent-spec.ts and types.ts still say .project/agents/; reword to the tryResolveContextDir tier) — no library code change, builtinDir stays consumer-supplied; (4) regression tests for the fresh-substrate bundled resolution, precedence, and 3-tier AgentNotFoundError; (5) docs-surface-sync audit (pi-agent-dispatch README, root README, tool description strings, CHANGELOG [Unreleased]). The 5 pi-behavior-monitors classifier specs remain monitor-scoped by design. DEC-0022 subprocess dispatch unaffected (loader resolves the SPEC pre-spawn). Grounding: analysis/2026-07-08-agent-loader-builtin-omission-claim-evaluation.md; user-approved plan 2026-07-08.",
+      "status": "in-progress",
+      "acceptance_criteria": [
+        "On a fresh substrate whose contextDir/agents is empty, both call-agent and work-order dispatch resolve a pi-workflows bundled spec by name (runtime-demonstrated via built dist, not only unit-asserted).",
+        "Tier precedence preserved: a same-named spec in contextDir/agents beats the bundled one; an unknown name still throws AgentNotFoundError listing three search paths.",
+        "bundledDir is importable only via the new @davidorex/pi-workflows/bundled-dirs subpath export; the barrel does not re-export it.",
+        "pi-jit-agents docblocks (agent-spec.ts createAgentLoader, types.ts LoadContext) describe the actual contextDir-resolved tier, with no .project/agents wording; loader code itself unchanged.",
+        "Docs-surface-sync: pi-agent-dispatch README + root README audited for statements the change stales; call-agent / run-work-order-loop tool description strings updated if they state resolution tiers; CHANGELOG [Unreleased] entry present.",
+        "Full gates green (build, check, test); fresh-context adversarial probe of the diff finds no false-pass shape; FGAP-127 closed with the ceremony-seeding disjunct explicitly recorded as an open FEAT-014 design option."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "TASK-103",
+      "oid": "a7bb2b580a306ead6e4f64039e9092f9",
+      "content_hash": "bd862ae2b2fe112a3de3747e191fa9e46977fb8b8f3b05ac0dc0b015a0f879aa",
+      "content_parent": "4961301f4c3b4ddc1a3a5876d1ace4ee4213f80cbad504e9ed57224a96069a5f"
     }
   ],
   "schema_version": "1.0.1"

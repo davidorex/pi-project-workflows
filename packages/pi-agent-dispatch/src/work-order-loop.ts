@@ -59,7 +59,7 @@ export interface WorkOrderIteration {
 export interface WorkOrderLoopResult {
 	work_order_id: string;
 	iterations: WorkOrderIteration[];
-	final_status: "completed" | "failed" | "aborted-by-human";
+	final_status: "completed" | "failed" | "aborted-by-human" | "aborted-non-interactive";
 	commit_sha?: string;
 	total_duration_ms: number;
 }
@@ -198,6 +198,15 @@ export async function runWorkOrderLoop(
 		// the loop will exit naturally as "failed" without asking the user
 		// whether to retry past max_iterations.
 		if (i < maxIterations - 1) {
+			// Non-interactive contexts have no human to ask. Do NOT call
+			// ctx.ui.confirm (which would return an environment default) and
+			// mislabel that default as a human decision. Mirror the auth-gate
+			// pattern (auth-gate.ts checks !ctx.hasUI first) and record the
+			// distinct "aborted-non-interactive" status.
+			if (ctx.hasUI === false) {
+				finalStatus = "aborted-non-interactive";
+				break;
+			}
 			const failExcerpt = JSON.stringify(realCheck.details, null, 2).slice(0, 500);
 			const proceed = await ctx.ui.confirm(
 				"Real-check failed",

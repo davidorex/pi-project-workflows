@@ -15,11 +15,16 @@ interface ConfirmCall {
 	message: string;
 }
 
-function mockCtx(cwd: string, confirmAnswers: boolean[] = []): { ctx: ExtensionContext; calls: ConfirmCall[] } {
+function mockCtx(
+	cwd: string,
+	confirmAnswers: boolean[] = [],
+	hasUI = true,
+): { ctx: ExtensionContext; calls: ConfirmCall[] } {
 	const calls: ConfirmCall[] = [];
 	let answerIdx = 0;
 	const ctx = {
 		cwd,
+		hasUI,
 		ui: {
 			confirm: async (title: string, message: string) => {
 				calls.push({ title, message });
@@ -184,6 +189,28 @@ describe("runWorkOrderLoop", () => {
 		assert.equal(result.final_status, "aborted-by-human");
 		assert.equal(result.iterations.length, 1);
 		assert.equal(calls.length, 1);
+		assert.equal(result.commit_sha, undefined);
+	});
+
+	it("non-interactive-abort — fail iter 1; ctx.hasUI=false → final_status=aborted-non-interactive + confirm never called + iterations.length=1", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-006",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: ["src/quux.ts"] },
+			},
+		]);
+		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
+		_internals.runRealChecks = async () => FAILING_REAL_CHECK;
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx, calls } = mockCtx(tmpDir, [], false); // non-interactive: no UI to confirm against
+
+		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-006", max_iterations: 2 }, ctx);
+
+		assert.equal(result.final_status, "aborted-non-interactive");
+		assert.equal(result.iterations.length, 1); // exactly one iteration ran; no retry past the environment default
+		assert.equal(calls.length, 0); // ctx.ui.confirm was NEVER called
 		assert.equal(result.commit_sha, undefined);
 	});
 

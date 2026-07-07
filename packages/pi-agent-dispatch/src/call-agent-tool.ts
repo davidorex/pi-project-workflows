@@ -15,6 +15,7 @@ import type { Api, Model } from "@earendil-works/pi-ai";
 import { Type } from "@earendil-works/pi-ai";
 import type { AgentToolResult, AgentToolUpdateCallback, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { composeToolGrant } from "./capability-composer.js";
+import { dispatchLoadContext } from "./dispatch-loader.js";
 
 function parseModelSpec(spec: string): { provider: string; modelId: string } {
 	const slashIndex = spec.indexOf("/");
@@ -42,7 +43,8 @@ export const callAgentTool = {
 	promptSnippet: "Dispatch a typed sub-agent with scoped capability grant.",
 	parameters: Type.Object({
 		spec_name: Type.String({
-			description: "Name of the agent spec to load (resolves to <name>.agent.yaml in the agents tier).",
+			description:
+				"Name of the agent spec to load (resolves to <name>.agent.yaml searched across the substrate agents/ dir, then ~/.pi/agent/agents/, then the bundled pi-workflows agents).",
 		}),
 		input: Type.Unknown({ description: "Typed input passed to the agent's compileAgent context." }),
 		parent_grant: Type.Optional(
@@ -69,8 +71,8 @@ export const callAgentTool = {
 		_onUpdate: AgentToolUpdateCallback,
 		ctx: ExtensionContext,
 	): Promise<AgentToolResult<JitAgentResult>> {
-		// 1. Load spec via jit-agents canonical loader
-		const loadAgent = createAgentLoader({ cwd: ctx.cwd });
+		// 1. Load spec via jit-agents canonical loader (builtin tier = bundled pi-workflows agents/)
+		const loadAgent = createAgentLoader(dispatchLoadContext(ctx.cwd));
 		const spec = loadAgent(params.spec_name);
 
 		// 2. Compile spec with input

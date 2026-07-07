@@ -36,6 +36,7 @@ import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { type AttestedCommitResult, attestedCommit as canonicalAttestedCommit } from "./attested-commit.js";
 import { composeToolGrant } from "./capability-composer.js";
+import { dispatchLoadContext } from "./dispatch-loader.js";
 import {
 	runRealChecks as canonicalRunRealChecks,
 	type RealCheckCriteria,
@@ -161,7 +162,7 @@ async function dispatchTargetAgent(
 	agentGrant: string[],
 	_ctx: ExtensionContext,
 ): Promise<JitAgentResult> {
-	const loadAgent = createAgentLoader({ cwd });
+	const loadAgent = createAgentLoader(dispatchLoadContext(cwd));
 	const spec = loadAgent(wo.target_agent);
 	const env = createTemplateEnv({ cwd });
 	// Guard the dispatch input against the work-order's declared input_contract

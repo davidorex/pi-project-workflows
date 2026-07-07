@@ -5,10 +5,12 @@
  * drives the end-to-end loop the work-order encodes:
  *
  *   for iteration in 0..max_iterations:
- *     1. dispatch the work-order's target_agent via the jit-agents library
- *        (DEC-0044 narrowed; pi-jit-agents stays a library import per JI-021).
+ *     1. dispatch the work-order's target_agent as a `pi` subprocess (FGAP-124
+ *        — the only path that binds real, callable tools; pi-jit-agents'
+ *        executeAgent binds none). pi-jit-agents stays the classify /
+ *        structured-output library primitive per JI-021.
  *     2. run the work-order's real_check_criteria via runRealChecks
- *        (deterministic verdict per DEC-0018 + DEC-0047 clause 5 — never the
+ *        (deterministic verdict — never the
  *        executing agent's self-report).
  *     3. on pass: commit-attested with writer-identity footer; final_status
  *        = "completed".
@@ -21,17 +23,15 @@
  * / commit-attested per iteration.
  *
  * Per DEC-0014 the orchestrator-side composite is the only authorized
- * driver of this loop; per FEAT-005 the agent_grant the orchestrator
+ * driver of this loop; the agent_grant the orchestrator
  * passes is composed (intersected) at the call-agent dispatch boundary.
  */
 
 import { readBlock } from "@davidorex/pi-context/block-api";
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
 import { compileAgent } from "@davidorex/pi-jit-agents/compile";
-import { executeAgent as canonicalExecuteAgent } from "@davidorex/pi-jit-agents/runtime";
 import { createTemplateEnv } from "@davidorex/pi-jit-agents/template";
-import type { CompiledAgent, DispatchContext, JitAgentResult } from "@davidorex/pi-jit-agents/types";
-import type { Api, Model } from "@earendil-works/pi-ai";
+import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { type AttestedCommitResult, attestedCommit as canonicalAttestedCommit } from "./attested-commit.js";
 import { composeToolGrant } from "./capability-composer.js";
@@ -40,6 +40,7 @@ import {
 	type RealCheckCriteria,
 	type RealCheckResult,
 } from "./real-check-runner.js";
+import { runPiSubprocess } from "./subprocess-dispatch.js";
 
 export class WorkOrderNotFoundError extends Error {
 	constructor(workOrderId: string) {
@@ -77,15 +78,9 @@ interface WorkOrderRecord {
 	scope?: { files?: string[]; directories?: string[]; operations?: string[] };
 }
 
-function parseModelSpec(spec: string): { provider: string; modelId: string } {
-	const slashIndex = spec.indexOf("/");
-	if (slashIndex !== -1) return { provider: spec.slice(0, slashIndex), modelId: spec.slice(slashIndex + 1) };
-	return { provider: "anthropic", modelId: spec };
-}
-
 /**
  * Internal indirection — tests substitute these to short-circuit the
- * jit-agents / real-check / commit paths. Production code path never
+ * subprocess dispatch / real-check / commit paths. Production code path never
  * reassigns; the same indirection pattern as call-agent-tool._internals.
  */
 type DispatchTargetAgent = (
@@ -96,22 +91,34 @@ type DispatchTargetAgent = (
 ) => Promise<JitAgentResult>;
 
 export const _internals = {
-	executeAgent: canonicalExecuteAgent as (c: CompiledAgent, d: DispatchContext) => Promise<JitAgentResult>,
 	runRealChecks: canonicalRunRealChecks,
 	attestedCommit: canonicalAttestedCommit,
 	/**
-	 * Tests reassign this to short-circuit the model/auth resolution +
-	 * jit-agents compile/dispatch chain. Production code path runs the
-	 * default canonical implementation.
+	 * Tests reassign this to short-circuit the spec compile + `pi` subprocess
+	 * dispatch chain. Production code path runs the default canonical
+	 * implementation below.
 	 */
 	dispatchTargetAgent: undefined as DispatchTargetAgent | undefined,
 };
 
+/**
+ * Dispatch the work-order's target agent as a `pi` subprocess (FGAP-124).
+ *
+ * The subprocess is the ONLY execution path that binds real, callable tools —
+ * pi-jit-agents `executeAgent` binds none (it materializes only a phantom
+ * output-schema tool), so an agent granted [write,bash] through that library
+ * primitive can never act. We reuse pi-workflows' proven subprocess pattern:
+ * compile the spec for its rendered task prompt + model + tool grant, then
+ * spawn `pi --mode json --model <spec> --tools <composedGrant> -p <prompt>`
+ * in `cwd` and collect the final assistant output. pi resolves model + auth
+ * itself inside the subprocess (operator auth.json), so no DispatchContext
+ * auth is threaded — `ctx` is retained only to satisfy the seam signature.
+ */
 async function dispatchTargetAgent(
 	cwd: string,
 	wo: WorkOrderRecord,
 	agentGrant: string[],
-	ctx: ExtensionContext,
+	_ctx: ExtensionContext,
 ): Promise<JitAgentResult> {
 	const loadAgent = createAgentLoader({ cwd });
 	const spec = loadAgent(wo.target_agent);
@@ -121,24 +128,34 @@ async function dispatchTargetAgent(
 	if (!modelSpec) {
 		throw new Error(`work-order-loop: agent '${wo.target_agent}' has no model specified.`);
 	}
-	const { provider, modelId } = parseModelSpec(modelSpec);
-	const model = ctx.modelRegistry.find(provider, modelId);
-	if (!model) {
-		throw new Error(`work-order-loop: model '${modelSpec}' not found for agent '${wo.target_agent}'.`);
-	}
-	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-	if (!auth.ok) {
-		throw new Error(`work-order-loop: auth resolution failed for '${modelSpec}': ${auth.error}`);
-	}
-	// Intersect at dispatch boundary per FEAT-005 (parent ∩ requested = agentGrant ∩ spec.tools).
+	// Intersect at dispatch boundary (parent ∩ requested = agentGrant ∩ spec.tools).
+	// The clamp now actually reaches execution: composedGrant becomes the
+	// subprocess `--tools` allowlist (empty grant → `--no-tools`).
 	const composedGrant = composeToolGrant(agentGrant, spec.tools);
-	const dispatch: DispatchContext = {
-		model: model as Model<Api>,
-		auth: { apiKey: auth.apiKey ?? "", headers: auth.headers ?? {} },
-		parentGrant: composedGrant,
-		maxTokens: 1024,
-	};
-	return _internals.executeAgent(compiled, dispatch);
+	const result = await runPiSubprocess({
+		cwd,
+		model: modelSpec,
+		tools: composedGrant,
+		prompt: compiled.taskPrompt,
+	});
+	if (result.exitCode !== 0 || result.timedOut) {
+		throw new Error(
+			`work-order-loop: pi subprocess for agent '${wo.target_agent}' ` +
+				`${result.timedOut ? "timed out" : `exited with code ${result.exitCode}`}` +
+				`${result.stderr ? `: ${result.stderr}` : ""}`,
+		);
+	}
+	if (!result.text) {
+		throw new Error(
+			`work-order-loop: pi subprocess for agent '${wo.target_agent}' produced no assistant output ` +
+				`(exit ${result.exitCode})${result.stderr ? `: ${result.stderr}` : ""}`,
+		);
+	}
+	return {
+		output: result.text,
+		raw: result.lastAssistantMessage,
+		usage: result.usage,
+	} as unknown as JitAgentResult;
 }
 
 export async function runWorkOrderLoop(

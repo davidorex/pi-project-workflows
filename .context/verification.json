@@ -2483,6 +2483,38 @@
       "id": "VER-079",
       "oid": "baabb5f3e68791b37210c8f22ff38530",
       "content_hash": "ddf5de7110bde59ecb825771acbcfddd6fbf4782292f3f66bfe074eecabe4275"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-08",
+      "evidence": "Live runtime demonstration this session against the real repo and a throwaway sandbox clone (deleted at closure). Real repo: first run with no watermark performed a FULL audit (verdict CURRENT + COMPLETE, Currency findings: 0, report persisted, watermark created with last_clean_head = 9cb3e559); immediate second run took the fast path (baseline == HEAD + clean tree; point-checks only; 50s vs 6.5min; silent; findings 0). Sandbox clone (same HEAD, seeded CLEAN watermark): an uncommitted CLAUDE.md drift produced verdict STALE/INCOMPLETE findings 1 (FGAP-043 anchor-drift caught by the mechanical core), watermark last_clean_head carried forward UNCHANGED with last_verdict FINDINGS; after committing the drift (clone has no husky hooks) the following run re-raised the same finding across the 9cb3e559..d2245d22 window with claude-history forensic attribution to the exact session/tool_use that committed it, and the PushNotification path delivered a real terminal notification (first non-clean call was suppressed only by the harness's active-terminal dedup). Advance-on-clean observed twice on the real repo (null->HEAD creation; refresh at HEAD). SCOPE NOTE: the adversarial-probe criterion was WAIVED from TASK-102's acceptance set by user directive at closure (2026-07-08, verbatim: 'far too much blind stupid bureaucratizing without balance of cost v. benefit. close down everything, file it complete as necessary. i want out of this stupidity.') — recorded per FEAT-013's closing-path doctrine (the user's recorded deprioritization); the authored files carry no adversarial-probe verdict, and any future false-pass finding in them re-enters the pipeline as a new finding. This verification passes the criteria that remained after that recorded descope.",
+      "criteria_results": [
+        {
+          "criterion": "The auditor agent file exists, is read-only (writes nothing, including the watermark), forces a FULL audit on missing/invalid watermark, and runs the mechanical core before the window-scoped judgment sweep.",
+          "status": "passed",
+          "evidence": "All four live runs: mechanical core executed first (check-context-currency.ts exit-code-parsed, context-reconcile --dryRun --yes, context-validate); run 1 with no watermark self-declared FULL audit and never treated the absence as clean; every run ended with byte-identical start/end git status --porcelain and an explicit the-auditor-writes-nothing statement."
+        },
+        {
+          "criterion": "The command persists a timestamped report, notifies via PushNotification iff non-clean, and advances last_clean_head iff CLEAN with zero findings and no unverified checks — otherwise the prior baseline carries forward unchanged so the finding recurs next cycle.",
+          "status": "passed",
+          "evidence": "Reports persisted per run (tmp/context-audits/audit-*.md); clean runs sent no notification; both non-clean runs called PushNotification exactly once (second delivered to terminal); non-clean watermark writes carried last_clean_head = 9cb3e559 forward unchanged while last_audit_head advanced to d2245d22 — observably distinct values."
+        },
+        {
+          "criterion": "Runtime demo: FULL first run; fast-path second run; synthetic non-clean leaves last_clean_head unchanged and fires exactly one notification; the finding recurs on the following run until cleaned.",
+          "status": "passed",
+          "evidence": "All cells observed live except the specific advance-after-prior-FINDINGS cell: the sandbox clean-recovery run was aborted by an API server error and not retried under the user's cost directive; advance-on-clean itself is covered by two real-repo observations (null->HEAD, refresh-at-HEAD), and the command's advance rule has no branch conditioned on the prior verdict — evidence by composition, stated rather than assumed."
+        },
+        {
+          "criterion": "CLAUDE.md documents the /loop 10m /audit-context-currency convention in lockstep.",
+          "status": "passed",
+          "evidence": "Conventions bullet landed in commit 9cb3e559 (with the FGAP-043 evidence re-pin its own edit necessitated — the currency gate caught its own documentation change, gate re-run green pre-commit)."
+        }
+      ],
+      "id": "VER-080",
+      "oid": "0132a2517e47fde890cd644c31fafd7b",
+      "content_hash": "d02d292f2c090b1a024ae3d62479c6db65169c8ced2a32aebcae0f82ebb6aa44",
+      "content_parent": "4c0113ca11ee5b73b81b79c38e626fe246ff3cec26f5878fade01a3af9ea284e"
     }
   ],
   "schema_version": "1.0.1"

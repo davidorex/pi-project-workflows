@@ -10149,5 +10149,18 @@
       "refname": "correctness-over-cost"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0132a2517e47fde890cd644c31fafd7b",
+      "refname": "VER-080"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "bc980c4281ec80f4222dfc2c8782f594",
+      "refname": "TASK-102"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

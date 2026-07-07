@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- The work-order loop now reports `final_status: "aborted-non-interactive"` when a real-check fails in a non-interactive context (`ctx.hasUI === false`): it checks `ctx.hasUI` before prompting and does not call `ctx.ui.confirm`, so an environment default is no longer mislabeled as `aborted-by-human`. Interactive aborts (a human answering the confirm `false`) still report `aborted-by-human`.
+
 ## [0.32.0] - 2026-07-05
 
 - `resolveOperationVocabulary` reads the active substrate's `config.json` through pi-context's migration-aware loader instead of a raw parse: a config whose `schema_version` lags the bundled schema is walked forward through the registered chain before its `tool_operations` overrides apply, so the vocabulary can never diverge from the shape `loadConfig` sees. The fail-safe contract is unchanged — any load failure (absent, unparsable, unresolvable version, invalid) yields `TOOL_OPERATION_DEFAULTS`.

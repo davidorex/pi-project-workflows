@@ -8,7 +8,13 @@ import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { AttestedCommitResult } from "./attested-commit.js";
 import type { RealCheckCriteria, RealCheckResult } from "./real-check-runner.js";
-import { _internals, runWorkOrderLoop, WorkOrderNotFoundError } from "./work-order-loop.js";
+import {
+	_internals,
+	clampToScope,
+	runWorkOrderLoop,
+	validateWorkOrderInput,
+	WorkOrderNotFoundError,
+} from "./work-order-loop.js";
 
 interface ConfirmCall {
 	title: string;
@@ -246,5 +252,60 @@ describe("runWorkOrderLoop", () => {
 		assert.equal(result.iterations[0].commit_attested_result?.commit_sha, "deadbeef");
 		assert.equal(result.iterations[0].commit_attested_result?.committed, true);
 		assert.deepEqual(result.iterations[0].agent_output, { ok: true });
+	});
+});
+
+describe("clampToScope — scope.operations capability clamp (FGAP-125)", () => {
+	it("intersects the composed grant to scope.operations (['write','bash'] ∩ ['write'] = ['write'])", () => {
+		assert.deepEqual(clampToScope(["write", "bash"], ["write"]), ["write"]);
+	});
+
+	it("drops every tool the work-order does not authorize (bash excluded when scope is ['write'])", () => {
+		const clamped = clampToScope(["write", "bash", "read"], ["write"]);
+		assert.deepEqual(clamped, ["write"]);
+		assert.equal(clamped.includes("bash"), false);
+	});
+
+	it("is a no-op when scope.operations is absent (undefined) — composed grant unchanged", () => {
+		assert.deepEqual(clampToScope(["write", "bash"], undefined), ["write", "bash"]);
+	});
+
+	it("is a no-op when scope.operations is an empty array — composed grant unchanged", () => {
+		assert.deepEqual(clampToScope(["write", "bash"], []), ["write", "bash"]);
+	});
+
+	it("preserves grant order and yields [] when scope authorizes nothing the grant holds", () => {
+		assert.deepEqual(clampToScope(["read", "write"], ["bash"]), []);
+	});
+});
+
+describe("validateWorkOrderInput — input_contract validation (FGAP-125)", () => {
+	const CONTRACT = {
+		type: "object",
+		required: ["work_order_id"],
+		properties: { work_order_id: { type: "string" } },
+		additionalProperties: false,
+	} as Record<string, unknown>;
+
+	it("passes a conforming input against the declared contract", () => {
+		assert.doesNotThrow(() => validateWorkOrderInput({ work_order_id: "WO-101" }, CONTRACT, "WO-101"));
+	});
+
+	it("throws naming the work-order id when the input violates the contract (wrong type)", () => {
+		assert.throws(
+			() => validateWorkOrderInput({ work_order_id: 42 } as unknown as Record<string, unknown>, CONTRACT, "WO-102"),
+			(err: Error) => /WO-102/.test(err.message) && /input_contract/.test(err.message),
+		);
+	});
+
+	it("throws when a required property is missing from the input", () => {
+		assert.throws(
+			() => validateWorkOrderInput({}, CONTRACT, "WO-103"),
+			(err: Error) => /WO-103/.test(err.message),
+		);
+	});
+
+	it("is a no-op pass-through when no contract is declared (undefined)", () => {
+		assert.doesNotThrow(() => validateWorkOrderInput({ work_order_id: "WO-104" }, undefined, "WO-104"));
 	});
 });

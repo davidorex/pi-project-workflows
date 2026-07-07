@@ -28,6 +28,7 @@
  */
 
 import { readBlock } from "@davidorex/pi-context/block-api";
+import { validate } from "@davidorex/pi-context/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
 import { compileAgent } from "@davidorex/pi-jit-agents/compile";
 import { createTemplateEnv } from "@davidorex/pi-jit-agents/template";
@@ -76,6 +77,46 @@ interface WorkOrderRecord {
 	target_agent: string;
 	real_check_criteria?: RealCheckCriteria;
 	scope?: { files?: string[]; directories?: string[]; operations?: string[] };
+	input_contract?: Record<string, unknown>;
+}
+
+/**
+ * Clamp a composed tool grant to the operations the work-order's `scope`
+ * declares. The work-order's declared operation scope is the outer bound —
+ * the dispatched agent can never exceed the operations the work-order itself
+ * authorizes, regardless of the caller's agent_grant. When the work-order
+ * declares no `scope.operations` (absent or empty array), the composed grant
+ * is returned unchanged.
+ */
+export function clampToScope(composedGrant: string[], operations?: string[]): string[] {
+	if (!operations || operations.length === 0) return composedGrant;
+	const allowed = new Set(operations);
+	return composedGrant.filter((t) => allowed.has(t));
+}
+
+/**
+ * Validate a work-order dispatch input against the work-order's declared
+ * `input_contract` (an inline JSON Schema). Reuses the canonical pi-context
+ * AJV validator (shared instance / strictness / formats) rather than standing
+ * up a parallel validator. On a contract violation THROWS an error naming the
+ * work-order id and the AJV error detail (the loop surfaces thrown errors);
+ * when no contract is declared this is a no-op pass-through.
+ */
+export function validateWorkOrderInput(
+	input: Record<string, unknown>,
+	contract: Record<string, unknown> | undefined,
+	workOrderId: string,
+): void {
+	if (!contract) return;
+	try {
+		validate(contract, input, `work-order '${workOrderId}' input_contract`);
+	} catch (err) {
+		throw new Error(
+			`work-order-loop: dispatch input for work-order '${workOrderId}' violates its input_contract: ${
+				err instanceof Error ? err.message : String(err)
+			}`,
+		);
+	}
 }
 
 /**
@@ -123,7 +164,12 @@ async function dispatchTargetAgent(
 	const loadAgent = createAgentLoader({ cwd });
 	const spec = loadAgent(wo.target_agent);
 	const env = createTemplateEnv({ cwd });
-	const compiled = compileAgent(spec, { env, input: { work_order_id: wo.id }, cwd });
+	// Guard the dispatch input against the work-order's declared input_contract
+	// BEFORE compiling/spawning; a contract violation throws and the loop
+	// surfaces it (no subprocess is spawned on a bad input).
+	const input = { work_order_id: wo.id };
+	validateWorkOrderInput(input, wo.input_contract, wo.id);
+	const compiled = compileAgent(spec, { env, input, cwd });
 	const modelSpec = compiled.model ?? spec.model;
 	if (!modelSpec) {
 		throw new Error(`work-order-loop: agent '${wo.target_agent}' has no model specified.`);
@@ -132,10 +178,16 @@ async function dispatchTargetAgent(
 	// The clamp now actually reaches execution: composedGrant becomes the
 	// subprocess `--tools` allowlist (empty grant → `--no-tools`).
 	const composedGrant = composeToolGrant(agentGrant, spec.tools);
+	// The work-order's declared operation scope is the outer bound — clamp the
+	// composed grant to wo.scope.operations so the dispatched agent can never
+	// exceed the operations the work-order itself authorizes, regardless of the
+	// caller's agent_grant. Absent/empty scope.operations → composedGrant
+	// unchanged.
+	const finalGrant = clampToScope(composedGrant, wo.scope?.operations);
 	const result = await runPiSubprocess({
 		cwd,
 		model: modelSpec,
-		tools: composedGrant,
+		tools: finalGrant,
 		prompt: compiled.taskPrompt,
 	});
 	if (result.exitCode !== 0 || result.timedOut) {

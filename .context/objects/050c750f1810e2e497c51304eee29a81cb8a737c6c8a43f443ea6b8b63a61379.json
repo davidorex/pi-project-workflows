@@ -1,0 +1,49 @@
+{
+  "title": "What pi-context is — the framework's generative model (organizing principles, audited)",
+  "status": "stale",
+  "layer": "L2",
+  "type": "landscape",
+  "question": "What does the pi-context framework provide as fixed scaffolding versus config-declared vocabulary, and how does .context instantiate that general model — as a usage / how-to / what-is-pi-context reference grounded against current code and substrate.",
+  "method": "code-inspection + live-substrate-query audit: an agent-written explainer verified claim-by-claim against packages/pi-context/src and the active .context substrate via the pi-context CLI (read-config / read-schema / read-block / find-references / context-validate).",
+  "scope": [
+    "branch context-jit-spec-v2",
+    "active substrate .context",
+    "packages/pi-context/src"
+  ],
+  "findings_summary": "pi-context is a declarative project operating system over typed JSON blocks: the framework is fixed scaffolding, the vocabulary is config-declared. A substrate declares block_kinds (schema-validated JSON files; content-addressed identity via oid/content_hash; schema_version + migrations.json forward-migration), relation_types (closure-table edges {parent,child,relation_type,ordinal} in relations.json — the ONLY linkage, no FK-as-field, each typed with source_kinds/target_kinds), invariants (cross-block constraints enforced by context-validate), status_buckets (status->lifecycle bucket; an OVERRIDE layer over hardcoded STATUS_VOCABULARY_DEFAULTS — bucket vocabulary complete/in_progress/blocked/todo/unknown, no 'open' bucket), lenses (derived_from_field or hand-curated views), and conventions (block-kind prose rules with enforcement+severity, some checked by requires-edge invariants). All of it is surfaced through one op-registry reflected by the pi-context CLI (pi-context <op>) and the in-pi tool surface. .context instantiates this as a software-project model: 17 block kinds (decisions, framework-gaps, tasks, verification, features, research, conventions, ...), 33 relation_types, and an arc model where a feature binds gaps decomposed into tasks — derivable as feature -> task_addresses_feature -> tasks -> task_addresses_gap -> gaps — with governance via conventions plus FEAT-007's convention-articulation invariants. A custom-vocabulary substrate (.context-jit-spec-v2: axioms/concepts/dispatch-modes) declares a different ontology over the same scaffolding. Two coupling points remain hardcoded (context-current-state, context-status; FGAP-017/018) pending FEAT-004's state-derivation registry; append-block-item lacks --dry-run (FGAP-024, open). What any substrate gets for free, without writing code: typed+validated state, stable content-addressed identity, typed cross-item relationships, lifecycle aggregation by bucket, integrity + governance validation, versioned schema migration, catalog distribution (pi-context update merges catalog vocabulary additively), content-addressed lineage, and a reflecting CLI surfacing every registered op. This entry curates the full per-section explainer in the findings_document; an embedded audit verified it against code + substrate — 22 claims Verified, 3 Incorrect + 2 Stale corrected in-body (the 'open' bucket, the FGAP-017/018 status-bucket misattribution, the universal --dry-run claim, the defaults-scope, and the roadmap.json reference).",
+  "findings_document": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md",
+  "grounding": {
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-08"
+    ]
+  },
+  "grounded_at": "2026-06-08T00:00:00.000Z",
+  "stale_conditions": [
+    "a block_kind / relation_type / lens / invariant / status_bucket is added or removed from .context config (the 17/33/2 counts and registry claims drift)",
+    "the op-registry surface changes (op added/removed/renamed — the CLI-reflection + op-name claims drift)",
+    "FEAT-004 lands (the context-current-state/context-status hardcoded-coupling claims in section 7 become false)",
+    "FGAP-024 closes (the 'append-block-item lacks --dry-run' claim becomes false)",
+    "STATUS_VOCABULARY_DEFAULTS changes (the bucket-mapping claims in section 3 drift)"
+  ],
+  "citations": [
+    {
+      "label": "full per-section explainer + embedded audit",
+      "path": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md",
+      "content_pin": "92aa05577b35630c70258e3f461f533dbb7bf289fdf9228f3bbbaf0033d5642b"
+    },
+    {
+      "label": "status bucket vocabulary + defaults",
+      "path": "packages/pi-context/src/status-vocab.ts",
+      "lines": "55-116",
+      "content_pin": "8cf22573e7985d3b6f9aa991834847ce82589a3816628544847adb91c126eea6"
+    },
+    {
+      "label": "block_kinds / relation_types / lenses registries (live counts)",
+      "path": ".context/config.json"
+    },
+    {
+      "label": "convention-articulation enforcement pattern",
+      "path": ".context/conventions.json"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Substrate direct-write deny hook (FEAT-013 pillar 1)",
+  "description": "PreToolUse(Edit|Write|NotebookEdit) hook that blocks any write whose file_path resolves under the active substrate dir (named by .pi-context.json contextDir): *.json and schemas/*.json. No escape — substrate repair flows through the CLI ops (a genuinely missing op is an FGAP, not a bypass). Closes the parallel ungated path around the op-layer's AJV/invariant/complete-task gates (feedback_architecture_enforcement: no parallel ungated paths). FEAT-013 R1.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "A direct Edit/Write/NotebookEdit targeting the active substrate's *.json or schemas/*.json is blocked at PreToolUse with stderr naming the ops-only rule; a write outside the substrate dir passes.",
+    "The block reads the active substrate dir from .pi-context.json contextDir, not a hardcoded name.",
+    "Regression cells: true-positive block on a .context/*.json edit; pass on a packages/** source edit and on an analysis/*.md write."
+  ]
+}

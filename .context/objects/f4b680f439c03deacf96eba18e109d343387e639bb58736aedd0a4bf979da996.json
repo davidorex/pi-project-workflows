@@ -1,0 +1,64 @@
+{
+  "title": "pi-bound pi-context CLI — porting launch-constrained-pi.sh into a `pi-context --pi-bound` command",
+  "status": "stale",
+  "layer": "L2",
+  "type": "feasibility",
+  "question": "Can scripts/launch-constrained-pi.sh be ported into a first-class `pi-context --pi-bound` CLI command, and what does that port entail — surface composition, the static-tools + per-target-composite union, meta-package SKILL.md resolution, and the exit-code/auth contracts?",
+  "method": "Spec authored in analysis/2026-06-07-pi-context-pi-bound-cli.md; evaluated twice by independent fresh-context agents that verified each assertion against the codebase (file:line + empirical CLI/`pi -p` runs), then the spec was corrected per the second evaluation and the corrections re-verified.",
+  "scope": [
+    "pi-project-workflows monorepo, branch context-jit-spec-v2 (2026-06-07)",
+    "analysis/2026-06-07-pi-context-pi-bound-cli.md (the spec)",
+    "scripts/launch-constrained-pi.sh (the script being ported)",
+    "packages/pi-context-cli/src/cli.ts (dispatch / exit-code surface)",
+    "docs/reports/2026-06-07-pi-bound-cli-evaluation.md + -v2.md (the two evaluations)"
+  ],
+  "findings_summary": "The spec proposes replacing scripts/launch-constrained-pi.sh with a first-class `pi-context --pi-bound` CLI command that launches an interactive pi session restricted to a composed tool surface. Two independent code-grounded evaluations found the core architecture SOUND: `--pi-bound` is currently an unknown CLI command (so adding it is non-breaking — verified: it returns exit 2 via cli.ts:444-450); `list-tools` is the lone `surface:\"process\"` op partitioned out of the reflected CLI; and the proposed two-package-root SKILL.md union is byte-identical to the launch script's five-directory glob (69 tools), so the static-tools derivation is preserved.\n\nThe second evaluation (after the spec was edited on the first round's feedback) graded 28 assertions: 26 CONFIRMED, 0 REFUTED, 2 PARTIAL, 2 UNVERIFIABLE (out-of-scope-for-a-spec). The two partials were provenance/precision, not behavioral, and have been CORRECTED in the spec: (1) the `--grant` missing-value exit-2 is a NEW contract the pi-bound CLI introduces, NOT a preserved script behavior — launch-constrained-pi.sh:77 is a bare `shift 2` that merely aborts under `set -euo pipefail` (:61), so the spec now labels it as new; (2) the unknown-command exit-2 cite was corrected to the two-armed conditional cli.ts:444-450 (a process-only-op arm at :445-446 and the unknown-command arm at :447-449 sharing `return 2` at :450). Three off-by-one line-range cites were fixed, and an explicit note was added that the port deliberately collapses the script's two-stage tsx+python3 context pipeline (:104-109) into a single in-process loadContext call — a replacement, not a behavior-preserving port.\n\nThe first evaluation additionally surfaced four architectural omissions the subsequent edit addressed: where `cwd` originates inside runPiBound; the `pi install -l <meta-package>` meta-path resolution strategy (the genuinely novel port piece, previously least-specified); the script's resume invariant of re-deriving `--tools` every launch; and the exec→spawn+exit-relay swap being mislisted under behavior-to-preserve.\n\nNet: the port is feasible and the spec is now code-accurate. Remaining design judgement (not defects): the meta-path resolution strategy ($REPO-relative script vs node-resolution from a published CLI) is the load-bearing open piece for shipping pi-bound from an installed package rather than the in-repo script.",
+  "findings_document": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
+  "grounding": {
+    "revisions": [
+      "context-jit-spec-v2 @ 2026-06-07"
+    ]
+  },
+  "stale_conditions": [
+    "scripts/launch-constrained-pi.sh changes its tool-union derivation, grant parsing, meta-install, or context pipeline — the port's behavior-preservation claims must be re-checked.",
+    "cli.ts dispatch / exit-code structure (the :444-450 unknown-command + process-only conditional) is refactored.",
+    "`pi-context --pi-bound` is actually implemented — this feasibility research is superseded by the implementation.",
+    "list-tools stops being the lone surface:\"process\" op, or the surface partitioning changes.",
+    "The generated SKILL.md glob set or the meta-package skill bundling changes, breaking the 69-tool union equivalence."
+  ],
+  "citations": [
+    {
+      "label": "the spec (deep read)",
+      "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
+      "content_pin": "6d115a303931bc792cb353587ed92bfed9db326b9736f402982db9bbfbcd1e6e"
+    },
+    {
+      "label": "unknown-command exit 2 — two-armed conditional (process-only arm + unknown arm)",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "444-450",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "label": "--grant parse is a bare shift 2 (no validation; aborts under set -euo pipefail)",
+      "path": "scripts/launch-constrained-pi.sh",
+      "lines": "61,77",
+      "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
+    },
+    {
+      "label": "script context pipeline the port collapses in-process (tsx emit + python3 JSON->CSV)",
+      "path": "scripts/launch-constrained-pi.sh",
+      "lines": "104-109",
+      "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
+    },
+    {
+      "label": "first evaluation report",
+      "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation.md",
+      "content_pin": "57245abc43d87b3b4aa9ec91a393e0ef01e089058215805b1ed5672262a9cead"
+    },
+    {
+      "label": "second evaluation report (post-edit)",
+      "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation-v2.md",
+      "content_pin": "c604dc2172bab3d95ab2242d07008d58df77d2fb48328238d9c71750c58e79e2"
+    }
+  ]
+}

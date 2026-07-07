@@ -2457,6 +2457,32 @@
       "id": "VER-078",
       "oid": "84fb8c374a5c89e07fed4f4d40300159",
       "content_hash": "bb9bafb925e3cf6a15ec583d2a08b97654aecce9d58a6c252e666f314f2b5acd"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-07",
+      "evidence": "Runtime demonstration during the 2026-07-07 currency audit: bash .claude/hooks/block-substrate-write.test.sh against the live guard — 10/10 cells pass. Harness header shows the guard resolving the active substrate dir from .pi-context.json contextDir (.context) at runtime, not a hardcoded name. Shipped on main via merge 643f996c (branch feat/task-094-substrate-write-deny); hook + regression harness tracked in git (.claude/hooks/block-substrate-write.sh, block-substrate-write.test.sh) with registration in tracked .claude/settings.json (c6fd8beb).",
+      "criteria_results": [
+        {
+          "criterion": "A direct Edit/Write/NotebookEdit targeting the active substrate's *.json or schemas/*.json is blocked at PreToolUse with stderr naming the ops-only rule; a write outside the substrate dir passes.",
+          "status": "passed",
+          "evidence": "Harness cells this run: BLOCK Write .context/tasks.json, BLOCK Edit .context/schemas/tasks.schema.json, BLOCK absolute-path write into substrate, BLOCK NotebookEdit .context/foo.json, BLOCK nested objects/ write, BLOCK ..-traversal into substrate (all exit 2); PASS packages/** source edit, PASS analysis/*.md write, PASS non-.json write inside substrate dir, PASS .json write outside substrate dir (all exit 0)."
+        },
+        {
+          "criterion": "The block reads the active substrate dir from .pi-context.json contextDir, not a hardcoded name.",
+          "status": "passed",
+          "evidence": "Harness run header this run: '# active substrate dir (from .pi-context.json contextDir): .context' — resolved at runtime from the pointer file."
+        },
+        {
+          "criterion": "Regression cells: true-positive block on a .context/*.json edit; pass on a packages/** source edit and on an analysis/*.md write.",
+          "status": "passed",
+          "evidence": "Exactly these cells are present and green in .claude/hooks/block-substrate-write.test.sh (SUMMARY: 10 passed, 0 failed, this run)."
+        }
+      ],
+      "id": "VER-079",
+      "oid": "baabb5f3e68791b37210c8f22ff38530",
+      "content_hash": "ddf5de7110bde59ecb825771acbcfddd6fbf4782292f3f66bfe074eecabe4275"
     }
   ],
   "schema_version": "1.0.1"

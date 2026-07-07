@@ -3,7 +3,7 @@
     {
       "id": "R-0001",
       "title": "Shared CLI core across monorepo packages — commonalities, layering, and scope",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "feasibility",
       "question": "What are the underlying commonalities any monorepo package CLI needs (pi-context-cli today; future pi-workflows / jit-agent-dispatch CLIs) so we do not duplicate code — a single source for what is best single-source-editable, with each package adding its particulars — from a minimalist best-practices perspective?",
@@ -78,15 +78,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-04T21:57:33.590Z",
+      "modified_at": "2026-07-07T11:00:28.245Z",
       "oid": "a0c0c826114705c8bf5bfb50d4f5189e",
-      "content_hash": "81661f130901ff8d9168a319232a34bdab6ea55684139adcdc8f09e43c90ad90",
-      "content_parent": "98c0b0c6cc1f700fb0f673a4e7e648cdb701f18edd2e4787f15b577f79a3a992"
+      "content_hash": "9f9574b00ca1eae703f7362d8e1332c82418232f49a473840b1ffba144a2b809",
+      "content_parent": "81661f130901ff8d9168a319232a34bdab6ea55684139adcdc8f09e43c90ad90"
     },
     {
       "id": "R-0002",
       "title": "Substrate portability — export/import bundles vs an external/global substrate dir",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "feasibility",
       "question": "How can a pi-context substrate be made portable via a `pi-context-cli export / import` command (e.g. encode a project-management model once and import it into other projects so it 'just works'), and/or via a switchable-to substrate that lives at an external `path/to/.substrate-dir` global location — which is feasible, what already exists, and what must be built?",
@@ -211,15 +211,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-04T22:19:52.083Z",
+      "modified_at": "2026-07-07T11:00:29.994Z",
       "oid": "8e68cdb846eaf93da1751ec989d11a9d",
-      "content_hash": "abf1be6bf9833b7ce96552b5b7b8975ae1afbdfb8bc18e721b761aed2b810898",
-      "content_parent": "34a477b940a36cdf8cf6233aa278959d3b4b47526b0e63a7a1ac11d63126796d"
+      "content_hash": "94a5af92774238865d67ab7fda7f47edf2882325718b0a8583e0a7dc8f9765bd",
+      "content_parent": "abf1be6bf9833b7ce96552b5b7b8975ae1afbdfb8bc18e721b761aed2b810898"
     },
     {
       "id": "R-0003",
       "title": "CLI↔ops↔scripts parity survey — categorical CLI-side parity under frozen in-pi ops",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "audit",
       "question": "Given pi-context's three surfaces over one library (the 48 surface:\"use\" ops, the CLI that reflects them 1:1, and the orchestrator-script twins), why do CLI defects keep surfacing, and can the CLI be brought to categorical capability-parity with the scripts WITHOUT changing in-pi op behavior — enumerating every script capability and the CLI seam that closes each gap?",
@@ -302,15 +302,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-04T23:35:40.314Z",
+      "modified_at": "2026-07-07T11:00:31.769Z",
       "oid": "3e5f5d547f6e3d1ce9ee1c34924f38f4",
-      "content_hash": "68a077fc862b9e21c2cc9218cc6ff4f1664f0865108ef2cc65523fcd706b57a1",
-      "content_parent": "d2e94f6d02b8be0ab2828ce152f8290b9238e4d16f1f1128d755d4dd4bfd14df"
+      "content_hash": "8944bc9bac0eb8d2510950564db46ca4d583874cec5b87c8966cc9d1b7565519",
+      "content_parent": "68a077fc862b9e21c2cc9218cc6ff4f1664f0865108ef2cc65523fcd706b57a1"
     },
     {
       "id": "R-0004",
       "title": "pi-bound pi-context CLI — porting launch-constrained-pi.sh into a `pi-context --pi-bound` command",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "feasibility",
       "question": "Can scripts/launch-constrained-pi.sh be ported into a first-class `pi-context --pi-bound` CLI command, and what does that port entail — surface composition, the static-tools + per-target-composite union, meta-package SKILL.md resolution, and the exit-code/auth contracts?",
@@ -374,15 +374,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-06T22:07:25.817Z",
+      "modified_at": "2026-07-07T11:00:42.951Z",
       "oid": "a6b0683bc10fe3094a3953d7d8e120e1",
-      "content_hash": "1bb01c6771c8d95edd9251d47e9300cad38ec333e9d908d09559435ae4368f7e",
-      "content_parent": "d288a1b96ba997266a2b7d298769f8259f77808b858b886002fa3bea0afed028"
+      "content_hash": "f4b680f439c03deacf96eba18e109d343387e639bb58736aedd0a4bf979da996",
+      "content_parent": "1bb01c6771c8d95edd9251d47e9300cad38ec333e9d908d09559435ae4368f7e"
     },
     {
       "id": "R-0005",
       "title": "Making pi-context a globally installable command, grounded in pi's own bin/publish pattern",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "feasibility",
       "question": "Grounded in the canonical pi runtime as exemplar, how is @davidorex/pi-context-cli shipped so the `pi-context` command (including the spec'd `pi-context --pi-bound` mode) resolves on PATH from any directory, not only via in-repo `node packages/pi-context-cli/dist/bin.js`?",
@@ -446,15 +446,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-06T22:29:48.981Z",
+      "modified_at": "2026-07-07T11:00:44.913Z",
       "oid": "e072cd74684d58d1ea83b4c8704491d3",
-      "content_hash": "0870fef6195fe8e62759c889c9f6a6a5cda3fa599976f7c2455ece930d20e1c2",
-      "content_parent": "a134a90ee305dd3f7449a0874e42b3840d7ab5273d752f5ae46c8b019178de0c"
+      "content_hash": "903274283c12f5f1031b5667d283590ad9662f46a2c628e3d096a29cb7ef63bf",
+      "content_parent": "0870fef6195fe8e62759c889c9f6a6a5cda3fa599976f7c2455ece930d20e1c2"
     },
     {
       "id": "R-0006",
       "title": "pi CLI command-form convention — bare-subcommand vs flag heuristic, applied to pi-context",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "investigative",
       "question": "What is pi's operative convention for making a capability a bare subcommand (pi update, pi config) versus a flag (--model, --export), and what does that heuristic prescribe for pi-context's surface — pi-context update, the reflected ops, and the currently flag-framed --pi-bound?",
@@ -499,15 +499,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-06T23:02:11.224Z",
+      "modified_at": "2026-07-07T11:00:46.793Z",
       "oid": "fbb9f0764e97850f64402839bfd97f7a",
-      "content_hash": "9269b37a41ddda35a41bb850a5c4ab820218509dda37d2454ee82e279283241b",
-      "content_parent": "37f7663e3d71bb6f3e42807900c963c441b629ac8a1efc03e4cd325a6d5d4740"
+      "content_hash": "0934a49bcf5b1e8814022805390e466111a4215b5256dc0fdbdab1db2cf1c247",
+      "content_parent": "9269b37a41ddda35a41bb850a5c4ab820218509dda37d2454ee82e279283241b"
     },
     {
       "id": "R-0007",
       "title": "CLI write-path UX — actionable AJV validation errors + --show-schema field hint: root cause, fix seams, and existing-filing map",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "investigative",
       "question": "What is the root cause of (1) non-actionable pi-context validation errors and (2) the absence of an inline block-field preview on write ops; where do the fixes live; and are they already filed?",
@@ -585,15 +585,15 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-07T03:40:34.167Z",
+      "modified_at": "2026-07-07T11:00:49.141Z",
       "oid": "e96de2ff2f1387f4eb3a2862455ad7aa",
-      "content_hash": "ea5f2e6483c7212596bfdbdf0e8e65878dd8bdac78e588229b8e578f46f54e79",
-      "content_parent": "42796d7ce25618cbde2289d5e233dc6073e49228e3933cd29c4ed4db812fa432"
+      "content_hash": "8c6a7aaf76f322ecdbaa02c1b8ddf7f33b20462f4b0ef96fd9e524a86e289759",
+      "content_parent": "ea5f2e6483c7212596bfdbdf0e8e65878dd8bdac78e588229b8e578f46f54e79"
     },
     {
       "id": "R-0008",
       "title": "FGAP-046 schema-merge across pi-context update — git-3-way reframed against the code; base-stamping + shared merge framework + hybrid resolver",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "feasibility",
       "question": "How should pi-context update preserve a user's edits to a catalog-shipped schema across a catalog version change — deterministic 3-way merge, agent-mediated reconciliation in pi, or hybrid — and what does the code say about each route's feasibility and cost?",
@@ -684,10 +684,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-07T05:35:36.864Z",
+      "modified_at": "2026-07-07T11:00:57.125Z",
       "oid": "47f24dbd5fdd704b40e61c2d4ab751bd",
-      "content_hash": "d5a72fd87130baa01cd85b6bca2bb23dfddbfdc97b0a19341b2e7cfb05afa943",
-      "content_parent": "a43b0cbea8bb01668125f8dfadab8666486c223ca5d8c64f7458740c8da16cd1"
+      "content_hash": "a15b41a347240c4dd8a5d76dbd2473f410a1ca64868d9968e9c234aa24a722d0",
+      "content_parent": "d5a72fd87130baa01cd85b6bca2bb23dfddbfdc97b0a19341b2e7cfb05afa943"
     },
     {
       "id": "R-0009",
@@ -758,7 +758,7 @@
     },
     {
       "title": "What pi-context is — the framework's generative model (organizing principles, audited)",
-      "status": "complete",
+      "status": "stale",
       "layer": "L2",
       "type": "landscape",
       "question": "What does the pi-context framework provide as fixed scaffolding versus config-declared vocabulary, and how does .context instantiate that general model — as a usage / how-to / what-is-pi-context reference grounded against current code and substrate.",
@@ -808,14 +808,14 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "R-0010",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-08T11:36:09.364Z",
+      "modified_at": "2026-07-07T11:00:59.541Z",
       "oid": "219737d47d31f299a5e212d924289359",
-      "content_hash": "4df54ddcc436a36f78d16357a82c09a1d16ac97bae5d2344c98daf912a4f050c",
-      "content_parent": "521c02fb728eb395b9987f40c3c9001883960cb184b08a3792157ae29c7c1c05"
+      "content_hash": "050c750f1810e2e497c51304eee29a81cb8a737c6c8a43f443ea6b8b63a61379",
+      "content_parent": "4df54ddcc436a36f78d16357a82c09a1d16ac97bae5d2344c98daf912a4f050c"
     },
     {
       "title": "Best-of-breed CLI --help + UX for an agent-invoked reflecting CLI — landscape + reusable elements",
-      "status": "complete",
+      "status": "stale",
       "layer": "L4",
       "type": "landscape",
       "question": "What do best-of-breed CLIs do for --help and overall CLI UX, and which concrete, reusable elements should a globally-installed, agent-invoked reflecting CLI (pi-context <op>, ~48 ops auto-derived from a typed op-registry) adopt to up-level help across ALL commands — primary consumer an LLM agent reading terminal output, secondary a human.",
@@ -886,10 +886,10 @@
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "R-0011",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-09T01:45:21.940Z",
+      "modified_at": "2026-07-07T11:01:02.585Z",
       "oid": "1325ed64eb8b90eb38cf8ab144bd2ad2",
-      "content_hash": "f44e7d40eab8c96f7d6b899b2175cb88dec776a22fa6ae931d73b73c74c01102",
-      "content_parent": "f36c5abca8ca470bcfc3c79fd21e27fa85ec88e9ccb434d2f8973720c987b84b"
+      "content_hash": "a2139c14569173d916d10675c37f645727c62484a2e10eeb911f7b8df7acf4b4",
+      "content_parent": "f44e7d40eab8c96f7d6b899b2175cb88dec776a22fa6ae931d73b73c74c01102"
     },
     {
       "title": "pi-context update: dry-run/live outcome divergence + per-component transactional seam",
@@ -1035,7 +1035,7 @@
     {
       "id": "R-0014",
       "title": "install ceremony has no reflected CLI op + enforcement hooks scoped by op-shape not target-substrate (TASK-033 dogfooding)",
-      "status": "complete",
+      "status": "stale",
       "layer": "L4",
       "type": "investigative",
       "question": "Why can a CLI-driven pi-context bootstrap not complete (no reflected install op), and why do the PreToolUse enforcement hooks fire on writes to non-active/throwaway substrates?",
@@ -1094,14 +1094,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-07T04:51:29.473Z",
+      "modified_at": "2026-07-07T11:01:07.369Z",
       "oid": "105c8dad04eef47ef75ee80a77d5a86c",
-      "content_hash": "95a2c622fd79eab419f30ed70f16b12e37d2a70fe2f9c1746e43ff2cfe8ee715",
-      "content_parent": "8b1aa189685b7d9673ade748aa2f6c9b7beea8b4010d9f3505c032c7b7125fe9"
+      "content_hash": "9eb7945e19e042ad7444c7abd3d519e20f2df4d1f957928e1cb1e7205e3401f0",
+      "content_parent": "95a2c622fd79eab419f30ed70f16b12e37d2a70fe2f9c1746e43ff2cfe8ee715"
     },
     {
       "title": "pi-context leverage audit: how fully pi-project-workflows dogfoods the tool for its own PM, and the shipped-but-unused vs blocked-on-tracked-gap leverage gaps",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "audit",
       "question": "Which pi-context features and functionalities does pi-project-workflows under-use or not use for managing its own development in .context, and which should it leverage to fully use the tool for its purposes — distinguishing shipped-but-unused (closable by discipline) from blocked-on-a-tracked-capability-gap?",
@@ -1160,14 +1160,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T23:36:55.610Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-14T23:36:55.610Z",
+      "modified_at": "2026-07-07T11:01:18.416Z",
       "oid": "602ad155df54de2092304a24eab8e610",
-      "content_hash": "2c507b8c77a6fa27fee1857ad72135d422834272933189ec21097dc2dec51b66",
-      "content_parent": "888989bf0a8b5b63e2e87b54c67ed6a2c7375bbe82f73297e5ded735d291c532"
+      "content_hash": "3bf6b418e722846c069c2208f09caf1d6a3ce56409e2ebd247d000b848a1f8de",
+      "content_parent": "2c507b8c77a6fa27fee1857ad72135d422834272933189ec21097dc2dec51b66"
     },
     {
       "title": "Forensic accuracy evaluation of the Context Contracts leverage plan: core thesis sound, 5 inaccuracies (3 material — nonexistent work_order_dispatches_task, wrong decision-shows-derivation severity, unimplemented bundle->contextBlocks injection)",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "audit",
       "question": "Are the load-bearing claims of the Context Contracts leverage plan (schema/op behavior, the exact edges on named items, the relation_types each proposed CTX contract names, the lens/invariant/tool facts) accurate against the real pi-context code and the .context substrate, and which specifics are wrong?",
@@ -1225,14 +1225,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-15T00:03:00.405Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-15T00:03:00.405Z",
+      "modified_at": "2026-07-07T11:01:20.760Z",
       "oid": "f59b05a894f00fe796d321bf50d094cb",
-      "content_hash": "5848d6c4983afc14813aa6d0ddf2e870e96ad146639827d66e9526652abe13ec",
-      "content_parent": "72953425b6a44ac29bac8d9624114121462963c2fa6378c667e4ec575fbc8dad"
+      "content_hash": "33266cbb3e2f8a3a67bd1f986e7bbda7aeee608c538c829edc617ff9893010aa",
+      "content_parent": "5848d6c4983afc14813aa6d0ddf2e870e96ad146639827d66e9526652abe13ec"
     },
     {
       "title": "Catalog↔config relation_type drift: task_gated_by_item consumed by a shipped derivation but missing from the packaged catalog — a class with no parity forcing-function",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "audit",
       "question": "Why does a fresh accept-all substrate lack task_gated_by_item; what is the root cause, shape, and reproducible condition; is it an atomic omission or an instance of a broader class; and does the substrate already track it?",
@@ -1293,14 +1293,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-15T22:53:06.399Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-15T22:53:06.399Z",
+      "modified_at": "2026-07-07T11:01:24.161Z",
       "oid": "a2a807f3e45e551c0024bb9a94c43403",
-      "content_hash": "c980b91e3c9806ce9b47b1db33e09c052869d9cc407fa735b774bf7b6b90d61d",
-      "content_parent": "ba59422dc18598544b079845baf40bd7c40a2618100825fa88a6e124ed022d7d"
+      "content_hash": "4f3477579a7a3107be49a35c4292d237e4c492797b3503e0c9faf57e70057550",
+      "content_parent": "c980b91e3c9806ce9b47b1db33e09c052869d9cc407fa735b774bf7b6b90d61d"
     },
     {
       "title": "Phase-block dev-process control plane: forensic validation of the proposal — the phase block and the roadmap layer are distinct surfaces, and the zero-code core vs named-code-dependency split",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "audit",
       "question": "Is the proposal that the empty `phase` block plus already-shipped pi-context elements form a discipline-closable dev-process control plane accurate against the real code and substrate, and which control-plane mechanisms are zero-code-usable today versus gated on named code?",
@@ -1360,14 +1360,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-15T23:11:10.619Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-15T23:11:10.619Z",
+      "modified_at": "2026-07-07T11:01:26.304Z",
       "oid": "d5db6a1c067ed5bfe1affd3f48b3293c",
-      "content_hash": "fb8c7e1fba2d4c3c5911ec030ed4a9b0fb2d11a572f0e61595c4b8031af94c10",
-      "content_parent": "69d4b4fca3c5e1a3e7169ebd6458a867f58115db5b84f650afe4ba4527826500"
+      "content_hash": "4c7abcf6dcaad648b5e0b7616960821ab91c67c719d0631f5ad07e38ad2457a6",
+      "content_parent": "fb8c7e1fba2d4c3c5911ec030ed4a9b0fb2d11a572f0e61595c4b8031af94c10"
     },
     {
       "title": "Best-next-steps sequencing determination, validated to substrate truth: re-derived counts/dependencies, the FGAP-061 NOW-slice-shipped correction, and the zero-code vs gated-on-unshipped-code split",
-      "status": "complete",
+      "status": "stale",
       "layer": "L3",
       "type": "audit",
       "question": "What is the leverage-ordered next-steps sequencing of the .context backlog validated against current substrate truth — which counts and dependencies hold, which proposal claims are stale or false, and which moves are genuinely zero-code substrate writes versus gated on the canonical pipeline or on unshipped code?",
@@ -1419,10 +1419,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-16T05:13:34.095Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-06-16T05:13:34.095Z",
+      "modified_at": "2026-07-07T11:01:40.246Z",
       "oid": "1d6b30289cd90c90f49ea368a9a5ed3d",
-      "content_hash": "a5a1253cf348ba4a322c82c431bb5680c9af91075b7dd9162141fd6ac37c2f48",
-      "content_parent": "1f876696f3eafb70660c9e6f4c74700a7f3d66600927735698c95de945a0e2e2"
+      "content_hash": "3ee609e69fd949092fc5fdfd514b95b5d1a3eea607eb7d8397a13b3737fb6646",
+      "content_parent": "a5a1253cf348ba4a322c82c431bb5680c9af91075b7dd9162141fd6ac37c2f48"
     },
     {
       "title": "WASC operation framework — the canonical run process",
@@ -1582,7 +1582,7 @@
     },
     {
       "title": "Foreign-status derivation blindness — mechanism, per-surface class inventory, and resolution shapes for cross-substrate consumption",
-      "status": "complete",
+      "status": "stale",
       "layer": "L1",
       "type": "empirical",
       "question": "Does pi-context's derived state consume foreign (cross-substrate) edge endpoints — and if not, where exactly does each derivation surface drop them, what is the blast radius, and what fix shapes does the shipped architecture afford?",
@@ -1638,10 +1638,10 @@
       "created_at": "2026-07-06",
       "id": "R-0026",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-06T01:39:15.801Z",
+      "modified_at": "2026-07-07T11:01:42.592Z",
       "oid": "afc95bbdfee7a8fa15bf9540a711edf8",
-      "content_hash": "edd2a60fbb901f6f8b5d0b62c1000de6d80d1cf3827a35bb5ca4b86130fe32bc",
-      "content_parent": "4e00c682a6c76d365d26813ab70ccc77b6a8cc7761fe50490dc5716371708598"
+      "content_hash": "0638dd97e56dbdef0e660b787ac580473f46799f99821c7142a3e24ccbdf2485",
+      "content_parent": "edd2a60fbb901f6f8b5d0b62c1000de6d80d1cf3827a35bb5ca4b86130fe32bc"
     },
     {
       "title": "Harness exemplars characterized — WASC's deterministic prompt pipeline and SYNTH's failure-derived deny surface, with the portable pattern set",

@@ -1,0 +1,83 @@
+{
+  "title": "CLI↔ops↔scripts parity survey — categorical CLI-side parity under frozen in-pi ops",
+  "status": "stale",
+  "layer": "L2",
+  "type": "audit",
+  "question": "Given pi-context's three surfaces over one library (the 48 surface:\"use\" ops, the CLI that reflects them 1:1, and the orchestrator-script twins), why do CLI defects keep surfacing, and can the CLI be brought to categorical capability-parity with the scripts WITHOUT changing in-pi op behavior — enumerating every script capability and the CLI seam that closes each gap?",
+  "method": "Agent-produced comprehensive read-only survey (general-purpose, opus) over packages/pi-context/src (ops-registry.ts, read-element.ts, context.ts, block-api.ts), packages/pi-context-cli/src (bin.ts, cli.ts), scripts/orchestrator/*.ts, and scripts/parity-check.ts. Enumerated all three surfaces; built a capability matrix; categorized each parity gap under the hard constraint that in-pi op behavior is frozen. Two known gaps (FGAP-019, FGAP-020) reproduced empirically against the live .context substrate. Orchestrator independently re-verified the load-bearing counts (48 use-ops confirmed via CLI --help) and read the verdict/categorization sections directly.",
+  "scope": [
+    "pi-project-workflows monorepo, branch context-jit-spec-v2, HEAD 9ef6e3d",
+    "48 surface:\"use\" OpDefinitions in packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context-cli/src/{bin.ts,cli.ts} reflection layer",
+    "scripts/orchestrator/*.ts — 53 files: 24 op-twin parity targets + 16 composer + 12 runtime-demo + 1 launch-support (reconciled; the survey prose's earlier '52' was an arithmetic slip, enumeration is complete and the 24 op-twin set is correct)",
+    "scripts/parity-check.ts static dual-surface gate"
+  ],
+  "findings_summary": "Three surfaces sit over the same block-api/context-sdk library: the in-pi OPS (48 surface:\"use\" OpDefinitions), the CLI (a 1:1 runtime reflection of the ops, cli.ts:44), and the orchestrator SCRIPTS (hand-ergonomic twins). CLI defects keep surfacing because the ops were authored for the in-pi caller (which reads schemas, retries, infers, tolerates verbose output), the CLI relays them faithfully, and the scripts add ergonomics the ops never had — so every latent op assumption becomes CLI friction on first direct use, invisible to unit tests that always supplied the happy-path input.\n\nThe survey enumerates 8 parity gaps where the CLI sits below script capability: GAP-1 FGAP-019 (array_key declared REQUIRED across a CLASS of 7 block-mutation ops though the script derives it); GAP-2 FGAP-020 (read-schema --path pages an addressed object node down to its incidental `required` array name-list); and 6 newly surveyed — GAP-3 no human-render/--format mode, GAP-4 no --show-schema contract preview, GAP-5 no AJV error translation, GAP-6 no append-time dry-run, GAP-7 no input shorthands (--writer kind:id / --where field:op:value / CSV), GAP-8 coarse exit codes (0/1/2 vs the scripts' 1-5). These were filed as FGAP-021..026 (CLI-side) and FGAP-027 (the in-pi op residual).\n\nCATEGORICAL VERDICT: full script-capability parity is reachable with ZERO in-pi op changes. Each gap maps to a CLI-layer seam under the frozen-ops constraint: GAP-1/GAP-7 = CLI-pre-call (derive/normalize input before the unchanged op — e.g. extend cli.ts's required-filter exemption from {writer} to {writer, arrayKey} and inject the derived key via a helper mirroring injectWriter); GAP-2/3/4/6/8 = CLI-only-shared-helper (a helper in-pi dispatch never touches — for GAP-2, re-run the addressed read with structureForRead({whole:true}) which skips collection paging and returns the full subtree while still applying the 50KB cap); GAP-5 = CLI-post-call (AJV error reshape in the cli.ts catch). No gap is forced into REQUIRES-OP-CHANGE for the CLI surface.\n\nTHE ONE RESIDUAL (filed as FGAP-027): closing FGAP-020 CLI-side corrects ONLY the CLI surface — the in-pi op keeps returning the paged name-list for addressed object-node reads (structureForRead paging at read-element.ts:266-285). Making BOTH surfaces return the full subtree requires passing whole:true at ops-registry.ts:1166, an op change conflicting with the frozen constraint (user-authorized, tracked as FGAP-027).\n\nREGRESSION FINDING: the existing parity-check.ts dual-surface guard keys the script twin by EXACT op-name (parity-check.ts:748), so 29 of 48 use-ops — including the entire block-mutation family where FGAP-019 lives, plus 5 name-mismatched twins — are structurally invisible to it; it also checks only 3 optional params, never a required-but-derivable one, never output shape. A behavioral gate would add, after the static checks: a script↔op name map, fixtures + an execution harness, a required-but-derivable assertion (FAIL if an op's required param is one the script derives), and an output-shape diff (the read-schema --path case FAILs today: op→name-list, script→subtree). This converts the class from found-one-at-a-time-by-dogfooding into caught-at-commit.\n\nScript inventory reconciled: 53 orchestrator scripts = 24 op-twin parity targets + 16 composer + 12 runtime-demo + 1 launch-support; the survey prose's earlier '52' was an arithmetic slip with no impact on the 24 op-twin parity set.",
+  "findings_document": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+  "grounding": {
+    "revisions": [
+      "9ef6e3d (branch context-jit-spec-v2)"
+    ],
+    "dependencies": [
+      "structureForRead/discoverArrayKey/resolveCollection collection-paging semantics (read-element.ts) — load-bearing for GAP-2 and its whole:true CLI-side fix"
+    ]
+  },
+  "stale_conditions": [
+    "The CLI gains a pre-call input-derivation or post-call output-reshaping seam (cli.ts) — the gap list and CLI-side categorization are realized and the 'below script parity' framing is superseded.",
+    "Any of the 8 gaps is closed (FGAP-019/020 especially) — re-derive the residual set.",
+    "In-pi op behavior is unfrozen / an op is changed (e.g. whole:true at ops-registry.ts:1166, or a dryRun param added to append-block-item) — the frozen-ops constraint the verdict rests on no longer holds.",
+    "parity-check.ts gains a behavioral phase or a script↔op name map (parity-check.ts:738/748) — the regression-gate finding is addressed.",
+    "structureForRead's collection-paging heuristic (read-element.ts:266-285) changes — GAP-2's root locus and the whole:true fix shift.",
+    "The orchestrator-script inventory changes — the 24 op-twin parity-target enumeration must be re-derived.",
+    "cli.ts's reflection machinery (useOps filter :44, required-from-schema :277-282, injectWriter :293-303) is refactored such that the named seams move."
+  ],
+  "citations": [
+    {
+      "label": "full survey (deep read)",
+      "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
+    },
+    {
+      "label": "CLI reflects ops 1:1 (useOps filter)",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "44",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "label": "CLI required-flag check + writer exemption (GAP-1 pre-call seam)",
+      "path": "packages/pi-context-cli/src/cli.ts",
+      "lines": "277-303",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "label": "read-schema op wraps addressed node in structureForRead (GAP-2 root locus / the op-change point)",
+      "path": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1166",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "label": "structureForRead collection-paging that projects an object node (FGAP-020)",
+      "path": "packages/pi-context/src/read-element.ts",
+      "lines": "266-285",
+      "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+    },
+    {
+      "label": "script derives array_key (FGAP-019 contrast)",
+      "path": "scripts/orchestrator/file-block-item.ts",
+      "lines": "89-107",
+      "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+    },
+    {
+      "label": "script returns full schema subtree directly (FGAP-020 contrast)",
+      "path": "scripts/orchestrator/read-schema.ts",
+      "lines": "181",
+      "content_pin": "0f3255c819e2b5ce735ec6069162f13042be38d4893b070f7c7a63795737dc66"
+    },
+    {
+      "label": "parity-check dual-surface guard keys twin by exact op-name (the 29/48 blind spot)",
+      "path": "scripts/parity-check.ts",
+      "lines": "738-748",
+      "content_pin": "5b7ec0aa1ec162aec394cc958ba588dafbccb1c389ebba3472a755d188915ded"
+    }
+  ]
+}

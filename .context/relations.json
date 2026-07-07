@@ -10058,5 +10058,57 @@
       "refname": "FGAP-124"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "baabb5f3e68791b37210c8f22ff38530",
+      "refname": "VER-079"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6dd24572418b41dad91b84457e4bcdc4",
+      "refname": "TASK-094"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f07c4fbfc8c2151a2f021b30b3248c52",
+      "refname": "DEC-0022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cbd7f44870e46657ee61ebca3aa5b501",
+      "refname": "FGAP-124"
+    },
+    "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f07c4fbfc8c2151a2f021b30b3248c52",
+      "refname": "DEC-0022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cbd7f44870e46657ee61ebca3aa5b501",
+      "refname": "FGAP-124"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f07c4fbfc8c2151a2f021b30b3248c52",
+      "refname": "DEC-0022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "refname": "derive-decisions-from-facts"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

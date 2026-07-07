@@ -1739,7 +1739,7 @@
     },
     {
       "title": "Work-order dispatch dogfood — the loop cannot run a real work-order today; five breaks root-caused, one architectural fact seen from three sides",
-      "status": "complete",
+      "status": "stale",
       "layer": "L1",
       "type": "audit",
       "question": "When a real work-order is filed and driven through run-work-order-loop from pi -p non-interactive dispatch, where does the machinery break, what is the root cause of each break, and is the work-order loop usable as a harness dispatch primitive today?",
@@ -1788,9 +1788,10 @@
       "created_at": "2026-07-07",
       "id": "R-0029",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-07T00:30:40.627Z",
+      "modified_at": "2026-07-07T02:44:38.048Z",
       "oid": "80029d80e697a952937e27e98866ee19",
-      "content_hash": "a1d3307c1e19e3eaab15fd3a91d0b0274c197785666ba3c0fa24fddaca0937ee"
+      "content_hash": "691825cdcd4053afe2d3b4690ad159d82b46ee8dabafdb1c74361a09a55d803e",
+      "content_parent": "a1d3307c1e19e3eaab15fd3a91d0b0274c197785666ba3c0fa24fddaca0937ee"
     }
   ],
   "schema_version": "1.0.1"

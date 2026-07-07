@@ -4479,16 +4479,16 @@
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "work-order contract-engine parity",
-      "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop consumes none of their semantics: WorkOrderRecord (work-order-loop.ts:73-78) omits three of the four; input is hardcoded {work_order_id} (:119); context_blocks and output_contract have zero references in pi-agent-dispatch; the capability clamp intersects the tool param agent_grant with spec.tools (:134) — wo.scope.operations is never an operand (WO-001 demonstrated: scope.operations ['write'] while the invocation granted ['write','bash']; bash survived). The schema's own scope description asserts present-tense engine behavior — 'Used by the capability composer to clamp the agent's grant at dispatch' — that does not exist, and the schema ships in the installable catalog. Direction settled by git dates: schema 2026-05-27 (7d06f616) one day ahead of the loop 2026-05-28 (494357ac). Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts:77-80 — that one at least documents the deferral; this one asserts falsely).",
+      "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop originally consumed none of their semantics. Two are now honored (fixed): the dispatch input is validated against input_contract via the canonical pi-context AJV validator before compile/spawn (validateWorkOrderInput), and the capability grant is clamped to wo.scope.operations (clampToScope intersects the composed grant, so a caller grant of [write,bash] under scope.operations [write] dispatches with --tools write). Two remain unconsumed: context_blocks is never injected into the dispatched agent, and output_contract is never validated against the agent's returned output — both have zero references in pi-agent-dispatch. The catalog schema's scope description historically asserted a clamp that did not run; the clamp now runs, so that assertion is satisfied for scope, while the schema still declares context_blocks/output_contract semantics the engine does not implement. Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts — documents its deferral). Direction settled by git dates: the schema landed one day ahead of the loop's demo-subset engine.",
       "evidence": [
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "reference": "73-78 WorkOrderRecord omits input_contract/context_blocks/output_contract; :119 input hardcoded; :134 clamp uses tool param, not wo.scope.operations; :167 scope consumed only as files for commit staging",
-          "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+          "reference": "dispatchTargetAgent: input validated against wo.input_contract (validateWorkOrderInput) before compile/spawn; the composed grant clamped to wo.scope.operations (clampToScope) becomes the subprocess --tools allowlist — both FIXED. context_blocks and output_contract still have zero consumption in this file.",
+          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
         },
         {
           "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
-          "reference": "required nine fields; scope description asserts the clamp the engine never runs — catalog-installable false contract text",
+          "reference": "required nine fields; still declares context_blocks + output_contract semantics the engine does not implement (scope clamp now satisfied)",
           "content_pin": "49b7a448ae5ffe8cf282d40edb6222323ad06d3e9fb870a73f459b5464042d8e"
         },
         {
@@ -4498,13 +4498,13 @@
         }
       ],
       "impact": "Filed work-orders carry dead contract fields authors reasonably rely on: inputs are never validated, context never injected, outputs never checked, and a narrower wo.scope.operations does not narrow the grant. Any substrate installing the catalog schema inherits contract text promising enforcement that does not exist.",
-      "proposed_resolution": "Under FEAT-014: after the dispatch-architecture decision, either the engine honors all four fields (validate input against input_contract pre-dispatch, inject wo.context_blocks, validate output against output_contract post-return, intersect the clamp with wo.scope.operations) or the schema is amended to stop asserting undecided behavior — dual-surface either way, with per-field regression pins.",
+      "proposed_resolution": "Under FEAT-014, the two remaining fields: inject wo.context_blocks into the dispatched pi subprocess (resolve the referenced blocks and pass them into the agent's context across the process boundary) and validate the agent's returned output against wo.output_contract post-return (the subprocess must emit structured output the loop can check) — or amend the schema to stop declaring semantics the engine will not implement, dual-surface, with per-field regression pins. The scope.operations clamp and input_contract validation are already implemented with unit pins (clampToScope, validateWorkOrderInput).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "892ab053675877c83351f6cde26cbc0cb67e15206ff912444b816403959fd6c0",
-      "content_parent": "ab2cd114c4aa76c6d8203dac435b86c4fc2367fb48a1ba62916cb799c0cacf9c"
+      "content_hash": "06a67e36505d62cc09efc7d36076e3f41ed9353f8b144d923a669b7bed17fbf2",
+      "content_parent": "892ab053675877c83351f6cde26cbc0cb67e15206ff912444b816403959fd6c0"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
@@ -4521,8 +4521,8 @@
         },
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "reference": ":171 attestedCommit as library call inside the ungated run-work-order-loop — the gated commit-attested tool's effect without its gate",
-          "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+          "reference": "attestedCommit invoked as a library call inside the ungated run-work-order-loop — the gated commit-attested tool's effect without its gate",
+          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4536,8 +4536,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "f76d7bdf134532c8b987c1ca3ba4f401ba79fa29a90c7165a6bbd70625801a2f",
-      "content_parent": "c8f253a1a9c0ca1ed7390e1b9b51f04027a66c2a3839b2204ea16d1e0e0d057d"
+      "content_hash": "86a978bdff51385bf14bfce30c5e256dab286a2aaebf013dc56a59268ec1b347",
+      "content_parent": "f76d7bdf134532c8b987c1ca3ba4f401ba79fa29a90c7165a6bbd70625801a2f"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
@@ -4554,8 +4554,8 @@
         },
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "reference": ":116 createAgentLoader({ cwd }) — no builtinDir; call-agent-tool.ts:73 same",
-          "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+          "reference": "createAgentLoader({ cwd }) constructed with no builtinDir (call-agent-tool.ts same) — the packaged specs are off this tier's search path",
+          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4569,8 +4569,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-127",
       "oid": "c2bc490c5b917dcbca4c4065002a1a42",
-      "content_hash": "66eb4bf1f6d8d94c5d4bfe22282b55fdcb9af260e254f8c1de5faf69d5f23f38",
-      "content_parent": "49463c7e7c968862d6b2bb48881f3a457d6e820c9ec8443c585f7c8960911489"
+      "content_hash": "8df62087def22d304acf8ca6c78e7c90cde46ebb597e77020a98e4c06d252741",
+      "content_parent": "66eb4bf1f6d8d94c5d4bfe22282b55fdcb9af260e254f8c1de5faf69d5f23f38"
     },
     {
       "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
@@ -4578,12 +4578,12 @@
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "hasUI-aware confirm gating",
-      "description": "On real-check failure before the last iteration the loop calls ctx.ui.confirm and maps a falsy answer to final_status 'aborted-by-human' (work-order-loop.ts:200-209). In a pi -p session ctx.ui is the runner's noOpUIContext whose confirm resolves false (runner.js:59-61; hasUI() = uiContext !== noOpUIContext, :211-213), so the gate silently auto-declines. Two defects share the line: (1) semantic mislabel — no human was consulted, an environment default is recorded as a human decision in the loop's durable verdict (a candidate harness/phase-state input); the auth gate by contrast checks hasUI FIRST and emits a structurally distinct non-interactive reason, the loop never inspects hasUI before asking; (2) the retry path (max_iterations > 1) is dead weight in exactly the context a harness would drive the loop from — every non-interactive run is single-shot abort-on-first-failure, with no way to opt into non-interactive bounded retry. The fail direction is fail-SAFE (never burns iterations unmonitored), so the default is defensible — but it is neither chosen nor reported as policy. Class: FGAP-068 interactivity-dependence-in-a-non-interactively-drivable-surface, plus a distinguishable sub-class — any ctx.ui.confirm call site that does not pre-check hasUI treats the no-UI default as an operator decline (a call-site sweep is fix-time work).",
+      "description": "On real-check failure before the last iteration the loop's human-OK gate now checks ctx.hasUI FIRST: in a non-interactive (pi -p) context (ctx.hasUI === false) it does NOT call ctx.ui.confirm and records the distinct final_status 'aborted-non-interactive' instead of mislabeling the noOpUIContext confirm-false default as 'aborted-by-human' — the semantic-mislabel defect is FIXED (mirrors the auth-gate's hasUI-first pattern). The interactive path (a human answering confirm false) still reports 'aborted-by-human', unchanged. Two things remain: (1) there is still no way to opt into non-interactive bounded retry — every non-interactive run is single-shot abort-on-first-failure (fail-SAFE, but not a chosen/opt-in policy); (2) the broader ui.confirm call-site class is unswept — any other ctx.ui.confirm call site that does not pre-check hasUI would treat the no-UI default as an operator decline. Class: FGAP-068 interactivity-dependence in a non-interactively-drivable surface.",
       "evidence": [
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "reference": ":200-209 ctx.ui.confirm on failure → false mapped to aborted-by-human; no hasUI pre-check",
-          "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+          "reference": "the human-OK gate checks ctx.hasUI === false before ctx.ui.confirm and records aborted-non-interactive (mislabel FIXED); the retry path is still single-shot non-interactively (no opt-in bounded-retry policy)",
+          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4592,13 +4592,13 @@
         }
       ],
       "impact": "The loop's durable verdict lies about the actor (harness inputs must not), and bounded retry — the loop's FEAT-006 governance feature — cannot run in the non-interactive context the harness uses; every such run is single-shot.",
-      "proposed_resolution": "Under FEAT-014: pre-check hasUI and emit a distinct non-interactive status (never 'aborted-by-human' without a human); add an explicit work-order retry policy (on_fail: retry|abort — the sort of field the v1 contract implies, tying to FGAP-125); a fix-time Explore sweeps ui.confirm consumers for the same no-pre-check pattern.",
+      "proposed_resolution": "Under FEAT-014, the remainder: add an explicit work-order retry policy (on_fail: retry|abort — the sort of field the v1 contract implies, tying to FGAP-125) so non-interactive runs can opt into bounded retry; sweep ui.confirm consumers across the packages for the same no-pre-check pattern and apply the hasUI-first guard where needed. The semantic mislabel (hasUI pre-check + aborted-non-interactive status) is already implemented with a unit pin.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-07",
       "id": "FGAP-128",
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
-      "content_hash": "aea29fdfd983569313b8d613672d2d1975d1a6d516c726eef8068ec4d1b0875b",
-      "content_parent": "974cae754a32cae01b4f7ca025b71f74eb6fbc94d93f7283bd216ad1dd60a473"
+      "content_hash": "a9cb34173eeca80f5534712d37c0eaa6335d431d529f752a80e764487d3921f2",
+      "content_parent": "aea29fdfd983569313b8d613672d2d1975d1a6d516c726eef8068ec4d1b0875b"
     }
   ]
 }

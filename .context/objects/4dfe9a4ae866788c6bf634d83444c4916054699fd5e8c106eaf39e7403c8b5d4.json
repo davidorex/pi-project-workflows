@@ -1,0 +1,35 @@
+{
+  "title": "CSV shorthand is a one-param special case, not a type-driven normalization for string-array params",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context-cli",
+  "description": "Array-typed op params are classified json and parsed with strict JSON.parse (cli.ts:126-142, 388-408); the only CSV affordance is a hardcoded post-loop split gated on field === 'value' AND op === 'in' (cli.ts:415-423, the FGAP-025 closure). So resolve-items-by-id --ids TASK-046,DEC-0018 fails (exit 2, 'not valid JSON') although --ids is Type.Array(Type.String()) (ops-registry.ts:1746) and the CSV intent is unambiguous. --ids is currently the sole string-array param on the use-op surface; all other array-shaped params (--edges, --item, --match, ...) are object/record arrays a CSV transform must not touch. Class: CSV-for-string-arrays should be type-driven, covering --ids and every future string-array param; the one-param special case is the instance pattern. Full investigation: analysis/2026-06-10-array-param-csv-shorthand-gap.md.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "388-408",
+      "reference": "array params parsed with strict JSON.parse; CSV re-throws as UsageError",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "415-423",
+      "reference": "the FGAP-025 CSV split is gated on field === 'value' AND op === 'in' — param-specific, not type-driven",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1746",
+      "reference": "resolve-items-by-id ids is Type.Array(Type.String()) — the sole string-array use-op param",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "analysis/2026-06-10-array-param-csv-shorthand-gap.md",
+      "reference": "agent investigation: root cause, verbatim repro (hit by two independent agents), full array-param enumeration, class verdict, FGAP-025 scope quoted",
+      "content_pin": "c61c79fea5061cb181c6afd585d51bfac4a73824594e6660b0759c7e636a2991"
+    }
+  ],
+  "impact": "The natural CSV form fails on string-array params with a JSON-parse error; every future string-array param inherits the footgun unless normalization is type-driven.",
+  "canonical_vocabulary": "type-driven string-array CSV shorthand",
+  "proposed_resolution": "In parseOpArgs, when a param's schema is an array of strings and the value is not valid JSON, split CSV to a string array — type-driven, covering --ids and future string-array params; object-array params and the JSON form unchanged. Verification per the investigation's CLI-provable conditions."
+}

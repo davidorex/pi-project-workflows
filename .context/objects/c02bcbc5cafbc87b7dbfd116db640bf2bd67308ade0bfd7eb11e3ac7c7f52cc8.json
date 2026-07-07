@@ -1,0 +1,40 @@
+{
+  "title": "Op-execution contract carries no DispatchContext channel — every cli / in-pi write op is attestation-blind",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "OpDefinition.run(cwd, params) has no DispatchContext channel (ops-registry.ts:104); registerAll invokes op.run(ctx.cwd, params), threading only ctx.cwd (:1519); the cli injects a writer only when an op's params schema declares a 'writer' property (cli.ts:292). So every write op whose schema omits 'writer' structurally cannot forward the library's ctx?: DispatchContext, and attestation stamping (stampItem, dispatch-context.ts:121-152) never runs. Ten write ops drop the ctx: append/update/remove-block-item, the nested trio, write-block, append-relation, plus amend-config and write-schema (which pass a literal undefined at the ctx slot). On attested-required schemas (framework-gaps / decisions / features require created_by + created_at) the cli filing fails AJV unless the caller hand-authors author fields. The same drop recurs in pi-workflows step-block.ts (six writers). The append-block-item ctx-drop is the seed instance.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "104",
+      "reference": "OpDefinition.run(cwd, params) — no DispatchContext channel in the contract (verified)",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1519",
+      "reference": "registerAll invokes op.run(ctx.cwd, params) — pi ExtensionContext identity not threaded (verified)",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "292",
+      "reference": "injectWriter sets params.writer only if the op schema declares a 'writer' property (verified)",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "174",
+      "reference": "append-block-item calls appendToBlock(cwd, block, arrayKey, item) — ctx (4th arg) dropped (verified)",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-workflows/src/step-block.ts",
+      "lines": "161,203,219,233,278,301",
+      "reference": "all six block-api writers called without ctx — same drop",
+      "content_pin": "5ae51147dc240f359275a0e88c9b04ce11c6c9bc811cd58495cce35d100f6eb4"
+    }
+  ],
+  "impact": "Every cli- or workflow-written item is unattested; the DispatchContext attestation model (created_by stamping; human/agent/monitor/workflow writer kinds) is silently bypassed; attested-required schemas reject cli filings. This is why filing has gone through the orchestrator scripts (which thread ctx), not the cli.",
+  "proposed_resolution": "Thread a writer/DispatchContext through the op-execution contract itself (a ctx/writer channel on OpDefinition.run + registerAll + the cli writer-injection) so every write op stamps uniformly — rather than per-op schema smuggling (the channel only promote-item / write-schema-migration / context-switch use today, and which context-archive declares-but-ignores). See DEC-0006."
+}

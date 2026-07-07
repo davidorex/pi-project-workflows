@@ -1,0 +1,37 @@
+{
+  "title": "Read surface has no field projection — item-metadata enumeration requires full-item reads the 50KB cap refuses, so substrate-wide currency audits are not cheaply repeatable",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "canonical_vocabulary": "field-projection reads",
+  "description": "No read op projects a subset of item fields: filter-block-items, read-block-page, resolve-items-by-id, and context-lens-view --bin all return whole items. Enumerating one field across a block (e.g. every research item's status + stale_conditions, or every gap's id + status + priority) therefore costs full-item payloads, and on populated blocks the 50KB read cap correctly refuses (observed in the 2026-07-05 currency audit: filter-block-items on framework-gaps status-in refused at 127,873 bytes; on research status-eq refused at 135,562 bytes; read-block-page of 8 research items truncated at 59,257 bytes). The workarounds are per-item read-block-item loops (dozens of invocations) or table-format rendering (drops fields not in the fixed column set and falls back to full JSON on heterogeneous pages). Class: any substrate-wide sweep that needs one or two fields per item — currency audits, staleness-condition review, priority triage, the planned reconcile/staleness machinery's reporting — pays whole-item cost or is refused; the cap and the projection absence jointly make honest bulk enumeration impossible through the sanctioned surface. Over-cap filter queries additionally fail as count-without-ids: the fail-closed envelope preserves total/totalBytes but bounds data to null, so the surface answers how-many-match while refusing which (observed 2026-07-06: filter-block-items framework-gaps description-matches 'substrate' → data:null, total:37, totalBytes:137380, complete:false); the op's overCapDirective names read-block-page / refine-the-predicate — both row-narrowing, neither reaches the match set's ids, and read-block-page's own floor (--limit 1) is bounded by the widest single item. Under-cap queries wanting only ids pay whole-body cost (observed 2026-07-06: conventions match-all → 14 items, 22,541 bytes of full rule bodies for ~400 bytes of wanted ids; --fields rejected as unknown flag). Survey completes the class enumeration: join-blocks, read-block, read-block-dir, and gather-execution-context also return whole item bodies; the only narrow shapes on the surface — context-lens-view's bin→count summary, walk-ancestors/context-walk-descendants id-chains, find-references Edge[] — are hardcoded, not parameterized, and cover only their own axes. Distinct from FGAP-016 (which concerns the cap measuring the pretty form vs compact emission, not projection).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "filter-block-items / read-block-page / resolve-items-by-id declare no field-projection parameter; context-lens-view --bin pages whole items",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "analysis/2026-07-05-currency-foreclosure-shape.md",
+      "reference": "the audit that hit the refusals; the recommended reconcile/staleness machinery needs cheap enumeration of status + condition fields across blocks",
+      "content_pin": "47fe803043f1982ff51f1a78341d92c0ce751727738b031d152af357e8c5142e"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "reference": "structureForRead bounds data to null on over-cap (line 313) while total/totalBytes survive — the count-without-ids envelope; pageArray (182-193) is the one-implementation precedent a projectFields primitive would sit beside",
+      "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "filter-block-items overCapDirective names read-block-page + refine-the-predicate — row-narrowing only; join-blocks whereField/whereOp/whereValue trio and resolve-items-by-id ids Type.Array(Type.String()) are the replicated-parameter and array-parameter precedents for a fields parameter",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "analysis/2026-07-06-block-query-projection-gap.md",
+      "reference": "the 2026-07-06 investigation: both failure shapes reproduced with envelopes pasted, full read-surface survey table, prior-art triage",
+      "content_pin": "20243a23027988d4d15e24037beed9e99a619d0fe8b1a882acad849ca1ddb604"
+    }
+  ],
+  "impact": "Substrate-wide currency auditing degrades to per-item invocation loops or partial table renders; the exact sweeps the derivation-truthfulness machinery must run (stored-vs-derived status, fired stale_conditions) cannot be performed affordably through the read surface.",
+  "proposed_resolution": "A shared projectFields primitive beside pageArray in read-element.ts, applied to item bodies BEFORE structureForRead serializes (truncateHead measures the projected payload — the cap shrinks rather than truncates), surfaced as an optional fields: string[] parameter (Type.Optional(Type.Array(Type.String())), reflecting to --fields) on the item-returning query ops — primary: filter-block-items, read-block-page, context-lens-view --bin; secondary: join-blocks, resolve-items-by-id. id always retained; a named field absent on an item is absent in the projected row; omitted fields = whole-item (additive, backward-compatible). Parameter-shape precedents: resolve-items-by-id ids (array param), join-blocks where* trio (one narrowing set replicated across ops)."
+}

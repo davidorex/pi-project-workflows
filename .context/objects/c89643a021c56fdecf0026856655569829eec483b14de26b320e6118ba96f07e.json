@@ -1,0 +1,27 @@
+{
+  "title": "CLI lacks a human-render mode (--format / terse / --raw) the script twins provide",
+  "status": "closed",
+  "package": "pi-context-cli",
+  "description": "The CLI emits only the --json envelope or the op's own renderOpResultText text; 15+ orchestrator op-twin scripts offer --format table|chain|summary|csv plus a renderTerse default and --raw for config/schema. Direct CLI users get structured JSON or the op's terse text, with no human-oriented render layer. Closable CLI-side without touching ops (a CLI-only render layer in-pi dispatch never sees).",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "504-508",
+      "reference": "CLI emits boundedJsonOutput (--json) or renderOpResultText only — no --format/render dispatch",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "reference": "representative op-twin scripts provide --format table|chain|summary|csv + renderTerse default + --raw; the CLI has no equivalent",
+      "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-3 in the parity survey (§C/§D), categorized CLI-only-shared-helper",
+      "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
+    }
+  ],
+  "impact": "Direct CLI/dogfooding users (human or agent) get no human-readable rendering for the 15+ ops whose script twins do — a capability asymmetry between the two surfaces over the same data.",
+  "proposed_resolution": "Add a --format global flag parsed in parseOpArgs (cli.ts:199) selecting text|json|table, plus a CLI render module dispatching per-op/per-shape (lifting the scripts' renderTable/renderTerse bodies into a CLI-shared render/ module) before the emit sites (cli.ts:504/508). Op behavior frozen. Re-confirm via the canonical pipeline.",
+  "priority": "P2"
+}

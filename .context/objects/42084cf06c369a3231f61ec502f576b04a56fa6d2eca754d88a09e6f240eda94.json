@@ -1,0 +1,23 @@
+{
+  "title": "Raw config.json readers bypass the config migration layer — silent shape divergence once the first shape-changing config migration ships",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Two readers parse config.json raw, skipping loadConfigForDir's migrate-then-validate: resolveOperationVocabulary (pi-agent-dispatch/src/capability-composer.ts:26, active substrate, fail-safe) and loadConfigForDirBestEffort (pi-context/src/context-sdk.ts:1443, non-active substrates). Harmless while only identity chains exist; the day a shape-changing `config` migration ships (map_each's declared consumer: the state_derivation delta), these see the un-migrated shape while loadConfig sees the migrated one — divergent reads of the same file, no throw, no signal. Class member of FGAP-105's raw-readers-cannot-tell-stale-from-current observation; distinct defect: these paths never migrate at all.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/capability-composer.ts",
+      "lines": "26",
+      "reference": "resolveOperationVocabulary raw-parses the ACTIVE substrate's config.json (fail-safe try/catch), bypassing the migration-aware loader.",
+      "content_pin": "63c669e9520527a57aed6430135a0015e9cf6e4d42e83798f4ad613d8633726d"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1444",
+      "reference": "loadConfigForDirBestEffort raw-parses non-active substrates' config.json — best-effort by design, but shape-blind to migrations.",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    }
+  ],
+  "impact": "Latent split-brain on config shape between the migration-aware and raw read paths; surfaces only when a non-identity config migration lands, far from this cause, with no error at the divergence point.",
+  "proposed_resolution": "Requires determination: route both through the migration-aware loader (best-effort semantics preserved via try/catch) or document them as deliberately raw with a shape-floor contract. FGAP-105's write-time convergence narrows the exposure window (converged files carry the current shape on disk) but does not close it for lagging substrates."
+}

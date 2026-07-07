@@ -1,0 +1,29 @@
+{
+  "title": "--block-taking ops ignore the config-declared prefix->block mapping — neither input normalization nor error enrichment",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Ops that take a --block name resolve it verbatim; a wrong-but-derivable name (--block task, --block decision) fails with a bare 'Block file not found' although config block_kinds declares both canonical_id and prefix, and expectedBlockForId (context-sdk.ts:1110) already computes TASK-046 -> tasks from it. The mapping is used neither to normalize the input (accept the singular / derive the block from a kind-prefixed id) nor to enrich the error (name the block that would have worked). resolve-item-by-id exists to bridge kind-id -> block, but the name-scoped readers' failure path never reaches for it. Class: every --block-taking op; triggering instance: read-block-item --block task. Full investigation: analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "764",
+      "reference": "readBlockForDir raises the generic 'Block file not found' without consulting the prefix->block mapping",
+      "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1110",
+      "reference": "expectedBlockForId already derives the block from an id's kind-prefix via config block_kinds",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "analysis/2026-06-10-block-name-vs-kind-id-resolution-gap.md",
+      "reference": "agent investigation: root cause, verbatim repro, op enumeration, class verdict, prior-art (extends closed FGAP-032/FGAP-019 normalization precedents to the block-name axis)",
+      "content_pin": "39fdaaf4e34d975ee30ba455596c24c5ded7b76996fd217d659b688685dc06eb"
+    }
+  ],
+  "impact": "A natural-but-wrong block name costs a failed invocation and a help round-trip on every --block-taking op, although the substrate already holds the data to resolve or explain it.",
+  "canonical_vocabulary": "prefix-aware block-name resolution",
+  "proposed_resolution": "Leverage the existing prefix->block mapping at the --block resolution layer: enrich the not-found error with the derivable block name (and accept an id-derived block where the op also receives an id). CLI/dispatch-layer change; ops' canonical semantics unchanged. Verification per the investigation's CLI-provable conditions."
+}

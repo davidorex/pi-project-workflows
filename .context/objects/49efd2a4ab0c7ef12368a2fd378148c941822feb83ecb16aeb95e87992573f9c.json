@@ -1,0 +1,51 @@
+{
+  "title": "Edge orientation (which endpoint is stored parent vs child) is carried by neither the relation_type name nor any queryable metadata, and no surface signals a wrong-orientation guess — backwards writes and empty reads both fail silently across ordering, membership, and wildcard relation_types",
+  "status": "closed",
+  "package": "pi-context",
+  "priority": "P1",
+  "canonical_vocabulary": "edge-orientation transparency + symmetric wrong-orientation signaling (write-reject and read-signal)",
+  "description": "The closure-table stores every relationship as a directed {parent, child} edge, but which endpoint is parent vs child is a convention that neither the relation_type canonical_id NAME nor any queryable metadata carries, and NO consuming surface signals a wrong-orientation guess — the failure is always silent, so backwards edges (write side) and empty results (read side) accumulate undetected. The only structural pin on orientation is the presence-gated source/target kind check (validateEdgeAgainstRegistry, context-sdk.ts:1590 parent->source_kinds / :1595 child->target_kinds), which constrains orientation ONLY when the two kinds differ AND both endpoints resolve; it is not a direction check. Consequently: (WRITE) assertEdgeValidForWrite (context-sdk.ts:1629-1636) accepts a name-faithful-but-backwards edge with no signal — the FGAP-007/TASK-027 task_depends_on_task footgun (name reads parent-depends-on-child while the deriver treats parent=prerequisite; corrected edge 5621c2a; the reverted fix a08e586). (READ) the walk primitives (context.ts:1550-1567 walk-ancestors / 1585-1602 walk-descendants) are bare direction-followers that return [] on a wrong-orientation guess, indistinguishable from 'no such relationship' — live: `walk-ancestors --id TASK-027 --relationType task_positioned_in_phase` returns data:[] while `context-walk-descendants --parentId TASK-027` returns PHASE-M5-WRITE-INTEGRITY, because task_positioned_in_phase stores parent=task/child=phase (member points up to container), opposite the name's containment intuition. (DERIVE) currentState (context-sdk.ts:801-927) and roadmap-plan.ts are correct-by-hardcode, so they consume a backwards edge silently rather than flag it. (VALIDATE) context-validate (context-sdk.ts:2179-, :2251) never inspects orientation. General class: orientation is an unenforced, unsurfaced convention on a directed edge, and every write/read/derive/validate surface fails silently on the wrong guess; FGAP-007 (write/ordering/same-kind) is one cell of this matrix, not the whole defect.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1590, 1595",
+      "reference": "validateEdgeAgainstRegistry: parent gated to source_kinds, child to target_kinds — the ONLY structural pin on orientation, and only when kinds differ and both endpoints resolve; not a direction check",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1629-1636",
+      "reference": "assertEdgeValidForWrite checks registration + kind only; a name-faithful backwards ordering edge is accepted and persisted with no signal (the FGAP-007 write cell)",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "1550-1567, 1585-1602",
+      "reference": "walk-ancestors / walk-descendants are bare parent/child direction-followers; a wrong-orientation query returns [] indistinguishable from no-such-relationship (the read cell)",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "801-927",
+      "reference": "currentState blocked/ready deriver hardcodes parent=prerequisite/child=dependent — consumes a backwards edge silently, does not flag orientation",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2179, 2251",
+      "reference": "context-validate endpoint/relation loops check registration, existence, kind, cycle — never orientation; no validate-time catch for a backwards edge or a silent-empty read",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "read-config --registry relation_types: item_derived_from_item is source_kinds:[*]/target_kinds:[*] so the kind check can NEVER fire — a fully unconstrained silent backwards write, strictly worse than task_depends_on_task; membership is internally inconsistent — feature_contains_story/story_includes_item store container=parent (source=container) while task_positioned_in_phase/phase_positioned_in_milestone store container=child (source=member), so any learned orientation heuristic is wrong for the sibling"
+    },
+    {
+      "file": "analysis/2026-07-04-edge-orientation-ambiguity-class.md",
+      "reference": "the investigation of record: full relation_type x surface matrix, verbatim reproduction transcripts for both instances, the silent-failure cell inventory, the prior-art coverage map, and the class characterization (commit 147cdf5)",
+      "content_pin": "5b030e6661035009963dc02df20272c7b33adc8ef0e4087b735bdc62526e5b78"
+    }
+  ],
+  "impact": "Every directed edge in the substrate is exposed to silent mis-orientation on both sides. WRITE: a filer or agent following the relation_type name files a backwards ordering edge (task_depends_on_task and the same-kind siblings milestone_precedes_milestone / decision_supersedes_decision / research_supersedes_research / story_depends_on_story / requirement_depends_on_requirement) or an arbitrarily-oriented item_derived_from_item (no kind pin at all) with no write-time signal; the defect surfaces only in derived blocked/ready or lineage state, divorced from the write. READ: any walk/query against the wrong end returns empty, indistinguishable from a genuine absence, so a consumer silently under-reads the graph (the mechanism that made this project's own membership query return empty). The membership category's split container-orientation guarantees the hazard cannot be learned away by convention. No surface — write, read, derive, or validate — makes a wrong-orientation guess observable, so both backwards edges and missed reads accumulate substrate-wide undetected. Addressing only the task_depends_on_task cell (FGAP-007 alone) leaves the wildcard write, the read-side silent-empty, and the membership inconsistency live and invites duplicate sibling filings.",
+  "proposed_resolution": "Make edge orientation explicit metadata on the relation_type and consume it SYMMETRICALLY so a wrong-orientation guess is never silent, on either side: (1) declare per-relation_type endpoint-role/orientation metadata (extending source_kinds/target_kinds) for every orientation-bearing relation_type — ordering, membership, and the wildcard item_derived_from_item — naming which stored endpoint is which semantic role; (2) WRITE: the append gate REJECTS a backwards orientation-bearing edge at write time with a message naming the expected orientation (never auto-orient — the reverted a08e586 always-swap inverted canonically-authored edges); (3) READ: a walk/query issued against the wrong end of an orientation-bearing relation ERRORS (or normalizes with an explicit signal) rather than returning silent-empty, so an absence is distinguishable from a wrong-direction guess; (4) reconcile the membership category's split container-orientation so the metadata is self-consistent across contains/includes/positioned_in; (5) optionally a validate-time check that flags any orientation-bearing edge whose stored direction violates its declared roles. The metadata is authored once and consumed by write, read, derive, and validate — the class closes when no orientation-bearing relation on any surface fails silently on the wrong guess. TASK-027 is re-scoped from the single task_depends_on_task write cell to this class-level fix; FGAP-007 is the write-ordering instance; FGAP-090/FGAP-093 (kind/existence parity, which defer direction here) are adjacent partial coverage."
+}

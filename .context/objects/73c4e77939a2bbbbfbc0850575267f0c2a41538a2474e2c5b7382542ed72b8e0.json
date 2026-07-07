@@ -1,0 +1,34 @@
+{
+  "title": "Gate satisfaction buckets the STORED status of derived-status kinds — currentState simultaneously derives a milestone reached and reports it as an unsatisfied gate",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "stored-vs-derived status convergence",
+  "description": "currentState's isCompleted (context-sdk.ts:787-790) buckets an item's STORED status for gate satisfaction (unsatisfiedGates, :835-836), while the SAME read derives milestone status from the phase rollup in memory (milestones[], :946-963) — two truth sources inside one payload. The milestone schema declares status 'DERIVED phase-rollup, not authored: … authored status is rejected by canon', yet nothing updates or guards the stored field, and the reached-milestone-phases-complete invariant guards only the stored-reached direction (when_bucket: complete), never stored-planned-with-all-phases-complete. Live instance: MILE-003 stored 'planned' while its phase completed — currentState reports MILE-003 reached in milestones[] AND lists it as an unsatisfied blocker of TASK-003/004/021/068/074 in blocked[]; gates on milestones never release. Class: any kind whose status is mechanically derivable (the state_derivation.rollups vocabulary) is read RAW by every bucket-consumer — gate satisfaction, focus_fallback, lens views, contextState summaries — so derived truth and consumed truth can diverge permanently. The packaged milestone schema additionally cites a 'substrate-derived-state' canon that does not exist in the conventions block.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "787-790",
+      "reference": "isCompleted buckets index.byRefname item's stored status; feeds unsatisfiedGates (:835-836) and therefore blocked/nextActions",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "946-963",
+      "reference": "milestones[] rollup derived per read from membership edges + member-status buckets, never persisted, never consulted by isCompleted",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/milestone.schema.json",
+      "reference": "status description: DERIVED phase-rollup, not authored — authored status rejected by canon (substrate-derived-state — a convention id absent from the conventions block)",
+      "content_pin": "63a575f03e106ca6447ddd76528d755aa8e59b4db49240dcd146a2b930978800"
+    },
+    {
+      "file": "analysis/2026-07-05-currency-foreclosure-shape.md",
+      "reference": "live-confirmed probe (P1) + seam map; reached-milestone-phases-complete one-directionality confirmed via context-validate run emitting no milestone issue",
+      "content_pin": "47fe803043f1982ff51f1a78341d92c0ce751727738b031d152af357e8c5142e"
+    }
+  ],
+  "impact": "A reached milestone does not release the tasks gated on it — MILE-003 derives reached while TASK-003/004/021/068/074 still derive blocked, so milestone completion has no effect on ready/blocked truth; the currentState payload self-contradicts; the divergence is invisible to context-validate.",
+  "proposed_resolution": "Per analysis/2026-07-05-currency-foreclosure-shape.md Class A (the schema_version construction generalized): isCompleted consults the rollup for rollup kinds (config-declared via state_derivation.rollups — closes the self-contradiction by construction within one read), converge-on-write stamps the stored field at the write chokes, a derived-status invariant class detects both divergence directions out-of-band, and a context-reconcile op repairs existing substrates. Determination and decomposition at the derivation-truthfulness feature filing; the dangling substrate-derived-state canon citation is corrected there too."
+}

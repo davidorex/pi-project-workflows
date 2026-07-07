@@ -1,0 +1,27 @@
+{
+  "title": "pi-context update's per-component write boundary (DEC-0018) is undocumented on the update surface — a blocked run's config mutation is contractual but nowhere stated",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "update applies per-component by decision: DEC-0018 (enacted, decision_addresses_gap -> this gap) extends DEC-0017's sibling-schema independence to the registry-propagation seam — a blocked schema rolls back byte-exact (resyncSchema, index.ts:1023-1203) while the additive config-registry propagation (index.ts:2150-2169) writes regardless of the schema-loop outcome. The mechanism is decided and correct; the residual gap is that no surface DOCUMENTS the contract: the update op description, the CLI text, and the README state neither that the boundary is per-component nor that a blocked run still lands the additive vocabulary. Outcome LEGIBILITY (the result object tying blocked to registryAdditions) is FGAP-076's scope, not this gap's.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "2150-2169",
+      "reference": "post-loop registry propagation calls writeConfig when !dryRun regardless of schema-loop outcome — per-component per DEC-0018, undocumented on the surface.",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1023-1203",
+      "reference": "resyncSchema per-schema byte-exact rollback bounds only the blocked schema's file + migrations.json declarations — the decided per-component boundary.",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": ".context/research.json",
+      "reference": "R-0012 — live reproduction of the behavior the contract must document: a schema returned blocked while registryAdditions were written in the same run."
+    }
+  ],
+  "impact": "Operators and agents reading the update surface have no stated contract for what a blocked run does to config.json; the decided per-component behavior reads as an accident instead of a boundary.",
+  "proposed_resolution": "Document the per-component contract on the update surface: the context-update op description, the CLI text, and the README state the DEC-0018 boundary (blocked schema rolls back byte-exact; additive registry propagation and sibling schemas apply independently). Result-object legibility is FGAP-076.",
+  "priority": "P2"
+}

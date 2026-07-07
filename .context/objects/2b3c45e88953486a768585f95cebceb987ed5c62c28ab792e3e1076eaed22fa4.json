@@ -1,0 +1,27 @@
+{
+  "title": "CLI exit codes are coarse (0/1/2) vs the scripts' 1-5 diagnostic granularity",
+  "status": "closed",
+  "package": "pi-context-cli",
+  "description": "The orchestrator scripts return granular exit codes (1-5: usage / not-initialized / schema-absent / validation / etc.); the CLI returns only 0/1/2, so callers and CI cannot distinguish error classes.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "456-518",
+      "reference": "CLI maps to 0/1/2 only (UsageError + generic catch)",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "reference": "scripts use 1-5 exit-code granularity (e.g. dry-run FAIL exits 5)",
+      "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "GAP-8 in the parity survey, categorized CLI-only-shared-helper",
+      "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
+    }
+  ],
+  "impact": "Scripted/CI consumers of the CLI cannot branch on error class (arg vs not-initialized vs schema-absent vs validation), below the scripts' diagnostic resolution.",
+  "proposed_resolution": "Map error classes to codes (arg/usage -> 2, not-initialized/BootstrapNotFoundError -> 1, schema-absent -> 3, validation -> 5) at the cli.ts catch + UsageError sites (:456-462, :511-518). The op never sees it. Re-confirm via the canonical pipeline.",
+  "priority": "P2"
+}

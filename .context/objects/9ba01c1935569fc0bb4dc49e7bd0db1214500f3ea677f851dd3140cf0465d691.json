@@ -1,0 +1,58 @@
+{
+  "title": "Installable schema descriptions hardcode this project (package names / Muni / in-pi / .project/) — non-portable",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "The packaged installable vocabulary that /context install copies (packages/pi-context/samples/schemas/*.schema.json) leaks THIS monorepo into description text: 8 lines across 5 of 16 schemas hardcode monorepo package names (pi-workflows, pi-project, pi-behavior-monitors, pi-jit-agents), the 'in-pi' runtime assumption, the '.project/' directory, and 'Muni' as the canonical layer model. An installed or exported model therefore carries this repo's identity into other projects, presuming the installer IS this monorepo — directly undercutting the portability arc (R-0002). conception.json + the other 11 schemas are clean. Separately, layer-plans + work-orders are whole-purpose project-specific (their entire subject is this repo's storage-restructuring / JIT-agent machinery), so for them the question is keep-or-drop from a generic catalog, not just description-stripping.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/issues.schema.json",
+      "lines": "46",
+      "reference": "properties.location.description: 'File path + line number, e.g. packages/pi-workflows/src/dag.ts:219'",
+      "content_pin": "b827f6d6bac39a6aa3afc216b106cce1fdaad1fd994d7c10d32b796a9a7dc153"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/issues.schema.json",
+      "lines": "77",
+      "reference": "properties.package.description: 'Which monorepo package this issue touches (e.g. pi-workflows, pi-project, pi-behavior-monitors)'",
+      "content_pin": "b827f6d6bac39a6aa3afc216b106cce1fdaad1fd994d7c10d32b796a9a7dc153"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+      "lines": "6",
+      "reference": "description: '...drives the in-pi bounded code-change loop...' — whole description is this repo's JIT-agent/orchestrator machinery",
+      "content_pin": "49b7a448ae5ffe8cf282d40edb6222323ad06d3e9fb870a73f459b5464042d8e"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+      "lines": "60",
+      "reference": "properties.context_blocks.description: '...per the existing ContextBlockRef shape in packages/pi-jit-agents/src/types.ts'",
+      "content_pin": "49b7a448ae5ffe8cf282d40edb6222323ad06d3e9fb870a73f459b5464042d8e"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/framework-gaps.schema.json",
+      "lines": "6",
+      "reference": "description: 'Capability gaps in the pi-project-workflows framework — ...'",
+      "content_pin": "40a9634a401769278b539d8621b983f0f790c3ed1760bf9569073ab68e08676d"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+      "lines": "6",
+      "reference": "description: 'restructuring the .project/ directory ... conceptual source (e.g. Muni five-layer)' — whole-purpose project-specific",
+      "content_pin": "b3b8e36d7911a92a047479a736414bd2e8e805f71d7ae9c53f37d77d646ae42b"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+      "lines": "48",
+      "reference": "properties.model.description: \"Conceptual source — e.g. 'Muni five-layer'\"",
+      "content_pin": "b3b8e36d7911a92a047479a736414bd2e8e805f71d7ae9c53f37d77d646ae42b"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/research.schema.json",
+      "lines": "58",
+      "reference": "properties.layer.description: 'Which Muni layer the research informs. L1 identity/domain; L2 specification; L3 work; L4 execution; L5 memory.'",
+      "content_pin": "a5cc3659f7fc26f5a4798088cc9ed37b301794e0701231eb73d88dd22aebda0a"
+    }
+  ],
+  "impact": "Any /context install (or a future export) carries this repo's package names + Muni + .project/ + in-pi into the installing project's schema descriptions — the model presents itself as project-agnostic but is not. Repeats across every consuming project; the leak is the catalog's, so it propagates by design.",
+  "proposed_resolution": "Genericize the 8 leaking description substrings in samples/schemas/ per a from->to strip-list (package names -> placeholder/'your agent layer'; 'in-pi' -> dropped; '.project/' -> 'substrate storage'; project layer-model proper noun -> 'layered architecture model'/'architecture layer'); preserve the model's intrinsic vocabulary (relations.json, L1-L5 mapping, substrate); produce a portable disinfect markdown; adversarial re-grep to zero residual named-term leaks. RESOLVED at b1cdccc: the 8 substrings genericized across issues/work-orders/framework-gaps/layer-plans/research; zero residual named-term leaks (grep); read-samples-catalog parses all 16 kinds; check + test green; portable strip-list at analysis/2026-06-05-disinfect-schema-descriptions.md. An adversarial re-audit additionally flagged model-intrinsic vocabulary (relations.json / L1-L5 / substrate / feature-story-task) as 'leakage' — dismissed as scope over-reach (that vocabulary describes what the shipped model IS, not which project authored it). Follow-ons NOT part of this closure: .context/schemas/ installed copies carry the same leaks (re-sync via /context install --update); .context/schemas/layer-plans.schema.json is version-skewed (1.0.0, missing layers[]/migration_phases[])."
+}

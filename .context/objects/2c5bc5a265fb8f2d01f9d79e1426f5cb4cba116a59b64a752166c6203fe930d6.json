@@ -1,0 +1,27 @@
+{
+  "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "The dual-surface principle ('library + tool + script as a unit') is unenforced. The orchestrator scripts build a DispatchContext and forward ctx + optional params (dryRun / ordinal) that the ops drop; the op-registry omits library write fns entirely; nothing catches the divergence at build/test. So projection loss (FGAP-008) and coverage gaps (FGAP-009) accrue silently — e.g. appendToBlock is called WITH ctx by file-block-item.ts:273 and pi-behavior-monitors:1612 but WITHOUT ctx by op append-block-item (ops-registry.ts:174) and pi-workflows step-block.ts:203.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/file-block-item.ts",
+      "lines": "233,273",
+      "reference": "builds DispatchContext + passes ctx to appendToBlock — op append-block-item drops it",
+      "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+    },
+    {
+      "file": "scripts/orchestrator/append-relation.ts",
+      "lines": "196",
+      "reference": "forwards ordinal + ctx to appendRelationByRef — the op forwards ordinal but drops ctx",
+      "content_pin": "01d7e8e79e3261473cb24508a245040244f1ed4094c12650ca0331faff7174c3"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "no test asserts op-registry coverage of the library write surface or ctx/param forwarding parity",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    }
+  ],
+  "impact": "FGAP-008 and FGAP-009 recur on every new library writer or op without a guard; the three surfaces silently diverge; attestation correctness and cli completeness can regress undetected.",
+  "proposed_resolution": "CLOSED at dc7f514 by scripts/parity-check.ts — the source-intrinsic build gate (husky pre-commit + CI) that AST-enumerates library writers, classifies each against OP_COVERAGE_RULE, fails fatally on an unclassified writer or a silent ctx drop, and reports dual-surface optional-param mismatches non-fatally. The dual-surface unit is now self-policing: a new library writer or op that drops ctx fails the build. The 5 non-fatal dryRun script/op asymmetries the gate now surfaces are tracked as FGAP-012."
+}

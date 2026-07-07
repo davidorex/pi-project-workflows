@@ -1,0 +1,27 @@
+{
+  "title": "Read cap measures the pretty/line-counted form while --json emits compact — conservative over-refusal + byte-vs-line message imprecision (pre-existing, cross-channel)",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Surfaced by the FGAP-015 re-audit (NOT introduced by it). truncateHead measures the pretty JSON.stringify(x, null, 2) byte size AND a 2000-line dimension; the CLI --json envelope emits the COMPACT JSON.stringify(x). So a value whose compact emitted form is well under 50KB but whose pretty form exceeds 50KB, or which exceeds 2000 lines, fails closed under --json even though the emitted compact payload would fit. This is conservative — it over-refuses, never under-protects (cannot leak) — and is inherited truncateHead behavior the {read} channel already exhibits; FGAP-015 applied the same primitive to the {json} boundary cap consistently. Secondary: the REFUSAL message reads 'N bytes, over the 50KB cap' even when the actual trigger is the 2000-line dimension, so the stated reason can be cosmetically inaccurate.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/truncate.ts",
+      "reference": "truncateHead measures pretty-serialized bytes + DEFAULT_MAX_LINES=2000; the cap dimension that fires is not surfaced in the refusal text",
+      "content_pin": "f6a054ff047641cf4e1f1047a93fb93d93aeebe2bc1a86d3a4fc92c7f898c29f"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "198",
+      "reference": "boundedJsonOutput (defined here) measures the pretty form; the CLI --json envelope emits compact JSON.stringify({ok,op,output}) at its cli.ts:1135-1136 call site -> measurement form != emission form",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "reference": "structureForRead/renderReadText measure the pretty content the same way — the {read} channel has the same pre-existing over-refusal",
+      "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+    }
+  ],
+  "impact": "A legitimate read whose compact --json payload would fit under the cap can be refused (functional over-restriction for machine --json consumers); the refusal message can misstate bytes-vs-lines as the trigger. Safe (never leaks), low severity, but a real ergonomic imprecision spanning the cap primitive and both output channels.",
+  "proposed_resolution": "Decide the cap's measurement basis per surface: for --json, measure the EMITTED compact form (so the cap reflects what actually ships); for text/Pi-tool, the pretty form is what the agent reads, so measuring pretty is right there. Surface the firing dimension (bytes vs lines) in the REFUSAL message. Its own canonical-pipeline arc; distinct from FGAP-015's channel-bypass."
+}

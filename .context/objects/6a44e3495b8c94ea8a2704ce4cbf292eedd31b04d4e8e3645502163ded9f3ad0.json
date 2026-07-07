@@ -1,0 +1,28 @@
+{
+  "title": "No per-item schema-validation diagnostic — which item, field, and constraint fail a schema is reported nowhere",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "No surface reports which item id, field, and constraint cause a block's items to fail a schema. update's resyncSchema discards the AJV error at an unbound catch (index.ts:622), returning a bare {status:blocked}. context-validate runs referential-integrity + invariant checks only, not per-item schema validation. No op validates a block's items against a target schema and returns the failures. The AJV detail is fully present at the throw site (allErrors:true; instancePath, keyword, params, message) and dropped. An operator facing a blocked schema must hand-validate the block against the catalog schema to learn what failed.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "622",
+      "reference": "resyncSchema's catch is unbound — the thrown ValidationError carrying errors[] is discarded; returns {status:blocked, registeredMigrations:[]}",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "reference": "validate compiles with allErrors:true and throws ValidationError holding the full per-item AJV errors[] (instancePath/keyword/params/message)",
+      "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "validateContext checks edge referential integrity + config-declared invariants only; it never AJV-validates block items against their schemas",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    }
+  ],
+  "impact": "A blocked schema is opaque: the operator cannot see which item or field failed, cannot distinguish a real invalid item from a migrate/validate fault, and must reverse-engineer the failure by hand-validating the block.",
+  "canonical_vocabulary": "per-item schema-validation diagnostic",
+  "proposed_resolution": "A returns-not-throws per-item validator — block items against a target schema version yielding per-item {item id, field, keyword, params} — surfaced both as a standalone op and within update's blocked output, mapping instancePath /<arrayKey>/N to the item id. Reuses the AJV errors validate/validateBlockWithMigrationForDir already produce; shares the in-memory migrate+validate primitive with FGAP-066/TASK-046. Distinct from FGAP-076 (partial-application legibility)."
+}

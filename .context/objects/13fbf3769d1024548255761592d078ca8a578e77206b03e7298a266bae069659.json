@@ -1,0 +1,23 @@
+{
+  "title": "pi-context has no global command form — the built bin carries no exec bit",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "packages/pi-context-cli declares bin pi-context -> dist/bin.js with a node shebang, but its build (rm -rf dist && tsc) never sets the exec bit on dist/bin.js, leaving it -rw-r--r--. npm link and npm i -g cannot expose pi-context on PATH from a non-executable entry.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/package.json",
+      "lines": "31",
+      "reference": "build is 'rm -rf dist && tsc -p tsconfig.build.json' — no chmod +x dist/bin.js step",
+      "content_pin": "f55e6c95a53910b70a0b837ce8bccba2e8c3969bf245f16e268a1811ccaef6a9"
+    },
+    {
+      "file": "packages/pi-context-cli/dist/bin.js",
+      "reference": "built bin is -rw-r--r-- (no exec bit); shebang present",
+      "content_pin": "51161305f77ad22e20b5a90971f9c9d18ae805bee45d30c6f7e80c4940e67c42"
+    }
+  ],
+  "impact": "pi-context is invokable only as `node packages/pi-context-cli/dist/bin.js` from the repo; there is no PATH `pi-context` command for users, and pi-context --pi-bound (FEAT-005) has no global entrypoint.",
+  "canonical_vocabulary": "executable bin bit (global command installability)",
+  "proposed_resolution": "Add a chmod +x dist/bin.js step to the pi-context-cli build so npm link and npm i -g expose an executable pi-context on PATH; the published artifact carries the bit unconditionally."
+}

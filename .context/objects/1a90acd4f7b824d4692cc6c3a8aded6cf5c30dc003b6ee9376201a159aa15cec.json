@@ -1,0 +1,16 @@
+{
+  "title": "Task success_criteria are objects, replacing acceptance_criteria",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "The task field acceptance_criteria is replaced by success_criteria. Each entry is an object { statement, status: pass|fail, verified_by, verified_at, evidence }. statement is binary and outcome-based. A task is done when every entry is pass.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+      "reference": "task items declare acceptance_criteria, not success_criteria",
+      "content_pin": "d74912531f2303bd2815ce5f2eb3d3e7e4948517be5f2ece15d3d8c8ad4c27e5"
+    }
+  ],
+  "impact": "Task schema declares acceptance_criteria as a string array; strings carry no status or proof, so done-ness and verification are not machine-checkable from the criterion.",
+  "proposed_resolution": "Rename acceptance_criteria to success_criteria and change each item from string to the criterion object."
+}

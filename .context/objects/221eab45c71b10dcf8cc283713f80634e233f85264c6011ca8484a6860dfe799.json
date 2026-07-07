@@ -1,0 +1,23 @@
+{
+  "title": "pi-context has no structure-aware git merge driver — substrate files fall through to git's line-based merge, which mangles them",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "Substrate state lives in git-tracked files (<block>.json, relations.json, config.json, schemas, objects/). When two branches carrying the same substrate are merged, git's default line-based merge diffs the JSON text, mangling arrays and producing structurally invalid or semantically wrong states. pi-context registers no custom git merge driver, so substrate files fall through to that line merge. The gap: a custom git merge driver (registered via .gitattributes) that, given git's three versions (%O ancestor / %A ours / %B theirs), performs a structure-aware per-file 3-way merge — matching items by stable id/oid rather than array index, merging edges as a set, merging ordered ref-fields via the convergent ordered-sequence field-type (FGAP-005), and merging config/schema — and writes a data-model-valid result; PLUS a post-merge pass for what a per-file driver structurally cannot do: cross-block referential integrity (e.g. an edge whose endpoint item was deleted in another file) and whole-substrate invariant + lens revalidation. Git owns branches, commits, merge-base, refs, and invocation; pi-context owns only the structure-aware reconciliation.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "reference": "substrate writes are whole-item upsert; nothing registers a git merge driver, so <block>.json / relations.json merge via git's line-based default, which mangles JSON arrays and yields structurally invalid states",
+      "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+    },
+    {
+      "file": ".gitattributes",
+      "reference": "no merge=<driver> attribute declared for substrate files (<block>.json / relations.json / config.json) — they get git's default line merge"
+    },
+    {
+      "file": ".context/objects/",
+      "reference": "content-addressed objects/ are distinct hash-named files (equal hash == equal content), so git's directory merge unions them without conflict — no driver needed there"
+    }
+  ],
+  "impact": "Merging two branches that both edited the same substrate corrupts it: concurrent array reorders / inserts produce invalid or wrong JSON, and cross-block referential integrity + declared invariants are never re-checked after a merge. Same-repo collaborative editing on a pi-context substrate is unsafe under normal git workflows.",
+  "proposed_resolution": "Ship a git merge driver (.gitattributes merge=pi-context + a [merge \"pi-context\"] driver entry) performing per-file structure-aware 3-way merge of substrate files from git's %O/%A/%B (items by id/oid, edge-set merge, ordered ref-fields via FGAP-005, config/schema), writing a data-model-valid result; plus a post-merge finalize/validate hook (git post-merge or a merge-finalize command) for cross-block referential integrity + invariant/lens revalidation, emitting a typed conflict set for what cannot auto-resolve. Branches, merge-base, commit lineage, refs, and cherry-pick stay git's. See DEC-0004."
+}

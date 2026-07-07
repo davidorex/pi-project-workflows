@@ -1,0 +1,40 @@
+{
+  "title": "Read cap enforced per-renderer (structureForRead/{read}) not at the output boundary — the {json} channel bypasses it on both CLI --json and in-pi Pi-tool surfaces",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-context",
+  "description": "Root cause surfaced by the TASK-012 adversarial re-audit. The 50KB read cap + FGAP-089 fail-closed REFUSAL lives inside structureForRead (used only by OpResult {read}); the {json} channel returns a raw value with no cap. So a {json} op embedding substrate content emits it unbounded on BOTH surfaces: the CLI --json envelope (cli.ts:492, output=r.json) and the in-pi Pi-tool tool-result text (ops-registry.ts:1927, renderOpResultText -> JSON.stringify(r.json) into the agent context — the exact context blowup the cap exists to prevent). Two confirmed unbounded {json} emitters: resolve-item-by-id (full ItemLocation incl. item body) and promote-item (PromotionResult embeds an item via ResolvedRef.loc). The one-at-a-time audit discovery (read-block, then resolve-item-by-id, then promote-item) is the signature of the missing invariant. Same gap-class the parity-check gate already closes for op-coverage/ctx-forwarding.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "492",
+      "reference": "--json emits output=r.json uncapped for {json} ops",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1927",
+      "reference": "registerAll Pi-tool text = renderOpResultText -> JSON.stringify(r.json) uncapped into agent context",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1363",
+      "reference": "resolve-item-by-id returns { json: full ItemLocation } — unbounded content emitter",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "519",
+      "reference": "promote-item returns { json: PromotionResult } embedding an item via ResolvedRef.loc",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "reference": "structureForRead applies truncateHead; only {read} ops route through it — the cap is a renderer property, not a boundary invariant",
+      "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+    }
+  ],
+  "impact": "Any op emitting substrate content via {json} leaks it unbounded on both the CLI --json surface and the in-pi agent context, defeating the FGAP-089 fail-closed read cap. Per-op patching is whack-a-mole; the next {json} content-emitter (existing or future) re-opens it.",
+  "proposed_resolution": "CLOSED at 75f2611 (TASK-013), per DEC-0009. The read cap is now enforced at the output boundary for every channel: a runtime boundary cap (boundedJsonOutput + cap-applying renderOpResultText) fail-closes any over-cap {json}/prose on all three emit sites (CLI --json, CLI text, in-pi Pi-tool); resolve-item-by-id + promote-item route through {read} for graceful degradation; a parity-check gate (checkJsonContentCap) FAILS an op directly returning {json} of a content-reading call, with the runtime cap as the backstop for helper-chain misses. Adversarial re-audit confirmed the recurrence ended — no read/query op ships unbounded data on either surface. Pre-existing truncateHead pretty-vs-compact/line-cap over-refusal tracked as FGAP-016 (non-leak)."
+}

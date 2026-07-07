@@ -1,0 +1,17 @@
+{
+  "title": "pi-context update does not reconcile a catalog registry entry whose body changed against a user-modified entry of the same id (additive-only) — the config-registry analog of the schema 3-way merge",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "TASK-038/FGAP-060's config-registry propagation is additive-only: an ABSENT catalog entry is appended, but an entry whose identity (canonical_id for relation_types/block_kinds, id for invariants/lenses) is already PRESENT is left exactly as the substrate has it — never reconciled — even when the catalog's body for that same id has changed. So a user who customizes a catalog registry entry's body never receives a later catalog change to that same entry (the user's version is kept entirely; the catalog's body change is silently dropped). This is the config-registry analog of FGAP-046 (the schema clobber/merge gap): there, schema BODIES get a 3-way merge preserving non-conflicting edits; here, config-registry entry bodies have NO merge — additive-only by design (mergeCatalogRegistries, context.ts).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "mergeCatalogRegistries appends only absent entries (by REGISTRY_DESCRIPTORS idField); a present id is never replaced or body-merged, even when the catalog body for that id diverges (additive-only)",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    }
+  ],
+  "impact": "A user who tailors a catalog registry entry (e.g. a relation_type display_name/category, an invariant severity, a lens body) is frozen against future catalog changes to that entry — the value of a catalog registry update is capped for any customized entry, mirroring FGAP-046 for schemas but for config registries.",
+  "canonical_vocabulary": "config-registry 3-way merge (divergent-body reconciliation)",
+  "proposed_resolution": "Extend update to reconcile a divergent catalog body against a user-modified registry entry of the same id via a 3-way merge (base = the as-installed catalog entry, ours = the substrate entry, theirs = the catalog entry), preserving non-conflicting customizations and surfacing conflicts — the registry analog of the FGAP-046 schema merge. Requires recording a per-registry-entry base (the registry equivalent of base-stamping)."
+}

@@ -1,0 +1,22 @@
+{
+  "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "hasUI-aware confirm gating",
+  "description": "On real-check failure before the last iteration the loop calls ctx.ui.confirm and maps a falsy answer to final_status 'aborted-by-human' (work-order-loop.ts:200-209). In a pi -p session ctx.ui is the runner's noOpUIContext whose confirm resolves false (runner.js:59-61; hasUI() = uiContext !== noOpUIContext, :211-213), so the gate silently auto-declines. Two defects share the line: (1) semantic mislabel — no human was consulted, an environment default is recorded as a human decision in the loop's durable verdict (a candidate harness/phase-state input); the auth gate by contrast checks hasUI FIRST and emits a structurally distinct non-interactive reason, the loop never inspects hasUI before asking; (2) the retry path (max_iterations > 1) is dead weight in exactly the context a harness would drive the loop from — every non-interactive run is single-shot abort-on-first-failure, with no way to opt into non-interactive bounded retry. The fail direction is fail-SAFE (never burns iterations unmonitored), so the default is defensible — but it is neither chosen nor reported as policy. Class: FGAP-068 interactivity-dependence-in-a-non-interactively-drivable-surface, plus a distinguishable sub-class — any ctx.ui.confirm call site that does not pre-check hasUI treats the no-UI default as an operator decline (a call-site sweep is fix-time work).",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": ":200-209 ctx.ui.confirm on failure → false mapped to aborted-by-human; no hasUI pre-check",
+      "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 5: noOpUIContext confirm-false mechanics, the two-defects split, fail-safe-but-dishonest analysis, the ui.confirm call-site sub-class",
+      "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+    }
+  ],
+  "impact": "The loop's durable verdict lies about the actor (harness inputs must not), and bounded retry — the loop's FEAT-006 governance feature — cannot run in the non-interactive context the harness uses; every such run is single-shot.",
+  "proposed_resolution": "Under FEAT-014: pre-check hasUI and emit a distinct non-interactive status (never 'aborted-by-human' without a human); add an explicit work-order retry policy (on_fail: retry|abort — the sort of field the v1 contract implies, tying to FGAP-125); a fix-time Explore sweeps ui.confirm consumers for the same no-pre-check pattern."
+}

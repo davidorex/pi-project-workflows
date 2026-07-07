@@ -1,0 +1,17 @@
+{
+  "title": "A block whose array key holds a non-array value takes the no-items resync path and migrates without validation",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "A block file whose declared array key holds a non-array value (e.g. tasks: {}) is treated as having no items by the resync hasItems probe, so a catalog-ahead version bump resyncs it as migrated without validating the malformed content against the new schema — it never blocks, never marks. Uninvestigated — root cause confirmation, the class across the resync/validate surface, and prior-art are for the investigating agent.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "the resyncSchema hasItems probe (forEachBlockArray over the parsed block) yields no items for a non-array value at the array key; the no-items arm returns migrated without running validate",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    }
+  ],
+  "impact": "A malformed block silently passes a version bump unvalidated; the blocked/marker diagnostic surface never engages for it.",
+  "canonical_vocabulary": "non-array block content on resync",
+  "proposed_resolution": "To be determined by the investigation (Experience-Gap Handling): whether the no-items arm must distinguish absent/empty arrays from malformed non-array content, and the class across every consumer of the hasItems probe."
+}

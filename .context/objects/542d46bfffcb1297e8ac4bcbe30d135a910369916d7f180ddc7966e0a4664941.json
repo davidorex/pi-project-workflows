@@ -1,0 +1,24 @@
+{
+  "title": "pi-context CLI has no --version / -v command — a globally-installed CLI cannot report its own version",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "main() (cli.ts:437-545) has no version branch; `pi-context --version` and `pi-context -v` fall through to resolveOp and are rejected as `unknown command: --version` (exit 2) followed by the help dump. The package ships a `bin` and is globally installed on PATH, yet the command cannot report its own version. `-h`/`--help` is handled (cli.ts:440), but `-v`/`--version` has no equivalent.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "437-545",
+      "reference": "main() has no --version/-v branch; both fall through to resolveOp as an unknown command and exit 2",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "440",
+      "reference": "-h is aliased to help; there is no -v/--version equivalent",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    }
+  ],
+  "impact": "A user verifying an install or filing a bug cannot state which pi-context version they run; --version is a baseline expectation of any installed CLI. A first-run and support deficiency on the global command.",
+  "canonical_vocabulary": "CLI version command",
+  "proposed_resolution": "Add a --version/-v branch in main() (beside the -h/--help branch, before resolveOp) that prints the pi-context-cli package version (read from package.json) and returns 0."
+}

@@ -1,0 +1,16 @@
+{
+  "title": "Raw-reader bypass class beyond config is unverified — no filing establishes whether block-data raw readers exist and closes them as a class",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "FGAP-107 files exactly two config.json raw readers. Whether raw readers of block-data *.json exist (parsing substrate block files without the validated read path, and — once TASK-073 activates block read-time migration — without migration awareness) has not been verified, and no filing closes the class either way. Surfaced as a coverage hole by the critical-focus outline derivation (dimension C): the class-level enumeration is the missing precondition to declaring the read side split-brain-free.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "FGAP-107's two filed instances are config-only; no enumeration of block-data raw readers exists in any filing.",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    }
+  ],
+  "impact": "Unknown exposure: if block-data raw readers exist, TASK-073's read-time migration activation creates the same silent split-brain FGAP-107 files for config, with no tracking item.",
+  "proposed_resolution": "Requires determination after enumeration: grep-enumerate all non-test JSON.parse readers of substrate block files across packages/, verdict each (validated-path / deliberate-raw-with-contract / defect), and file or close the class on the evidence. Positioned with MILE-003."
+}

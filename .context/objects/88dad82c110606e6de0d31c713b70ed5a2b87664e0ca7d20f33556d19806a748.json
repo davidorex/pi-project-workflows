@@ -1,0 +1,16 @@
+{
+  "title": "Review-enforced conventions have no structural forcing function as a class — all 12 conventions declare enforcement review or manual",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Every convention in the conventions block declares enforcement \"review\" or \"manual\"; only FGAP-071 files the unenforced-ness of ONE convention (gap-arc-coherence). The class — a convention registry whose members are all honor-system while the framework's own doctrine treats manual enforcement as a gap (the filing-provenance and branch-discipline guards exist precisely because review-enforcement fails) — is unfiled. Surfaced as a coverage hole by the critical-focus outline derivation (dimension E).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/blocks/conventions.json",
+      "reference": "All shipped conventions carry enforcement review/manual; no invariant, hook, or gate consumes the conventions block's enforcement field.",
+      "content_pin": "5dad004edaed0cf2a9e232e4e47f21f0f1cbde22f9a6635a5ad8e5a0ee905968"
+    }
+  ],
+  "impact": "Convention compliance depends entirely on session discipline; violations (deviations this project has repeatedly experienced) surface only by later audit, never at act time.",
+  "proposed_resolution": "Requires determination: per-convention triage of which are structurally enforceable (invariant / write-gate / build-gate per the filing-pipeline enforcement surface) vs genuinely review-only, with the enforcement field made consequential. Positioned with MILE-007."
+}

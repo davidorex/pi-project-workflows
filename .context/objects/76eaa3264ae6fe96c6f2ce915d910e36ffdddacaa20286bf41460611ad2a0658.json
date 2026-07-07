@@ -1,0 +1,21 @@
+{
+  "title": "Phase and task criteria must be binary outcome-based or invalid",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Both levels' criteria must be binary outcome-based or invalid — phase success_criteria and task success_criteria must each be binary and outcome-based, or they are invalid.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/phase.schema.json",
+      "reference": "no constraint that phase success_criteria are binary and outcome-based",
+      "content_pin": "56ba9806e044fb075f976b0097f4dca0019924a87b8b8eaf0db1efb4b544b814"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+      "reference": "no constraint that task criteria are binary and outcome-based",
+      "content_pin": "d74912531f2303bd2815ce5f2eb3d3e7e4948517be5f2ece15d3d8c8ad4c27e5"
+    }
+  ],
+  "impact": "Criteria at both levels can be non-binary or non-outcome-based.",
+  "proposed_resolution": "Constrain phase and task success_criteria so each criterion must be binary and outcome-based, or it is invalid."
+}

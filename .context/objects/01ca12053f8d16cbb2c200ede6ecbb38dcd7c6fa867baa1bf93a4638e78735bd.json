@@ -1,0 +1,17 @@
+{
+  "title": "CLI errors carry no remediation hints as a class — only FGAP-106 asks for one error's hint",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context-cli",
+  "description": "FGAP-106 files the missing remediation hint on one error (the unresolvable config chain). No filing requires that CLI/op errors name their sanctioned remediation generally — which op un-bricks, which flag previews, which ceremony heals. The class: the error surface tells the operator what failed but not the sanctioned way out, in a system whose whole design is that every recovery has a sanctioned op. Surfaced as a coverage hole by the critical-focus outline derivation (dimension F).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/schema-migrations.ts",
+      "lines": "96-125",
+      "reference": "Representative instance (FGAP-106): the throw names the stuck version but no remediation op; the pattern generalizes across the error surface with no filing covering it.",
+      "content_pin": "f4a074a607eb5e8fb39c1d03f039ad3bcf35e34c5aae519184668f0e44c5cd4e"
+    }
+  ],
+  "impact": "Operators (human or agent) hitting a refusal must already know the recovery op; errors dead-end sessions that the design intends to be self-recoverable.",
+  "proposed_resolution": "Requires determination: an error-surface audit enumerating refusal/throw sites with a sanctioned-recovery op, adding the hint per site or via a shared error-shaping layer (the cli render/formatAjvError precedent). Positioned with MILE-008."
+}

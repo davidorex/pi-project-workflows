@@ -1,0 +1,34 @@
+{
+  "title": "In-pi read-schema op returns the projected name-list, not the full subtree (needs whole:true at ops-registry.ts:1166)",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "Distinct from FGAP-020's CLI-surface correction: the IN-PI read-schema op itself returns the paged `required` name-list for an addressed object node, because it wraps addr.value in structureForRead (ops-registry.ts:1166) which pages on the node's incidental array (read-element.ts:266-285). A CLI-only fix leaves in-pi agents still receiving the projection. Correcting BOTH surfaces requires passing whole:true at ops-registry.ts:1166 — a deliberate change to in-pi op behavior, which the parity survey's frozen-ops constraint explicitly carved out and the user has now authorized as a tracked gap.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "1166",
+      "reference": "read-schema op wraps the addressed node in structureForRead WITHOUT whole:true — the in-pi op projection point; whole:true here forces full-subtree serialization while retaining the 50KB cap",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/src/read-element.ts",
+      "lines": "147,268",
+      "reference": "whole:true forces whole-object serialization and skips collection discovery",
+      "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+    },
+    {
+      "file": "scripts/orchestrator/read-schema.ts",
+      "lines": "181",
+      "reference": "the orchestrator script already returns the full subtree (JSON.stringify(addr.value)) — the behavior the in-pi op should match",
+      "content_pin": "0f3255c819e2b5ce735ec6069162f13042be38d4893b070f7c7a63795737dc66"
+    },
+    {
+      "file": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
+      "reference": "the GAP-2 residual / REQUIRES-OP-CHANGE branch in §D/§E of the parity survey",
+      "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
+    }
+  ],
+  "impact": "In-pi agents (not only the CLI) reading an object schema node via read-schema --path receive the field-name list, not the schema subtree — the same defect class as FGAP-020 but on the in-pi surface, which the CLI-side fix does not reach.",
+  "proposed_resolution": "Pass whole:true into structureForRead at ops-registry.ts:1166 for the addressed-node case so the in-pi op returns the full subtree (matching scripts/orchestrator/read-schema.ts:181), while retaining the 50KB cap. This deliberately changes in-pi op behavior (user-authorized). Re-confirm via the canonical pipeline; class-check other read ops routing addressed object nodes through structureForRead.",
+  "priority": "P2"
+}

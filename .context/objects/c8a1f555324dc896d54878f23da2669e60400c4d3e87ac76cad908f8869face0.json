@@ -1,0 +1,37 @@
+{
+  "title": "Authoring-time shape projections flatten nested item shapes — --show-schema and the samples-catalog itemProperties render object/array<object> fields as bare types, and every documented pre-step points at the names-only required read, so the refused write is the de-facto nested-shape discovery mechanism",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "nested-shape-faithful authoring projections",
+  "description": "Two independent one-level projections hide nested item contracts: (1) the --show-schema render (pi-context-cli cli.ts:1028-1041) types each field as fschema.type | $ref | 'enum' | 'object' — a nested object prints as bare 'object' (no keys), an array<object> as 'array' (no items keys, no items.required); (2) schemaInfoFromPath (pi-context context-sdk.ts:209-264, comment 'one level deep' at 232) emits SchemaProperty {name,type,required,description?,enum?} with no nested-children field, and samples-catalog.ts:175 projects it as read-samples-catalog shape.itemProperties — research.grounding surfaces as {type:'object'} with no keys, citations as 'array' with no items shape. Guidance compounds it: the CLAUDE.md canonical filing pre-step reads properties.<key>.items.required (names only), read-schema's sole example (ops-registry.ts:1473) addresses the same .required path, and SKILL.md's read-schema description says to address ONE property 'instead of reading the whole schema' — while the sufficient one-call read (read-schema --path properties.<key>.items; 6,311 bytes for research, every catalog schema ≤10,251 bytes, all under the 50KB cap) is named nowhere. samples/blocks/*.json ship empty arrays — no exemplar items. 8 of 18 catalog schemas carry nested shapes invisible to every projection: context-contracts.bundle_relation_types, decisions.options_considered+references, framework-gaps.evidence, layer-plans.layers+migration_phases, phase.success_criteria+specs, research.grounding+citations, verification.criteria_results, work-orders.scope+real_check_criteria. Observed instance (2026-07-06): a research filing authored after the documented pre-step passed grounding as a string and citations as [{path,note}]; the append was refused whole with per-field diagnostics; two follow-up per-field read-schema calls recovered the shapes. The refusal is FGAP-022's filed impact ('raising write-time validation failures') recurring one nesting level below the preview it shipped.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "reference": "lines 1028-1041: --show-schema field loop — type = fschema.type | $ref | 'enum' | 'object'; no expansion of nested properties or items.required",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "lines 209-264: schemaInfoFromPath extracts item properties one level deep (comment line 232); SchemaProperty (179-184) has no nested-shape field; consumed by samples-catalog.ts:175 for read-samples-catalog shape.itemProperties",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "line 1473: read-schema's sole example addresses properties.gaps.items.required — the names-only read; the CLAUDE.md canonical filing pre-step and the SKILL.md read-schema description steer the same way",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "packages/pi-context/samples/blocks/research.json",
+      "reference": "starter blocks ship empty arrays — no exemplar item anywhere on the authoring surface",
+      "content_pin": "f42dd21caae41e730d5f64fb56e3102839cb4c6ab831a1e15cdde8300caa42c9"
+    },
+    {
+      "file": "analysis/2026-07-06-filing-shape-discovery-friction.md",
+      "reference": "investigation of record: affordance inventory with observed byte sizes, 8/18 nested-shape schema enumeration, the refused-write instance, prior-art sweep (not tracked; FGAP-022 origin, FGAP-117/072/089 adjacent-not-covering)",
+      "content_pin": "324ede10f05a529c3a075fe597d1f18137d77701aa0f432552ceb962fb602e5c"
+    }
+  ],
+  "impact": "An author on any of the 8 nested-shape block kinds who follows the documented pre-step or either purpose-built projection authors nested fields blind; first contact with the nested contract is the refused write. The affected fields sit on the every-filing path: framework-gaps.evidence (every gap), verification.criteria_results (every task closure), decisions.options_considered/references (every decision).",
+  "proposed_resolution": "Expand nested shapes at both projection sites, one recursion level (covers the entire current catalog — no nested field nests further): the --show-schema render prints an object field's nested keys+types and an array<object> field's item keys/types + items.required; SchemaProperty gains an optional children field populated by schemaInfoFromPath and rendered through read-samples-catalog shape.itemProperties. Correct the guidance to the sufficient one-call read (read-schema --path properties.<key>.items): the CLAUDE.md canonical filing pre-step, the read-schema example in ops-registry.ts, skill-narrative.md, SKILL regen — docs-surface-sync. Additive; in-pi op behavior frozen except the read-schema example string."
+}

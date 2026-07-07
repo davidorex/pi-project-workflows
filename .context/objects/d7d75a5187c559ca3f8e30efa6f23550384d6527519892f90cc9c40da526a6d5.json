@@ -1,0 +1,29 @@
+{
+  "title": "resync/resolve blocked pipeline classifies every throw as item-validation failure — non-validation refusals are mislabeled, mark valid blocks, dead-end the routed remedy, and break dry/live parity",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "refusal-cause classification",
+  "description": "resyncSchema's version-bump catch converts ANY throw into blocked with reason validation-failed and a synthetic failure ({instancePath:'', keyword:'error', message:String(err)}), and every downstream consumer trusts that classification. Observed end-to-end on the pre-identity reproduction (writeBlockForDir's substrateIdForDir throw, a pure infrastructure precondition): (1) blockedDetail tells the operator to fix items that are valid — the infrastructure message is costumed as a validation failure; (2) git-style failure markers are inscribed INTO the fully-valid block file and a pending-blocked record is persisted; (3) the routed remedy resolve-blocked re-validates (passes) then THROWS UNCAUGHT mid-commit on the same precondition, leaving partial state — schema advanced to the target version, markers stripped, block unwritten/unstamped, pending entry stale — the only known violation of the per-component byte-exact refusal discipline; (4) the closed dry/live parity guarantee is silently violated for this class (simulateResyncOutcome models migration + re-validation only, never write preconditions: dry predicts migrated, live blocks). Class: refusal-cause conflation — the pipeline has exactly one refusal category (item-validation) while throws at the write boundary include non-validation causes; the pre-identity stamping throw is the triggering instance, and any future non-validation throw at that boundary (I/O failure, corrupt sidecar) inherits all four facets.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1242-1270",
+      "reference": "the version-bump catch: err instanceof ValidationError ? mapValidationFailures(...) : synthetic {keyword:'error'} — both land under reason 'validation-failed'; marker inscription + pending-blocked follow for the live path",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "2652-2688",
+      "reference": "resolveBlocked's commit sequence (schema write, marker-strip raw write, writeBlockForDir, base advance, pending clear) runs OUTSIDE its validation try — a stamping throw aborts mid-commit; observed: schema 1.0.1 + markers stripped + block unwritten + pending stale",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md",
+      "reference": "two-cell reproduction (substrate_id presence the only variable) + the resolve-blocked partial-commit run — all four facets observed",
+      "content_pin": "bca74f7df896119e6aee78c6a3cc1d4fe832c95f7794e7d5840674eec0d0c86e"
+    }
+  ],
+  "impact": "An operator hit by any non-validation refusal is sent to fix items that are fine, has failure markers written into a valid block, and the prescribed remedy corrupts the refusal's all-or-nothing guarantee. Diagnosis cost is high precisely because the surface lies about the cause class.",
+  "proposed_resolution": "Classify at the catch: distinguish item-validation failure (err instanceof ValidationError) from non-validation refusal, carry the distinction through blockedDetail (a truthful reason vocabulary), and gate the validation-only consequences (marker inscription, pending-blocked routing) on the validation class; resolve-blocked's commit sequence gains the same all-or-nothing discipline as resyncSchema (no partial commit on a write-boundary throw). Dry/live parity for the class follows derivatively once the ceremony-entry identity establishment decision removes the pre-identity instance; the classification fix stands for every other non-validation throw at the boundary."
+}

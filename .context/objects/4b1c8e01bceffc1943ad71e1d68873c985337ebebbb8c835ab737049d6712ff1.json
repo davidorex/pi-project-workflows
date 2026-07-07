@@ -1,0 +1,22 @@
+{
+  "title": "A failing message-less assert under the tsx test loader spins node:assert's message reconstruction effectively forever — 958 bare assert occurrences are latent suite-hang triggers",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-project-workflows",
+  "canonical_vocabulary": "bounded test-failure reporting",
+  "description": "When an assert.ok/assert with NO message argument FAILS in a test file loaded by tsx, node:assert reconstructs the failure expression by re-reading the module source and locating the call (getErrMessage -> getCode -> findColumn -> acorn parseExpressionAt). tsx serves the TRANSFORMED module as a single line whose positions do not map back to the on-disk TypeScript, so the acorn re-parse never converges — the test child process spins at 100% CPU indefinitely (>=49 minutes observed), its event loop starved, and the node test runner's parent waits forever with the log frozen mid-run and no summary. Proven via V8-inspector pause on two independent spinning processes with the stack anchored at the transformed frame (analysis/2026-07-05-converge-hook-hang-rootcause.md; a minimal twin-file repro measured message-present at 0.36s vs message-less unbounded). The repo carries ~958 message-less assert/assert.ok occurrences across test files — each a latent hang trigger on any future failure. Mitigation shipped with the converge-on-write task: every tsx-runner package test script carries --test-timeout=120000, which turns a hang into a bounded, NAMED test failure (measured). Residual class: (a) the messaged-assert sweep so failures report instantly instead of at the deadline; (b) a CI wall-clock with SIGKILL — the runner's SIGTERM at the deadline is absorbed by signal-exit on a starved loop, so an external kill guard is needed for unattended runs.",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-05-converge-hook-hang-rootcause.md",
+      "reference": "reproduction table, V8-inspector stack (assert.ok -> getErrMessage -> getCode -> findColumn -> acorn parseExpressionAt at the single-line transformed frame), twin-file timing measurement, and the --test-timeout behavior measurement",
+      "content_pin": "1a4ed35495a3393b4a909f578cf19f9114333231d834b42e78452fb021830ca6"
+    },
+    {
+      "file": "packages/pi-context/package.json",
+      "reference": "test script now carries --test-timeout=120000 (mitigation; same for the other four tsx-runner packages)",
+      "content_pin": "d997638de8b085cd462e3c055723767664e88576c4960e28cd9721b7b0fc2254"
+    }
+  ],
+  "impact": "Any future failing bare assert in any tsx-run test file stalls that package's suite until the 120s deadline (attended) or requires an external kill (unattended CI on a starved loop) — and before the mitigation it hung runs indefinitely and silently, costing a half-hour of wall clock in the observed instance.",
+  "proposed_resolution": "Class fix in two legs: (1) messaged-assert sweep — every assert/assert.ok in test files carries a message argument (mechanical, partitionable; a lint rule or grep-gate keeps new bare asserts out); (2) CI hardening — the workflow wraps npm test in an external wall-clock that SIGKILLs on overrun, since the runner's own deadline cannot deliver SIGTERM to a starved event loop. Determination at task time whether a biome/lint rule can enforce leg 1 structurally."
+}

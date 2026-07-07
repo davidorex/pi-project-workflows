@@ -1,0 +1,27 @@
+{
+  "title": "Work-order schema is a v1 contract whose engine implements a demo subset — four required fields never consumed, and the catalog schema asserts a scope clamp that does not run",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "work-order contract-engine parity",
+  "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop consumes none of their semantics: WorkOrderRecord (work-order-loop.ts:73-78) omits three of the four; input is hardcoded {work_order_id} (:119); context_blocks and output_contract have zero references in pi-agent-dispatch; the capability clamp intersects the tool param agent_grant with spec.tools (:134) — wo.scope.operations is never an operand (WO-001 demonstrated: scope.operations ['write'] while the invocation granted ['write','bash']; bash survived). The schema's own scope description asserts present-tense engine behavior — 'Used by the capability composer to clamp the agent's grant at dispatch' — that does not exist, and the schema ships in the installable catalog. Direction settled by git dates: schema 2026-05-27 (7d06f616) one day ahead of the loop 2026-05-28 (494357ac). Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts:77-80 — that one at least documents the deferral; this one asserts falsely).",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": "73-78 WorkOrderRecord omits input_contract/context_blocks/output_contract; :119 input hardcoded; :134 clamp uses tool param, not wo.scope.operations; :167 scope consumed only as files for commit staging",
+      "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+      "reference": "required nine fields; scope description asserts the clamp the engine never runs — catalog-installable false contract text",
+      "content_pin": "49b7a448ae5ffe8cf282d40edb6222323ad06d3e9fb870a73f459b5464042d8e"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 3: per-field verification with quotes, git-date archaeology, the WO-001 scope demonstration",
+      "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+    }
+  ],
+  "impact": "Filed work-orders carry dead contract fields authors reasonably rely on: inputs are never validated, context never injected, outputs never checked, and a narrower wo.scope.operations does not narrow the grant. Any substrate installing the catalog schema inherits contract text promising enforcement that does not exist.",
+  "proposed_resolution": "Under FEAT-014: after the dispatch-architecture decision, either the engine honors all four fields (validate input against input_contract pre-dispatch, inject wo.context_blocks, validate output against output_contract post-return, intersect the clamp with wo.scope.operations) or the schema is amended to stop asserting undecided behavior — dual-surface either way, with per-field regression pins."
+}

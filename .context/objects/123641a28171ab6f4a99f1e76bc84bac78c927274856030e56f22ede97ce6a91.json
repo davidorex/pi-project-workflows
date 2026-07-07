@@ -1,0 +1,23 @@
+{
+  "title": "install --update does not propagate catalog config-registry additions (relation_types/invariants/block_kinds) to an existing substrate",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "installContext writes config via a verbatim spread ({...config, installed_from}), so new catalog config-registry entries (relation_types, invariants, block_kinds, lenses) are never merged into an existing substrate's config on install --update; adoptConception writes registries only on a skeleton. A catalog model addition (e.g. new governance relation_types/invariants) therefore reaches only fresh substrates; existing substrates never receive it. Distinct from FGAP-046 (schema clobber): this is non-propagation of config-registry additions, not destruction of edits.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "784",
+      "reference": "installContext writes config via writeConfig(cwd, {...config, installed_from}) — verbatim spread; no catalog-registry merge",
+      "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "adoptConception writes registries only on a skeleton (isSkeletonConfig guard)",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    }
+  ],
+  "impact": "Any catalog vocabulary/invariant addition is delivered only to fresh installs; existing users must hand-amend-config to receive it — capping the value of every catalog release for the installed base.",
+  "canonical_vocabulary": "catalog config-registry propagation on update",
+  "proposed_resolution": "The unified update command (FEAT-006) merges catalog config-registry additions into an existing substrate's config (additive, customization-preserving), so new relation_types/invariants/block_kinds reach existing substrates; surface what is added, and --dry-run previews."
+}

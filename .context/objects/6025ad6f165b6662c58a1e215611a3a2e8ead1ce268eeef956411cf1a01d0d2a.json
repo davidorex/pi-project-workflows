@@ -1,0 +1,24 @@
+{
+  "title": "relations.json has no scoped remove/replace edge op — edge hygiene is append-only through the tool surface",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "append-relation is a full dual-surface op (library appendRelation + Pi tool + orchestrator script + CLI). There is no counterpart to remove or replace a single edge. Whole-file writeRelations exists (library only, consumed by rename-canonical-id) but there is no scoped remove-relation primitive, no Pi tool, and no CLI op. So a mis-filed edge (wrong direction / type / endpoint — e.g. the TASK-004/TASK-005 dependency just corrected) cannot be fixed through the operator/agent tool surface; only ad-hoc loadRelations+filter+writeRelations library code can, which harness-confined in-pi agents (registered Pi tools only) cannot run.",
+  "evidence": [
+    {
+      "file": "scripts/orchestrator/append-relation.ts",
+      "reference": "append-relation is dual-surface (library appendRelation + Pi tool + CLI + script); no remove/replace counterpart exists anywhere",
+      "content_pin": "01d7e8e79e3261473cb24508a245040244f1ed4094c12650ca0331faff7174c3"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "writeRelations is a whole-file replace (library only, used by rename-canonical-id); grep for removeRelation/deleteRelation/pruneRelation returns none — no scoped single-edge removal",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "the backwards TASK-005->TASK-004 edge was removable only via orchestrator-side loadRelations+filter+writeRelations (5621c2a), unavailable to cli-only or in-pi-tool-only consumers"
+    }
+  ],
+  "impact": "Edges are append-only through tools; mis-directions, typos, and superseded edges accumulate uncorrectably for cli-only and harness-confined consumers, who would need privileged library access to fix them — breaking the dual-surface symmetry append-relation otherwise has.",
+  "proposed_resolution": "A scoped remove-relation (and replace-relation) as a dual-surface unit mirroring append-relation: library removeRelation(cwd, {parent, child, relation_type}) (idempotent whole-file rewrite minus the matched edge) + Pi tool + CLI op + orchestrator script; run context-validate after for referential integrity. replace-relation = remove+append in one call for direction/type corrections."
+}

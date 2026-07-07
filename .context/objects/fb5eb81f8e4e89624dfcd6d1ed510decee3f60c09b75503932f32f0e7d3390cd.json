@@ -1,0 +1,47 @@
+{
+  "title": "Derivation is foreign-blind: every edge-consuming derived surface resolves endpoints against the active index only, so valid foreign endpoints are silently dropped (gates derive ready), defaulted (rollups never complete), or collision-mis-resolved to same-refname local items — while validate certifies the same edges as fine",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "registry-aware endpoint resolution in derived state",
+  "description": "The v0.28.0 cross-substrate arc shipped foreign IDENTITY (structured EdgeEndpoint with substrate_id, registry+aliases, resolveRef active/foreign/dangling/unregistered classification, promoteItem lineage) but no derivation surface consumes it. Every derivation/read join computes endpointKey(e) — the BARE refname for a structured foreign endpoint (normalizeEndpoint key: refname ?? oid, substrate_id discarded) — and looks it up in the ACTIVE substrate's byRefname index only. Consequences by surface: (1) gate/dependency satisfaction (currentState incompletePreds/unsatisfiedGates, context-sdk.ts:889-892) filters foreign blockers out via index.byRefname.has() BEFORE the completeness check — the foreign endpoint rides the documented dangling-target-satisfied guard, so a task gated on an OPEN foreign item derives ready/nextActions; (2) derivedRollupComplete (context-sdk.ts:758-759) returns false for any foreign member — a rollup with a foreign member NEVER derives complete even when every member is complete in its home substrate, and context-reconcile/converge-on-write STAMP that false incomplete_status onto the stored item; (3) the status-consistency invariant skips foreign targets (context-sdk.ts:2352-2353 'if (!otherLoc) continue', comment wrongly claims edge-integrity handles it); (4) requires-edge satisfaction never resolves the counter-endpoint (foreign or dangling edges satisfy); (5) joinBlocks edge mode (context-sdk.ts:1253) and roadmap-plan rollups (roadmap-plan.ts:340,345) drop foreign counterparts; (6) walk ops emit foreign nodes as bare refnames (substrate qualifier erased). Refname collision is the aggravator: because the foreign key is the bare refname, a local item with the same refname (the EXPECTED case across catalog-installed sibling substrates) silently substitutes its status for the foreign item's — empirically, a task gated on foreign-open gB derived UNBLOCKED because a local closed gB existed. Meanwhile validateContext's edge-integrity DOES route through resolveRef and classifies foreign endpoints as VALID (no issue), so the substrate certifies edges that its own derivation treats as nonexistent. Zero diagnostics on any derivation path. The 2026-05-31 identity spec designed the resolver wiring for validation (Phase J1, shipped) and foreign-aware status-consistency (§J3: compare-if-readable, warn-if-unreadable — NOT implemented); it contains no design for derivation over foreign endpoints. findReferences (raw Edge[] out) is the only edge-read surface preserving foreignness.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "lines 889-892: incompletePreds/unsatisfiedGates filter blockers through index.byRefname.has() against the ACTIVE index — foreign gate/dep endpoints silently dropped before the completeness check",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "lines 405-413: normalizeEndpoint — foreign structured endpoint keys on bare refname (refname ?? oid), substrate_id discarded — the collision-aliasing root; endpointKey consumers cannot distinguish foreign from local/dangling",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "lines 758-759: derivedRollupComplete — unresolvable (foreign) member returns false, rollup never complete; shared by currentState gate satisfaction, the derived-status invariant, and reconcile/converge (index.ts:2704,2760), which WRITE the false derivation to stored status",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "lines 2352-2353: status-consistency invariant skips foreign targets ('if (!otherLoc) continue'); comment claims edge-integrity handles it, but edge-integrity classifies foreign as valid (no issue) — the drift is checked nowhere. Spec §J3 designed compare-if-readable/warn-if-unreadable for exactly this site; unimplemented",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "lines 2513-2557: validateContext edge loop routes every endpoint through resolveRef, foreign → no issue — the substrate certifies foreign edges as valid while deriving as if absent; split-brain empirically demonstrated (blocked:[] + nextActions:[tA] + validate clean, with a declared status-consistency invariant, task gated on an OPEN foreign gap via a porcelain-written structured foreign endpoint)",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "line 1253: joinBlocks edge mode resolves the counter-endpoint via active byRefname only; roadmap-plan.ts:340,345 likewise for phase/task rollup members; context.ts:1586-1638 walks emit bare refnames (foreign qualifier erased)",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "analysis/2026-07-06-foreign-status-derivation-blindness.md",
+      "reference": "investigation of record: mechanism trace, two-substrate empirical reproduction (fixture + pasted outputs, incl. the refname-collision mis-resolution and the both-members-complete milestone deriving planned), per-surface class inventory, prior-art sweep, resolution shapes",
+      "content_pin": "437fb07276fe94bada551a8f7d3cf63953e9ab8e1d0c34c1334108a32da7bdfe"
+    }
+  ],
+  "impact": "Cross-substrate edges — the entire point of the v0.28.0 identity arc — carry no derived consequence anywhere: a foreign gate silently releases (false-ready enters nextActions and is composed into agent contexts), a foreign rollup member permanently pins its container incomplete AND reconcile/converge durably stamp that wrong status, declared invariants silently skip foreign targets, and a refname collision (expected across catalog-installed substrates) makes derivation read the WRONG substrate's status as the gate truth. validate certifies all of it clean, so no audit surfaces the divergence. Downstream two-substrate projects hit this on first real use; concurrent operational peer substrates (per-pillar topologies) are foreclosed until fixed.",
+  "proposed_resolution": "Route every edge-consuming derivation join through registry-aware endpoint resolution (resolveRef / a resolveEndpointLoc(e) shim with the existing per-pass foreignCache) instead of endpointKey+active-byRefname: gate/dep predicates, derivedRollupComplete (the one seam converging currentState, the derived-status invariant, and reconcile/converge), status-consistency (implementing spec §J3's compare-if-readable/warn-if-unreadable), joinBlocks, roadmap rollups, walks (qualify foreign keys in output). In every variant: eliminate silent dropping (unresolvable-foreign degrades LOUDLY), split the dangling-vs-foreign conflation in the gate guard, and kill refname-collision aliasing (foreign keys must never collide onto local items). The foreign-resolution SEMANTICS — live cross-substrate status read vs derive-as-blocked-until-resolved vs flagged-exclusion — is a genuine design choice (freshness/cost/offline-substrate trade-offs) and lands as a DECISION first; requires-edge foreign-satisfaction is examined and decided in the same decision. Addressed by FEAT-012 (cross-substrate consumption); relates to FGAP-061 (same deriver, orthogonal kind-coverage axis) and FGAP-002 (the identity/provenance layer this consumption layer completes); sibling instance in the rendering stack recorded as R-0009 finding D1 (template resolve() is single-substrate)."
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "relation_type canonical_ids use source_verb_target naming, so task_depends_on_task reads as parent(source) depends_on child(target). But the closure-table convention + the current-state deriver treat parent as the PREREQUISITE and child as the DEPENDENT — the child is blocked until the parent completes (context-sdk.ts:678-712). Name and stored direction are therefore opposite: the name implies the parent is the depender; the system treats the parent as the depended-upon. append-relation does no semantic direction check, so a backwards ordering edge is accepted silently and only surfaces in derived state — it just produced a backwards TASK-004/TASK-005 dependency, corrected at 5621c2a. History: the proposed_resolution's design (endpoint_roles metadata + write-time validate-or-normalize) was implemented on 2026-06-06 (a08e586; TASK-027 closed at 7968580) and reverted the same day at user direction (b80eea7/98b6413/fe676a5); the recorded verdict — 'worth running but a failure implementation wise' — carries no recorded articulation of what failed (analysis/2026-07-03-task-027-revert-archaeology.md + analysis/2026-07-03-task-027-context-supplement.md). Whether the failure was the design or its unisolated execution is an open user determination; the reverted implementation remains recoverable at a08e586.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "678-712",
+      "reference": "edge-direction contract: {parent: D, child: T} => T blocked until D completed (parent=prerequisite, child=dependent) — opposite to the source_verb_target name reading",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": ".context/config.json",
+      "reference": "relation_type task_depends_on_task display_name 'depends on task', category ordering — name reads 'parent depends on child' while the deriver treats parent as prerequisite"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "the corrected dependency edge (5621c2a): original parent=TASK-005/child=TASK-004 was filed per the name, wrong per the deriver"
+    }
+  ],
+  "impact": "Any ordering relation whose verb implies the parent is the actor while the deriver treats parent as the prerequisite is easy to mis-direct; append-time silence means the error is invisible until topo/blocked derivation. Affects dependency-ordering correctness across tasks and any similarly-shaped ordering relation (e.g. phase_depends_on).",
+  "proposed_resolution": "Carry explicit endpoint-role metadata on the relation_type (which endpoint is the prerequisite vs the dependent) and have appendRelation / append-relation validate or normalize an ordering edge's direction against it at write time, so name and stored direction cannot diverge and a backwards edge is rejected (or auto-oriented) at append rather than discovered in derived state. Extends the existing relation-type endpoint-kind metadata; the deriver already consumes the contract, so the fix makes the WRITE path enforce the same contract."
+}

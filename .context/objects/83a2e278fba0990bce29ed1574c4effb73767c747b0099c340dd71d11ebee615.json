@@ -1,0 +1,32 @@
+{
+  "title": "No substrate clone/import: cross-project substrate reuse has no op-driven path and substrate identity carries no provenance",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "substrate_id is content-addressed, but the project-root registry (.pi-context-registry.json) is a flat id -> { dir, aliases } map with no origin/provenance. Item-level cross-substrate import exists (promoteItem mints a fresh content-addressed identity + records item_derived_from_item lineage), but there is no substrate-level analogue. Bringing a pi-context substrate in from another project therefore requires manual file copy + a manual registry edit, and yields a false substrate_id_unregistered drift error because the SoT-drift invariant cannot distinguish a native substrate whose registry entry was lost from a legitimately imported foreign one.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-registry.ts",
+      "reference": "registry entry shape is { dir, aliases } only — no origin/provenance field",
+      "content_pin": "4ec5c1a14d70b5a89e478b9e98ee41b684dfad57dfbf293a0cc1743af2984f8c"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1685-1714",
+      "reference": "SoT-drift invariant: an unregistered config.substrate_id is a single error code with no native-vs-foreign discrimination",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "reference": "promoteItem provides item-level cross-substrate import with item_derived_from_item lineage + fresh content-addressed identity; no substrate-level counterpart exists",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    },
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "759,822",
+      "reference": "the only registerSubstrate call sites record id+dir+aliases, no origin — so an imported substrate's lineage is unrecorded",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    }
+  ],
+  "impact": "No tool-driven cross-project substrate reuse; imported substrates carry no lineage to their origin; the SoT-drift invariant false-positives on legitimate imports; and the local switch-register reconciliation fix cannot tell a native-lost-registry substrate from a foreign import, so registering blindly on switch would silently absorb a foreign or colliding id.",
+  "proposed_resolution": "Lift substrate identity to the content-addressed + lineage model items already use: a substrate-level substrate_derived_from_substrate relation, provenance-bearing registry entries (minted-here vs derived-from), and a cloneSubstrate op (fork semantics: copy content into a new dir, mint a fresh substrate_id, record the derived-from edge + origin) surfaced as a dual-surface pi-context clone (library + Pi tool + CLI + orchestrator script). Preserves the one-id<->one-dir SoT invariant. See DEC-0002."
+}

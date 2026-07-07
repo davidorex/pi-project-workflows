@@ -1,0 +1,24 @@
+{
+  "title": "Feature/story-level readiness derivation does not exist — feature_gated_by_item / story_gated_by_item play no role in ready/blocked truth (task-level gates shipped)",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "currentState is the sole ready/blocked/next deriver and buckets only the tasks block. Task-level gate awareness SHIPPED: task_gated_by_item folds into blocked + the nextActions topo order (context-sdk.ts:804-836, TASK-065), and the blocked-by relation set is config-declared (state_derivation.blocked_by, partitioned gate-vs-dependency by role_direction). The residual gap: feature_gated_by_item / story_gated_by_item have no readiness deriver at all — no derivation buckets features or stories, so feature/story-level gates remain documentation-only. roadmap-plan.ts orders phases by membership/precedes (no phase_gated_by_item; out of scope).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "804-836",
+      "reference": "shipped task-level gate partition: blocked_by relations classified gate-vs-dependency by role_direction; task_gated_by_item honored in blocked + topo (TASK-065)",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "736-989",
+      "reference": "currentState buckets only the tasks block — no feature/story readiness derivation exists",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    }
+  ],
+  "impact": "Orderings expressed as feature/story gates are invisible to 'what is ready': feature_gated_by_item / story_gated_by_item edges carry no derived consequence anywhere.",
+  "canonical_vocabulary": "gate-aware readiness derivation",
+  "proposed_resolution": "FEAT-004 (the proper home): the config-declared blocked-by set generalizes beyond tasks — feature/story-level readiness derivation added so gate-awareness covers all kinds by config declaration, not hardcoded to the tasks block. The task-level NOW leg is closed (TASK-065); this gap tracks the feature/story residual only."
+}

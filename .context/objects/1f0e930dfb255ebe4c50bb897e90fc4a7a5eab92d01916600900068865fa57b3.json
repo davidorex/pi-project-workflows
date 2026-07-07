@@ -1,0 +1,29 @@
+{
+  "title": "context-status lifecycle metrics special-case stock kinds (phase/requirements/verification); custom kinds get only generic summaries",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "contextState() (context-sdk.ts ~429-667), behind the context-status op, produces a GENERIC per-kind block summary for every block (status aggregation works for custom kinds), but special-cases 5 stock lifecycle blocks with hardcoded fields/status values: phase (status completed), requirements (byStatus + byPriority on field priority), tasks (byStatus), domain (entries total), verification (status passed/failed split). So a custom-vocabulary substrate gets only the generic status summary, not the declared lifecycle metrics the stock kinds enjoy.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "577-654",
+      "reference": "special-cased phase/requirements/tasks/domain/verification lifecycle metrics with hardcoded fields + status literals (completed, passed, failed)",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "531-566",
+      "reference": "generic per-array status-summary path (works for any kind) — the default custom kinds fall back to",
+      "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "869",
+      "reference": "context-status op delegates to contextState(cwd)",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    }
+  ],
+  "impact": "the lifecycle/planning projection in context-status is stock-vocabulary-specific; a custom substrate's lifecycle (its own phase/verification-equivalent kinds + status values) is not surfaced as structured metrics — only counted generically.",
+  "proposed_resolution": "Make the lifecycle metrics config-declared (which kinds + which status values yield the lifecycle/metrics projection), keeping the generic per-kind summary as the default. Pairs with FGAP-017's state-derivation registry. Advances FEAT-004."
+}

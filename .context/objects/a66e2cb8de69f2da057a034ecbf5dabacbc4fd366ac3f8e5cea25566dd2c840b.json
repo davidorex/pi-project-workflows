@@ -1,0 +1,35 @@
+{
+  "title": "pi-context per-op <op> --help lacks the best-of-breed template — no EXAMPLES, SYNOPSIS, RELATED/see-also, or footer; and structured help bypasses --format",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context-cli",
+  "description": "deriveHelp(op) (packages/pi-context-cli/src/cli.ts:554) renders a per-op help page consisting only of `${op.name} — ${op.description}`, a Flags: list (each `--field <type> (required|optional) — desc`), and one global-flags line (grep SYNOPSIS|examples|related in cli.ts returns zero matches). Against the R-0011 best-of-breed bar (analysis/2026-06-09-cli-help-ux-research.md §6) for an agent-invoked CLI whose --help is the agent's PRIMARY documentation surface (§5: agents read --help before docs, and learn patterns from examples faster than from flag descriptions), the per-op page is missing the highest-leverage elements: (1) a copy-pasteable EXAMPLES block (the single highest-value agent-help element) — requires a per-op examples[] help-metadata source added to OpDefinition in ops-registry.ts, authored for all ~48 use-ops (seedable from the CLAUDE.md canonical filing patterns); (2) a SYNOPSIS/usage line in docopt notation, derivable from the op's typed params (required -> `--flag <type>`, optional -> `[--flag <type>]`, @file alternation); (3) a RELATED/see-also hint surfacing sibling ops within the op's name-prefix group plus the process-mode pi-bound (undiscoverable from a per-op page today); (4) a learn-more footer. Additionally, help is emitted as raw process.stdout.write in main() (~:644 top-level, ~:674 per-op) and does NOT participate in the --format text|json|table layer (FGAP-021, shipped) — so there is no machine-readable structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) off the registry, which R-0011 §7.3 derived as the target (machine help through the existing --format). This is the PER-OP help-template class, a DISTINCT code location from FGAP-062 (the top-level grouped listing in deriveTopHelp) and FGAP-063 (--version in main): it edits deriveHelp + the OpDefinition help-metadata source + the help-render-through-format path. Already-covered elements NOT in this gap: top-level grouping/promptSnippet/pi-bound-in-listing (FGAP-062), required-vs-optional typed flags (present in deriveHelp), --version (FGAP-063), exit codes (FGAP-026), --format result-render (FGAP-021), field-named AJV errors (FGAP-023), flag-name normalization (FGAP-064/032). Plain-by-default color (R-0011 §7.2) is already satisfied (help is plain text) and is not part of this gap.",
+  "evidence": [
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "554-577",
+      "reference": "deriveHelp emits `${op.name} — ${op.description}`, a Flags: list, and the global-flags line only — no synopsis line, no examples block, no related/see-also, no footer",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "640-680",
+      "reference": "main() writes deriveTopHelp()/deriveHelp(op) via process.stdout.write; help output does not route through the --format text|json|table layer (which shapes op RESULTS, not help)",
+      "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "201-210",
+      "reference": "OpDefinition carries promptSnippet/label/description but NO examples/related/synopsis help-metadata source for a per-op help template to render",
+      "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+    },
+    {
+      "file": "analysis/2026-06-09-cli-help-ux-research.md",
+      "reference": "R-0011 §6 reusable-elements checklist (per-op template: synopsis + flags + EXAMPLES + RELATED + footer) and §5 (agents read --help before docs; examples are the highest-value element); §7.3 (machine help through the existing --format)",
+      "content_pin": "d8eff82cb0aff83af2f0d68ac3bd911868b059f025d844db4455e5ece8b88b72"
+    }
+  ],
+  "impact": "The reflecting CLI is agent-invoked and --help is the agent caller's primary documentation surface. The per-op page gives flags but no examples, no call-shape synopsis, and no related ops, so an agent driving an unfamiliar op cannot see a copy-pasteable invocation, the synopsis, or what to call next — forcing trial-and-error and --help round-trips, and forcing prose-scraping where a structured --format json help would be parseable. FEAT-008 (the best-of-breed CLI) is not best-of-breed until the per-op help page carries examples + synopsis + related; per the standing best-of-breed/no-deferral mandate this is required work, not a deferrable separate decision.",
+  "canonical_vocabulary": "per-op help template (synopsis + examples + related + footer + machine help via --format)",
+  "proposed_resolution": "A per-op help-template render layer, ADDITIVE (in-pi op behavior frozen — run/parameters/description unchanged; the FEAT-008 byte-unchanged invariant is about op BEHAVIOR, and the parity gate TASK-019 asserts op<->CLI behavioral parity, which additive help-metadata does not touch): (1) add an examples[] (and optionally related[]/synopsis-override) help-metadata field to OpDefinition in ops-registry.ts, authoring examples[] for all ~48 use-ops from the CLAUDE.md canonical filing patterns; (2) in deriveHelp (cli.ts:554) render a fixed template — SYNOPSIS (derived from typed params, docopt notation) -> summary -> Flags (existing) -> EXAMPLES -> RELATED -> footer; (3) derive RELATED within the op's name-prefix group and surface pi-bound; (4) route a structured-help rendering ({synopsis, summary, flags[], examples[], related[]}) through the existing --format json so --help participates in --format. Fold into FEAT-008 as a SIBLING task to TASK-040 (different code location per the feature-decomposition rule), decompose per feature-decomposition, verify via the canonical pipeline; the parity gate stays green (additive)."
+}

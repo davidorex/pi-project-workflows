@@ -1,0 +1,30 @@
+{
+  "title": "Config-schema evolution has no load-time migration path",
+  "status": "closed",
+  "package": "pi-context",
+  "description": "loadConfigForDir parses config.json then calls validateFromFile(bundledSchemaPath(\"config\"), …) and returns — no schema_version check, no migration step. A schema-name-keyed migration mechanism exists (validateBlockWithMigrationForDir: compare schema.version to data.schema_version, walk the registered chain on mismatch, then validate) and \"config\" is a valid schemaName, but config-load never invokes it. When config.schema.json advances to a shape the stored config does not satisfy, every config-loading op fails validation (exit 5) with no path to carry the config across the version gap. The class: read-time validation and migration require a versioned-data envelope; config carries no schema_version, so the mechanism is uninvoked and config's raw-validate brick is the acute symptom.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context.ts",
+      "lines": "564-581",
+      "reference": "loadConfigForDir parses config.json then validateFromFile(bundledSchemaPath(\"config\"), data, …) and returns — no schema_version check, no migration call",
+      "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "lines": "205-242",
+      "reference": "validateBlockWithMigrationForDir: block-data load reads schema.version vs the item's schema_version, runs runMigrations over the registered chain on mismatch, then validates — the mechanism config-load lacks",
+      "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+    },
+    {
+      "file": "packages/pi-context/src/schema-migrations.ts",
+      "lines": "96-159",
+      "reference": "the migration registry is keyed by schemaName; resolve()/runMigrations would walk a \"config\" chain identically to a block name; config-load simply never calls it",
+      "content_pin": "f4a074a607eb5e8fb39c1d03f039ad3bcf35e34c5aae519184668f0e44c5cd4e"
+    }
+  ],
+  "impact": "A breaking config-schema bump strands the live substrate: config.json fails validation against the rebuilt CLI and every config-loading op exits 5, with no sanctioned recovery (amend-config also validates-before-mutate). Reproduced in this project: the TASK-020 state_derivation.blocked_by shape change bricked the live .context until the change was reverted. Until a config-migration path exists, every future config-schema shape change carries the same live-substrate-bricking risk.",
+  "canonical_vocabulary": "schema migration (forward migration / version-gated transform applied at load)",
+  "proposed_resolution": "RESOLVED at TASK-070: loadConfigForDir migrates-then-validates via the schema-name-keyed config chain (fail-fast on unresolvable chain, no raw-validate fallback); map_each declarative-transform primitive shipped (table + set-on-each modes); catalog identity config 1.0.0→1.7.0 declaration in samples/migrations.json with idempotent seeding at every ceremony entry point (write ceremonies materialize-then-seed; read ceremonies no-op on a nonexistent dir); the live substrate's config chain filed via write-schema-migration. Verified VER-060. --- Original: Add a load-time config-migration path mirroring validateBlockWithMigrationForDir: loadConfigForDir reads the config's schema_version and, on mismatch with the bundled schema version, walks the schema-name-keyed migration chain for \"config\" before validating. Requires a declarative-transform primitive able to map array elements (map_each) and a config migration registry entry. Verified design + corrected wiring: analysis/2026-06-18-config-migration-corrected-implementation-steps.md (and the same-date feasibility/validation md's). File at the class level (schema-evolution safety: read-time validation + migration require a versioned-data envelope).",
+  "priority": "P2"
+}

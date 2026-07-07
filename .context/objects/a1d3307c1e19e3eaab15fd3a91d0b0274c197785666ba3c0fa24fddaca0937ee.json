@@ -1,0 +1,48 @@
+{
+  "title": "Work-order dispatch dogfood — the loop cannot run a real work-order today; five breaks root-caused, one architectural fact seen from three sides",
+  "status": "complete",
+  "layer": "L1",
+  "type": "audit",
+  "question": "When a real work-order is filed and driven through run-work-order-loop from pi -p non-interactive dispatch, where does the machinery break, what is the root cause of each break, and is the work-order loop usable as a harness dispatch primitive today?",
+  "method": "User-directed live probe (WO-001: a minimal real work-order whose agent must write a file, gated by a deterministic runtime-demo real-check) driven from pi -p; fresh-context investigation root-causing each break against current source with an instrumented completeFn reproduction against built dist; git-date archaeology; substrate prior-art sweep via the CLI.",
+  "findings_summary": "The loop runs end to end without crashing but cannot execute any real work-order. Highest-value root cause (empirically confirmed): pi-jit-agents executeAgent is a single-turn completion primitive whose context.tools is populated only by a phantom output-schema tool — a dispatched agent granted ['write','bash'] receives ZERO executable tools (instrumented: toolsPassedToLLM UNDEFINED), so the demo agent's 'cannot write files' was accurate and every honest work-order must fail at iteration 0. Breaks 2, 3, 5 are one architectural fact from three sides: the work-orders schema (2026-05-27) is a v1 contract — typed input, context injection, output validation, operation-scoped clamp, bounded retry — whose loop (2026-05-28) implements a demo slice on a primitive that cannot act; the schema even asserts present-tense engine behavior (scope 'Used by the capability composer to clamp') that does not run, and ships in the installable catalog. Breaks 1 and 4 compound at the boundary: the sanctioned agent-authoring tool is interactively gated (no non-interactive path for the 8 pi-only gated tools), and no ceremony seeds the <contextDir>/agents/ tier the loader resolves from — so on a fresh substrate driven from pi -p the loop's precondition is unproducible. Only the deterministic real-check behaved correctly, which is why this surfaced as a clean failure not a false pass. The dispatch-architecture choice (pi-subprocess vs executeAgent tool-loop vs output-only re-scope) is a decision the fix must make first. Also flagged: loop/tool doc comments cite frozen .project-era IDs that collide with unrelated active-.context items.",
+  "findings_document": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+  "grounding": {
+    "revisions": [
+      "workflowsPiExtension main @ 3b84e895 (2026-07-07); dispatch code re-read from source at investigation time"
+    ]
+  },
+  "stale_conditions": [
+    {
+      "kind": "item-status",
+      "item": "FEAT-014",
+      "bucket": "complete"
+    },
+    "Any change to pi-jit-agents executeAgent tool-binding (jit-runtime.ts) or the work-order loop's field consumption (work-order-loop.ts)"
+  ],
+  "citations": [
+    {
+      "label": "executeAgent single-turn primitive; phantom-tool-only context.tools; grant clamp",
+      "path": "packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "432-738, 488, 566-570",
+      "content_pin": "2f87a8ee64833591867a8d7720a09d8089a5f335b3f75d95cb99840cf6f63a11"
+    },
+    {
+      "label": "loop consumes 5 of 9 required fields; clamp on tool param not wo.scope.operations",
+      "path": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "lines": "73-78, 119, 134, 200-209",
+      "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+    },
+    {
+      "label": "auth gate unconditional hasUI=false refusal; gated-tool set",
+      "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
+      "lines": "67, 156-161",
+      "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
+    },
+    {
+      "label": "findings document: five-break root-cause, instrumented reproduction, git-date archaeology, findings table",
+      "path": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+    }
+  ]
+}

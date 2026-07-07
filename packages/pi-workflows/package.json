@@ -43,6 +43,10 @@
 		"./auth-required": {
 			"types": "./dist/auth-required.d.ts",
 			"default": "./dist/auth-required.js"
+		},
+		"./bundled-dirs": {
+			"types": "./dist/bundled-dirs.d.ts",
+			"default": "./dist/bundled-dirs.js"
 		}
 	},
 	"pi": {

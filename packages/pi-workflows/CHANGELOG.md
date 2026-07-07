@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 
 ## [Unreleased]
 
+- New `./bundled-dirs` subpath export: `bundledDir(subdir)` resolves this package's bundled `agents/` / `workflows/` / `schemas/` directories for consumers outside the package (module-scoped helper, deliberately kept off the package barrel; pi-agent-dispatch consumes it to supply the bundled `agents/` directory as its dispatch loaders' builtin search tier).
+
 ## [0.32.0] - 2026-07-05
 
 ## [0.31.0] - 2026-06-13

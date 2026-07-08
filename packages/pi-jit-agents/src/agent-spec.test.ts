@@ -67,6 +67,27 @@ describe("parseAgentYaml — existence-gated spec-path resolution", () => {
 		assert.strictEqual(spec.taskPromptTemplate, path.join(dir, "task.md"));
 	});
 
+	it("adjacent probe wins over the sibling probe even when siblingProbe is enabled", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// Both an adjacent file AND a package-root sibling file exist for the same
+		// relative ref. Adjacent is probed first and must win regardless of tier.
+		const agentsDir = path.join(dir, "agents");
+		const schemasDir = path.join(dir, "schemas");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.mkdirSync(path.join(agentsDir, "schemas"), { recursive: true });
+		fs.writeFileSync(path.join(agentsDir, "schemas", "findings.schema.json"), "{}");
+		fs.writeFileSync(path.join(schemasDir, "findings.schema.json"), "{}");
+		const file = writeAgent(
+			agentsDir,
+			"adjwins",
+			"name: adjwins\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/findings.schema.json\n",
+		);
+		const spec = parseAgentYaml(file, { siblingProbe: true });
+		assert.strictEqual(spec.outputSchema, path.join(agentsDir, "schemas", "findings.schema.json"));
+	});
+
 	it("preserves a non-adjacent relative template ref as a loader-resolvable name", (t) => {
 		const dir = tmpProject();
 		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -82,12 +103,13 @@ describe("parseAgentYaml — existence-gated spec-path resolution", () => {
 		assert.ok(!path.isAbsolute(spec.taskPromptTemplate as string), "non-adjacent ref must stay relative");
 	});
 
-	it("absolutizes a relative schema ref against the spec dir's PARENT (package-root sibling convention)", (t) => {
+	it("absolutizes a relative schema ref against the spec dir's PARENT for a BUNDLED-tier spec (siblingProbe on)", (t) => {
 		const dir = tmpProject();
 		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 		// Bundled layout: spec lives in agents/, its schema in a SIBLING schemas/
 		// at the package root (the parent of agents/). The adjacent probe misses;
-		// the parent probe finds it.
+		// the parent probe finds it — but ONLY because the bundled tier enables it
+		// (siblingProbe: true, the flag createAgentLoader threads for builtinDir).
 		const agentsDir = path.join(dir, "agents");
 		const schemasDir = path.join(dir, "schemas");
 		fs.mkdirSync(agentsDir, { recursive: true });
@@ -98,24 +120,51 @@ describe("parseAgentYaml — existence-gated spec-path resolution", () => {
 			"sib",
 			"name: sib\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/findings.schema.json\n",
 		);
-		const spec = parseAgentYaml(file);
+		const spec = parseAgentYaml(file, { siblingProbe: true });
 		assert.ok(spec.outputSchema);
-		assert.ok(path.isAbsolute(spec.outputSchema), "sibling schema ref must absolutize");
+		assert.ok(path.isAbsolute(spec.outputSchema), "sibling schema ref must absolutize for the bundled tier");
 		assert.strictEqual(spec.outputSchema, path.join(schemasDir, "findings.schema.json"));
 	});
 
-	it("preserves a relative schema ref that resolves at NEITHER probe as a bare name", (t) => {
+	it("does NOT run the sibling probe for a LOCAL-tier spec — a same-basename sibling schema cannot shadow (siblingProbe off)", (t) => {
 		const dir = tmpProject();
 		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
-		// No adjacent and no parent-sibling file → the ref survives unchanged; its
-		// read fails loudly downstream (buildPhantomTool) rather than mis-resolving.
+		// Same on-disk shape as the bundled case — a sibling schemas/x.schema.json
+		// EXISTS at the parent of agents/ (in a real substrate this would be a
+		// pi-context BLOCK schema). With the default (local/user tier) the parent
+		// probe is OFF, so the ref must survive as a bare name rather than silently
+		// absolutizing onto the block schema and mis-validating agent output.
+		const agentsDir = path.join(dir, "agents");
+		const schemasDir = path.join(dir, "schemas");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(path.join(schemasDir, "phase.schema.json"), "{}");
+		const file = writeAgent(
+			agentsDir,
+			"local",
+			"name: local\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/phase.schema.json\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.strictEqual(spec.outputSchema, "schemas/phase.schema.json");
+		assert.ok(
+			!path.isAbsolute(spec.outputSchema as string),
+			"local-tier ref must stay a bare name, not shadow onto the sibling",
+		);
+	});
+
+	it("preserves a relative schema ref that resolves at NEITHER probe as a bare name (bundled tier)", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// Bundled tier (siblingProbe on) but no adjacent and no parent-sibling file
+		// → the ref survives unchanged; its read fails loudly downstream
+		// (buildPhantomTool) rather than mis-resolving.
 		const agentsDir = path.join(dir, "agents");
 		const file = writeAgent(
 			agentsDir,
 			"noschema",
 			"name: noschema\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/absent.schema.json\n",
 		);
-		const spec = parseAgentYaml(file);
+		const spec = parseAgentYaml(file, { siblingProbe: true });
 		assert.strictEqual(spec.outputSchema, "schemas/absent.schema.json");
 		assert.ok(!path.isAbsolute(spec.outputSchema as string), "non-resolving schema ref must stay relative");
 	});
@@ -284,6 +333,59 @@ describe("createAgentLoader", () => {
 		const spec = load("builtin-agent");
 		assert.strictEqual(spec.name, "builtin-agent");
 		assert.strictEqual(spec.loadedFrom, builtinDir);
+	});
+
+	it("enables the sibling probe ONLY for a spec matched from the builtin tier", (t) => {
+		const cwd = tmpProject();
+		const userDir = tmpProject();
+		const builtinRoot = fs.mkdtempSync(path.join(os.tmpdir(), "jit-agent-builtin-"));
+		t.after(() => {
+			for (const d of [cwd, userDir, builtinRoot]) fs.rmSync(d, { recursive: true, force: true });
+		});
+		// Bundled package layout: agents/ and schemas/ as package-root siblings.
+		const builtinAgents = path.join(builtinRoot, "agents");
+		const builtinSchemas = path.join(builtinRoot, "schemas");
+		fs.mkdirSync(builtinSchemas, { recursive: true });
+		fs.writeFileSync(path.join(builtinSchemas, "out.schema.json"), "{}");
+		writeAgent(
+			builtinAgents,
+			"bundled",
+			"name: bundled\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/out.schema.json\n",
+		);
+
+		const load = createAgentLoader({ cwd, userDir, builtinDir: builtinAgents });
+		const spec = load("bundled");
+		assert.strictEqual(spec.loadedFrom, builtinAgents);
+		assert.ok(path.isAbsolute(spec.outputSchema as string), "builtin-tier spec must absolutize its sibling schema ref");
+		assert.strictEqual(spec.outputSchema, path.join(builtinSchemas, "out.schema.json"));
+	});
+
+	it("does NOT enable the sibling probe for a project-tier spec even when a sibling schema exists", (t) => {
+		const cwd = tmpProject();
+		const userDir = tmpProject();
+		t.after(() => {
+			for (const d of [cwd, userDir]) fs.rmSync(d, { recursive: true, force: true });
+		});
+		// Project-tier layout mirroring the substrate: .project/agents/ spec with a
+		// same-basename schema present in the sibling .project/schemas/. The probe
+		// stays OFF for this tier, so the ref must survive as a bare name.
+		const substrateRoot = path.join(cwd, ".project");
+		fs.mkdirSync(path.join(substrateRoot, "schemas"), { recursive: true });
+		fs.writeFileSync(path.join(substrateRoot, "schemas", "phase.schema.json"), "{}");
+		writeAgent(
+			path.join(substrateRoot, "agents"),
+			"proj",
+			"name: proj\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/phase.schema.json\n",
+		);
+
+		const load = createAgentLoader({ cwd, userDir });
+		const spec = load("proj");
+		assert.strictEqual(spec.loadedFrom, path.join(substrateRoot, "agents"));
+		assert.strictEqual(spec.outputSchema, "schemas/phase.schema.json");
+		assert.ok(
+			!path.isAbsolute(spec.outputSchema as string),
+			"project-tier ref must not shadow onto the sibling block schema",
+		);
 	});
 
 	it("project tier takes precedence over user and builtin (first match wins)", (t) => {

@@ -37,10 +37,10 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
  * - Absolute paths (returned unchanged)
  * - `block:<name>` sentinels (returned unchanged — resolved at compile time against cwd)
  * - Relative paths: probed in order against (1) the spec's own directory
- *   (specDir-adjacent) then (2) the spec directory's PARENT (the package-root
- *   sibling convention). The value is absolutized to the FIRST probe that finds
- *   a file on disk; if NEITHER probe resolves, the value is returned UNCHANGED
- *   as a loader-resolvable name.
+ *   (specDir-adjacent) then, ONLY when `siblingProbe` is true, (2) the spec
+ *   directory's PARENT (the package-root sibling convention). The value is
+ *   absolutized to the FIRST probe that finds a file on disk; if no enabled
+ *   probe resolves, the value is returned UNCHANGED as a loader-resolvable name.
  *
  * The existence gate is what lets a bundled spec's template/schema reference —
  * e.g. `investigator/task.md` or `analyzers/quality.md`, whose file lives in the
@@ -66,15 +66,29 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
  * schema-bearing bundled specs dispatch. A ref that resolves at NEITHER probe
  * still survives as a bare name (correct for templates; a schema that resolves
  * nowhere fails later with the existing honest ENOENT).
+ *
+ * `siblingProbe` gates that parent probe to the BUNDLED tier ONLY (the caller
+ * passes true exclusively when the spec was matched from ctx.builtinDir). The
+ * sibling convention is a fact about the packaged layout — agents/ and schemas/
+ * are package-root siblings — and does NOT hold for the local-substrate tier
+ * (<contextDir>/agents/, whose parent's schemas/ holds pi-context BLOCK schemas)
+ * or the user tier (~/.pi/agent/agents/, whose parent is user config). Running
+ * the parent probe there would let a spec's relative `schemas/x.schema.json` ref
+ * silently absolutize onto a same-basename block/config schema and mis-validate
+ * agent output. Default false keeps local/user specs adjacent-only plus the
+ * loader-name fallthrough; the adjacent probe and that fallthrough are
+ * unconditional across all tiers.
  */
-function resolveSpecPath(value: string | undefined, specDir: string): string | undefined {
+function resolveSpecPath(value: string | undefined, specDir: string, siblingProbe: boolean): string | undefined {
 	if (!value) return undefined;
 	if (value.startsWith("block:")) return value;
 	if (path.isAbsolute(value)) return value;
 	const adjacent = path.resolve(specDir, value);
 	if (fs.existsSync(adjacent)) return adjacent;
-	const sibling = path.resolve(specDir, "..", value);
-	if (fs.existsSync(sibling)) return sibling;
+	if (siblingProbe) {
+		const sibling = path.resolve(specDir, "..", value);
+		if (fs.existsSync(sibling)) return sibling;
+	}
 	return value;
 }
 
@@ -186,10 +200,18 @@ function parseContextBlockEntry(
  * directory when an adjacent file exists, otherwise left as a loader-resolvable
  * name (bundled specs reference templates that live in the pi-jit-agents tier,
  * not adjacent to the spec). The `loadedFrom` field records that directory.
+ *
+ * `opts.siblingProbe` (default false) additionally allows absolutizing a
+ * non-adjacent relative ref against the spec dir's PARENT (the package-root
+ * agents/⇄schemas/ sibling convention). It is enabled ONLY for specs loaded from
+ * the bundled tier; local/user specs stay adjacent-only so a `schemas/x` ref can
+ * never silently resolve onto a substrate block schema or user-config sibling.
+ * See `resolveSpecPath`.
  */
-export function parseAgentYaml(filePath: string): AgentSpec {
+export function parseAgentYaml(filePath: string, opts?: { siblingProbe?: boolean }): AgentSpec {
 	const name = path.basename(filePath, ".agent.yaml");
 	const specDir = path.dirname(filePath);
+	const siblingProbe = opts?.siblingProbe ?? false;
 
 	let content: string;
 	try {
@@ -223,12 +245,12 @@ export function parseAgentYaml(filePath: string): AgentSpec {
 		extensions: spec.extensions,
 		skills: spec.skills,
 		systemPrompt: systemField.inline,
-		systemPromptTemplate: resolveSpecPath(systemField.template, specDir),
+		systemPromptTemplate: resolveSpecPath(systemField.template, specDir, siblingProbe),
 		taskPrompt: taskField.inline,
-		taskPromptTemplate: resolveSpecPath(taskField.template, specDir),
+		taskPromptTemplate: resolveSpecPath(taskField.template, specDir, siblingProbe),
 		inputSchema: spec.input,
 		outputFormat: spec.output?.format,
-		outputSchema: resolveSpecPath(spec.output?.schema, specDir),
+		outputSchema: resolveSpecPath(spec.output?.schema, specDir, siblingProbe),
 		contextBlocks: Array.isArray(spec.contextBlocks)
 			? spec.contextBlocks.map((entry: unknown, index: number) =>
 					parseContextBlockEntry(entry, index, spec.name || name, filePath),
@@ -252,6 +274,13 @@ export function parseAgentYaml(filePath: string): AgentSpec {
  *
  * IMPORTANT: Does NOT search .pi/agents/ — that path violates D3
  * (jit-agents-spec.md §4). Pi platform territory is respected.
+ *
+ * Tier note: the package-root sibling probe in `parseAgentYaml` is enabled ONLY
+ * when the matched spec came from the builtin/bundled tier (ctx.builtinDir),
+ * because the agents/⇄schemas/ sibling convention is a fact of the bundled
+ * package layout. A local-substrate spec (<contextDir>/agents/) or user spec
+ * (~/.pi/agent/agents/) is parsed with the probe OFF so its relative refs cannot
+ * silently absolutize onto a same-basename block/config schema in the sibling dir.
  */
 export function createAgentLoader(ctx: LoadContext): (name: string) => AgentSpec {
 	const userTier = ctx.userDir ?? path.join(os.homedir(), ".pi", "agent", "agents");
@@ -268,12 +297,15 @@ export function createAgentLoader(ctx: LoadContext): (name: string) => AgentSpec
 			searchPaths.push(path.join(base, "agents", `${name}.agent.yaml`));
 		}
 		searchPaths.push(path.join(userTier, `${name}.agent.yaml`));
-		if (ctx.builtinDir) {
-			searchPaths.push(path.join(ctx.builtinDir, `${name}.agent.yaml`));
+		// The bundled-tier path (when present) is the ONLY one that enables the
+		// package-root sibling probe — capture it so the match below can compare.
+		const builtinPath = ctx.builtinDir ? path.join(ctx.builtinDir, `${name}.agent.yaml`) : null;
+		if (builtinPath !== null) {
+			searchPaths.push(builtinPath);
 		}
 
 		for (const p of searchPaths) {
-			if (fs.existsSync(p)) return parseAgentYaml(p);
+			if (fs.existsSync(p)) return parseAgentYaml(p, { siblingProbe: p === builtinPath });
 		}
 
 		throw new AgentNotFoundError(name, searchPaths);

@@ -52,18 +52,12 @@ def segments(s):
     # split on && || ; | and newlines, keeping it simple and shell-agnostic enough
     return re.split(r"&&|\|\||;|\||\n", s)
 
-REDIR = re.compile(r"^(\d*|&)?(>>|<<-?|<|>)")
-
 def has_pathspec(tokens):
     # tokens are the args AFTER the "commit" subcommand
     i = 0
     n = len(tokens)
     while i < n:
         t = tokens[i]
-        if REDIR.match(t):
-            # a shell redirection / heredoc (e.g. <<EOF, >, 2>, >>): its operand is
-            # a redirect target or heredoc body, never a git pathspec. Stop here.
-            return False
         if t == "--":
             # explicit pathspec separator: anything after it is a path
             return len(tokens) > i + 1

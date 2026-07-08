@@ -32,12 +32,6 @@ expect "chained after add"              2 'git add -A && git commit -- foo'
 expect "global opt then pathspec"       2 'git -c core.editor=true commit -- foo'
 expect "absolute git path"              2 '/usr/bin/git commit -- foo'
 
-# --- must ALLOW (exit 0): redirections / heredocs are not pathspecs ---
-expect "heredoc -F - message"           0 "git commit -F - <<'EOF'"
-expect "commit redirect stdout"         0 'git commit -m x > /tmp/out.log'
-expect "commit redirect stderr"         0 'git commit -m x 2> /tmp/err.log'
-expect "commit append redirect"         0 'git commit -m x >> /tmp/out.log'
-
 # --- must ALLOW (exit 0): non-pathspec commits and non-commits ---
 expect "plain staged commit"            0 'git commit'
 expect "commit with -m"                 0 'git commit -m "message"'

@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-agent-dispatch",
-	"version": "0.32.0",
+	"version": "0.33.0",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -45,10 +45,10 @@
 		"test": "tsx --test --test-timeout=120000 src/*.test.ts"
 	},
 	"dependencies": {
-		"@davidorex/pi-behavior-monitors": "^0.32.0",
-		"@davidorex/pi-context": "^0.32.0",
-		"@davidorex/pi-jit-agents": "^0.32.0",
-		"@davidorex/pi-workflows": "^0.32.0",
+		"@davidorex/pi-behavior-monitors": "^0.33.0",
+		"@davidorex/pi-context": "^0.33.0",
+		"@davidorex/pi-jit-agents": "^0.33.0",
+		"@davidorex/pi-workflows": "^0.33.0",
 		"@earendil-works/pi-ai": "^0.75.4",
 		"@earendil-works/pi-coding-agent": "^0.75.4",
 		"yaml": "^2.7.1"

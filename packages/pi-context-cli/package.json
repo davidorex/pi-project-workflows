@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-context-cli",
-	"version": "0.32.0",
+	"version": "0.33.0",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -33,8 +33,8 @@
 		"test": "tsx --test --test-timeout=120000 src/*.test.ts"
 	},
 	"dependencies": {
-		"@davidorex/pi-context": "^0.32.0",
-		"@davidorex/pi-project-workflows": "^0.32.0",
+		"@davidorex/pi-context": "^0.33.0",
+		"@davidorex/pi-project-workflows": "^0.33.0",
 		"typebox": "^1.1.24"
 	},
 	"engines": {

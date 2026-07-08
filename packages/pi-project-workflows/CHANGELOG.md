@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-07-08
+
 - Re-exported pi-context surface gains the `context-reconcile` op (derived-status repair: dry-run-exact preview, validated-write convergence of rollup-kind stored statuses).
 
 ## [0.32.0] - 2026-07-05

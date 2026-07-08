@@ -1,6 +1,6 @@
 {
 	"name": "@davidorex/pi-project-workflows",
-	"version": "0.32.0",
+	"version": "0.33.0",
 	"publishConfig": {
 		"access": "public"
 	},
@@ -33,9 +33,9 @@
 		]
 	},
 	"dependencies": {
-		"@davidorex/pi-context": "^0.32.0",
-		"@davidorex/pi-workflows": "^0.32.0",
-		"@davidorex/pi-behavior-monitors": "^0.32.0",
-		"@davidorex/pi-agent-dispatch": "^0.32.0"
+		"@davidorex/pi-context": "^0.33.0",
+		"@davidorex/pi-workflows": "^0.33.0",
+		"@davidorex/pi-behavior-monitors": "^0.33.0",
+		"@davidorex/pi-agent-dispatch": "^0.33.0"
 	}
 }

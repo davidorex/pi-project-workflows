@@ -10,7 +10,7 @@ tools:
 
 output:
   format: json
-  schema: ../../.workflow/schemas/phase.schema.json
+  schema: schemas/phase.schema.json
 
 prompt:
   task:

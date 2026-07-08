@@ -82,6 +82,44 @@ describe("parseAgentYaml — existence-gated spec-path resolution", () => {
 		assert.ok(!path.isAbsolute(spec.taskPromptTemplate as string), "non-adjacent ref must stay relative");
 	});
 
+	it("absolutizes a relative schema ref against the spec dir's PARENT (package-root sibling convention)", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// Bundled layout: spec lives in agents/, its schema in a SIBLING schemas/
+		// at the package root (the parent of agents/). The adjacent probe misses;
+		// the parent probe finds it.
+		const agentsDir = path.join(dir, "agents");
+		const schemasDir = path.join(dir, "schemas");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		fs.mkdirSync(schemasDir, { recursive: true });
+		fs.writeFileSync(path.join(schemasDir, "findings.schema.json"), "{}");
+		const file = writeAgent(
+			agentsDir,
+			"sib",
+			"name: sib\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/findings.schema.json\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.ok(spec.outputSchema);
+		assert.ok(path.isAbsolute(spec.outputSchema), "sibling schema ref must absolutize");
+		assert.strictEqual(spec.outputSchema, path.join(schemasDir, "findings.schema.json"));
+	});
+
+	it("preserves a relative schema ref that resolves at NEITHER probe as a bare name", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// No adjacent and no parent-sibling file → the ref survives unchanged; its
+		// read fails loudly downstream (buildPhantomTool) rather than mis-resolving.
+		const agentsDir = path.join(dir, "agents");
+		const file = writeAgent(
+			agentsDir,
+			"noschema",
+			"name: noschema\nmodel: test/m\noutput:\n  format: json\n  schema: schemas/absent.schema.json\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.strictEqual(spec.outputSchema, "schemas/absent.schema.json");
+		assert.ok(!path.isAbsolute(spec.outputSchema as string), "non-resolving schema ref must stay relative");
+	});
+
 	it("returns a `block:` sentinel unchanged", (t) => {
 		const dir = tmpProject();
 		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));

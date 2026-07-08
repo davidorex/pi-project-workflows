@@ -36,9 +36,11 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
  * Existence-gated contract:
  * - Absolute paths (returned unchanged)
  * - `block:<name>` sentinels (returned unchanged — resolved at compile time against cwd)
- * - Relative paths: absolutized against the spec's directory ONLY when a file
- *   actually exists at that adjacent location; otherwise the value is returned
- *   UNCHANGED as a loader-resolvable name.
+ * - Relative paths: probed in order against (1) the spec's own directory
+ *   (specDir-adjacent) then (2) the spec directory's PARENT (the package-root
+ *   sibling convention). The value is absolutized to the FIRST probe that finds
+ *   a file on disk; if NEITHER probe resolves, the value is returned UNCHANGED
+ *   as a loader-resolvable name.
  *
  * The existence gate is what lets a bundled spec's template/schema reference —
  * e.g. `investigator/task.md` or `analyzers/quality.md`, whose file lives in the
@@ -49,13 +51,31 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
  * `renderTemplateFile` then tried to `readFileSync` directly (absolute paths
  * bypass the loader), defeating the bundled-template tier. Adjacent-file specs
  * (the local/project case, and the test fixtures) still absolutize as before.
+ *
+ * The package-root sibling probe extends the gate to the bundled-agent layout
+ * where an `agents/*.agent.yaml` spec references a schema that lives in a
+ * SIBLING `schemas/` dir at the package root (e.g. investigator's
+ * `schemas/investigation-findings.schema.json`, whose file is at
+ * pi-workflows/schemas/, the parent of agents/). Unlike templates, an
+ * outputSchema gets no downstream loader-tier resolution — resolveOutputSchema-
+ * ForCompile passes non-block values through unchanged and buildPhantomTool
+ * reads them directly against process.cwd() — so a relative schema ref left as
+ * a bare name fails with an ENOENT at dispatch. Absolutizing against the spec
+ * dir's parent here (mirroring how pi-behavior-monitors absolutizes its
+ * classifiers' relative schema refs before dispatch) is what makes those
+ * schema-bearing bundled specs dispatch. A ref that resolves at NEITHER probe
+ * still survives as a bare name (correct for templates; a schema that resolves
+ * nowhere fails later with the existing honest ENOENT).
  */
 function resolveSpecPath(value: string | undefined, specDir: string): string | undefined {
 	if (!value) return undefined;
 	if (value.startsWith("block:")) return value;
 	if (path.isAbsolute(value)) return value;
-	const resolved = path.resolve(specDir, value);
-	return fs.existsSync(resolved) ? resolved : value;
+	const adjacent = path.resolve(specDir, value);
+	if (fs.existsSync(adjacent)) return adjacent;
+	const sibling = path.resolve(specDir, "..", value);
+	if (fs.existsSync(sibling)) return sibling;
+	return value;
 }
 
 /**

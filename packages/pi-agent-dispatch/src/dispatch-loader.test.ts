@@ -136,4 +136,54 @@ output:
 			"quality-analyzer system prompt (extends base-analyzer) must render non-empty",
 		);
 	});
+
+	// Dispatch-past-compile regression: a bundled spec's RELATIVE output-schema
+	// ref must compile to an ABSOLUTE path that exists on disk. Both investigator
+	// and quality-analyzer declare `schemas/<x>.schema.json`, whose file lives in
+	// pi-workflows/schemas/ (the parent of agents/, the package-root sibling
+	// convention). Without parse's sibling probe the ref survived as a bare name
+	// and buildPhantomTool's readFileSync(process.cwd()) threw ENOENT at dispatch.
+	// Asserting the compiled schema is an existing absolute path pins that class
+	// without invoking a live LLM — it guarantees buildPhantomTool's read succeeds.
+	it("bundled `investigator` compiles its relative outputSchema to an existing absolute path (dispatch-past-compile)", () => {
+		const loadAgent = createAgentLoader({ ...dispatchLoadContext(tmpDir), userDir: pinnedUserDir(tmpDir) });
+		const spec = loadAgent("investigator");
+		const env = createTemplateEnv({
+			cwd: tmpDir,
+			builtinDir: bundledTemplateDir(),
+			userDir: pinnedTemplateUserDir(tmpDir),
+		});
+		const compiled = compileAgent(spec, { env, input: {}, cwd: tmpDir });
+		assert.ok(compiled.outputSchema, "investigator declares an output schema");
+		assert.ok(
+			path.isAbsolute(compiled.outputSchema as string),
+			`investigator outputSchema must be absolute, got: ${compiled.outputSchema}`,
+		);
+		assert.ok(
+			fs.existsSync(compiled.outputSchema as string),
+			`investigator outputSchema must exist on disk: ${compiled.outputSchema}`,
+		);
+	});
+
+	it("bundled `quality-analyzer` compiles its relative outputSchema to an existing absolute path (dispatch-past-compile)", () => {
+		const loadAgent = createAgentLoader({ ...dispatchLoadContext(tmpDir), userDir: pinnedUserDir(tmpDir) });
+		const spec = loadAgent("quality-analyzer");
+		const env = createTemplateEnv({
+			cwd: tmpDir,
+			builtinDir: bundledTemplateDir(),
+			userDir: pinnedTemplateUserDir(tmpDir),
+		});
+		const compiled = compileAgent(spec, { env, input: { exploration: {}, path: "src" }, cwd: tmpDir });
+		// quality-analyzer declares `schemas/quality-analysis.schema.json` (checked
+		// in the spec yaml) — so the resolved schema must be an existing absolute path.
+		assert.ok(compiled.outputSchema, "quality-analyzer declares an output schema");
+		assert.ok(
+			path.isAbsolute(compiled.outputSchema as string),
+			`quality-analyzer outputSchema must be absolute, got: ${compiled.outputSchema}`,
+		);
+		assert.ok(
+			fs.existsSync(compiled.outputSchema as string),
+			`quality-analyzer outputSchema must exist on disk: ${compiled.outputSchema}`,
+		);
+	});
 });

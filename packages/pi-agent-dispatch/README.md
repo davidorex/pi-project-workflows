@@ -29,10 +29,11 @@ The `run-work-order-loop` tool consolidates the orchestrator's prior per-iterati
 
 ## Dispatch resolution tiers
 
-Both dispatch entry points (`call-agent`, `run-work-order-loop`) resolve an agent for dispatch across three layered searches, so a fresh substrate with no local files can dispatch the bundled agent set out of the box while a local or user copy of the same name still wins:
+Both dispatch entry points (`call-agent`, `run-work-order-loop`) resolve an agent for dispatch across layered searches, so a fresh substrate with no local files can resolve and compile the bundled agent set from the bundled tiers while a local or user copy of the same name still wins. (Compiling and dispatching are distinct: `call-agent` additionally requires a resolvable model — see the **Model** axis — so on a fresh substrate with no `model-config`, a bundled spec that carries no `model` compiles but `call-agent` still errors for want of a model; `run-work-order-loop` omits `--model` and lets the subprocess pick its default.)
 
 - **Agent spec** — `<contextDir>/agents/` → `~/.pi/agent/agents/` → bundled pi-workflows `agents/`.
 - **Templates** (the spec's task/system prompt bodies) — `<contextDir>/templates/` → `~/.pi/agent/templates/` → bundled pi-jit-agents `templates/`.
+- **Output schema** (the spec's `output.schema`) — a `block:<name>` sentinel resolves to the active substrate's `<contextDir>/schemas/<name>.schema.json`; a relative path is resolved at parse against the spec's own directory first, then the spec directory's PARENT (the package-root sibling `schemas/` dir the bundled `agents/`+`schemas/` layout uses), absolutized to the first that exists on disk. Unlike templates, an output-schema ref gets no downstream loader-tier search — a relative ref that resolves at neither probe stays a bare name whose read fails loudly when the phantom validation tool is built.
 - **Model** — the spec's own `model` → substrate `model-config` `by_role[role]` → `model-config` `default`. When none resolves, subprocess dispatch (`run-work-order-loop`) omits `--model` and pi picks its own default inside the subprocess; in-process dispatch (`call-agent`), which must resolve a concrete model + auth before it can call, instead requires a spec or `model-config` model and errors otherwise.
 
 ## Canonical rules

@@ -1,0 +1,29 @@
+{
+  "title": "Roadmap emits a false `complete` from a second completeness derivation divergent from the authoritative one (surfaces when positioned-task coverage is partial)",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "single-source completeness derivation",
+  "description": "The roadmap runs its own completeness derivation (rollupPhaseStatus) over positioned tasks (task_positioned_in_phase edges), separate from the authoritative derivedRollupComplete used by gate satisfaction, the derived-status invariant, reconcile, and converge. The two can disagree: when a phase's positioned tasks all bucket complete but its authored status is not complete, rollupPhaseStatus emits rollup: complete while the authoritative verdict — and the stored phase/milestone status — is not-complete. The roadmap view then presents {rollup: complete, status: planned} as contradictory raw data. rollupPhaseStatus is display-only (no completeness consumer reads it): the authoritative gate/invariant/reconcile path is unaffected and does not misfire; the harm is confined to roadmap consumers (LLMs, HTML views, agent context) that read the false verdict.\n\nTriggering instance: MILE-005 / PHASE-M5-WRITE-INTEGRITY on 2026-07-08. PHASE-M5 has one positioned task (TASK-027, completed) and authored status in-progress; the roadmap derived rollup: complete while the authoritative verdict (and stored phase: in-progress / milestone: planned) was not-complete. An LLM shown {rollup: complete, status: planned} defaulted to 'stored status is stale'.",
+  "impact": "Roadmap consumers (LLMs, HTML views, agent context composition) read a false completeness verdict and must manually cross-verify every roadmap completeness claim. The authoritative gate/invariant/reconcile path is correct; the defect is confined to the roadmap's independent, display-only derivation — but that verdict drives consumer decisions until completeness is single-sourced.",
+  "evidence": [
+    {
+      "file": ".context/phase.json",
+      "reference": "PHASE-M5-WRITE-INTEGRITY: authored status in-progress; one positioned task (TASK-027, completed) via task_positioned_in_phase"
+    },
+    {
+      "file": ".context/milestone.json",
+      "reference": "MILE-005: stored status 'planned'; roadmap rollup bucket 'complete' — the roadmap's task-derived bucket contradicts the authoritative not-complete verdict"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "PHASE-M5-WRITE-INTEGRITY has one task_positioned_in_phase edge (TASK-027)"
+    },
+    {
+      "file": "packages/pi-context/src/roadmap-plan.ts",
+      "reference": "rollupPhaseStatus derives a completeness bucket by aggregating positioned tasks, independent of the authoritative derivedRollupComplete; the roadmap surfaces this bucket next to the status field with no single source of completeness truth",
+      "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
+    }
+  ],
+  "proposed_resolution": "Single-source the completeness verdict. The roadmap must not run a second completeness derivation. The roadmap's milestone/phase completeness routes through the authoritative derivedRollupComplete (context-sdk.ts) — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use — never rollupPhaseStatus's independent positioned-task aggregation. rollupPhaseStatus is retained only as a task-progress display, labeled as progress, never surfaced as a completeness or reached verdict, so a progress count can neither read as nor contradict the authoritative status. Scope is read only from typed edges (task_positioned_in_phase); no membership is inferred from the intent prose. With completeness single-sourced, a phase whose authored status is not complete derives not-complete regardless of positioned-task coverage, and the false complete cannot arise."
+}

@@ -5,6 +5,7 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 ## [Unreleased]
 
 - New `./bundled-dirs` subpath export: `bundledDir(subdir)` resolves this package's bundled `agents/` / `workflows/` / `schemas/` directories for consumers outside the package (module-scoped helper, deliberately kept off the package barrel; pi-agent-dispatch consumes it to supply the bundled `agents/` directory as its dispatch loaders' builtin search tier).
+- The bundled `phase-author` agent spec's task-template reference is now `phase-author/task.md` (a path relative to the template search roots) rather than `templates/phase-author/task.md`. The prior `templates/`-prefixed value did not resolve against the bundled pi-jit-agents template tier (whose search root already IS the `templates/` directory), so the spec's task prompt rendered empty when the agent was dispatched from a substrate with no local template copy; the relative reference lets it resolve against the bundled template tier.
 
 ## [0.32.0] - 2026-07-05
 

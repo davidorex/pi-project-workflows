@@ -10331,5 +10331,31 @@
       "refname": "FGAP-132"
     },
     "relation_type": "research_informs_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
+      "refname": "TASK-105"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9ef254bce9d25e19f5bed570b51bc3dc",
+      "refname": "FGAP-133"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
+      "refname": "TASK-105"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6aafd6423198c262b5590852823c6282",
+      "refname": "working-substrate-is-the-aim"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

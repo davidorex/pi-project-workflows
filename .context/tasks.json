@@ -2136,6 +2136,24 @@
       "oid": "6e24884a209f392093009212bd517adf",
       "content_hash": "1688939734a2d1ca538d793b9d08ecaa6ffbca8e3976f964f16f29c7fc16c9ac",
       "content_parent": "9934c9711a092355cba2cac38a4af67ea18c804f3b3ef89b8b8e19f8f34da62d"
+    },
+    {
+      "description": "Single-source the roadmap's completeness verdict through the authoritative derivedRollupComplete (context-sdk.ts). Eliminate rollupPhaseStatus's independent positioned-task aggregation as a completeness/reached signal; the roadmap's milestone/phase completeness derives from derivedRollupComplete — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use. rollupPhaseStatus is retained only as a labeled task-progress display, never surfaced as a completeness or reached verdict. Scope reads only from task_positioned_in_phase edges; no membership inferred from intent prose. Fixes FGAP-133.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/roadmap-plan.ts"
+      ],
+      "acceptance_criteria": [
+        "The roadmap's milestone/phase completeness verdict is computed via derivedRollupComplete (context-sdk.ts), not rollupPhaseStatus; a phase whose authored status is not complete never reads complete in the roadmap regardless of positioned-task coverage.",
+        "rollupPhaseStatus output, if retained, is labeled task-progress only; no consumer or renderer treats it as a completeness/reached verdict, and no code path derives a completeness verdict from it.",
+        "No membership is inferred from phase intent prose; scope reads only from task_positioned_in_phase edges.",
+        "Runtime demo: context-roadmap-load on the live substrate reports PHASE-M5-WRITE-INTEGRITY / MILE-005 as not-complete, with no bucket 'complete' contradicting stored status 'planned'.",
+        "npm run build + npm run check + npm test green; roadmap-plan.ts tests assert single-sourced completeness and the labeled progress-only display."
+      ],
+      "id": "TASK-105",
+      "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
+      "content_hash": "ec61290dd8e115ef8b560f50102e3c14783e4aaf559bfec3e8095c0587bf42a8",
+      "content_parent": "72bc8733db4782e7762efc661d3925f7c155950ea0c0578aa4698cb01bb69b87"
     }
   ],
   "schema_version": "1.0.1"

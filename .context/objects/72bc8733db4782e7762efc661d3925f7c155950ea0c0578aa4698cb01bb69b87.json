@@ -1,0 +1,14 @@
+{
+  "description": "Single-source the roadmap's completeness verdict through the authoritative derivedRollupComplete (context-sdk.ts). Eliminate rollupPhaseStatus's independent positioned-task aggregation as a completeness/reached signal; the roadmap's milestone/phase completeness derives from derivedRollupComplete — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use. rollupPhaseStatus is retained only as a labeled task-progress display, never surfaced as a completeness or reached verdict. Scope reads only from task_positioned_in_phase edges; no membership inferred from intent prose. Fixes FGAP-133.",
+  "status": "planned",
+  "files": [
+    "packages/pi-context/src/roadmap-plan.ts"
+  ],
+  "acceptance_criteria": [
+    "The roadmap's milestone/phase completeness verdict is computed via derivedRollupComplete (context-sdk.ts), not rollupPhaseStatus; a phase whose authored status is not complete never reads complete in the roadmap regardless of positioned-task coverage.",
+    "rollupPhaseStatus output, if retained, is labeled task-progress only; no consumer or renderer treats it as a completeness/reached verdict, and no code path derives a completeness verdict from it.",
+    "No membership is inferred from phase intent prose; scope reads only from task_positioned_in_phase edges.",
+    "Runtime demo: context-roadmap-load on the live substrate reports PHASE-M5-WRITE-INTEGRITY / MILE-005 as not-complete, with no bucket 'complete' contradicting stored status 'planned'.",
+    "npm run build + npm run check + npm test green; roadmap-plan.ts tests assert single-sourced completeness and the labeled progress-only display."
+  ]
+}

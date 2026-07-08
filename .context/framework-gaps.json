@@ -4755,7 +4755,7 @@
     },
     {
       "title": "Roadmap emits a false `complete` from a second completeness derivation divergent from the authoritative one (surfaces when positioned-task coverage is partial)",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "canonical_vocabulary": "single-source completeness derivation",
@@ -4785,8 +4785,10 @@
       "created_by": "agent/deepseek-v4-pro",
       "created_at": "2026-07-08T22:45:52.944Z",
       "oid": "9ef254bce9d25e19f5bed570b51bc3dc",
-      "content_hash": "b6afa19a491ff9c9cea95148e929c0e336ac57a96e08123e477c8238eeeaea18",
-      "content_parent": "8450c3e66f08ef5ebf76585f48f446c1c2b5a347503fb5698105fb98a1e48667"
+      "content_hash": "0940be89cd22a710b5db848a824e2a757fb3d22ec3c31656ce0577564c934c1b",
+      "content_parent": "b6afa19a491ff9c9cea95148e929c0e336ac57a96e08123e477c8238eeeaea18",
+      "closed_by": "human/davidryan@gmail.com",
+      "closed_at": "2026-07-09"
     }
   ]
 }

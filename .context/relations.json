@@ -10357,5 +10357,18 @@
       "refname": "working-substrate-is-the-aim"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "bcf7ca6d3fadffee69d103feb1661196",
+      "refname": "VER-083"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
+      "refname": "TASK-105"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

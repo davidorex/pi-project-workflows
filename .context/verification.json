@@ -2597,6 +2597,41 @@
       "id": "VER-082",
       "oid": "204db3129f7b14d7dd514dcdac59c779",
       "content_hash": "556bfe3fb51d482e363fac8d5c900ef39cb295eee882bb4017e43c595c5c7e86"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Merged to main (db4fa111) and rebuilt. Deterministic gate green: npm run build + npm run check (349 files clean) + npm test exit 0 (roadmap-plan 45/45, including the added FGAP-133 regression). Runtime demo: loadRoadmap on the live substrate reports MILE-005 status 'planned', PHASE-M5-WRITE-INTEGRITY status 'in-progress', taskProgress.bucket 'complete', and no `rollup` field — completeness (status) is decoupled from task-progress, so the false 'complete' verdict cannot arise. Fresh adversarial audit found no residual completeness-off-progress path, no missed rename, scripts type-checked, HTML consumer dry-run clean, docs coherent.",
+      "criteria_results": [
+        {
+          "criterion": "Roadmap completeness verdict computed via derivedRollupComplete (status), not rollupPhaseStatus; a phase whose authored status is not complete never reads complete regardless of positioned-task coverage.",
+          "status": "passed",
+          "evidence": "loadRoadmap sets milestone status from currentState (derivedRollupComplete-backed) and phase status from the authored field; runtime demo shows MILE-005 planned / PHASE-M5 in-progress while taskProgress.bucket is complete."
+        },
+        {
+          "criterion": "rollupPhaseStatus output labeled task-progress only; no consumer/renderer treats it as a completeness/reached verdict; no code path derives a completeness verdict from it.",
+          "status": "passed",
+          "evidence": "Field renamed rollup->taskProgress on MilestoneView/PhaseRollupView; renderRoadmap '**Task progress:**'; validateRoadmap warning reworded as data-quality; build-html-views label 'task progress'. Adversarial audit confirmed no completeness verdict derives from taskProgress."
+        },
+        {
+          "criterion": "No membership inferred from phase intent prose; scope reads only from task_positioned_in_phase edges.",
+          "status": "passed",
+          "evidence": "rollupPhaseStatus and its membership scope unchanged; no intent-parsing added (confirmed by diff + audit)."
+        },
+        {
+          "criterion": "Runtime demo: context-roadmap-load reports PHASE-M5/MILE-005 not-complete with no bucket 'complete' contradicting status 'planned'.",
+          "status": "passed",
+          "evidence": "loadRoadmap('.') demo output: MILE-005 status planned, taskProgress.bucket complete, no rollup field; assertion 'task-progress reads complete while status is not' true."
+        },
+        {
+          "criterion": "npm run build + check + test green; roadmap-plan.ts tests assert single-sourced completeness and the labeled progress-only display.",
+          "status": "passed",
+          "evidence": "build/check/test exit 0; roadmap-plan.test.ts renames to taskProgress, renderRoadmap regex asserts '**Task progress:**', and a new regression test decouples status from taskProgress."
+        }
+      ],
+      "id": "VER-083",
+      "oid": "bcf7ca6d3fadffee69d103feb1661196",
+      "content_hash": "88e7a307731856dd48ec7cdb2a455ec9ad53b4ff8a1dac831e1b7a1a176a729b"
     }
   ],
   "schema_version": "1.0.1"

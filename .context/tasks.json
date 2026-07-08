@@ -2139,7 +2139,7 @@
     },
     {
       "description": "Single-source the roadmap's completeness verdict through the authoritative derivedRollupComplete (context-sdk.ts). Eliminate rollupPhaseStatus's independent positioned-task aggregation as a completeness/reached signal; the roadmap's milestone/phase completeness derives from derivedRollupComplete — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use. rollupPhaseStatus is retained only as a labeled task-progress display, never surfaced as a completeness or reached verdict. Scope reads only from task_positioned_in_phase edges; no membership inferred from intent prose. Fixes FGAP-133.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/roadmap-plan.ts"
       ],
@@ -2152,8 +2152,8 @@
       ],
       "id": "TASK-105",
       "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
-      "content_hash": "ec61290dd8e115ef8b560f50102e3c14783e4aaf559bfec3e8095c0587bf42a8",
-      "content_parent": "72bc8733db4782e7762efc661d3925f7c155950ea0c0578aa4698cb01bb69b87"
+      "content_hash": "2e4041e9d063840f4c936bedc0ea7a6d2336e119dbba4fc61493e14cc178c2dc",
+      "content_parent": "ec61290dd8e115ef8b560f50102e3c14783e4aaf559bfec3e8095c0587bf42a8"
     }
   ],
   "schema_version": "1.0.1"

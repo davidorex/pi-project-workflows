@@ -1,0 +1,59 @@
+{
+  "title": "Gaps + issues in the pi-context → jit-agents rendering (agent-spec compilation) pipeline",
+  "status": "complete",
+  "layer": "L4",
+  "type": "audit",
+  "question": "What are the gaps and issues in the pi-context → jit-agents rendering pipeline — the agent-spec → prompt compilation that injects substrate context (contextBlocks) into dispatched agents?",
+  "method": "code-inspection of both compilation implementations + the workflow validation/type surfaces (step-shared.ts, pi-jit-agents/compile.ts, template-validation, workflow-sdk, types.d.ts, render-helpers.md)",
+  "scope": [
+    "repo @ branch context-jit-spec-v2, 2026-06-06",
+    "packages: pi-workflows, pi-jit-agents, pi-context",
+    "the agent-spec compilation/rendering pipeline (contextBlocks → prompt)"
+  ],
+  "findings_summary": "A code-inspection audit of the pi-context → jit-agents agent-spec rendering/compilation pipeline finds the most fundamental issue is TWO divergent compilation implementations that do not share behavior. The LEGACY path (pi-workflows/step-shared.ts) executes ALL workflow steps (step-agent, step-loop); the MODERN path (pi-jit-agents/compile.ts) is used ONLY by the renderItemById tool. Because the main execution path is legacy, every agent a workflow step dispatches gets none of the modern path's protections.\n\nLegacy-path gaps: (B1) no anti-injection boundaries — block content is injected as raw JSON straight into the prompt (ctx[key] = readBlock(...)), so block content is indistinguishable from instructions (a decision body containing 'ignore all previous instructions' is literal injection); the modern path wraps each block in <context_block role=\"data\"> with XML-entity escaping. (B2) no per-item resolution — object-form {name,item,depth,focus} entries are iterated as strings → garbage variable names. (B3) no budget enforcement — long block fields blow out the prompt window; no x-prompt-budget honored. (B4) no cross-reference recursion — resolve()/render_recursive() globals are never registered. (B5) no renderer registry. (B6) it swallows missing blocks to null (modern throws AgentCompileError).\n\nModern-path gaps: (C1) per-item injected items ({name:'decisions',item:'DEC-0001'}) are NOT macro-rendered — the template gets raw item JSON, not render_decision(dec,depth); macro output is only reachable via whole-block delegator macros. (C2) no declarative 'render item X at depth N' surface; depth/focus on ContextBlockRef sit inert, never consumed. (C3/C4/C5) the pi-workflows type system + template-validation + workflow-sdk still treat contextBlocks as string[] only — object-form entries crash workflow-sdk.ts:576 (path join), surface as false 'undeclared variable' validation errors, and aren't typed.\n\nCross-cutting: (D1) the resolve global is single-substrate (buildIdIndex) — no <alias>:<refname> / foreign-substrate classification in templates; (D2) no closure-table edge injection (relations.json / lens groupings can't be injected via contextBlocks); (D3) no dynamic/predicate item scoping (all-or-one-item granularity); (D4) the INJECTED_VARIABLES validation set is incomplete (only output_schema+loop); (D5) depth/focus are dead data — delegator macros hardcode depth=0, focus has no consumer; (D6) the renderer registry is block-kind-granular, not focus-granular; (D7) no workflow-level budget policy — budgetWarnings are collected on CompiledAgent but the executor never inspects them.\n\nHighest severity: the architectural split (most features exist only in the unused modern path) and the legacy path's missing anti-injection wrapping (a prompt-injection surface for every workflow-dispatched agent).",
+  "findings_document": "analysis/june 6 all gaps and issues in the pi-context → jit-agents rendering pipeline.md",
+  "grounding": {
+    "revisions": [
+      "repo @ context-jit-spec-v2, 2026-06-06"
+    ]
+  },
+  "grounded_at": "2026-06-06T00:00:00.000Z",
+  "stale_conditions": [
+    "pi-workflows step execution migrates from step-shared.ts to pi-jit-agents compileAgent (the two paths are unified)",
+    "pi-workflows' contextBlocks type + template-validation + workflow-sdk adopt the ContextBlockRef object form",
+    "anti-injection wrapping / budget enforcement / cross-reference recursion are added to the legacy step-shared.ts compilation path",
+    "ContextBlockRef depth/focus hints become consumed by a rendering path (no longer dead data)"
+  ],
+  "citations": [
+    {
+      "label": "Legacy compilation path — used by all workflow step execution (no anti-injection, no budget, no recursion, no per-item resolution)",
+      "path": "packages/pi-workflows/src/step-shared.ts",
+      "content_pin": "a34370316e19d3782f974d65984f326f30cbcc5efb68abc418cd011b368a9fee"
+    },
+    {
+      "label": "Modern compilation path — used only by renderItemById (anti-injection wrap, budget, recursion, renderer registry, tool-grant clamping) — claim re-reviewed 2026-07-08 (a docstring-only edit to resolveOutputSchemaForCompile touched this file; the compilation features the citation attests are unchanged)",
+      "path": "packages/pi-jit-agents/src/compile.ts",
+      "content_pin": "243f95115dd636d188fd8f8dd280f73f4c978fec00510b71a559be3ed72292ed"
+    },
+    {
+      "label": "Template validation — computes only the _<name> form; INJECTED_VARIABLES = {output_schema, loop} only",
+      "path": "packages/pi-workflows/src/template-validation.ts",
+      "content_pin": "e188f7aae02e1c1e9793eb4bb9cc9ffab006b0b309d71b84113befc714b7631d"
+    },
+    {
+      "label": "Workflow SDK validation treats every contextBlocks entry as a block filename (crashes on object-form)",
+      "path": "packages/pi-workflows/src/workflow-sdk.ts",
+      "lines": "576",
+      "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+    },
+    {
+      "label": "pi-workflows contextBlocks type is string[] only; pi-jit-agents has (string | ContextBlockRef)[] — claim re-reviewed 2026-07-08 (a LoadContext docblock alignment touched this file; the ContextBlockRef typing the citation attests is unchanged)",
+      "path": "packages/pi-jit-agents/src/types.ts",
+      "content_pin": "25ebaa9e39820068b941da1283b23410a5d3414ee42fbd0c8572204c000bbf83"
+    },
+    {
+      "label": "render-id-list helpers pass IDs to resolve() and silently fall back to bare-ID text on a miss",
+      "path": "templates/shared/render-helpers.md"
+    }
+  ]
+}

@@ -724,6 +724,23 @@
       "id": "DEC-0022",
       "oid": "f07c4fbfc8c2151a2f021b30b3248c52",
       "content_hash": "901e286a38f6b5a6f19d7d7ffb98b260a694962f93e5ea0751cd5101e263b297"
+    },
+    {
+      "title": "Dispatch model policy — mirror the workflow executor's model-config precedence; subprocess dispatch falls through to pi's default, in-process dispatch keeps the informed throw",
+      "status": "enacted",
+      "context": "FGAP-130: both dispatch sites hard-throw on model-less specs while the entire bundled spec set is model-less by design, models living in the substrate model-config block. The choice of dispatch model policy is determinable from the system's own facts: the workflow executor already implements a proven precedence (pi-workflows/src/dispatch.ts:76-85 — step.model ?? agentSpec.model ?? modelConfig.by_role[role] ?? modelConfig.default, omitting --models when nothing resolves so pi's own default applies; modelConfig from the substrate model-config block, workflow-executor.ts:765-772). Derivation: reuse the existing surface rather than invent a parallel one (no-parallel-ungated-paths discipline); the only dispatch-specific delta is forced by mechanism — a pi subprocess has pi's own default model available, an in-process executeAgent call does not. Investigation of record: analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md (Class B).",
+      "decision": "Dispatch model resolution is spec.model ?? model-config.by_role[spec.role] ?? model-config.default, reading the active substrate's model-config block with an absent block treated as null fall-through (byte-mirroring the executor's semantics). When nothing resolves: work-order subprocess dispatch omits --model and pi's own default applies inside the subprocess (exactly the executor's --models omission); in-process call-agent retains the hard throw — executeAgent requires a model — with the error text naming the model-config block as the remedy. No new mechanism, no dispatch-only model vocabulary.",
+      "consequences": [
+        "The 26 bundled specs become dispatchable via the work-order subprocess path with zero configuration (pi's default model) and via call-agent wherever a model-config block or spec model exists.",
+        "Model governance stays in one place — the model-config block — for both pipelines; spec authors keep the models-out-of-specs convention.",
+        "call-agent on a substrate with no model-config block and a model-less spec still refuses, now with an actionable message; that residual is the in-process mechanism's floor, not a policy choice.",
+        "Any future dispatch consumer inherits the same helper; divergence from the executor's precedence becomes a defect, not a variant."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "DEC-0023",
+      "oid": "b18ef2d3138f2e79c82d523921cc12ca",
+      "content_hash": "d3f95d793b606ba6f8ec423e0bfc654dabfb91c14ca36fa5eacf7cae30e7a076"
     }
   ],
   "schema_version": "1.0.1"

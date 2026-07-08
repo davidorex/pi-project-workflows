@@ -40,8 +40,14 @@ const PROMPT_ARG_LIMIT = 8000;
 const MAX_STDOUT_BYTES = 10 * 1024 * 1024;
 
 export interface DispatchArgsParams {
-	/** Model spec string passed straight to `--model` (supports `provider/id[:thinking]`). */
-	model: string;
+	/**
+	 * Model spec string passed straight to `--model` (supports
+	 * `provider/id[:thinking]`). Optional: when omitted the `--model` flag is not
+	 * emitted at all, so pi resolves its own default model inside the subprocess
+	 * (the fall-through the dispatch-model resolution takes when neither the spec
+	 * nor the model-config block names a model — DEC-0023).
+	 */
+	model?: string;
 	/** Composed tool grant (already intersected at the dispatch boundary). */
 	tools: string[];
 	/**
@@ -60,7 +66,8 @@ export interface DispatchArgsParams {
  * `--tools` would let pi enable its full default tool set.
  */
 export function buildDispatchArgs({ model, tools, promptArg }: DispatchArgsParams): string[] {
-	const args = ["--mode", "json", "--model", model];
+	const args = ["--mode", "json"];
+	if (model) args.push("--model", model);
 	if (tools.length > 0) {
 		args.push("--tools", tools.join(","));
 	} else {
@@ -94,7 +101,8 @@ function extractText(content: unknown): string {
 
 export interface RunPiSubprocessOptions {
 	cwd: string;
-	model: string;
+	/** Model spec; when omitted pi resolves its own default inside the subprocess. */
+	model?: string;
 	tools: string[];
 	prompt: string;
 	timeoutMs?: number;

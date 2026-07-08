@@ -9,12 +9,14 @@
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
 import { compileAgent } from "@davidorex/pi-jit-agents/compile";
 import { executeAgent as canonicalExecuteAgent } from "@davidorex/pi-jit-agents/runtime";
-import { createTemplateEnv } from "@davidorex/pi-jit-agents/template";
+import { bundledTemplateDir, createTemplateEnv } from "@davidorex/pi-jit-agents/template";
 import type { CompiledAgent, DispatchContext, JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { Api, Model } from "@earendil-works/pi-ai";
 import { Type } from "@earendil-works/pi-ai";
 import type { AgentToolResult, AgentToolUpdateCallback, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { composeToolGrant } from "./capability-composer.js";
+import { dispatchLoadContext } from "./dispatch-loader.js";
+import { resolveDispatchModel } from "./dispatch-model.js";
 
 function parseModelSpec(spec: string): { provider: string; modelId: string } {
 	const slashIndex = spec.indexOf("/");
@@ -42,7 +44,8 @@ export const callAgentTool = {
 	promptSnippet: "Dispatch a typed sub-agent with scoped capability grant.",
 	parameters: Type.Object({
 		spec_name: Type.String({
-			description: "Name of the agent spec to load (resolves to <name>.agent.yaml in the agents tier).",
+			description:
+				"Name of the agent spec to load (resolves to <name>.agent.yaml searched across the substrate agents/ dir, then ~/.pi/agent/agents/, then the bundled pi-workflows agents).",
 		}),
 		input: Type.Unknown({ description: "Typed input passed to the agent's compileAgent context." }),
 		parent_grant: Type.Optional(
@@ -69,18 +72,25 @@ export const callAgentTool = {
 		_onUpdate: AgentToolUpdateCallback,
 		ctx: ExtensionContext,
 	): Promise<AgentToolResult<JitAgentResult>> {
-		// 1. Load spec via jit-agents canonical loader
-		const loadAgent = createAgentLoader({ cwd: ctx.cwd });
+		// 1. Load spec via jit-agents canonical loader (builtin tier = bundled pi-workflows agents/)
+		const loadAgent = createAgentLoader(dispatchLoadContext(ctx.cwd));
 		const spec = loadAgent(params.spec_name);
 
-		// 2. Compile spec with input
-		const env = createTemplateEnv({ cwd: ctx.cwd });
+		// 2. Compile spec with input (builtinDir = bundled pi-jit-agents templates/,
+		// so a bundled spec's task/system templates resolve without a local copy)
+		const env = createTemplateEnv({ cwd: ctx.cwd, builtinDir: bundledTemplateDir() });
 		const compiled = compileAgent(spec, { env, input: params.input, cwd: ctx.cwd });
 
-		// 3. Resolve model + auth via ExtensionContext.modelRegistry
-		const modelSpec = compiled.model ?? spec.model;
+		// 3. Resolve model + auth via ExtensionContext.modelRegistry. Precedence
+		// (DEC-0023): compiled/spec model → model-config by_role[role] → default.
+		// In-process dispatch has no pi subprocess to fall through to, so a still-null
+		// resolution is an informed throw naming the model-config block as the remedy.
+		const modelSpec = compiled.model ?? spec.model ?? resolveDispatchModel(ctx.cwd, spec);
 		if (!modelSpec) {
-			throw new Error(`call-agent: agent '${params.spec_name}' has no model specified.`);
+			throw new Error(
+				`call-agent: agent '${params.spec_name}' has no model — declare one on the spec, ` +
+					`or add a matching entry to the substrate's model-config block (by_role['${spec.role ?? ""}'] or default).`,
+			);
 		}
 		const { provider, modelId } = parseModelSpec(modelSpec);
 		const model = ctx.modelRegistry.find(provider, modelId);

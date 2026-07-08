@@ -93,14 +93,16 @@ export interface ContextBlockRef {
  * Options for loadAgent / createAgentLoader.
  *
  * Per D7 (jit-agents-spec.md §4), the loader searches three tiers in order:
- *   1. {cwd}/.project/agents/
+ *   1. {contextDir}/agents/ — the active substrate dir resolved from {cwd}'s
+ *      .pi-context.json pointer via tryResolveContextDir(cwd); tier omitted
+ *      when no pointer resolves
  *   2. {userDir ?? ~/.pi/agent/agents/}
  *   3. {builtinDir}   (only when supplied)
  *
  * Per D3, .pi/agents/ is NOT searched — that path is Pi platform territory.
  */
 export interface LoadContext {
-	/** Project root. Used to resolve the project-level tier and as base for block reads. */
+	/** Project root. Used to resolve the substrate agents tier and as base for block reads. */
 	cwd: string;
 	/** Optional consumer-supplied builtin agents directory. When absent, builtin tier is skipped. */
 	builtinDir?: string;

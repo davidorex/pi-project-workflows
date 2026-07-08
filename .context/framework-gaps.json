@@ -4486,7 +4486,7 @@
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
           "reference": "dispatchTargetAgent: input validated against wo.input_contract (validateWorkOrderInput) before compile/spawn; the composed grant clamped to wo.scope.operations (clampToScope) becomes the subprocess --tools allowlist — both FIXED. context_blocks and output_contract still have zero consumption in this file.",
-          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
+          "content_pin": "a45febac3a2e1e767288db02aeaa7df38d357eaec859d663ac08a52d6c934ed9"
         },
         {
           "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
@@ -4505,8 +4505,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "06a67e36505d62cc09efc7d36076e3f41ed9353f8b144d923a669b7bed17fbf2",
-      "content_parent": "892ab053675877c83351f6cde26cbc0cb67e15206ff912444b816403959fd6c0"
+      "content_hash": "9acd079c9d41778cbe059a8461cf7f0bf1b71043b6bf95a17141aa8e8e86d047",
+      "content_parent": "f98bd2e09687d746c42bd99eade13aa14a001c0e840439e0605dad48dfa1df2c"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
@@ -4524,7 +4524,7 @@
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
           "reference": "attestedCommit invoked as a library call inside the ungated run-work-order-loop — the gated commit-attested tool's effect without its gate",
-          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
+          "content_pin": "a45febac3a2e1e767288db02aeaa7df38d357eaec859d663ac08a52d6c934ed9"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4538,8 +4538,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "86a978bdff51385bf14bfce30c5e256dab286a2aaebf013dc56a59268ec1b347",
-      "content_parent": "f76d7bdf134532c8b987c1ca3ba4f401ba79fa29a90c7165a6bbd70625801a2f"
+      "content_hash": "d240c4b6df367d854264c2956072662eb01501489f7c05030ccf27cd2ddb98d3",
+      "content_parent": "66f6c784b2792650f24436d6dd7e22ac61faa702d4c6cbabf61e25295c42126d"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
@@ -4551,13 +4551,13 @@
       "evidence": [
         {
           "file": "packages/pi-jit-agents/src/agent-spec.ts",
-          "reference": "219-243 three-tier search; docblock's '.project/agents' wording stale (resolves via tryResolveContextDir)",
-          "content_pin": "3ec23ff4db21ad039badd3c4ef76841dcc8836bc085ced9b84016f93708784cb"
+          "reference": "219-243 three-tier search; the builtin tier participates only when the consumer supplies ctx.builtinDir (unchanged, by design — the library never hardcodes a consumer dir); the docblock's stale '.project/agents' tier wording is aligned to the contextDir-resolved reality on fix/fgap-127-bundled-agents-tier",
+          "content_pin": "e2f3c7f93df919e6f0886fb0016bae8647582ccbcb17302dea8c2f77fe3f19cb"
         },
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "reference": "createAgentLoader({ cwd }) constructed with no builtinDir (call-agent-tool.ts same) — the packaged specs are off this tier's search path",
-          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
+          "reference": "dispatchTargetAgent now constructs the loader via dispatchLoadContext(cwd) (src/dispatch-loader.ts), supplying pi-workflows' bundled agents/ as builtinDir — call-agent-tool.ts rewired identically; the packaged specs are on the dispatch search path (fix on fix/fgap-127-bundled-agents-tier, verification pending)",
+          "content_pin": "a45febac3a2e1e767288db02aeaa7df38d357eaec859d663ac08a52d6c934ed9"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4571,8 +4571,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-127",
       "oid": "c2bc490c5b917dcbca4c4065002a1a42",
-      "content_hash": "8df62087def22d304acf8ca6c78e7c90cde46ebb597e77020a98e4c06d252741",
-      "content_parent": "66eb4bf1f6d8d94c5d4bfe22282b55fdcb9af260e254f8c1de5faf69d5f23f38"
+      "content_hash": "2e24eef7c93b7cd4038ef78a13200a8a684e9d1ada9d9503d18eceb191604390",
+      "content_parent": "1ce05adf847db032c230054bbaee540ecfff96918b6677718652268910fef356"
     },
     {
       "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
@@ -4585,7 +4585,7 @@
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
           "reference": "the human-OK gate checks ctx.hasUI === false before ctx.ui.confirm and records aborted-non-interactive (mislabel FIXED); the retry path is still single-shot non-interactively (no opt-in bounded-retry policy)",
-          "content_pin": "b21dd26f41df067e7fe2fce1d50d588f4a9752525b16217282dfa2391039225d"
+          "content_pin": "a45febac3a2e1e767288db02aeaa7df38d357eaec859d663ac08a52d6c934ed9"
         },
         {
           "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
@@ -4599,8 +4599,74 @@
       "created_at": "2026-07-07",
       "id": "FGAP-128",
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
-      "content_hash": "a9cb34173eeca80f5534712d37c0eaa6335d431d529f752a80e764487d3921f2",
-      "content_parent": "aea29fdfd983569313b8d613672d2d1975d1a6d516c726eef8068ec4d1b0875b"
+      "content_hash": "a824c8d9dc9f2c9b697af2c840da487aa81210f951ddb61e80dd9a1e62eb34a0",
+      "content_parent": "e0754514e03bbdc6515fd011aafe9c55cd8ea7967f5ff2f489f274630fb5e794"
+    },
+    {
+      "title": "Template-resolution divergence between the two spec pipelines — jit parse absolutizes template refs, so every bundled spec is uncompilable on the dispatch path",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-jit-agents",
+      "canonical_vocabulary": "loader-tier template resolution on the dispatch path",
+      "description": "pi-jit-agents parseAgentYaml resolves every relative template ref specDir-relative to an ABSOLUTE path (resolveSpecPath, agent-spec.ts:41-46, applied :191/:193), and renderTemplateFile bypasses the env loader for absolute paths (template.ts:116-126, readFileSync :121-123). The 26 bundled specs in pi-workflows/agents/ all carry template: refs whose files live under pi-jit-agents/templates/ per-agent subdirs (DEC-0049 relocation), not beside the specs — so on the dispatch path (call-agent, work-order loop) loadAgent succeeds and compileAgent throws ENOENT for every bundled spec. The working pi-workflows executor proves the correct shape: its parser keeps refs as loader-resolved NAMES (pi-workflows/src/agent-spec.ts:123-125) through a three-tier env whose builtin tier is bundledTemplateDir() (pi-workflows/src/template.ts:26,29,36) and whose renderTemplateFile has no absolute bypass (:94-100). Compounding: both dispatch sites build createTemplateEnv({ cwd }) with NO builtinDir (call-agent-tool.ts:79, work-order-loop.ts:167), and three analyzer system-templates begin {% extends \"analyzers/base-analyzer.md\" %} (templates/analyzers/quality.md:1, structure.md:1, patterns.md:1) — loader-resolved even from an absolute entry, so the bundled tier is required in the env regardless. Sibling instance: phase-author.agent.yaml:17 carries a malformed 'templates/' path prefix broken on BOTH pipelines. Class: any consumer of the jit parse + dispatch env combination inherits the failure for any spec whose templates are loader-tier resources; no test on any path compiles a bundled spec (dispatch-loader.test.ts stops at loadAgent; call-agent-tool.test.ts uses inline prompts; pi-workflows agent-spec.test.ts:282-368 is parse-only).",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+          "reference": "Class A: root cause, shape, ENOENT reproduction (fresh substrate, investigator), class statement, per-anchor re-verified evidence, prior-art and test-gap survey",
+          "content_pin": "f9ef7380b537e941d6149d9f80285930be277ebd9a6bac897b89e958aef91705"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "reference": "resolveSpecPath now absolutizes a relative ref only when it exists beside the spec OR — for bundled-tier specs only (siblingProbe threaded from createAgentLoader's builtin-tier match) — at the package-root sibling location, otherwise preserving it as a loader-resolvable name (TASK-104 fix in flight on fix/fgap-127-bundled-agents-tier; previously unconditional absolutization — the defect this gap tracks; the tier-scoped sibling probe closes the outputSchema member and forecloses the local/user-tier shadowing vector probe 3 surfaced); applied to system/task templates and outputSchema",
+          "content_pin": "e2f3c7f93df919e6f0886fb0016bae8647582ccbcb17302dea8c2f77fe3f19cb"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/template.ts",
+          "reference": ":116-126 renderTemplateFile absolute-path bypass (readFileSync :121-123); createTemplateEnv tiers :60-81 — builtin tier only when ctx.builtinDir supplied; bundledTemplateDir helper :39-42, now wired at both dispatch sites by the TASK-104 fix in flight",
+          "content_pin": "ddab0306bd0e0a337a945474074b2e38d0c2ee5b9a51b47c7781cda6d5e936f9"
+        }
+      ],
+      "impact": "The FGAP-127 loader fix delivers name-resolution only: every one of the 26 bundled specs fails at compile on both dispatch paths, so bundled-agent dispatch remains impossible end to end; the dispatch template env additionally cannot resolve {% extends %} chains even for local specs.",
+      "proposed_resolution": "Converge the dispatch path onto the proven executor mechanism (user-approved plan, 2026-07-08): resolveSpecPath absolutizes a relative ref ONLY when the file exists beside the spec, otherwise returns it unchanged as a loader-resolvable name; both dispatch sites pass builtinDir: bundledTemplateDir() to createTemplateEnv; fix the phase-author.agent.yaml ref; end-to-end compile tests for a bundled spec and an extends-bearing analyzer spec.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-129",
+      "oid": "c4a5cc51e493bf6c9b0ec31189133a5d",
+      "content_hash": "8ab094dc0af95df18d42e84738db66cb4b7711c89fdb6747bc15a8e422bb2e11",
+      "content_parent": "7d65579ba06d0f34de7fa99423ce31c5b89c72fed476eba73faf87fd49c7f72a"
+    },
+    {
+      "title": "Dispatch model-resolution divergence — bundled specs are model-less by design and both dispatch sites hard-throw, with no model-config fallback",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-agent-dispatch",
+      "canonical_vocabulary": "model-config precedence on the dispatch path",
+      "description": "Zero of the 26 bundled specs declare model: — by design ('model comes from .project/model-config.json, not agent spec', pi-workflows/src/agent-spec.test.ts:291). The workflow executor resolves models as step.model ?? agentSpec.model ?? modelConfig.by_role[role] ?? modelConfig.default and OMITS --models when nothing resolves so pi's own default applies (pi-workflows/src/dispatch.ts:76-85; modelConfig read from the substrate model-config block, workflow-executor.ts:765-772). The dispatch path has none of this: call-agent-tool.ts:83-86 and work-order-loop.ts:174-177 hard-throw on a model-less spec, and pi-jit-agents has no fallback (compile.ts:574 passes spec.model verbatim). Class: even after the template class (FGAP-129) is fixed, every model-less spec — the entire bundled set — remains undispatchable on both dispatch paths.",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+          "reference": "Class B: root cause, shape, the production precedence facts, per-anchor re-verified evidence",
+          "content_pin": "f9ef7380b537e941d6149d9f80285930be277ebd9a6bac897b89e958aef91705"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "reference": "model resolution now compiled.model ?? spec.model ?? resolveDispatchModel(cwd, spec) with the residual throw naming the model-config block (TASK-104 fix in flight; previously an unconditional hard-throw on any model-less spec — the defect this gap tracks; work-order-loop.ts resolves identically and omits the subprocess --model when null)",
+          "content_pin": "c224e72286c51aa8f639dcf2212473a044253aeeb706be076e30c7fbcdec3f0f"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": ":76-85 the proven precedence incl. --models omission when nothing resolves; modelConfig sourced from the model-config block (workflow-executor.ts:765-772)",
+          "content_pin": "1d2aa7f231715588a5e6463c605f0bcc47edbba021c7b255476cb3fd182a31f7"
+        }
+      ],
+      "impact": "Bundled-agent dispatch fails 100% of the time on a model axis independent of template resolution; the dispatch surface contradicts the spec-authoring convention that models live in model-config, forcing spec forks or hand-edits.",
+      "proposed_resolution": "Per the derived dispatch model-policy decision (user-approved plan, 2026-07-08): a resolveDispatchModel(cwd, spec) helper implementing spec.model ?? model-config.by_role[spec.role] ?? model-config.default (absent block = null fall-through, mirroring the executor); work-order subprocess dispatch omits --model when null (pi defaults inside the subprocess); in-process call-agent keeps the throw when nothing resolves, with the error naming the model-config block as the remedy; precedence unit cells.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-130",
+      "oid": "8f5001956b2a2f478363e12604207534",
+      "content_hash": "0ae50d509fcc659dca637f4327d87b6d9be884e8a7ab43487e068e223559cc1d",
+      "content_parent": "c9bef5206e48f87923f07fe5c0eb9f760c72311f5188a89c5622a9444c85027d"
     }
   ]
 }

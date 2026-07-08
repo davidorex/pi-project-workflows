@@ -189,7 +189,14 @@ function wrapItemContent(blockName: string, itemId: string, content: unknown): s
 /**
  * Resolve an outputSchema value that may be a `block:<name>` sentinel.
  *
- * Non-sentinel values are returned unchanged (they are already absolute per D1).
+ * A `block:<name>` sentinel is resolved to the active substrate's
+ * schemas/<name>.schema.json under `cwd`. Non-sentinel values are passed
+ * through UNCHANGED: parse's existence-gated resolveSpecPath already
+ * absolutized the ref when it found the file on disk (spec-adjacent or the
+ * package-root sibling schemas/ dir). A ref that resolved at neither probe
+ * survives here as a bare name — no downstream loader tier resolves an
+ * outputSchema, so that name's read fails loudly at buildPhantomTool /
+ * validateFromFile rather than silently mis-resolving.
  */
 function resolveOutputSchemaForCompile(outputSchema: string | undefined, cwd: string): string | undefined {
 	if (!outputSchema) return undefined;

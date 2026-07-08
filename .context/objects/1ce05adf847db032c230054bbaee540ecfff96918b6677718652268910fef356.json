@@ -1,0 +1,27 @@
+{
+  "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "agents-tier seeding in the install ceremony",
+  "description": "The jit agent loader's project tier is <contextDir>/agents/ (pi-jit-agents agent-spec.ts:219-243; ~/.pi/agent/agents/ second; builtinDir third only when the caller supplies one). The work-order loop and call-agent construct the loader with cwd only (work-order-loop.ts:116, call-agent-tool.ts:73) — no builtinDir — so the 30+ packaged specs in pi-workflows/agents/ and pi-behavior-monitors/agents/ (resolved by those packages' own loaders) are unreachable for work-order dispatch. Nothing creates or seeds <contextDir>/agents/: context-init/accept-all/install materialize config, schemas, and starter blocks only; no agents concept exists in the install ceremony or samples catalog. The only in-band materializer is author-agent-spec (mkdirs on first authoring, author-agent-spec-tool.ts:82-83) — which is interactively gated (FGAP-126), so on a fresh substrate driven from pi -p the loop's precondition is unproducible. Class: the install ceremony seeds a subset of the surfaces the runtime resolves from (schemas and blocks seeded; agents not; templates similar but package-defaulted).",
+  "evidence": [
+    {
+      "file": "packages/pi-jit-agents/src/agent-spec.ts",
+      "reference": "219-243 three-tier search; the builtin tier participates only when the consumer supplies ctx.builtinDir (unchanged, by design — the library never hardcodes a consumer dir); the docblock's stale '.project/agents' tier wording is aligned to the contextDir-resolved reality on fix/fgap-127-bundled-agents-tier",
+      "content_pin": "3d4b963c56d2aa36b90fc2b75bae3fcad6388bcf7779acdb44cd7f34b1cf4688"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": "dispatchTargetAgent now constructs the loader via dispatchLoadContext(cwd) (src/dispatch-loader.ts), supplying pi-workflows' bundled agents/ as builtinDir — call-agent-tool.ts rewired identically; the packaged specs are on the dispatch search path (fix on fix/fgap-127-bundled-agents-tier, verification pending)",
+      "content_pin": "a45febac3a2e1e767288db02aeaa7df38d357eaec859d663ac08a52d6c934ed9"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 4: ceremony survey (install copies installed_schemas/installed_blocks only), AgentNotFoundError reproduction, compounding with the gated author tool",
+      "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+    }
+  ],
+  "impact": "run-work-order-loop on a fresh substrate throws AgentNotFoundError for every target_agent; combined with FGAP-126, the loop's precondition cannot be produced in the loop's own operating context — hand-writing spec files into an unseeded directory is the only path.",
+  "proposed_resolution": "Under FEAT-014, per the dispatch-architecture decision: seed the agents tier in the install ceremony (an installed_agents[] manifest beside schemas/blocks) and/or wire a bundled builtinDir into the dispatch loaders; align the loader docblock's stale tier wording."
+}

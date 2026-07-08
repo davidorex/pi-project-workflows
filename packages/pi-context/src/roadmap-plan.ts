@@ -190,21 +190,35 @@ export interface TaskRow {
 /**
  * One member phase of a milestone: the parent of a
  * phase_positioned_in_milestone edge, with its tasks (parents of
- * task_positioned_in_phase edges targeting it) and a status rollup over those
- * task items.
+ * task_positioned_in_phase edges targeting it) and a task-progress aggregation
+ * over those task items.
+ *
+ * `status` is the authored phase status — for a non-rollup-kind phase this IS
+ * the authoritative completeness verdict for the phase (the phase schema
+ * requires status; it is optional here only because the view is built from
+ * membership edges whose phase endpoint may not resolve to a phase item —
+ * a dangling / wrong-kind edge — in which case the resolved view carries none).
+ * `taskProgress` is a task-status aggregation over the phase's member tasks for
+ * PROGRESS display ONLY and is NOT a completeness verdict — never read it as
+ * "reached"/"complete".
  */
 export interface PhaseRollupView {
 	id: string;
 	name?: string;
 	status?: string;
 	tasks: TaskRow[];
-	rollup: PhaseStatus;
+	taskProgress: PhaseStatus;
 }
 
 /**
  * One milestone in the derived roadmap. `status` + `phaseCount` come from
- * currentState's config-declared milestone rollup (reached/planned); `rollup`
- * aggregates ALL member phases' task items in a single rollupPhaseStatus pass.
+ * currentState's config-declared milestone rollup (reached/planned): `status`
+ * is the AUTHORITATIVE completeness verdict (currentState's
+ * derivedRollupComplete-backed rollup). `taskProgress` aggregates ALL member
+ * phases' task items in a single rollupPhaseStatus pass — it is a task-status
+ * aggregation for PROGRESS display ONLY and is NOT a completeness verdict
+ * (`taskProgress.bucket === "complete"` does NOT mean the milestone is reached;
+ * read `status` for completeness).
  */
 export interface MilestoneView {
 	id: string;
@@ -212,7 +226,7 @@ export interface MilestoneView {
 	status: string;
 	phaseCount: number;
 	phases: PhaseRollupView[];
-	rollup: PhaseStatus;
+	taskProgress: PhaseStatus;
 }
 
 /**
@@ -275,8 +289,10 @@ const ROADMAP_WARNING_CODES: ReadonlySet<RoadmapValidationIssue["code"]> = new S
  *      phaseCount 0); phases = parents of phase_positioned_in_milestone edges
  *      (child = the milestone), each with tasks = parents of
  *      task_positioned_in_phase edges (child = the phase) and a
- *      rollupPhaseStatus over the resolved task items; the milestone-level
- *      rollup aggregates all member phases' task items in one call.
+ *      rollupPhaseStatus over the resolved task items surfaced as
+ *      `taskProgress` (progress-display aggregation, NOT the completeness
+ *      verdict — that is the milestone/phase `status`); the milestone-level
+ *      `taskProgress` aggregates all member phases' task items in one call.
  *
  * The returned `edges` field is the authoritative scoped subset that the
  * renderer consumes for per-milestone adjacency lines.
@@ -356,7 +372,7 @@ export function loadRoadmap(cwd: string): MilestoneRoadmapView | { error: string
 				...(typeof phaseLoc?.item.name === "string" ? { name: phaseLoc.item.name } : {}),
 				...(typeof phaseLoc?.item.status === "string" ? { status: phaseLoc.item.status } : {}),
 				tasks,
-				rollup: rollupPhaseStatus(taskItems, vocabulary),
+				taskProgress: rollupPhaseStatus(taskItems, vocabulary),
 			};
 		});
 
@@ -366,7 +382,7 @@ export function loadRoadmap(cwd: string): MilestoneRoadmapView | { error: string
 			status: derived?.status ?? "planned",
 			phaseCount: derived?.phaseCount ?? 0,
 			phases,
-			rollup: rollupPhaseStatus(allTaskItems, vocabulary),
+			taskProgress: rollupPhaseStatus(allTaskItems, vocabulary),
 		};
 	});
 
@@ -385,8 +401,9 @@ export function loadRoadmap(cwd: string): MilestoneRoadmapView | { error: string
  *   roadmap_milestone_cycle (error) — a cycle in the precedes graph.
  *   roadmap_milestone_missing (error) — a phase_positioned_in_milestone edge
  *     whose child is not a known milestone.
- *   roadmap_status_unknown_value (warning) — a member phase whose task rollup
- *     buckets unknown with total > 0 (items lack a recognised status value).
+ *   roadmap_status_unknown_value (warning) — a member phase whose task-progress
+ *     rollup buckets unknown with total > 0 (items lack a recognised status
+ *     value). A task-progress / data-quality warning, NOT a completeness check.
  *   roadmap_milestone_isolated (info) — a milestone with zero precedes edges
  *     while at least one precedes edge exists elsewhere. Info NEVER flips
  *     status: status = invalid iff any error-code issue; warnings iff any
@@ -466,13 +483,13 @@ export function validateRoadmap(cwd: string): {
 
 		for (const m of view.milestones) {
 			for (const p of m.phases) {
-				if (p.rollup.bucket === "unknown" && p.rollup.total > 0) {
+				if (p.taskProgress.bucket === "unknown" && p.taskProgress.total > 0) {
 					issues.push({
 						code: "roadmap_status_unknown_value",
 						message: diagMessage(
 							cwd,
 							"roadmap_status_unknown_value",
-							`Phase '${p.id}' in milestone '${m.id}' rolls up to bucket 'unknown' across ${p.rollup.total} item(s) — items lack a recognised status enum value.`,
+							`Phase '${p.id}' in milestone '${m.id}' has a task-progress rollup bucketing 'unknown' across ${p.taskProgress.total} task(s) — tasks lack a recognised status enum value (a data-quality warning about task progress, not a completeness check).`,
 						),
 						milestone_id: m.id,
 						phase_id: p.id,
@@ -584,9 +601,9 @@ export function renderRoadmap(view: MilestoneRoadmapView): string {
 			.sort();
 		lines.push(`**Preceded by:** ${incoming.length > 0 ? incoming.join(", ") : "—"}`);
 
-		const c = m.rollup.counts;
+		const c = m.taskProgress.counts;
 		lines.push(
-			`**Rollup:** complete=${c.complete} in_progress=${c.in_progress} blocked=${c.blocked} todo=${c.todo} unknown=${c.unknown} (total=${m.rollup.total})`,
+			`**Task progress:** complete=${c.complete} in_progress=${c.in_progress} blocked=${c.blocked} todo=${c.todo} unknown=${c.unknown} (total=${m.taskProgress.total})`,
 		);
 		lines.push("");
 

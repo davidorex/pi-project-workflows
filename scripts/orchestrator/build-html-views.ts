@@ -1133,11 +1133,11 @@ function renderRoadmapSection(view) {
     else for (const pid of preceded) chipsWrap.appendChild(chip(pid));
     card.appendChild(el("div", { class: "field-row" }, el("span", { class: "field-label" }, "preceded by"), chipsWrap));
 
-    const c = m.rollup.counts;
+    const c = m.taskProgress.counts;
     card.appendChild(el("div", { class: "field-row" },
-      el("span", { class: "field-label" }, "rollup"),
+      el("span", { class: "field-label" }, "task progress"),
       el("span", {}, "complete=" + c.complete + " in_progress=" + c.in_progress + " blocked=" + c.blocked +
-        " todo=" + c.todo + " unknown=" + c.unknown + " (total=" + m.rollup.total + ")"),
+        " todo=" + c.todo + " unknown=" + c.unknown + " (total=" + m.taskProgress.total + ")"),
     ));
 
     for (const p of m.phases) {

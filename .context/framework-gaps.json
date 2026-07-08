@@ -4601,6 +4601,70 @@
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
       "content_hash": "e0754514e03bbdc6515fd011aafe9c55cd8ea7967f5ff2f489f274630fb5e794",
       "content_parent": "a9cb34173eeca80f5534712d37c0eaa6335d431d529f752a80e764487d3921f2"
+    },
+    {
+      "title": "Template-resolution divergence between the two spec pipelines — jit parse absolutizes template refs, so every bundled spec is uncompilable on the dispatch path",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-jit-agents",
+      "canonical_vocabulary": "loader-tier template resolution on the dispatch path",
+      "description": "pi-jit-agents parseAgentYaml resolves every relative template ref specDir-relative to an ABSOLUTE path (resolveSpecPath, agent-spec.ts:41-46, applied :191/:193), and renderTemplateFile bypasses the env loader for absolute paths (template.ts:116-126, readFileSync :121-123). The 26 bundled specs in pi-workflows/agents/ all carry template: refs whose files live under pi-jit-agents/templates/ per-agent subdirs (DEC-0049 relocation), not beside the specs — so on the dispatch path (call-agent, work-order loop) loadAgent succeeds and compileAgent throws ENOENT for every bundled spec. The working pi-workflows executor proves the correct shape: its parser keeps refs as loader-resolved NAMES (pi-workflows/src/agent-spec.ts:123-125) through a three-tier env whose builtin tier is bundledTemplateDir() (pi-workflows/src/template.ts:26,29,36) and whose renderTemplateFile has no absolute bypass (:94-100). Compounding: both dispatch sites build createTemplateEnv({ cwd }) with NO builtinDir (call-agent-tool.ts:79, work-order-loop.ts:167), and three analyzer system-templates begin {% extends \"analyzers/base-analyzer.md\" %} (templates/analyzers/quality.md:1, structure.md:1, patterns.md:1) — loader-resolved even from an absolute entry, so the bundled tier is required in the env regardless. Sibling instance: phase-author.agent.yaml:17 carries a malformed 'templates/' path prefix broken on BOTH pipelines. Class: any consumer of the jit parse + dispatch env combination inherits the failure for any spec whose templates are loader-tier resources; no test on any path compiles a bundled spec (dispatch-loader.test.ts stops at loadAgent; call-agent-tool.test.ts uses inline prompts; pi-workflows agent-spec.test.ts:282-368 is parse-only).",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+          "reference": "Class A: root cause, shape, ENOENT reproduction (fresh substrate, investigator), class statement, per-anchor re-verified evidence, prior-art and test-gap survey",
+          "content_pin": "f9ef7380b537e941d6149d9f80285930be277ebd9a6bac897b89e958aef91705"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "reference": "resolveSpecPath :41-46 absolutizes relative refs; applied to system/task templates :191/:193",
+          "content_pin": "56eb86d3318f108a46e99106e66fa26aad55959fb8a696a418bdaba1309a19da"
+        },
+        {
+          "file": "packages/pi-jit-agents/src/template.ts",
+          "reference": ":116-126 renderTemplateFile absolute-path bypass (readFileSync :121-123); createTemplateEnv tiers :60-81 — builtin tier only when ctx.builtinDir supplied; bundledTemplateDir helper :39-42 exists but is unwired at the dispatch sites",
+          "content_pin": "ddab0306bd0e0a337a945474074b2e38d0c2ee5b9a51b47c7781cda6d5e936f9"
+        }
+      ],
+      "impact": "The FGAP-127 loader fix delivers name-resolution only: every one of the 26 bundled specs fails at compile on both dispatch paths, so bundled-agent dispatch remains impossible end to end; the dispatch template env additionally cannot resolve {% extends %} chains even for local specs.",
+      "proposed_resolution": "Converge the dispatch path onto the proven executor mechanism (user-approved plan, 2026-07-08): resolveSpecPath absolutizes a relative ref ONLY when the file exists beside the spec, otherwise returns it unchanged as a loader-resolvable name; both dispatch sites pass builtinDir: bundledTemplateDir() to createTemplateEnv; fix the phase-author.agent.yaml ref; end-to-end compile tests for a bundled spec and an extends-bearing analyzer spec.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-129",
+      "oid": "c4a5cc51e493bf6c9b0ec31189133a5d",
+      "content_hash": "b6c87d4caf98fce572e058496eeb715208c754fd52b093fc8c7a783456fef31d"
+    },
+    {
+      "title": "Dispatch model-resolution divergence — bundled specs are model-less by design and both dispatch sites hard-throw, with no model-config fallback",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-agent-dispatch",
+      "canonical_vocabulary": "model-config precedence on the dispatch path",
+      "description": "Zero of the 26 bundled specs declare model: — by design ('model comes from .project/model-config.json, not agent spec', pi-workflows/src/agent-spec.test.ts:291). The workflow executor resolves models as step.model ?? agentSpec.model ?? modelConfig.by_role[role] ?? modelConfig.default and OMITS --models when nothing resolves so pi's own default applies (pi-workflows/src/dispatch.ts:76-85; modelConfig read from the substrate model-config block, workflow-executor.ts:765-772). The dispatch path has none of this: call-agent-tool.ts:83-86 and work-order-loop.ts:174-177 hard-throw on a model-less spec, and pi-jit-agents has no fallback (compile.ts:574 passes spec.model verbatim). Class: even after the template class (FGAP-129) is fixed, every model-less spec — the entire bundled set — remains undispatchable on both dispatch paths.",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+          "reference": "Class B: root cause, shape, the production precedence facts, per-anchor re-verified evidence",
+          "content_pin": "f9ef7380b537e941d6149d9f80285930be277ebd9a6bac897b89e958aef91705"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "reference": ":83-86 hard-throw on model-less spec (work-order-loop.ts:174-177 identical pattern)",
+          "content_pin": "8d5ee3c648416c200fe7c07dbec53d87bb7428c3bff5c2049fe689d9ee281cd7"
+        },
+        {
+          "file": "packages/pi-workflows/src/dispatch.ts",
+          "reference": ":76-85 the proven precedence incl. --models omission when nothing resolves; modelConfig sourced from the model-config block (workflow-executor.ts:765-772)",
+          "content_pin": "1d2aa7f231715588a5e6463c605f0bcc47edbba021c7b255476cb3fd182a31f7"
+        }
+      ],
+      "impact": "Bundled-agent dispatch fails 100% of the time on a model axis independent of template resolution; the dispatch surface contradicts the spec-authoring convention that models live in model-config, forcing spec forks or hand-edits.",
+      "proposed_resolution": "Per the derived dispatch model-policy decision (user-approved plan, 2026-07-08): a resolveDispatchModel(cwd, spec) helper implementing spec.model ?? model-config.by_role[spec.role] ?? model-config.default (absent block = null fall-through, mirroring the executor); work-order subprocess dispatch omits --model when null (pi defaults inside the subprocess); in-process call-agent keeps the throw when nothing resolves, with the error naming the model-config block as the remedy; precedence unit cells.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-130",
+      "oid": "8f5001956b2a2f478363e12604207534",
+      "content_hash": "c9bef5206e48f87923f07fe5c0eb9f760c72311f5188a89c5622a9444c85027d"
     }
   ]
 }

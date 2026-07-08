@@ -1,0 +1,41 @@
+{
+  "title": "pi-workflows docs advertise ~30 ${{ }} expression filters; the registry defines 10 — the 20 phantom names throw at runtime, latent because no bundled spec uses one",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "canonical_vocabulary": "single-source-of-truth filter-surface documentation (generated from FILTER_NAMES, not hand-authored)",
+  "description": "expression.ts:10-29 registers exactly 10 ${{ }} filters (duration, currency, json, length, keys, filter, last, first, slugify, shell); FILTER_NAMES = Object.keys(FILTERS) (:32) is re-exported as the SDK filterNames() and consumed by the filter-names validation check. README.md:95-104, SKILL.md:286-288, and skill-narrative.md:40-42 advertise a ~30-name list explicitly in the ${{ }} expression context; 20 of those names (upper, lower, trim, default, join, split, replace, includes, map, sum, min, max, sort, unique, flatten, zip, group_by, count_by, chunk, pick, omit, entries, from_entries, merge, values, not, and, or) are registered in neither the expression layer nor the stock-Nunjucks template layer (template.ts:26-45 registers zero custom filters). An unrecognized filter throws at runtime (expression.ts:110-114); authoring-time validation only warns (workflow-sdk.ts:558-568). No bundled spec uses a phantom name, so the trap is latent — it bites an author who writes a new spec trusting the docs. Class: documentation-ahead-of-implementation; the prose lists bypass the SDK's registry-derived single source of truth.",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+      "reference": "Claim 1 evaluation: registered-vs-advertised diff, phantom-name derivation, runtime-throw plus latency proof, class characterization",
+      "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+    },
+    {
+      "file": "packages/pi-workflows/src/expression.ts",
+      "lines": "10-29,32,110-114",
+      "reference": "10-entry FILTERS map; FILTER_NAMES = Object.keys(FILTERS); unknown-filter throw",
+      "content_pin": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+    },
+    {
+      "file": "packages/pi-workflows/src/template.ts",
+      "lines": "26-45",
+      "reference": "stock Nunjucks env registers zero custom filters — the phantom names are not mislabeled real Nunjucks filters",
+      "content_pin": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+    },
+    {
+      "file": "packages/pi-workflows/README.md",
+      "lines": "95-104",
+      "reference": "advertised ~30-name filter list attached to the ${{ }} expression context",
+      "content_pin": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+    },
+    {
+      "file": "packages/pi-workflows/skill-narrative.md",
+      "lines": "40-42",
+      "reference": "SKILL source carrying the same list; SKILL.md:286-288 is generated from it",
+      "content_pin": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+    }
+  ],
+  "impact": "An author who writes a new spec using any of the 20 documented-but-unregistered filters gets a runtime ExpressionError; authoring validation only warns, so the failure surfaces at execution, not at validate time. Three published doc surfaces (README, SKILL.md, skill-narrative.md) misrepresent the filter capability. No shipped workflow is broken.",
+  "proposed_resolution": "Derive the documented filter list from filterNames() rather than hand-authoring it, so the three doc surfaces cannot drift from the registry; reconcile the current lists to the 10 registered names — add the four omitted registered names (duration, currency, slugify, shell), remove the 20 phantom names."
+}

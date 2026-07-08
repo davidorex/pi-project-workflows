@@ -4673,6 +4673,85 @@
       "content_parent": "0ae50d509fcc659dca637f4327d87b6d9be884e8a7ab43487e068e223559cc1d",
       "closed_by": "TASK-104 (VER-082) implemented DEC-0023's derived precedence in resolveDispatchModel (spec.model, then the substrate model-config block's by_role[spec.role], then its default, else null; absent block = null fall-through mirroring the workflow executor's own try/catch handling): call-agent keeps an informed throw naming the model-config block as the remedy when nothing resolves (the in-process mechanism's floor — executeAgent requires a concrete model), and the work-order subprocess path omits --model when null so pi resolves its own default inside the subprocess (byte-mirroring the executor's --models omission). Precedence unit-pinned (spec wins / by_role / default / absent-block-null / no-match-null); --model presence/omission runtime-demonstrated via built dist; buildDispatchArgs' model made optional preserving its testable export shape.",
       "closed_at": "2026-07-08"
+    },
+    {
+      "title": "pi-workflows docs advertise ~30 ${{ }} expression filters; the registry defines 10 — the 20 phantom names throw at runtime, latent because no bundled spec uses one",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-workflows",
+      "canonical_vocabulary": "single-source-of-truth filter-surface documentation (generated from FILTER_NAMES, not hand-authored)",
+      "description": "expression.ts:10-29 registers exactly 10 ${{ }} filters (duration, currency, json, length, keys, filter, last, first, slugify, shell); FILTER_NAMES = Object.keys(FILTERS) (:32) is re-exported as the SDK filterNames() and consumed by the filter-names validation check. README.md:95-104, SKILL.md:286-288, and skill-narrative.md:40-42 advertise a ~30-name list explicitly in the ${{ }} expression context; 20 of those names (upper, lower, trim, default, join, split, replace, includes, map, sum, min, max, sort, unique, flatten, zip, group_by, count_by, chunk, pick, omit, entries, from_entries, merge, values, not, and, or) are registered in neither the expression layer nor the stock-Nunjucks template layer (template.ts:26-45 registers zero custom filters). An unrecognized filter throws at runtime (expression.ts:110-114); authoring-time validation only warns (workflow-sdk.ts:558-568). No bundled spec uses a phantom name, so the trap is latent — it bites an author who writes a new spec trusting the docs. Class: documentation-ahead-of-implementation; the prose lists bypass the SDK's registry-derived single source of truth.",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+          "reference": "Claim 1 evaluation: registered-vs-advertised diff, phantom-name derivation, runtime-throw plus latency proof, class characterization",
+          "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+        },
+        {
+          "file": "packages/pi-workflows/src/expression.ts",
+          "lines": "10-29,32,110-114",
+          "reference": "10-entry FILTERS map; FILTER_NAMES = Object.keys(FILTERS); unknown-filter throw",
+          "content_pin": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+        },
+        {
+          "file": "packages/pi-workflows/src/template.ts",
+          "lines": "26-45",
+          "reference": "stock Nunjucks env registers zero custom filters — the phantom names are not mislabeled real Nunjucks filters",
+          "content_pin": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+        },
+        {
+          "file": "packages/pi-workflows/README.md",
+          "lines": "95-104",
+          "reference": "advertised ~30-name filter list attached to the ${{ }} expression context",
+          "content_pin": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+        },
+        {
+          "file": "packages/pi-workflows/skill-narrative.md",
+          "lines": "40-42",
+          "reference": "SKILL source carrying the same list; SKILL.md:286-288 is generated from it",
+          "content_pin": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+        }
+      ],
+      "impact": "An author who writes a new spec using any of the 20 documented-but-unregistered filters gets a runtime ExpressionError; authoring validation only warns, so the failure surfaces at execution, not at validate time. Three published doc surfaces (README, SKILL.md, skill-narrative.md) misrepresent the filter capability. No shipped workflow is broken.",
+      "proposed_resolution": "Derive the documented filter list from filterNames() rather than hand-authoring it, so the three doc surfaces cannot drift from the registry; reconcile the current lists to the 10 registered names — add the four omitted registered names (duration, currency, slugify, shell), remove the 20 phantom names.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-131",
+      "oid": "bee6e95a2e79333085ce11033a9574e0",
+      "content_hash": "cc1d5a42a2cdc53f234dff615d5c93f473cccc2553b2dfcf4634a9ab72798034"
+    },
+    {
+      "title": "8 of 15 bundled pi-workflows specs are invalid under validateWorkflow; the invalidator is error-level input-contract/template drift, not the missing block schemas (which only warn) — bundled specs have no propagation path from their evolving targets",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-workflows",
+      "canonical_vocabulary": "lockstep propagation from evolving targets (catalog vocabulary, agent input contracts, block-schema shapes) to bundled workflow specs",
+      "description": "A real validateWorkflow run over all 15 bundled specs (cwd = repo root, active .context) yields 8 invalid / 7 warnings-only. Invalid: analyze-existing-project (4 errors), create-phase (1), do-gap (5), fix-audit (3), gap-to-phase (1), init-new-project (1), pausable-analysis (2), resumable-analysis (2). Warnings-only (0 errors): create-handoff, execute-task, parallel-analysis, parallel-explicit, plan-from-requirements, self-implement, typed-analysis. Missing block schemas (project, architecture, handoff, inventory — absent from installed_blocks) are downgraded to WARNINGS (workflow-sdk.ts:483-492, rationale 'project may not be initialized yet') and do NOT drive invalid status. The invalid verdicts are error-level: inputSchema-required (workflow-sdk.ts:597-614; e.g. analyze-existing-project step infer-project missing required input 'analysis' across 3 agents), template-alignment (workflow-sdk.ts:651-652; e.g. create-phase template references 'gaps' not declared in the step input), and stale schema shape (do-gap step implement: template references spec.intent/spec.tasks/spec.context_needed, fields absent from the current schema whose fields are name, description, files, depends_on, acceptance_criteria, parallel_safe, estimated_complexity). Three manifestation classes: (a) catalog/substrate-vocabulary drift (warning-level) — specs reference block kinds this install's later catalog dropped; (b) stale schema shape (error, do-gap) — spec written against a shape that changed; (c) input-contract drift (error, dominant error source) — agent inputSchema.required keys and template variable references the workflow step no longer provides. Common root: bundled specs carry no propagation path from their evolving targets, so target evolution silently invalidates them.",
+      "evidence": [
+        {
+          "file": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+          "reference": "Claim 2 evaluation: per-spec status table (8 invalid / 7 warnings), the block-schema-only-warns refinement, the three class characterizations, prior-art sweep",
+          "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+        },
+        {
+          "file": "packages/pi-workflows/src/workflow-sdk.ts",
+          "lines": "483-492,597-614,651-652",
+          "reference": "block: schema ref downgraded to warning (:483-492); inputSchema-required error check (:597-614); template-alignment error check (:651-652)",
+          "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+        },
+        {
+          "file": "packages/pi-jit-agents/templates/spec-implementer/task.md",
+          "reference": "do-gap step-implement template references spec.intent / spec.tasks / spec.context_needed — fields absent from the current spec schema shape",
+          "content_pin": "9b177fdd48847e4ae463fd3547154a869fecd4aa39a8330c7e6733b4a5bb345f"
+        }
+      ],
+      "impact": "Over half the bundled workflow catalog fails authoring validation on this substrate; a user validating a shipped spec sees invalid status. Class (a) additionally means analysis/init/handoff/phase specs reference block kinds this install cannot materialize.",
+      "proposed_resolution": "Establish a lockstep check that fails when a bundled spec's inputSchema-required keys, template variable references, or block: targets diverge from the current agent specs / block schemas / installed catalog; reconcile the 8 invalid specs to the current contracts (do-gap's spec.intent/tasks/context_needed to the current schema fields; the per-spec input-contract/template mismatches). Relate the catalog-vocabulary facet (a) to FGAP-065 as the pi-context-side instance of the same no-propagation-path family.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "FGAP-132",
+      "oid": "013b4d6399e020000127b48647ae46a2",
+      "content_hash": "64665f40ce330839f53eecca8b15eaf3b8a2e3dcaf2544e00aa9986656b912ee"
     }
   ]
 }

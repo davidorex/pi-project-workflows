@@ -1793,6 +1793,114 @@
       "oid": "80029d80e697a952937e27e98866ee19",
       "content_hash": "691825cdcd4053afe2d3b4690ad159d82b46ee8dabafdb1c74361a09a55d803e",
       "content_parent": "a1d3307c1e19e3eaab15fd3a91d0b0274c197785666ba3c0fa24fddaca0937ee"
+    },
+    {
+      "title": "pi-workflows filter-doc & bundled-spec-validation claim evaluation — both TRUE",
+      "status": "complete",
+      "layer": "L2",
+      "type": "empirical",
+      "question": "Are two dogfooding claims true: (1) the pi-workflows ${{ }} expression filters are drastically misdocumented; (2) most bundled workflow specs fail validation — and what is the root cause and class of each?",
+      "method": "code-inspection (expression.ts / template.ts / workflow-sdk.ts / README / SKILL.md / skill-narrative.md) + empirical validateWorkflow run over all 15 bundled specs at repo root against the active .context substrate + registry read (read-config installed_blocks) + prior-art sweep of .context via the pi-context CLI (filter-block-items).",
+      "scope": [
+        "15 bundled pi-workflows specs (workflows/*.workflow.yaml)",
+        "packages/pi-workflows/src/expression.ts, template.ts, workflow-sdk.ts",
+        "packages/pi-workflows/README.md, SKILL.md, skill-narrative.md",
+        "packages/pi-jit-agents/templates/spec-implementer/task.md",
+        "workflowsPiExtension main @ c39de9cb (2026-07-08)"
+      ],
+      "findings_summary": "Both claims verdict TRUE against source and a real validator run. CLAIM 1 (filters misdocumented): expression.ts registers exactly 10 ${{ }} filters (duration, currency, json, length, keys, filter, last, first, slugify, shell); FILTER_NAMES = Object.keys(FILTERS) is re-exported as the SDK filterNames() and is the source the filter-names validation check consumes. Three doc surfaces (README.md:95-104, SKILL.md:286-288, skill-narrative.md:40-42) advertise a ~30-name list in the ${{ }} expression context; 20 of those names exist in neither the expression layer nor the stock-Nunjucks template layer (template.ts registers zero custom filters, so the phantom names are not mislabeled Nunjucks builtins — Nunjucks supplies only 8 of the 20). An unknown filter throws at runtime (expression.ts:110-114); authoring validation only warns. No bundled spec uses a phantom filter, so the trap is latent — it bites an author who writes a new spec trusting the docs. Class: documentation-ahead-of-implementation; the prose lists bypass the registry-derived single source of truth. CLAIM 2 (bundled specs fail validation): a real validateWorkflow run over all 15 specs reproduces 8 invalid / 7 warnings-only, matching the claim's per-spec breakdown exactly (self-implement and typed-analysis, which the claim omits, are also warnings-only). Causal refinement: the missing block schemas (project, architecture, handoff, inventory — confirmed absent from installed_blocks) are deliberately downgraded to WARNINGS (workflow-sdk.ts:483-492) and do NOT drive invalid status. The invalid verdicts are error-level input-contract / template-alignment checks: inputSchema-required (:597-614), template-alignment (:651-652), and the sharpest instance, do-gap step implement referencing spec.intent/spec.tasks/spec.context_needed — fields absent from the current schema (name, description, files, depends_on, acceptance_criteria, parallel_safe, estimated_complexity). Three distinct classes are present: (a) catalog/substrate-vocabulary drift (warning-level; sibling of FGAP-065 on the pi-context side); (b) genuinely stale schema shape (error, do-gap); (c) input-contract drift (error, dominant error source). For block schemas, validation is more lenient than runtime (warning vs a hard write failure only when a step actually writes an uninstalled block: target); for input-contract/template errors, validation catches at authoring time what runtime would hit at dispatch/render. Prior-art sweep: no .context item tracks either claim; nearest non-duplicates are FGAP-065, TASK-103/FGAP-127, issue-011, FGAP-104. Filed from this evaluation: FGAP-131 (Claim 1) and FGAP-132 (Claim 2), the latter related to FGAP-065.",
+      "findings_document": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+      "grounding": {
+        "revisions": [
+          "workflowsPiExtension main @ c39de9cb (2026-07-08)"
+        ]
+      },
+      "stale_conditions": [
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-workflows/src/expression.ts",
+          "baseline_hash": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+        },
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-workflows/src/template.ts",
+          "baseline_hash": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+        },
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-workflows/src/workflow-sdk.ts",
+          "baseline_hash": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+        },
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-workflows/README.md",
+          "baseline_hash": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+        },
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-workflows/skill-narrative.md",
+          "baseline_hash": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+        },
+        {
+          "kind": "file-changed",
+          "path": "packages/pi-jit-agents/templates/spec-implementer/task.md",
+          "baseline_hash": "9b177fdd48847e4ae463fd3547154a869fecd4aa39a8330c7e6733b4a5bb345f"
+        },
+        {
+          "kind": "file-changed",
+          "path": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+          "baseline_hash": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+        }
+      ],
+      "citations": [
+        {
+          "label": "10-entry FILTERS map; FILTER_NAMES; unknown-filter throw",
+          "path": "packages/pi-workflows/src/expression.ts",
+          "lines": "10-29,32,110-114",
+          "content_pin": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+        },
+        {
+          "label": "stock Nunjucks env, zero custom filters",
+          "path": "packages/pi-workflows/src/template.ts",
+          "lines": "26-45",
+          "content_pin": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+        },
+        {
+          "label": "advertised ~30-name filter list (${{ }} context)",
+          "path": "packages/pi-workflows/README.md",
+          "lines": "95-104",
+          "content_pin": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+        },
+        {
+          "label": "SKILL source carrying the same list",
+          "path": "packages/pi-workflows/skill-narrative.md",
+          "lines": "40-42",
+          "content_pin": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+        },
+        {
+          "label": "block: schema ref -> warning; inputSchema-required error; template-alignment error",
+          "path": "packages/pi-workflows/src/workflow-sdk.ts",
+          "lines": "483-492,597-614,651-652",
+          "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+        },
+        {
+          "label": "do-gap step-implement template references spec.intent/spec.tasks/spec.context_needed",
+          "path": "packages/pi-jit-agents/templates/spec-implementer/task.md",
+          "content_pin": "9b177fdd48847e4ae463fd3547154a869fecd4aa39a8330c7e6733b4a5bb345f"
+        },
+        {
+          "label": "full evaluation: per-spec table, phantom-name derivation, class characterizations, prior-art",
+          "path": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+          "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+        }
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-08",
+      "id": "R-0030",
+      "modified_by": "human/davidryan@gmail.com",
+      "modified_at": "2026-07-08T06:36:49.392Z",
+      "oid": "11f332104915181300a0d8429654f62c",
+      "content_hash": "66b767da9365d3e16ba6901bb6d589ba949ae407fb350714e136ab1836a32f4d"
     }
   ],
   "schema_version": "1.0.1"

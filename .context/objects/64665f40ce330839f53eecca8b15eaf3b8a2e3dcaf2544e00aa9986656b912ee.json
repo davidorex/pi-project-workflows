@@ -1,0 +1,28 @@
+{
+  "title": "8 of 15 bundled pi-workflows specs are invalid under validateWorkflow; the invalidator is error-level input-contract/template drift, not the missing block schemas (which only warn) — bundled specs have no propagation path from their evolving targets",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-workflows",
+  "canonical_vocabulary": "lockstep propagation from evolving targets (catalog vocabulary, agent input contracts, block-schema shapes) to bundled workflow specs",
+  "description": "A real validateWorkflow run over all 15 bundled specs (cwd = repo root, active .context) yields 8 invalid / 7 warnings-only. Invalid: analyze-existing-project (4 errors), create-phase (1), do-gap (5), fix-audit (3), gap-to-phase (1), init-new-project (1), pausable-analysis (2), resumable-analysis (2). Warnings-only (0 errors): create-handoff, execute-task, parallel-analysis, parallel-explicit, plan-from-requirements, self-implement, typed-analysis. Missing block schemas (project, architecture, handoff, inventory — absent from installed_blocks) are downgraded to WARNINGS (workflow-sdk.ts:483-492, rationale 'project may not be initialized yet') and do NOT drive invalid status. The invalid verdicts are error-level: inputSchema-required (workflow-sdk.ts:597-614; e.g. analyze-existing-project step infer-project missing required input 'analysis' across 3 agents), template-alignment (workflow-sdk.ts:651-652; e.g. create-phase template references 'gaps' not declared in the step input), and stale schema shape (do-gap step implement: template references spec.intent/spec.tasks/spec.context_needed, fields absent from the current schema whose fields are name, description, files, depends_on, acceptance_criteria, parallel_safe, estimated_complexity). Three manifestation classes: (a) catalog/substrate-vocabulary drift (warning-level) — specs reference block kinds this install's later catalog dropped; (b) stale schema shape (error, do-gap) — spec written against a shape that changed; (c) input-contract drift (error, dominant error source) — agent inputSchema.required keys and template variable references the workflow step no longer provides. Common root: bundled specs carry no propagation path from their evolving targets, so target evolution silently invalidates them.",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
+      "reference": "Claim 2 evaluation: per-spec status table (8 invalid / 7 warnings), the block-schema-only-warns refinement, the three class characterizations, prior-art sweep",
+      "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+    },
+    {
+      "file": "packages/pi-workflows/src/workflow-sdk.ts",
+      "lines": "483-492,597-614,651-652",
+      "reference": "block: schema ref downgraded to warning (:483-492); inputSchema-required error check (:597-614); template-alignment error check (:651-652)",
+      "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+    },
+    {
+      "file": "packages/pi-jit-agents/templates/spec-implementer/task.md",
+      "reference": "do-gap step-implement template references spec.intent / spec.tasks / spec.context_needed — fields absent from the current spec schema shape",
+      "content_pin": "9b177fdd48847e4ae463fd3547154a869fecd4aa39a8330c7e6733b4a5bb345f"
+    }
+  ],
+  "impact": "Over half the bundled workflow catalog fails authoring validation on this substrate; a user validating a shipped spec sees invalid status. Class (a) additionally means analysis/init/handoff/phase specs reference block kinds this install cannot materialize.",
+  "proposed_resolution": "Establish a lockstep check that fails when a bundled spec's inputSchema-required keys, template variable references, or block: targets diverge from the current agent specs / block schemas / installed catalog; reconcile the 8 invalid specs to the current contracts (do-gap's spec.intent/tasks/context_needed to the current schema fields; the per-spec input-contract/template mismatches). Relate the catalog-vocabulary facet (a) to FGAP-065 as the pi-context-side instance of the same no-propagation-path family."
+}

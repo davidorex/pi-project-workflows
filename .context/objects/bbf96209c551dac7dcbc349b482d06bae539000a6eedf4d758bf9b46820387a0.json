@@ -1,0 +1,29 @@
+{
+  "title": "Roadmap derivation produces false `complete` when positioned-task coverage is partial — no signal that the rollup is structurally incomplete",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "derivation partiality signal",
+  "description": "The roadmap derivation computes milestone/phase completeness solely from positioned tasks (task_positioned_in_phase edges). A phase whose `intent` field names four members but has only one positioned task — three gaps named in prose, never decomposed into tasks with positioning edges — derives `rollup: complete` (1 positioned task, 1 complete). The stored statuses (`phase: in-progress`, `milestone: planned`) are the author's honest judgment that the work is not done. The roadmap view presents `{rollup: complete, status: planned}` as contradictory raw data with no disambiguation: the consumer cannot tell whether the stored status is stale (a divergence to repair) or the derivation is structurally incomplete (the stored status is truthful). The FEAT-011 derived-status invariant class, built on the premise that rollup truth stored status, would classify this as a divergence to repair — compounding the error.\n\nTriggering instance: MILE-005 / PHASE-M5-WRITE-INTEGRITY on 2026-07-08. Phase intent names TASK-027, FGAP-093, FGAP-091, FGAP-085 as members. Only TASK-027 has a task_positioned_in_phase edge. The roadmap derived `rollup: complete` while the stored statuses (phase: in-progress, milestone: planned) were truthful. An LLM presented with both values defaulted to 'stored status is stale' — the predictable error when the system's own invariant class primes that interpretation.",
+  "impact": "Roadmap consumers (LLMs, HTML views, agent context composition) receive a false completeness verdict with no signal of partiality. The gap between `intent` and positioning is a common state in active development — phases are authored with their intended scope before all members are decomposed into positioned tasks. The derivation's false `complete` will mislead every downstream consumer until fixed. The user must manually cross-verify every roadmap completeness claim, which defeats the substrate's purpose.",
+  "evidence": [
+    {
+      "file": ".context/phase.json",
+      "reference": "PHASE-M5-WRITE-INTEGRITY: intent names 4 members (TASK-027, FGAP-093, FGAP-091, FGAP-085); only TASK-027 has a task_positioned_in_phase edge — 3/4 members are unpositioned"
+    },
+    {
+      "file": ".context/milestone.json",
+      "reference": "MILE-005: stored status 'planned', roadmap rollup 'complete' — contradiction with no disambiguation"
+    },
+    {
+      "file": ".context/relations.json",
+      "reference": "Only 1 task_positioned_in_phase edge for PHASE-M5-WRITE-INTEGRITY (TASK-027), 0 for the 3 gap-named members"
+    },
+    {
+      "file": "packages/pi-context/src/roadmap-plan.ts",
+      "reference": "Roadmap derivation aggregates positioned tasks only; phase intent is not consumed — no partiality signal exists in the derivation path",
+      "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
+    }
+  ],
+  "proposed_resolution": "Single-source the completeness verdict. The roadmap must not run a second completeness derivation. The roadmap's milestone/phase completeness routes through the authoritative derivedRollupComplete (context-sdk.ts) — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use — never rollupPhaseStatus's independent positioned-task aggregation. rollupPhaseStatus is retained only as a task-progress display, labeled as progress, never surfaced as a completeness or reached verdict, so a progress count can neither read as nor contradict the authoritative status. Scope is read only from typed edges (task_positioned_in_phase); no membership is inferred from the intent prose. With completeness single-sourced, a phase whose authored status is not complete derives not-complete regardless of positioned-task coverage, and the false complete cannot arise."
+}

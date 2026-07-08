@@ -4780,12 +4780,13 @@
           "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
         }
       ],
-      "proposed_resolution": "When a phase's `intent` field names members that lack positioning edges (task_positioned_in_phase), the roadmap rollup degrades to a `partial` bucket distinct from `todo`/`in_progress`/`complete`/`blocked` — signalling 'positioning coverage is incomplete, the completeness verdict is underdetermined.' The `partial` bucket carries metadata naming the unpositioned members so the consumer can see what's missing. When positioning coverage is complete (every intent member has an edge), the rollup computes as today. The degrade is a derivation signal, not a status mutation: the stored status is untouched. This eliminates the false `complete` at the source — `{rollup: partial, status: planned}` is honest and consistent, and the derived-status invariant never flags a `partial` rollup as a divergence to repair.",
+      "proposed_resolution": "Single-source the completeness verdict. The roadmap must not run a second completeness derivation. The roadmap's milestone/phase completeness routes through the authoritative derivedRollupComplete (context-sdk.ts) — the same function gate satisfaction, the derived-status invariant, reconcile, and converge use — never rollupPhaseStatus's independent positioned-task aggregation. rollupPhaseStatus is retained only as a task-progress display, labeled as progress, never surfaced as a completeness or reached verdict, so a progress count can neither read as nor contradict the authoritative status. Scope is read only from typed edges (task_positioned_in_phase); no membership is inferred from the intent prose. With completeness single-sourced, a phase whose authored status is not complete derives not-complete regardless of positioned-task coverage, and the false complete cannot arise.",
       "id": "FGAP-133",
       "created_by": "agent/deepseek-v4-pro",
       "created_at": "2026-07-08T22:45:52.944Z",
       "oid": "9ef254bce9d25e19f5bed570b51bc3dc",
-      "content_hash": "f7c7a34d790242e4a10e34017ce8668e54437b75c5fdb9dc3a65b5643b4e42bc"
+      "content_hash": "bbf96209c551dac7dcbc349b482d06bae539000a6eedf4d758bf9b46820387a0",
+      "content_parent": "f7c7a34d790242e4a10e34017ce8668e54437b75c5fdb9dc3a65b5643b4e42bc"
     }
   ]
 }

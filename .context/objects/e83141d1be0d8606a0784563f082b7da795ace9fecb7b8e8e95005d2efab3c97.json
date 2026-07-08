@@ -1,0 +1,38 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-07-08",
+  "evidence": "Runtime demonstration via built dist against a fresh scratch substrate (empty contextDir/agents): createAgentLoader(dispatchLoadContext(fresh)) resolved the bundled 'investigator' spec (builtinDir observed as packages/pi-workflows/agents); a same-named local substrate spec shadowed the bundled one (model demo/local won); an unknown name threw AgentNotFoundError listing exactly three search paths in tier order (contextDir/agents, ~/.pi/agent/agents, bundled). Merged to main in 4964dfd5's successor arc (final merge covers both tasks). Full gates green at every commit; four adversarial probes ran across the branch arc — the first refuted the initial docs claim and its findings re-entered the pipeline as the follow-on task's scope.",
+  "criteria_results": [
+    {
+      "criterion": "On a fresh substrate whose contextDir/agents is empty, both call-agent and work-order dispatch resolve a pi-workflows bundled spec by name (runtime-demonstrated via built dist, not only unit-asserted).",
+      "status": "passed",
+      "evidence": "Dist eval: investigator resolved from the bundled tier on the fresh scratch substrate; both dispatch sites construct their loader via the same dispatchLoadContext helper (unit-pinned)."
+    },
+    {
+      "criterion": "Tier precedence preserved: a same-named spec in contextDir/agents beats the bundled one; an unknown name still throws AgentNotFoundError listing three search paths.",
+      "status": "passed",
+      "evidence": "Both observed live via dist eval (local override won; AgentNotFoundError with searchPaths.length 3 in tier order)."
+    },
+    {
+      "criterion": "bundledDir is importable only via the new @davidorex/pi-workflows/bundled-dirs subpath export; the barrel does not re-export it.",
+      "status": "passed",
+      "evidence": "Subpath export added to pi-workflows package.json exports (46c9e576); barrel unchanged; the dispatch helper imports via the subpath."
+    },
+    {
+      "criterion": "pi-jit-agents docblocks describe the actual contextDir-resolved tier, with no .project/agents wording; loader code itself unchanged in the docblock commit.",
+      "status": "passed",
+      "evidence": "68b9451d: comment-only diff verified by the branch probe (agent-spec.ts and types.ts docblocks reworded; D3 statement retained)."
+    },
+    {
+      "criterion": "Docs-surface-sync: READMEs audited; tool description strings updated where they stated tiers; CHANGELOG [Unreleased] entries present.",
+      "status": "passed",
+      "evidence": "call-agent spec_name description updated to the three-tier order; per-package CHANGELOGs grown (citation-rot gate enforced no substrate IDs in shipped markdown); the initial overclaiming bullet was later corrected under the follow-on task when the probe refuted it."
+    },
+    {
+      "criterion": "Full gates green; fresh-context adversarial probe; closure with honest closed_by.",
+      "status": "passed",
+      "evidence": "Gates green at every commit (suite grew from 3285 to 3305 passing). The first probe FOUND real findings (bundled specs could not compile or acquire models) — per iterate-to-zero those re-entered the pipeline as the follow-on task rather than blocking this task's delivered scope, which the probe confirmed genuine (resolution works)."
+    }
+  ]
+}

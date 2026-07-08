@@ -2515,6 +2515,88 @@
       "oid": "0132a2517e47fde890cd644c31fafd7b",
       "content_hash": "d02d292f2c090b1a024ae3d62479c6db65169c8ced2a32aebcae0f82ebb6aa44",
       "content_parent": "4c0113ca11ee5b73b81b79c38e626fe246ff3cec26f5878fade01a3af9ea284e"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-08",
+      "evidence": "Runtime demonstration via built dist against a fresh scratch substrate (empty contextDir/agents): createAgentLoader(dispatchLoadContext(fresh)) resolved the bundled 'investigator' spec (builtinDir observed as packages/pi-workflows/agents); a same-named local substrate spec shadowed the bundled one (model demo/local won); an unknown name threw AgentNotFoundError listing exactly three search paths in tier order (contextDir/agents, ~/.pi/agent/agents, bundled). Merged to main in 4964dfd5's successor arc (final merge covers both tasks). Full gates green at every commit; four adversarial probes ran across the branch arc — the first refuted the initial docs claim and its findings re-entered the pipeline as the follow-on task's scope.",
+      "criteria_results": [
+        {
+          "criterion": "On a fresh substrate whose contextDir/agents is empty, both call-agent and work-order dispatch resolve a pi-workflows bundled spec by name (runtime-demonstrated via built dist, not only unit-asserted).",
+          "status": "passed",
+          "evidence": "Dist eval: investigator resolved from the bundled tier on the fresh scratch substrate; both dispatch sites construct their loader via the same dispatchLoadContext helper (unit-pinned)."
+        },
+        {
+          "criterion": "Tier precedence preserved: a same-named spec in contextDir/agents beats the bundled one; an unknown name still throws AgentNotFoundError listing three search paths.",
+          "status": "passed",
+          "evidence": "Both observed live via dist eval (local override won; AgentNotFoundError with searchPaths.length 3 in tier order)."
+        },
+        {
+          "criterion": "bundledDir is importable only via the new @davidorex/pi-workflows/bundled-dirs subpath export; the barrel does not re-export it.",
+          "status": "passed",
+          "evidence": "Subpath export added to pi-workflows package.json exports (46c9e576); barrel unchanged; the dispatch helper imports via the subpath."
+        },
+        {
+          "criterion": "pi-jit-agents docblocks describe the actual contextDir-resolved tier, with no .project/agents wording; loader code itself unchanged in the docblock commit.",
+          "status": "passed",
+          "evidence": "68b9451d: comment-only diff verified by the branch probe (agent-spec.ts and types.ts docblocks reworded; D3 statement retained)."
+        },
+        {
+          "criterion": "Docs-surface-sync: READMEs audited; tool description strings updated where they stated tiers; CHANGELOG [Unreleased] entries present.",
+          "status": "passed",
+          "evidence": "call-agent spec_name description updated to the three-tier order; per-package CHANGELOGs grown (citation-rot gate enforced no substrate IDs in shipped markdown); the initial overclaiming bullet was later corrected under the follow-on task when the probe refuted it."
+        },
+        {
+          "criterion": "Full gates green; fresh-context adversarial probe; closure with honest closed_by.",
+          "status": "passed",
+          "evidence": "Gates green at every commit (suite grew from 3285 to 3305 passing). The first probe FOUND real findings (bundled specs could not compile or acquire models) — per iterate-to-zero those re-entered the pipeline as the follow-on task rather than blocking this task's delivered scope, which the probe confirmed genuine (resolution works)."
+        }
+      ],
+      "id": "VER-081",
+      "oid": "9c1ffb4819f56a2a28a97a50863c237b",
+      "content_hash": "e83141d1be0d8606a0784563f082b7da795ace9fecb7b8e8e95005d2efab3c97"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-08",
+      "evidence": "Runtime demonstrations via built dist against a fresh scratch substrate: bundled investigator compiled end-to-end (1025-char rendered task prompt); quality-analyzer compiled through its {% extends %} chain (548-char system prompt); investigator, phase-author, and quality-analyzer all compiled with ABSOLUTE, readable, JSON-parseable outputSchema paths (the exact prior ENOENT point at buildPhantomTool's readFileSync, replicated verbatim in the demo since jit-runtime imports the pi runtime); resolveDispatchModel returned null on the fresh substrate (no model-config, model-less spec); buildDispatchArgs carried --model when supplied and omitted it when absent; unknown-name negative unchanged. Full gates green at every commit (suite at 3305+ passing, 0 failing). Four adversarial probes across the arc: probe 2 found the outputSchema sibling hole (fixed via the package-root sibling probe); probe 3 found the sibling probe's local-tier shadowing vector (fixed via bundled-tier scoping) plus two NITs (README mechanism note added; dual phase-schema drift recorded in the gap closures); probe 4 found only a changelog-hygiene fold (applied and re-verified by direct read) — the loop converged.",
+      "criteria_results": [
+        {
+          "criterion": "Runtime demo via built dist on a fresh scratch substrate: bundled investigator compiles end-to-end and quality-analyzer compiles through its extends chain; unknown-name negative unchanged.",
+          "status": "passed",
+          "evidence": "All observed live via dist evals (task prompt 1025 chars; extends-chain system prompt 548 chars; AgentNotFoundError with 3 searchPaths)."
+        },
+        {
+          "criterion": "Model precedence observed: spec.model wins; by_role then default from the model-config block apply; with no block and no spec model, work-order buildDispatchArgs carries no --model flag and call-agent's throw names the model-config block.",
+          "status": "passed",
+          "evidence": "Precedence unit cells green (spec/by_role/default/absent-block-null/no-match-null); --model presence/omission observed live via dist; call-agent's model-config-remedy message pinned in its updated test."
+        },
+        {
+          "criterion": "Substrate-local specs with templates beside the spec resolve byte-identically to before; block: sentinels and absolute refs untouched.",
+          "status": "passed",
+          "evidence": "Existence-gate four-shape unit cells green; existing adjacent-fixture tests unmodified and green; probes 3 and 4 verified block:/absolute branches byte-identical from the diffs. The sibling probe is additionally scoped to the bundled tier (probe-3 fix), so local/user specs cannot shadow onto sibling dirs — pinned by real-collision negative cells."
+        },
+        {
+          "criterion": "phase-author.agent.yaml parses to a loader-resolvable ref on the workflow path.",
+          "status": "passed",
+          "evidence": "Both of its refs repointed (template to the tier-relative name; outputSchema to the in-package schemas/phase.schema.json, semantically verified against the agent's declared output by probe 4); resolution from a fresh substrate observed live in the schema demo."
+        },
+        {
+          "criterion": "Docs corrected: no surface claims broader dispatchability than the runtime demo shows; README states the dispatch resolution tiers.",
+          "status": "passed",
+          "evidence": "README gained the resolution-tiers section including the output-schema axis and the bundled-tier qualifier on the sibling clause; the overclaiming CHANGELOG bullet was rewritten and the superseded universal-probe sentence folded (probe-4 finding); citation-rot gate enforced zero substrate IDs in shipped markdown."
+        },
+        {
+          "criterion": "Full gates green; a FRESH adversarial re-probe of the complete branch diff finds nothing new; gap closures with honest closed_by.",
+          "status": "passed",
+          "evidence": "Probe 4 (post-fix, fresh context) returned a single LOW changelog-hygiene finding and refuted nothing substantive; the fold was applied and re-verified by direct read. Gap closures follow in this same substrate commit."
+        }
+      ],
+      "id": "VER-082",
+      "oid": "204db3129f7b14d7dd514dcdac59c779",
+      "content_hash": "556bfe3fb51d482e363fac8d5c900ef39cb295eee882bb4017e43c595c5c7e86"
     }
   ],
   "schema_version": "1.0.1"

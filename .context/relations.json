@@ -10266,5 +10266,31 @@
       "refname": "correctness-over-cost"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9c1ffb4819f56a2a28a97a50863c237b",
+      "refname": "VER-081"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a7bb2b580a306ead6e4f64039e9092f9",
+      "refname": "TASK-103"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "204db3129f7b14d7dd514dcdac59c779",
+      "refname": "VER-082"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "6e24884a209f392093009212bd517adf",
+      "refname": "TASK-104"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

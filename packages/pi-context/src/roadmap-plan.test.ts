@@ -507,20 +507,52 @@ describe("loadRoadmap", () => {
 		);
 		// TASK-002 has no title field (tasks carry description, not title).
 		assert.equal(phaseA.tasks[0]?.title, undefined);
-		assert.equal(phaseA.rollup.bucket, "todo"); // complete=1 todo=1
-		assert.equal(phaseA.rollup.counts.complete, 1);
-		assert.equal(phaseA.rollup.counts.todo, 1);
-		assert.equal(m1.rollup.total, 2); // milestone aggregates all member phases' tasks
+		assert.equal(phaseA.taskProgress.bucket, "todo"); // complete=1 todo=1
+		assert.equal(phaseA.taskProgress.counts.complete, 1);
+		assert.equal(phaseA.taskProgress.counts.todo, 1);
+		assert.equal(m1.taskProgress.total, 2); // milestone aggregates all member phases' tasks
 
 		const m2 = result.milestones.find((m) => m.id === "MILE-002");
 		assert.ok(m2);
-		assert.equal(m2.phases[0]?.rollup.bucket, "in_progress");
+		assert.equal(m2.phases[0]?.taskProgress.bucket, "in_progress");
 
 		const m3 = result.milestones.find((m) => m.id === "MILE-003");
 		assert.ok(m3);
 		assert.equal(m3.status, "reached"); // its sole member phase PHASE-C is complete
 		assert.equal(m3.phaseCount, 1);
-		assert.equal(m3.rollup.total, 0); // PHASE-C has no tasks
+		assert.equal(m3.taskProgress.total, 0); // PHASE-C has no tasks
+	});
+
+	it("single-sources completeness (FGAP-133): milestone/phase status is NOT reached/complete off task progress alone", () => {
+		// The exact FGAP-133 divergence: a phase authored `in-progress` whose SOLE
+		// positioned task is `completed`. Task progress rolls up to `complete`, but
+		// the authoritative completeness verdict (`status`) must NOT read complete
+		// off that — the phase is authored in-progress and the milestone is planned.
+		roadmapTmpRoot = makeRoadmapProject({
+			milestones: [{ id: "MILE-001", name: "Solo", status: "planned" }],
+			phases: [{ id: "PHASE-A", name: "In-flight", intent: "a", status: "in-progress" }],
+			tasks: [{ id: "TASK-001", status: "completed" }],
+			relations: [
+				{ parent: "PHASE-A", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "TASK-001", child: "PHASE-A", relation_type: "task_positioned_in_phase" },
+			],
+		});
+		const result = loadRoadmap(roadmapTmpRoot);
+		assert.ok(!("error" in result));
+		const m1 = result.milestones.find((m) => m.id === "MILE-001");
+		assert.ok(m1);
+		// Task progress DOES roll up to complete (its one task is completed) —
+		// at BOTH the phase and the milestone level.
+		const phaseA = m1.phases[0];
+		assert.ok(phaseA);
+		assert.equal(phaseA.taskProgress.bucket, "complete");
+		assert.equal(m1.taskProgress.bucket, "complete");
+		// But completeness (`status`) is the authoritative verdict and must NOT be
+		// reached/complete: the phase is authored in-progress, so the milestone's
+		// derived rollup stays planned. status and taskProgress are distinct signals.
+		assert.equal(phaseA.status, "in-progress");
+		assert.notEqual(m1.status, "reached");
+		assert.equal(m1.status, "planned");
 	});
 
 	it("orders the live-shaped DAG (9 milestones + the 8 authored edges) exactly", () => {
@@ -686,7 +718,10 @@ describe("renderRoadmap (markdown shape, NO mermaid)", () => {
 		assert.match(md, /^### Foundation \(MILE-001\) \[planned\]$/m);
 		assert.match(md, /\*\*Preceded by:\*\* —/);
 		assert.match(md, /\(MILE-002\)[^\n]*\n[\s\S]*?\*\*Preceded by:\*\* MILE-001/);
-		assert.match(md, /\*\*Rollup:\*\* complete=\d+ in_progress=\d+ blocked=\d+ todo=\d+ unknown=\d+ \(total=\d+\)/);
+		assert.match(
+			md,
+			/\*\*Task progress:\*\* complete=\d+ in_progress=\d+ blocked=\d+ todo=\d+ unknown=\d+ \(total=\d+\)/,
+		);
 		assert.match(md, /^#### Groundwork \(PHASE-A\) \[planned\]$/m);
 		assert.match(md, /\| Task \| Status \|/);
 		assert.match(md, /\| TASK-001 \| completed \|/);

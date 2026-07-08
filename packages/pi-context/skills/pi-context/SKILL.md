@@ -620,21 +620,21 @@ Compose a ContextBundle for a work-unit by reading its context-contract (by unit
 </tool>
 
 <tool name="context-roadmap-load">
-Load the derived roadmap view over the milestone_precedes_milestone DAG: milestone-block items topo-ordered by the authored precedes edges (order + cycles), each milestone carrying its derived status/phaseCount (currentState's milestone rollup), its member phases (parents of phase_positioned_in_milestone edges), each phase's tasks (parents of task_positioned_in_phase edges), and per-phase + per-milestone status rollups. Adjacency comes strictly from the authored edges — never inferred from order. Zero milestones is a valid empty view.
+Load the derived roadmap view over the milestone_precedes_milestone DAG: milestone-block items topo-ordered by the authored precedes edges (order + cycles), each milestone carrying its derived `status`/phaseCount (currentState's milestone rollup — `status` is the authoritative completeness verdict), its member phases (parents of phase_positioned_in_milestone edges, each with its authored phase `status`), each phase's tasks (parents of task_positioned_in_phase edges), and per-phase + per-milestone `taskProgress` (a task-status aggregation for PROGRESS display ONLY — NOT a completeness verdict; read `status` for completeness, never taskProgress). Adjacency comes strictly from the authored edges — never inferred from order. Zero milestones is a valid empty view.
 
 *Load the derived milestone roadmap view*
 
 </tool>
 
 <tool name="context-roadmap-render">
-Render the derived roadmap as pure-textual markdown — milestone order list (topo over the authored milestone_precedes_milestone edges), per-milestone sections with **Preceded by:** adjacency lines sourced strictly from those edges (alphabetically sorted; '—' when none), per-milestone rollup counts, and per-phase task tables. Cycle participants surface under a separate heading with a Cycles-detected line. NO mermaid / graph syntax; adjacency is never inferred from order consecutive pairs.
+Render the derived roadmap as pure-textual markdown — milestone order list (topo over the authored milestone_precedes_milestone edges), per-milestone sections with **Preceded by:** adjacency lines sourced strictly from those edges (alphabetically sorted; '—' when none), per-milestone **Task progress:** counts (a task-status aggregation for progress display only — the completeness verdict is the milestone/phase `status` printed in the section heading, not the task-progress counts), and per-phase task tables. Cycle participants surface under a separate heading with a Cycles-detected line. NO mermaid / graph syntax; adjacency is never inferred from order consecutive pairs.
 
 *Render the derived milestone roadmap as markdown*
 
 </tool>
 
 <tool name="context-roadmap-validate">
-Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task rollup buckets unknown with items present). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status: invalid iff any error-code issue, warnings iff any warning-code issue, else clean. Display strings flow through config.display_strings (pi-context divergence).
+Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task-progress rollup buckets unknown with tasks present — a task-progress / data-quality warning, NOT a completeness check). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status: invalid iff any error-code issue, warnings iff any warning-code issue, else clean. Display strings flow through config.display_strings (pi-context divergence).
 
 *Validate the derived milestone roadmap*
 

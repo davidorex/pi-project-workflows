@@ -157,15 +157,20 @@ function checkUnreleasedAgainstChanges() {
 		const logCmd = `git diff ${lastTag}..HEAD --name-only -- ${watch.join(" ")}`;
 		const changedPaths = (run(logCmd, { silent: true, env: cleanGitEnv() })?.trim() ?? "").split("\n").filter(Boolean);
 		// Exempt non-shipped surface — mirrors check-changelog.ts isExemptSurface:
-		// build-excluded tests + monitor learned-pattern stores.
+		// build-excluded tests + monitor learned-pattern stores + generated skill
+		// artifacts (SKILL.md / references/bundled-resources.md under skills/, whose
+		// semantics are changelogged at their generating source).
 		const surfaceCommits = changedPaths
-			.filter(
-				(p) =>
-					!(
-						/\.test\.[cm]?tsx?$/.test(p) ||
-						(p.startsWith("packages/pi-behavior-monitors/examples/") && p.endsWith(".patterns.json"))
-					),
-			)
+			.filter((p) => {
+				const inSkillsDir = /(^|\/)skills\//.test(p);
+				const isGeneratedSkillArtifact =
+					inSkillsDir && (/(^|\/)SKILL\.md$/.test(p) || /\/references\/bundled-resources\.md$/.test(p));
+				return !(
+					/\.test\.[cm]?tsx?$/.test(p) ||
+					(p.startsWith("packages/pi-behavior-monitors/examples/") && p.endsWith(".patterns.json")) ||
+					isGeneratedSkillArtifact
+				);
+			})
 			.join("\n");
 		const changelog = readFileSync(join(pkgDir, "CHANGELOG.md"), "utf-8");
 		const body = unreleasedNonBlank(changelog);

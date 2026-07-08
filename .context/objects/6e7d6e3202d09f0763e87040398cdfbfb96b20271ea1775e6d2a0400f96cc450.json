@@ -1,0 +1,29 @@
+{
+  "title": "No release/version vocabulary — releases and changelog grouping cannot be planned or tracked as first-class substrate items",
+  "status": "accepted",
+  "package": "pi-context",
+  "description": "The substrate (and the packaged conception) has no release/version block kind, no version field, no target/date, and no ships-in-release relation. A release plan can only be modeled by overloading phase (task_positioned_in_phase) or story (story_contains_task) plus a DEC; nothing represents a release as a first-class object binding a version tag + the set of completed dev-items (closed tasks/gaps) + their changelog lines. Changelog text lives in per-package CHANGELOG.md, enforced only at commit-time by the changelog guard, disconnected from the substrate's dev-item lifecycle. So there is no substrate-native way to plan 'release N ships these items' in advance, nor to verify that a release reflects the organized set of done dev-items.",
+  "evidence": [
+    {
+      "file": ".context/config.json",
+      "reference": "block_kinds has no release/version/milestone kind; planning relation_types are phase/story/work-order groupings only (task_positioned_in_phase, story_contains_task), none binding a version or release"
+    },
+    {
+      "file": "packages/pi-context/samples/conception.json",
+      "reference": "the packaged conception ships no release/version block kind — the gap is in the catalog, not just this substrate",
+      "content_pin": "ebe4d94272a91f5ad05222dfd639fa1dd85fa03f23b6ede01b7003d8b4fb911d"
+    },
+    {
+      "file": "scripts/release.mjs",
+      "reference": "version bump + changelog stamping operate on CHANGELOG.md ([Unreleased]) at release time, disconnected from substrate task/gap closure. Pin re-reviewed 2026-07-08: the file changed by the generated-skill-artifact exemption mirror in its pre-stamp coverage check — the disconnected-from-substrate claim is unaffected.",
+      "content_pin": "96aa0e719ab12421ff010fc63b2267b6043897f9b2fef4ebd7ba3bbb6d24fa6a"
+    },
+    {
+      "file": "analysis/2026-06-02-changelog-backfill-and-forward-discipline.md",
+      "reference": "changelog forward-discipline is a manual practice; no substrate linkage between closed dev-items and changelog entries / releases",
+      "content_pin": "b52131cf1fe6af4dfbba3698f2b404b0eab532c4ab33f84c98ad58a2f2db458e"
+    }
+  ],
+  "impact": "Releases are planned and tracked ad-hoc (overloaded phase/story or a loose DEC); there is no first-class binding of version -> completed dev-items -> changelog lines, so the project risks losing the thread between organized dev work done and what shipped in which release.",
+  "proposed_resolution": "A release/version vocabulary: a 'release' block kind (id, version, target/date, status planned|released, summary) + a relation binding closed dev-items to a release (e.g. release_contains_item / task_shipped_in_release / gap_closed_in_release) + optionally a milestone/roadmap instantiation; the release item carries or references the changelog lines for its items, so a release is the organized set of done dev-items with their changelog text — planned in advance and verifiable. Dual-surface (schema + conception registration + ops)."
+}

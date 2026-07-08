@@ -388,8 +388,8 @@
         },
         {
           "file": "scripts/release.mjs",
-          "reference": "version bump + changelog stamping operate on CHANGELOG.md ([Unreleased]) at release time, disconnected from substrate task/gap closure",
-          "content_pin": "ab8f048209b09937ba7a904fbda7e2df3098c89b2bae384d0e82bcf2f0c6a8d6"
+          "reference": "version bump + changelog stamping operate on CHANGELOG.md ([Unreleased]) at release time, disconnected from substrate task/gap closure. Pin re-reviewed 2026-07-08: the file changed by the generated-skill-artifact exemption mirror in its pre-stamp coverage check — the disconnected-from-substrate claim is unaffected.",
+          "content_pin": "96aa0e719ab12421ff010fc63b2267b6043897f9b2fef4ebd7ba3bbb6d24fa6a"
         },
         {
           "file": "analysis/2026-06-02-changelog-backfill-and-forward-discipline.md",
@@ -403,8 +403,8 @@
       "created_at": "2026-06-04T01:47:12.392Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
-      "content_hash": "91692c00a8a65f2476539d964ec8da38f934f33164c5a1617789c54a56ec682e",
-      "content_parent": "5a690e82dbdb8f3f2226a8f0dca34fab63824b72449a0beedba4a53b65f943a0"
+      "content_hash": "6e7d6e3202d09f0763e87040398cdfbfb96b20271ea1775e6d2a0400f96cc450",
+      "content_parent": "91692c00a8a65f2476539d964ec8da38f934f33164c5a1617789c54a56ec682e"
     },
     {
       "id": "FGAP-012",
@@ -3743,8 +3743,8 @@
         },
         {
           "file": "packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md",
-          "reference": "Realized instance: commit 08f00f9 shipped the events-section-truncated output as complete; 6d91cb0 restored it. Git archaeology dated the three enabling conditions (generator catch 2026-03-18; factory-time substrate read 2026-05-28; fail-fast config load 2026-07-02) and confirmed first-and-only occurrence.",
-          "content_pin": "675cabaef65eb05a530767e15a4274248738a49ff07a85a85fd1e457b895daaf"
+          "reference": "Realized instance: commit 08f00f9 shipped the events-section-truncated output as complete; 6d91cb0 restored it. Git archaeology dated the three enabling conditions (generator catch 2026-03-18; factory-time substrate read 2026-05-28; fail-fast config load 2026-07-02) and confirmed first-and-only occurrence. Pin re-reviewed 2026-07-08: the file changed by an ordinary regen (call-agent spec_name tier wording) — the historical claim is unaffected.",
+          "content_pin": "b3eb186ab2dbfbd81d4b9f5b66dba4581b6533c270cbf203c3cb7addbff833c8"
         }
       ],
       "impact": "Shipped SKILL.md content varies with the generating machine's substrate state: a mid-migration or legacy substrate silently truncates the documented surface (realized once); a substrate with tool_operations entries would publish project configuration as package documentation (latent). Exit-0-on-crash means neither case is detectable at generation time — the false-pass mode the project's own doctrine names as fallback-swallows-failure, in the toolchain itself.",
@@ -3753,9 +3753,9 @@
       "created_at": "2026-07-02",
       "id": "FGAP-104",
       "oid": "6ef2afa56ccd3df0de74b53fd796af26",
-      "content_hash": "e91a11d9e7b51f16a53f5358bd71f51b4dbba6732121f5612c13d3e1434548e3",
+      "content_hash": "8c4e1de703f4b2471d510b0c7f3d0b5435a54256c1206e97335a2cef458b7984",
       "priority": "P2",
-      "content_parent": "b61846b9bed128e92a6f17399122998ed9bd6fbb375ea90224a668e9240a0247"
+      "content_parent": "e91a11d9e7b51f16a53f5358bd71f51b4dbba6732121f5612c13d3e1434548e3"
     },
     {
       "title": "Versioned substrate documents never converge their persisted schema_version at write time — config is the live instance: reads migrate in memory forever, writes persist the stale version back",

@@ -133,6 +133,19 @@ describe("changedPackages", () => {
 		assert.deepEqual(changedPackages(["packages/pi-context/src/lens-view-op.ts"], watchFor), ["pi-context"]);
 		assert.deepEqual(changedPackages(["packages/pi-context/src/block-api.ts"], watchFor), ["pi-context"]);
 	});
+
+	it("does NOT flag a package for a generated-SKILL.md-only change under a watched skills/ tree", () => {
+		const skillsWatch = (pkg: string): string[] =>
+			pkg === "pi-agent-dispatch" ? ["packages/pi-agent-dispatch/skills/"] : [];
+		assert.deepEqual(
+			changedPackages(["packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md"], skillsWatch),
+			[],
+		);
+		// but a hand-authored skills/ file under the same watched tree still flags
+		assert.deepEqual(changedPackages(["packages/pi-agent-dispatch/skills/pi-agent-dispatch/HOWTO.md"], skillsWatch), [
+			"pi-agent-dispatch",
+		]);
+	});
 });
 
 describe("isExemptSurface", () => {
@@ -155,6 +168,32 @@ describe("isExemptSurface", () => {
 
 	it("is false for a monitor definition (examples/*.monitor.json is shipped surface)", () => {
 		assert.equal(isExemptSurface("packages/pi-behavior-monitors/examples/hedge.monitor.json"), false);
+	});
+
+	it("is true for a generated SKILL.md under a skills/ dir (a)", () => {
+		assert.equal(isExemptSurface("packages/pi-agent-dispatch/skills/pi-agent-dispatch/SKILL.md"), true);
+	});
+
+	it("is true for a generated references/bundled-resources.md under a skills/ dir (b)", () => {
+		assert.equal(isExemptSurface("packages/pi-workflows/skills/x/references/bundled-resources.md"), true);
+	});
+
+	it("is false for a hand-authored non-generated *.md under a skills/ dir (c)", () => {
+		assert.equal(isExemptSurface("packages/pi-workflows/skills/x/HOWTO.md"), false);
+	});
+
+	it("is false for a non-bundled-resources file under skills/references/ (tightness)", () => {
+		assert.equal(isExemptSurface("packages/pi-workflows/skills/x/references/other.md"), false);
+	});
+
+	it("is false for a SKILL.md NOT under a skills/ dir (tightness)", () => {
+		assert.equal(isExemptSurface("packages/pi-workflows/SKILL.md"), false);
+	});
+
+	it("regression: existing test / patterns.json exemptions unchanged", () => {
+		assert.equal(isExemptSurface("x/y.test.ts"), true);
+		assert.equal(isExemptSurface("packages/pi-behavior-monitors/examples/hedge.patterns.json"), true);
+		assert.equal(isExemptSurface("packages/pi-context/src/foo.ts"), false);
 	});
 });
 

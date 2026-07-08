@@ -73,13 +73,25 @@ export function watchDirsFromFiles(files: string[], pkgDir: string, hasSrc?: boo
 
 /**
  * Is this path a non-shipping surface that should never flag a package? Subtractive
- * exemption applied before classification: build-excluded tests + monitor learned-pattern
- * stores — not shipped feature surface.
+ * exemption applied before classification. Exempts:
+ *   - build-excluded tests (*.test.[cm]?tsx?);
+ *   - monitor learned-pattern stores (pi-behavior-monitors/examples/ *.patterns.json);
+ *   - GENERATED skill artifacts — a `SKILL.md` (any depth) or a
+ *     `references/bundled-resources.md` under a `skills/` directory. `npm run skills`
+ *     (scripts/generate-skills.js) writes both from src/ registrations + agents/ specs +
+ *     skill-narrative.md, so their semantic changes are already changelogged at that
+ *     generating source; demanding a second [Unreleased] line for the regenerated output
+ *     is redundant ceremony. Kept TIGHT to those two generated basenames — any other
+ *     hand-authored file under skills/ stays watched.
  */
 export function isExemptSurface(path: string): boolean {
+	const inSkillsDir = /(^|\/)skills\//.test(path);
+	const isGeneratedSkillArtifact =
+		inSkillsDir && (/(^|\/)SKILL\.md$/.test(path) || /\/references\/bundled-resources\.md$/.test(path));
 	return (
 		/\.test\.[cm]?tsx?$/.test(path) ||
-		(path.startsWith("packages/pi-behavior-monitors/examples/") && path.endsWith(".patterns.json"))
+		(path.startsWith("packages/pi-behavior-monitors/examples/") && path.endsWith(".patterns.json")) ||
+		isGeneratedSkillArtifact
 	);
 }
 

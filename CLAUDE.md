@@ -2,6 +2,8 @@
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state via pi-context. Behavior monitors that classify agent activity and steer corrections.
 
+**Aim — working substrate, not substrate management.** Substrate management is not the aim or purpose of this project. Working substrate is. A defect surfaced through this repo's own substrate is triaged to its tool-level cause and fixed in the tooling; managing this substrate's own items is a means, never the deliverable.
+
 Monorepo: npm packages under `packages/*` with lockstep versioning. `ls -d packages/*/` for the set; each `packages/<name>/package.json` `description` + `src/index.ts` re-exports (root for pi-behavior-monitors) for its surface. `pi-project-workflows` is the meta-package re-exporting the Pi extensions; `pi-jit-agents` is a library, not an extension.
 
 # How to establish exact current context for this project using pi-context

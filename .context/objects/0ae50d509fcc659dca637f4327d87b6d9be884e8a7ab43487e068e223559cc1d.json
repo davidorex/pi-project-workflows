@@ -1,0 +1,27 @@
+{
+  "title": "Dispatch model-resolution divergence — bundled specs are model-less by design and both dispatch sites hard-throw, with no model-config fallback",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "model-config precedence on the dispatch path",
+  "description": "Zero of the 26 bundled specs declare model: — by design ('model comes from .project/model-config.json, not agent spec', pi-workflows/src/agent-spec.test.ts:291). The workflow executor resolves models as step.model ?? agentSpec.model ?? modelConfig.by_role[role] ?? modelConfig.default and OMITS --models when nothing resolves so pi's own default applies (pi-workflows/src/dispatch.ts:76-85; modelConfig read from the substrate model-config block, workflow-executor.ts:765-772). The dispatch path has none of this: call-agent-tool.ts:83-86 and work-order-loop.ts:174-177 hard-throw on a model-less spec, and pi-jit-agents has no fallback (compile.ts:574 passes spec.model verbatim). Class: even after the template class (FGAP-129) is fixed, every model-less spec — the entire bundled set — remains undispatchable on both dispatch paths.",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+      "reference": "Class B: root cause, shape, the production precedence facts, per-anchor re-verified evidence",
+      "content_pin": "f9ef7380b537e941d6149d9f80285930be277ebd9a6bac897b89e958aef91705"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+      "reference": "model resolution now compiled.model ?? spec.model ?? resolveDispatchModel(cwd, spec) with the residual throw naming the model-config block (TASK-104 fix in flight; previously an unconditional hard-throw on any model-less spec — the defect this gap tracks; work-order-loop.ts resolves identically and omits the subprocess --model when null)",
+      "content_pin": "c224e72286c51aa8f639dcf2212473a044253aeeb706be076e30c7fbcdec3f0f"
+    },
+    {
+      "file": "packages/pi-workflows/src/dispatch.ts",
+      "reference": ":76-85 the proven precedence incl. --models omission when nothing resolves; modelConfig sourced from the model-config block (workflow-executor.ts:765-772)",
+      "content_pin": "1d2aa7f231715588a5e6463c605f0bcc47edbba021c7b255476cb3fd182a31f7"
+    }
+  ],
+  "impact": "Bundled-agent dispatch fails 100% of the time on a model axis independent of template resolution; the dispatch surface contradicts the spec-authoring convention that models live in model-config, forcing spec forks or hand-edits.",
+  "proposed_resolution": "Per the derived dispatch model-policy decision (user-approved plan, 2026-07-08): a resolveDispatchModel(cwd, spec) helper implementing spec.model ?? model-config.by_role[spec.role] ?? model-config.default (absent block = null fall-through, mirroring the executor); work-order subprocess dispatch omits --model when null (pi defaults inside the subprocess); in-process call-agent keeps the throw when nothing resolves, with the error naming the model-config block as the remedy; precedence unit cells."
+}

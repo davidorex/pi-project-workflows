@@ -4552,7 +4552,7 @@
         {
           "file": "packages/pi-jit-agents/src/agent-spec.ts",
           "reference": "219-243 three-tier search; the builtin tier participates only when the consumer supplies ctx.builtinDir (unchanged, by design — the library never hardcodes a consumer dir); the docblock's stale '.project/agents' tier wording is aligned to the contextDir-resolved reality on fix/fgap-127-bundled-agents-tier",
-          "content_pin": "3d4b963c56d2aa36b90fc2b75bae3fcad6388bcf7779acdb44cd7f34b1cf4688"
+          "content_pin": "e2f3c7f93df919e6f0886fb0016bae8647582ccbcb17302dea8c2f77fe3f19cb"
         },
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
@@ -4571,8 +4571,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-127",
       "oid": "c2bc490c5b917dcbca4c4065002a1a42",
-      "content_hash": "1ce05adf847db032c230054bbaee540ecfff96918b6677718652268910fef356",
-      "content_parent": "8154cb67abc89e61649daa13ca856a7e3c7cd6807855d19c52780b1221c7c05e"
+      "content_hash": "2e24eef7c93b7cd4038ef78a13200a8a684e9d1ada9d9503d18eceb191604390",
+      "content_parent": "1ce05adf847db032c230054bbaee540ecfff96918b6677718652268910fef356"
     },
     {
       "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
@@ -4617,8 +4617,8 @@
         },
         {
           "file": "packages/pi-jit-agents/src/agent-spec.ts",
-          "reference": "resolveSpecPath now absolutizes a relative ref only when it exists beside the spec OR at the package-root sibling location (specDir/.. — the bundled agents/+schemas/ layout), otherwise preserving it as a loader-resolvable name (existence-gated probes, TASK-104 fix in flight on fix/fgap-127-bundled-agents-tier; previously unconditional absolutization — the defect this gap tracks; the sibling probe closes the outputSchema member of the class the re-probe surfaced); applied to system/task templates and outputSchema",
-          "content_pin": "3d4b963c56d2aa36b90fc2b75bae3fcad6388bcf7779acdb44cd7f34b1cf4688"
+          "reference": "resolveSpecPath now absolutizes a relative ref only when it exists beside the spec OR — for bundled-tier specs only (siblingProbe threaded from createAgentLoader's builtin-tier match) — at the package-root sibling location, otherwise preserving it as a loader-resolvable name (TASK-104 fix in flight on fix/fgap-127-bundled-agents-tier; previously unconditional absolutization — the defect this gap tracks; the tier-scoped sibling probe closes the outputSchema member and forecloses the local/user-tier shadowing vector probe 3 surfaced); applied to system/task templates and outputSchema",
+          "content_pin": "e2f3c7f93df919e6f0886fb0016bae8647582ccbcb17302dea8c2f77fe3f19cb"
         },
         {
           "file": "packages/pi-jit-agents/src/template.ts",
@@ -4632,8 +4632,8 @@
       "created_at": "2026-07-08",
       "id": "FGAP-129",
       "oid": "c4a5cc51e493bf6c9b0ec31189133a5d",
-      "content_hash": "7d65579ba06d0f34de7fa99423ce31c5b89c72fed476eba73faf87fd49c7f72a",
-      "content_parent": "319f71e7cdde59d956c56217f507656edf827b78e4986c946869f5331d104367"
+      "content_hash": "8ab094dc0af95df18d42e84738db66cb4b7711c89fdb6747bc15a8e422bb2e11",
+      "content_parent": "7d65579ba06d0f34de7fa99423ce31c5b89c72fed476eba73faf87fd49c7f72a"
     },
     {
       "title": "Dispatch model-resolution divergence — bundled specs are model-less by design and both dispatch sites hard-throw, with no model-config fallback",

@@ -29,7 +29,7 @@ Dispatch a privileged JIT-agent as a typed tool call. Loads the named .agent.yam
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `spec_name` | string | yes | Name of the agent spec to load (resolves to <name>.agent.yaml in the agents tier). |
+| `spec_name` | string | yes | Name of the agent spec to load (resolves to <name>.agent.yaml searched across the substrate agents/ dir, then ~/.pi/agent/agents/, then the bundled pi-workflows agents). |
 | `input` | unknown | yes | Typed input passed to the agent's compileAgent context. |
 | `parent_grant` | array | no | The caller's own tool grant. Default-empty. |
 | `requested_grant` | array | no | The grant requested for the dispatched sub-agent. Will be clamped to the intersection with parent_grant. |

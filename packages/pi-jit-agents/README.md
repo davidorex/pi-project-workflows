@@ -17,7 +17,7 @@ There is one concept of "agent" regardless of whether a workflow step or a monit
 
 The package owns four public surfaces:
 
-- `loadAgent(name, ctx) → AgentSpec` — resolves spec from discovery tiers, fully resolves all path fields to absolute
+- `loadAgent(name, ctx) → AgentSpec` — resolves spec from discovery tiers; relative path fields absolutize only where a file exists (beside the spec, or — for builtin-tier specs — at the package-root sibling location), otherwise surviving as loader-resolvable names
 - `compileAgent(spec, ctx) → CompiledAgent` — renders templates, injects `contextBlocks` from the substrate directory, composes final prompts
 - `executeAgent(compiled, dispatch) → JitAgentResult` — in-process LLM dispatch with phantom tool enforcement; clamps the compiled agent's tool grant to a subset of the caller-supplied parent grant at the dispatch boundary
 - `agentContract(spec) → AgentContract` — projection for introspection, no execution

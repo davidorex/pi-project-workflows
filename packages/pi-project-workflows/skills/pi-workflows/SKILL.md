@@ -217,7 +217,7 @@ See references/bundled-resources.md for full inventory.
 - `handoff-writer`: task: `handoff-writer/task.md`
 - `investigator`: task: `investigator/task.md`
 - `pattern-analyzer`: system: `analyzers/patterns.md`, task: `analyzers/patterns-task.md`
-- `phase-author`: task: `templates/phase-author/task.md`
+- `phase-author`: task: `phase-author/task.md`
 - `plan-creator`: task: `plan-creator/task.md`
 - `plan-decomposer`: task: `plan-decomposer/task.md`
 - `project-definer`: task: `project-definer/task.md`

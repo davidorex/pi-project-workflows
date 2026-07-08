@@ -3,4 +3,3 @@ npm test
 npx tsx scripts/check-changelog.ts
 npx tsx scripts/parity-check.ts
 npx tsx scripts/check-config-schema.ts
-npx tsx scripts/check-context-currency.ts

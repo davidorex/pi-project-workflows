@@ -16,7 +16,7 @@
 # relations.json, objects/*.json) and schemas/*.json (they live under the substrate dir).
 # A .md/.ts/etc. under the substrate dir is NOT blocked; a .json outside it is NOT blocked.
 #
-# Fail-open, matching the sibling hooks (block-control-chars.sh, gap-register-guard.sh):
+# Fail-open, matching the sibling hook (block-control-chars.sh):
 # jq-absent, malformed input, or an absent/empty contextDir pointer => exit 0 (a broken
 # hook must never brick all edits). Exit 2 => block, stderr fed back to the agent.
 

@@ -115,6 +115,14 @@
       "severity": "error",
       "oid": "fbf16a2e8a8e0bd11e380154bdcaa66f",
       "content_hash": "921c5314abcfdaa0f61f1f81c935526490291bc54b6c9b9f83a48639f2a4c5c5"
+    },
+    {
+      "id": "working-substrate-is-the-aim",
+      "description": "Substrate management is not the aim or purpose of this project; a working substrate — the tooling that makes substrates correct — is. Apply when triaging any finding surfaced through this repo's own substrate: the deliverable is the tool-level fix that makes the framework truthful and correct for all substrates, not housekeeping of this substrate's items. A finding's triggering instance in the local substrate is evidence of a tool defect, not a task to tidy the substrate. Positioning, decomposing, or re-statusing local items is a means only when it serves tool verification, never the work itself.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "6aafd6423198c262b5590852823c6282",
+      "content_hash": "28d1d8d32b799b5a383e117be99a0691fc7715d5021bce02a9e05f6c26a2d59b"
     }
   ],
   "schema_version": "1.0.1"

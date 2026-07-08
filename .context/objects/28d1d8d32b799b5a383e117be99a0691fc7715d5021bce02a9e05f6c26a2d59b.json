@@ -1,0 +1,5 @@
+{
+  "description": "Substrate management is not the aim or purpose of this project; a working substrate — the tooling that makes substrates correct — is. Apply when triaging any finding surfaced through this repo's own substrate: the deliverable is the tool-level fix that makes the framework truthful and correct for all substrates, not housekeeping of this substrate's items. A finding's triggering instance in the local substrate is evidence of a tool defect, not a task to tidy the substrate. Positioning, decomposing, or re-statusing local items is a means only when it serves tool verification, never the work itself.",
+  "enforcement": "review",
+  "severity": "error"
+}

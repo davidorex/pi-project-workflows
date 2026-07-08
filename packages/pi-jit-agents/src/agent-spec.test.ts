@@ -54,6 +54,56 @@ describe("parseAgentYaml", () => {
 	});
 });
 
+describe("parseAgentYaml — existence-gated spec-path resolution", () => {
+	it("absolutizes a relative template ref when the adjacent file EXISTS", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// Adjacent file present → absolutized against the spec dir.
+		fs.writeFileSync(path.join(dir, "task.md"), "adjacent task template");
+		const file = writeAgent(dir, "adj", "name: adj\nmodel: test/m\nprompt:\n  task:\n    template: task.md\n");
+		const spec = parseAgentYaml(file);
+		assert.ok(spec.taskPromptTemplate);
+		assert.ok(path.isAbsolute(spec.taskPromptTemplate), "adjacent template must absolutize");
+		assert.strictEqual(spec.taskPromptTemplate, path.join(dir, "task.md"));
+	});
+
+	it("preserves a non-adjacent relative template ref as a loader-resolvable name", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		// No `subdir/task.md` adjacent → the ref survives as a bare name for the
+		// Nunjucks loader's three-tier search (the bundled-spec shape).
+		const file = writeAgent(
+			dir,
+			"nonadj",
+			"name: nonadj\nmodel: test/m\nprompt:\n  task:\n    template: subdir/task.md\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.strictEqual(spec.taskPromptTemplate, "subdir/task.md");
+		assert.ok(!path.isAbsolute(spec.taskPromptTemplate as string), "non-adjacent ref must stay relative");
+	});
+
+	it("returns a `block:` sentinel unchanged", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const file = writeAgent(
+			dir,
+			"blk",
+			"name: blk\nmodel: test/m\nprompt:\n  task:\n    template: 'block:task-context'\n",
+		);
+		const spec = parseAgentYaml(file);
+		assert.strictEqual(spec.taskPromptTemplate, "block:task-context");
+	});
+
+	it("returns an absolute template ref unchanged (passthrough)", (t) => {
+		const dir = tmpProject();
+		t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+		const abs = path.join(dir, "elsewhere", "task.md");
+		const file = writeAgent(dir, "absref", `name: absref\nmodel: test/m\nprompt:\n  task:\n    template: ${abs}\n`);
+		const spec = parseAgentYaml(file);
+		assert.strictEqual(spec.taskPromptTemplate, abs);
+	});
+});
+
 describe("parseAgentYaml — contextBlocks union form", () => {
 	function withSpec(t: { after: (fn: () => void) => void }, body: string): string {
 		const dir = tmpProject();

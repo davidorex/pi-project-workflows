@@ -31,18 +31,31 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
 }
 
 /**
- * Resolve a path referenced from an agent spec to an absolute filesystem path.
+ * Resolve a path referenced from an agent spec.
  *
- * Accepts:
+ * Existence-gated contract:
  * - Absolute paths (returned unchanged)
  * - `block:<name>` sentinels (returned unchanged — resolved at compile time against cwd)
- * - Relative paths (resolved against the agent spec's directory)
+ * - Relative paths: absolutized against the spec's directory ONLY when a file
+ *   actually exists at that adjacent location; otherwise the value is returned
+ *   UNCHANGED as a loader-resolvable name.
+ *
+ * The existence gate is what lets a bundled spec's template/schema reference —
+ * e.g. `investigator/task.md` or `analyzers/quality.md`, whose file lives in the
+ * pi-jit-agents template tier, NOT adjacent to the spec — survive as a bare name
+ * that the Nunjucks FileSystemLoader resolves through the three-tier search
+ * (project → user → bundled builtinDir). Without the gate a non-adjacent
+ * relative ref was frozen to a nonexistent absolute adjacent path, which
+ * `renderTemplateFile` then tried to `readFileSync` directly (absolute paths
+ * bypass the loader), defeating the bundled-template tier. Adjacent-file specs
+ * (the local/project case, and the test fixtures) still absolutize as before.
  */
 function resolveSpecPath(value: string | undefined, specDir: string): string | undefined {
 	if (!value) return undefined;
 	if (value.startsWith("block:")) return value;
 	if (path.isAbsolute(value)) return value;
-	return path.resolve(specDir, value);
+	const resolved = path.resolve(specDir, value);
+	return fs.existsSync(resolved) ? resolved : value;
 }
 
 /**
@@ -148,9 +161,11 @@ function parseContextBlockEntry(
 /**
  * Parse a YAML agent spec file into a fully-resolved AgentSpec.
  *
- * All relative path fields (system/task templates, output schema) are
- * resolved to absolute paths against the directory containing the spec file.
- * The `loadedFrom` field records that directory.
+ * Relative path fields (system/task templates, output schema) are resolved per
+ * the existence-gated `resolveSpecPath` contract: absolutized against the spec's
+ * directory when an adjacent file exists, otherwise left as a loader-resolvable
+ * name (bundled specs reference templates that live in the pi-jit-agents tier,
+ * not adjacent to the spec). The `loadedFrom` field records that directory.
  */
 export function parseAgentYaml(filePath: string): AgentSpec {
 	const name = path.basename(filePath, ".agent.yaml");

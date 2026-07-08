@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Agent-spec path resolution is now existence-gated: a relative `template`/`schema` reference is absolutized against the spec's directory only when a file actually exists at that adjacent location; when it does not, the reference is preserved unchanged as a loader-resolvable name so the Nunjucks `FileSystemLoader` resolves it through the three-tier template search (project → user → bundled). This lets a spec that references a template living in a bundled/builtin tier (e.g. `investigator/task.md`, `analyzers/quality.md`) compile from any working directory instead of being frozen to a nonexistent absolute adjacent path. Absolute references and `block:` sentinels are unchanged; adjacent-file references (the local/project case) still absolutize exactly as before.
 - Docblock alignment only (no behavior change): the `createAgentLoader` / `LoadContext` docs now describe the loader's actual first tier — the active substrate dir resolved from the project's `.pi-context.json` pointer via `tryResolveContextDir(cwd)`, plus `/agents`, with the tier omitted when no pointer resolves — replacing the stale `{cwd}/.project/agents/` wording. The D3 statement (`.pi/agents/` is never searched) stands unchanged.
 
 ## [0.32.0] - 2026-07-05

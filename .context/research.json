@@ -723,9 +723,9 @@
           "content_pin": "a34370316e19d3782f974d65984f326f30cbcc5efb68abc418cd011b368a9fee"
         },
         {
-          "label": "Modern compilation path — used only by renderItemById (anti-injection wrap, budget, recursion, renderer registry, tool-grant clamping)",
+          "label": "Modern compilation path — used only by renderItemById (anti-injection wrap, budget, recursion, renderer registry, tool-grant clamping) — claim re-reviewed 2026-07-08 (a docstring-only edit to resolveOutputSchemaForCompile touched this file; the compilation features the citation attests are unchanged)",
           "path": "packages/pi-jit-agents/src/compile.ts",
-          "content_pin": "7ed94e88176d9f5afdc31d4b73d76aad042904bba2756c248b545f94d4da4cd5"
+          "content_pin": "243f95115dd636d188fd8f8dd280f73f4c978fec00510b71a559be3ed72292ed"
         },
         {
           "label": "Template validation — computes only the _<name> form; INJECTED_VARIABLES = {output_schema, loop} only",
@@ -751,10 +751,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-07T23:00:07.422Z",
+      "modified_at": "2026-07-08T00:59:39.832Z",
       "oid": "7ae0c774789722c30b31af55d518cb9f",
-      "content_hash": "8e5579fbc02d68e45d9d8a2a4a244576e0d1953938e081f6664d6c0b6dbb9d14",
-      "content_parent": "33463fbb417b99917c833a1b08cddd436498c5b7b98202a769049ee9d62e3eb2"
+      "content_hash": "983e45020991eff7c69f1160045d30c1ec71276104c28b0714154ab8a14a0b37",
+      "content_parent": "8e5579fbc02d68e45d9d8a2a4a244576e0d1953938e081f6664d6c0b6dbb9d14"
     },
     {
       "title": "What pi-context is — the framework's generative model (organizing principles, audited)",

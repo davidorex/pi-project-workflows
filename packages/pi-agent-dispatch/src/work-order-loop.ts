@@ -31,12 +31,13 @@ import { readBlock } from "@davidorex/pi-context/block-api";
 import { validate } from "@davidorex/pi-context/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
 import { compileAgent } from "@davidorex/pi-jit-agents/compile";
-import { createTemplateEnv } from "@davidorex/pi-jit-agents/template";
+import { bundledTemplateDir, createTemplateEnv } from "@davidorex/pi-jit-agents/template";
 import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { type AttestedCommitResult, attestedCommit as canonicalAttestedCommit } from "./attested-commit.js";
 import { composeToolGrant } from "./capability-composer.js";
 import { dispatchLoadContext } from "./dispatch-loader.js";
+import { resolveDispatchModel } from "./dispatch-model.js";
 import {
 	runRealChecks as canonicalRunRealChecks,
 	type RealCheckCriteria,
@@ -164,17 +165,19 @@ async function dispatchTargetAgent(
 ): Promise<JitAgentResult> {
 	const loadAgent = createAgentLoader(dispatchLoadContext(cwd));
 	const spec = loadAgent(wo.target_agent);
-	const env = createTemplateEnv({ cwd });
+	// builtinDir = bundled pi-jit-agents templates/, so a bundled spec's task/system
+	// templates resolve without a local copy.
+	const env = createTemplateEnv({ cwd, builtinDir: bundledTemplateDir() });
 	// Guard the dispatch input against the work-order's declared input_contract
 	// BEFORE compiling/spawning; a contract violation throws and the loop
 	// surfaces it (no subprocess is spawned on a bad input).
 	const input = { work_order_id: wo.id };
 	validateWorkOrderInput(input, wo.input_contract, wo.id);
 	const compiled = compileAgent(spec, { env, input, cwd });
-	const modelSpec = compiled.model ?? spec.model;
-	if (!modelSpec) {
-		throw new Error(`work-order-loop: agent '${wo.target_agent}' has no model specified.`);
-	}
+	// Model precedence (DEC-0023): compiled/spec model → model-config by_role[role]
+	// → default → null. A null result is NOT an error for subprocess dispatch — no
+	// `--model` is passed and pi resolves its own default inside the subprocess.
+	const modelSpec = compiled.model ?? spec.model ?? resolveDispatchModel(cwd, spec) ?? undefined;
 	// Intersect at dispatch boundary (parent ∩ requested = agentGrant ∩ spec.tools).
 	// The clamp now actually reaches execution: composedGrant becomes the
 	// subprocess `--tools` allowlist (empty grant → `--no-tools`).

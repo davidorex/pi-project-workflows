@@ -105,11 +105,14 @@ describe("callAgentTool", () => {
 		);
 	});
 
-	it("throws when the loaded spec carries no model declaration", async () => {
+	it("throws naming the model-config remedy when neither the spec nor model-config resolves a model", async () => {
+		// The substrate has no model-config block, so the DEC-0023 fall-through
+		// (spec → model-config by_role → default) yields nothing and in-process
+		// dispatch throws an informed error pointing at the model-config block.
 		writeAgentSpec(substrateRoot, "no-model", minimalSpec("no-model"));
 		await assert.rejects(
 			callAgentTool.execute("call-3", { spec_name: "no-model", input: {} }, signal, noopUpdate, mockCtx(tmpDir)),
-			/has no model specified/,
+			/has no model — declare one on the spec, or add a matching entry to the substrate's model-config block/,
 		);
 	});
 

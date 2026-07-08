@@ -46,4 +46,18 @@ describe("buildDispatchArgs", () => {
 		assert.ok(args.includes("--no-tools"));
 		assert.equal(args.indexOf("--tools"), -1);
 	});
+
+	it("emits --model when a model is supplied", () => {
+		const args = buildDispatchArgs({ model: "anthropic/claude-haiku-4.5", tools: ["bash"], promptArg: "x" });
+		const modelIdx = args.indexOf("--model");
+		assert.notEqual(modelIdx, -1);
+		assert.equal(args[modelIdx + 1], "anthropic/claude-haiku-4.5");
+	});
+
+	it("omits --model entirely when no model is supplied — pi resolves its own default (DEC-0023)", () => {
+		const args = buildDispatchArgs({ tools: ["bash"], promptArg: "x" });
+		assert.equal(args.indexOf("--model"), -1);
+		// The rest of the surface is unaffected.
+		assert.deepEqual(args, ["--mode", "json", "--tools", "bash", "-p", "x"]);
+	});
 });

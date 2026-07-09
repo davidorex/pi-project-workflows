@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/framework-gaps",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "title": "Framework Gaps",
   "description": "Capability gaps in the framework — pieces that must exist natively for the target artifact-ownership model to be expressible as configuration rather than hand-enactment. Each gap carries evidence (file + line references), impact, canonical engineering vocabulary for the missing capability, proposed resolution, and lifecycle state. Framework gaps are distinct from feature-level defects: they describe what the framework cannot yet express at all, not bugs in expressible functionality.",
   "type": "object",
@@ -101,11 +101,6 @@
                     "tokens": 1000,
                     "words": 800
                   }
-                },
-                "content_pin": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$",
-                  "description": "SHA-256 of the referenced file at write time. Stamped by the write path when `file` names a readable file OUTSIDE the substrate dir (substrate-internal paths are living state, never pinned) and no pin exists; context-validate flags a pinned evidence entry whose current file hash drifted (anchor drift — re-review, never rewritten)."
                 }
               }
             }

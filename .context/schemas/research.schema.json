@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/research",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Research",
   "description": "Factual and analytical substrate under decisions — each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them.",
   "type": "object",
@@ -206,11 +206,6 @@
                 },
                 "retrieved_at": {
                   "type": "string"
-                },
-                "content_pin": {
-                  "type": "string",
-                  "pattern": "^[0-9a-f]{64}$",
-                  "description": "SHA-256 of the cited file at write time. Stamped by the write path when `path` names a readable file OUTSIDE the substrate dir (substrate-internal paths are living state, never pinned) and no pin exists; context-validate flags a pinned citation whose current file hash drifted."
                 }
               }
             }

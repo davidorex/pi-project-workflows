@@ -2628,10 +2628,9 @@ export interface ReconcileResult {
 	/**
 	 * Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089):
 	 * every stale_conditions-bearing item whose status buckets complete and
-	 * whose typed condition fired or whose content pin drifted, transitioned
-	 * to `stale`. Under dryRun the exact set a live run would apply; a live
-	 * run applies it through the standard validated write path. Flag-only
-	 * anchor-drift items (no transition shape) are validate's, not here.
+	 * whose typed condition fired, transitioned to `stale`. Under dryRun the
+	 * exact set a live run would apply; a live run applies it through the
+	 * standard validated write path.
 	 */
 	stalenessTransitions: Array<{ id: string; block: string; from: string; to: string; reasons: string[] }>;
 	stalenessApplied: number;
@@ -2686,21 +2685,18 @@ export function reconcileContext(
 
 /**
  * The transition slice of the declared-baseline staleness sweep: candidates
- * from the SAME evaluateStalenessCandidates helper validate flags with,
- * restricted to the transition-eligible kind, each becoming a stored-status
- * delta to `stale`. Flag-only anchor-drift candidates never transition.
+ * from the SAME evaluateStalenessCandidates helper validate flags with, each
+ * becoming a stored-status delta to `stale`.
  */
 function computeStalenessTransitions(cwd: string): ReconcileResult["stalenessTransitions"] {
 	const index = buildIdIndex(cwd);
-	return evaluateStalenessCandidates(cwd, index)
-		.filter((c) => c.kind === "staleness-candidate")
-		.map((c) => ({
-			id: c.id,
-			block: c.block,
-			from: String(index.byRefname.get(c.id)?.item.status ?? ""),
-			to: "stale",
-			reasons: c.reasons,
-		}));
+	return evaluateStalenessCandidates(cwd, index).map((c) => ({
+		id: c.id,
+		block: c.block,
+		from: String(index.byRefname.get(c.id)?.item.status ?? ""),
+		to: "stale",
+		reasons: c.reasons,
+	}));
 }
 
 /** Apply the complete-to-stale transitions through the standard validated write path. */

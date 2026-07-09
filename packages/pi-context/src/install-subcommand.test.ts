@@ -3827,12 +3827,12 @@ describe("write-time invariant gate (delta-scoped)", () => {
 	});
 });
 
-// ── declared-baseline staleness: typed conditions + content pins (TASK-089) ──
-// The write choke (prepareItemIdentityForWrite, identity-gated) stamps citation
-// content pins and typed stale-condition baselines BEFORE the content hash;
-// evaluateStalenessCandidates is the ONE verdict path validate flags with and
-// reconcile transitions with. Bare-string conditions stay human-only.
-describe("declared-baseline staleness (typed stale_conditions + content pins)", () => {
+// ── declared-baseline staleness: typed stale_conditions (TASK-089) ──
+// The write choke (prepareItemIdentityForWrite, identity-gated) stamps typed
+// stale-condition baselines BEFORE the content hash; evaluateStalenessCandidates
+// is the ONE verdict path validate flags with and reconcile transitions with.
+// Bare-string conditions stay human-only.
+describe("declared-baseline staleness (typed stale_conditions)", () => {
 	let staleRoot: string | undefined;
 	afterEach(() => {
 		if (staleRoot) fs.rmSync(staleRoot, { recursive: true, force: true });
@@ -3842,7 +3842,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 	/**
 	 * Project root with a git repo, two anchor files, and a substrate whose
 	 * research schema is the REAL catalog schema (identity fields + typed
-	 * stale_conditions + citation content_pin all declared).
+	 * stale_conditions declared).
 	 */
 	function makeStalenessProject(): string {
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-stale-"));
@@ -3900,7 +3900,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		};
 	}
 
-	it("the write choke stamps citation pins + typed-condition baselines (schema-gated, hashed into content_hash), and leaves bare strings + existing pins untouched", (t) => {
+	it("the write choke stamps typed-condition baselines (schema-gated, hashed into content_hash), and leaves bare strings untouched", (t) => {
 		staleRoot = makeStalenessProject();
 		const root = staleRoot;
 		t.after(() => undefined);
@@ -3909,11 +3909,6 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 			"research",
 			"research",
 			researchItem("R-0001", "complete", {
-				citations: [
-					{ label: "cited file", path: "cited.txt" },
-					{ label: "no path — never pinned" },
-					{ label: "pre-pinned, never overwritten", path: "cited.txt", content_pin: "ab".repeat(32) },
-				],
 				stale_conditions: [
 					"a bare human-only string",
 					{ kind: "file-changed", path: "watched.txt" },
@@ -3924,14 +3919,6 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		);
 		const data = readBlock(root, "research") as { research: Array<Record<string, unknown>> };
 		const item = data.research[0];
-		const citations = item.citations as Array<Record<string, unknown>>;
-		assert.equal(
-			citations[0].content_pin,
-			computeFileBytesHash(path.join(root, "cited.txt")),
-			"path-bearing citation pinned with the file's hash",
-		);
-		assert.equal(citations[1].content_pin, undefined, "path-less citation never pinned");
-		assert.equal(citations[2].content_pin, "ab".repeat(32), "an existing pin is never overwritten");
 		const conds = item.stale_conditions as Array<unknown>;
 		assert.equal(conds[0], "a bare human-only string", "bare strings pass through untouched");
 		assert.equal(
@@ -3947,7 +3934,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		assert.ok(typeof item.content_hash === "string", "identity stamping still ran");
 	});
 
-	it("evaluateStalenessCandidates + validate: fired item-status / file-changed / revision-moved conditions and pin drift flag a complete item as a staleness candidate; bare strings never judged; unpinned items untouched", (t) => {
+	it("evaluateStalenessCandidates + validate: fired item-status / file-changed / revision-moved conditions flag a complete item as a staleness candidate; bare strings never judged; conditionless items untouched", (t) => {
 		staleRoot = makeStalenessProject();
 		const root = staleRoot;
 		t.after(() => undefined);
@@ -3958,7 +3945,6 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 			"research",
 			"research",
 			researchItem("R-0001", "complete", {
-				citations: [{ label: "cited", path: "cited.txt" }],
 				stale_conditions: [
 					{ kind: "item-status", item: "R-0009", bucket: "complete" },
 					{ kind: "file-changed", path: "watched.txt" },
@@ -3974,15 +3960,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 			"research",
 			researchItem("R-0002", "complete", { stale_conditions: ["human judgment only"] }),
 		);
-		// R-0003: NOT complete (in-progress), pinned citation that will drift → anchor-drift, not a transition candidate.
-		appendToBlock(
-			root,
-			"research",
-			"research",
-			researchItem("R-0003", "in-progress", { citations: [{ label: "cited", path: "cited.txt" }] }),
-		);
-		// Drift everything: change both files + move HEAD.
-		fs.writeFileSync(path.join(root, "cited.txt"), "cited v2 — drifted\n");
+		// Drift the watched file + move HEAD so file-changed + revision-moved fire.
 		fs.writeFileSync(path.join(root, "watched.txt"), "watched v2 — changed\n");
 		execFileSync("git", ["add", "."], { cwd: root });
 		execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "move HEAD"], { cwd: root });
@@ -3996,21 +3974,13 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		assert.ok(joined.includes("item 'R-0009' bucketed 'complete'"), "item-status condition fired");
 		assert.ok(joined.includes("'watched.txt' changed"), "file-changed condition fired");
 		assert.ok(joined.includes("ref 'HEAD' moved"), "revision-moved condition fired");
-		assert.ok(joined.includes("pin drift"), "citation pin drift reported on the same candidate");
 		assert.equal(byId.get("R-0002"), undefined, "bare-string-only item is never machine-judged");
-		assert.equal(
-			byId.get("R-0003")?.kind,
-			"anchor-drift",
-			"non-transition-shaped drift degrades to the flag-only kind",
-		);
-		assert.equal(byId.get("R-0009"), undefined, "an item with no conditions and no pins is untouched");
+		assert.equal(byId.get("R-0009"), undefined, "an item with no conditions is untouched");
 
 		const validation = validateContext(root);
 		const staleIssues = validation.issues.filter((i) => i.code === "staleness-candidate");
-		const driftIssues = validation.issues.filter((i) => i.code === "anchor-drift");
 		assert.equal(staleIssues.length, 1, "validate flags exactly the transition candidate");
 		assert.equal(staleIssues[0].severity, "warning", "staleness candidacy is warning severity");
-		assert.equal(driftIssues.length, 1, "validate flags exactly the anchor-drift item");
 		const dataBefore = fs.readFileSync(path.join(root, ".project", "research.json"), "utf-8");
 		validateContext(root);
 		assert.equal(
@@ -4020,7 +3990,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		);
 	});
 
-	it("reconcile sweeps the transition: dryRun previews the exact complete-to-stale set writing nothing; live applies it through the validated write path; anchor-drift never transitions", (t) => {
+	it("reconcile sweeps the transition: dryRun previews the exact complete-to-stale set writing nothing; live applies it through the validated write path", (t) => {
 		staleRoot = makeStalenessProject();
 		const root = staleRoot;
 		t.after(() => undefined);
@@ -4033,20 +4003,13 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 				stale_conditions: [{ kind: "item-status", item: "R-0009", bucket: "complete" }],
 			}),
 		);
-		appendToBlock(
-			root,
-			"research",
-			"research",
-			researchItem("R-0003", "in-progress", { citations: [{ label: "cited", path: "cited.txt" }] }),
-		);
-		fs.writeFileSync(path.join(root, "cited.txt"), "cited v2 — drifted\n");
 
 		const before = fs.readFileSync(path.join(root, ".project", "research.json"), "utf-8");
 		const plan = reconcileContext(root, { dryRun: true });
 		assert.deepEqual(
 			plan.stalenessTransitions.map((s) => ({ id: s.id, from: s.from, to: s.to })),
 			[{ id: "R-0001", from: "complete", to: "stale" }],
-			"dryRun previews exactly the transition set — the anchor-drift item is not in it",
+			"dryRun previews exactly the transition set",
 		);
 		assert.equal(plan.stalenessApplied, 0, "dryRun applies nothing");
 		assert.equal(
@@ -4063,7 +4026,6 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 			"stale",
 			"the complete item transitioned to stale",
 		);
-		assert.equal(data.research.find((r) => r.id === "R-0003")?.status, "in-progress", "anchor-drift item untouched");
 
 		const after = reconcileContext(root, { dryRun: true });
 		assert.equal(
@@ -4073,36 +4035,30 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		);
 	});
 
-	it("substrate-internal paths are living state: never pinned at the choke, never judged by the evaluator", (t) => {
+	it("substrate-internal paths are living state: file-changed conditions on them are never baselined at the choke, never judged by the evaluator", (t) => {
 		staleRoot = makeStalenessProject();
 		const root = staleRoot;
 		t.after(() => undefined);
-		// Citation pointing INSIDE the substrate dir: the choke must not pin it.
+		// file-changed condition pointing INSIDE the substrate dir: the choke must not baseline it.
 		appendToBlock(
 			root,
 			"research",
 			"research",
 			researchItem("R-0004", "complete", {
-				citations: [{ label: "living substrate block", path: ".project/research.json" }],
 				stale_conditions: [{ kind: "file-changed", path: ".project/research.json" }],
 			}),
 		);
 		const data = readBlock(root, "research") as { research: Array<Record<string, unknown>> };
 		const item = data.research.find((r) => r.id === "R-0004") as Record<string, unknown>;
-		const cits = item.citations as Array<Record<string, unknown>>;
-		assert.equal(cits[0].content_pin, undefined, "substrate-internal citation never pinned at the choke");
 		const conds = item.stale_conditions as Array<Record<string, unknown>>;
 		assert.equal(conds[0].baseline_hash, undefined, "substrate-internal file-changed condition never baselined");
-		// Even a HAND-AUTHORED pin/baseline on a substrate-internal path is never
+		// Even a HAND-AUTHORED baseline on a substrate-internal path is never
 		// judged — it would drift on every substrate write and flag forever.
 		appendToBlock(
 			root,
 			"research",
 			"research",
 			researchItem("R-0005", "complete", {
-				citations: [
-					{ label: "authored pin on living state", path: ".project/research.json", content_pin: "ab".repeat(32) },
-				],
 				stale_conditions: [{ kind: "file-changed", path: ".project/research.json", baseline_hash: "cd".repeat(32) }],
 			}),
 		);
@@ -4110,7 +4066,7 @@ describe("declared-baseline staleness (typed stale_conditions + content pins)", 
 		assert.equal(
 			cands.find((c) => c.id === "R-0005"),
 			undefined,
-			"authored pin/baseline on a substrate-internal path is never judged",
+			"authored baseline on a substrate-internal path is never judged",
 		);
 	});
 });

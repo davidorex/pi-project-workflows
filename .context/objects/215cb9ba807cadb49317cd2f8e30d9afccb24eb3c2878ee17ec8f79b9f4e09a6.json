@@ -1,0 +1,5 @@
+{
+  "description": "Every operator-facing render that reports a remediable, non-terminal, non-clean state whose resolution is a known op NAMES that op, per state. Apply when authoring or reviewing any reflected-op text render or Pi-command notify that surfaces drift / validation / install / bootstrap / conflict / blocked states. A render that lists an actionable state (e.g. both-diverged, a dangling-edge finding, not-installed) without the command that transitions it toward clean is incomplete: the operator cannot derive the next action from the output. The remedy is stated inline at the point the state is reported, keyed off the state, not left to out-of-band knowledge — the pattern renderConflicts (-> resolve-conflict) / renderBlocked (-> resolve-blocked) and the context-validate messages already follow. Terminal / clean states carry no remedy. The durable form is a shared state->op remedy map consumed by every such render, not per-render hand-written literals whose omission is how coverage drifts. Enforcement is review at every op-render authoring.",
+  "enforcement": "review",
+  "severity": "error"
+}

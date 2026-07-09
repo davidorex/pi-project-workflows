@@ -1,0 +1,24 @@
+{
+  "title": "Template-resolution divergence between the two spec pipelines — jit parse absolutizes template refs, so every bundled spec is uncompilable on the dispatch path",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-jit-agents",
+  "canonical_vocabulary": "loader-tier template resolution on the dispatch path",
+  "description": "pi-jit-agents parseAgentYaml resolves every relative template ref specDir-relative to an ABSOLUTE path (resolveSpecPath, agent-spec.ts:41-46, applied :191/:193), and renderTemplateFile bypasses the env loader for absolute paths (template.ts:116-126, readFileSync :121-123). The 26 bundled specs in pi-workflows/agents/ all carry template: refs whose files live under pi-jit-agents/templates/ per-agent subdirs (DEC-0049 relocation), not beside the specs — so on the dispatch path (call-agent, work-order loop) loadAgent succeeds and compileAgent throws ENOENT for every bundled spec. The working pi-workflows executor proves the correct shape: its parser keeps refs as loader-resolved NAMES (pi-workflows/src/agent-spec.ts:123-125) through a three-tier env whose builtin tier is bundledTemplateDir() (pi-workflows/src/template.ts:26,29,36) and whose renderTemplateFile has no absolute bypass (:94-100). Compounding: both dispatch sites build createTemplateEnv({ cwd }) with NO builtinDir (call-agent-tool.ts:79, work-order-loop.ts:167), and three analyzer system-templates begin {% extends \"analyzers/base-analyzer.md\" %} (templates/analyzers/quality.md:1, structure.md:1, patterns.md:1) — loader-resolved even from an absolute entry, so the bundled tier is required in the env regardless. Sibling instance: phase-author.agent.yaml:17 carries a malformed 'templates/' path prefix broken on BOTH pipelines. Class: any consumer of the jit parse + dispatch env combination inherits the failure for any spec whose templates are loader-tier resources; no test on any path compiles a bundled spec (dispatch-loader.test.ts stops at loadAgent; call-agent-tool.test.ts uses inline prompts; pi-workflows agent-spec.test.ts:282-368 is parse-only).",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-08-bundled-spec-dispatch-template-model-divergence.md",
+      "reference": "Class A: root cause, shape, ENOENT reproduction (fresh substrate, investigator), class statement, per-anchor re-verified evidence, prior-art and test-gap survey"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/agent-spec.ts",
+      "reference": "resolveSpecPath now absolutizes a relative ref only when it exists beside the spec OR — for bundled-tier specs only (siblingProbe threaded from createAgentLoader's builtin-tier match) — at the package-root sibling location, otherwise preserving it as a loader-resolvable name (TASK-104 fix in flight on fix/fgap-127-bundled-agents-tier; previously unconditional absolutization — the defect this gap tracks; the tier-scoped sibling probe closes the outputSchema member and forecloses the local/user-tier shadowing vector probe 3 surfaced); applied to system/task templates and outputSchema"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/template.ts",
+      "reference": ":116-126 renderTemplateFile absolute-path bypass (readFileSync :121-123); createTemplateEnv tiers :60-81 — builtin tier only when ctx.builtinDir supplied; bundledTemplateDir helper :39-42, now wired at both dispatch sites by the TASK-104 fix in flight"
+    }
+  ],
+  "impact": "The FGAP-127 loader fix delivers name-resolution only: every one of the 26 bundled specs fails at compile on both dispatch paths, so bundled-agent dispatch remains impossible end to end; the dispatch template env additionally cannot resolve {% extends %} chains even for local specs.",
+  "proposed_resolution": "Converge the dispatch path onto the proven executor mechanism (user-approved plan, 2026-07-08): resolveSpecPath absolutizes a relative ref ONLY when the file exists beside the spec, otherwise returns it unchanged as a loader-resolvable name; both dispatch sites pass builtinDir: bundledTemplateDir() to createTemplateEnv; fix the phase-author.agent.yaml ref; end-to-end compile tests for a bundled spec and an extends-bearing analyzer spec."
+}

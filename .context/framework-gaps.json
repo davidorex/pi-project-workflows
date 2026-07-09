@@ -38,10 +38,10 @@
       "created_at": "2026-06-03T21:22:40.700Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "068f9d8fd481ef5cfcdb70c02163024e",
-      "content_hash": "2e3c897dc58fc640ffcecef099a6dedcdb2f16bf9c6a36e6f8bafb5be393573d",
+      "content_hash": "651178770909f1ac9d6e5a9aad9f211646e3604b6934adbf8d8da0434e99511e",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-03T22:01:57.907Z",
-      "content_parent": "651178770909f1ac9d6e5a9aad9f211646e3604b6934adbf8d8da0434e99511e"
+      "content_parent": "2e3c897dc58fc640ffcecef099a6dedcdb2f16bf9c6a36e6f8bafb5be393573d"
     },
     {
       "title": "No substrate clone/import: cross-project substrate reuse has no op-driven path and substrate identity carries no provenance",
@@ -74,8 +74,8 @@
       "created_at": "2026-06-03T22:15:05.522Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "02be67a9f744e7e13a28a24c382a3cbb",
-      "content_hash": "83a2e278fba0990bce29ed1574c4effb73767c747b0099c340dd71d11ebee615",
-      "content_parent": "2423f10217466a921cde8849b12a51b37023453b409e0ff6065b346c3c46de10"
+      "content_hash": "2423f10217466a921cde8849b12a51b37023453b409e0ff6065b346c3c46de10",
+      "content_parent": "83a2e278fba0990bce29ed1574c4effb73767c747b0099c340dd71d11ebee615"
     },
     {
       "title": "switch / switch -c do not reconcile the active substrate's identity into the registry, yielding a false substrate_id_unregistered",
@@ -104,10 +104,10 @@
       "created_at": "2026-06-03T22:34:15.863Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "6fa0827c377ece5df7de98d7d0595989",
-      "content_hash": "5151695faee1283c3667ea14821d900dbe2f1389a6b6747b4dfba91849b7db6e",
+      "content_hash": "93306bfbb59dc5e6b082a26c2f80971fda8524d368e50d0a9dc6d2a74467535d",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T02:31:44.268Z",
-      "content_parent": "93306bfbb59dc5e6b082a26c2f80971fda8524d368e50d0a9dc6d2a74467535d"
+      "content_parent": "5151695faee1283c3667ea14821d900dbe2f1389a6b6747b4dfba91849b7db6e"
     },
     {
       "title": "pi-context has no structure-aware git merge driver — substrate files fall through to git's line-based merge, which mangles them",
@@ -134,8 +134,8 @@
       "created_at": "2026-06-03T22:41:38.989Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "5dd26cbe28f1c457b9eaf355db2d08a6",
-      "content_hash": "221eab45c71b10dcf8cc283713f80634e233f85264c6011ca8484a6860dfe799",
-      "content_parent": "f9ba8469bdc9264d162bd071c51b3b3cb9daf0091be007915862ed4ce88d160f"
+      "content_hash": "f9ba8469bdc9264d162bd071c51b3b3cb9daf0091be007915862ed4ce88d160f",
+      "content_parent": "221eab45c71b10dcf8cc283713f80634e233f85264c6011ca8484a6860dfe799"
     },
     {
       "title": "Ordered collections of item-refs need a convergent sequence field-kind — an array index cannot merge concurrent insert / delete / move",
@@ -158,8 +158,8 @@
       "created_at": "2026-06-03T22:42:55.244Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "6a415ca3c4c82e4dc5ce77924500952c",
-      "content_hash": "9a9903dcf181e3e53cd3f7fde6c11849945d9327bb253cf71b7883f9ab0b6e69",
-      "content_parent": "0721ee767e758f3fc14545c42c66eb270aa9f6b8f7e84d0a29a072a246093e84"
+      "content_hash": "0721ee767e758f3fc14545c42c66eb270aa9f6b8f7e84d0a29a072a246093e84",
+      "content_parent": "9a9903dcf181e3e53cd3f7fde6c11849945d9327bb253cf71b7883f9ab0b6e69"
     },
     {
       "title": "relations.json has no scoped remove/replace edge op — edge hygiene is append-only through the tool surface",
@@ -186,10 +186,10 @@
       "created_at": "2026-06-03T23:03:57.951Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "675c130c286a10a6b213ae99157e29f0",
-      "content_hash": "6025ad6f165b6662c58a1e215611a3a2e8ead1ce268eeef956411cf1a01d0d2a",
+      "content_hash": "b3d695df7d998555ea950f460f1a7b14ef4719033e6caf12b6d39aff6cf2fd8f",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T10:06:36.145Z",
-      "content_parent": "b3d695df7d998555ea950f460f1a7b14ef4719033e6caf12b6d39aff6cf2fd8f"
+      "content_parent": "6025ad6f165b6662c58a1e215611a3a2e8ead1ce268eeef956411cf1a01d0d2a"
     },
     {
       "title": "Ordering relation_type names read opposite to the parent/child convention (task_depends_on_task footgun) — backwards edges file silently",
@@ -217,8 +217,8 @@
       "created_at": "2026-06-03T23:04:22.642Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "e811f975cac54a4e5f3da3be14ac1f9b",
-      "content_hash": "8e654f4fe12332267514c20aefbe336730ad94301b967b1783fa8594fb21ce60",
-      "content_parent": "425da968ae8233665debb8f34981d25790ef5b90e42974f7b54f8336e51d8ceb",
+      "content_hash": "425da968ae8233665debb8f34981d25790ef5b90e42974f7b54f8336e51d8ceb",
+      "content_parent": "8e654f4fe12332267514c20aefbe336730ad94301b967b1783fa8594fb21ce60",
       "closed_by": "TASK-027 / VER-062 — the write-ordering instance of the FGAP-113 edge-orientation class. FGAP-007's proposed_resolution (explicit endpoint-role metadata on the relation_type + write-time direction enforcement so name and stored direction cannot diverge and a backwards edge is rejected at append) is implemented: task_depends_on_task carries role_direction as_parent, and append-relation/append-relations REJECT a bare ambiguous --parent/--child append of it (same-kind), directing the author to role-typed --primary/--counter that maps role->stored layout — never auto-oriented (the reverted a08e586 always-swap is not used). Live-verified: a bare task_depends_on_task append is rejected; the role-typed form stores canonical parent=prerequisite/child=dependent. Merged 3bc3d7a4; the same-kind ordering siblings (story_depends_on_story, requirement_depends_on_requirement, milestone_precedes_milestone, *_supersedes_*) are covered by the same mechanism.",
       "closed_at": "2026-07-04"
     },
@@ -260,10 +260,10 @@
       "created_at": "2026-06-03T23:28:56.582Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "2893d93b28870d600d726711866fd426",
-      "content_hash": "c02bcbc5cafbc87b7dbfd116db640bf2bd67308ade0bfd7eb11e3ac7c7f52cc8",
+      "content_hash": "8e405ef1b63afbe9dcd011666422fb53e7405f267dc9dddb3248186da897ab17",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T06:29:27.100Z",
-      "content_parent": "8e405ef1b63afbe9dcd011666422fb53e7405f267dc9dddb3248186da897ab17"
+      "content_parent": "c02bcbc5cafbc87b7dbfd116db640bf2bd67308ade0bfd7eb11e3ac7c7f52cc8"
     },
     {
       "title": "Op-registry does not cover the library write surface — whole capabilities unreachable from the cli / out-of-pi",
@@ -303,10 +303,10 @@
       "created_at": "2026-06-03T23:29:15.313Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "fffddbb27a8284308c6df49ecef6c46b",
-      "content_hash": "8498b2d5d110b9ebfcc4ca0021ee14447071f30f9bed62ba5ddcdd95976dc6d0",
+      "content_hash": "35d31ae515b026fa963d05347c7f6102feef74e9f81b9bcb176854de52d60de3",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T10:06:36.145Z",
-      "content_parent": "35d31ae515b026fa963d05347c7f6102feef74e9f81b9bcb176854de52d60de3"
+      "content_parent": "8498b2d5d110b9ebfcc4ca0021ee14447071f30f9bed62ba5ddcdd95976dc6d0"
     },
     {
       "title": "No enforced parity across the library / op-registry / orchestrator-script surfaces — they drift silently",
@@ -335,10 +335,10 @@
       "created_at": "2026-06-03T23:29:28.118Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "b2eeed1692053af8f84133e21707c0a4",
-      "content_hash": "2c5bc5a265fb8f2d01f9d79e1426f5cb4cba116a59b64a752166c6203fe930d6",
+      "content_hash": "6a2db45e3ba2cdc9cf26524583d6e7bd845af1260d69c6328c57c0bdc7bb28e2",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z",
-      "content_parent": "6a2db45e3ba2cdc9cf26524583d6e7bd845af1260d69c6328c57c0bdc7bb28e2"
+      "content_parent": "2c5bc5a265fb8f2d01f9d79e1426f5cb4cba116a59b64a752166c6203fe930d6"
     },
     {
       "title": "No release/version vocabulary — releases and changelog grouping cannot be planned or tracked as first-class substrate items",
@@ -369,8 +369,8 @@
       "created_at": "2026-06-04T01:47:12.392Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
-      "content_hash": "6e7d6e3202d09f0763e87040398cdfbfb96b20271ea1775e6d2a0400f96cc450",
-      "content_parent": "91692c00a8a65f2476539d964ec8da38f934f33164c5a1617789c54a56ec682e"
+      "content_hash": "38f8a067a1dfdcc224b905820eaa103e42a1cc4186f9bdc719bea80b0022194e",
+      "content_parent": "6e7d6e3202d09f0763e87040398cdfbfb96b20271ea1775e6d2a0400f96cc450"
     },
     {
       "id": "FGAP-012",
@@ -406,10 +406,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "687d105852ff67bd9e56446eb678f78d",
-      "content_hash": "b6f804b4a0bd223d45894014d0407b1c7fcd31d5d289c5717cc9e86e8d653c89",
+      "content_hash": "e82317fee2bdeeed2ab85c42394d96b4f4c83e19c0b65d9d7c3d2499e8962180",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z",
-      "content_parent": "e82317fee2bdeeed2ab85c42394d96b4f4c83e19c0b65d9d7c3d2499e8962180"
+      "content_parent": "b6f804b4a0bd223d45894014d0407b1c7fcd31d5d289c5717cc9e86e8d653c89"
     },
     {
       "id": "FGAP-013",
@@ -434,8 +434,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d639295dcb8ac399df8f0e4d21ab860",
-      "content_hash": "4b3767df66373ecaf94438c9a635ff73cb192b2bc1a6b2fbe74444210bd2fd34",
-      "content_parent": "1594b2524f6d774c0834343c9761e9d2eb85d59810f6f5992888d9574c2cd7db",
+      "content_hash": "1594b2524f6d774c0834343c9761e9d2eb85d59810f6f5992888d9574c2cd7db",
+      "content_parent": "4b3767df66373ecaf94438c9a635ff73cb192b2bc1a6b2fbe74444210bd2fd34",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z"
     },
@@ -474,8 +474,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "baf3754f16b1076610852345a624b60e",
-      "content_hash": "1223c41faffc99b70dc6669f9e5b1c6e03f8aac8720c7477f593416c4d5e3d30",
-      "content_parent": "ed8ac6c3f4537f3cde4d5db63d8b8b2f27213f8ce18ec9302f796f783e3994fb",
+      "content_hash": "ed8ac6c3f4537f3cde4d5db63d8b8b2f27213f8ce18ec9302f796f783e3994fb",
+      "content_parent": "1223c41faffc99b70dc6669f9e5b1c6e03f8aac8720c7477f593416c4d5e3d30",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z"
     },
@@ -517,10 +517,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "bbc9dfeee30d0619adc92a7d1481c785",
-      "content_hash": "664f2fa6e3f71fb7b620e5d7201666de19beb9fb1811363bae21fbd6b88dac8d",
+      "content_hash": "bba3cc1a512c9b11696e7226ddbc026973e3837ef721150b4c8b8685bbcc96e2",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-04T00:00:00.000Z",
-      "content_parent": "bba3cc1a512c9b11696e7226ddbc026973e3837ef721150b4c8b8685bbcc96e2"
+      "content_parent": "664f2fa6e3f71fb7b620e5d7201666de19beb9fb1811363bae21fbd6b88dac8d"
     },
     {
       "id": "FGAP-016",
@@ -549,8 +549,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-04T00:00:00.000Z",
       "oid": "4d35361e9bdb0c0892a860ebff318bc1",
-      "content_hash": "55963eb6c08968d7ff79549380e47cfa078a67c677e8eedc369282883219bf86",
-      "content_parent": "0b8cbf6dc4078d3ebd2bd261ee7ddee53424f3d47606033df7f7995cea4124ac"
+      "content_hash": "0b8cbf6dc4078d3ebd2bd261ee7ddee53424f3d47606033df7f7995cea4124ac",
+      "content_parent": "55963eb6c08968d7ff79549380e47cfa078a67c677e8eedc369282883219bf86"
     },
     {
       "id": "FGAP-017",
@@ -606,8 +606,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "oid": "8585502a1289ac63e708d521f94b7ab6",
-      "content_hash": "0025382342c688a09680cffa563085956df690914b165fc30a8b5cc61d0ce3c3",
-      "content_parent": "33f63c002f3f4c7ce29c1ffdf79156caaf1ac738305d286317ec40d0987f41c2",
+      "content_hash": "33f63c002f3f4c7ce29c1ffdf79156caaf1ac738305d286317ec40d0987f41c2",
+      "content_parent": "0025382342c688a09680cffa563085956df690914b165fc30a8b5cc61d0ce3c3",
       "closed_by": "VER-057 / TASK-020 — a config-declared state_derivation registry replaces the hardcoded currentState couplings (focus-eligible/next-ranked kinds, ranking field, blocked-by relation SET, milestone-style rollup, and head-size); a custom-vocabulary substrate returns a truthful not-configured signal instead of a silent empty result; the next-actions head-size is config-declared (no NEXT_ACTIONS_CAP literal) and next_ranked is ordered tasks-first in the shipped conception and the live config, so ready tasks surface in the ranked head rather than being truncated below open gaps.",
       "closed_at": "2026-06-20T00:00:00.000Z"
     },
@@ -640,8 +640,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-05T00:00:00.000Z",
       "oid": "9a2bcfaf30cf57acf84e7183261ca7c8",
-      "content_hash": "1f0e930dfb255ebe4c50bb897e90fc4a7a5eab92d01916600900068865fa57b3",
-      "content_parent": "adc6a77c904021192d3d09e35cd0f210eab67e3b7e43b5fd0729622a4a487ac1"
+      "content_hash": "adc6a77c904021192d3d09e35cd0f210eab67e3b7e43b5fd0729622a4a487ac1",
+      "content_parent": "1f0e930dfb255ebe4c50bb897e90fc4a7a5eab92d01916600900068865fa57b3"
     },
     {
       "title": "Block-mutation ops require `arrayKey` though it is derivable from config (CLASS: 7 ops)",
@@ -720,9 +720,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-019",
       "oid": "433ae156e4ce1a04ca4c220c85339ad7",
-      "content_hash": "e498229eeb71c2803acf260e5394c3f0856099411ef1b85faa9820976fe44005",
+      "content_hash": "4083438f692babf9f6266d4eda91a5ac803cff809c17db2f9a7e78536944d873",
       "priority": "P2",
-      "content_parent": "4083438f692babf9f6266d4eda91a5ac803cff809c17db2f9a7e78536944d873",
+      "content_parent": "e498229eeb71c2803acf260e5394c3f0856099411ef1b85faa9820976fe44005",
       "closed_by": "VER-029 / TASK-015 — block-mutation ops accept --block without --arrayKey; the CLI derives array_key from config.block_kinds[].array_key (injectArrayKey) and supplies it pre-call, the op schema unchanged.",
       "closed_at": "2026-06-08T00:00:00.000Z"
     },
@@ -772,9 +772,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-020",
       "oid": "8ecb24b45db69607db7b05d0fb95e678",
-      "content_hash": "56dd7dac80e2450b9bfc8457e75dd10164a82937bccde0c9a0d9f3c7dc7459b8",
+      "content_hash": "e5310ecf70f626c6b5f93ce46a1a7771a2d5e8eb0359735a53871a512c9dbdba",
       "priority": "P2",
-      "content_parent": "e5310ecf70f626c6b5f93ce46a1a7771a2d5e8eb0359735a53871a512c9dbdba",
+      "content_parent": "56dd7dac80e2450b9bfc8457e75dd10164a82937bccde0c9a0d9f3c7dc7459b8",
       "closed_by": "VER-030 / TASK-016 — a CLI-side addressedReadOverride recomputes the addressed value from source (addressInto + readSchema/loadConfig) and re-structures it whole (structureForRead whole:true, 50KB-capped) for read-schema --path and read-config --registry [--id], so an addressed object node returns the full subtree; the op is untouched.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -804,9 +804,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-021",
       "oid": "a23d5835258e1b607bfa3e3f59f87e88",
-      "content_hash": "c89643a021c56fdecf0026856655569829eec483b14de26b320e6118ba96f07e",
+      "content_hash": "7962432256133c739ad395260cfc372040aaa36bb6d2855826b92b1c5d4012e4",
       "priority": "P2",
-      "content_parent": "7962432256133c739ad395260cfc372040aaa36bb6d2855826b92b1c5d4012e4",
+      "content_parent": "c89643a021c56fdecf0026856655569829eec483b14de26b320e6118ba96f07e",
       "closed_by": "VER-030 / TASK-016 — --format text|json|table render dispatch in cli.ts backed by a new render.ts renderTable (lifted from the script twin); --json is sugar for --format json; table gracefully falls back to text for non-tabular/over-cap/empty results.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -836,9 +836,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-022",
       "oid": "ba04c442d72fcaa8655338fba491263e",
-      "content_hash": "11a960559ae0f2a701b95b69cdb8ba90092b9ed43dc77ce02e1195b3a1a327ba",
+      "content_hash": "24481bda4220161eb154bacd99d238df871b87c76d0907f0a7a2471f8591bbda",
       "priority": "P2",
-      "content_parent": "24481bda4220161eb154bacd99d238df871b87c76d0907f0a7a2471f8591bbda",
+      "content_parent": "11a960559ae0f2a701b95b69cdb8ba90092b9ed43dc77ce02e1195b3a1a327ba",
       "closed_by": "VER-031 / TASK-017 — --show-schema previews the block contract (array_key/required/fields/id-pattern via readSchema + resolveBlockItemSchema) and exits 0 before any write; schema-absent -> exit 3.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -869,9 +869,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-023",
       "oid": "bf32be6013fbaa95a52e337fd5f3413c",
-      "content_hash": "d7482b582434edfcdc3c2ac8988a7662cd137c21ae60347760d4e10e60d0004a",
+      "content_hash": "4c2c075877d889c39232037669e0786947a73632e5b6eb0719b55ff2fe82fdc2",
       "priority": "P2",
-      "content_parent": "4c2c075877d889c39232037669e0786947a73632e5b6eb0719b55ff2fe82fdc2",
+      "content_parent": "d7482b582434edfcdc3c2ac8988a7662cd137c21ae60347760d4e10e60d0004a",
       "closed_by": "VER-030 / TASK-016 — render.ts formatAjvError translates ValidationError.errors[] to field-named guidance in the cli.ts op-run catch (both --json envelope + stderr); a structural isValidationError guard handles the cross-package-boundary class-identity issue with instanceof.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -902,9 +902,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-024",
       "oid": "ce9edaedb3e9cd6a0ed6f9210146c5fc",
-      "content_hash": "d87f7d2e08bbf2ecf9543b22267640ade7d40d0119f0f324de2682e7d2f79070",
+      "content_hash": "a9ae20e020d085ddee476c1b4224524192471605077a06defcefcc31cf0986ce",
       "priority": "P2",
-      "content_parent": "a9ae20e020d085ddee476c1b4224524192471605077a06defcefcc31cf0986ce",
+      "content_parent": "d87f7d2e08bbf2ecf9543b22267640ade7d40d0119f0f324de2682e7d2f79070",
       "closed_by": "VER-031 / TASK-017 — append-block-item --dry-run is a CLI-only flag whose early branch does prospective-whole-block validation (validateFromFile) and returns before op.run, writing nothing; PASS exit 0, validation exit 5. Op byte-unchanged. The swallow is op-scoped to append-block-item so other no-dryRun ops reject --dryRun (exit 2), not silently run (fix 41b8326).",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -935,9 +935,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-025",
       "oid": "7bc3e3acaefeb84ecf05d6a8c09c0c49",
-      "content_hash": "4be7d4a8e376d8d1507eb75f8bc34bb5110ec5395dd64830f4b89c2a370feb68",
+      "content_hash": "2039076b8fa8c53483463c00e3faa0c88090152f0150db376584d9f1d81bff94",
       "priority": "P2",
-      "content_parent": "2039076b8fa8c53483463c00e3faa0c88090152f0150db376584d9f1d81bff94",
+      "content_parent": "4be7d4a8e376d8d1507eb75f8bc34bb5110ec5395dd64830f4b89c2a370feb68",
       "closed_by": "VER-029 / TASK-015 — the CLI accepts the scripts input shorthands: --writer kind:id, --where field:op:value, and CSV --op in, each a pre-call transform in parseOpArgs.",
       "closed_at": "2026-06-08T00:00:00.000Z"
     },
@@ -967,9 +967,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-026",
       "oid": "0fd57fe8d476068c817bc3e796aa9ebc",
-      "content_hash": "2b3c45e88953486a768585f95cebceb987ed5c62c28ab792e3e1076eaed22fa4",
+      "content_hash": "8e1e9cac33fde1be2b5d189175ad82faa1c2405382a67c58ffc6d2f951785ce1",
       "priority": "P2",
-      "content_parent": "8e1e9cac33fde1be2b5d189175ad82faa1c2405382a67c58ffc6d2f951785ce1",
+      "content_parent": "2b3c45e88953486a768585f95cebceb987ed5c62c28ab792e3e1076eaed22fa4",
       "closed_by": "VER-031 / TASK-017 — a name/message-based exit-code classifier maps error classes 1-5 (validation 5, id-allocation 4, schema-absent 3, usage 2, bootstrap/runtime 1) at the cli.ts catch + UsageError sites; schema-absent is tested ahead of id-allocation (fix 41b8326).",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -1005,9 +1005,9 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-027",
       "oid": "ffb4699841def6cd0b79d7d20ff0adf6",
-      "content_hash": "7a00b6c3f2a2dc2f5d036de334217e2f57b1e0d8096b4c8f815051dee03e3f36",
+      "content_hash": "bea9a5e60c7f04612e22f834bccc4a813029b6fbac0eb4b94dcf9df36a341244",
       "priority": "P2",
-      "content_parent": "bea9a5e60c7f04612e22f834bccc4a813029b6fbac0eb4b94dcf9df36a341244",
+      "content_parent": "7a00b6c3f2a2dc2f5d036de334217e2f57b1e0d8096b4c8f815051dee03e3f36",
       "closed_by": "VER-032 / TASK-018 — the in-pi op-registry addressed-single-node reads (read-schema --path, read-config --registry/--id, list-tools name=, read-samples-catalog kind=) pass whole:true, returning the whole subtree (50KB cap retained); the redundant CLI addressedReadOverride is retired so the op is the single source on both surfaces.",
       "closed_at": "2026-06-09T00:00:00.000Z"
     },
@@ -1064,10 +1064,10 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-028",
       "oid": "93ee78687c71e6d609695e4919f9a4ac",
-      "content_hash": "9ba01c1935569fc0bb4dc49e7bd0db1214500f3ea677f851dd3140cf0465d691",
+      "content_hash": "dedec7c29a8b75dcca9ba4904686017e368d007b17ae8afdc74c8025d5539dc1",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-06-05T00:00:00.000Z",
-      "content_parent": "dedec7c29a8b75dcca9ba4904686017e368d007b17ae8afdc74c8025d5539dc1"
+      "content_parent": "9ba01c1935569fc0bb4dc49e7bd0db1214500f3ea677f851dd3140cf0465d691"
     },
     {
       "title": "/context install --update overwrites block DATA with empty starters (substrate-wiping); stale installed schemas have no safe re-sync; undocumented",
@@ -1106,10 +1106,10 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-029",
       "oid": "53ac7027782b8996d06334fe0ae12e1a",
-      "content_hash": "b934e71a3ad8ff6a1085d4ac8ce6d782e083d335ce1c6da8accca864b612b5bd",
+      "content_hash": "ce54e64007de2fdaef01f9c6f14a6c249c88aad9c9d543991bb519839a4acac4",
       "closed_by": "human/davidryan@gmail.com — closed by fa8a0cc (skipIdentityStamp excision, DEC-0012) + c6434db (re-sync promoted to live .context); verified by VER-014. Core safe re-sync resolved: install --update routes installed-schema evolution through the migration registry, never blind-overwrites a populated block (S1), records a baseline (S2), previews drift (S3 check-status), and forward-migrates-or-refuses (S4). Pre-identity-substrate re-sync deferred to FGAP-033.",
       "closed_at": "2026-06-06T00:00:00.000Z",
-      "content_parent": "ce54e64007de2fdaef01f9c6f14a6c249c88aad9c9d543991bb519839a4acac4"
+      "content_parent": "b934e71a3ad8ff6a1085d4ac8ce6d782e083d335ce1c6da8accca864b612b5bd"
     },
     {
       "title": "check-status drift report is command-only — no context-check-status op, unreachable from the reflecting CLI",
@@ -1138,8 +1138,8 @@
       "created_at": "2026-06-05T00:00:00.000Z",
       "id": "FGAP-030",
       "oid": "78ac46a06f4b91e021f3b0a7ba0e1533",
-      "content_hash": "4dce67292547a52521e978374fc6c7aeb97083b009d965a33dbf9518ad3b462e",
-      "content_parent": "a6b04e43b5c10a2d6b3d2e1c9eb49062accb3cecfe51d7616ca5147abd81323b",
+      "content_hash": "a6b04e43b5c10a2d6b3d2e1c9eb49062accb3cecfe51d7616ca5147abd81323b",
+      "content_parent": "4dce67292547a52521e978374fc6c7aeb97083b009d965a33dbf9518ad3b462e",
       "closed_by": "VER-043 / TASK-049 — the drift report is the reflected context-check-status op (zero params, the context-status template): per installed schema the drift state, baseline and catalog versions, and for behind schemas the version delta or content-only basis; slotted in Read & query with an example; --json carries the structured report.",
       "closed_at": "2026-06-12T10:00:00.000Z"
     },
@@ -1171,10 +1171,10 @@
       "created_at": "2026-06-06T00:00:00.000Z",
       "id": "FGAP-031",
       "oid": "82fa1ecb70845e5f7e862dd369bd9676",
-      "content_hash": "7faf08baeb5642396e585fca82715fd17b335dadbd882f30ce3c3b429eb8229b",
+      "content_hash": "0240f88adee1c2727bc6c5a2cde273ac1d859c849770b7a9e252fe1b0928d883",
       "closed_by": "TASK-028 (VER-017) made pi-context globally installable (chmod +x dist/bin.js + the published bin) and the project docs + dogfooding switched to the global `pi-context <op>` command, retiring `node …/dist/bin.js`; `which pi-context` resolves the published bin. The load-bearing asks (first-class command on PATH + doc/dogfooding switch) are met.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "0240f88adee1c2727bc6c5a2cde273ac1d859c849770b7a9e252fe1b0928d883"
+      "content_parent": "7faf08baeb5642396e585fca82715fd17b335dadbd882f30ce3c3b429eb8229b"
     },
     {
       "id": "FGAP-032",
@@ -1230,10 +1230,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7d987f8421ac209f9efc57b81adc1f6d",
-      "content_hash": "badf27c6b6ca6a88a85ea914f5655f9ccb3b00ba0da04067c35b5cc2e088c206",
+      "content_hash": "ffa80a9d97233a20acdb2dfd80d9e998a0ea3f22c2ed937f287ac328e5dc5fff",
       "closed_by": "VER-029 / TASK-015 — --id aliases the op single string-typed id-param (the same normalization layer as FGAP-064); ambiguous-reject when >=2, unknown-flag when 0; boolean autoId is excluded by the string-type guard (f1aef2b).",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "ffa80a9d97233a20acdb2dfd80d9e998a0ea3f22c2ed937f287ac328e5dc5fff"
+      "content_parent": "badf27c6b6ca6a88a85ea914f5655f9ccb3b00ba0da04067c35b5cc2e088c206"
     },
     {
       "id": "FGAP-033",
@@ -1261,10 +1261,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "ee498f7c88fc4b3680ee569af5a9f0e4",
-      "content_hash": "65340b510cfc94796c11aeea1127ea84ededf2f29ed3a06ee3eeaea1bd484a0a",
+      "content_hash": "baf894ba4de808401f09bba328cb599e0bbd7a793415e219dbc1d016e98e206d",
       "closed_by": "TASK-082 / VER-070, enacting DEC-0020 — the designed contract resolved to ceremony-entry identity establishment (heal, not refusal-by-design): update (live runs), install, and resolve-blocked establish substrate identity at entry when config.json carries no substrate_id — minted via mintSubstrateId, persisted through the sanctioned config write, registered via registerSubstrate, reported under substrateIdEstablished — before the ceremony's first identity-stamping write. A pre-identity substrate's populated-block version bump now migrates through the sanctioned ceremony (demonstrated on the promoted operator: install established and reported the id, the live update migrated 1.0.0->1.0.1 and registered the chain), the two DEC-0012-era skipped S4 migrate-path tests are re-greened, and dry/live update runs agree on the healed outcome. An established identity is never re-minted, dryRun establishes nothing, and writeBlockForDir's stamping guard stays load-bearing for any write reaching it without identity (no lazy mint inside block writes — DEC-0012 preserved). Merged c50de724.",
       "closed_at": "2026-07-05",
-      "content_parent": "baf894ba4de808401f09bba328cb599e0bbd7a793415e219dbc1d016e98e206d"
+      "content_parent": "65340b510cfc94796c11aeea1127ea84ededf2f29ed3a06ee3eeaea1bd484a0a"
     },
     {
       "id": "FGAP-034",
@@ -1284,8 +1284,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "d1b88e8546dffdba6ac17b1ecde6707f",
-      "content_hash": "01ec0edaaa4bf79a7cb9dc05fce6169c2f468fbef801de56f922cb9982861fd7",
-      "content_parent": "6b6f0ac33c95aafc01907b350daf66c9ddcdaf9648a2e5d2089e24d025a93240"
+      "content_hash": "6b6f0ac33c95aafc01907b350daf66c9ddcdaf9648a2e5d2089e24d025a93240",
+      "content_parent": "01ec0edaaa4bf79a7cb9dc05fce6169c2f468fbef801de56f922cb9982861fd7"
     },
     {
       "id": "FGAP-035",
@@ -1305,8 +1305,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "7b6e4b4aeb6fbe795e883daf85000d2f",
-      "content_hash": "1a90acd4f7b824d4692cc6c3a8aded6cf5c30dc003b6ee9376201a159aa15cec",
-      "content_parent": "2d28e470d7106362df13a0a73e78349a8d1e5ef7d9ca20bad82e4d9f75608c0d"
+      "content_hash": "2d28e470d7106362df13a0a73e78349a8d1e5ef7d9ca20bad82e4d9f75608c0d",
+      "content_parent": "1a90acd4f7b824d4692cc6c3a8aded6cf5c30dc003b6ee9376201a159aa15cec"
     },
     {
       "id": "FGAP-036",
@@ -1330,8 +1330,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "8d71055d9de89506bbaafe2eb946260e",
-      "content_hash": "76eaa3264ae6fe96c6f2ce915d910e36ffdddacaa20286bf41460611ad2a0658",
-      "content_parent": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98"
+      "content_hash": "9c2efc3b0e4b0179179cba28ed8ff322f2f71c5ae12d8e7e5447c7bcbc935b98",
+      "content_parent": "76eaa3264ae6fe96c6f2ce915d910e36ffdddacaa20286bf41460611ad2a0658"
     },
     {
       "id": "FGAP-037",
@@ -1359,8 +1359,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "eb340f2333abb437c6cff7e8036499a1",
-      "content_hash": "64b7c1560b1c82c3172aed901f78315daeabddcb3f44d897afdcbef59cf46c4d",
-      "content_parent": "279263801462ca96b7d385c821f20ec273b3b08ddf7153fc371382afbf602d58",
+      "content_hash": "279263801462ca96b7d385c821f20ec273b3b08ddf7153fc371382afbf602d58",
+      "content_parent": "64b7c1560b1c82c3172aed901f78315daeabddcb3f44d897afdcbef59cf46c4d",
       "closed_by": "Milestone block kind + schema + derived reached phase-rollup + reached-milestone-phases-complete invariant shipped; VER-052; merged 18cca3d (direction-corrected 96d37ee)",
       "closed_at": "2026-06-17T00:00:00.000Z"
     },
@@ -1429,8 +1429,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5fb8c651598f008d8526a291a7806673",
-      "content_hash": "792307748901608136451b788ab1055c08d0a67d1bf09dc67642baba5f10a251",
-      "content_parent": "7088e439ebf55580b5bf98bbec1c32d8e4da561d8bf1cbd8ace45a6bfe8ce7d7"
+      "content_hash": "7088e439ebf55580b5bf98bbec1c32d8e4da561d8bf1cbd8ace45a6bfe8ce7d7",
+      "content_parent": "792307748901608136451b788ab1055c08d0a67d1bf09dc67642baba5f10a251"
     },
     {
       "id": "FGAP-041",
@@ -1473,8 +1473,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "99dd98ebd606aa911c245f6c1967c8a3",
-      "content_hash": "a03a84b29530370ebd57703e6a2970c6c0f8fb28736c814bb570e786ab4f1682",
-      "content_parent": "cab7f8cb5d0105bfe6e3cbf7ef8dfe32bfe7e4e72e7b3d763727f7a89f6a9050",
+      "content_hash": "cab7f8cb5d0105bfe6e3cbf7ef8dfe32bfe7e4e72e7b3d763727f7a89f6a9050",
+      "content_parent": "a03a84b29530370ebd57703e6a2970c6c0f8fb28736c814bb570e786ab4f1682",
       "closed_at": "2026-07-02",
       "closed_by": "human/davidryan@gmail.com -- fixed by TASK-077 (commits 88319af + 4212396) per its 8 accepted criteria; verified VER-061"
     },
@@ -1501,8 +1501,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "2f08f2750efda60b38d29123f488ca37dabedabc996dd2ddc7c2db6b98c9aa29",
-      "content_parent": "a9524c65b676e4d2e3331ba5ff2980b270ab9d7cf425a4b3ccc50d4bb3fde887"
+      "content_hash": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a",
+      "content_parent": "2f08f2750efda60b38d29123f488ca37dabedabc996dd2ddc7c2db6b98c9aa29"
     },
     {
       "id": "FGAP-044",
@@ -1528,8 +1528,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "a5de06b93ccd6dc5f6e4494a96db4c7f",
-      "content_hash": "8cec81ed21769e2e37fe32ddc6c03081a413a60d8dbca88eed286e136b5de410",
-      "content_parent": "869b528484211f1f6206225726adb0ae40e7319aabc85ee95d1f354b12a4b98d"
+      "content_hash": "869b528484211f1f6206225726adb0ae40e7319aabc85ee95d1f354b12a4b98d",
+      "content_parent": "8cec81ed21769e2e37fe32ddc6c03081a413a60d8dbca88eed286e136b5de410"
     },
     {
       "title": "No one-step block-kind rename tool",
@@ -1574,8 +1574,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "1f84b7e0e7fe232c0838dd01a6492765",
-      "content_hash": "afca6f6b62e49088defb1222c61fd5f379e0d341577c09654ff4fa1f57339c39",
-      "content_parent": "4e18c89ace912ee548742f5ede69d9d9fa5ba9eb978a210b2357c45d1744cebc",
+      "content_hash": "4e18c89ace912ee548742f5ede69d9d9fa5ba9eb978a210b2357c45d1744cebc",
+      "content_parent": "afca6f6b62e49088defb1222c61fd5f379e0d341577c09654ff4fa1f57339c39",
       "closed_by": "VER-023 / TASK-037 — FEAT-006 hybrid complete (refuse T1 -> base-stamp T2 -> 3-way merge T3 -> resolver T4): pi-context update merges a locally-edited schema with the catalog preserving non-conflicting edits, and routes conflicts to an interactive pi-bound mergetool or a conflict report; a customization is never silently clobbered",
       "closed_at": "2026-06-07T00:00:00.000Z"
     },
@@ -1603,10 +1603,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "61cb108b1659ffae0891557c6d591e85",
-      "content_hash": "13fbf3769d1024548255761592d078ca8a578e77206b03e7298a266bae069659",
+      "content_hash": "94657ffaf881ca7ba9bcd6c73a8211b87d26bb0db834cf5bf59e7754129a196f",
       "closed_by": "human/davidryan@gmail.com — closed by a5055ad (chmod +x dist/bin.js in the pi-context-cli build); verified by VER-017 (dist/bin.js -rwxr-xr-x; npm link exposed pi-context on PATH; ran an op from outside the repo). Published npm i -g smoke deferred (release-gated), not blocking closure of the exec-bit gap.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "94657ffaf881ca7ba9bcd6c73a8211b87d26bb0db834cf5bf59e7754129a196f"
+      "content_parent": "13fbf3769d1024548255761592d078ca8a578e77206b03e7298a266bae069659"
     },
     {
       "id": "FGAP-048",
@@ -1632,10 +1632,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "371e3a81b13ab6db63959580a0962ab9",
-      "content_hash": "0f026ea5959d42474fd1cc79b3afd3f2e6fcc7d6015c64c313467075d5332ae2",
+      "content_hash": "9b3814fe45783c1916e8fb583635b8283202f02e5bba0e5e71b247dd27f72a13",
       "closed_by": "human/davidryan@gmail.com — closed by dafa2c6 (declared @davidorex/pi-project-workflows ^0.30.0 in pi-context-cli); verified by VER-018 (require.resolve resolves; no cycle; build/check/test green). The registry-install resolution smoke is deferred (release-gated) and does not block closing the declaration gap.",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "9b3814fe45783c1916e8fb583635b8283202f02e5bba0e5e71b247dd27f72a13"
+      "content_parent": "0f026ea5959d42474fd1cc79b3afd3f2e6fcc7d6015c64c313467075d5332ae2"
     },
     {
       "id": "FGAP-049",
@@ -1660,10 +1660,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "ad54150945add17479f99d15cee3619b",
-      "content_hash": "516a1b724307a815f8d64f952ffb6816dc6e46357560d99cc23ea0ec50a6b5db",
+      "content_hash": "c84dacda2728ff2e4acbc7e3241d6d7e6eb5399d3aec4e9506b1b719469dbf84",
       "closed_by": "FEAT-006 unified update command — VER-020 (TASK-034) delivered the consult-checkStatus routing: updateContext reads the checkStatus drift state per installed schema and routes locally-modified/both-diverged to refuse (T1) / merge (T3, VER-022) / resolve (T4, VER-023) instead of overwriting; the drift classification is consulted before any write",
       "closed_at": "2026-06-07T00:00:00.000Z",
-      "content_parent": "c84dacda2728ff2e4acbc7e3241d6d7e6eb5399d3aec4e9506b1b719469dbf84"
+      "content_parent": "516a1b724307a815f8d64f952ffb6816dc6e46357560d99cc23ea0ec50a6b5db"
     },
     {
       "id": "FGAP-050",
@@ -1684,10 +1684,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "3ddeff09fe364adbd381ecd321493064",
-      "content_hash": "cd67b52256cc26cc647344887d63ee9579fe1d53bb13abdf14bcea5792b57902",
+      "content_hash": "9ed3a74ca9e1f5dc2a80687711a08f5af740b3ad9f7f5f5ae8e05df333f32998",
       "closed_by": "VER-026 / TASK-039 — pi-context update enumerates the migration declarations it registers into migrations.json under UpdateResult.migrationsRegistered; --dryRun lists the would-register set read-only (computeWouldRegisterMigrations), writing nothing.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "9ed3a74ca9e1f5dc2a80687711a08f5af740b3ad9f7f5f5ae8e05df333f32998"
+      "content_parent": "cd67b52256cc26cc647344887d63ee9579fe1d53bb13abdf14bcea5792b57902"
     },
     {
       "id": "FGAP-051",
@@ -1708,10 +1708,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "136d4b378729d6ac5a4891b0d79d416c",
-      "content_hash": "912418f883c2e7a520d9ffdc1d63f01eb54f10b0f0832a262ccb792739f89362",
+      "content_hash": "745a2ba911096d56162a9527ddfcdaa81123f320186531f0d351f63e8e36288f",
       "closed_by": "VER-026 / TASK-039 — installContext skips rewriting an existing catalog-origin block whose content already equals the starter (computeFileContentHash equality guard before the empty-block overwrite), reporting it skipped not updated.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "745a2ba911096d56162a9527ddfcdaa81123f320186531f0d351f63e8e36288f"
+      "content_parent": "912418f883c2e7a520d9ffdc1d63f01eb54f10b0f0832a262ccb792739f89362"
     },
     {
       "id": "FGAP-052",
@@ -1897,10 +1897,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "9d20eeedb0616d8c8f7f7aa614da5985",
-      "content_hash": "123641a28171ab6f4a99f1e76bc84bac78c927274856030e56f22ede97ce6a91",
+      "content_hash": "d50fe02e54bf0b5c73a80461d465c6a2e7291abb5130a7f392870a6022aa6f27",
       "closed_by": "VER-025 / TASK-038 — pi-context update additively merges catalog-new config-registry entries (relation_types/invariants/block_kinds/lenses) absent from an existing substrate config, preserving user entries; --dryRun previews. mergeCatalogRegistries (additive, REGISTRY_DESCRIPTORS-driven) wired into updateContext after the baseline-refresh loop.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "d50fe02e54bf0b5c73a80461d465c6a2e7291abb5130a7f392870a6022aa6f27"
+      "content_parent": "123641a28171ab6f4a99f1e76bc84bac78c927274856030e56f22ede97ce6a91"
     },
     {
       "id": "FGAP-061",
@@ -1927,8 +1927,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "aeffe68d922894375b46f7f0f1121056",
-      "content_hash": "1abaf82cddf9090734fdcb0c96e17456a64489e8ec15552db1a69e7a2d05b992",
-      "content_parent": "fcd710332d0762a4e55bf3a65051e7384a0c1442c8bb2b191069123f841dfe07"
+      "content_hash": "fcd710332d0762a4e55bf3a65051e7384a0c1442c8bb2b191069123f841dfe07",
+      "content_parent": "1abaf82cddf9090734fdcb0c96e17456a64489e8ec15552db1a69e7a2d05b992"
     },
     {
       "id": "FGAP-062",
@@ -1965,10 +1965,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-07T00:00:00.000Z",
       "oid": "6e97fee15ea7746c3535e2ce37a4b16e",
-      "content_hash": "7acdc2d794289dd900420b4b81254076a5e569e8641daf5cd91cc5829c5c7e54",
+      "content_hash": "003031c7011a5a83b8df264520b4413454b6cf28dd819475a5956a78fd09bbe6",
       "closed_by": "VER-034 / TASK-040 — deriveTopHelp rewritten as a grouped scannable listing (7 read-before-mutate groups via an exhaustive+disjoint groupForOp classifier over all 50 use-ops, alphabetical within group), one-liner sourced from promptSnippet (truncated at a 72-char word boundary, not the full op.description), pi-bound surfaced under a Process modes section. Additive dispatch-layer in cli.ts; ops frozen.",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "003031c7011a5a83b8df264520b4413454b6cf28dd819475a5956a78fd09bbe6"
+      "content_parent": "7acdc2d794289dd900420b4b81254076a5e569e8641daf5cd91cc5829c5c7e54"
     },
     {
       "title": "pi-context CLI has no --version / -v command — a globally-installed CLI cannot report its own version",
@@ -1995,10 +1995,10 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-063",
       "oid": "8ce58a2be65cf437b2c58bc5b4986c14",
-      "content_hash": "542d46bfffcb1297e8ac4bcbe30d135a910369916d7f180ddc7966e0a4664941",
+      "content_hash": "c0c3c3d574ffabfdee08b1cdfcfe546ce848fe49ba5930baf89ac7c6bac5bf83",
       "closed_by": "VER-034 / TASK-040 — a --version/-v branch in main() before resolveOp prints pi-context <version> to stdout exit 0; the version is read build-safe at module load from the shipped package.json via fileURLToPath(new URL(../package.json, import.meta.url)), resolving from dist/cli.js (matches package.json 0.30.0, not hardcoded).",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "c0c3c3d574ffabfdee08b1cdfcfe546ce848fe49ba5930baf89ac7c6bac5bf83"
+      "content_parent": "542d46bfffcb1297e8ac4bcbe30d135a910369916d7f180ddc7966e0a4664941"
     },
     {
       "title": "pi-context CLI surfaces camelCase op-schema keys as flags verbatim — no kebab-case normalization, so conventional --dry-run / --id fail",
@@ -2028,10 +2028,10 @@
       "created_at": "2026-06-07T00:00:00.000Z",
       "id": "FGAP-064",
       "oid": "f91a7b90ad64bb551a6804035241ca20",
-      "content_hash": "bb40c6a0a9f2a9b66bc0d4d4f9dacd5d940133a3b8f72c37fef4187d4426b2fb",
+      "content_hash": "b41d499ddfa5c2ebb84afd99bd33b928af95e867109941fed2842d63bb07f53d",
       "closed_by": "VER-029 / TASK-015 — a kebab->camel alias layer in parseOpArgs resolves conventional kebab-case flags (e.g. update --dry-run) to the camelCase op-schema key; the camelCase form still works.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "b41d499ddfa5c2ebb84afd99bd33b928af95e867109941fed2842d63bb07f53d"
+      "content_parent": "bb40c6a0a9f2a9b66bc0d4d4f9dacd5d940133a3b8f72c37fef4187d4426b2fb"
     },
     {
       "title": "No op materializes a newly-declared block's data file into an already-installed substrate — neither update nor the install-ceremony write that declared it (a dangling block_kind declaration)",
@@ -2076,8 +2076,8 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-065",
       "oid": "6c909103e3127305ce4e68a7cbbfd727",
-      "content_hash": "2e69dcb292dad226d40399c8b4779edd2f9972bb5e8eea16e9ee796485109731",
-      "content_parent": "85f724cb1528c9dfff45ede1755abf3220cacf34dc9b53dd643331b06c1ce04f"
+      "content_hash": "85f724cb1528c9dfff45ede1755abf3220cacf34dc9b53dd643331b06c1ce04f",
+      "content_parent": "2e69dcb292dad226d40399c8b4779edd2f9972bb5e8eea16e9ee796485109731"
     },
     {
       "title": "pi-context update --dryRun reports a version-bump schema as the would-act `resynced` set, not its precise migrate/block outcome — the preview can over-report",
@@ -2098,10 +2098,10 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-066",
       "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
-      "content_hash": "6477645edaed85bcdb3ed321c3e8e6a059a9434683c3e74b22c2c2d406469274",
+      "content_hash": "36e047af1270c23dccc0c7118fd8050c06afe1d739373a46171b0c21086b2423",
       "closed_by": "VER-038 / TASK-046 — update --dryRun predicts the precise catalog-ahead outcome (resynced/migrated/blocked) via simulateResyncOutcome: an in-memory forward-migration + AJV re-validation against the catalog schema, classifying by the live resyncSchema logic, writing nothing; a dry-blocked schema reports no would-register migration declarations. resyncSchema and the live arm byte-unchanged.",
       "closed_at": "2026-06-10T12:00:00.000Z",
-      "content_parent": "36e047af1270c23dccc0c7118fd8050c06afe1d739373a46171b0c21086b2423"
+      "content_parent": "6477645edaed85bcdb3ed321c3e8e6a059a9434683c3e74b22c2c2d406469274"
     },
     {
       "title": "pi-context update does not reconcile a catalog registry entry whose body changed against a user-modified entry of the same id (additive-only) — the config-registry analog of the schema 3-way merge",
@@ -2122,8 +2122,8 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-067",
       "oid": "b08ca852bf0eba2255dc47a5b5e7d641",
-      "content_hash": "b4eb28ffcda835b234c0292c8527d419587280c84505065738ebeff68b8bea58",
-      "content_parent": "4f74f3dc354576a40941f24ae4ad9acb2c23cafc8f2a741927f636dfa4b9ed7f"
+      "content_hash": "4f74f3dc354576a40941f24ae4ad9acb2c23cafc8f2a741927f636dfa4b9ed7f",
+      "content_parent": "b4eb28ffcda835b234c0292c8527d419587280c84505065738ebeff68b8bea58"
     },
     {
       "title": "the update conflict resolver spawns a subordinate `pi -p` mergetool instead of returning the conflict to the calling agent — the spawned agent's write-schema is auth-gate-refused (hasUI=false)",
@@ -2154,10 +2154,10 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-068",
       "oid": "6b5814e3842aab14d6006e1a7280f180",
-      "content_hash": "b11f0eb6394a4d73d1db92246addf133236c737f1ca8d2df8f534f15962d9b19",
+      "content_hash": "53d77803609aff0d6772d146019ddbbdd2c9305bbfb59c75d0568083987444af",
       "closed_by": "VER-028 / TASK-037 — the update conflict resolver no longer spawns a subordinate pi-bound mergetool; pi-context update surfaces the conflict set (structured under --json + a renderConflicts report) to the calling agent, which reconciles via read-schema/write-schema/resolve-conflict.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "53d77803609aff0d6772d146019ddbbdd2c9305bbfb59c75d0568083987444af"
+      "content_parent": "b11f0eb6394a4d73d1db92246addf133236c737f1ca8d2df8f534f15962d9b19"
     },
     {
       "title": "a calling agent cannot resolve an update conflict — write-schema does not advance the merge base, so update re-flags a reconciled schema forever",
@@ -2187,10 +2187,10 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-069",
       "oid": "30fd821860903b50e4d6356a0f8d4fcf",
-      "content_hash": "5e1f22e7913811d0cf7f87e25fd06d3ec1f0b62d21788ad241c4d9d74830baa7",
+      "content_hash": "c5d85ba7f322eb799697c117ae0f5f21d2f27eb7e07735458911b40ef1e96df8",
       "closed_by": "VER-028 / TASK-037 — the reflected auth-gated resolve-conflict op writes the reconciled schema AND advances the merge base to the catalog (stampBaselineFromBody), so a subsequent update converges instead of re-deriving the conflict; verified live end-to-end.",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "c5d85ba7f322eb799697c117ae0f5f21d2f27eb7e07735458911b40ef1e96df8"
+      "content_parent": "5e1f22e7913811d0cf7f87e25fd06d3ec1f0b62d21788ad241c4d9d74830baa7"
     },
     {
       "title": "update re-baselines an auto-merged schema to the merged body, not the catalog — so a kept-local divergence is resynced to catalog (clobbered) on the NEXT update",
@@ -2227,10 +2227,10 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-070",
       "oid": "6ea2b21f2d3253e27cda91f02a8c30bd",
-      "content_hash": "5461b03e159c3e5bcf96f30af51ec4d6b02663aa542892a9c2b3a065d07e89ac",
+      "content_hash": "5905482c6eb46f949b2bcb2615a8811bc036488070123a0a91eea4019659f3c8",
       "closed_by": "VER-028 / TASK-037 — updateContext stamps the merge base := the catalog (theirs) body and excludes merged from the on-disk baseline refresh, so a kept-local divergence (reconciled conflict OR disjoint auto-merge) stays locally-modified and survives subsequent updates; live 3x-update + adversarial 4+-update harness confirm a stable fixed point (no resync clobber).",
       "closed_at": "2026-06-08T00:00:00.000Z",
-      "content_parent": "5905482c6eb46f949b2bcb2615a8811bc036488070123a0a91eea4019659f3c8"
+      "content_parent": "5461b03e159c3e5bcf96f30af51ec4d6b02663aa542892a9c2b3a065d07e89ac"
     },
     {
       "title": "gap-arc-coherence is a review convention but unenforced — no invariant catches an unbound gap, so flat-list drift recurs silently",
@@ -2259,8 +2259,8 @@
       "created_at": "2026-06-08T00:00:00.000Z",
       "id": "FGAP-071",
       "oid": "87eaf6bf5da8e7658c818203f9ce701e",
-      "content_hash": "5389060b63d00c1186c1a65a1cd8a42ee915779e8f5fc667dec23e7b1aa364c1",
-      "content_parent": "06287d59e85c2dbdad068866b0a4a9df8c31aeef1e78d6346b325974cac57455"
+      "content_hash": "06287d59e85c2dbdad068866b0a4a9df8c31aeef1e78d6346b325974cac57455",
+      "content_parent": "5389060b63d00c1186c1a65a1cd8a42ee915779e8f5fc667dec23e7b1aa364c1"
     },
     {
       "title": "pi-context per-op <op> --help lacks the best-of-breed template — no EXAMPLES, SYNOPSIS, RELATED/see-also, or footer; and structured help bypasses --format",
@@ -2296,10 +2296,10 @@
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "FGAP-072",
       "oid": "16665161ef645c304de0152cd4d2237f",
-      "content_hash": "a66e2cb8de69f2da057a034ecbf5dabacbc4fd366ac3f8e5cea25566dd2c840b",
+      "content_hash": "370a1b4a23f9411e81cedded8917e400704968d542d8d66a118a57cedf7dc7e1",
       "closed_by": "VER-035 / TASK-042 — per-op <op> --help now renders the best-of-breed template (SYNOPSIS + Flags + EXAMPLES + RELATED + footer) via a pure buildHelpModel; OpDefinition gained an additive examples? field authored for all ~50 use-ops; --help --format json emits the structured help model; RELATED derives from the single groupForOp source; the auto-supplied set is single-sourced to AUTO_SUPPLIED (Flags annotate (required; auto-derived/auto-injected)) and the TASK-019 parity gate migrated to read its keys. Additive: in-pi ops frozen, parity gate green.",
       "closed_at": "2026-06-09T00:00:00.000Z",
-      "content_parent": "370a1b4a23f9411e81cedded8917e400704968d542d8d66a118a57cedf7dc7e1"
+      "content_parent": "a66e2cb8de69f2da057a034ecbf5dabacbc4fd366ac3f8e5cea25566dd2c840b"
     },
     {
       "title": "The reflecting pi-context CLI has no op to project a config-declared target-lens as a binned item-view (the lens-view primitive exists but is reachable only inside a roadmap)",
@@ -2340,8 +2340,8 @@
       "created_at": "2026-06-09T00:00:00.000Z",
       "id": "FGAP-073",
       "oid": "204bd4df63719f6f0f23fb86c95fbd08",
-      "content_hash": "f02240f7261915842a97cde2fcf437dbe4a539260d3fd37ce9a5bff58ef9f0c7",
-      "content_parent": "2ee21ceddb02b7a249d23ea0f4ce8b7059788b7343796c5d27e61adf3509d9ac",
+      "content_hash": "2ee21ceddb02b7a249d23ea0f4ce8b7059788b7343796c5d27e61adf3509d9ac",
+      "content_parent": "f02240f7261915842a97cde2fcf437dbe4a539260d3fd37ce9a5bff58ef9f0c7",
       "closed_by": "VER-037 / TASK-043 — the additive context-lens-view op projects any config-declared lens as a binned item-view (bin->count summary + per-bin paging via pageArray, routed through structureForRead), reusing loadLensView/renderLensView; serves target/composition/hand-curated lenses; slotted in groupForOp; ops frozen, parity green.",
       "closed_at": "2026-06-10T00:00:00.000Z"
     },
@@ -2384,8 +2384,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T10:47:57.307Z",
       "oid": "93f4e2eb7f52c8ea4c9f12735fd1a7af",
-      "content_hash": "febb1f89947ec469939a6c6558e91a453334d702d0be9c373bd4420ab2eb522e",
-      "content_parent": "759ecc91228fff086f5a37c785616293e92bb113cc0da996ef095dc66628f24b"
+      "content_hash": "759ecc91228fff086f5a37c785616293e92bb113cc0da996ef095dc66628f24b",
+      "content_parent": "febb1f89947ec469939a6c6558e91a453334d702d0be9c373bd4420ab2eb522e"
     },
     {
       "title": "check-changelog watched-surface derivation over-includes non-shipping files — build-excluded *.test.ts and monitor examples/*.patterns.json learned-pattern stores",
@@ -2420,10 +2420,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T16:02:20.407Z",
       "oid": "cc70d9e9aa6271bc6a565563cd641e8f",
-      "content_hash": "b4d8278aa697f8d2e774022a75b03ce1ad5d8fa76cc1fa1f637240504c9ea800",
+      "content_hash": "8baa14cbf42d5d08731387b03a2997432b2a58661b529eb901650a562a690de8",
       "closed_by": "VER-036 / TASK-045 — check-changelog exempts non-shipping surface via a subtractive isExemptSurface predicate (build-excluded *.test.ts + monitor examples/*.patterns.json) filtered in changedPackages before classification; watch-set derivation and matching unchanged; a genuine src/*.ts and examples/*.monitor.json still flag.",
       "closed_at": "2026-06-10T00:00:00.000Z",
-      "content_parent": "8baa14cbf42d5d08731387b03a2997432b2a58661b529eb901650a562a690de8"
+      "content_parent": "b4d8278aa697f8d2e774022a75b03ce1ad5d8fa76cc1fa1f637240504c9ea800"
     },
     {
       "title": "pi-context update result does not make partial application legible — a blocked run can read as a no-op while config.json was mutated",
@@ -2454,8 +2454,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-09T22:20:35.633Z",
       "oid": "ce550805023c174d4626b03da56911a7",
-      "content_hash": "590d5476141562bb222a68b9d10fc01a00ee5a3d004cd284af751a84b30bb5a8",
-      "content_parent": "b42df58bfd4146871ecfe16b3fc98aa1019920e9f7c82b3390b206802b968061",
+      "content_hash": "b42df58bfd4146871ecfe16b3fc98aa1019920e9f7c82b3390b206802b968061",
+      "content_parent": "590d5476141562bb222a68b9d10fc01a00ee5a3d004cd284af751a84b30bb5a8",
       "closed_by": "TASK-080 / VER-067 — UpdateResult gains the optional partialApplication field, populated exactly when a run both refused something (blocked / refused / conflicts non-empty) and applied something (resynced / migrated / merged / migrationsRegistered / any registryAdditions array non-empty): applied/notApplied mirrors of the result channels plus a one-line summary naming what was applied alongside what was refused and why, computed last in updateContext as a pure derivation of the finished result for live and dryRun runs (the preview declares itself). A blocked run whose registry additions landed no longer reads as a no-op on either surface (the op returns the result object; text mode renders the same object). Merged c81c06b2; three test cells; promoted-CLI runtime demo shows the field end-to-end; live substrate stays a clean no-op.",
       "closed_at": "2026-07-05"
     },
@@ -2487,10 +2487,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:37.461Z",
       "oid": "5c221bb7122f1ee3f7905a2557ebefc4",
-      "content_hash": "6a44e3495b8c94ea8a2704ce4cbf292eedd31b04d4e8e3645502163ded9f3ad0",
+      "content_hash": "6a6122192b53270dcf7ae94b5f4e054de202449614056c25ac06a08462784479",
       "closed_by": "VER-039 / TASK-048 — update blocked entries carry the per-item validation diagnostic (UpdateResult.blockedDetail: reason no-migration-chain | validation-failed, the version pair, and per failing item the id/field/constraint, dry and live identically); the standalone validate-block-items op validates a named block against the catalog schema version and returns the per-item failure list without writing; renderBlocked surfaces the detail on the CLI text surface. blocked: string[] and the rollback contract unchanged.",
       "closed_at": "2026-06-10T14:00:00.000Z",
-      "content_parent": "6a6122192b53270dcf7ae94b5f4e054de202449614056c25ac06a08462784479"
+      "content_parent": "6a44e3495b8c94ea8a2704ce4cbf292eedd31b04d4e8e3645502163ded9f3ad0"
     },
     {
       "title": "check-status reports no version gap — which schemas are behind the catalog, and by how much, is not surfaced",
@@ -2519,10 +2519,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:44.761Z",
       "oid": "dcc2f8ed71723eb06e5c2f887faafa6b",
-      "content_hash": "c005f299b1c0e6def643ca9275c11db1f61c1c3abb192765422a602a7975c833",
+      "content_hash": "969e232797f46394bc5929a6cf29e3e269e3ac2561c9c925af28cc382bb85bb3",
       "closed_by": "VER-043 / TASK-049 — checkStatus reports the version gap: additive per-asset behind + version_delta fields (basis version-bump or content-only — catalog-ahead is a hash comparison, so behind at equal versions states the content basis), and renderCheckStatus annotates behind names inline with the delta; the classification arm byte-unchanged.",
       "closed_at": "2026-06-12T10:00:00.000Z",
-      "content_parent": "969e232797f46394bc5929a6cf29e3e269e3ac2561c9c925af28cc382bb85bb3"
+      "content_parent": "c005f299b1c0e6def643ca9275c11db1f61c1c3abb192765422a602a7975c833"
     },
     {
       "title": "Catalog schema is not locally diffable — no surface yields the schema body, only a projection",
@@ -2551,8 +2551,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:51.179Z",
       "oid": "2c068661ac0880a6df03ba5014d63df3",
-      "content_hash": "162f90fe06914c016ca382d6d2fbaca12a5f6110435da7417f77a5dfef0cee1c",
-      "content_parent": "d0b626cf2044bf7155fa50f7930b39268c320606034e9c15a31fe7ecb111dae1",
+      "content_hash": "d0b626cf2044bf7155fa50f7930b39268c320606034e9c15a31fe7ecb111dae1",
+      "content_parent": "162f90fe06914c016ca382d6d2fbaca12a5f6110435da7417f77a5dfef0cee1c",
       "closed_by": "VER-044 / TASK-050 — the read-catalog-schema op emits the verbatim catalog *.schema.json body for a named kind (raw JSON Schema: properties/definitions/$id), byte-exact and locally diffable against the installed <substrate>/schemas/<name>.schema.json without touching node_modules; no sidecar.",
       "closed_at": "2026-06-13T00:00:00.000Z"
     },
@@ -2585,10 +2585,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:02:57.608Z",
       "oid": "fe716b9c5318124ccbd923252daeb47d",
-      "content_hash": "38cf2fccbcf6f8b7952f1ae0a720e208b5bb4258103d9d2008ce848b8499736b",
+      "content_hash": "8d57870cf93fb8d2f7058155340ecf2a0b5ff6893ef935e06289aa3df5938885",
       "closed_by": "VER-040 / TASK-051 — a blocked update persists a pending-blocked record (pending-blocked.json + the target schema body pinned in the object store: name/reason/version pair/chain/failures) and the authGated resolve-blocked op commits the resolution: re-validates the corrected block against the pinned target, on pass registers the chain, writes the target schema, advances the merge base (base := target), and clears the entry — a re-run update reports in-sync; on fail it reports the remaining per-item failures and writes nothing. The blocked byte-unchanged contract and per-component application unchanged.",
       "closed_at": "2026-06-11T10:00:00.000Z",
-      "content_parent": "8d57870cf93fb8d2f7058155340ecf2a0b5ff6893ef935e06289aa3df5938885"
+      "content_parent": "38cf2fccbcf6f8b7952f1ae0a720e208b5bb4258103d9d2008ce848b8499736b"
     },
     {
       "title": "update writes no in-block diagnostic — a blocked schema's failures appear only in a CLI report, not in the block file",
@@ -2618,10 +2618,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T00:03:03.956Z",
       "oid": "c51cb146f1a01db985597d4b70a6a2e4",
-      "content_hash": "b6f98a8149947a6d130304aab4c7919cb65c3f6a9be0948d4dfc05c1635e8a2a",
+      "content_hash": "c3294895f241552f629fd32977c2ee3b2fbd0e107b9a4f758b737a715c67504d",
       "closed_by": "VER-041 / TASK-052 — git-style in-file failure markers are the default behavior of a live validation-failed block: full-line sentinels at the offending items/fields (string-aware placement), the pre-marker block pinned to the object store and restored byte-exact, resolve-blocked strips on a passing resolution and refuses while the named violations persist, item identity preserved across the round-trip; dry and no-chain runs write nothing; schema and migrations.json byte-unchanged on every path.",
       "closed_at": "2026-06-11T16:00:00.000Z",
-      "content_parent": "c3294895f241552f629fd32977c2ee3b2fbd0e107b9a4f758b737a715c67504d"
+      "content_parent": "b6f98a8149947a6d130304aab4c7919cb65c3f6a9be0948d4dfc05c1635e8a2a"
     },
     {
       "title": "Invariant engine cannot express exists-a-complete-advancer rules — no aggregate-over-incoming-edges invariant class",
@@ -2647,8 +2647,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T10:31:32.921Z",
       "oid": "ce05514b1831f35b27cd8fa9c485c153",
-      "content_hash": "8a58aaf6073a84a555a1d9d2a437f58583d2a321f4edcc898e52b50f34258ed5",
-      "content_parent": "fb025faa767f3302f7e0f220941a350bc7e6b2bc179c92e1803acc2015f7488f"
+      "content_hash": "fb025faa767f3302f7e0f220941a350bc7e6b2bc179c92e1803acc2015f7488f",
+      "content_parent": "8a58aaf6073a84a555a1d9d2a437f58583d2a321f4edcc898e52b50f34258ed5"
     },
     {
       "title": "--block-taking ops ignore the config-declared prefix->block mapping — neither input normalization nor error enrichment",
@@ -2679,8 +2679,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:08:27.528Z",
       "oid": "0166694b1cc10e80c96530c1c46f5df3",
-      "content_hash": "10b2e0daf81ba54ed6f0b4ab01e2c380f45f05f8e3152caa45b73d8d4a928cf9",
-      "content_parent": "c979ee8a25db7dc04d92486c33f0318eb41c464419912d44bc69e9a13797ca0a"
+      "content_hash": "c979ee8a25db7dc04d92486c33f0318eb41c464419912d44bc69e9a13797ca0a",
+      "content_parent": "10b2e0daf81ba54ed6f0b4ab01e2c380f45f05f8e3152caa45b73d8d4a928cf9"
     },
     {
       "title": "CSV shorthand is a one-param special case, not a type-driven normalization for string-array params",
@@ -2716,8 +2716,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T11:08:40.127Z",
       "oid": "62dd9448dac29b7f842781f77cd2c4dc",
-      "content_hash": "4dfe9a4ae866788c6bf634d83444c4916054699fd5e8c106eaf39e7403c8b5d4",
-      "content_parent": "00e912a3fbf6a609413471e31ee8a84cdc7752d8991dd526dc50b725f1e3e860"
+      "content_hash": "00e912a3fbf6a609413471e31ee8a84cdc7752d8991dd526dc50b725f1e3e860",
+      "content_parent": "4dfe9a4ae866788c6bf634d83444c4916054699fd5e8c106eaf39e7403c8b5d4"
     },
     {
       "title": "update-block-item cannot delete a field — a null update sets the key to null instead of removing it",
@@ -2764,8 +2764,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-10T22:20:41.734Z",
       "oid": "bde73d76c6af1ea31a585e00bfa17674",
-      "content_hash": "0e98cee1542dc0f988267d5084970b31c5a79974f173bb633e33873aa20f574c",
-      "content_parent": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2"
+      "content_hash": "1ed43255342dddd2165d3caa45c77114f1854f8a5bc2ac3a117baed5461443a2",
+      "content_parent": "0e98cee1542dc0f988267d5084970b31c5a79974f173bb633e33873aa20f574c"
     },
     {
       "title": "A block whose array key holds a non-array value takes the no-items resync path and migrates without validation",
@@ -2786,8 +2786,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-11T12:10:45.615Z",
       "oid": "9630b64f2a71eafa06e2534a003662e7",
-      "content_hash": "f30767e20b18ce48c22fc29ee8e789d5e5447f34b0b055e08643c0ad79eaf9df",
-      "content_parent": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7"
+      "content_hash": "fbe716669b7f12ab5a2bb2cb551b89074f2de3bd63c6e31c6bc0877f562f95b7",
+      "content_parent": "f30767e20b18ce48c22fc29ee8e789d5e5447f34b0b055e08643c0ad79eaf9df"
     },
     {
       "id": "FGAP-088",
@@ -2823,8 +2823,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:11.027Z",
       "oid": "077caf30c88f6c44cbf996ec5aa361f0",
-      "content_hash": "47c190780ec2eede5f4719fcf70278baf752d0ac3d5bc15a7a91695f07fafaf3",
-      "content_parent": "3526b36f9fcc669f1f1dac42df9e43dd9358df51b1fa5e157073f34bf9a8d537",
+      "content_hash": "3526b36f9fcc669f1f1dac42df9e43dd9358df51b1fa5e157073f34bf9a8d537",
+      "content_parent": "47c190780ec2eede5f4719fcf70278baf752d0ac3d5bc15a7a91695f07fafaf3",
       "closed_by": "VER-045 / TASK-059 — the reflected context-install op completes the CLI bootstrap triad (init -> accept-all -> install); installContext is op-backed (removed from INTENTIONALLY_UNEXPOSED_WRITERS) with no behavior fork; a pure-CLI bootstrap materializes schemas + blocks + baseline and a subsequent append succeeds.",
       "closed_at": "2026-06-13T00:00:00.000Z"
     },
@@ -2857,8 +2857,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-13T05:14:18.108Z",
       "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
-      "content_hash": "8ebf50030876a30bb54b44bacec5e21ec6a5d56a532d235bf6835cc5dae723a7",
-      "content_parent": "ab0dc90a4c5ef03e932c2188eb5b5533b1eda2194d672e3112bcc88697fe7a5c"
+      "content_hash": "1ab9bc6a5ec89ab66173f98fb0aa56e0fcd114fc5dfdb83e804c134af06d5889",
+      "content_parent": "8ebf50030876a30bb54b44bacec5e21ec6a5d56a532d235bf6835cc5dae723a7"
     },
     {
       "title": "relation_type registry coverage is incomplete and edge direction is unenforced: a decision raising a gap, a decision gated by an item, and a gap related to a gap are all unexpressible, and raise-edges are mistyped as the resolve-direction decision_addresses_gap",
@@ -2898,10 +2898,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T01:25:55.291Z",
       "oid": "89c4e44ff0668ae999b544ac9426a111",
-      "content_hash": "84597c3261a8e6fdaf09da9144702ce1c4913ff95e722f7b156759eb83d615a2",
+      "content_hash": "a122c93b7d2a0a0a170c0821ba428517b9ca6ed31c387b6a60afd0421383b351",
       "closed_by": "VER-047/048/049 / TASK-061/062/063 — the three relation_types (decision_raises_gap, decision_gated_by_item, gap_relates_to_gap) added to active config + the packaged catalog (TASK-061); the write-time edge kind/registration validator hoisting the validateContext check to appendRelationByRef/appendRelationsByRef, distinct from TASK-027 (TASK-062); the edge corrections (TASK-063) — FGAP-092 filed and cited as DEC-0018's forcing artifact, DEC-0018->FGAP-076 retyped from decision_addresses_gap to decision_raises_gap, decision_gated_by_item DEC-0018->FGAP-076 and gap_relates_to_gap FGAP-090->FGAP-007/FGAP-061 added. All three tasks verified (passing verifications); context-validate warnings-only baseline with no decision-cites-forcing-artifact error.",
       "closed_at": "2026-06-14T00:00:00.000Z",
-      "content_parent": "a122c93b7d2a0a0a170c0821ba428517b9ca6ed31c387b6a60afd0421383b351"
+      "content_parent": "84597c3261a8e6fdaf09da9144702ce1c4913ff95e722f7b156759eb83d615a2"
     },
     {
       "title": "no forcing function for warranted non-invariant closure-table edges: edge presence is enforced only for requires-edge-backed relation_types, so warranted task_governed_by_decision / task_addresses_gap / research_informs_item edges are omitted with nothing to flag the absence",
@@ -2945,9 +2945,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T02:08:01.945Z",
       "oid": "59e28b0f7b432759d5234348ebc6aca9",
-      "content_hash": "99d8c4c9c6609cc3cceb147e4d0109d4ac5df4ba01c995b1ddd0ce21a4069005",
+      "content_hash": "a084a6d5f40a0874bfdb03481a646b43cae5e6d68fc6f901836b47f4a8066508",
       "priority": "P2",
-      "content_parent": "a084a6d5f40a0874bfdb03481a646b43cae5e6d68fc6f901836b47f4a8066508"
+      "content_parent": "99d8c4c9c6609cc3cceb147e4d0109d4ac5df4ba01c995b1ddd0ce21a4069005"
     },
     {
       "title": "pi-context update's per-component write boundary (DEC-0018) is undocumented on the update surface — a blocked run's config mutation is contractual but nowhere stated",
@@ -2976,9 +2976,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T05:13:16.413Z",
       "oid": "6feabcc9ecd0d77f19956178ae19c93d",
-      "content_hash": "c4dbf1244df25d7a4238b15f674edb3ab0cf98ff667ad82eeca38665f53d2b01",
+      "content_hash": "b13ef34e6cbfb9905520a1c420b2487658d0a4ebb4c41b43bba1da82ca3ea367",
       "priority": "P2",
-      "content_parent": "b13ef34e6cbfb9905520a1c420b2487658d0a4ebb4c41b43bba1da82ca3ea367",
+      "content_parent": "c4dbf1244df25d7a4238b15f674edb3ab0cf98ff667ad82eeca38665f53d2b01",
       "closed_by": "TASK-080 docs deliverable / VER-068 — closure by verification: the filed resolution (document the DEC-0018 per-component contract on the update surface) is fully shipped. The update op description, the package README (prose + op bullet), and the monorepo README (op bullet) all state the per-component boundary ('a blocked schema rolls back only itself; the additive registry propagation writes regardless') and sibling-schema independence ('…while applying registry additions or other-schema resyncs/migrations/merges'); the byte-exact blocked rollback was already stated on all three surfaces. The CLI text surface carries the op description plus the rendered result object with its per-run partialApplication summary. Merged c81c06b2; result-object legibility itself landed as FGAP-076's closure in the same merge.",
       "closed_at": "2026-07-05"
     },
@@ -3039,9 +3039,9 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T07:17:10.372Z",
       "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
-      "content_hash": "ae2c8e2f29c350b48e6c681405c87e20e8b4acbd9cf8868698d6d3d38f290b02",
+      "content_hash": "2524c771f55e7426dd50874f490bcb27c373f1de10b4d80c328d98cfda14070d",
       "priority": "P2",
-      "content_parent": "2524c771f55e7426dd50874f490bcb27c373f1de10b4d80c328d98cfda14070d"
+      "content_parent": "ae2c8e2f29c350b48e6c681405c87e20e8b4acbd9cf8868698d6d3d38f290b02"
     },
     {
       "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
@@ -3078,10 +3078,10 @@
       "created_at": "2026-06-16T00:00:00.000Z",
       "id": "FGAP-094",
       "oid": "ca21cdeb1fcabee3c51f4fbbf0f99492",
-      "content_hash": "e26f260d84de8de90d446a7ad1d7152d451618e17f64bba920eb1628be724b79",
+      "content_hash": "0dc264743d1df85ca1bd533c0ed4a35634534289c902bf307e2a38f68ff08a3a",
       "closed_by": "human/davidryan@gmail.com -- superseded by FGAP-102: the relation_types-only framing is one of >=5 dimensions (4-registry drift across relation_types/lenses/invariants/block_kinds + the catalog state_derivation referential defect); per investigation analysis/2026-07-01-fgap-094-catalog-config-parity-dimensions.md",
       "closed_at": "2026-07-01",
-      "content_parent": "0dc264743d1df85ca1bd533c0ed4a35634534289c902bf307e2a38f68ff08a3a"
+      "content_parent": "e26f260d84de8de90d446a7ad1d7152d451618e17f64bba920eb1628be724b79"
     },
     {
       "title": "Config-schema evolution has no load-time migration path",
@@ -3112,8 +3112,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-095",
       "oid": "9a63822d8ac46e00f1527c96c790f66f",
-      "content_hash": "ab84a2a6faada8b6e87880b6d49cb10a2dcc1e9af15352be6b5b8f44abc086bf",
-      "content_parent": "cbadcc9ea6542e4fb96f32486595ff01bdce23aa6c8c3de81bb2b6e5e6c0025d",
+      "content_hash": "cbadcc9ea6542e4fb96f32486595ff01bdce23aa6c8c3de81bb2b6e5e6c0025d",
+      "content_parent": "ab84a2a6faada8b6e87880b6d49cb10a2dcc1e9af15352be6b5b8f44abc086bf",
       "priority": "P2",
       "closed_at": "2026-07-02",
       "closed_by": "human/davidryan@gmail.com -- fixed by TASK-070 (commits 6661c9c..c12e87a) per its 7 accepted criteria; verified VER-060"
@@ -3147,9 +3147,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-096",
       "oid": "ca82f3434231e4586e837a4d4feb5004",
-      "content_hash": "8ed12dd25252c1d84b7aaacdab0621d2233f68f77e86f08a0ef261dfd9820062",
+      "content_hash": "c2f3f00e1f74655f6d6ef792488a4ccf4ec3172cdde3736a703f380c579ef4e3",
       "priority": "P2",
-      "content_parent": "c2f3f00e1f74655f6d6ef792488a4ccf4ec3172cdde3736a703f380c579ef4e3"
+      "content_parent": "8ed12dd25252c1d84b7aaacdab0621d2233f68f77e86f08a0ef261dfd9820062"
     },
     {
       "title": "No additive / expand-contract discipline for config-schema changes",
@@ -3175,9 +3175,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-097",
       "oid": "c515c2449f95a83c0fd2bbf477e60830",
-      "content_hash": "89baa3330aee6dce287ceefb84efd9e7fd89eb72461d73f14f73ade9142bc67a",
+      "content_hash": "8e050a545299fe04e4f234adf36579a2a165b83bd4db2343289ca4ed752bf1f0",
       "priority": "P2",
-      "content_parent": "8e050a545299fe04e4f234adf36579a2a165b83bd4db2343289ca4ed752bf1f0",
+      "content_parent": "89baa3330aee6dce287ceefb84efd9e7fd89eb72461d73f14f73ade9142bc67a",
       "closed_by": "TASK-072 / VER-064 — the expand-contract discipline is enforced mechanically by the build-time breaking-diff gate scripts/check-config-schema.ts (pre-commit 5th line + pull_request CI step, staged and --base modes diffing against the prior git revision): a removed/renamed property key anywhere in the config.schema.json properties tree, or a new required entry on a pre-existing object, fails the gate unless the same change set advances the schema version AND declares a packaged config migration reaching that version in samples/migrations.json; additive changes (new optional fields, description/enum additions, a newly-added optional object's initial requireds) pass. Live-demonstrated: a staged removal of properties.lenses failed naming the JSON path; the same removal paired with a version bump + packaged decl passed; clean-tree runs pass in both modes. Merged b21089e8.",
       "closed_at": "2026-07-05"
     },
@@ -3221,9 +3221,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-098",
       "oid": "3045be571ddb51cb25782d95ec0b4fe6",
-      "content_hash": "d4a2320b22d4f5c5348249ca33fcff2f408bd65cc6a79d695641bca7ed589ef5",
+      "content_hash": "64da49344db695562c8361a1403bcb9eb65fef649344c9b3b0994d351720e333",
       "priority": "P2",
-      "content_parent": "64da49344db695562c8361a1403bcb9eb65fef649344c9b3b0994d351720e333"
+      "content_parent": "d4a2320b22d4f5c5348249ca33fcff2f408bd65cc6a79d695641bca7ed589ef5"
     },
     {
       "title": "Block data carries no schema_version — read-time validation and migration are inert for all blocks",
@@ -3259,8 +3259,8 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-099",
       "oid": "202f544f1f6eacb06c13b407e5bb4a20",
-      "content_hash": "e93505665e4c76f49cc0719d0ae98a4152496eec328b6457e5303150c9821625",
-      "content_parent": "7c3adb9dadef32af9cb75011133a8bda80c6282f122bdef727c52ed1c0e8d116",
+      "content_hash": "7c3adb9dadef32af9cb75011133a8bda80c6282f122bdef727c52ed1c0e8d116",
+      "content_parent": "e93505665e4c76f49cc0719d0ae98a4152496eec328b6457e5303150c9821625",
       "closed_by": "TASK-073 / VER-063 — the filed resolution shipped verbatim: every catalog block schema envelope admits a single optional top-level schema_version (named relaxation only; per-item objects unchanged), and the write path (writeTypedFile, generically, self-gated on the schema declaring the property + carrying a version) stamps the envelope to the schema's current version on every block write. The read-time AJV hook and the version-mismatch migration branch are thereby active for all blocks: a version gap walks the registered chain forward on read and write, and an unresolvable gap fails loud (read throws; write refused, block file byte-unchanged). Live on the active substrate: installed schemas resynced via update, tasks.json/verification.json envelopes stamped 1.0.1 by the closure writes, stamped reads routing through the hook. Per-item stamping remains out of scope as filed.",
       "closed_at": "2026-07-05"
     },
@@ -3291,9 +3291,9 @@
       "created_at": "2026-06-19T00:00:00.000Z",
       "id": "FGAP-100",
       "oid": "702672901cff779f38aac4fc2a64d419",
-      "content_hash": "0b7a3071a6efc86475f5663cdf23d4107dfac1df988bd2e2f46468f7277752e0",
+      "content_hash": "85080c43d7f5aeb63b08ce0cea9f591064c989c9e1aa1a0086174116f1df0d80",
       "priority": "P3",
-      "content_parent": "85080c43d7f5aeb63b08ce0cea9f591064c989c9e1aa1a0086174116f1df0d80"
+      "content_parent": "0b7a3071a6efc86475f5663cdf23d4107dfac1df988bd2e2f46468f7277752e0"
     },
     {
       "title": "validateRelations conflates content relations with lens-axis relations: a hand-curated edge-materialization lens (derived_from_field null, bins []) over a content relation_type yields spurious edge_parent_not_in_bins on every real advancer edge, forcing context-validate-relations to invalid",
@@ -3342,10 +3342,10 @@
       "created_at": "2026-06-20T00:00:00.000Z",
       "id": "FGAP-101",
       "oid": "de2d3cfdaf6ec50e07575e812c8ce37b",
-      "content_hash": "9bd582eba95305cb564e207c9af6dae428ead43137c8179e9d4e173adc4cd8e1",
+      "content_hash": "a816ba9b1605644f067c2228e326825fd8badf7c68105904a94288e59874e8ff",
       "closed_by": "human/davidryan@gmail.com -- fixed by TASK-076 (commit e1cf07f) via mechanism (b): validateRelations guards the lens parent-in-bins check on parentBin !== null (endpointBin non-null), so a structured item parent never enters the bins check while a genuine lens_bin parent not in bins still errors. Verified VER-059: full suite 0 failures (rewritten edge_parent_not_in_bins test + new edge-materialization-lens clean test) and live .context context-validate-relations now clean -- the 29 advancer false-invalids gone.",
       "closed_at": "2026-07-01",
-      "content_parent": "a816ba9b1605644f067c2228e326825fd8badf7c68105904a94288e59874e8ff"
+      "content_parent": "9bd582eba95305cb564e207c9af6dae428ead43137c8179e9d4e173adc4cd8e1"
     },
     {
       "title": "Packaged catalog drifts below live config across all four propagated registries and ships a state_derivation reference to an unregistered relation_type, with no forcing-function for vocabulary parity or state_derivation referential integrity",
@@ -3390,8 +3390,8 @@
       "created_at": "2026-07-01",
       "id": "FGAP-102",
       "oid": "a5f7fc190b220f06db71edaa9595b44f",
-      "content_hash": "730df2dde2419c65c95f4e87019b2233c88dc2c3e9b8b278c58ae94c51c183ab",
-      "content_parent": "e6af3017f0b02c6cf869fc9623b3d841da7351d67d8b1e748ccb6c4ba340555c"
+      "content_hash": "e6af3017f0b02c6cf869fc9623b3d841da7351d67d8b1e748ccb6c4ba340555c",
+      "content_parent": "730df2dde2419c65c95f4e87019b2233c88dc2c3e9b8b278c58ae94c51c183ab"
     },
     {
       "title": "PM lifecycle vocabularies admit no deliberate-suspension status on any kind; a paused arc is unrepresentable (phase acute: derived focus presents it as active)",
@@ -3425,9 +3425,9 @@
       "created_at": "2026-07-02",
       "id": "FGAP-103",
       "oid": "76a82d22340fc5bfd25457e37f0fc67a",
-      "content_hash": "2be0d19eec98ab1c5f5f32f38fbd95201a2ea800a773e2927c621ba911054651",
+      "content_hash": "b427bee54ee78647f129b6f9ab4bfb7bec8c51bfdb6f70757ae5f68df41371dd",
       "priority": "P1",
-      "content_parent": "b427bee54ee78647f129b6f9ab4bfb7bec8c51bfdb6f70757ae5f68df41371dd"
+      "content_parent": "2be0d19eec98ab1c5f5f32f38fbd95201a2ea800a773e2927c621ba911054651"
     },
     {
       "title": "SKILL.md generation executes extension factories against the live environment — shipped package docs are a function of local project state (crash → silently partial output; substrate-declared composites → embedded as package surface)",
@@ -3466,9 +3466,9 @@
       "created_at": "2026-07-02",
       "id": "FGAP-104",
       "oid": "6ef2afa56ccd3df0de74b53fd796af26",
-      "content_hash": "8c4e1de703f4b2471d510b0c7f3d0b5435a54256c1206e97335a2cef458b7984",
+      "content_hash": "0a408563e59b51258dba15883150226fa8acd2690a75010fa2d88f4dbf671fa9",
       "priority": "P2",
-      "content_parent": "e91a11d9e7b51f16a53f5358bd71f51b4dbba6732121f5612c13d3e1434548e3"
+      "content_parent": "8c4e1de703f4b2471d510b0c7f3d0b5435a54256c1206e97335a2cef458b7984"
     },
     {
       "title": "Versioned substrate documents never converge their persisted schema_version at write time — config is the live instance: reads migrate in memory forever, writes persist the stale version back",
@@ -3509,10 +3509,10 @@
       "created_at": "2026-07-02",
       "id": "FGAP-105",
       "oid": "23e1efb8f3c97f1b159111690174dfb8",
-      "content_hash": "af472192419f3bac0c38c4d568fb9255874da0c740bc620a7843318871bcee7c",
+      "content_hash": "985c264e7219363992cd7a519654f3c7c223c7d175b095129170b08778729725",
       "closed_by": "TASK-073 / VER-063 — the write-time stamp landed at the generic writeTypedFile locus (the fold disposition this gap's resolution named), self-gated on the schema declaring a top-level schema_version + carrying a version, so every versioned-document write converges: blocks, config.json (writeConfigForDir delegates to writeTypedFile against the bundled schema), and migrations.json (migrations-store writes via writeTypedFile against the bundled migrations schema). Live-proven on the active substrate: the first sanctioned post-stamp config write (the update run's baseline advance) converged on-disk config.json schema_version 1.0.0 -> 1.8.0, after which loads version-match and never consult the chain; a subsequent identical-content amend-config was a byte-identical no-op (convergence durable). Born-lagging fresh substrates are fixed by the same mechanism (writeSkeletonConfig and adoptConception write through writeConfigForDir, stamped current at write). Config-write convergence is regression-locked in block-version-stamp.test.ts.",
       "closed_at": "2026-07-05",
-      "content_parent": "985c264e7219363992cd7a519654f3c7c223c7d175b095129170b08778729725"
+      "content_parent": "af472192419f3bac0c38c4d568fb9255874da0c740bc620a7843318871bcee7c"
     },
     {
       "title": "An operator-filed partial config migration chain bricks every ceremony with no remediation hint; recovery path exists but is undocumented",
@@ -3537,8 +3537,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-106",
       "oid": "cf2c443da8c12971e79912b0ceffa57a",
-      "content_hash": "e018cb23060c57e651aac95491f8ace1b54fe6658d1fb11ed47b240e2e234152",
-      "content_parent": "51e922243f356147c6e5cf224e8b75fe058673f29b67a332470b4097605cc089"
+      "content_hash": "51e922243f356147c6e5cf224e8b75fe058673f29b67a332470b4097605cc089",
+      "content_parent": "e018cb23060c57e651aac95491f8ace1b54fe6658d1fb11ed47b240e2e234152"
     },
     {
       "title": "Raw config.json readers bypass the config migration layer — silent shape divergence once the first shape-changing config migration ships",
@@ -3564,8 +3564,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-107",
       "oid": "f9bfeb7ad8e0807ca765357ba4284fd5",
-      "content_hash": "42084cf06c369a3231f61ec502f576b04a56fa6d2eca754d88a09e6f240eda94",
-      "content_parent": "70c21d6cc877723a2c21439aba512255ee5d16a7cf36edc73968b9816e474334",
+      "content_hash": "70c21d6cc877723a2c21439aba512255ee5d16a7cf36edc73968b9816e474334",
+      "content_parent": "42084cf06c369a3231f61ec502f576b04a56fa6d2eca754d88a09e6f240eda94",
       "closed_by": "TASK-079 / VER-066 — the filed determination resolved to migration-aware routing (not document-as-raw), and both named readers were converted: resolveOperationVocabulary (pi-agent-dispatch capability-composer) reads the active substrate's config via loadConfigForDir with its fail-safe tightened to alignment (any load failure yields TOOL_OPERATION_DEFAULTS; a raw AJV-invalid config's tool_operations no longer apply), and loadConfigForDirBestEffort (pi-context context-sdk, foreign substrates) prefers loadConfigForDir with a two-tier degraded contract — raw-parse fallback on unresolvable/invalid so the foreign prefix invariant stays fed (mis-filed foreign ids keep degrading to dangling; the resolve-ref suite caught and forced this tier during implementation), null on absent/unparsable. No reader of config.json sees a different shape than loadConfig wherever a chain resolves. Merged fe9af165; both cells tested at both sites; live parity confirmed on the converged active substrate.",
       "closed_at": "2026-07-05"
     },
@@ -3593,8 +3593,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-108",
       "oid": "2cd2f886b0e1572455bfbd7cb64c1090",
-      "content_hash": "c93e547399e882c6f81d7612e05eebc87fa9a8be6053cf643b07da8e1cf524a9",
-      "content_parent": "51e7e95bc05124a46f44e874345d6e006ce9bddf4de445e696135a0c3475ff97"
+      "content_hash": "51e7e95bc05124a46f44e874345d6e006ce9bddf4de445e696135a0c3475ff97",
+      "content_parent": "c93e547399e882c6f81d7612e05eebc87fa9a8be6053cf643b07da8e1cf524a9"
     },
     {
       "title": "No build-time gate flags a narrowing catalog BLOCK-schema diff — the additive/expand-contract gate covers config.schema.json only",
@@ -3634,8 +3634,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-110",
       "oid": "a45222d72708f48dfce1d9a1b3fae56a",
-      "content_hash": "2de511ed3dc5612e88456fff18d1aa0d7e062aa3f376081ae6091d532e4fa276",
-      "content_parent": "0f3f07acae131cfc3b558992d94512d99ea04c60e8dec1c7555d6f86dca11573"
+      "content_hash": "0f3f07acae131cfc3b558992d94512d99ea04c60e8dec1c7555d6f86dca11573",
+      "content_parent": "2de511ed3dc5612e88456fff18d1aa0d7e062aa3f376081ae6091d532e4fa276"
     },
     {
       "title": "Review-enforced conventions have no structural forcing function as a class — all 12 conventions declare enforcement review or manual",
@@ -3655,8 +3655,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-111",
       "oid": "8d9622451350dd47a630739417dd2222",
-      "content_hash": "88dad82c110606e6de0d31c713b70ed5a2b87664e0ca7d20f33556d19806a748",
-      "content_parent": "a953242efe1b9829fc14f278a37918f7318f9a8936db6dd68cfbec6017d373ce"
+      "content_hash": "a953242efe1b9829fc14f278a37918f7318f9a8936db6dd68cfbec6017d373ce",
+      "content_parent": "88dad82c110606e6de0d31c713b70ed5a2b87664e0ca7d20f33556d19806a748"
     },
     {
       "title": "CLI errors carry no remediation hints as a class — only FGAP-106 asks for one error's hint",
@@ -3677,8 +3677,8 @@
       "created_at": "2026-07-02",
       "id": "FGAP-112",
       "oid": "e3ca49d3091ab621978adb0060e98368",
-      "content_hash": "01ca12053f8d16cbb2c200ede6ecbb38dcd7c6fa867baa1bf93a4638e78735bd",
-      "content_parent": "187ca90807f1aeca6a71c527144a0c772664781d8ca584173bf2548225d6bcd7"
+      "content_hash": "187ca90807f1aeca6a71c527144a0c772664781d8ca584173bf2548225d6bcd7",
+      "content_parent": "01ca12053f8d16cbb2c200ede6ecbb38dcd7c6fa867baa1bf93a4638e78735bd"
     },
     {
       "title": "Edge orientation (which endpoint is stored parent vs child) is carried by neither the relation_type name nor any queryable metadata, and no surface signals a wrong-orientation guess — backwards writes and empty reads both fail silently across ordering, membership, and wildcard relation_types",
@@ -3728,10 +3728,10 @@
       "created_at": "2026-07-04",
       "id": "FGAP-113",
       "oid": "71ea617e989e45ab4c249dd7844670be",
-      "content_hash": "49efd2a4ab0c7ef12368a2fd378148c941822feb83ecb16aeb95e87992573f9c",
+      "content_hash": "d78215321ad5c340c1d8c2a40e9f65c9dff34f61a00208d7ca9af4ff8588c0f2",
       "closed_by": "TASK-027 / VER-062 — role_direction ('as_parent'|'as_child') declared as the single orientation source of truth on the 17 role-bearing relation_types, consumed by the deriver / rollup / roadmap / promote (the task_gated_by_item + roadmap module-constant + item_derived_from_item string-literal hardcodes deleted); role-typed --primary/--counter write authoring with ambiguous-bare-append reject for same-kind/wildcard relations (never auto-oriented); read-side wrong-orientation walk signal for disjoint-kind relations (throws naming the counterpart op) with same-kind/wildcard honestly returning []; config schema advanced to 1.8.0 with the active .context substrate migrated (chain + role_direction). Merged 3bc3d7a4; build/check/test green; runtime demos + fresh-context adversarial probe PASS; deriver output byte-identical to the pre-change baseline; context-validate warnings-only baseline. FGAP-007 (write/ordering/same-kind) and the task_positioned_in_phase read silent-empty are the closed instances.",
       "closed_at": "2026-07-04",
-      "content_parent": "d78215321ad5c340c1d8c2a40e9f65c9dff34f61a00208d7ca9af4ff8588c0f2"
+      "content_parent": "49efd2a4ab0c7ef12368a2fd378148c941822feb83ecb16aeb95e87992573f9c"
     },
     {
       "title": "context-validate performs no block-item schema validation — a substrate with schema-invalid items reports clean, so resync-introduced invalidity persists undetected until a write to that block fails",
@@ -3766,10 +3766,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-114",
       "oid": "be37aff0e312f5ddddb526365564da4e",
-      "content_hash": "b9a606352903e9dd83206e113d2682e1640255063665d91b9ddbe23dc297c7a3",
+      "content_hash": "518233c3f55a6f596adfc1e40ebbeee546e65e25f15a4f34e949670d6fa1a0e7",
       "closed_by": "TASK-078 / VER-065 — the filed resolution shipped: validateContext gained the substrate-wide block schema-validity sweep (every block with an installed schema + block file validated whole, migration-aware for stamped envelopes via validateBlockWithMigrationForDir, raw otherwise), surfacing per-item failures as errors (block_schema_invalid, item id from the AJV instancePath, field/keyword); pointer-less projects skip gracefully. Live-proven on the active substrate: the sweep reported the previously-invisible 14 invalid story items (status invalid) that the pre-fix verdict missed, and returned to the warnings-only baseline after the paired producer fix + catalog story user_kind remediation resynced the block to validity. The producer side (same-version resync re-validation) landed in the same task, closing both ends of the class. Merged 5dc2f2fc.",
       "closed_at": "2026-07-05",
-      "content_parent": "518233c3f55a6f596adfc1e40ebbeee546e65e25f15a4f34e949670d6fa1a0e7"
+      "content_parent": "b9a606352903e9dd83206e113d2682e1640255063665d91b9ddbe23dc297c7a3"
     },
     {
       "title": "resync/resolve blocked pipeline classifies every throw as item-validation failure — non-validation refusals are mislabeled, mark valid blocks, dead-end the routed remedy, and break dry/live parity",
@@ -3800,10 +3800,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-115",
       "oid": "a02e0f3d83a7f3fe85666035bef71a67",
-      "content_hash": "d7d75a5187c559ca3f8e30efa6f23550384d6527519892f90cc9c40da526a6d5",
+      "content_hash": "5ccd6247d4fa83e1e7901d5fee52b3994e4763d88a80ab5fef90fa89c21fe350",
       "closed_by": "TASK-081 / VER-069 — refusal-cause classification landed at both resyncSchema catch sites: an AJV ValidationError keeps reason validation-failed (per-item failures, markers, pending record — unchanged); any other throw reports the new reason write-failed with the thrown message carried, and the validation-only consequences never fire (no markers inscribed into the block, no pending-blocked record persisted). renderBlocked renders write-failed truthfully (the items were not flagged invalid; address the precondition, re-run update) and its trailing fix-items guidance is gated to reports carrying a pending-persisting entry. resolveBlocked's commit is all-or-nothing: pre-commit bytes of every touched file (migrations.json, installed schema, block, config.json, pending record) captured and byte-restored on any commit-phase throw, returning resolved:false with the truthful failure — the partial-commit facet is closed. The dry/live parity facet for the pre-identity instance is deferred by design to the ceremony-entry identity establishment implementation (the enacted decision), which removes the instance; the classification stands for every other non-validation throw at the boundary. Merged 1cf7f6ac; both facets demonstrated on the promoted operator against the original reproduction.",
       "closed_at": "2026-07-05",
-      "content_parent": "5ccd6247d4fa83e1e7901d5fee52b3994e4763d88a80ab5fef90fa89c21fe350"
+      "content_parent": "d7d75a5187c559ca3f8e30efa6f23550384d6527519892f90cc9c40da526a6d5"
     },
     {
       "title": "Gate satisfaction buckets the STORED status of derived-status kinds — currentState simultaneously derives a milestone reached and reports it as an unsatisfied gate",
@@ -3838,10 +3838,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-116",
       "oid": "8677c280ca00bcf48c82146bc166334f",
-      "content_hash": "73c4e77939a2bbbbfbc0850575267f0c2a41538a2474e2c5b7382542ed72b8e0",
+      "content_hash": "523072295d9d1113447f9347c4f3724d34e8d4980cb1e1c449d59064bf9fd8c3",
       "closed_by": "TASK-084/085/086/087 (VER-072/073/074/075) — the filed resolution's four mechanisms all shipped: gate satisfaction consults the derived rollup for config-declared rollup kinds within the same currentState read (the self-contradiction impossible by construction); the derived-status invariant class detects stored-vs-derived divergence in BOTH directions out-of-band; context-reconcile repairs with a dry-run-exact preview through the validated write path (and converged the live MILE-003 instance); and converge-on-write leaves rollup-kind stored statuses equal to their derivation after every sanctioned rollup-input write (demonstrated through the promoted operator: one phase update left the milestone stored 'reached' on disk). All four verdicts come from ONE shared completeness helper (derivedRollupComplete), so derivation, detector, repair, and convergence cannot disagree. The dangling substrate-derived-state canon citation remains TASK-091's deliverable.",
       "closed_at": "2026-07-06",
-      "content_parent": "523072295d9d1113447f9347c4f3724d34e8d4980cb1e1c449d59064bf9fd8c3"
+      "content_parent": "73c4e77939a2bbbbfbc0850575267f0c2a41538a2474e2c5b7382542ed72b8e0"
     },
     {
       "title": "Read surface has no field projection — item-metadata enumeration requires full-item reads the 50KB cap refuses, so substrate-wide currency audits are not cheaply repeatable",
@@ -3878,8 +3878,8 @@
       "created_at": "2026-07-05",
       "id": "FGAP-117",
       "oid": "264d39cc77f44ab98deb2227d610b0b9",
-      "content_hash": "e12a2c6ba67e28338cd976b25db5aa8b551ae7a76f9ca826d0154f16c9ead6ce",
-      "content_parent": "0f478daa6f043c3fb87c5286bb8afe88497571e7f03b88b88f45ace285398b4a"
+      "content_hash": "0f478daa6f043c3fb87c5286bb8afe88497571e7f03b88b88f45ace285398b4a",
+      "content_parent": "e12a2c6ba67e28338cd976b25db5aa8b551ae7a76f9ca826d0154f16c9ead6ce"
     },
     {
       "title": "release:* bumps versions but never re-promotes — the globally-installed operator CLI silently lags the tree after every release",
@@ -3904,10 +3904,10 @@
       "created_at": "2026-07-05",
       "id": "FGAP-118",
       "oid": "fb77630304d903238205a5ec49d8360c",
-      "content_hash": "5b7012fcc15a08e8cb0dc9697e9e838bb55f27e96b5f3e46ca874b16dbec7379",
+      "content_hash": "9d0fbe49e625f851cdc1a6c73801644da8de3522580b9cbff7fc15b1434cdcf9",
       "closed_by": "TASK-083 / VER-071 — scripts/release.mjs step 5: after the tag, the release run promotes the operator CLI (npm run promote:cli via the script's run() helper, silent+ignoreError so a string return means success and null means failure) and prints the promoted version, so a release leaves the globally-installed pi-context at the released version by construction. A promote failure does not un-release: the bump/CHANGELOG/commit/tag are already durable; the script reports the release intact, names npm run promote:cli as the manual remedy, reprints the human next steps, and exits non-zero. Both legs runtime-demonstrated (throwaway-prefix convergence to the tree version; unwritable-prefix promote failure). README + CLAUDE.md state the behavior. Merged e1647eef.",
       "closed_at": "2026-07-05",
-      "content_parent": "9d0fbe49e625f851cdc1a6c73801644da8de3522580b9cbff7fc15b1434cdcf9"
+      "content_parent": "5b7012fcc15a08e8cb0dc9697e9e838bb55f27e96b5f3e46ca874b16dbec7379"
     },
     {
       "title": "A failing message-less assert under the tsx test loader spins node:assert's message reconstruction effectively forever — 958 bare assert occurrences are latent suite-hang triggers",
@@ -3932,8 +3932,8 @@
       "created_at": "2026-07-06",
       "id": "FGAP-119",
       "oid": "6c45c842b187852cca617dd239236976",
-      "content_hash": "c8e9ea9cea89628a413a9defd207eb33d4c7b08fc8858bcdd2cd67a531dd3046",
-      "content_parent": "4b1c8e01bceffc1943ad71e1d68873c985337ebebbb8c835ab737049d6712ff1"
+      "content_hash": "2cb09587ccb8f0a6c1f831a9c8397a6a125205ca73590b514e0a88f0f2fef7d7",
+      "content_parent": "c8e9ea9cea89628a413a9defd207eb33d4c7b08fc8858bcdd2cd67a531dd3046"
     },
     {
       "title": "block-pi-context-glue.sh pattern-matches shell metacharacters inside QUOTED argument values as shell syntax — regex alternation in --value is blocked as piping, and every heuristic false-positives on quoted-payload text",
@@ -3966,8 +3966,8 @@
       "created_at": "2026-07-06",
       "id": "FGAP-120",
       "oid": "e664356314c6ef76901640c61a2d88e1",
-      "content_hash": "00f163f1d7c64cd9ddeaf06d6d618e481028170434603606516ad97546e9f2d2",
-      "content_parent": "3aa66ffd5aa122aa514e080172402be1357b1571c9a0c84c69adb1eb2eab2bcb",
+      "content_hash": "a8572b24b6b0d1cbbcddb2070509b6ad9b62b77686b42ffebe6ebc9e33a76c92",
+      "content_parent": "00f163f1d7c64cd9ddeaf06d6d618e481028170434603606516ad97546e9f2d2",
       "closed_by": "Quote-blindness closed by making the guard quote-aware: a single left-to-right COMBINED perl substitution (block-pi-context-glue.sh line 32) strips each single- and double-quoted span (honoring \\\" escapes) to a placeholder 'Q' immediately after tool_input.command extraction, BEFORE the recognizer and all four block heuristics — so shell metacharacters that are DATA inside quoted argument values are no longer visible as shell syntax, while inter-token operators outside quotes survive (genuine glue still blocks) and degradation on exotic quoting is fail-closed (over-block, never under-block). Composes with the pipe-evasion fix already in the file (block-1/block-3 redirect-tolerant bridges); the strip runs on a skeleton the existing regexes consume unchanged. Verified against the live deployed guard: the extended harness (.claude/hooks/block-pi-context-glue.test.sh) 28/28 — every pre-existing pipe-evasion case plus the quote-FP rows (single/double-quoted | in --value, literal 2>/dev/null and ' > ' and $? and '; echo ' and prose 'for x do' inside quoted payloads, and a non-pi-context git commit -m mentioning the CLI); raw checks — filter-block-items --value '\"hook|guard\"' passes (rc=0), the same command with a genuine trailing | head blocks (rc=2). Sibling on the same artifact: FGAP-089 (target-substrate scope-blindness, still open — a distinct class the quote fix does not address). Grounding: analysis/2026-07-06-glue-hook-quoted-value-false-positive.md (landing note appended).",
       "closed_at": "2026-07-07"
     },
@@ -4006,10 +4006,10 @@
       "created_at": "2026-07-06",
       "id": "FGAP-121",
       "oid": "4e456b445663b2e6edc5e44b6891e90c",
-      "content_hash": "26cc3eb02ce8c4c47bac617efd37c5dbc6a0cc96e4ac82a196128493d04b99ae",
+      "content_hash": "1bc7a76d3c9cec206ffc3153261ada642b275c253ccf2f93f8824aa5ce583c1b",
       "closed_by": "TASK-092 (VER-077) — the birth-relations entry shape affords both orientation forms: role: primary|counter maps to the role-typed append input and delegates to the same porcelain, so orientAppendInput's mapping + ambiguity guard apply verbatim and its re-issue instruction is followable in-shape; the direction/role mutual exclusion refuses at coercion before any write; upsert --dryRun runs the same orientation guard over entries (preview refuses what the live run refuses — the second class cell). The error-severity deadlock demonstration passes via the role form, pinned as a test; demonstrated live through the promoted CLI (direction form refused, role form threading an error derivation invariant atomically, stored orientation read back per role_direction). error-invariant-transition-atom rule 2 is satisfiable for all 17 role-bearing relation_types.",
       "closed_at": "2026-07-06",
-      "content_parent": "1bc7a76d3c9cec206ffc3153261ada642b275c253ccf2f93f8824aa5ce583c1b"
+      "content_parent": "26cc3eb02ce8c4c47bac617efd37c5dbc6a0cc96e4ac82a196128493d04b99ae"
     },
     {
       "title": "Derivation is foreign-blind: every edge-consuming derived surface resolves endpoints against the active index only, so valid foreign endpoints are silently dropped (gates derive ready), defaulted (rollups never complete), or collision-mis-resolved to same-refname local items — while validate certifies the same edges as fine",
@@ -4054,8 +4054,8 @@
       "created_at": "2026-07-06",
       "id": "FGAP-122",
       "oid": "1c05acbdcc5cd1cace7c398fa7de6dde",
-      "content_hash": "fb5eb81f8e4e89624dfcd6d1ed510decee3f60c09b75503932f32f0e7d3390cd",
-      "content_parent": "d983a0441319fd19af152b4a7ea69748c0010411970a58114c5c8bd849485fe7"
+      "content_hash": "d983a0441319fd19af152b4a7ea69748c0010411970a58114c5c8bd849485fe7",
+      "content_parent": "fb5eb81f8e4e89624dfcd6d1ed510decee3f60c09b75503932f32f0e7d3390cd"
     },
     {
       "title": "Authoring-time shape projections flatten nested item shapes — --show-schema and the samples-catalog itemProperties render object/array<object> fields as bare types, and every documented pre-step points at the names-only required read, so the refused write is the de-facto nested-shape discovery mechanism",
@@ -4092,8 +4092,8 @@
       "created_at": "2026-07-06",
       "id": "FGAP-123",
       "oid": "331f2959c5d630673f4387c1800f4249",
-      "content_hash": "c8a1f555324dc896d54878f23da2669e60400c4d3e87ac76cad908f8869face0",
-      "content_parent": "bd9e08ed5b71312498c68d3bbb0608d5971005be9a78aefcafd139d6d565d7dc"
+      "content_hash": "bd9e08ed5b71312498c68d3bbb0608d5971005be9a78aefcafd139d6d565d7dc",
+      "content_parent": "c8a1f555324dc896d54878f23da2669e60400c4d3e87ac76cad908f8869face0"
     },
     {
       "title": "In-process jit dispatch cannot execute tools — executeAgent is a single-turn completion primitive, so the grant machinery clamps a capability that does not exist",
@@ -4122,8 +4122,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-124",
       "oid": "cbd7f44870e46657ee61ebca3aa5b501",
-      "content_hash": "0d21080b2c0f421c315a11dbf676fddf0f6ca10e315843f825c8d0c80b975c29",
-      "content_parent": "70bb7ad798562764bddc70dd3ef1ad51e297b607f77ef83b604ec044a3afb11a",
+      "content_hash": "f9f1584cb43394e5f06763e11301aa3f46eff3f5399a96f7719badd1682150c2",
+      "content_parent": "0d21080b2c0f421c315a11dbf676fddf0f6ca10e315843f825c8d0c80b975c29",
       "closed_by": "Fixed on main (merge 8e2e764e): the work-order loop's dispatchTargetAgent now spawns a pi subprocess (pi --mode json -p <task> --tools <composedGrant> --model <spec>) — the pi-workflows production mechanism — instead of the tool-less in-process executeAgent primitive; the composed capability clamp becomes the subprocess --tools allowlist and now actually reaches execution. New subprocess-dispatch.ts (runPiSubprocess + testable buildDispatchArgs) with timeout/SIGTERM-SIGKILL/cancellation/long-prompt-tmpfile/bounded-stdout; suite 100/100. Verified end to end and re-run independently by the orchestrator with the artifact deleted first: runWorkOrderLoop against a fixture whose agent must write a file produced out.txt='FGAP-124-PROVEN', the deterministic runtime-demo real-check passed, final_status=completed. Operator rebuilt + promoted. Residual (separately tracked, not part of this defect): FGAP-125 (loop still ignores input_contract/context_blocks/output_contract/scope.operations), FGAP-127 (agents tier unseeded), FGAP-126 (non-interactive gate path).",
       "closed_at": "2026-07-07"
     },
@@ -4154,8 +4154,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "9acd079c9d41778cbe059a8461cf7f0bf1b71043b6bf95a17141aa8e8e86d047",
-      "content_parent": "f98bd2e09687d746c42bd99eade13aa14a001c0e840439e0605dad48dfa1df2c"
+      "content_hash": "e8eca3b0bf101fa5a0f2dd7a1c912fb63fa5f5b50c4967717c891da25dc2a727",
+      "content_parent": "9acd079c9d41778cbe059a8461cf7f0bf1b71043b6bf95a17141aa8e8e86d047"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
@@ -4184,8 +4184,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "d240c4b6df367d854264c2956072662eb01501489f7c05030ccf27cd2ddb98d3",
-      "content_parent": "66f6c784b2792650f24436d6dd7e22ac61faa702d4c6cbabf61e25295c42126d"
+      "content_hash": "6cee31c3f2f3c93e3fa87b73f6a645b6d2d752c0f6ccadd5948ba30adcfea108",
+      "content_parent": "d240c4b6df367d854264c2956072662eb01501489f7c05030ccf27cd2ddb98d3"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
@@ -4214,8 +4214,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-127",
       "oid": "c2bc490c5b917dcbca4c4065002a1a42",
-      "content_hash": "3c04f846098a93fadb32a05d4992b575cc210f830d16efade8ef7055b94aa66a",
-      "content_parent": "2e24eef7c93b7cd4038ef78a13200a8a684e9d1ada9d9503d18eceb191604390",
+      "content_hash": "fb03c49a7fcfa812c02260af0ba839f3863f7b7cea93c2d57a6891c03b28358d",
+      "content_parent": "3c04f846098a93fadb32a05d4992b575cc210f830d16efade8ef7055b94aa66a",
       "closed_by": "TASK-103 (VER-081) wired pi-workflows' bundled agents/ as the dispatch loaders' builtin tier via dispatchLoadContext consuming the new @davidorex/pi-workflows/bundled-dirs subpath export — on a fresh substrate whose contextDir/agents is empty, target agents resolve from the 26 packaged specs (runtime-demonstrated via built dist: investigator resolved; local same-named spec still wins; unknown name throws with three tier paths). The loader docblocks' stale .project/agents wording was aligned in the same arc. This takes the proposed_resolution's bundled-builtinDir disjunct; the OTHER disjunct — seeding the agents tier in the install ceremony (an installed_agents[] manifest) — was NOT built and remains an open FEAT-014 design option, deliberately not required for this gap's headline defect (a fresh substrate CAN now produce a resolvable target_agent from the loop's operating context). Compile/model dispatchability beyond resolution was tracked and closed separately as FGAP-129/FGAP-130 (TASK-104, VER-082).",
       "closed_at": "2026-07-08"
     },
@@ -4242,8 +4242,8 @@
       "created_at": "2026-07-07",
       "id": "FGAP-128",
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
-      "content_hash": "a824c8d9dc9f2c9b697af2c840da487aa81210f951ddb61e80dd9a1e62eb34a0",
-      "content_parent": "e0754514e03bbdc6515fd011aafe9c55cd8ea7967f5ff2f489f274630fb5e794"
+      "content_hash": "52156f6000cf37733695367229c707d7598cb24c256af07b7087e50e34e385e1",
+      "content_parent": "a824c8d9dc9f2c9b697af2c840da487aa81210f951ddb61e80dd9a1e62eb34a0"
     },
     {
       "title": "Template-resolution divergence between the two spec pipelines — jit parse absolutizes template refs, so every bundled spec is uncompilable on the dispatch path",
@@ -4272,8 +4272,8 @@
       "created_at": "2026-07-08",
       "id": "FGAP-129",
       "oid": "c4a5cc51e493bf6c9b0ec31189133a5d",
-      "content_hash": "7ead18424ad60779925ff04eadffecc34bca1fae31f4234fc401986298e9e5ed",
-      "content_parent": "8ab094dc0af95df18d42e84738db66cb4b7711c89fdb6747bc15a8e422bb2e11",
+      "content_hash": "de0e78fbdb400857aaa230bf33682e4c7b45fb30132e6a7d6d48a19f5171bc5a",
+      "content_parent": "7ead18424ad60779925ff04eadffecc34bca1fae31f4234fc401986298e9e5ed",
       "closed_by": "TASK-104 (VER-082) converged dispatch template resolution onto the executor's proven mechanism: resolveSpecPath is existence-gated (a relative ref absolutizes only when found beside the spec or — bundled-tier specs only, siblingProbe threaded from createAgentLoader's builtin-tier match — at the package-root sibling location; otherwise it survives as a loader-resolvable name), and both dispatch entry points build their template env with builtinDir: bundledTemplateDir(). Runtime-demonstrated via built dist on a fresh substrate: investigator compiled end-to-end, quality-analyzer compiled through its {% extends %} chain, and all schema-bearing demo specs produced absolute readable parseable outputSchema paths at the exact prior ENOENT point. The sibling instance (phase-author's malformed refs) was repointed in-package. The local/user-tier shadowing vector the tier-scoping forecloses is pinned by real-collision negative cells. Residual observation (probe 4, NIT): phase-author's agent-level schema and the workflows' block:phase step schema are maintained independently and could drift — recorded here, not a defect today (semantic match verified).",
       "closed_at": "2026-07-08"
     },
@@ -4304,8 +4304,8 @@
       "created_at": "2026-07-08",
       "id": "FGAP-130",
       "oid": "8f5001956b2a2f478363e12604207534",
-      "content_hash": "c0e99457eeda4e425ea4d96f5833e54a956fbb11fefdb8b96f7e3149e8fce61a",
-      "content_parent": "0ae50d509fcc659dca637f4327d87b6d9be884e8a7ab43487e068e223559cc1d",
+      "content_hash": "601a65c1d423905d58b8b1c3d40c88391cc94556441ea5ea7f15308f75f56c0a",
+      "content_parent": "c0e99457eeda4e425ea4d96f5833e54a956fbb11fefdb8b96f7e3149e8fce61a",
       "closed_by": "TASK-104 (VER-082) implemented DEC-0023's derived precedence in resolveDispatchModel (spec.model, then the substrate model-config block's by_role[spec.role], then its default, else null; absent block = null fall-through mirroring the workflow executor's own try/catch handling): call-agent keeps an informed throw naming the model-config block as the remedy when nothing resolves (the in-process mechanism's floor — executeAgent requires a concrete model), and the work-order subprocess path omits --model when null so pi resolves its own default inside the subprocess (byte-mirroring the executor's --models omission). Precedence unit-pinned (spec wins / by_role / default / absent-block-null / no-match-null); --model presence/omission runtime-demonstrated via built dist; buildDispatchArgs' model made optional preserving its testable export shape.",
       "closed_at": "2026-07-08"
     },
@@ -4348,7 +4348,8 @@
       "created_at": "2026-07-08",
       "id": "FGAP-131",
       "oid": "bee6e95a2e79333085ce11033a9574e0",
-      "content_hash": "cc1d5a42a2cdc53f234dff615d5c93f473cccc2553b2dfcf4634a9ab72798034"
+      "content_hash": "153d5a602df20588f377c7c4d1707739d81045342cc069fa2ce91e35a0670f59",
+      "content_parent": "cc1d5a42a2cdc53f234dff615d5c93f473cccc2553b2dfcf4634a9ab72798034"
     },
     {
       "title": "8 of 15 bundled pi-workflows specs are invalid under validateWorkflow; the invalidator is error-level input-contract/template drift, not the missing block schemas (which only warn) — bundled specs have no propagation path from their evolving targets",
@@ -4378,7 +4379,8 @@
       "created_at": "2026-07-08",
       "id": "FGAP-132",
       "oid": "013b4d6399e020000127b48647ae46a2",
-      "content_hash": "64665f40ce330839f53eecca8b15eaf3b8a2e3dcaf2544e00aa9986656b912ee"
+      "content_hash": "2082509b0774c465394480eb4387f8302ddaa4b249a3295577ee0277c1d08b34",
+      "content_parent": "64665f40ce330839f53eecca8b15eaf3b8a2e3dcaf2544e00aa9986656b912ee"
     },
     {
       "title": "Roadmap emits a false `complete` from a second completeness derivation divergent from the authoritative one (surfaces when positioned-task coverage is partial)",
@@ -4411,10 +4413,43 @@
       "created_by": "agent/deepseek-v4-pro",
       "created_at": "2026-07-08T22:45:52.944Z",
       "oid": "9ef254bce9d25e19f5bed570b51bc3dc",
-      "content_hash": "0940be89cd22a710b5db848a824e2a757fb3d22ec3c31656ce0577564c934c1b",
-      "content_parent": "b6afa19a491ff9c9cea95148e929c0e336ac57a96e08123e477c8238eeeaea18",
+      "content_hash": "1843fe0228d21bf3c3566a55d5626da76f4fac2eb4576a03c2789722e64b6941",
+      "content_parent": "0940be89cd22a710b5db848a824e2a757fb3d22ec3c31656ce0577564c934c1b",
       "closed_by": "human/davidryan@gmail.com",
       "closed_at": "2026-07-09"
+    },
+    {
+      "title": "Operator status/drift renders report actionable states without naming the resolving op — no shared remedy-guidance contract",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "canonical_vocabulary": "actionable-state remedy guidance",
+      "description": "Class: an operator-facing render that enumerates a remediable, non-terminal, non-clean state whose resolution is a known op must name that op, per state; several renders report bare state instead, so the operator cannot derive the next action from the output. Triggering instance: renderCheckStatus (context-check-status / /context check-status) prints the header, one line per drift-state group (e.g. `both-diverged (2): framework-gaps (1.1.1 -> 1.2.0)`), and a total, then returns — no line naming `/context update` as the reconciler for both-diverged / catalog-ahead, `/context install` for missing-installed, etc. This is an INSTANCE, not atomic: renderCheckStatus's own sibling renderers renderConflicts and renderBlocked (authored to mirror its grouping style) DO name their transition op (resolve-conflict / resolve-blocked), as do context-validate's dangling-edge-vs-not messages — so check-status is the lone omission in the check-status -> update -> resolve-conflict/blocked family it heads. Further bare-state instances to bring onto the contract: the /context roadmap-validate render, context-validate's dangling-edge and unknown-status-vocabulary messages, and the install handler's blocked/notFound lines. Root: there is no shared state->op remedy map or render helper — every remedy today is a hand-written literal string in one render, which is exactly why coverage is inconsistent.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "renderCheckStatus (~1814-1848) pushes header + per-state group line (~1841) + total (~1846) and returns; no remedy/next-command line for any state"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "renderConflicts (~3093) ends with a guidance line naming resolve-conflict — the counter-example; its comment (~3087) says it mirrors renderCheckStatus's grouping style, yet check-status omits the remedy the sibling carries"
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "reference": "renderBlocked names resolve-blocked; context-validate messages embed remedies (e.g. decision-shows-derivation -> add a decision_derived_from_item edge) — the codebase already does this in some surfaces, not others"
+        },
+        {
+          "file": "analysis/2026-07-09-operator-surface-remedy-guidance-class.md",
+          "reference": "enumeration table of every actionable-state render: reports-actionable-state? / names-its-remedy? / evidence; the class statement and the shared-contract fix-level determination"
+        }
+      ],
+      "impact": "An operator running /context check-status sees `both-diverged (2): framework-gaps (1.1.1 -> 1.2.0)` and has no way, from the output, to know that /context update reconciles it — the remedy is out-of-band tribal knowledge. Coverage is inconsistent across the operator surface (some renders guide, others report bare state), which is the operator-surface-truthfulness concern MILE-008 owns.",
+      "proposed_resolution": "Introduce a shared state->op remedy map (or render helper) consumed by every actionable-state render, so the transition op is named per state at the point the state is reported. renderCheckStatus is the first consumer: annotate each behind/actionable state with its remedy (both-diverged / catalog-ahead -> /context update; missing-installed -> /context install; no-baseline -> the baseline-establishing op). Then bring the other bare-state renders (roadmap-validate render, validate dangling-edge / unknown-status-vocabulary, install blocked/notFound) onto the same contract. Governed by the actionable-state-renders-name-remedy convention. Terminal/clean states carry no remedy.",
+      "id": "FGAP-134",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-09T02:48:57.259Z",
+      "oid": "a0ff47bd9515ec200d3d4121508a3e86",
+      "content_hash": "4938c323321f7e3f98d47cf6c5f8110ee52bc15cd129b0b806399aa0966212a6"
     }
   ]
 }

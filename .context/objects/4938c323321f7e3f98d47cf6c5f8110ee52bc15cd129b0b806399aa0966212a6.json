@@ -1,0 +1,28 @@
+{
+  "title": "Operator status/drift renders report actionable states without naming the resolving op — no shared remedy-guidance contract",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "actionable-state remedy guidance",
+  "description": "Class: an operator-facing render that enumerates a remediable, non-terminal, non-clean state whose resolution is a known op must name that op, per state; several renders report bare state instead, so the operator cannot derive the next action from the output. Triggering instance: renderCheckStatus (context-check-status / /context check-status) prints the header, one line per drift-state group (e.g. `both-diverged (2): framework-gaps (1.1.1 -> 1.2.0)`), and a total, then returns — no line naming `/context update` as the reconciler for both-diverged / catalog-ahead, `/context install` for missing-installed, etc. This is an INSTANCE, not atomic: renderCheckStatus's own sibling renderers renderConflicts and renderBlocked (authored to mirror its grouping style) DO name their transition op (resolve-conflict / resolve-blocked), as do context-validate's dangling-edge-vs-not messages — so check-status is the lone omission in the check-status -> update -> resolve-conflict/blocked family it heads. Further bare-state instances to bring onto the contract: the /context roadmap-validate render, context-validate's dangling-edge and unknown-status-vocabulary messages, and the install handler's blocked/notFound lines. Root: there is no shared state->op remedy map or render helper — every remedy today is a hand-written literal string in one render, which is exactly why coverage is inconsistent.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "renderCheckStatus (~1814-1848) pushes header + per-state group line (~1841) + total (~1846) and returns; no remedy/next-command line for any state"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "renderConflicts (~3093) ends with a guidance line naming resolve-conflict — the counter-example; its comment (~3087) says it mirrors renderCheckStatus's grouping style, yet check-status omits the remedy the sibling carries"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "renderBlocked names resolve-blocked; context-validate messages embed remedies (e.g. decision-shows-derivation -> add a decision_derived_from_item edge) — the codebase already does this in some surfaces, not others"
+    },
+    {
+      "file": "analysis/2026-07-09-operator-surface-remedy-guidance-class.md",
+      "reference": "enumeration table of every actionable-state render: reports-actionable-state? / names-its-remedy? / evidence; the class statement and the shared-contract fix-level determination"
+    }
+  ],
+  "impact": "An operator running /context check-status sees `both-diverged (2): framework-gaps (1.1.1 -> 1.2.0)` and has no way, from the output, to know that /context update reconciles it — the remedy is out-of-band tribal knowledge. Coverage is inconsistent across the operator surface (some renders guide, others report bare state), which is the operator-surface-truthfulness concern MILE-008 owns.",
+  "proposed_resolution": "Introduce a shared state->op remedy map (or render helper) consumed by every actionable-state render, so the transition op is named per state at the point the state is reported. renderCheckStatus is the first consumer: annotate each behind/actionable state with its remedy (both-diverged / catalog-ahead -> /context update; missing-installed -> /context install; no-baseline -> the baseline-establishing op). Then bring the other bare-state renders (roadmap-validate render, validate dangling-edge / unknown-status-vocabulary, install blocked/notFound) onto the same contract. Governed by the actionable-state-renders-name-remedy convention. Terminal/clean states carry no remedy."
+}

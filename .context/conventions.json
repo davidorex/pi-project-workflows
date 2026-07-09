@@ -123,6 +123,14 @@
       "severity": "error",
       "oid": "6aafd6423198c262b5590852823c6282",
       "content_hash": "28d1d8d32b799b5a383e117be99a0691fc7715d5021bce02a9e05f6c26a2d59b"
+    },
+    {
+      "id": "actionable-state-renders-name-remedy",
+      "description": "Every operator-facing render that reports a remediable, non-terminal, non-clean state whose resolution is a known op NAMES that op, per state. Apply when authoring or reviewing any reflected-op text render or Pi-command notify that surfaces drift / validation / install / bootstrap / conflict / blocked states. A render that lists an actionable state (e.g. both-diverged, a dangling-edge finding, not-installed) without the command that transitions it toward clean is incomplete: the operator cannot derive the next action from the output. The remedy is stated inline at the point the state is reported, keyed off the state, not left to out-of-band knowledge — the pattern renderConflicts (-> resolve-conflict) / renderBlocked (-> resolve-blocked) and the context-validate messages already follow. Terminal / clean states carry no remedy. The durable form is a shared state->op remedy map consumed by every such render, not per-render hand-written literals whose omission is how coverage drifts. Enforcement is review at every op-render authoring.",
+      "enforcement": "review",
+      "severity": "error",
+      "oid": "98a8e081549abe166158a1bd11ea6efb",
+      "content_hash": "215cb9ba807cadb49317cd2f8e30d9afccb24eb3c2878ee17ec8f79b9f4e09a6"
     }
   ],
   "schema_version": "1.0.1"

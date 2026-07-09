@@ -135,11 +135,14 @@
 							"description": "item_endpoint used for an unmatched string element under `table`; defaults to 'parent' when absent."
 						},
 						"field": { "type": "string", "description": "When present (and `table` absent): set this field on every object element." },
-						"value": { "description": "Value assigned to `field` on each object element." }
+						"value": { "description": "Value assigned to `field` on each object element." },
+						"each": { "type": "string", "description": "When present with delete_field: descend into this nested-array field on each element before deleting." },
+						"delete_field": { "type": "string", "description": "When present (table/field absent): delete this field on every object element, or on every element of `each` when set." }
 					},
 					"oneOf": [
-						{ "required": ["table"], "not": { "required": ["field"] } },
-						{ "required": ["field", "value"], "not": { "required": ["table"] } }
+						{ "required": ["table"], "not": { "anyOf": [{ "required": ["field"] }, { "required": ["delete_field"] }] } },
+						{ "required": ["field", "value"], "not": { "anyOf": [{ "required": ["table"] }, { "required": ["delete_field"] }] } },
+						{ "required": ["delete_field"], "not": { "anyOf": [{ "required": ["table"] }, { "required": ["field"] }] } }
 					]
 				}
 			]

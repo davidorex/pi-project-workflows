@@ -200,6 +200,20 @@ function applyOp(data: unknown, op: TransformOp): unknown {
 				for (const el of arr) {
 					if (el && typeof el === "object") (el as Record<string, unknown>)[op.field] = op.value;
 				}
+			} else if (op.delete_field !== undefined) {
+				for (const el of arr) {
+					if (!el || typeof el !== "object") continue;
+					if (op.each !== undefined) {
+						const inner = (el as Record<string, unknown>)[op.each];
+						if (Array.isArray(inner)) {
+							for (const leaf of inner) {
+								if (leaf && typeof leaf === "object") delete (leaf as Record<string, unknown>)[op.delete_field];
+							}
+						}
+					} else {
+						delete (el as Record<string, unknown>)[op.delete_field];
+					}
+				}
 			}
 			return data;
 		}

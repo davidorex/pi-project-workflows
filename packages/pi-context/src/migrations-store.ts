@@ -73,6 +73,8 @@ export type TransformOp =
 			fallback?: "parent" | "child";
 			field?: string;
 			value?: unknown;
+			each?: string;
+			delete_field?: string;
 	  };
 
 export interface TransformSpec {

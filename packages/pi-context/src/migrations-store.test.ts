@@ -107,6 +107,48 @@ describe("migrations-store: load + writeMigrationsFile", () => {
 	});
 });
 
+describe("migrations-store: map_each mode mutual-exclusion (schema oneOf)", () => {
+	// The map_each inner oneOf must make its three modes (table / field+value /
+	// delete_field) individually mutually exclusive. Prior to the fix a decl
+	// carrying BOTH `field` and `delete_field` (without `value`) matched only the
+	// delete_field branch and passed validation, yet applyOp checks `op.field`
+	// before `op.delete_field` (migration-registry-loader.ts ~L199-203), so the
+	// field-set branch fired and the delete silently never ran. Rejecting the
+	// ambiguous shape at load closes that silent mis-run.
+	it("rejects a map_each decl carrying BOTH field and delete_field (ambiguous mode)", (t) => {
+		const cwd = makeTmpDir("map-each-field-and-delete");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const file = {
+			schema_version: MIGRATIONS_FILE_VERSION,
+			migrations: [
+				declTransform("thing", "1.0.0", "2.0.0", [{ op: "map_each", path: "$.a", field: "f", delete_field: "g" }]),
+			],
+		};
+		assert.throws(
+			() => writeMigrationsFile(cwd, file),
+			(err: unknown) => err instanceof ValidationError,
+		);
+	});
+
+	it("accepts each of the three valid map_each modes (table / field+value / delete_field / each+delete_field)", (t) => {
+		const cwd = makeTmpDir("map-each-valid-modes");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		const validDecls: MigrationDecl[] = [
+			declTransform("thing", "1.0.0", "2.0.0", [
+				{ op: "map_each", path: "$.a", table: { x: { relation_type: "r", item_endpoint: "parent" } } },
+			]),
+			declTransform("thing", "2.0.0", "3.0.0", [{ op: "map_each", path: "$.b", field: "f", value: "v" }]),
+			declTransform("thing", "3.0.0", "4.0.0", [{ op: "map_each", path: "$.c", delete_field: "g" }]),
+			declTransform("thing", "4.0.0", "5.0.0", [{ op: "map_each", path: "$.d", each: "e", delete_field: "g" }]),
+		];
+		for (const decl of validDecls) {
+			const file = { schema_version: MIGRATIONS_FILE_VERSION, migrations: [decl] };
+			assert.doesNotThrow(() => writeMigrationsFile(cwd, file));
+			assert.deepEqual(loadMigrationsFile(cwd), file);
+		}
+	});
+});
+
 describe("migrations-store: appendMigrationDecl", () => {
 	it("creates migrations.json when absent and inserts the decl", (t) => {
 		const cwd = makeTmpDir("append-fresh");

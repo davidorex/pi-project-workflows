@@ -19,35 +19,47 @@
  *     the pin-less, version-bumped bodies), so the installed schema model
  *     matches what the data is now stamped against.
  *
- *   STEP 3 — migrations append: registers the two identity migration decls
- *     (framework-gaps 1.1.1 → 1.2.0, research 1.0.1 → 1.1.0) in the substrate's
- *     migrations.json if not already present, so the read/write gates can walk
- *     an unadvanced block forward instead of failing on the version delta.
+ *   STEP 3 — migrations upsert: registers the two declarative-transform
+ *     migration decls (framework-gaps 1.1.1 → 1.2.0 over $.gaps[].evidence[],
+ *     research 1.0.1 → 1.1.0 over $.research[].citations[]) in the substrate's
+ *     migrations.json — each op a map_each descent that deletes the retired
+ *     content_pin field from every nested entry. Upserts by
+ *     (schemaName, fromVersion, toVersion): a matching decl already present in a
+ *     prior form (e.g. the earlier identity crutch) is REPLACED in place with
+ *     the declarative-transform body; an absent one is appended; an
+ *     already-current one is left untouched. This lets the read/write gates walk
+ *     an unadvanced block forward AND actually strip the field, rather than
+ *     no-op'ing the version delta.
  *
  * Mirrors the migrate-content-addressed precedent: a Claude-Code-side reshape
  * script the orchestrator runs out-of-band via tsx. The substrate copies cannot
  * be reached by the Edit/Write tool (a PreToolUse guard forbids those on
- * .context/*.json) nor by a declarative migration op (walkPath rejects the
- * doubly-nested array addressing), so the reshape + schema/registry sync happen
- * here and the schema advance is declared as an identity migration.
+ * .context/*.json), so the block-data reshape + schema sync happen here out of
+ * band. The schema advance itself is now carried by a real declarative-transform
+ * migration (an extended map_each that descends one nested-array field via
+ * `each` and deletes `delete_field` from each leaf), so the registered decl
+ * replays the same content_pin strip through the ordinary migration gate.
  *
  * Scope: the ACTIVE substrate's top-level block files, its schemas/ dir, and its
  * migrations.json ONLY. It NEVER touches objects/*.json (immutable
  * content-addressed history). Idempotent: a re-run strips 0 entries, leaves
- * already-advanced envelopes and already-synced schemas unchanged, and appends
- * no already-present migration decl.
+ * already-advanced envelopes and already-synced schemas unchanged, and rewrites
+ * an already-current migration decl to identical bytes (converting a prior
+ * identity decl in place on first run, then a genuine no-op thereafter).
  *
  * Usage:
  *   tsx scripts/orchestrator/migrate-strip-content-pin.ts [--dry-run] [--cwd <dir>]
  *
  * Prints one JSON report: per-file stripped counts + envelope advances, schemas
- * synced, and migration decls appended vs already-present. `--dry-run` reports
+ * synced, and migration decls converted / appended / already-current.
+ * `--dry-run` reports
  * what a live run would do and writes nothing. Exits non-zero if any required
  * target file (block data file, packaged sample schema source, or substrate
  * migrations.json) is missing.
  */
 import fs from "node:fs";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 
 interface Args {
 	dryRun: boolean;
@@ -78,13 +90,16 @@ const SCHEMA_TARGETS: SchemaTarget[] = [
 	{ schemaFile: "research.schema.json" },
 ];
 
-/** The identity migration decls this reshape registers. Match key is
- *  schemaName + fromVersion + toVersion; the rest is the payload to write. */
+/** The declarative-transform migration decls this reshape registers. Match key
+ *  is schemaName + fromVersion + toVersion; the rest is the payload to upsert.
+ *  `transform` carries the map_each descent that strips content_pin from the
+ *  block's nested entries when the gate replays the version advance. */
 interface MigrationDecl {
 	schemaName: string;
 	fromVersion: string;
 	toVersion: string;
 	kind: string;
+	transform?: { operations: Array<Record<string, unknown>> };
 	created_by: string;
 	created_at: string;
 }
@@ -94,7 +109,10 @@ const MIGRATION_DECLS: MigrationDecl[] = [
 		schemaName: "framework-gaps",
 		fromVersion: "1.1.1",
 		toVersion: "1.2.0",
-		kind: "identity",
+		kind: "declarative-transform",
+		transform: {
+			operations: [{ op: "map_each", path: "$.gaps", each: "evidence", delete_field: "content_pin" }],
+		},
 		created_by: "migrate-strip-content-pin",
 		created_at: "2026-07-09T00:00:00.000Z",
 	},
@@ -102,7 +120,10 @@ const MIGRATION_DECLS: MigrationDecl[] = [
 		schemaName: "research",
 		fromVersion: "1.0.1",
 		toVersion: "1.1.0",
-		kind: "identity",
+		kind: "declarative-transform",
+		transform: {
+			operations: [{ op: "map_each", path: "$.research", each: "citations", delete_field: "content_pin" }],
+		},
 		created_by: "migrate-strip-content-pin",
 		created_at: "2026-07-09T00:00:00.000Z",
 	},
@@ -132,8 +153,9 @@ interface SchemaReport {
 interface MigrationReport {
 	migrationsFile: string;
 	present: boolean;
+	converted: string[];
 	appended: string[];
-	alreadyPresent: string[];
+	alreadyCurrent: string[];
 }
 
 function parseArgs(argv: string[]): Args {
@@ -244,17 +266,22 @@ function syncSchema(cwd: string, substrateDir: string, target: SchemaTarget, dry
 	return report;
 }
 
-/** STEP 3 — append the identity migration decls to the substrate's
- *  migrations.json when not already registered. Tolerates both the
+/** STEP 3 — upsert the declarative-transform migration decls into the
+ *  substrate's migrations.json, keyed on (schemaName, fromVersion, toVersion):
+ *  an absent decl is appended, a matching decl in a stale form (e.g. a prior
+ *  identity crutch) is replaced in place with the declarative-transform body,
+ *  and an already-current one is left untouched. Tolerates both the
  *  object-wrapped ({schema_version, migrations:[]}) and bare-array shapes;
- *  preserves 2-space indent + trailing newline. */
+ *  preserves 2-space indent + trailing newline. Idempotent: a re-run over
+ *  already-current decls rewrites nothing. */
 function appendMigrations(substrateDir: string, decls: MigrationDecl[], dryRun: boolean): MigrationReport {
 	const abs = path.join(substrateDir, "migrations.json");
 	const report: MigrationReport = {
 		migrationsFile: "migrations.json",
 		present: false,
+		converted: [],
 		appended: [],
-		alreadyPresent: [],
+		alreadyCurrent: [],
 	};
 	if (!fs.existsSync(abs)) return report;
 	report.present = true;
@@ -271,7 +298,7 @@ function appendMigrations(substrateDir: string, decls: MigrationDecl[], dryRun: 
 	let mutated = false;
 	for (const decl of decls) {
 		const key = `${decl.schemaName} ${decl.fromVersion}->${decl.toVersion}`;
-		const exists = list.some(
+		const idx = list.findIndex(
 			(m) =>
 				m &&
 				typeof m === "object" &&
@@ -279,11 +306,19 @@ function appendMigrations(substrateDir: string, decls: MigrationDecl[], dryRun: 
 				m.fromVersion === decl.fromVersion &&
 				m.toVersion === decl.toVersion,
 		);
-		if (exists) {
-			report.alreadyPresent.push(key);
-		} else {
+		if (idx === -1) {
+			// No decl for this version edge yet — append the declarative-transform form.
 			list.push(decl);
 			report.appended.push(key);
+			mutated = true;
+		} else if (isDeepStrictEqual(list[idx], decl)) {
+			// Already the exact declarative-transform bytes — genuine no-op.
+			report.alreadyCurrent.push(key);
+		} else {
+			// A decl exists in a stale form (e.g. the prior identity crutch) —
+			// replace it in place with the declarative-transform body.
+			list[idx] = decl;
+			report.converted.push(key);
 			mutated = true;
 		}
 	}

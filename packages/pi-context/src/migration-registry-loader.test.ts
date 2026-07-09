@@ -349,6 +349,49 @@ describe("migrationFnFor: declarative-transform 'map_each' op (set-on-each mode)
 	});
 });
 
+describe("migrationFnFor: declarative-transform 'map_each' op (delete-field-in-nested mode)", () => {
+	function stripPinFn() {
+		return migrationFnFor({
+			schemaName: "framework-gaps",
+			fromVersion: "1.1.1",
+			toVersion: "1.2.0",
+			kind: "declarative-transform",
+			transform: { operations: [{ op: "map_each", path: "$.gaps", each: "evidence", delete_field: "content_pin" }] },
+			created_by: "t@e",
+			created_at: "2026-07-09T00:00:00.000Z",
+		});
+	}
+
+	it("deletes delete_field from every element of the nested `each` array", () => {
+		const out = stripPinFn()({
+			gaps: [
+				{
+					id: "g1",
+					evidence: [
+						{ ref: "a", content_pin: "h1" },
+						{ ref: "b", content_pin: "h2" },
+					],
+				},
+				{ id: "g2", evidence: [{ ref: "c", content_pin: "h3" }] },
+			],
+		});
+		assert.deepEqual(out, {
+			gaps: [
+				{ id: "g1", evidence: [{ ref: "a" }, { ref: "b" }] },
+				{ id: "g2", evidence: [{ ref: "c" }] },
+			],
+		});
+	});
+
+	it("is idempotent over already-stripped data (deleting an absent key is a no-op)", () => {
+		const fn = stripPinFn();
+		const once = fn({ gaps: [{ id: "g1", evidence: [{ ref: "a", content_pin: "h1" }] }] });
+		const twice = fn(once);
+		assert.deepEqual(twice, { gaps: [{ id: "g1", evidence: [{ ref: "a" }] }] });
+		assert.deepEqual(twice, once);
+	});
+});
+
 describe("migrationFnFor: composed chain with map_each ordered before rename of the same key", () => {
 	it("map_each (table) maps the array elements BEFORE the rename moves the key — order matters", () => {
 		// state_derivation-style fixture: legacy shape carries a string-array

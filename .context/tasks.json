@@ -2157,7 +2157,7 @@
     },
     {
       "description": "Remove the broken citation-currency half of the declared-baseline staleness machinery (originally TASK-089): the auto whole-file content_pin stamping on citation/evidence entries, the anchor-drift flag, and the content_pin schema field. Keep the typed stale_conditions (item-status, revision-moved, file-changed). Rationale: the whole-file pin fires anchor-drift on ANY edit to a cited file regardless of whether the cited region changed, manufacturing false-positive drift and re-review debt; it never solved the motivating case (R-0012's rot was an item-status condition, not a pin), so removing it loses nothing load-bearing. Scope: (1) block-api.ts stampDeclaredBaselines — remove the content_pin stamping branch; keep file-changed baseline_hash and revision-moved baseline_sha stamping. (2) context-sdk.ts evaluateStalenessCandidates — remove the anchor-drift (pin-drift) branch; keep typed-condition judgment; remove the substrate-internal-path pin skip that only existed for pins. (3) Schemas: remove the content_pin property from framework-gaps evidence entries and research citations entries (and any other schema declaring it) with a schema-version bump + a declarative migration that strips existing content_pin values, since additionalProperties:false rejects them otherwise. (4) context-reconcile staleness sweep + context-validate + surfaced op strings (ops-registry context-reconcile/validate descriptions), SKILL, package + monorepo READMEs, CHANGELOG [Unreleased]. (5) Tests referencing content_pin / anchor-drift. computeFileBytesHash is retained iff file-changed/revision-moved still use it; removed if now dead.",
-      "status": "in-progress",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/block-api.ts",
         "packages/pi-context/src/context-sdk.ts",
@@ -2172,8 +2172,8 @@
       ],
       "id": "TASK-106",
       "oid": "c31c3bd32a318c20054ec4fa8c205072",
-      "content_hash": "aa6e85c5e812c90ecad450ed07fc8176f4be68c77c1827ff0a0f15587ec23126",
-      "content_parent": "70b68a202cf4cf3d4b8fb2bb97444ae5160c2c85c53e31dc55bf7f39f6db23cc"
+      "content_hash": "039b0bc2351bf41dcc0e60bc84d65407736d6b1abb39b1a8a37b4ce175f4b864",
+      "content_parent": "aa6e85c5e812c90ecad450ed07fc8176f4be68c77c1827ff0a0f15587ec23126"
     }
   ],
   "schema_version": "1.0.1"

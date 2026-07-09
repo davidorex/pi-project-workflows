@@ -2632,6 +2632,41 @@
       "id": "VER-083",
       "oid": "bcf7ca6d3fadffee69d103feb1661196",
       "content_hash": "88e7a307731856dd48ec7cdb2a455ec9ad53b4ff8a1dac831e1b7a1a176a729b"
+    },
+    {
+      "status": "passed",
+      "method": "test",
+      "evidence": "Merged to main (e3010a3e) and rebuilt + promoted. Removed the whole-file content_pin stamping, the anchor-drift flag, and the content_pin schema field; kept the typed stale_conditions. Root-fixed the migration crutch: extended the map_each transform op with each/delete_field (modes mutually exclusive at schema-load) and converted the two migrations from identity to declarative-transform. Removed the now-dead anchor-drift branch from check-context-currency.ts (script kept for the audit loop) and corrected CLAUDE.md's stale husky-gate line. Deterministic gate green (build/check/test exit 0); context-validate on the migrated .context shows zero anchor-drift / staleness-candidate / schema-invalid; runtime demo shows lagging framework-gaps (1.1.1) and research (1.0.1) blocks carrying content_pin migrate + validate clean at the new versions, input unmutated, idempotent; a fresh adversarial audit cleared all seven vectors and its one low-severity schema finding was fixed + tested.",
+      "criteria_results": [
+        {
+          "criterion": "content_pin is no longer stamped on any citation/evidence entry by the block-api write path; file-changed baseline_hash and revision-moved baseline_sha stamping still work.",
+          "status": "passed",
+          "evidence": "block-api stampDeclaredBaselines content_pin branch removed; file-changed/revision-moved branches retained (test: 'the write choke stamps typed-condition baselines'); the content_pin schema field is gone so a pin cannot be written."
+        },
+        {
+          "criterion": "evaluateStalenessCandidates no longer emits any anchor-drift candidate; item-status / file-changed / revision-moved typed conditions are still judged.",
+          "status": "passed",
+          "evidence": "driftReasons loop + anchor-drift emitter removed; StalenessCandidate.kind narrowed to 'staleness-candidate'; typed-condition test retained and green; live context-validate emits zero anchor-drift."
+        },
+        {
+          "criterion": "content_pin removed from framework-gaps + research schemas with a migration that strips existing values; context-validate reports no schema-invalid and no anchor-drift.",
+          "status": "passed",
+          "evidence": "schemas bumped 1.1.1->1.2.0 / 1.0.1->1.1.0 (samples + .context); declarative-transform migrations (map_each each/delete_field) strip content_pin from lagging blocks; out-of-band script stripped the live 492 entries; context-validate clean; runtime demo confirms lagging-block migration."
+        },
+        {
+          "criterion": "npm run build + check + test exit 0; a fresh adversarial audit finds no residual pin-stamping or anchor-drift path and confirms typed conditions survive.",
+          "status": "passed",
+          "evidence": "build/check/test exit 0 (nested-delete, idempotency, mode-mutual-exclusion, pruned-currency tests included); fresh adversarial audit cleared all 7 vectors; the one low-severity schema-permissiveness finding was fixed (individual mode mutual-exclusion) and covered by a rejection test."
+        },
+        {
+          "criterion": "Docs synced (ops-registry context-reconcile/validate descriptions, SKILL.md regenerated, package + monorepo READMEs) and CHANGELOG [Unreleased] carries the removal with no substrate-ID citations.",
+          "status": "passed",
+          "evidence": "content_pin/anchor-drift scrubbed from ops-registry context-reconcile description, package README, regenerated SKILL.md; CHANGELOG [Unreleased] carries the removal + the nested-delete migration-op addition (corrected the stale 'identity migration' phrase to declarative-transform); no substrate-ID tokens in CHANGELOG (check-changelog gate passed)."
+        }
+      ],
+      "id": "VER-084",
+      "oid": "fd232faf676565ed58e53a2109d0bfc7",
+      "content_hash": "1127db2ce52564a3198cf912bb5298a0ace605742b7d98f650d267717e4a48ab"
     }
   ],
   "schema_version": "1.0.1"

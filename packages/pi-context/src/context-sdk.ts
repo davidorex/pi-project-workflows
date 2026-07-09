@@ -2426,13 +2426,11 @@ export interface StalenessCandidate {
 	block: string;
 	/**
 	 * `staleness-candidate`: a stale_conditions-bearing item whose status
-	 * buckets complete and whose typed condition fired or whose pinned
-	 * citation drifted — eligible for the complete-to-stale transition
-	 * (applied ONLY by context-reconcile or a human, never by validate).
-	 * `anchor-drift`: a pinned path-bearing entry whose file changed on an
-	 * item outside that transition shape — a re-review flag, never rewritten.
+	 * buckets complete and whose typed condition fired — eligible for the
+	 * complete-to-stale transition (applied ONLY by context-reconcile or a
+	 * human, never by validate).
 	 */
-	kind: "staleness-candidate" | "anchor-drift";
+	kind: "staleness-candidate";
 	reasons: string[];
 }
 
@@ -2441,13 +2439,11 @@ export interface StalenessCandidate {
  * evaluation path shared by `validateContext` (flags) and `reconcileContext`
  * (the complete-to-stale transition) — detector and repair cannot disagree.
  * Field-driven and vocabulary-neutral: no block-name literals — any item
- * carrying a `stale_conditions` array is condition-evaluable, and any
- * array-of-object field entry carrying a `content_pin` beside a `path`/`file`
- * is drift-checkable. Bare-string conditions are never machine-judged. Typed
- * conditions are judged only on items whose status buckets `complete` (the
- * transition's precondition); pin drift elsewhere degrades to the flag-only
- * `anchor-drift` kind. Unstamped baselines (no `baseline_hash`/`baseline_sha`
- * — e.g. the file/ref was unreadable at write) are never judged.
+ * carrying a `stale_conditions` array is condition-evaluable. Bare-string
+ * conditions are never machine-judged. Typed conditions are judged only on
+ * items whose status buckets `complete` (the transition's precondition).
+ * Unstamped baselines (no `baseline_hash`/`baseline_sha` — e.g. the file/ref
+ * was unreadable at write) are never judged.
  */
 export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex): StalenessCandidate[] {
 	const out: StalenessCandidate[] = [];
@@ -2513,33 +2509,13 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 			}
 		}
 
-		const driftReasons: string[] = [];
-		for (const [field, value] of Object.entries(item)) {
-			if (!Array.isArray(value)) continue;
-			for (const el of value) {
-				if (!el || typeof el !== "object" || Array.isArray(el)) continue;
-				const rec = el as Record<string, unknown>;
-				if (typeof rec.content_pin !== "string") continue;
-				const rel = typeof rec.path === "string" ? rec.path : typeof rec.file === "string" ? rec.file : null;
-				if (rel === null || isSubstrateInternal(rel)) continue;
-				const now = fileHashOrNull(rel);
-				if (now === null) {
-					driftReasons.push(`pin drift: '${field}' entry file '${rel}' is gone`);
-				} else if (now !== rec.content_pin) {
-					driftReasons.push(`pin drift: '${field}' entry file '${rel}' changed since pinned`);
-				}
-			}
-		}
-
-		if (hasConditions && completeBucket && (firedReasons.length > 0 || driftReasons.length > 0)) {
+		if (hasConditions && completeBucket && firedReasons.length > 0) {
 			out.push({
 				id: loc.id,
 				block: loc.block,
 				kind: "staleness-candidate",
-				reasons: [...firedReasons, ...driftReasons],
+				reasons: firedReasons,
 			});
-		} else if (driftReasons.length > 0) {
-			out.push({ id: loc.id, block: loc.block, kind: "anchor-drift", reasons: driftReasons });
 		}
 	}
 	return out;
@@ -2781,20 +2757,17 @@ export function validateContext(cwd: string): ContextValidationResult {
 	}
 
 	// ── Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089) ──
-	// Fired typed stale_conditions and drifted content pins, through the SAME
+	// Fired typed stale_conditions, through the SAME
 	// evaluateStalenessCandidates helper context-reconcile's transition sweep
 	// uses (identical verdicts). Warning-only, and validate NEVER mutates — the
 	// complete-to-stale transition belongs to reconcile or a human.
 	for (const cand of evaluateStalenessCandidates(cwd, index)) {
 		issues.push({
 			severity: "warning",
-			message:
-				cand.kind === "staleness-candidate"
-					? `Item '${cand.id}' (block '${cand.block}') is a staleness candidate — ${cand.reasons.join("; ")}. Apply the complete-to-stale transition via context-reconcile or by hand; validate never mutates.`
-					: `Item '${cand.id}' (block '${cand.block}') has drifted anchors — ${cand.reasons.join("; ")}. Re-review the cited locations; the flag never rewrites.`,
+			message: `Item '${cand.id}' (block '${cand.block}') is a staleness candidate — ${cand.reasons.join("; ")}. Apply the complete-to-stale transition via context-reconcile or by hand; validate never mutates.`,
 			block: cand.block,
 			field: `${cand.id}.${cand.kind}`,
-			code: cand.kind,
+			code: "staleness-candidate",
 		});
 	}
 

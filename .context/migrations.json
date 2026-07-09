@@ -152,6 +152,42 @@
       "kind": "identity",
       "created_by": "davidryan@gmail.com",
       "created_at": "2026-07-04T03:16:58.162Z"
+    },
+    {
+      "schemaName": "framework-gaps",
+      "fromVersion": "1.1.1",
+      "toVersion": "1.2.0",
+      "kind": "declarative-transform",
+      "transform": {
+        "operations": [
+          {
+            "op": "map_each",
+            "path": "$.gaps",
+            "each": "evidence",
+            "delete_field": "content_pin"
+          }
+        ]
+      },
+      "created_by": "migrate-strip-content-pin",
+      "created_at": "2026-07-09T00:00:00.000Z"
+    },
+    {
+      "schemaName": "research",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "declarative-transform",
+      "transform": {
+        "operations": [
+          {
+            "op": "map_each",
+            "path": "$.research",
+            "each": "citations",
+            "delete_field": "content_pin"
+          }
+        ]
+      },
+      "created_by": "migrate-strip-content-pin",
+      "created_at": "2026-07-09T00:00:00.000Z"
     }
   ]
 }

@@ -664,22 +664,13 @@ export function mintOid(substrateId: string, nonce?: string): string {
  */
 /**
  * Declared-baseline currency capture at the write choke (FEAT-011 criterion 6
- * — TASK-089). Two field families, each schema-gated per nested field so a
- * schema not declaring the shape is untouched (the identity-stamp gating
- * pattern):
- *
- *  (a) CONTENT PINS — an array-of-object field whose item subschema declares
- *      `content_pin` plus a path-bearing property (`path` or `file`): each
- *      element naming a readable file and carrying no pin gets
- *      `content_pin = sha256(file)`. An existing pin is never overwritten
- *      (the pin records the hash at GROUNDING time; drift is a validate flag,
- *      not a re-stamp).
- *  (b) TYPED STALE-CONDITION BASELINES — an array field whose item subschema
- *      admits kind-const object branches (oneOf): a `file-changed` element
- *      without `baseline_hash` gets the file's current hash; a
- *      `revision-moved` element without `baseline_sha` gets the ref's current
- *      commit (repo-resolved from the project root; unresolvable → left
- *      unstamped, so the condition stays human-only).
+ * — TASK-089). TYPED STALE-CONDITION BASELINES — an array field whose item
+ * subschema admits kind-const object branches (oneOf), schema-gated per nested
+ * field so a schema not declaring the shape is untouched (the identity-stamp
+ * gating pattern): a `file-changed` element without `baseline_hash` gets the
+ * file's current hash; a `revision-moved` element without `baseline_sha` gets
+ * the ref's current commit (repo-resolved from the project root; unresolvable →
+ * left unstamped, so the condition stays human-only).
  *
  * Paths resolve against the project root (the substrate dir's parent).
  * Mutated elements are copied first — the caller's nested objects are never
@@ -710,7 +701,7 @@ function stampDeclaredBaselines(
 	const fileHashOrNull = (rel: string): string | null => {
 		const abs = path.resolve(projectRoot, rel);
 		// Substrate-internal paths are LIVING STATE, not groundable artifacts: a
-		// pin/baseline on a block file would drift on every subsequent substrate
+		// baseline on a block file would drift on every subsequent substrate
 		// write and flag forever. Never stamped — such references stay human-only.
 		if (abs === substrateAbs || abs.startsWith(substrateAbs + path.sep)) return null;
 		try {
@@ -726,11 +717,7 @@ function stampDeclaredBaselines(
 		const fieldItems = (decl as Record<string, unknown> | undefined)?.items as Record<string, unknown> | undefined;
 		if (!fieldItems) continue;
 
-		// (a) content pins
-		const elemProps = fieldItems.properties as Record<string, unknown> | undefined;
-		const pathField = elemProps?.content_pin ? (elemProps.path ? "path" : elemProps.file ? "file" : null) : null;
-
-		// (b) typed condition baselines
+		// typed condition baselines
 		const branches = Array.isArray(fieldItems.oneOf) ? (fieldItems.oneOf as Array<Record<string, unknown>>) : [];
 		const branchDeclares = (kind: string): boolean =>
 			branches.some((b) => {
@@ -740,15 +727,11 @@ function stampDeclaredBaselines(
 				return kindDecl?.const === kind;
 			});
 
-		if (pathField === null && branches.length === 0) continue;
+		if (branches.length === 0) continue;
 
 		item[field] = arr.map((el) => {
 			if (!el || typeof el !== "object" || Array.isArray(el)) return el;
 			const rec = el as Record<string, unknown>;
-			if (pathField !== null && typeof rec.content_pin !== "string" && typeof rec[pathField] === "string") {
-				const hash = fileHashOrNull(rec[pathField] as string);
-				if (hash !== null) return { ...rec, content_pin: hash };
-			}
 			if (
 				rec.kind === "file-changed" &&
 				branchDeclares("file-changed") &&
@@ -806,11 +789,10 @@ export function prepareItemIdentityForWrite(
 
 	const out: Record<string, unknown> = { ...item };
 	// Declared-baseline currency capture (FEAT-011 criterion 6) rides the
-	// identity choke: citation/evidence content pins and typed stale-condition
-	// baselines are stamped BEFORE the content projection is hashed, so
-	// content_hash covers them and a later metadata-only write never sees a
-	// phantom content change. Schema-gated per nested field (a schema not
-	// declaring content_pin / the typed condition shapes is untouched).
+	// identity choke: typed stale-condition baselines are stamped BEFORE the
+	// content projection is hashed, so content_hash covers them and a later
+	// metadata-only write never sees a phantom content change. Schema-gated per
+	// nested field (a schema not declaring the typed condition shapes is untouched).
 	stampDeclaredBaselines(substrateDir, schemaPath as string, arrayKey, out);
 
 	// `content_hash` is itself a metadata field; project (which drops it +

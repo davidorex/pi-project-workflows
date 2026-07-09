@@ -34,45 +34,37 @@
       "citations": [
         {
           "label": "pi-context-cli generic reflection engine (parse/coerce/flags/auth/envelope)",
-          "path": "packages/pi-context-cli/src/cli.ts",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "path": "packages/pi-context-cli/src/cli.ts"
         },
         {
           "label": "OpDefinition contract — pi-context-internal, not shared",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "201-210",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "201-210"
         },
         {
           "label": "output cap machinery: OpResult / renderOpResultText / boundedJsonOutput / 50KB boundary cap",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "104-210",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "104-210"
         },
         {
           "label": "DispatchContext / WriterIdentity — package-specific run-context",
-          "path": "packages/pi-context/src/dispatch-context.ts",
-          "content_pin": "ef9aa014e29cb9eed034922567d37b2d60249e35637a9549ae0c51b3c4cf4bae"
+          "path": "packages/pi-context/src/dispatch-context.ts"
         },
         {
           "label": "pi-workflows direct pi.registerTool registration + long-running executors (divergent model)",
-          "path": "packages/pi-workflows/src/index.ts",
-          "content_pin": "e345ae80bb9ac391d1bf928f92859da5e3e7cd9fbdcf1d2c36109a8a2c3f8d7f"
+          "path": "packages/pi-workflows/src/index.ts"
         },
         {
           "label": "pi-jit-agents is a library, not an extension (no CLI surface)",
-          "path": "packages/pi-jit-agents/README.md",
-          "content_pin": "50fb074b20c159f3f382cb86dcd789742c7727319dd959682f9eaf57c7f45a82"
+          "path": "packages/pi-jit-agents/README.md"
         },
         {
           "label": "per-package-CLI decision (1c)",
-          "path": "analysis/2026-06-03-pi-context-cli-design-ledger.md",
-          "content_pin": "7b2b101762c828363445532a862cc495378982caa3df5165be8a4e16f4822e88"
+          "path": "analysis/2026-06-03-pi-context-cli-design-ledger.md"
         },
         {
           "label": "full design doc (deep read)",
-          "path": "analysis/2026-06-05-shared-cli-core-design.md",
-          "content_pin": "84261f2b959cdf0461ec977a806f641ac83a268d6d7c04890428db85b12bd6f6"
+          "path": "analysis/2026-06-05-shared-cli-core-design.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -122,90 +114,75 @@
         {
           "label": "ConfigBlock interface — model vs instance fields",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "39-64",
-          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+          "lines": "39-64"
         },
         {
           "label": "REGISTRY_DESCRIPTORS — the portable registries",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "942",
-          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+          "lines": "942"
         },
         {
           "label": "adoptConception — reads hardcoded samples/conception.json, never-clobber guard",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "873-909",
-          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+          "lines": "873-909"
         },
         {
           "label": "installContext — copies installed_schemas/blocks from samples/ with skip-if-exists",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "334-410",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "334-410"
         },
         {
           "label": "initProject — bootstrap pointer + skeleton config + substrate_id",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "250",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "250"
         },
         {
           "label": "resolveContextDir — unconditional path.join(cwd, contextDir), no isAbsolute (Fork 2 blocker)",
           "path": "packages/pi-context/src/context-dir.ts",
-          "lines": "104-143",
-          "content_pin": "0088d1013ec7466540271ebd0cd06d9cf9aa9a9dd42ce2fb474fa311f2ee4483"
+          "lines": "104-143"
         },
         {
           "label": "listSubstrates — cwd-bound bare-name discovery",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "675-712",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "675-712"
         },
         {
           "label": "withBlockLock — per-block lock; no substrate-global lock for config/relations/migrations",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "45-55",
-          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+          "lines": "45-55"
         },
         {
           "label": "mintOid — substrate-scoped oid",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "624-627",
-          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+          "lines": "624-627"
         },
         {
           "label": "computeContentHash — globally stable content hash",
           "path": "packages/pi-context/src/content-hash.ts",
-          "lines": "65-67",
-          "content_pin": "cedf5482fdb59eb42c382940fea0d0c93b5f96e6a989ab0c0b1d67781d3a3283"
+          "lines": "65-67"
         },
         {
           "label": "OpResult + 50KB cap at the output boundary",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "118-199",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "118-199"
         },
         {
           "label": "CLI reflection — useOps filters surface:'use'",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "44"
         },
         {
           "label": "parity-check gates — classification / ctx-forwarding / {json}-content-cap / dual-surface params",
           "path": "scripts/parity-check.ts",
-          "lines": "423-827",
-          "content_pin": "5b7ec0aa1ec162aec394cc958ba588dafbccb1c389ebba3472a755d188915ded"
+          "lines": "423-827"
         },
         {
           "label": "workflow-discovery — directory-scan, the real 'import workflows' prior art",
-          "path": "packages/pi-workflows/src/workflow-discovery.ts",
-          "content_pin": "6beef2155c8a27ac77b93c79ae430358bf42b8edb7bbc32bba024f9fa79c69ac"
+          "path": "packages/pi-workflows/src/workflow-discovery.ts"
         },
         {
           "label": "full design doc (deep read)",
-          "path": "analysis/2026-06-05-substrate-portability-export-import.md",
-          "content_pin": "e129dcd11bb0c69495fc70be94b515db4624caf20aea8d926f00888f9cd18a9e"
+          "path": "analysis/2026-06-05-substrate-portability-export-import.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -253,50 +230,42 @@
       "citations": [
         {
           "label": "full survey (deep read)",
-          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md",
-          "content_pin": "0482e24bb3075c42a60910d4a52dde5ed95b191fc2d39c826ef4e08f97d3f9c2"
+          "path": "analysis/2026-06-05-cli-ops-scripts-parity-survey.md"
         },
         {
           "label": "CLI reflects ops 1:1 (useOps filter)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "44"
         },
         {
           "label": "CLI required-flag check + writer exemption (GAP-1 pre-call seam)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "277-303",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "277-303"
         },
         {
           "label": "read-schema op wraps addressed node in structureForRead (GAP-2 root locus / the op-change point)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1166",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "1166"
         },
         {
           "label": "structureForRead collection-paging that projects an object node (FGAP-020)",
           "path": "packages/pi-context/src/read-element.ts",
-          "lines": "266-285",
-          "content_pin": "4d3b1fa809f415e9db45798b0d9f4012f2423476dda8bb2306f25ff117072aba"
+          "lines": "266-285"
         },
         {
           "label": "script derives array_key (FGAP-019 contrast)",
           "path": "scripts/orchestrator/file-block-item.ts",
-          "lines": "89-107",
-          "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+          "lines": "89-107"
         },
         {
           "label": "script returns full schema subtree directly (FGAP-020 contrast)",
           "path": "scripts/orchestrator/read-schema.ts",
-          "lines": "181",
-          "content_pin": "0f3255c819e2b5ce735ec6069162f13042be38d4893b070f7c7a63795737dc66"
+          "lines": "181"
         },
         {
           "label": "parity-check dual-surface guard keys twin by exact op-name (the 29/48 blind spot)",
           "path": "scripts/parity-check.ts",
-          "lines": "738-748",
-          "content_pin": "5b7ec0aa1ec162aec394cc958ba588dafbccb1c389ebba3472a755d188915ded"
+          "lines": "738-748"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -339,36 +308,30 @@
       "citations": [
         {
           "label": "the spec (deep read)",
-          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md",
-          "content_pin": "6d115a303931bc792cb353587ed92bfed9db326b9736f402982db9bbfbcd1e6e"
+          "path": "analysis/2026-06-07-pi-context-pi-bound-cli.md"
         },
         {
           "label": "unknown-command exit 2 — two-armed conditional (process-only arm + unknown arm)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "444-450",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "444-450"
         },
         {
           "label": "--grant parse is a bare shift 2 (no validation; aborts under set -euo pipefail)",
           "path": "scripts/launch-constrained-pi.sh",
-          "lines": "61,77",
-          "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
+          "lines": "61,77"
         },
         {
           "label": "script context pipeline the port collapses in-process (tsx emit + python3 JSON->CSV)",
           "path": "scripts/launch-constrained-pi.sh",
-          "lines": "104-109",
-          "content_pin": "0bf4a4f5b1ac705674c522a39f8801403a03944f4037029d1f177c74c42eafeb"
+          "lines": "104-109"
         },
         {
           "label": "first evaluation report",
-          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation.md",
-          "content_pin": "57245abc43d87b3b4aa9ec91a393e0ef01e089058215805b1ed5672262a9cead"
+          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation.md"
         },
         {
           "label": "second evaluation report (post-edit)",
-          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation-v2.md",
-          "content_pin": "c604dc2172bab3d95ab2242d07008d58df77d2fb48328238d9c71750c58e79e2"
+          "path": "docs/reports/2026-06-07-pi-bound-cli-evaluation-v2.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -428,19 +391,16 @@
         {
           "label": "pi-context-cli build — no chmod +x (FGAP-047)",
           "path": "packages/pi-context-cli/package.json",
-          "lines": "31",
-          "content_pin": "f55e6c95a53910b70a0b837ce8bccba2e8c3969bf245f16e268a1811ccaef6a9"
+          "lines": "31"
         },
         {
           "label": "pi-context-cli deps lack the meta-package (FGAP-048)",
           "path": "packages/pi-context-cli/package.json",
-          "lines": "35-38",
-          "content_pin": "f55e6c95a53910b70a0b837ce8bccba2e8c3969bf245f16e268a1811ccaef6a9"
+          "lines": "35-38"
         },
         {
           "label": "full analysis (deep read)",
-          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md",
-          "content_pin": "212a0c66240f6523bb3d457fe5fbdd194fafb845eef5f5388df82b80d4ba93db"
+          "path": "analysis/2026-06-07-pi-context-global-install-pattern.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -486,14 +446,12 @@
         },
         {
           "label": "full audit + heuristic derivation (deep read)",
-          "path": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md",
-          "content_pin": "4961dc6ccf85aae4c9986c9f8b090b35ba200f7f7e8f2f006ec360a6d8197aa4"
+          "path": "analysis/2026-06-07-pi-cli-command-pattern-heuristic.md"
         },
         {
           "label": "pi-context reflects surface:use ops as bare verbs; --pi-bound routed before op resolution",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "44",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "44"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -537,49 +495,41 @@
         {
           "label": "validation-error message collapse (root cause) — maps to instancePath+message, discards params",
           "path": "packages/pi-context/src/schema-validator.ts",
-          "lines": "88",
-          "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+          "lines": "88"
         },
         {
           "label": "AJV allErrors:true; full errors[] stored on this.errors",
           "path": "packages/pi-context/src/schema-validator.ts",
-          "lines": "13,92",
-          "content_pin": "464d82d3c9d2d8269f681eb7fc82d7f16b20dad40c7d729bda8a7346a41e5af7"
+          "lines": "13,92"
         },
         {
           "label": "CLI is pure err.message passthrough (reads neither errors nor params)",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "511-523",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "511-523"
         },
         {
           "label": "read-schema op — on-demand schema-node addressing (derivation primitive)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1140-1181",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "1140-1181"
         },
         {
           "label": "resolveBlockItemSchema — array_key + items + $ref resolution",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "2266-2295",
-          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+          "lines": "2266-2295"
         },
         {
           "label": "--show-schema seam: parsed.help early-return branch in main()",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "469-472",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "469-472"
         },
         {
           "label": "formatAjvError + contract-preview bodies to lift",
           "path": "scripts/orchestrator/file-block-item.ts",
-          "lines": "113-142,184-205",
-          "content_pin": "8e82c0c4ef7f558068ebd13f9c4371d7cd080cd316b7afb01516faf1caea5a32"
+          "lines": "113-142,184-205"
         },
         {
           "label": "full grounded findings",
-          "path": "analysis/2026-06-07-cli-write-path-ux-research.md",
-          "content_pin": "f628765b71cb4aeb97e448c5c86d255a7db612a6e2ca59dfe0fe99161914e1da"
+          "path": "analysis/2026-06-07-cli-write-path-ux-research.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -624,50 +574,42 @@
         {
           "label": "resyncSchema overwrites; reads only version, never the installed body",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "464-583",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "464-583"
         },
         {
           "label": "checkStatus 3-way HASH compare; locally-modified verdict; baseline content_hash",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "858-949",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "858-949"
         },
         {
           "label": "installed_from.assets stores {content_hash, version} only — base body not retained",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "71-80",
-          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+          "lines": "71-80"
         },
         {
           "label": "content-addressed object store (putObject/getObject; dormant) — the base-stamping vehicle",
           "path": "packages/pi-context/src/object-store.ts",
-          "lines": "59-110",
-          "content_pin": "42a5d1d72e9e99688d49f5d3c2ef3c06e08d2cb1901abe3bfbcdb970f5de4aae"
+          "lines": "59-110"
         },
         {
           "label": "baseline write — the base-stamping target",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "738-754",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "738-754"
         },
         {
           "label": "write-schema op (dryRun + authGated) — the R2 resolver write path",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1183-1201",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "1183-1201"
         },
         {
           "label": "auth-gate non-interactive refusal / interactive confirm",
           "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
-          "lines": "148-211",
-          "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
+          "lines": "148-211"
         },
         {
           "label": "pi-bound bounded session (R2 vehicle)",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "298-305",
-          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
+          "lines": "298-305"
         },
         {
           "label": "DEC-0004 §6 names config/schema 3-way but does not author the schema strategy",
@@ -677,8 +619,7 @@
         {
           "label": "full reframed findings (deep read)",
           "path": "analysis/2026-06-07-fgap-046-schema-merge-reframe.md",
-          "lines": "",
-          "content_pin": "9da6ec6a05493038b300a98508fa9ef90b4d822e4688b748885acbd770b8bde0"
+          "lines": ""
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -719,29 +660,24 @@
       "citations": [
         {
           "label": "Legacy compilation path — used by all workflow step execution (no anti-injection, no budget, no recursion, no per-item resolution)",
-          "path": "packages/pi-workflows/src/step-shared.ts",
-          "content_pin": "a34370316e19d3782f974d65984f326f30cbcc5efb68abc418cd011b368a9fee"
+          "path": "packages/pi-workflows/src/step-shared.ts"
         },
         {
           "label": "Modern compilation path — used only by renderItemById (anti-injection wrap, budget, recursion, renderer registry, tool-grant clamping) — claim re-reviewed 2026-07-08 (a docstring-only edit to resolveOutputSchemaForCompile touched this file; the compilation features the citation attests are unchanged)",
-          "path": "packages/pi-jit-agents/src/compile.ts",
-          "content_pin": "243f95115dd636d188fd8f8dd280f73f4c978fec00510b71a559be3ed72292ed"
+          "path": "packages/pi-jit-agents/src/compile.ts"
         },
         {
           "label": "Template validation — computes only the _<name> form; INJECTED_VARIABLES = {output_schema, loop} only",
-          "path": "packages/pi-workflows/src/template-validation.ts",
-          "content_pin": "e188f7aae02e1c1e9793eb4bb9cc9ffab006b0b309d71b84113befc714b7631d"
+          "path": "packages/pi-workflows/src/template-validation.ts"
         },
         {
           "label": "Workflow SDK validation treats every contextBlocks entry as a block filename (crashes on object-form)",
           "path": "packages/pi-workflows/src/workflow-sdk.ts",
-          "lines": "576",
-          "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+          "lines": "576"
         },
         {
           "label": "pi-workflows contextBlocks type is string[] only; pi-jit-agents has (string | ContextBlockRef)[] — claim re-reviewed 2026-07-08 (a LoadContext docblock alignment touched this file; the ContextBlockRef typing the citation attests is unchanged)",
-          "path": "packages/pi-jit-agents/src/types.ts",
-          "content_pin": "25ebaa9e39820068b941da1283b23410a5d3414ee42fbd0c8572204c000bbf83"
+          "path": "packages/pi-jit-agents/src/types.ts"
         },
         {
           "label": "render-id-list helpers pass IDs to resolve() and silently fall back to bare-ID text on a miss",
@@ -786,14 +722,12 @@
       "citations": [
         {
           "label": "full per-section explainer + embedded audit",
-          "path": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md",
-          "content_pin": "92aa05577b35630c70258e3f461f533dbb7bf289fdf9228f3bbbaf0033d5642b"
+          "path": "analysis/2026-06-08-Meta-Usage-Statement-Draft-The-Organizing-Principles-of-Framework .md"
         },
         {
           "label": "status bucket vocabulary + defaults",
           "path": "packages/pi-context/src/status-vocab.ts",
-          "lines": "55-116",
-          "content_pin": "8cf22573e7985d3b6f9aa991834847ce82589a3816628544847adb91c126eea6"
+          "lines": "55-116"
         },
         {
           "label": "block_kinds / relation_types / lenses registries (live counts)",
@@ -858,8 +792,7 @@
       "citations": [
         {
           "label": "full research with per-claim guideline/exemplar/synthesis tags + source list",
-          "path": "analysis/2026-06-09-cli-help-ux-research.md",
-          "content_pin": "d8eff82cb0aff83af2f0d68ac3bd911868b059f025d844db4455e5ece8b88b72"
+          "path": "analysis/2026-06-09-cli-help-ux-research.md"
         },
         {
           "label": "clig.dev Command Line Interface Guidelines",
@@ -924,20 +857,17 @@
         {
           "label": "dry branch: unconditional resynced + read-only would-register decls",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1239-1262",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "1239-1262"
         },
         {
           "label": "live branch: resyncSchema forward-migrate + re-validate + block/rollback",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "599-641",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "599-641"
         },
         {
           "label": "post-loop registry propagation, ungated on schema outcome, !dryRun writeConfig",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1391-1421",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "1391-1421"
         },
         {
           "label": "FGAP-066 — dry-run over-reports the catalog-ahead outcome",
@@ -990,38 +920,32 @@
         {
           "label": "allowlist composition — union of static SKILL tools, read-only built-ins, composites",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "161-170",
-          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
+          "lines": "161-170"
         },
         {
           "label": "launch — pi --tools <csv> ...passthrough child process",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "305",
-          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
+          "lines": "305"
         },
         {
           "label": "unconditional read-only built-ins read,ls,grep,find",
           "path": "packages/pi-context-cli/src/pi-bound.ts",
-          "lines": "32",
-          "content_pin": "8eb9e19550dca4f37def3f3867862bef0b62ac1513aef98b491ec82bc1e4b973"
+          "lines": "32"
         },
         {
           "label": "bare pi-bound verb dispatch before resolveOp",
           "path": "packages/pi-context-cli/src/cli.ts",
-          "lines": "963-965",
-          "content_pin": "701672fa2d62d178abea5e65210835b63a88302fdcdb2718595de6392a356490"
+          "lines": "963-965"
         },
         {
           "label": "execution-time auth-gate — blocks gated tools when ctx.hasUI=false",
           "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
-          "lines": "148-161",
-          "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
+          "lines": "148-161"
         },
         {
           "label": "list-tools surface:process introspection op (live tool enumeration)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "1034-1058",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "1034-1058"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1063,32 +987,27 @@
         {
           "label": "installContext engine + the /context install slash-command handler",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1211, 3098-3149",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "1211, 3098-3149"
         },
         {
           "label": "the --autoId append throw on an unmaterialized substrate (nextId before block read)",
           "path": "packages/pi-context/src/block-api.ts",
-          "lines": "2311",
-          "content_pin": "a5564e2295fa27ae8e2de949b1f69c1b97040e77b607ca5f62b6b2bc16dadac3"
+          "lines": "2311"
         },
         {
           "label": "INTENTIONALLY_UNEXPOSED_WRITERS installContext entry (removed by TASK-059)",
           "path": "packages/pi-context/src/ops-registry.ts",
-          "lines": "2172-2175",
-          "content_pin": "49a800ec646f775e4412ead76aa99c1746a2a049f6e2e73fd85be71b08c3a84f"
+          "lines": "2172-2175"
         },
         {
           "label": "gap-register-guard.sh — op-name + block-name match, no --cwd inspection",
           "path": ".claude/hooks/gap-register-guard.sh",
-          "lines": "20-21",
-          "content_pin": "e20f90aecba64e883c2a786eb508e45a9b1ae5ecc45b2c53184baa0f43dd3bc7"
+          "lines": "20-21"
         },
         {
           "label": "block-pi-context-glue.sh — CLI-invocation-shape match, no --cwd inspection (the confirmed sibling)",
           "path": ".claude/hooks/block-pi-context-glue.sh",
-          "lines": "35",
-          "content_pin": "fd4870211fea46b022c705013d19b537169f951c49e1acc233c89f7c68b26f32"
+          "lines": "35"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1131,13 +1050,11 @@
       "citations": [
         {
           "label": "the full leverage audit (capability surface inventory, current-usage inventory, prioritized leverage gaps, the discipline-vs-tracked-gap split)",
-          "path": "analysis/2026-06-15-pi-context-leverage-audit.md",
-          "content_pin": "f7d4199b8b34db855aa63813f63aa0cab9f79aa1e0c419e3b8bde1986bbd20f1"
+          "path": "analysis/2026-06-15-pi-context-leverage-audit.md"
         },
         {
           "label": "gap-task-feature coverage + release-pinnability audit (45 open gaps, sparse coverage, 4 release-pinnable features)",
-          "path": "analysis/2026-06-14-gap-task-feature-coverage-audit.md",
-          "content_pin": "0d6ad71985480a11e4c8623651331254e29a5feb6598afcbd9b8b5d50964627c"
+          "path": "analysis/2026-06-14-gap-task-feature-coverage-audit.md"
         },
         {
           "label": "FGAP-011 — no release/version vocabulary (accepted)",
@@ -1197,8 +1114,7 @@
       "citations": [
         {
           "label": "the full forensic evaluation (claim-by-claim verdict table A/B/C/D)",
-          "path": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md",
-          "content_pin": "8e84de2ec0cb933aedff7f9cd7abab9565ba070088b0cff3bf69b5aea55df5c1"
+          "path": "analysis/2026-06-15-context-contracts-plan-forensic-evaluation.md"
         },
         {
           "label": "relation_types registry — work_order_dispatches_task absent",
@@ -1263,13 +1179,11 @@
       "citations": [
         {
           "label": "the full investigation (root-cause git evidence, shape, repro, prior-art table, 6-member live-only diff)",
-          "path": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md",
-          "content_pin": "d41c51872c0c66ca24ead32e16ee97b4d77369fcbbd2c98f4c40d81553e05f17"
+          "path": "analysis/2026-06-16-task-gated-by-item-catalog-config-drift.md"
         },
         {
           "label": "catalog relation_types[] — task_gated_by_item absent",
-          "path": "packages/pi-context/samples/conception.json",
-          "content_pin": "ebe4d94272a91f5ad05222dfd639fa1dd85fa03f23b6ede01b7003d8b4fb911d"
+          "path": "packages/pi-context/samples/conception.json"
         },
         {
           "label": "live config relation_types[] — task_gated_by_item present (669890c), strict superset",
@@ -1277,8 +1191,7 @@
         },
         {
           "label": "registration-first write-time edge validator (unwritable on fresh substrate)",
-          "path": "packages/pi-context/src/context-sdk.ts",
-          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+          "path": "packages/pi-context/src/context-sdk.ts"
         },
         {
           "label": "FGAP-094 — the class-level gap this audit grounds",
@@ -1329,23 +1242,19 @@
       "citations": [
         {
           "label": "the full register-compliant validated control-plane writeup (shipped-today vs gated-on-named-code)",
-          "path": "analysis/2026-06-16-phase-block-dev-process-control-plane.md",
-          "content_pin": "7448326dee71158e111dfdd598f3ea5c9138796d4531be31b5726553a78ebf74"
+          "path": "analysis/2026-06-16-phase-block-dev-process-control-plane.md"
         },
         {
           "label": "currentState reads the phase block only for the focus fallback",
-          "path": "packages/pi-context/src/context-sdk.ts",
-          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+          "path": "packages/pi-context/src/context-sdk.ts"
         },
         {
           "label": "the roadmap layer reads roadmap.json + aggregates via lens (distinct from the phase block)",
-          "path": "packages/pi-context/src/roadmap-plan.ts",
-          "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
+          "path": "packages/pi-context/src/roadmap-plan.ts"
         },
         {
           "label": "gatherExecutionContext is context-contracts-driven",
-          "path": "packages/pi-context/src/execution-context.ts",
-          "content_pin": "0cdb965f0f8a0a770d2ddbfe539702887fea895e8e4fe6279c590ccd9013261a"
+          "path": "packages/pi-context/src/execution-context.ts"
         },
         {
           "label": "TASK-066 back-ports phase_depends_on (roadmap ordering dependency)",
@@ -1395,8 +1304,7 @@
       "citations": [
         {
           "label": "the full register-compliant validated sequencing determination (advisory order + DAG + zero-code/code/gated split)",
-          "path": "analysis/2026-06-16-best-next-steps-determination.md",
-          "content_pin": "d17b9451ffba2255991b79854287236f8b9df605d543b284f87cd520bac3f245"
+          "path": "analysis/2026-06-16-best-next-steps-determination.md"
         },
         {
           "label": "FEAT-007 already carries the four task_addresses_feature edges (1c premise false)",
@@ -1436,13 +1344,11 @@
       "citations": [
         {
           "label": "last complete run step sequence",
-          "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md",
-          "content_pin": "91bd9d8218c77418daba4e6c119d7579c19b597691c5a14ae7e08e65d5aa5099"
+          "path": "analysis/2026-06-21-wasc-last-complete-run-step-sequence.md"
         },
         {
           "label": "loop run step sequence (iterate-to-zero)",
-          "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md",
-          "content_pin": "b646b6b1b1ddec19e11a16e54c3c705a24e7700ba19a3b078e9aa6254d586f71"
+          "path": "analysis/2026-06-21-wasc-loop-run-step-sequence.md"
         }
       ],
       "created_by": "orchestrator",
@@ -1549,26 +1455,22 @@
       "citations": [
         {
           "label": "two-cell reproduction outputs (dry/live per cell)",
-          "path": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md",
-          "content_pin": "bca74f7df896119e6aee78c6a3cc1d4fe832c95f7794e7d5840674eec0d0c86e"
+          "path": "analysis/2026-07-05-issue-003-redrive-pre-identity-refusal.md"
         },
         {
           "label": "version-bump catch: all throws -> blocked/validation-failed",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "1242-1270",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "1242-1270"
         },
         {
           "label": "resolveBlocked commit sequence outside the validation try",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "2652-2688",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "2652-2688"
         },
         {
           "label": "substrateIdForDir loud guard (no lazy mint on write)",
           "path": "packages/pi-context/src/context-dir.ts",
-          "lines": "486-491",
-          "content_pin": "0088d1013ec7466540271ebd0cd06d9cf9aa9a9dd42ce2fb474fa311f2ee4483"
+          "lines": "486-491"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1607,31 +1509,26 @@
         {
           "label": "gate filters + derivedRollupComplete + status-consistency skip + edge-integrity resolveRef loop + joinBlocks",
           "path": "packages/pi-context/src/context-sdk.ts",
-          "lines": "889-892, 758-759, 2352-2353, 2513-2557, 1253",
-          "content_pin": "9ea5c167f077fe191ebae11fe144ed1f2aebe8b82227f9cfd1ce54b551022019"
+          "lines": "889-892, 758-759, 2352-2353, 2513-2557, 1253"
         },
         {
           "label": "normalizeEndpoint bare-refname foreign keying + walks",
           "path": "packages/pi-context/src/context.ts",
-          "lines": "405-413, 1586-1638",
-          "content_pin": "de75057a62d0964c0449ecde6e255b403986327fe3173f65892cbd781505ba24"
+          "lines": "405-413, 1586-1638"
         },
         {
           "label": "reconcile/converge stamping via the shared completeness helper",
           "path": "packages/pi-context/src/index.ts",
-          "lines": "2704, 2760",
-          "content_pin": "42457eec316f033801c80652847751b0d709b25a47d2c20e379f273831c6e775"
+          "lines": "2704, 2760"
         },
         {
           "label": "roadmap rollup member lookups",
           "path": "packages/pi-context/src/roadmap-plan.ts",
-          "lines": "340, 345",
-          "content_pin": "6028d5dea2ded4821a2da5e1744428774874dd709639da981a054d035d4d1a3f"
+          "lines": "340, 345"
         },
         {
           "label": "findings document: reproduction transcripts, class inventory, prior-art sweep, resolution shapes",
-          "path": "analysis/2026-07-06-foreign-status-derivation-blindness.md",
-          "content_pin": "437fb07276fe94bada551a8f7d3cf63953e9ab8e1d0c34c1334108a32da7bdfe"
+          "path": "analysis/2026-07-06-foreign-status-derivation-blindness.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1673,8 +1570,7 @@
         },
         {
           "label": "findings document with verbatim quoted anchors",
-          "path": "analysis/2026-07-06-harness-exemplars-wasc-synth.md",
-          "content_pin": "0f4f2feb429c57a57667868988691c6cbc23e4e660f43725022a9ef68f8f3f72"
+          "path": "analysis/2026-07-06-harness-exemplars-wasc-synth.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1711,8 +1607,7 @@
       "citations": [
         {
           "label": "canonical pipeline + completion sequence + gap handling",
-          "path": "CLAUDE.md",
-          "content_pin": "3cbdd7a491e76884b6a22687309444a1bcf3dce43f980f175cccede0326fa3a8"
+          "path": "CLAUDE.md"
         },
         {
           "label": "the three live repo hooks",
@@ -1720,13 +1615,11 @@
         },
         {
           "label": "husky commit gates",
-          "path": ".husky/pre-commit",
-          "content_pin": "39dea4d0f43810d4a11a2f0561b81a9a761046c3340788e0fc736c230c4bd1a1"
+          "path": ".husky/pre-commit"
         },
         {
           "label": "findings document: state machine, enforcement classification table, failure-mode signal map, R1-R20",
-          "path": "analysis/2026-07-06-harness-requirements.md",
-          "content_pin": "58cd85af0f3f8d053edef3f4e9fa12d875822355c00e263527eea40f096678f0"
+          "path": "analysis/2026-07-06-harness-requirements.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1764,25 +1657,21 @@
         {
           "label": "executeAgent single-turn primitive; phantom-tool-only context.tools; grant clamp",
           "path": "packages/pi-jit-agents/src/jit-runtime.ts",
-          "lines": "432-738, 488, 566-570",
-          "content_pin": "2f87a8ee64833591867a8d7720a09d8089a5f335b3f75d95cb99840cf6f63a11"
+          "lines": "432-738, 488, 566-570"
         },
         {
           "label": "loop consumes 5 of 9 required fields; clamp on tool param not wo.scope.operations",
           "path": "packages/pi-agent-dispatch/src/work-order-loop.ts",
-          "lines": "73-78, 119, 134, 200-209",
-          "content_pin": "c81de2098a57720a75ca163126072b53bd354bf773661b1612d1bdd84bbdd9e6"
+          "lines": "73-78, 119, 134, 200-209"
         },
         {
           "label": "auth gate unconditional hasUI=false refusal; gated-tool set",
           "path": "packages/pi-agent-dispatch/src/auth-gate.ts",
-          "lines": "67, 156-161",
-          "content_pin": "d8e30e57b24970a8fd3571a16e50fbd67f8c5c12ce00bdbcf30bc966e85ac556"
+          "lines": "67, 156-161"
         },
         {
           "label": "findings document: five-break root-cause, instrumented reproduction, git-date archaeology, findings table",
-          "path": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
-          "content_pin": "e7783fc945786802d3e0e9a83507a3284497290507c5404cb8d29f2eaa96d359"
+          "path": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1856,42 +1745,35 @@
         {
           "label": "10-entry FILTERS map; FILTER_NAMES; unknown-filter throw",
           "path": "packages/pi-workflows/src/expression.ts",
-          "lines": "10-29,32,110-114",
-          "content_pin": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+          "lines": "10-29,32,110-114"
         },
         {
           "label": "stock Nunjucks env, zero custom filters",
           "path": "packages/pi-workflows/src/template.ts",
-          "lines": "26-45",
-          "content_pin": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+          "lines": "26-45"
         },
         {
           "label": "advertised ~30-name filter list (${{ }} context)",
           "path": "packages/pi-workflows/README.md",
-          "lines": "95-104",
-          "content_pin": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+          "lines": "95-104"
         },
         {
           "label": "SKILL source carrying the same list",
           "path": "packages/pi-workflows/skill-narrative.md",
-          "lines": "40-42",
-          "content_pin": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+          "lines": "40-42"
         },
         {
           "label": "block: schema ref -> warning; inputSchema-required error; template-alignment error",
           "path": "packages/pi-workflows/src/workflow-sdk.ts",
-          "lines": "483-492,597-614,651-652",
-          "content_pin": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+          "lines": "483-492,597-614,651-652"
         },
         {
           "label": "do-gap step-implement template references spec.intent/spec.tasks/spec.context_needed",
-          "path": "packages/pi-jit-agents/templates/spec-implementer/task.md",
-          "content_pin": "9b177fdd48847e4ae463fd3547154a869fecd4aa39a8330c7e6733b4a5bb345f"
+          "path": "packages/pi-jit-agents/templates/spec-implementer/task.md"
         },
         {
           "label": "full evaluation: per-spec table, phantom-name derivation, class characterizations, prior-art",
-          "path": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md",
-          "content_pin": "ae9f9de1089e915e411b9499492498c95aa22fab0e417b8d8a89a2cee1f00158"
+          "path": "analysis/2026-07-08-pi-workflows-filter-and-spec-validation-eval.md"
         }
       ],
       "created_by": "human/davidryan@gmail.com",
@@ -1903,5 +1785,5 @@
       "content_hash": "66b767da9365d3e16ba6901bb6d589ba949ae407fb350714e136ab1836a32f4d"
     }
   ],
-  "schema_version": "1.0.1"
+  "schema_version": "1.1.0"
 }

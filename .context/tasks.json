@@ -1930,7 +1930,7 @@
       "id": "TASK-093",
       "title": "Track the harness wiring + populate the project mandates slot (FEAT-013 pillar 5)",
       "description": "Move hook registrations from untracked .claude/settings.local.json into tracked .claude/settings.json (permissions-allowlist stays local); populate .claude/mandates.jsonl with the project-shaped mandates (pipeline-first, explore-agents-only, three-stops ask gate, iterate-to-zero) so the existing UserPromptSubmit injection carries them every prompt. Foundation task: the wiring home every subsequent hook registers into. FEAT-013 R20, R9.",
-      "status": "in-progress",
+      "status": "completed",
       "acceptance_criteria": [
         "Hook registrations live in git-tracked .claude/settings.json and a fresh checkout arms the same guards; permissions allowlist remains machine-local.",
         ".claude/mandates.jsonl exists and its mandates inject into every prompt via the existing UserPromptSubmit hook."
@@ -1938,8 +1938,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-06",
       "oid": "6b876ab0eb94db2c1188fba1e1b9456d",
-      "content_hash": "f770aff8c99d9be49051b8942f54ef537a3f9a84f98100ef7de0354685e799b7",
-      "content_parent": "e3fe292b93f520c2d8dd3970e5dcf367f25d3da046ddafa1763159f9325e92f8"
+      "content_hash": "9f606206663b3549259466ac8ba06e5401dd6f0b037228c7c131c403b99c4f80",
+      "content_parent": "f770aff8c99d9be49051b8942f54ef537a3f9a84f98100ef7de0354685e799b7"
     },
     {
       "id": "TASK-094",

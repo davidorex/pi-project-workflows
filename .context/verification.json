@@ -2667,6 +2667,27 @@
       "id": "VER-084",
       "oid": "fd232faf676565ed58e53a2109d0bfc7",
       "content_hash": "1127db2ce52564a3198cf912bb5298a0ace605742b7d98f650d267717e4a48ab"
+    },
+    {
+      "id": "VER-085",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-10",
+      "evidence": "Runtime demo: after committing .claude/mandates.jsonl (e92ff7ab, branch task-093-mandates-slot), the exact registered UserPromptSubmit hook command (from ~/.claude/settings.json: `cat ~/.claude/mandates.jsonl 2>/dev/null; if [ -f .claude/mandates.jsonl ]; then cat .claude/mandates.jsonl; fi`) was executed live from the repo root; real stdout carried the global 9 mandates followed by the 4 new project mandates (mandate-p01..p04). AC1 (hook registrations tracked in .claude/settings.json; settings.local.json holds no hooks key) re-verified unchanged post-change via git ls-files + byte diff against HEAD. A fresh-context adversarial probe (Explore agent) independently re-derived both criteria from the committed tree (not from prior reports) and returned PASS/PASS with its own evidence, explicitly scoped to only TASK-093's two stated acceptance criteria per user directive that success criteria bound iterate-to-zero. Docs-surface-sync grep (READMEs, skill-narrative.md) for mandates.jsonl/UserPromptSubmit/settings.local.json-hooks found zero hits -- no stale surface to correct.",
+      "criteria_results": [
+        {
+          "criterion": "Hook registrations live in git-tracked .claude/settings.json and a fresh checkout arms the same guards; permissions allowlist remains machine-local.",
+          "status": "passed",
+          "evidence": "git ls-files .claude/settings.json confirms tracked; file declares 4 PreToolUse guards (block-pi-context-glue.sh, block-pathspec-commit.sh, block-control-chars.sh, block-substrate-write.sh) under Bash and Write|Edit|NotebookEdit matchers; git show HEAD:.claude/settings.json byte-identical to working tree. .claude/settings.local.json carries only permissions.allow (42 entries) + outputStyle, no hooks key -- confirmed by both the implementer and the independent adversarial probe."
+        },
+        {
+          "criterion": ".claude/mandates.jsonl exists and its mandates inject into every prompt via the existing UserPromptSubmit hook.",
+          "status": "passed",
+          "evidence": "git ls-files .claude/mandates.jsonl confirms tracked (commit e92ff7ab); all 4 lines valid JSON (mandate-p01..p04); the actual registered UserPromptSubmit command was executed live (not mocked) and its real stdout included the file's content. git show HEAD:.claude/mandates.jsonl byte-identical to working tree."
+        }
+      ],
+      "oid": "d7a32f2f0a5ad819043aa30eb404312b",
+      "content_hash": "6873e2458789e98229be2a0758e07b4c486782c910e8a0554a15c1ee58ace77d"
     }
   ],
   "schema_version": "1.0.1"

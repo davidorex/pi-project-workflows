@@ -4482,12 +4482,13 @@
         }
       ],
       "impact": "An operator working in pi cannot run the documented remedies via /context: update (for the both-diverged state /context check-status itself reports), context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations. The remedy for the very drift /context check-status surfaces is unreachable in pi. And because the /context surface is hand-curated and unguarded, every new operator-action op silently repeats the gap. This is the operator-surface-truthfulness concern MILE-008 owns.",
-      "proposed_resolution": "Two parts, both required. (1) Add the missing operator-action /context subcommands reaching their ops: update, context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations. (2) Close the guard so it cannot re-drift: EITHER extend parity-check to the /context surface (assert every operator-action op has a subcommand or a recorded intentional-exemption entry), OR derive the /context operator commands from the op-registry so an op with no command and no recorded exemption fails the gate. Governed by the op-command-surface-parity convention. Run through the canonical pipeline.",
+      "proposed_resolution": "Two parts, both required. (1) Add the missing operator-action /context subcommands reaching their ops: update, context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations. (2) Close the guard so it cannot re-drift: extend parity-check to the /context surface — assert every operator-action op has a /context subcommand or a recorded intentional-exemption entry, so an op with no command and no recorded exemption fails the gate. Governed by the op-command-surface-parity convention. Run through the canonical pipeline.",
       "id": "FGAP-135",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-09T03:13:08.907Z",
       "oid": "4bd55123fb550d493f30aa10b471e892",
-      "content_hash": "8a4b2d6b179ef73a35a5ef17ba4b4a0b546849ab586e300163a0e8163cc0c7a2"
+      "content_hash": "01ff8fb584219acb55c36496e7ea6d500145cee61f72b426704a626969a4221c",
+      "content_parent": "8a4b2d6b179ef73a35a5ef17ba4b4a0b546849ab586e300163a0e8163cc0c7a2"
     }
   ]
 }

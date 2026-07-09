@@ -1,0 +1,5 @@
+{
+  "description": "The pi `/context` command surface is kept coherent with the op registry: every reflected op that is an operator action a human runs in pi has a reachable `/context` subcommand, or a recorded reason it is intentionally not operator-facing. Apply when adding or reviewing any reflected op or `/context` subcommand. CONTEXT_SUBCOMMANDS is a THIRD surface over the op-registry alongside the in-pi op and the reflecting CLI; parity-check guards only op<->CLI + writer->op, never this surface, so command coverage drifts silently as ops are added. An operator-action op (the update / reconcile / resolve / validate / lifecycle families) requires either a `/context` subcommand reaching it or an entry in a recorded intentional-exemption set. The durable form is a coverage guard: parity-check is extended to the `/context` surface, so an operator-action op with no command and no recorded exemption fails the gate. Enforcement is review until that guard exists.",
+  "enforcement": "review",
+  "severity": "error"
+}

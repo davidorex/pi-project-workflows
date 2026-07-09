@@ -2154,6 +2154,26 @@
       "oid": "e65f52a11e6c327ab82a5c0decb0bbb7",
       "content_hash": "2e4041e9d063840f4c936bedc0ea7a6d2336e119dbba4fc61493e14cc178c2dc",
       "content_parent": "ec61290dd8e115ef8b560f50102e3c14783e4aaf559bfec3e8095c0587bf42a8"
+    },
+    {
+      "description": "Remove the broken citation-currency half of the declared-baseline staleness machinery (originally TASK-089): the auto whole-file content_pin stamping on citation/evidence entries, the anchor-drift flag, and the content_pin schema field. Keep the typed stale_conditions (item-status, revision-moved, file-changed). Rationale: the whole-file pin fires anchor-drift on ANY edit to a cited file regardless of whether the cited region changed, manufacturing false-positive drift and re-review debt; it never solved the motivating case (R-0012's rot was an item-status condition, not a pin), so removing it loses nothing load-bearing. Scope: (1) block-api.ts stampDeclaredBaselines — remove the content_pin stamping branch; keep file-changed baseline_hash and revision-moved baseline_sha stamping. (2) context-sdk.ts evaluateStalenessCandidates — remove the anchor-drift (pin-drift) branch; keep typed-condition judgment; remove the substrate-internal-path pin skip that only existed for pins. (3) Schemas: remove the content_pin property from framework-gaps evidence entries and research citations entries (and any other schema declaring it) with a schema-version bump + a declarative migration that strips existing content_pin values, since additionalProperties:false rejects them otherwise. (4) context-reconcile staleness sweep + context-validate + surfaced op strings (ops-registry context-reconcile/validate descriptions), SKILL, package + monorepo READMEs, CHANGELOG [Unreleased]. (5) Tests referencing content_pin / anchor-drift. computeFileBytesHash is retained iff file-changed/revision-moved still use it; removed if now dead.",
+      "status": "in-progress",
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/index.ts"
+      ],
+      "acceptance_criteria": [
+        "content_pin is no longer stamped on any citation/evidence entry by the block-api write path; file-changed baseline_hash and revision-moved baseline_sha stamping still work (proven by a runtime write demo).",
+        "evaluateStalenessCandidates no longer emits any anchor-drift candidate; item-status / file-changed / revision-moved typed conditions are still judged (proven by test + a live context-validate).",
+        "The content_pin property is removed from the framework-gaps and research schemas, with a schema-version bump and a migration that strips existing content_pin from every substrate item, so context-validate reports no schema-invalid items and no anchor-drift warnings on the live substrate.",
+        "npm run build + check + test exit 0; a fresh adversarial audit finds no residual pin-stamping or anchor-drift path and confirms typed conditions survive.",
+        "Docs synced (ops-registry context-reconcile/validate descriptions, SKILL.md regenerated, package + monorepo READMEs) and CHANGELOG [Unreleased] carries the removal with no substrate-ID citations."
+      ],
+      "id": "TASK-106",
+      "oid": "c31c3bd32a318c20054ec4fa8c205072",
+      "content_hash": "aa6e85c5e812c90ecad450ed07fc8176f4be68c77c1827ff0a0f15587ec23126",
+      "content_parent": "70b68a202cf4cf3d4b8fb2bb97444ae5160c2c85c53e31dc55bf7f39f6db23cc"
     }
   ],
   "schema_version": "1.0.1"

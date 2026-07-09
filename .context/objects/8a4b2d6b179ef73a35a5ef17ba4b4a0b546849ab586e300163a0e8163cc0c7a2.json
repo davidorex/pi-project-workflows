@@ -1,0 +1,33 @@
+{
+  "title": "The pi /context command surface is unguarded against the op registry — operator-action ops (update, reconcile, resolve-conflict, resolve-blocked, validate-relations) have no /context command and nothing enforces coverage",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "op -> /context command-surface parity",
+  "description": "The pi-context op-registry has THREE surfaces over it: the in-pi op (registerTool), the reflecting CLI (one auto-derived command per op), and the human `/context` slash commands (CONTEXT_SUBCOMMANDS, index.ts:3691). parity-check guards only the first two (op<->CLI + writer->op coverage); the `/context` surface is a hand-curated 15-key object, read nowhere but index.ts, with NO derive-from-ops path and NO parity guard — so operator command coverage drifts silently as ops are added. Confirmed instance set (operator-action ops with no reachable `/context` command): update (the both-diverged reconciler — `/context install --update` is a DIFFERENT function, installContext(overwrite) at index.ts:3714, not the update op), context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations (distinct from `/context validate` which runs validateContext). All 57 ops register as pi tools so none is agent/CLI-unreachable; the gap is the human `/context` surface specifically. This is the forward-direction twin of the inverse reflection-parity gaps FGAP-030 (command-only check-status, no op) and FGAP-088 (command-only install, no op), both closed by ADDING the op; here the op exists and the command is missing.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "CONTEXT_SUBCOMMANDS (~3691-3894): hand-curated 15 keys (init switch list archive install check-status accept-all view lens-curate roadmap-view roadmap-validate status add-work validate help) — no update / reconcile / resolve-conflict / resolve-blocked / validate-relations"
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "registerAll loops every op into pi.registerTool (57 ops as tools); update/context-reconcile/resolve-conflict/resolve-blocked/context-validate-relations are reflected ops + CLI commands but reach no /context subcommand"
+    },
+    {
+      "file": "scripts/parity-check.ts",
+      "reference": "header: guards op<->reflecting-CLI parity + library-writer->op coverage ONLY; explicitly compares just the in-pi op and the CLI command that reflects it — never the /context command surface; no coverage rule spans CONTEXT_SUBCOMMANDS"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "3714",
+      "reference": "/context install --update sets overwrite and calls installContext — a different function from the update op, so the update reconciler for a both-diverged schema is unreachable via any /context command"
+    },
+    {
+      "file": "analysis/2026-07-09-context-command-op-coverage.md",
+      "reference": "op x command coverage table (behavior-mapped), the confirmed instance set, the guard-absence finding, prior-art coverage"
+    }
+  ],
+  "impact": "An operator working in pi cannot run the documented remedies via /context: update (for the both-diverged state /context check-status itself reports), context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations. The remedy for the very drift /context check-status surfaces is unreachable in pi. And because the /context surface is hand-curated and unguarded, every new operator-action op silently repeats the gap. This is the operator-surface-truthfulness concern MILE-008 owns.",
+  "proposed_resolution": "Two parts, both required. (1) Add the missing operator-action /context subcommands reaching their ops: update, context-reconcile, resolve-conflict, resolve-blocked, context-validate-relations. (2) Close the guard so it cannot re-drift: EITHER extend parity-check to the /context surface (assert every operator-action op has a subcommand or a recorded intentional-exemption entry), OR derive the /context operator commands from the op-registry so an op with no command and no recorded exemption fails the gate. Governed by the op-command-surface-parity convention. Run through the canonical pipeline."
+}

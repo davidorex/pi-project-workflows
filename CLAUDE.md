@@ -1,3 +1,9 @@
+Don't pollute user's cognition with unasked for noise.
+Do not waste tokens and mental space relating performative noise.
+Do not pollute the user's cognitive load with information they did not ask for and that which they more than likely already know.
+Do not make any statements designed to create any impression in the user's mind, including "make the work look considered."
+Do not interfere with the user's cognitive focus.
+
 # pi-project-workflows
 
 Typed, multi-step workflow execution via `.workflow.yaml` specs. Schema-driven project state via pi-context. Behavior monitors that classify agent activity and steer corrections.

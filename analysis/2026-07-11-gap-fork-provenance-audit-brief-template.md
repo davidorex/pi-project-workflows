@@ -23,10 +23,11 @@ Read `{{GAP_ID}}` fresh: `pi-context read-block-item --block framework-gaps --id
 4. Read each of `{{CITED_PRECEDENT_IDS}}` fresh. Quote its resolution/criterion verbatim. State whether it is itself hedged, and whether it supports treating this clause as a real choice or points one direction.
 5. Read the current code each branch of the hedge would touch. For each branch: does it contradict already-shipped, verified state (a closed gap's `closed_by`, a met acceptance criterion, a passing test)? Quote the actual code, not the gap's prose.
 6. Verdict per branch: user-VERBATIM / user-DIRECTED / DERIVABLE-from-a-source-that-supports-it / LLM-augmentation-with-no-basis.
+7. For any branch found genuinely unbuilt-but-not-contradicted (deferred, not rejected, per step 5): do not call it "an open question" or "a user scope call" without first checking claude-history for any user statement, in any session since the filing, retracting, deprioritizing, or declining that branch. If none is found, state plainly: "no retraction found — this remains standing, undeclined, directed intent," and name the exact source it derives from (the acceptance criterion / decision / gap text that directed it). Absence of subsequent action is not absence of intent. Only report it as genuinely underdetermined if you find either (a) an explicit contradictory signal, or (b) the branch was never actually directed/derivable to begin with.
 
-Steps 1-6 are gating: do not make any edit until every one is complete and the verdict is reached. No edit before provenance (claude-history) and code-currency checks are both done.
+Steps 1-7 are gating: do not make any edit until every one is complete and the verdict is reached. No edit before provenance (claude-history) and code-currency checks are both done.
 
-## Only after steps 1-6 are complete: if the verdict is LLM-augmentation-with-no-basis (wholly or partly), correct it yourself
+## Only after steps 1-7 are complete: if the verdict is LLM-augmentation-with-no-basis (wholly or partly), correct it yourself
 
 Edit `{{GAP_ID}}`'s `proposed_resolution` field to state only the resolution the sources actually support (or, if no branch is supported, state that plainly in the field rather than leaving an unsupported hedge). Do not touch any other field on the item. Do not invent a resolution beyond what steps 3-4 found.
 
@@ -43,5 +44,6 @@ Substrate write mechanics (this repo's active-substrate `.context/*.json` files 
 Constraints:
 - Do not edit any substrate item other than `{{GAP_ID}}`'s `proposed_resolution`.
 - Every claim in your findings cites its exact source (quoted message+timestamp, quoted report line, quoted precedent line, quoted code).
-- Write your own full investigation report to `{{OUTPUT_REPORT_PATH}}` (Write tool — this file only; do not Write/Edit anything else). Include in it: the verdict per step 6, and if you made a correction, the exact before/after of `proposed_resolution`.
+- Write your own full investigation report to `{{OUTPUT_REPORT_PATH}}` (Write tool — this file only; do not Write/Edit anything else). Include in it: the verdict per step 6, the standing/underdetermined call per step 7, and if you made a correction, the exact before/after of `proposed_resolution`.
 - Final response to the orchestrator: report file path, whether a correction was made, and a 3-5 sentence verdict summary. No inline report.
+- Content validity (steps 3-5, and the step-7 standing/underdetermined call) is the ONLY subject of the verdict. Anything about the HISTORICAL write-time attestation mechanism (whether a `# provenance-reviewed` sentinel or a since-removed hook was present at filing time) has zero bearing on content validity and is not part of the verdict. If found, it gets exactly one line, at the very end of the report, prefixed "Not part of the verdict:" — never elaborated, never in the final response to the orchestrator, never the lead finding.

@@ -26,11 +26,13 @@ import nunjucks from "nunjucks";
  * Absolute path to this package's bundled `templates/` directory — the canonical
  * package-layer root for the 3-tier template search (tier 3 / builtinDir).
  *
- * Per DEC-0049 uniform-agent axiom, agent-prompt rendering assets (per-item
- * macros + whole-block delegators + per-agent template directories) live in
- * pi-jit-agents. Consumers (pi-workflows, pi-behavior-monitors, pi-agent-
- * dispatch) import this function rather than computing their own
- * package-relative paths.
+ * There is exactly one shared "agent" abstraction across this project (spec +
+ * loader + compile/templates/macros + capability composition + execute), used
+ * uniformly wherever an agent is needed. As a direct consequence, agent-prompt
+ * rendering assets (per-item macros + whole-block delegators + per-agent
+ * template directories) live in this one package — pi-jit-agents. Consumers
+ * (pi-workflows, pi-behavior-monitors, pi-agent-dispatch) import this function
+ * rather than computing their own package-relative paths.
  *
  * Resolves via `import.meta.url` so the path works under both source and
  * built (dist) modes — the dist/ directory and the src/ directory sit at the
@@ -61,9 +63,9 @@ export function createTemplateEnv(ctx: TemplateEnvContext): nunjucks.Environment
 	const userDir = ctx.userDir ?? path.join(os.homedir(), ".pi", "agent", "templates");
 
 	const searchPaths: string[] = [];
-	// Project tier (FGAP-074 C3): pointer-less repos omit it; user/builtin tiers
-	// unaffected. `contextTemplatesDir(cwd)` was `<contextDir>/templates`, so the
-	// inline equivalent is `path.join(base, "templates")`.
+	// Project tier: when no substrate bootstrap pointer resolves for this cwd, this
+	// tier is simply omitted; user/builtin tiers are unaffected. `contextTemplatesDir(cwd)`
+	// was `<contextDir>/templates`, so the inline equivalent is `path.join(base, "templates")`.
 	const base = tryResolveContextDir(ctx.cwd);
 	if (base !== null) {
 		const projectTemplates = path.join(base, "templates");

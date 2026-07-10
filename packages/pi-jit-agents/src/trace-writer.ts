@@ -1,11 +1,11 @@
-// trace-writer: JSONL persistence layer for the monitor-classify trace capture pipeline (issue-023).
+// trace-writer: JSONL persistence layer for the monitor-classify trace capture pipeline.
 //
-// Layered above trace-redactor (T2) and below the executeAgent integration point (T5/T6),
-// this module accepts an already-redacted TraceEntry, validates it against
+// Layered above trace-redactor and below the executeAgent integration point, this module
+// accepts an already-redacted TraceEntry, validates it against
 // packages/pi-jit-agents/schemas/agent-trace.schema.json, and atomically appends one JSONL
-// line to the configured trace file. Per DEC-0005 (push-write divergence from pi-mono's
-// pull/replay model) entries are written immediately at the moment of occurrence inside
-// executeAgent rather than reconstructed at session close, so each append must be self-
+// line to the configured trace file. This is a one-way push-write, diverging from pi-mono's
+// own pull/replay session model: entries are written immediately at the moment of occurrence
+// inside executeAgent rather than reconstructed at session close, so each append must be self-
 // validating and crash-safe — a partial write or interleaved write from a concurrent process
 // would corrupt the JSONL invariant (one valid JSON document per line).
 //

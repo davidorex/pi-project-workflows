@@ -284,11 +284,11 @@ export function parseAgentYaml(filePath: string, opts?: { siblingProbe?: boolean
  */
 export function createAgentLoader(ctx: LoadContext): (name: string) => AgentSpec {
 	const userTier = ctx.userDir ?? path.join(os.homedir(), ".pi", "agent", "agents");
-	// Resolve the project tier once (FGAP-074 C3): pointer-less repos degrade by
-	// omitting the project-tier search path so the loader still searches the
-	// user/builtin tiers and ultimately throws its normal AgentNotFoundError
-	// (NOT BootstrapNotFoundError). `agentsDir(cwd)` was `<contextDir>/agents`,
-	// so the inline equivalent is `path.join(base, "agents", ...)`.
+	// Resolve the project tier once: when no substrate bootstrap pointer resolves
+	// for this cwd, the project-tier search path is simply omitted so the loader
+	// still searches the user/builtin tiers and ultimately throws its normal
+	// AgentNotFoundError (NOT a "no bootstrap" error). `agentsDir(cwd)` was
+	// `<contextDir>/agents`, so the inline equivalent is `path.join(base, "agents", ...)`.
 	const base = tryResolveContextDir(ctx.cwd);
 
 	return (name: string): AgentSpec => {

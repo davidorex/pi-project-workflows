@@ -83,7 +83,7 @@ export interface ContextBlockRef {
 	name: string;
 	/** Optional ID of a specific item to inject. Plan 4 resolves via cross-block resolver. */
 	item?: string;
-	/** Optional kind-specific scope hints (e.g., { story: "STORY-001" }). Plan 4 passes through to macros. */
+	/** Optional kind-specific scope hints (e.g., { story: "<some-story-id>" }). Plan 4 passes through to macros. */
 	focus?: Record<string, string>;
 	/** Optional traversal depth. 0 = bare-ID refs (default), 1 = inline direct, 2+ recurse. */
 	depth?: number;
@@ -159,9 +159,9 @@ export interface CompiledAgent {
 	/**
 	 * Resolved per-collector context values, keyed by the contextBlock name
 	 * (e.g. "conventions"), populated when contextBlocks are read from `.project/`
-	 * during compilation. Surfaced for trace capture (issue-023 T5/T6) so the
-	 * push-write trace stream can emit one `context_collection` entry per
-	 * resolved block. Empty object when the spec declares no contextBlocks.
+	 * during compilation. Surfaced so the push-write trace stream can emit one
+	 * `context_collection` entry per resolved block for post-hoc inspection.
+	 * Empty object when the spec declares no contextBlocks.
 	 *
 	 * The values stored here are the raw (unwrapped) block payloads — distinct
 	 * from the anti-injection-wrapped strings that the templates see under the
@@ -187,7 +187,7 @@ export interface CompiledAgent {
 	 * full warning record for trace / inspection consumers.
 	 */
 	budgetWarnings?: BudgetWarning[];
-	/** Tool grant carried from AgentSpec.tools — operation-granular per DEC-0047; the clamp at executeAgent enforces child ⊆ parent at dispatch boundary. */
+	/** Tool grant carried from AgentSpec.tools — operation-granular, default-empty; the clamp at executeAgent enforces child ⊆ parent at dispatch boundary. */
 	tools?: string[];
 }
 
@@ -199,20 +199,20 @@ export interface DispatchContext {
 	model: Model<Api>;
 	/** API auth — apiKey and headers from the consumer's model registry. */
 	auth: JitAgentAuth;
-	/** Parent agent's tool grant (caller-supplied). executeAgent clamps compiled.tools ⊆ parentGrant. Undefined = empty set (default-empty per DEC-0047). */
+	/** Parent agent's tool grant (caller-supplied). executeAgent clamps compiled.tools ⊆ parentGrant. Undefined = empty set (default-empty — capability is never implicitly inherited). */
 	parentGrant?: string[];
 	/** Max tokens for the LLM call. Defaults to 1024. */
 	maxTokens?: number;
 	/** Abort signal for cancellation. */
 	signal?: AbortSignal;
 	/**
-	 * Trace destination for the monitor-classify trace capture pipeline (issue-023).
+	 * Trace destination for the monitor-classify trace capture pipeline.
 	 * - `undefined` → use the default resolution (env var or null fallback).
 	 * - `null` → tracing explicitly disabled; no JSONL is written.
 	 * - `string` → absolute path to the JSONL trace file the writer should append to.
 	 *
-	 * Per DEC-0005 the trace stream is push-write (emitted at the moment of occurrence
-	 * inside executeAgent), divergent from pi-mono's pull/replay session model.
+	 * The trace stream is push-write (emitted at the moment of occurrence inside
+	 * executeAgent), divergent from pi-mono's own pull/replay session model.
 	 */
 	tracePath?: string | null;
 	/**

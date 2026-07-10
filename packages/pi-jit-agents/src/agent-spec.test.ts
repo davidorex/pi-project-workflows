@@ -438,7 +438,7 @@ describe("createAgentLoader", () => {
 		}
 	});
 
-	it("pointer-less cwd omits the project tier and throws AgentNotFoundError, not BootstrapNotFoundError (FGAP-074 C3)", (t) => {
+	it("pointer-less cwd omits the project tier and throws AgentNotFoundError, not BootstrapNotFoundError", (t) => {
 		// Deliberately pointer-less mkdtemp — NO writeBootstrapPointer. The project
 		// tier is omitted; the loader still searches user/builtin and ultimately
 		// throws its normal not-found error rather than BootstrapNotFoundError.

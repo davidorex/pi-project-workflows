@@ -143,8 +143,9 @@ export function registerCompositionGlobals(opts: {
 /** Escape the 3 XML structural entities (& first, order matters) so block content
  * cannot forge a </context_block> close tag and break the data boundary. Quotes are
  * NOT escaped — they don't threaten element-text boundaries and escaping them would
- * degrade JSON-body readability. (FGAP-081; pi leaves its own trusted bodies raw, but
- * our blocks carry semi-trusted user/agent content.) */
+ * degrade JSON-body readability. (pi leaves its own trusted bodies raw, but our
+ * blocks carry semi-trusted user/agent content, so this package escapes on top of
+ * pi's own house-style convention for marking injected context as data-not-instructions.) */
 function escapeXmlText(s: string): string {
 	return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
@@ -226,8 +227,8 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		typeof ctx.input === "object" && ctx.input !== null ? { ...(ctx.input as Record<string, unknown>) } : {};
 
 	// Per-collector resolved values, surfaced on the CompiledAgent so the trace
-	// pipeline (issue-023 T5/T6) can emit one `context_collection` entry per
-	// resolved block. Keyed by the contextBlock name as declared in the spec
+	// pipeline (the JSONL trace-capture subsystem) can emit one `context_collection`
+	// entry per resolved block. Keyed by the contextBlock name as declared in the spec
 	// (no `_` prefix, no hyphen→underscore rewrite — that's only the template
 	// variable convention). The stored value is the raw block payload (or null
 	// when the block is missing / the .project dir absent), distinct from the
@@ -238,8 +239,8 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	// compile call. We accept `ctx.idIndex` from the caller for reuse; otherwise
 	// we build at most once on demand. The lazy `getIdIndex` closure also
 	// backs the `resolve` and `render_recursive` Nunjucks globals registered
-	// below — so a template that calls `resolve("DEC-0001")` triggers index
-	// construction even when no object-form entry needed it.
+	// below — so a template that calls `resolve()` with any item id triggers
+	// index construction even when no object-form entry needed it.
 	let cachedIdIndex: Map<string, ItemLocation> | undefined = ctx.idIndex;
 	const getIdIndex = (): Map<string, ItemLocation> => {
 		if (!cachedIdIndex) {
@@ -255,8 +256,13 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 					// Substrate absent — return empty index. Downstream resolution
 					// fails with the existing AgentCompileError contract rather
 					// than letting the bootstrap exception propagate to template
-					// global callers (resolve / render_recursive). Preserves the
-					// pre-DEC-0015 graceful-skip semantic per DEC-0021 gate-2.
+					// global callers (resolve / render_recursive). This preserves the
+					// substrate-location resolver's contract: only the missing-pointer
+					// case (no substrate set up at all) degrades gracefully this way —
+					// a malformed pointer file or any other resolver failure still
+					// throws normally, and that distinction had to be explicitly
+					// preserved here when the resolver was changed to throw instead
+					// of silently returning null/empty.
 					cachedIdIndex = new Map();
 				} else {
 					throw err;
@@ -270,9 +276,10 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		// tryResolveContextDir returns null when the substrate is absent — projectDirExists
 		// stays false. Downstream per-group logic (lines below) treats !projectDirExists as
 		// the canonical "no substrate" signal and either nulls whole-block surfaces OR throws
-		// AgentCompileError for unresolvable item-form entries. Preserves pre-DEC-0015
-		// graceful-skip semantic per DEC-0021 gate-2 closure. Only the missing-pointer case
-		// degrades; a malformed pointer / read failure still throws from within the primitive.
+		// AgentCompileError for unresolvable item-form entries. This preserves the same
+		// graceful-skip behavior as the getIdIndex catch above: only the missing-pointer
+		// case degrades; a malformed pointer / read failure still throws from within the
+		// primitive.
 		const projectDirPath = tryResolveContextDir(ctx.cwd);
 		const projectDirExists = projectDirPath !== null && fs.existsSync(projectDirPath);
 

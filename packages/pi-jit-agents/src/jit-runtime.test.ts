@@ -227,8 +227,9 @@ describe("executeAgent", () => {
 });
 
 describe("executeAgent grant clamp", () => {
-	// DEC-0047: child tool grant must be subset of caller's parentGrant.
-	// Undefined = empty set semantics (default-empty per DEC-0047).
+	// Child tool grant must be subset of caller's parentGrant.
+	// Undefined = empty set semantics (default-empty — capability is never
+	// implicitly inherited).
 
 	const fakeText: AssistantMessage = {
 		role: "assistant",

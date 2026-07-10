@@ -23,7 +23,7 @@ export { CANONICAL_MACRO_NAMES, createRendererRegistry } from "./renderer-regist
 export type { TemplateEnvContext } from "./template.js";
 export { bundledTemplateDir, createTemplateEnv, renderTemplate, renderTemplateFile } from "./template.js";
 export type { RedactionConfig, RedactionPattern } from "./trace-redactor.js";
-// Trace subsystem (issue-023)
+// Trace subsystem (JSONL run-capture for post-hoc inspection)
 export {
 	BUILTIN_PATTERNS,
 	loadContextRedactionConfig,

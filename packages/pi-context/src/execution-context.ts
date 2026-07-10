@@ -1,19 +1,21 @@
 /**
- * gatherExecutionContext primitive — work-unit-driven context bundling per
- * DEC-0017. Reads the unit + reads its context-contract (keyed by unit_kind)
+ * gatherExecutionContext primitive — work-unit-driven context bundling.
+ * Reads the unit + reads its context-contract (keyed by unit_kind)
  * + walks each declared relation_type in the contract bidirectionally per
  * direction semantic + resolves reached ids to full items via the bulk
  * resolver + returns the composed ContextBundle as one structured payload.
  *
- * Closure scope: this module closes FGAP-031 (gather-execution-context
- * primitive) by composing existing pieces:
- *   - filterBlockItems (context-sdk.ts; TASK-034 / Phase 2.1) — locates the
+ * Closure scope: this module closes the earlier gap where no single op
+ * composed reading a work unit + its context-contract + walking declared
+ * relations into one bundle (the orchestrator previously had to do N+1 reads
+ * by hand) by composing existing pieces:
+ *   - filterBlockItems (context-sdk.ts; Phase 2.1) — locates the
  *     context-contract entry by unit_kind without scanning the whole block.
- *   - resolveItemsByIds (context-sdk.ts; TASK-035 / Phase 2.2) — cross-block
- *     bulk lookup over a single buildIdIndex traversal; used twice (once to
- *     read the unit by id, once to resolve reached ids per relation_type).
+ *   - resolveItemsByIds (context-sdk.ts; Phase 2.2) — the bulk-lookup variant:
+ *     cross-block lookup over a single buildIdIndex traversal; used twice (once
+ *     to read the unit by id, once to resolve reached ids per relation_type).
  *   - walkAncestors / walkDescendants / findReferences (context.ts;
- *     TASK-036/037 / Phase 2.3/2.4) — closure-table traversal primitives.
+ *     Phase 2.3/2.4) — closure-table traversal primitives.
  *   - loadRelations (context.ts existing) — single substrate read of
  *     relations.json reused across every declared relation_type's walk; the
  *     traversal primitives operate on the loaded Edge[] in-memory rather
@@ -32,7 +34,7 @@
  * traversal primitives themselves are visited-set bounded but not currently
  * depth-bounded (cycle-safe via the visited set); recording the effective
  * depth on the bundle preserves the contract surface for a future
- * depth-bounded variant (FGAP-029 depth-bound territory) without breaking
+ * depth-bounded variant of context-bundling without breaking
  * the current callable shape.
  *
  * Error surface: returns `{ error: string }` (NOT throw) for three failure
@@ -44,10 +46,13 @@
  * propagate as throws via the underlying primitives — these are substrate
  * corruption, not lookup misses.
  *
- * Per DEC-0019 dual-surface pattern: this library function pairs with the
+ * Per the dual-surface convention — every orchestrator-facing script is both
+ * an ergonomics wrapper around the library/extension surface and an
+ * executable specification: this library function pairs with the
  * gather-execution-context pi tool (index.ts) and the orchestrator script
  * scripts/orchestrator/gather-execution-context.ts; all three ship as one
- * atomic unit. TASK-039 / Phase 3 sub-phase 3.2.
+ * atomic unit, closing the earlier "no composition-of-views primitive" gap
+ * (Phase 3 sub-phase 3.2).
  */
 
 import { loadRelations, walkAncestors, walkDescendants } from "./context.js";
@@ -56,8 +61,10 @@ import { filterBlockItems, resolveItemsByIds } from "./context-sdk.js";
 /**
  * One entry in a context-contract's bundle_relation_types[] — declares a
  * relation_type to walk, the direction of traversal, the per-relation depth
- * bound, and an optional applicability_predicate (FGAP-010 territory;
- * reserved, not yet consumed by this primitive).
+ * bound, and an optional applicability_predicate — reserved for a future
+ * applicability-predicate mini-language (which agent/scope/lifecycle-state/tags
+ * a context entry applies to, evaluated at compile-time by the composition
+ * layer); not yet consumed by this primitive.
  */
 export interface BundleRelationTypeSpec {
 	relation_type: string;

@@ -43,7 +43,7 @@ function captureTools(opts?: { allTools?: unknown[]; activeTools?: string[] }): 
 } {
 	const tools = new Map<string, CapturedTool>();
 	// Capture `pi.on(event, handler)` registrations keyed by event name so
-	// tests can emit synthetic events (FGAP-090 guidance hooks).
+	// tests can emit synthetic events (eager framework guidance hooks).
 	const handlers = new Map<string, (...a: unknown[]) => unknown>();
 	const api = {
 		on: (evt: string, h: (...a: unknown[]) => unknown) => {
@@ -392,7 +392,8 @@ describe("FGAP-090: guidance hooks", () => {
 	});
 });
 
-// ── TASK-013 / FGAP-015: in-pi Pi-tool over-cap {json} bound ──────────────────
+// ── In-pi Pi-tool over-cap {json} bound (enforcing the 50KB cap at the actual
+// output boundary) ──────────────────────
 // The Pi-tool surface emits via registerAll → renderOpResultText. Pre-fix, a
 // {json} op embedding >50KB of substrate content leaked it unbounded at
 // content[0].text (the cap lived only in the {read} channel). This registers a

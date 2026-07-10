@@ -669,7 +669,7 @@ describe("read-block-dir (tool surface)", () => {
 
 // ─────────────────────────────────────────────────────────────────────────
 // read-config tool — loadConfig + resolveContextDir cascade through bootstrap pointer
-// (DEC-0015: substrate location is config-driven via .pi-context.json; the
+// (substrate location is config-driven via .pi-context.json, never hardcoded; the
 // computed config path must reflect the pointer-declared contextDir, not a
 // hardcoded ".project" literal).
 // ─────────────────────────────────────────────────────────────────────────
@@ -726,7 +726,7 @@ describe("read-config tool — loadConfig + resolveContextDir cascade", () => {
 
 // ─────────────────────────────────────────────────────────────────────────
 // read-schema tool — readSchema + schemaPath cascade through bootstrap pointer
-// (DEC-0015: schema location is config-driven; schemaPath must compose
+// (schema location is config-driven, never hardcoded; schemaPath must compose
 // pointer-declared contextDir + SCHEMAS_DIR + "<name>.schema.json").
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -893,8 +893,9 @@ describe("addressed-single-node reads return the whole subtree (capped)", () => 
 // read-catalog-schema — readCatalogSchemaText fetches the VERBATIM bundled
 // catalog *.schema.json body (raw JSON Schema), not the read-samples-catalog
 // projection. The fetch is read-only + substrate-independent (no cwd). The op
-// returns the bare raw bytes as a prose-string OpResult (STORY-010 / FGAP-079,
-// TASK-050).
+// returns the bare raw bytes as a prose-string OpResult (the requirement that
+// an operator can diff the catalog schema locally without digging through
+// node_modules).
 // ─────────────────────────────────────────────────────────────────────────
 
 const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");

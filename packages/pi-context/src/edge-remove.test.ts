@@ -1,5 +1,5 @@
 /**
- * Tests for the edge removal / replace write surface (TASK-007, cli-arc β):
+ * Tests for the edge removal / replace write surface (cli-arc β):
  * removeRelation / removeRelationForDir in context.ts (symmetric inverse of
  * appendRelation, matched on the SAME identityKey dedup identity), and the
  * porcelain removeRelationByRef / replaceRelationByRef in context-sdk.ts.

@@ -119,7 +119,9 @@ import { writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
  * auth-gate remains canonical).
  */
 /**
- * The discriminated result of an op's `run` (TASK-012 / FGAP-013). An op returns
+ * The discriminated result of an op's `run` — introduced so the CLI's `--json`
+ * envelope can emit a real JSON value instead of a stringified-JSON string
+ * requiring a double-parse. An op returns
  * one of three shapes, each carrying its OWN text-rendering rule so the CLI
  * `--json` envelope can emit a real JSON value (no double-encode) while the
  * default text surface + the in-pi Pi-tool surface stay byte-identical:
@@ -137,12 +139,14 @@ export type OpResult = string | { json: unknown } | { read: ReadStructured };
 /**
  * Collapse an {@link OpResult} to the text the default CLI surface + the in-pi
  * Pi-tool surface emit. This reproduces, byte-for-byte, what each op's `run`
- * returned before the TASK-012 split: prose → itself; `{json}` →
+ * returned before the structured-result split (introduced to fix the CLI
+ * `--json` double-encoding): prose → itself; `{json}` →
  * `JSON.stringify(x, null, 2)`; `{read}` → `renderReadText` (== the old
  * `serializeForRead().content`).
  */
 /**
- * The unbypassable output-boundary cap (TASK-013 / FGAP-015). The 50KB read cap
+ * The unbypassable output-boundary cap — closing the gap where the 50KB read
+ * cap was enforced only inside the `{read}` channel's renderer. The 50KB read cap
  * (`DEFAULT_MAX_BYTES` + `truncateHead`) previously lived ONLY in the `{read}`
  * channel (structureForRead / renderReadText); the prose `string` and `{json}`
  * channels emitted unbounded. A `{json}` op embedding substrate content (e.g.
@@ -178,7 +182,9 @@ function overCapRefusalText(totalBytes: number): string {
 
 /**
  * Collapse an {@link OpResult} to the text the default CLI surface + the in-pi
- * Pi-tool surface emit, NOW BOUNDED at the 50KB read cap (TASK-013 / FGAP-015).
+ * Pi-tool surface emit, NOW BOUNDED at the 50KB read cap — enforced at the
+ * actual output boundary for every channel, closing the earlier gap where only
+ * the `{read}` channel was capped.
  * `{read}` → renderReadText (already capped); prose `string` → itself when under
  * cap, else the REFUSAL prose; `{json}` → `JSON.stringify(x, null, 2)` when under
  * cap, else the REFUSAL prose (no partial body).
@@ -196,7 +202,8 @@ export function renderOpResultText(r: OpResult): string {
 
 /**
  * The JSON VALUE for the CLI `--json` envelope `output` field, NOW BOUNDED at the
- * 50KB read cap (TASK-013 / FGAP-015). Prose `string` → itself when under cap,
+ * 50KB read cap — enforced at the actual output boundary for every channel.
+ * Prose `string` → itself when under cap,
  * else the REFUSAL string; `{read}` → its ReadStructured (already fail-closed —
  * serializes tiny on over-cap); `{json}` → the raw value when under cap, else a
  * fail-closed envelope that MIRRORS {@link ReadStructured}'s over-cap shape
@@ -223,7 +230,9 @@ export interface OpDefinition<P = any> {
 	/**
 	 * Copy-pasteable `pi-context <op> …` invocation strings surfaced by the CLI's
 	 * per-op `--help` EXAMPLES section (and its `--format json` machine help). Help
-	 * metadata only — TASK-042 (FEAT-008). Deliberately NOT projected by registerAll
+	 * metadata only — part of the best-of-breed per-op `--help` template (synopsis,
+	 * flags, copy-pasteable examples, related-ops, machine-readable `--format json`
+	 * help). Deliberately NOT projected by registerAll
 	 * into the in-pi tool surface (the in-pi tool exposes only
 	 * {name,label,description,promptSnippet,parameters}); `examples` is CLI-help-only.
 	 */
@@ -443,7 +452,7 @@ export const ops: OpDefinition[] = [
 				}
 			}
 			const relations = coerceBirthRelations(params.relations);
-			// Auto-id allocation (FGAP-084 dual-surface twin of file-block-item --auto-id)
+			// Auto-id allocation — the canonical block-api id-allocation helper (dual-surface twin of file-block-item --auto-id)
 			if (params.autoId && params.item && typeof params.item === "object" && !params.item.id) {
 				params.item.id = nextId(cwd, params.block);
 			}
@@ -570,11 +579,12 @@ export const ops: OpDefinition[] = [
 			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
 			// lens-bin) are resolved to structured EdgeEndpoints and written via the raw
 			// plumbing. The append accepts EITHER raw --parent/--child OR the role-typed
-			// --primary/--counter form (FGAP-113); messaging renders the RESOLVED stored
+			// --primary/--counter form (the explicit role-typed orientation, rather than
+			// a guessed direction); messaging renders the RESOLVED stored
 			// orientation (endpointKey of the returned edge), so a role-typed call reports
 			// the parent/child it actually filed. Under dryRun the byRef fn validates the
-			// prospective relations + dedup-checks without writing (TASK-010 shared
-			// preview path).
+			// prospective relations + dedup-checks without writing (the shared dry-run
+			// preview path added for relation-mutation ops' `--dryRun` parity).
 			const { appended, edge } = appendRelationByRef(
 				cwd,
 				{
@@ -631,7 +641,8 @@ export const ops: OpDefinition[] = [
 			// EdgeEndpoints, then matched on the identityKey dedup identity. Messaging
 			// uses the raw selectors (params.*), not the resolved structured endpoints.
 			// Under dryRun the byRef fn validates the prospective post-removal
-			// relations + match-checks without writing (TASK-010 shared preview path).
+			// relations + match-checks without writing (the shared dry-run preview path
+			// added for relation-mutation ops' `--dryRun` parity).
 			const { removed } = removeRelationByRef(
 				cwd,
 				{ parent: params.parent, child: params.child, relation_type: params.relation_type },
@@ -691,7 +702,8 @@ export const ops: OpDefinition[] = [
 		): OpResult {
 			// Under dryRun the byRef fn validates the prospective post-replace
 			// relations and computes the same removed/replaced would-decisions
-			// without writing (TASK-010 shared preview path).
+			// without writing (the shared dry-run preview path added for
+			// relation-mutation ops' `--dryRun` parity).
 			const { replaced, removed } = replaceRelationByRef(
 				cwd,
 				{
@@ -770,9 +782,9 @@ export const ops: OpDefinition[] = [
 				throw new Error(`edges parameter must be a JSON array of relation edge objects`);
 			}
 			// Under dryRun the byRef fn replays the on-disk + in-batch dedup and
-			// validates the prospective relations without writing (TASK-010 shared
-			// preview path). Each edge accepts raw {parent,child} or role-typed
-			// {primary,counter} (FGAP-113); orientation + the ambiguous-bare-append
+			// validates the prospective relations without writing (the shared dry-run
+			// preview path added for relation-mutation ops' `--dryRun` parity). Each edge accepts raw {parent,child} or role-typed
+			// {primary,counter} (the explicit role-typed orientation form); orientation + the ambiguous-bare-append
 			// reject are applied inside appendRelationsByRef before any write.
 			const { appended, skipped } = appendRelationsByRef(cwd, edges as RelationAppendInput[], ctx, {
 				dryRun: params.dryRun,
@@ -845,7 +857,8 @@ export const ops: OpDefinition[] = [
 				);
 			}
 			// Under dryRun upsertItemInBlock computes mode + builds + validates the prospective
-			// whole block, writing nothing (TASK-011 shared preview path).
+			// whole block, writing nothing (the shared dry-run preview path added for
+			// upsert-block-item's `--dryRun` parity).
 			const { mode } = upsertItemInBlock(cwd, params.block, params.arrayKey, params.item, idField, ctx, {
 				dryRun: params.dryRun,
 			});
@@ -931,7 +944,8 @@ export const ops: OpDefinition[] = [
 				},
 				ctx,
 			);
-			// TASK-013 / FGAP-015: route through {read} so the embedded
+			// Route through {read} (enforcing the 50KB cap at the actual output
+			// boundary) so the embedded
 			// ResolvedRef.loc.item is bounded at the 50KB cap; over-cap fails closed
 			// with metadata. Under-cap text stays the same JSON (renderReadText
 			// under-cap returns JSON.stringify(serialized, null, 2) with no footer).
@@ -1319,7 +1333,9 @@ export const ops: OpDefinition[] = [
 				return { read };
 			}
 
-			// Default: compact index (FGAP-101) — name + param count + one-line description.
+			// Default: compact index — progressive disclosure over the full
+			// per-tool parameter-schema dump that routinely exceeded the 50KB cap —
+			// name + param count + one-line description.
 			const index = all.map((t) => {
 				const tool = t as {
 					name?: string;
@@ -1885,7 +1901,8 @@ export const ops: OpDefinition[] = [
 		): OpResult {
 			// The auth-gate stamps event.input.writer to verified identity on
 			// confirm; the body trusts the stamped writer (auth-gate is the
-			// canonical identity check per FGAP-134 / FGAP-138 model). When the
+			// canonical identity check — the in-body writer.kind check is redundant
+			// with it, not a substitute). When the
 			// gate is bypassed (e.g., test harness), fall back to 'operator'
 			// rather than throwing — the same fallback policy the slash command
 			// path uses.
@@ -1998,7 +2015,8 @@ export const ops: OpDefinition[] = [
 		surface: "use",
 		run(cwd: string, params: { id: string }): OpResult {
 			const result = resolveItemById(cwd, params.id);
-			// TASK-013 / FGAP-015: route through {read} so the embedded full
+			// Route through {read} (enforcing the 50KB cap at the actual output
+			// boundary) so the embedded full
 			// ItemLocation is bounded at the 50KB cap and over-cap fails closed with
 			// a narrowing directive (mirrors read-block-item). `result` is
 			// ItemLocation | null — structureForRead handles both.
@@ -2401,9 +2419,11 @@ export interface UnexposedWriter {
 }
 
 /**
- * The FGAP-009 non-exposure allowlist: every library write function that is
+ * The non-exposure allowlist for the op-surface ↔ library-write-surface
+ * coverage contract: every library write function that is
  * deliberately NOT op-backed, with the reason it is withheld. This is the
- * closure contract γ (TASK-008) WILL consume: γ's parity test — not yet written
+ * closure contract γ (the library↔op-registry↔orchestrator-script parity/coverage
+ * test) WILL consume: γ's parity test — not yet written
  * (no executable parity test exists in β; β defines the contract, γ implements
  * the test against it) — WILL assert that EVERY library writer is either op-backed
  * (appears in {@link ops}, directly or transitively) OR named here, so a
@@ -2416,7 +2436,8 @@ export interface UnexposedWriter {
  * cwd-form writer that IS op-backed, and is covered by that cwd-form op (the op
  * resolves the active substrate dir then delegates to the same shared
  * typed-file primitive the `*ForDir` twin calls). The contract is that γ's
- * parity test (TASK-008, not yet written) WILL treat a `*ForDir` writer as
+ * parity test (the library↔op-registry↔orchestrator-script parity/coverage
+ * test, not yet written) WILL treat a `*ForDir` writer as
  * covered when its cwd-form sibling is covered.
  */
 export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
@@ -2444,8 +2465,11 @@ export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
 
 /**
  * The five mutually-exhaustive ways a library write function is COVERED by the
- * FGAP-009 op-surface ↔ library-write-surface parity contract. A writer that
- * matches NONE of these is a silent gap that γ's (TASK-008) parity test — once
+ * op-surface ↔ library-write-surface parity contract (ensuring every library
+ * write function is either op-backed or explicitly, deliberately withheld with
+ * a stated reason). A writer that
+ * matches NONE of these is a silent gap that γ's parity test (the
+ * library↔op-registry↔orchestrator-script coverage check) — once
  * written — MUST fail on. Coverage is the DISJUNCTION over these classes — a
  * writer needs ANY one, not all.
  */
@@ -2497,7 +2521,9 @@ export interface CoverageClause {
 }
 
 /**
- * The FGAP-009 coverage RULE, made explicit so γ (TASK-008) will import the
+ * The coverage RULE for the op-surface ↔ library-write-surface parity
+ * contract, made explicit so γ (the library↔op-registry↔orchestrator-script
+ * parity/coverage test) will import the
  * contract rather than re-derive it. A library write function is COVERED iff it
  * matches ANY clause below (the disjunction); a writer matching none is a silent
  * gap that γ's parity test — when written — MUST fail on. β fixes the contract
@@ -2588,7 +2614,11 @@ export function buildDispatchContextFromExecute(
 }
 
 /**
- * Converge-on-write (FEAT-011 criterion 2 — FGAP-116): the sanctioned mutating
+ * Converge-on-write — part of currency-by-construction (stored substrate state
+ * never silently diverging from what's derivable), closing the earlier gap
+ * where a milestone's rollup status could be simultaneously "reached" by live
+ * derivation and still gate-block its own tasks via a stale stored status: the
+ * sanctioned mutating
  * ops that can change a rollup INPUT (a member item's status; a membership
  * edge; an id every edge keys on) run the derived-status convergence hook
  * AFTER their own write lands — so every op-surface write leaves rollup-kind
@@ -2623,8 +2653,8 @@ const CONVERGE_AFTER_OPS = new Set([
  * null when the substrate is unreadable or declares no invariants — the gate
  * is config-driven opt-in and NEVER breaks a write on legacy/undeclared
  * substrates. Uses the SAME evaluateConfigInvariants path validateContext
- * runs, so write-side and validate-side verdicts are identical (TASK-062
- * lift pattern).
+ * runs, so write-side and validate-side verdicts are identical (the same
+ * write/validate-parity lift pattern used for edge kind/category checks).
  */
 function invariantSnapshot(cwd: string): Map<string, { severity: string; message: string }> | null {
 	try {
@@ -2680,7 +2710,8 @@ function attachWriteWarnings(result: OpResult, warnings: string[]): OpResult {
 }
 
 /**
- * The write pipeline (FEAT-011 criteria 2 + 5 — one module-init pass over the
+ * The write pipeline — part of currency-by-construction, combining rollup
+ * convergence and write-time invariant checks in one module-init pass over the
  * ops DATA; both consumers — registerAll pi tools and the reflecting CLI —
  * execute the wrapped run):
  *

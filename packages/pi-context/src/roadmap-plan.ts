@@ -1,6 +1,6 @@
 /**
  * Roadmap substrate primitives — the roadmap as a DERIVED view over the
- * milestone block + authored relations (FGAP-042). There is no roadmap block,
+ * milestone block + authored relations. There is no roadmap block,
  * no roadmap.json, and no ROADMAP- id: the roadmap IS the milestone-block
  * items ordered by the `milestone_precedes_milestone` closure-table edges,
  * with per-milestone membership resolved through `phase_positioned_in_milestone`
@@ -19,7 +19,8 @@
  * divergence from main, the active vocabulary is resolved via
  * `resolveStatusVocabulary(cwd)` which merges
  * `config.status_buckets` over the defaults — users override per-project
- * by editing config.json (FGAP-013 closed).
+ * by editing config.json, closing the earlier gap where status rollup was
+ * hardcoded in TS rather than exposed as a user-extensible registry.
  *
  * Diagnostic display strings: validateRoadmap() emits issues whose
  * `code` field is an opaque slug; the human-readable message is
@@ -141,7 +142,7 @@ function diagMessage(cwd: string, code: string, fallback: string): string {
 // here to preserve the existing import surface (barrel + roadmap-plan.test).
 export { topoSort };
 
-// ── Derived roadmap over milestone_precedes_milestone (FGAP-042) ────────────
+// ── Derived roadmap over milestone_precedes_milestone ────────────
 //
 // Roadmap order is the precedes-DAG over milestone-block items: authoring the
 // order = appending milestone_precedes_milestone edges to relations.json. The
@@ -153,14 +154,16 @@ export { topoSort };
 // (milestone_precedes_milestone for the precedes DAG, phase_positioned_in_milestone
 // + task_positioned_in_phase for the membership tiers), but the ORIENTATION of
 // each edge — which endpoint is the predecessor / container — is read from the
-// relation's declared `role_direction` (FGAP-113) via primaryEndpoint /
+// relation's declared `role_direction` — the explicit field carrying edge
+// orientation instead of a hardcoded guess — via primaryEndpoint /
 // counterEndpoint, not hardcoded parent/child picks. The former module constants
 // are inlined at their (few) use sites so no relation-name literal is duplicated
 // as an orientation carrier.
 
 /**
  * The declared orientation of a roadmap relation, or the roadmap's `fallback`
- * when the config does not register a `role_direction` for it (FGAP-113). The
+ * when the config does not register a `role_direction` for it — the field that
+ * otherwise makes edge orientation explicit rather than guessed. The
  * fallbacks preserve the pre-metadata hardcoded orientation exactly:
  * `milestone_precedes_milestone` → `as_parent` (predecessor at `edge.parent`);
  * the two `*_positioned_in_*` membership relations → `as_child` (container at

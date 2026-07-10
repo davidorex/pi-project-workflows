@@ -1,5 +1,5 @@
 /**
- * Tests for the /context switch command family per TASK-094 step 8.
+ * Tests for the /context switch command family, step 8.
  *
  * Surface under test:
  * - `flipBootstrapPointer` — the pointer-flip primitive that preserves

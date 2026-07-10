@@ -1,5 +1,5 @@
 /**
- * FGAP-113 — edge-orientation metadata regression locks.
+ * Edge-orientation metadata regression locks.
  *
  * Covers the ONE source of truth (role_direction) end to end at the catalog +
  * helper + property level, complementing the per-consumer tests

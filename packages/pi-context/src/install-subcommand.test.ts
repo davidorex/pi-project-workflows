@@ -175,7 +175,7 @@ describe("installContext", () => {
 		assert.deepEqual(result.installed, []);
 	});
 
-	// FGAP-029 safe re-sync (slice S1): --update must never overwrite a populated
+	// Safe re-sync (slice S1): --update must never overwrite a populated
 	// block — the catalog block starter is empty ({"tasks": []}), so copying it over
 	// a block holding filed items would delete them. Populated blocks are preserved.
 	it("preserves a populated block under overwrite (byte-identical, reported as preserved)", () => {
@@ -218,7 +218,7 @@ describe("installContext", () => {
 		assert.notEqual(fs.readFileSync(dest, "utf-8"), "{}", "schema must be refreshed from the samples catalog");
 	});
 
-	// FGAP-029 safe re-sync (slice S2): /context install records an install baseline
+	// Safe re-sync (slice S2): /context install records an install baseline
 	// (config.installed_from) of the installed SCHEMAS so later slices can detect
 	// installed-vs-catalog drift.
 	it("records an installed_from baseline with a per-schema fingerprint", () => {
@@ -241,10 +241,11 @@ describe("installContext", () => {
 		}
 	});
 
-	// TASK-035 / FEAT-006 T2 base-stamping: every install baseline-write site also
+	// Base-stamping: every install baseline-write site also
 	// persists the as-installed schema BODY into the content-addressed object store,
 	// keyed by the SAME content_hash recorded in installed_from.assets — so the merge
-	// base is retrievable later (TASK-036 precondition). computeContentHash(body) over
+	// base is retrievable later (a precondition for the deterministic 3-way schema
+	// merge). computeContentHash(body) over
 	// the retrieved object must round-trip back to the baseline hash (per
 	// content-hash.ts: a file's computeFileContentHash and its parsed object's
 	// computeContentHash are the same JCS digest).
@@ -342,7 +343,7 @@ describe("installContext", () => {
 	});
 });
 
-// TASK-070 class rule: EVERY sanctioned ceremony entry point seeds the catalog's
+// The ceremony-seeding class rule: EVERY sanctioned ceremony entry point seeds the catalog's
 // `config` migration chain before its first config read, so a legacy substrate
 // (1.0.0 config, no migrations.json) heals on the ceremony instead of throwing.
 // init / accept-all / install seeding is covered in their own suites (and the
@@ -439,10 +440,10 @@ describe("ceremony legacy-heal seeding — update / check-status / resolve famil
 	});
 });
 
-// FGAP-029 safe re-sync (slice S3): /context check-status is a PURE-READ drift
+// Safe re-sync (slice S3): /context check-status is a PURE-READ drift
 // detector — it compares the S2 install baseline against the catalog + the
 // currently-installed schema files, classifies per-schema drift, and writes NOTHING
-// (except the TASK-070 ceremony seed of the catalog's `config` migration decls
+// (except the ceremony-seeding class rule's seed of the catalog's `config` migration decls
 // into migrations.json — idempotent, covered by the legacy-heal suite above).
 describe("checkStatus (read-only drift detector)", () => {
 	afterEach(() => {
@@ -523,8 +524,8 @@ describe("checkStatus (read-only drift detector)", () => {
 		assert.ok(before.equals(after), "checkStatus must not modify config.json (byte-identical before/after)");
 	});
 
-	// FGAP-078 / STORY-007 ("report which installed schemas are behind the catalog,
-	// and by what version gap"): the additive `behind` / `version_delta` reporting
+	// The requirement to report which installed schemas are behind the catalog,
+	// and by what version gap: the additive `behind` / `version_delta` reporting
 	// fields. Computed AFTER the classification arm — the state classifications above
 	// are untouched. `installOlderSchema` overwrites the installed schema body with a
 	// lower `version` so the post-install re-baseline records that older version, and
@@ -622,7 +623,7 @@ describe("checkStatus (read-only drift detector)", () => {
 	});
 });
 
-// FGAP-029 safe re-sync (slice S4): /context install --update re-syncs installed
+// Safe re-sync (slice S4): /context install --update re-syncs installed
 // SCHEMAS through the migration registry — same-version overwrite, version-bump
 // forward-migration, or refuse-and-leave-unchanged. Never strands block items
 // under a schema they fail.
@@ -1012,8 +1013,8 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.ok(fs.readFileSync(configDest).equals(configBefore), "dryRun must not write the registry additions");
 	});
 
-	// Re-greened per the ceremony-entry identity establishment decision (DEC-0020 —
-	// FGAP-033): installContext establishes a substrate_id at entry on this
+	// Re-greened per the ceremony-entry identity establishment decision:
+	// installContext establishes a substrate_id at entry on this
 	// pre-identity substrate (makeProject writes none), so the migrate write's
 	// identity stamp proceeds instead of refusing.
 	it("version bump WITH a shipped identity migration + populated block → migrated, item fields intact", () => {
@@ -1162,8 +1163,8 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 		assert.ok(fs.readFileSync(blockDest).equals(blockBefore), "block bytes unchanged on an in-sync re-run");
 	});
 
-	// Re-greened per the ceremony-entry identity establishment decision (DEC-0020 —
-	// FGAP-033): the ceremony establishes identity at entry, the migrate proceeds,
+	// Re-greened per the ceremony-entry identity establishment decision:
+	// the ceremony establishes identity at entry, the migrate proceeds,
 	// and the refreshed baseline reports in-sync.
 	it("after a migrate, check-status reports the schema in-sync (baseline refreshed)", () => {
 		tmpRoot = makeProject(["tasks"], []);
@@ -1181,7 +1182,7 @@ describe("installContext --update SCHEMA migration-aware re-sync (S4)", () => {
 	});
 });
 
-// FEAT-006 T1 (TASK-034 / DEC-0017): /context update consults checkStatus per
+// The `pi-context update` command shell's first slice: /context update consults checkStatus per
 // installed schema and routes by drift — refuse-and-report for locally-modified /
 // both-diverged (never overwrite), resync catalog-ahead via the SAME resyncSchema
 // path /context install --update uses, no-op in-sync, report undecidable/absent.
@@ -1208,7 +1209,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		return dest;
 	}
 
-	// TASK-036 — FEAT-006 T3: a locally-modified schema is now 3-way-merged rather
+	// The deterministic 3-way schema merge: a locally-modified schema is now 3-way-merged rather
 	// than blindly refused. The refuse-and-report path remains ONLY as the no-safe-
 	// base fallback: with no retrievable stamped BASE body (here the object-store
 	// object is deleted), the merge cannot run → the schema falls back to `refused`,
@@ -1283,7 +1284,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		);
 	});
 
-	// TASK-035 / FEAT-006 T2: the updateContext baseline-REFRESH site (TASK-034) is a
+	// Base-stamping: the updateContext baseline-REFRESH site is a
 	// baseline-write site too, so a resync base-stamps the resynced schema's NEW body
 	// under its NEW (refreshed) content_hash. After resync, the refreshed baseline hash
 	// must have a retrievable stored body that round-trips.
@@ -1339,7 +1340,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		const cfgPath = path.join(tmpRoot, ".project", "config.json");
 		const snapshot = new Map<string, Buffer>();
 		for (const f of [tasksDest, decDest, woDest, cfgPath]) snapshot.set(f, fs.readFileSync(f));
-		// TASK-035 / FEAT-006 T2: base-stamping is INSIDE the !dryRun guard, so a
+		// Base-stamping is INSIDE the !dryRun guard, so a
 		// dry-run must add NO new object to the content-addressed store. Snapshot the
 		// objects/ directory listing before the dry run (prior installs may have
 		// stamped bodies; the invariant is that dryRun adds none).
@@ -1354,7 +1355,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		const plan = updateContext(tmpRoot, { dryRun: true });
 		assert.equal(plan.dryRun, true, "the plan must declare it is a dry run");
 		assert.deepEqual(plan.resynced, ["tasks"], "catalog-ahead schema appears in the would-resync set");
-		// TASK-036 — FEAT-006 T3: a locally-modified schema is no longer blindly
+		// The deterministic 3-way schema merge: a locally-modified schema is no longer blindly
 		// refused. `decisions` here is locally-modified with base === catalog (only
 		// ours diverges), so its 3-way merge is conflict-free → it routes into
 		// `merged` (the would-merge set), NOT `refused`. Under dryRun the merge is
@@ -1377,7 +1378,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		);
 	});
 
-	// ---- TASK-036 — FEAT-006 T3: 3-way installed/baseline/catalog schema merge ----
+	// ---- The deterministic 3-way installed/baseline/catalog schema merge ----
 	//
 	// All three sides must differ for the merge to be exercised non-trivially, but
 	// the catalog (THEIRS) is the shared packaged samples file and must not be
@@ -1448,7 +1449,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		assert.ok("notes" in writtenProps, "the catalog-kept `notes` field must survive the merge");
 		assert.ok("__ours_field" in writtenProps, "the local `__ours_field` add must survive the merge");
 		assert.ok(!fs.readFileSync(dest).equals(before), "a live merge must rewrite the schema file");
-		// FGAP-070 durability: a SECOND update must NOT resync the disjoint local add away.
+		// Post-merge baseline-refresh durability: a SECOND update must NOT resync the disjoint local add away.
 		// The merge stamped baseline := the catalog body, so the kept-local `__ours_field`
 		// reads as locally-modified and persists; the re-merge takes ours via base === theirs.
 		const second = updateContext(tmpRoot);
@@ -1562,7 +1563,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		);
 		const result = updateContext(tmpRoot);
 		assert.deepEqual(result.merged, ["tasks"], "precondition: tasks must auto-merge");
-		// FGAP-070: the merge stamps the baseline := the CATALOG body (theirs), NOT the
+		// The merge stamps the baseline := the CATALOG body (theirs), NOT the
 		// merged on-disk body. The merged body still carries the local-only `__ours_field`
 		// the catalog lacks, so against the catalog baseline a follow-up check-status sees a
 		// LOCAL edit (installed ≠ baseline) while baseline === catalog (no catalog-ahead axis)
@@ -1598,7 +1599,9 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 		assert.equal(computeContentHash(body), refreshedHash, "the stamped catalog body must round-trip to its hash");
 	});
 
-	// ── FGAP-069: resolveConflict commits a reconciliation end-to-end ────────────
+	// ── resolveConflict commits a reconciliation end-to-end (advancing the merge
+	// base to the catalog body on commit, so resolving a conflict actually stops
+	// it from being re-flagged) ────────────────────────
 	// update surfaces a both-diverged CONFLICT; the calling agent reconciles into a
 	// body R and runs resolveConflict, which writes R AND advances the merge base to
 	// the catalog. A SUBSEQUENT update must then converge — the base === catalog rule
@@ -1649,17 +1652,18 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 			"boolean",
 			"the reconciled R (notes.type boolean) survives the converging update",
 		);
-		// After the converging update, tasks is no longer a CONFLICT — and FGAP-070 makes
+		// After the converging update, tasks is no longer a CONFLICT — and the
+		// post-merge baseline-refresh fix makes
 		// it STABLE: the second update auto-merged R (notes.type "boolean") and stamped the
 		// baseline := the CATALOG body, so the kept-local divergence reads as `locally-
 		// modified` (installed R ≠ baseline catalog), NOT `catalog-ahead`. A catalog-ahead
-		// reading would resync R away on the next update — the very defect FGAP-070 fixes.
+		// reading would resync R away on the next update — the very defect this fix closes.
 		assert.equal(
 			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
 			"locally-modified",
 			"the merge stamps baseline := catalog, so the kept-local R reads as locally-modified (stable, not resync-bound)",
 		);
-		// Durability across repeated updates (the FGAP-070 fixed point): a THIRD and FOURTH
+		// Durability across repeated updates (the post-merge baseline-refresh fixed point): a THIRD and FOURTH
 		// update must keep R on disk (notes.type "boolean") and raise no conflict — R is
 		// never resynced to the catalog "string".
 		const third = updateContext(tmpRoot);
@@ -1709,7 +1713,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 			"boolean",
 			"the on-disk R (already boolean) is preserved",
 		);
-		// FGAP-070 durability: a THIRD and FOURTH update keep the reconciled value — the
+		// Post-merge baseline-refresh durability: a THIRD and FOURTH update keep the reconciled value — the
 		// schema is never resynced back to the catalog "string".
 		const third = updateContext(tmpRoot);
 		assert.deepEqual(third.conflicts, [], "a third update raises no conflict — the base advanced to the catalog");
@@ -1762,7 +1766,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 			"string",
 			"the catalog-valued reconciliation is preserved on disk",
 		);
-		// FGAP-070: a catalog-valued reconciliation is already a stable in-sync fixed point —
+		// A catalog-valued reconciliation is already a stable in-sync fixed point —
 		// a second update is a no-op and it stays in-sync (notes.type "string" preserved).
 		const third = updateContext(tmpRoot);
 		assert.deepEqual(third.conflicts, [], "a second update over an in-sync schema raises no conflict");
@@ -1782,7 +1786,7 @@ describe("updateContext (drift-routed model update — T1 refuse-and-report)", (
 	});
 });
 
-// ── TASK-038 (FEAT-006 T5): config-registry propagation on update ────────────
+// ── The additive config-registry propagation slice of `pi-context update` ────────────
 // `updateContext` additively brings catalog-new config-registry entries
 // (relation_types / invariants / block_kinds / lenses) absent from the substrate
 // config current, preserving every user entry (and any locally-diverged body of
@@ -1918,7 +1922,9 @@ describe("updateContext — config-registry propagation (TASK-038)", () => {
 	});
 });
 
-// FGAP-050 — surfaced migration-declaration reporting on /context update. A
+// Surfaced migration-declaration reporting on /context update — closing the
+// earlier gap where migration declarations were silently appended with no
+// report of what was added. A
 // version-bump catalog-ahead resync registers the shipped catalog chain's decls
 // into migrations.json; updateContext now surfaces them under
 // `migrationsRegistered` (live = the decls actually appended; dryRun = the
@@ -1984,7 +1990,7 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 
 		const result = updateContext(tmpRoot, { dryRun: true });
 		assert.equal(result.dryRun, true, "the plan must declare it is a dry run");
-		// TASK-046 / FGAP-066: the faithful dryRun predicts the PRECISE outcome — this
+		// The faithful dryRun predicts the PRECISE outcome — this
 		// fixture is a version-bump (1.0.0 → 1.0.1) with NO items, so the live path
 		// reports `migrated`; the dry prediction must bucket it `migrated`, not
 		// `resynced`.
@@ -2055,7 +2061,8 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 	});
 });
 
-// TASK-046 / FGAP-066 — faithful dryRun outcome prediction. `update --dryRun`
+// Faithful dryRun outcome prediction — closing the earlier gap where --dryRun
+// optimistically reported every catalog-ahead schema as "resynced." `update --dryRun`
 // must predict the PRECISE per-schema catalog-ahead bucket (resynced / migrated /
 // blocked) the live (`!dryRun`) path would land, by an in-memory forward-migration
 // + re-validation. Each case runs dry on a fixture, asserts the bucket, then runs
@@ -2068,7 +2075,7 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 	// Pre-place an installed schema dest = the catalog body with its `version`
 	// overridden to an older value, then install so the baseline is recorded FROM
 	// that on-disk older body → checkStatus classifies it catalog-ahead. (Mirrors
-	// the FGAP-050 suite's installOlderSchema.)
+	// the migration-declaration-reporting suite's installOlderSchema.)
 	function installOlderSchema(dir: string, name: string, version: string): void {
 		const catalog = JSON.parse(
 			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
@@ -2128,7 +2135,7 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.deepEqual(live.migrationsRegistered, [], "live: a blocked (rolled-back) outcome registers nothing");
 		fs.rmSync(liveDir, { recursive: true, force: true });
 
-		// TASK-048 / FGAP-077: dry == live blockedDetail for the validation-failed case.
+		// dry == live blockedDetail for the validation-failed case.
 		// Re-derive both fresh (the dirs above were removed) and compare the diagnostic
 		// detail (reason + version pair + per-item failures naming the failing item id).
 		const dryDetailDir = makeCatalogAheadTasks("1.0.0", [badItem]);
@@ -2137,10 +2144,10 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		const liveDetailDir = makeCatalogAheadTasks("1.0.0", [badItem]);
 		const liveDetail = updateContext(liveDetailDir).blockedDetail;
 		fs.rmSync(liveDetailDir, { recursive: true, force: true });
-		// TASK-052 / FGAP-081 FIX 2: the live run inscribes markers and records premarker_hash
+		// FIX 2: the live run inscribes markers and records premarker_hash
 		// on its blockedDetail (the write attestation renderBlocked keys its past-tense claim
 		// on); the dry preview writes nothing and carries no premarker_hash — an INTENDED
-		// divergence. The TASK-048 diagnostic detail (reason + version pair + per-item failures)
+		// divergence. The per-item validation diagnostic detail (reason + version pair + per-item failures)
 		// must still be identical, so compare with premarker_hash stripped, then assert the
 		// attestation is present live / absent dry.
 		const strip = (ds: typeof dryDetail) => ds.map(({ premarker_hash, ...rest }) => rest);
@@ -2243,7 +2250,7 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.deepEqual(live.migrationsRegistered, [], "live: a no-chain blocked outcome registers nothing");
 		fs.rmSync(liveDir, { recursive: true, force: true });
 
-		// TASK-048 / FGAP-077: dry == live blockedDetail for the no-migration-chain case.
+		// dry == live blockedDetail for the no-migration-chain case.
 		const dryDetailDir = makeCatalogAheadTasks("0.9.0");
 		const dryDetail = updateContext(dryDetailDir, { dryRun: true }).blockedDetail;
 		fs.rmSync(dryDetailDir, { recursive: true, force: true });
@@ -2259,7 +2266,8 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 	});
 });
 
-// ── TASK-048 / FGAP-077: itemIdForPath mapper + validateBlockItemsAgainstCatalog ─
+// ── itemIdForPath mapper + validateBlockItemsAgainstCatalog (the per-item
+// validation diagnostic) ─
 describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048)", () => {
 	afterEach(() => {
 		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
@@ -2319,7 +2327,7 @@ describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048
 		);
 	});
 
-	// Mapper cases (TASK-048 itemIdForPath), observed through the diagnostic: an
+	// Mapper cases (itemIdForPath), observed through the diagnostic: an
 	// id-less item failing the schema yields a failure whose itemId is undefined
 	// (the indexed item has no string `id` to resolve); an envelope-level failure
 	// (a non-array `tasks`) yields a failure whose instancePath has no
@@ -2358,7 +2366,7 @@ describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048
 	});
 });
 
-// FGAP-051 — idempotent block skip. installContext's empty-block overwrite arm
+// Idempotent block skip. installContext's empty-block overwrite arm
 // must NOT rewrite a block whose on-disk content already equals the catalog
 // starter (JCS-canonical equality); it reports `skipped` and leaves the file
 // byte-identical (mtime + bytes), avoiding no-op churn. A starter whose content
@@ -2401,7 +2409,9 @@ describe("installContext idempotent block skip (FGAP-051)", () => {
 	});
 });
 
-// ---- TASK-051 — FGAP-080: pending-blocked record + resolve-blocked commit ----
+// ---- Pending-blocked record + resolve-blocked commit (closing the earlier
+// gap where blocked was a dead-end with no persisted state or resolution
+// command) ----
 // The blocked-resync resolution loop: a live `update` that BLOCKS a catalog-ahead
 // schema persists pending-blocked.json (pinning the target catalog schema + the
 // chain), the calling agent fixes the failing items, and `resolveBlocked` commits
@@ -2456,7 +2466,7 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		const live = updateContext(tmpRoot);
 		assert.deepEqual(live.blocked, ["tasks"], "the item failing the catalog schema blocks the resync");
 
-		// The blocked contract: schema + migrations.json byte-unchanged. TASK-052: the
+		// The blocked contract: schema + migrations.json byte-unchanged. The
 		// block file is NO longer byte-unchanged — the live blocked run inscribes git-style
 		// failure markers INTO it (default behavior). Assert the sentinels are present and
 		// POSITIONED at the offending item (the status line of TASK-001).
@@ -2827,7 +2837,7 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 	});
 });
 
-// TASK-059 / FGAP-088: the reflected `context-install` op surfaces the install
+// The reflected `context-install` op surfaces the install
 // ceremony as a CLI/Pi op. It calls `installContext` with NO behavior fork — the
 // op's `run` is the same engine + call shape the `/context install` slash handler
 // runs (overwrite derived from `--update`). These tests exercise the op's own
@@ -2924,9 +2934,9 @@ describe("op: context-install (reflected install ceremony)", () => {
 	});
 });
 
-// ── context-reconcile (FEAT-011 — the repair half of derived-status) ─────────
+// ── context-reconcile (currency-by-construction — the repair half of derived-status) ─────────
 // The op converges stored rollup-kind statuses with their derivation: dryRun
-// predicts the EXACT delta set a live run applies (FGAP-066 discipline), the
+// predicts the EXACT delta set a live run applies (the faithful-dryRun discipline), the
 // live run writes through the standard validated path, and authored-status
 // kinds are structurally out of reach (only rollup-declared kinds derive).
 // makeDivergentSubstrate sits at module scope — shared by the reconcile suite
@@ -3085,7 +3095,7 @@ describe("reconcileContext (derived-status repair)", () => {
 	});
 });
 
-// ── converge-on-write (FEAT-011 criterion 2 — FGAP-116's last mechanism) ─────
+// ── converge-on-write (part of currency-by-construction) ─────
 // The rollup-input-mutating ops run the derived-status convergence hook after
 // their write lands, so an op-surface write leaves rollup-kind stored statuses
 // equal to their derivation — no reconcile run needed for engine writes.
@@ -3254,7 +3264,7 @@ describe("converge-on-write (op-surface rollup convergence)", () => {
 	});
 });
 
-// ── delta-scoped write-time invariant gate (FEAT-011 criterion 5) ────────────
+// ── delta-scoped write-time invariant gate (part of currency-by-construction) ────────────
 // Newly-introduced violations act at the causal write (error refuses with a
 // byte-exact restore; warning surfaces on the result); pre-existing violations
 // never block — verdicts come from the SAME evaluateConfigInvariants path
@@ -3640,7 +3650,9 @@ describe("write-time invariant gate (delta-scoped)", () => {
 		);
 	});
 
-	// ── birth-relations role-typed orientation form (FGAP-121 / TASK-092) ──────
+	// ── birth-relations role-typed orientation form (closing the earlier gap
+	// where birth entries only supported the raw direction form, so
+	// orientation-ambiguous relation types couldn't be filed atomically) ──────
 	// The birth entry affords BOTH orientation vocabularies the standalone
 	// porcelain affords: direction (raw) and role (primary/counter, mapped via
 	// role_direction in orientAppendInput — the single guard source). A
@@ -3827,7 +3839,8 @@ describe("write-time invariant gate (delta-scoped)", () => {
 	});
 });
 
-// ── declared-baseline staleness: typed stale_conditions (TASK-089) ──
+// ── declared-baseline staleness: typed stale_conditions (the machine-evaluable
+// typed-condition-baseline mechanism, beyond bare strings) ──
 // The write choke (prepareItemIdentityForWrite, identity-gated) stamps typed
 // stale-condition baselines BEFORE the content hash; evaluateStalenessCandidates
 // is the ONE verdict path validate flags with and reconcile transitions with.

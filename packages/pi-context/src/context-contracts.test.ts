@@ -1,7 +1,7 @@
 /**
  * Schema-validation tests for the context-contracts block kind landed
- * in TASK-038 / Phase 3 sub-phase 3.1 (FGAP-030 substrate side, DEC-0017
- * work-unit-context-contract surface).
+ * in Phase 3 sub-phase 3.1 — the context-contracts substrate schema side of
+ * the gather-execution-context primitive's work-unit-context-contract surface.
  *
  * Scope: validates the registry schema at
  * `packages/pi-context/registry/schemas/context-contracts.schema.json`
@@ -11,7 +11,7 @@
  * label)`, and asserts pass/fail with the expected AJV diagnostic
  * shape.
  *
- * Coverage per TASK-038 acceptance criteria:
+ * Coverage per that phase's acceptance criteria:
  *   1. Valid round-trip with the 3 default registry contracts (and
  *      one fully-populated bundle_relation_types entry) → passes.
  *   2. Missing required field (id / unit_kind / bundle_relation_types /

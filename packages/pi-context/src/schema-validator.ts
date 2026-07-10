@@ -15,12 +15,12 @@ addFormats(ajv);
 
 /**
  * Pre-register the eight framework schemas (`config`, `relations`, plus the
- * six FGAP-016 shared enums: priority, status, severity, source, layer,
+ * six shared enums: priority, status, severity, source, layer,
  * verification-method) at AJV-instance construction so cross-schema `$ref`
  * to `pi-context://schemas/<name>` resolves synchronously without an async
  * `loadSchema` hook. Pre-registration also makes the URN identity surface
- * (FGAP-006 closure) usable from any caller of this module without each
- * caller restating the schemas.
+ * (the schema `$id` + version + migration-registry story) usable from any
+ * caller of this module without each caller restating the schemas.
  *
  * Pre-registration is best-effort: if a schema file is missing or malformed
  * (which would only happen during local dev with a half-applied edit), the
@@ -141,7 +141,7 @@ export function validate(schema: Record<string, unknown>, data: unknown, label: 
  * input on success (pass-through, mirrors `validate`).
  *
  * Reusing the module-internal `ajv` instance is intentional per the rebuild
- * arc — the schema-write surface (FGAP-011) must not stand up a parallel AJV
+ * arc — the canonical schema-write surface must not stand up a parallel AJV
  * instance with diverging strictness / format settings.
  */
 export function validateSchemaAgainstMeta(schema: unknown, label: string): unknown {
@@ -176,7 +176,8 @@ export function validateFromFile(schemaPath: string, data: unknown, label: strin
 }
 
 /**
- * Migration-aware block validation (FGAP-006 read-time migration surface).
+ * Migration-aware block validation — the read-time migration surface that
+ * pairs with schema versioning + identity + migration-registry support.
  *
  * Aim: read a block file from disk, compare its declared `schema_version`
  * against the framework schema's `version`, run any registered migrations
@@ -191,7 +192,8 @@ export function validateFromFile(schemaPath: string, data: unknown, label: strin
  *     framework schemas because that path is computed relative to `cwd`.
  *   - `data.schema_version` is read off the supplied data when present. When
  *     it is missing, the data is validated as-is (no migration attempted) —
- *     pre-FGAP-006 blocks have no version field and should pass through.
+ *     blocks predating schema versioning have no version field and should
+ *     pass through.
  *   - `registry` is optional; when omitted and the versions differ, the
  *     function throws (no chain to apply).
  *   - On match (`block.schema_version === schema.version`) or missing

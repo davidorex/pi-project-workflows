@@ -1,5 +1,6 @@
 /**
- * Unit tests for citation-rot-scanner (FGAP-132).
+ * Unit tests for citation-rot-scanner, the rigorous AST + JSON +
+ * markdown/YAML scanner that replaces the naive line-by-line scan.
  *
  * Aim: validate that the AST + JSON + text scanner correctly discriminates
  * the four target surfaces:
@@ -92,9 +93,9 @@ describe("citation-rot-scanner — AST .ts surface", () => {
 				// Arbitrary string outside an operator-surface call tree — not
 				// flagged. Protects against false-positives in internal helper
 				// code that happens to mention canonical_ids in literal-bound
-				// constants. NOTE: error-constructor messages ARE flagged per
-				// FGAP-133; that case is covered in the ast-error-message
-				// surface tests above.
+				// constants. NOTE: error-constructor messages ARE flagged (closing the
+				// gap where thrown-error messages went unscanned); that case is covered
+				// in the ast-error-message surface tests above.
 				`const internalConstant = "DEC-0047";`,
 				`const arr = ["FGAP-102 inside array literal"];`,
 			].join("\n"),
@@ -138,8 +139,8 @@ describe("citation-rot-scanner — AST error-message surface (FGAP-133)", () => 
 		fs.mkdirSync(pkgDir, { recursive: true });
 		fs.writeFileSync(
 			path.join(pkgDir, "src.ts"),
-			// Constructor name `Widget` does NOT end in `Error`; FGAP-133 visitor
-			// must skip. Data classes / builders / value objects must not pollute
+			// Constructor name `Widget` does NOT end in `Error`; the error-constructor
+			// visitor must skip it. Data classes / builders / value objects must not pollute
 			// the operator-surface gate.
 			`function f() { return new Widget("per FGAP-999"); }`,
 		);

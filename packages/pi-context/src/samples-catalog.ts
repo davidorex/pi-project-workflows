@@ -1,8 +1,8 @@
 /**
- * Samples-catalog discovery surface (FGAP-068 closure; DEC-0037 packaged view).
- *
- * DEC-0037 (enacted) requires the conception present each block kind PACKAGED
- * with its relation_types + invariants + lens. This module reads the
+ * Samples-catalog discovery surface — the package's shipped sample catalog is
+ * enumerable/described/queryable rather than filename-guess-only, and the
+ * conception requires each block kind present PACKAGED with its
+ * relation_types + invariants + lens. This module reads the
  * extension's OWN bundled `samples/conception.json` + `samples/schemas/` and
  * projects, per block kind: title, description, item shape, the relation_types
  * for which the kind may be a source / target endpoint, the invariants ranging
@@ -14,7 +14,7 @@
  * the same from `src/` (tsx --test) and from `dist/` (post-build) and is
  * independent of any installed project substrate.
  *
- * DEC-0019/0020 dual-surface: this library function backs both the Pi tool
+ * Dual-surface convention: this library function backs both the Pi tool
  * `read-samples-catalog` (in-pi LLM discovery) and the CLI script
  * `scripts/orchestrator/read-samples-catalog.ts` (Claude-Code-side); all three
  * ship as one unit.
@@ -62,7 +62,8 @@ export interface SampleKind {
 	warnings: string[];
 }
 
-/** The packaged samples catalog (DEC-0037 view). */
+/** The packaged samples catalog — every block kind shipped as a complete package
+ * (schema + relation_types + invariants + a starter lens). */
 export interface SamplesCatalog {
 	schema_version: string;
 	kinds: SampleKind[];

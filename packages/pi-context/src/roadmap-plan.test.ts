@@ -300,8 +300,8 @@ interface RoadmapFixture {
 	status_buckets?: Record<string, StatusBucket>;
 	display_strings?: Record<string, string>;
 	// Optional relation_types registry — supplied only when a test needs to declare
-	// a non-default role_direction to exercise the config-driven roadmap orientation
-	// (FGAP-113). Absent → no registry, so every roadmap relation falls back to its
+	// a non-default role_direction to exercise the config-driven roadmap orientation.
+	// Absent → no registry, so every roadmap relation falls back to its
 	// stock orientation (milestone_precedes_milestone as_parent, the *_positioned_in_*
 	// membership relations as_child) and output is byte-identical to the pre-metadata deriver.
 	relation_types?: Array<Record<string, unknown>>;
@@ -316,7 +316,7 @@ function makeRoadmapProject(fixture: RoadmapFixture): string {
 		root: ".project",
 		lenses: [],
 		block_kinds: [],
-		// Stock state_derivation (TASK-020): loadRoadmap's per-milestone status +
+		// Stock state_derivation: loadRoadmap's per-milestone status +
 		// phaseCount read currentState().milestones — the config-declared rollup
 		// over phase_positioned_in_milestone (reached/planned) — so the fixture
 		// must declare the stock rollups entry.
@@ -523,8 +523,8 @@ describe("loadRoadmap", () => {
 		assert.equal(m3.taskProgress.total, 0); // PHASE-C has no tasks
 	});
 
-	it("single-sources completeness (FGAP-133): milestone/phase status is NOT reached/complete off task progress alone", () => {
-		// The exact FGAP-133 divergence: a phase authored `in-progress` whose SOLE
+	it("single-sources completeness: milestone/phase status is NOT reached/complete off task progress alone", () => {
+		// The exact divergence: a phase authored `in-progress` whose SOLE
 		// positioned task is `completed`. Task progress rolls up to `complete`, but
 		// the authoritative completeness verdict (`status`) must NOT read complete
 		// off that — the phase is authored in-progress and the milestone is planned.

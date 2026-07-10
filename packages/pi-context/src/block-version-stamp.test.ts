@@ -1,5 +1,5 @@
 /**
- * TASK-073: envelope schema_version activation.
+ * Envelope schema_version activation.
  *
  * The write path stamps `schema_version` onto every versioned-document
  * envelope (generic in writeTypedFile, self-gated on the schema declaring the
@@ -17,7 +17,8 @@
  *     write-gate migrate / write-gate no-chain throw with the block file
  *     byte-unchanged
  *   - append funnel: appendToBlock (typed-file wrapper route) stamps too
- *   - config convergence (FGAP-105 instance): writeConfigForDir persists the
+ *   - config convergence (closing the gap where config never converged its
+ *     persisted schema_version at write time): writeConfigForDir persists the
  *     bundled config schema's version
  */
 

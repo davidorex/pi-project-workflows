@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { type ConfigBlock, mergeCatalogRegistries } from "./context.js";
 
-// Focused unit coverage for the PURE merge helper (TASK-038 — FEAT-006 T5).
+// Focused unit coverage for the PURE merge helper (the additive
+// config-registry propagation slice of `pi-context update`).
 // mergeCatalogRegistries reads each registry's identity field from
 // REGISTRY_DESCRIPTORS (relation_types / block_kinds keyed by canonical_id;
 // invariants / lenses keyed by id) and ADDITIVELY brings catalog-new entries

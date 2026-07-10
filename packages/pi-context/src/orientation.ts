@@ -1,5 +1,8 @@
 /**
- * Eager framework guidance for the in-pi LLM (FGAP-090 / TASK-074).
+ * Eager framework guidance for the in-pi LLM: pi's before_agent_start /
+ * resources_discover eager-injection hooks are wired so the in-pi agent
+ * actually receives framework orientation, rather than operating from bare
+ * tool descriptions alone.
  *
  * The constrained in-pi agent receives no framework orientation today — it
  * operates from tool descriptions alone. This module supplies two pure

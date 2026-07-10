@@ -1,6 +1,6 @@
 /**
- * Deterministic key/path-level draft-07 3-way schema merge (FEAT-006 T3 —
- * TASK-036). Pure, no I/O: given the recorded merge BASE (the installed-from
+ * Deterministic key/path-level draft-07 3-way schema merge. Pure, no I/O:
+ * given the recorded merge BASE (the installed-from
  * baseline schema body), OURS (the currently-installed, locally-edited body),
  * and THEIRS (the catalog's current body), produce a merged body plus the set of
  * irreconcilable per-path conflicts.

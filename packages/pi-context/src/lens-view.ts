@@ -56,7 +56,9 @@ export function loadLensView(cwd: string, lensId: string): LoadedLensView | { er
 		return { error: `Lens '${lensId}' not found in config. Known lenses: ${known}` };
 	}
 
-	// Composition dispatch (FGAP-012): kind="composition" lenses route through
+	// Composition dispatch — the kind="composition" lens variant, added because the
+	// original LensSpec couldn't express cross-block aggregation (multiple blocks in
+	// one view, or composing other lenses): such lenses route through
 	// resolveComposition which walks members[] and returns a unioned item set.
 	// Catches composition_cycle_detected and other resolution errors as { error }.
 	if (lens.kind === "composition") {
@@ -260,7 +262,10 @@ export function edgesForLensByName(cwd: string, lensId: string): Edge[] | { erro
  * under the relation_type, or if relations.json is absent).
  */
 /**
- * FGAP-113 read-side wrong-orientation signal. A closure-table walk under a
+ * Read-side wrong-orientation signal: because edge orientation is not carried
+ * by the relation-type name or any metadata on its own, a caller could
+ * otherwise guess the wrong endpoint with no signal — backwards writes and
+ * silently-empty reads both went undetected. A closure-table walk under a
  * DISJOINT-kind relation (its `source_kinds` and `target_kinds` share no kind and
  * neither is the `"*"` wildcard) is meaningful only from the correct endpoint: a
  * DESCENDANTS walk starts from a SOURCE-kind id (the `edge.parent` / from side); an

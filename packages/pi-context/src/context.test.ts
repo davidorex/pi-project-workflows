@@ -69,7 +69,8 @@ const minimalConfig = (): ConfigBlock => ({
 	],
 });
 
-// ── Installed-asset materialization helpers (FGAP-095 P1 / DEC-0042) ─────────
+// ── Installed-asset materialization helpers (part of the /context start
+// single-entry-point bootstrap state machine, phase 1) ─────────
 
 describe("installed-asset materialization helpers", () => {
 	it("dest-path helpers derive resolveContextDir-relative locations (single source shared with installContext)", () => {
@@ -148,7 +149,9 @@ describe("loadConfig", () => {
 	});
 });
 
-// ── loadConfig migration-aware path (TASK-070 / FGAP-095) ──────────────────
+// ── loadConfig migration-aware path (the load-time config-migration path:
+// reads the config's schema_version and, on mismatch, walks the migration
+// chain forward before validating) ──────────────────
 
 describe("loadConfig: migration-aware version-mismatch path", () => {
 	const laggingConfig = (): ConfigBlock => ({ ...minimalConfig(), schema_version: "1.0.0" });
@@ -411,8 +414,8 @@ describe("walkDescendants", () => {
 
 // ── walkAncestors ───────────────────────────────────────────────────────────
 // Reverse-direction counterpart to walkDescendants; mirrors its cycle-safety
-// and relation-type-filter semantics. Per FGAP-029 partial closure
-// (TASK-036 / sub-phase 2.3) — closure-table parent-direction traversal.
+// and relation-type-filter semantics. Phase 2 sub-phase 2.3 — closure-table
+// parent-direction traversal.
 
 describe("walkAncestors", () => {
 	it("walks a linear ancestor chain (A → B → C → D; ancestors of D = [C, B, A])", () => {
@@ -461,7 +464,7 @@ describe("walkAncestors", () => {
 
 // ── findReferences ──────────────────────────────────────────────────────────
 // Edge-level inspection primitive — returns Edge[] (NOT string[]) for
-// callers that need relation_type + ordinal preserved per record. TASK-037 /
+// callers that need relation_type + ordinal preserved per record.
 // Phase 2 sub-phase 2.4. Coexists with walkAncestors/walkDescendants which
 // return projected id chains; semantic divergence is intentional.
 
@@ -1003,9 +1006,10 @@ describe("loaders degrade gracefully when no .pi-context.json pointer exists (tr
 		assert.deepEqual(loadRelations(tmp), []);
 	});
 
-	// FGAP-074 C3 chokepoint: loadContext calls the throwing configPath/relationsPath
+	// Chokepoint: loadContext calls the throwing configPath/relationsPath
 	// for its mtime cache keys; the top-of-function tryResolveContextDir guard must
-	// degrade to an empty context rather than throw.
+	// degrade to an empty context rather than throw (introduced as part of the
+	// /project→/context source-identifier rename's consumer-migration chunk).
 	it("loadContext returns { config: null, relations: [] } when no pointer exists", (t) => {
 		const tmp = makePointerlessDir("loadcontext");
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));

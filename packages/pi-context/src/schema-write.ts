@@ -3,11 +3,11 @@
  * that live alongside project blocks under `<contextDir>/schemas/`.
  *
  * Closes structurally:
- *   - FGAP-011 (canonical schema-write surface): every schema mutation that
+ *   - Canonical schema-write surface: every schema mutation that
  *     would otherwise reach `.project/schemas/*.schema.json` via direct fs
  *     edits now has a single typed entry point. Direct fs writes remain
  *     possible but are now a parallel ungated path that should be retired
- *     in any future schema mutation per the F-006-bypass-pattern discipline.
+ *     in any future schema mutation per the bypass-pattern discipline.
  *
  * Contract:
  *   - All schemas pass through AJV draft-07 meta-schema validation before
@@ -18,12 +18,14 @@
  *     schema byte-identical.
  *   - Schema files land at `<resolveContextDir(cwd)>/schemas/<schemaName>.schema.json`,
  *     routed through `schemaPath` (context-dir) so write resolution is identical
- *     to read resolution — pointer-canonical, `config.root` is NOT a path input
- *     (FGAP-079 / DEC-0045). Previously based on a config.root-honoring
+ *     to read resolution — pointer-canonical, `config.root` is NOT a path input,
+ *     per the convention that all substrate path resolution (blocks, schemas,
+ *     config, relations; read and write) goes through the single pointer-based
+ *     resolver. Previously based on a config.root-honoring
  *     path-builder, which diverged from the pointer-canonical read side.
  *
  * Out-of-scope for step 3:
- *   - Schema $id + version + $ref + migration registry (FGAP-006, step 4)
+ *   - Schema $id + version + $ref + migration registry (step 4)
  *   - Schema diff / change-log tooling
  *   - Cross-package opinionated mutators (e.g. add-author-fields shorthand)
  */
@@ -277,8 +279,9 @@ export function assertNoNestedIdBearingArray(schema: Record<string, unknown>, la
 /**
  * `<substrateDir>/schemas/<schemaName>.schema.json` — canonical schema path for
  * an EXPLICIT substrate directory, routed through `schemaPathForDir`
- * (context-dir) so write resolution is BYTE-IDENTICAL to read resolution
- * (FGAP-079 / DEC-0045) and inherits its `assertSubstrateName` guard
+ * (context-dir) so write resolution is BYTE-IDENTICAL to read resolution —
+ * the same single pointer-based resolver used for all substrate path
+ * resolution — and inherits its `assertSubstrateName` guard
  * (path-traversal rejection). This is the dir-targeted twin of the cwd-resolved
  * write path; the cwd forms below delegate here via `resolveContextDir(cwd)`,
  * so a cwd call lands BYTE-IDENTICALLY where it did when this routed through the
@@ -396,7 +399,8 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
 
 /**
  * Op-correct create-or-replace of a whole schema body, layered over
- * `writeSchema` (FGAP-077 — the Pi-tool / CLI-facing schema-write op).
+ * `writeSchema` — the Pi-tool / CLI-facing schema-write op that lets
+ * in-pi agents define/evolve block-kind schemas.
  *
  * Where `writeSchema` is an unconditional create-or-overwrite, this surface
  * adds an explicit operation discriminator so a caller's intent (create a NEW
@@ -414,7 +418,7 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
  * draft-07 meta-schema and writes atomically (tmp + rename); this surface adds
  * no second validation or write path.
  *
- * Migration boundary (DECIDED, FGAP-077): this op writes the schema JSON and
+ * Migration boundary (DECIDED): this op writes the schema JSON and
  * meta-validates the schema body. It does NOT migrate existing block items
  * forward when a `replace` changes the schema's `version`. A breaking
  * evolution is handled at READ time by `validateBlockWithMigration`, which

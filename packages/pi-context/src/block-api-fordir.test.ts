@@ -422,7 +422,7 @@ describe("ForDir: writeBlockForDir migrates against the TARGET dir's schema + mi
 		assert.ok(fs.existsSync(path.join(subB, "thing.json")), "v1→v2 write into .subB must land");
 		const landed = readBlockForDir(subB, "thing") as { schema_version: string };
 		// The write path stamps the envelope to the TARGET schema's current
-		// version (TASK-073): the landed block converges to 2.0.0 rather than
+		// version: the landed block converges to 2.0.0 rather than
 		// echoing the writer-supplied v1 claim.
 		assert.strictEqual(landed.schema_version, "2.0.0");
 		// Active .subA untouched.

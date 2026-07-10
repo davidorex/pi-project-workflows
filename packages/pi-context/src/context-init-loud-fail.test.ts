@@ -1,5 +1,6 @@
 /**
- * Tests for initProject's loud-fail-on-mismatch behavior per FGAP-179 / TASK-094 step 3.
+ * Tests for initProject's loud-fail-on-mismatch behavior, part of the
+ * /context switch command family's step 3.
  *
  * Pre-fix behavior: initProject silently ignored its contextDir arg when a
  * .pi-context.json already existed; the dir-scaffolding loop ran against the

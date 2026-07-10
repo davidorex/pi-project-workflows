@@ -9,7 +9,8 @@
  * T7 exercises the rewired initProject through its public surface (the
  * `context-init` registered tool, invoked via a minimal ExtensionAPI stub that
  * captures tool registrations) and asserts the new init copies NO schema/block
- * assets — only scaffolds directories (FGAP-067 / DEC-0011).
+ * assets — only scaffolds directories (init must not impose a catalog; the
+ * package ships no default schemas or block files).
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -91,7 +92,7 @@ describe("adoptConception (accept-all)", () => {
 
 	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {
 		tmpRoot = mkTmp(".context");
-		// init writes a SKELETON config (FGAP-001 / DEC-0001) — empty of vocabulary.
+		// init writes a SKELETON config — empty of vocabulary.
 		initProject(tmpRoot, ".context");
 		const skeleton = loadConfig(tmpRoot);
 		assert.ok(skeleton, "init must write a config");
@@ -171,7 +172,7 @@ describe("adoptConception (accept-all)", () => {
 		assert.ok(fs.existsSync(schemasDir), "schemas dir must be scaffolded");
 		const schemaFiles = fs.readdirSync(schemasDir).filter((f) => f.endsWith(".schema.json"));
 		assert.deepEqual(schemaFiles, [], "init must copy no schema assets");
-		// init writes a SKELETON config.json (FGAP-001 / DEC-0001) plus the seeded
+		// init writes a SKELETON config.json plus the seeded
 		// migrations.json (the catalog's config migration chain); NO block data files.
 		const jsonFiles = fs
 			.readdirSync(substrateDir)

@@ -1,5 +1,5 @@
 /**
- * Tests for the FGAP-060 / DEC-0035 canonical_id rename engine.
+ * Tests for the canonical_id rename engine.
  *
  * Fixture pattern mirrors context.test.ts / context-sdk.test.ts:
  * mkdtemp + writeBootstrapPointer(".project") + raw-write config.json /

@@ -1543,7 +1543,7 @@ describe("readBlockDir", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		const wfDir = setupWorkflowDir(tmpDir);
 		// readBlockDir is a generic subdirectory reader; use a neutral subdir name
-		// (phases are an ordinary array-block since DEC-0028, no longer a subdir).
+		// (phases are an ordinary array-block, no longer a subdir).
 		const itemsDir = path.join(wfDir, "items");
 		fs.mkdirSync(itemsDir);
 		fs.writeFileSync(path.join(itemsDir, "02-second.json"), JSON.stringify({ n: 2 }));
@@ -1601,7 +1601,7 @@ describe("readBlockDir", () => {
 	});
 });
 
-// ── DispatchContext coverage (FGAP-004) ─────────────────────────────────────
+// ── DispatchContext coverage (authorship attestation) ─────────────────────────────────────
 
 // Schema variant of gapsSchema that DOES declare per-item author fields.
 // Used to verify ctx-stamping populates the fields when the schema permits.
@@ -1974,7 +1974,7 @@ describe("DispatchContext — schemas without author fields skip stamping (no AJ
 	});
 });
 
-// FGAP-017 regression: schemas may declare a SUBSET of the four author
+// Regression: schemas may declare a SUBSET of the four author
 // fields. The framework-gaps.schema.json shape (item declares `created_by`
 // only, with `additionalProperties: false`) was the empirical trigger that
 // surfaced the original bug — `stampItem` injected all four fields, and
@@ -2251,7 +2251,7 @@ describe("upsertItemInBlock", () => {
 		// modified_* refreshed under update-mode stamping.
 		assert.strictEqual(afterUpdate.gaps[0].modified_by, "agent/claude-opus-4-7");
 		assert.notStrictEqual(afterUpdate.gaps[0].modified_at, originalModifiedAt);
-		// FGAP-018 closure: upsert update-branch pre-merges declared create-time
+		// Attestation-carry-forward closure: upsert update-branch pre-merges declared create-time
 		// attestation fields from the existing on-disk item when supplied item omits
 		// them. created_* survives replacement; modified_* refreshes per update-mode.
 		assert.strictEqual(afterUpdate.gaps[0].created_by, "agent/claude-opus-4-7");
@@ -2293,7 +2293,7 @@ describe("upsertItemInBlock", () => {
 
 // =============================================================================
 // writeTypedFile / appendToTypedFile — generalised (filePath, schemaPath) surface
-// FGAP-019 closure: the same validated-write surface that fronts .project/<block>.json
+// Closure: the same validated-write surface that fronts .project/<block>.json
 // writes is now reachable for arbitrary file paths + schema paths (e.g. monitor
 // side-car state). The existing block-api primitives wrap it.
 // =============================================================================
@@ -2472,7 +2472,7 @@ describe("wrapper continuity smoke (writeBlock + appendToBlock still byte-identi
 });
 
 // =============================================================================
-// FGAP-020 closure: 6 typed-file find-or-merge primitives reach the validated-
+// Closure: 6 typed-file find-or-merge primitives reach the validated-
 // write surface for arbitrary `(filePath, schemaPath, arrayPath)` triples.
 // 3 of 6 (update / upsert / remove) accept arrayPath = null (top-level array
 // shape, e.g. monitor pattern lists). The 3 nested variants require object-
@@ -2505,10 +2505,10 @@ const sideObjectSchema = {
 };
 
 // Author-bearing variant of the side-object schema — used to exercise the
-// FGAP-018 pre-merge through `upsertItemInTypedFile` with a real schema-path
+// attestation-carry-forward pre-merge through `upsertItemInTypedFile` with a real schema-path
 // declaration outside `.project/`. additionalProperties:false would also work
 // here; omitted to keep the test focused on attestation preservation rather
-// than partial-declaration AJV interactions (covered by the FGAP-017 test).
+// than partial-declaration AJV interactions (covered by the author-subset-fields test).
 const sideObjectAuthoredSchema = {
 	type: "object",
 	required: ["items"],
@@ -2679,12 +2679,12 @@ describe("upsertItemInTypedFile", () => {
 		assert.strictEqual(onDisk[0].severity, "warning");
 	});
 
-	// FGAP-018 regression — pre-merge logic now lives inside upsertItemInTypedFile.
+	// Attestation-carry-forward regression — pre-merge logic now lives inside upsertItemInTypedFile.
 	// On the object-shape side the wrapper test on line ~2128 already proves
 	// preservation of declared created_* through the wrapper; this test asserts the
 	// same on the typed-file primitive directly with an arbitrary (non-.project/)
 	// file path.
-	it("FGAP-018 (object-shape): preserves declared created_* across upsert update when caller omits them", (t) => {
+	it("attestation carry-forward (object-shape): preserves declared created_* across upsert update when caller omits them", (t) => {
 		const tmpDir = makeTmpDir("typed-upsert-fgap-018-obj");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 
@@ -2719,7 +2719,7 @@ describe("upsertItemInTypedFile", () => {
 		assert.strictEqual(afterSecond.items[0].modified_by, "human/david");
 	});
 
-	// FGAP-018 (flat-array) — DOCUMENTED SKIP. The pre-merge logic structurally
+	// Attestation carry-forward (flat-array) — DOCUMENTED SKIP. The pre-merge logic structurally
 	// no-ops for arrayPath = null because `collectArrayItemAuthorDecisions`
 	// never visits a top-level array schema, so the declared-fields lookup
 	// keyed by `__top__` returns the empty set. No current consumer declares
@@ -2973,7 +2973,7 @@ describe("removeFromNestedTypedFile", () => {
 	});
 });
 
-// ── resolveBlockItemSchema + nextId (FGAP-083 / FGAP-084) ─────────────────────
+// ── resolveBlockItemSchema + nextId ($ref-aware id-pattern resolution + canonical id-allocation) ─────────────────────
 
 const inlineGapSchema = {
 	type: "object",

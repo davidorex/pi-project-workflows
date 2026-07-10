@@ -1,5 +1,6 @@
 /**
- * Tests for the op-registry's in-pi DispatchContext construction (TASK-006).
+ * Tests for the op-registry's in-pi DispatchContext construction (writer-identity
+ * threaded through the whole op-execution contract).
  *
  * `buildDispatchContextFromExecute` is the boundary that turns the per-call
  * `params` + `ExtensionContext` into the contract `DispatchContext` threaded as
@@ -58,8 +59,9 @@ test("buildDispatchContextFromExecute handles null/undefined params (agent fallb
 	});
 });
 
-// ── FGAP-009 coverage rule (TASK-007 β / Finding B) ─────────────────────────
-// The coverage RULE is exported as a typed structure γ (TASK-008) consumes
+// ── Op-surface ↔ library-write-surface coverage rule (cli-arc β, Finding B) ─────────────────────────
+// The coverage RULE is exported as a typed structure γ (the
+// library↔op-registry↔orchestrator-script parity/coverage test) consumes
 // instead of re-deriving. These tests pin the contract: the 5 classes are
 // present + documented, and every allowlist entry is well-formed.
 

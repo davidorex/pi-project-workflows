@@ -1,16 +1,19 @@
 /**
  * Completeness guard for STATUS_VOCABULARY_DEFAULTS (sub-unit 2.6D).
  *
- * The going-forward conception (samples/schemas, DEC-0037 canon) is the source
+ * The going-forward conception (samples/schemas, the dogfooded packaged-conception
+ * canon) is the source
  * of truth for status vocabulary. This test reads every status enum declared in
  * those schemas and asserts each value resolves in STATUS_VOCABULARY_DEFAULTS —
  * so a future conception schema that adds an unmapped (or wrongly-unknown)
  * status fails CI rather than silently bucketing to "unknown" and mis-firing
  * the status-consistency invariants / currentState derivation.
  *
- * Scope is the conception only (DEC-0036): retired registry-only vocab is NOT
+ * Scope is the conception only (the substrate re-derives cleanly through
+ * canonical authoring surfaces rather than migrating in place): retired
+ * registry-only vocab is NOT
  * guarded here; substrate-specific vocab is a config.status_buckets concern
- * (DEC-0025), not a framework-defaults concern.
+ * (per the vocabulary-neutral-canon convention), not a framework-defaults concern.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";

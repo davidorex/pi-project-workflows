@@ -4489,6 +4489,38 @@
       "oid": "4bd55123fb550d493f30aa10b471e892",
       "content_hash": "01ff8fb584219acb55c36496e7ea6d500145cee61f72b426704a626969a4221c",
       "content_parent": "8a4b2d6b179ef73a35a5ef17ba4b4a0b546849ab586e300163a0e8163cc0c7a2"
+    },
+    {
+      "title": "Internal tracker-ID citations in code comments are opaque jargon to a reader outside this project, independent of whether the ID still resolves",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-agent-dispatch",
+      "description": "A code comment that cites this project's internal tracker IDs (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, VER-NNN, JI-NNN, etc.) is opaque to any reader without access to the active .context substrate -- a library consumer reading the published @davidorex/pi-agent-dispatch source, or a new contributor. This holds whether or not the cited ID still resolves to the correct current item: a comment citing a currently-valid ID (e.g. FGAP-134, DEC-0023) is exactly as unreadable to that outside reader as one citing a dangling ID, because the reader has no way to look either one up. Staleness (the concern issue-012 originally named) is a distinct, narrower defect from opacity (this gap): a citation can be perfectly accurate and still be jargon-noise. citation-rot-scanner.ts (packages/pi-context/src/citation-rot-scanner.ts) already forbids these ID-shaped tokens from shipped operator-facing surfaces (tool descriptions, thrown error messages, README/markdown bodies, JSON description fields) but its own test suite confirms it deliberately excludes JSDoc and line comments in source -- comments are assumed to be internal-provenance notes, not something that needs policing. scan-comment-citations.ts (TASK-107) enumerates citations in comments but is informational only, not a gate.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/citation-rot-scanner.ts",
+          "reference": "CITATION_RE / scanTsFile scope operator-visible surfaces only (registerTool/Type.X description strings, new *Error() messages, JSON/markdown/yaml bodies); its own test 'does NOT flag JSDoc comments referencing canonical_ids' confirms comments are an intentional exclusion, not an oversight"
+        },
+        {
+          "file": "scripts/scan-comment-citations.ts",
+          "reference": "TASK-107's new tool enumerates every comment-embedded citation across all 7 packages (588 instances, 54 files) but exits 0 unconditionally -- informational, not enforced"
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/call-agent-tool.ts",
+          "reference": "header comment cites FEAT-004/DEC-0044/FEAT-005/TASK-081; all four are genuine, technically-accurate citations to the .project-archived predecessor substrate's items, verified this session -- yet every one is unreadable to a reader without that archive, independent of the fact they also happen to collide with unrelated live-substrate IDs of the same number"
+        },
+        {
+          "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+          "reference": "prior investigation that surfaced issue-012's specific stale-ID instance, narrower than this class"
+        }
+      ],
+      "impact": "Every code comment in this repo's published packages that cites a bare internal tracker ID communicates nothing to a reader outside this project's own .context substrate, regardless of the ID's accuracy. This degrades comment quality across all shipped source (this session's sweep of packages/pi-agent-dispatch/src/*.ts alone found 25 distinct ID citations across 24 files), and the defect recurs every time a comment is authored citing an ID instead of stating its point in plain English -- there is no gate that catches a newly-introduced instance.",
+      "proposed_resolution": "Comments should state the substantive engineering point in plain English instead of a bare ID pointer -- an ID is a pointer for internal PM tracking, not a substitute for explaining the reasoning inline. Eventual enforcement: extend citation-rot-scanner.ts's detection surface to also cover code comments (never fork a second parallel gate -- scan-comment-citations.ts already had to hand-duplicate part of its regex because the scanner's CITATION_RE is unexported with no package subpath), delta-scoped so only a NEWLY-INTRODUCED comment citation in a diff is flagged (per this project's established delta-scoped write-time-invariant pattern) -- a full-repo error-severity gate today would immediately block on the ~500+ pre-existing instances found across all 7 packages. This gate is filed as future work, not built as part of this gap's triggering-instance fix (TASK-108, which rewrites pi-agent-dispatch's own comments as the first concrete instance of the standard).",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "id": "FGAP-136",
+      "oid": "fd846f8be7f6520977bd45b6de15b0ce",
+      "content_hash": "815d04afd6ca4f449a6ee44b763088c7757f9f4d1ac0130f669576d9cbdfb4cb"
     }
   ]
 }

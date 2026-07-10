@@ -1,0 +1,14 @@
+{
+  "title": "De-jargon every internal-tracker-ID citation in pi-agent-dispatch's code comments (fixes issue-012, first instance of FGAP-136)",
+  "status": "planned",
+  "description": "Rewrite every code comment in packages/pi-agent-dispatch/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive engineering point in plain English instead. This closes issue-012 (the frozen .project-era IDs that now collide with unrelated live substrate items) and applies FGAP-136's broader standard (opacity to an outside reader is the defect, independent of whether the ID still resolves correctly) to every citation found in this package, not just the 7 originally named by issue-012. 25 distinct IDs across 24 files (14 source, 10 test) were enumerated and substantively resolved this session (each ID's actual meaning recovered from .project-archived/*.json where stale, or the live .context substrate where still current) -- the implementing agent's brief carries the full substantive-meaning table verbatim so it does not re-derive or guess. Also fixes the literal stale path string '.project/work-orders.json' in run-work-order-loop-tool.ts's tool-parameter description, named explicitly by issue-012's own filed text. Scope is bounded to this one package -- the other 6 packages' remaining ~500 comment-citations (found by scripts/scan-comment-citations.ts, TASK-107) are explicit follow-on work tracked by FGAP-136, not touched here.",
+  "acceptance_criteria": [
+    "Every one of the 25 identified ID citations (FEAT-006, TASK-088, TASK-091, DEC-0044, DEC-0047, DEC-0018, DEC-0014, FEAT-004, FEAT-005, TASK-081, DEC-0023, FGAP-124, FGAP-127, JI-021, FEAT-010, DEC-0002, TASK-086, FGAP-121, TASK-090, FGAP-102, FGAP-134, FGAP-135, FGAP-125, FGAP-136, TASK-094, TASK-059) is replaced with plain-English prose stating the same substantive point, grounded in the recovered meaning (not fabricated, not the unrelated live-substrate collision).",
+    "The literal '.project/work-orders.json' path string in run-work-order-loop-tool.ts is corrected to describe the substrate's work-orders block.",
+    "scripts/scan-comment-citations.ts re-run against packages/pi-agent-dispatch/src finds zero remaining instances of the 25 target IDs in source files.",
+    "A direct grep of the 10 named test files for the same 25 ID patterns finds zero remaining instances.",
+    "Spot-check confirms rewritten comments still accurately describe current code behavior (this session's investigation already verified the surrounding technical claims match current code in every site -- this is a wording substitution, not a behavior audit).",
+    "npm run build + npm run check + npm test exit 0.",
+    "issue-012 is explicitly re-checked against its own filed acceptance criteria at closure and closed if satisfied; not assumed closed merely because this task completed."
+  ]
+}

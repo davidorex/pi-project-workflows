@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Comments across `src/` no longer cite internal tracker IDs (FEAT-/TASK-/DEC-/FGAP-/STORY-NNN forms) — the citations previously present in this package's comments are now plain-English prose describing the same rationale in place. Scoped to this package only; sibling packages are unaffected.
+
 ## [0.33.0] - 2026-07-08
 
 - The reflected op surface gains `context-reconcile` (auth-gated): `--dryRun` previews the exact stored-vs-derived delta set for rollup-declared kinds; a live run converges them through the validated write path. Grouped under Schema & config in `--help`.

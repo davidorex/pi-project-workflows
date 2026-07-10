@@ -829,10 +829,12 @@ test("CLI --json: context-check-status emits the drift report (perAsset + summar
 	}
 });
 
-// STORY-010: read-catalog-schema is a raw-string op — its
-// `--json` envelope carries the VERBATIM catalog schema text as a string (the
-// raw JSON Schema bytes, not the read-samples-catalog projection), so a caller
-// can capture the body and diff it locally. Package-intrinsic: no substrate.
+// An operator needs to fetch the catalog schema body and diff it locally
+// against an installed schema, without digging through node_modules — so
+// read-catalog-schema is a raw-string op: its `--json` envelope carries the
+// VERBATIM catalog schema text as a string (the raw JSON Schema bytes, not
+// the read-samples-catalog projection), so a caller can capture the body and
+// diff it locally. Package-intrinsic: no substrate.
 test("CLI --json: read-catalog-schema carries the verbatim catalog schema text as a string (raw JSON Schema)", async () => {
 	const { code, out } = await captureMainStdout(["read-catalog-schema", "--kind", "tasks", "--json"]);
 	assert.equal(code, 0);
@@ -849,7 +851,7 @@ test("CLI --json: read-catalog-schema carries the verbatim catalog schema text a
 	assert.equal(typeof parsed.$id, "string", "raw schema carries a top-level $id");
 });
 
-// STORY-010: on the TEXT surface read-catalog-schema is
+// For the same local-diffing need, on the TEXT surface read-catalog-schema is
 // declared `verbatimText`, so the CLI emits the raw catalog schema bytes byte-exact
 // — it reproduces the file's own bytes (its single trailing `\n` included) and does
 // NOT append a second newline. The catalog *.schema.json files DO end with a trailing

@@ -3003,6 +3003,14 @@
       ],
       "oid": "a29793ede6e636d4b82bacd3cdbf03ef",
       "content_hash": "a950ae18a0b1faee5ecba8b5a5b74a2d0438aaf473d42fe8ea24fcb9af2fa3d5"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Independently re-verified TASK-117 (remove revision-moved) on branch task-117-remove-revision-moved (commit 3095e9cb) after merge to main (merge commit). Reran: npm run build (clean, all packages), npm run check (biome+tsc, 352 files clean), npm test (0 fail across all packages: pi-context 1271, pi-agent-dispatch 125, pi-behavior-monitors 155, pi-jit-agents 178, pi-workflows 831, pi-context-cli 169), check-changelog.ts exit 0, parity-check.ts exit 0 (82 writers classified, 0 ctx-drops, 0 json-cap bypasses), check-config-schema.ts exit 0. Grep sweep for revision-moved/baseline_sha/resolveGitRefOrNull: zero hits in live code/schema/docs/test surfaces outside expected historical records (.context/tasks.json, .context/framework-gaps.json, .context/verification.json, .context/objects/*.json) and the CHANGELOG removal entry itself. This is an independent re-run of every gate, not a relay of the implementing agents self-report. One residual item found and left OPEN, not part of this verifications pass scope: FEAT-011 (in-progress) acceptance_criteria still names revision-moved as a typed stale_conditions variant; a corrective edit is drafted and pending user provenance grant.",
+      "id": "VER-096",
+      "oid": "9fb299be2c920714344d0badfbbf97c0",
+      "content_hash": "312e94970d56919aec6bd2a0ad2bfe7b4044fff16505e04d5f7fa3f378e9e23f"
     }
   ],
   "schema_version": "1.0.1"

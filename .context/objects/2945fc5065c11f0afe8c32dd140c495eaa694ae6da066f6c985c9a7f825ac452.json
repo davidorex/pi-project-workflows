@@ -1,0 +1,35 @@
+{
+  "title": "revision-moved stale_conditions has no scoping mechanism (fires on any commit reaching a moving ref) and is missing a ref-gone fired-reason arm",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "Follow-on investigation from FGAP-137/TASK-116 (file-changed's line-range scoping fix), examining the sibling stale_conditions kind revision-moved as that closure's own recorded open question. revision-moved is mechanistically distinct from file-changed -- it compares a git ref's resolved commit SHA (resolveGitRefOrNull, block-api.ts/context-sdk.ts) at stamp time vs. evaluation time, not a file/line content hash -- so it does not share file-changed's literal bug. But it shares the same underlying class of concern: it has NO scoping mechanism at all (no lines/path-equivalent), so a ref naming a moving pointer (a development branch, HEAD) fires on the very next unrelated commit, with a strictly larger blast radius than file-changed's pre-fix whole-file hash. The schema neither documents nor enforces a distinction between a fixed/frozen ref (correct use: 'the ref moving IS the invalidating event') and a moving one (imprecise use). The only usage on record anywhere in the codebase -- the shipped test at install-subcommand.test.ts:3928,3964 -- exercises ref:'HEAD', the maximally imprecise case, with no discouraging comment. Separately, revision-moved's evaluation branch (context-sdk.ts evaluateStalenessCandidates) has no now===null arm the way file-changed does (which fires 'file is gone') -- so a deleted or renamed ref silently never fires instead of surfacing as stale, an asymmetric false-negative risk distinct from the scoping question. Zero live substrate items currently use kind:'revision-moved' (confirmed via full grep of .context/research.json and all other block files) -- this is a dormant, unexercised mechanism, not one causing active false positives today, unlike file-changed's confirmed live R-0030 misfire.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/samples/schemas/research.schema.json",
+      "lines": "199-219",
+      "reference": "revision-moved branch declares only kind + ref (required) + baseline_sha (optional) -- no path, no lines, no any scoping-equivalent field"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2558-2564",
+      "reference": "the revision-moved evaluation branch has no now===null arm (unlike file-changed's explicit 'file is gone' fire at 2546-2557) -- an unresolvable ref silently never fires"
+    },
+    {
+      "file": "packages/pi-context/src/install-subcommand.test.ts",
+      "lines": "3928,3964",
+      "reference": "the only shipped usage of revision-moved anywhere, using ref:'HEAD' -- the maximally imprecise usage, treated as the canonical example with no caveat"
+    },
+    {
+      "file": ".context/research.json",
+      "reference": "full grep confirms zero live items use kind:'revision-moved' -- dormant, not actively firing"
+    },
+    {
+      "file": "analysis/2026-07-05-currency-foreclosure-shape.md",
+      "lines": "78",
+      "reference": "S5 introduces revision-moved in the same design pass as file-changed/content_pin with no distinct limitation called out for it"
+    }
+  ],
+  "impact": "If a research (or future framework-gaps, since the evaluator is field-driven/schema-agnostic) item is ever filed using revision-moved with a moving ref, it will fire false-stale on every unrelated subsequent commit with no way to narrow it -- reproducing file-changed's pre-fix imprecision at a larger scope, with no fix precedent applied yet since it has never been exercised live. Separately, the missing ref-gone arm means a deleted/renamed ref produces a silent false negative rather than a stale signal, undermining trust in the mechanism the opposite direction from over-firing.",
+  "proposed_resolution": "Not designed here -- filed as a tracked, examined finding per the user's explicit direction not to leave a class-shared concern as an unexamined narrated note. Candidate directions for a future task to decide between: (a) restrict/document ref to only accept non-moving refs (tags, explicit SHAs) at write time, refusing a moving-branch/HEAD ref as a usage error; (b) add a companion scoping field (e.g. a path the ref's tree must contain unchanged, or a commit-range bound) narrowing what 'moved' means, mirroring file-changed's lines fix; (c) accept the current design as correct-by-convention (a ref citation always means 'as of what this literally resolves to') and instead only fix the missing ref-gone fired-reason arm as a smaller, uncontroversial correction. Since zero live items use this kind, there is no forcing live instance the way R-0030 forced file-changed's fix -- priority and direction are the user's call."
+}

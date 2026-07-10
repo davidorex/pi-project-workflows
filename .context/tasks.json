@@ -2353,7 +2353,7 @@
     {
       "id": "TASK-117",
       "title": "Remove revision-moved stale_conditions kind entirely -- unmotivated LLM-invented mechanism, zero live usage",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Delete the revision-moved stale_conditions kind in full: the oneOf schema branch (research.schema.json, both samples and installed copies, version 1.2.0 -> 1.3.0, identity migration -- confirmed zero live items carry kind:'revision-moved' via direct grep), the resolveGitRefOrNull function (block-api.ts, confirmed via grep to have exactly 2 call sites, both serving only this mechanism), the write-time stamping branch in stampDeclaredBaselines and the evaluation branch in evaluateStalenessCandidates (context-sdk.ts), the 'item-status / file-changed / revision-moved' doc-surface prose in ops-registry.ts's op description, README.md, and skill-narrative.md (regenerate SKILL.md after), and the revision-moved-specific test coverage in install-subcommand.test.ts's declared-baseline-staleness describe block (edited in place, not deleted, since item-status/file-changed coverage in the same it() bodies must survive). A CHANGELOG [Unreleased] entry records the removal. This session's provenance investigation (via claude-history) traced revision-moved to having never been tied to a concrete use case anywhere -- not the 2026-07-05 design doc that proposed it (introduced as the third member of an 'e.g.' list with zero worked example, unlike item-status's fully worked R-0012/FGAP-066 case), not TASK-089's four acceptance criteria (none names or exercises it), not FEAT-011 criterion 6 (names it only as one word in a slash-separated list), not any user message across the originating arc (all broad/mechanism-agnostic directives and terse plan approvals). User's explicit call: this is LLM-invented over-complication, remove it -- the same disposition content_pin received for the identical reason. Fixes FGAP-138 (supersedes its original scope/fix framing with removal).",
       "acceptance_criteria": [
         "research.schema.json's stale_conditions oneOf no longer declares a revision-moved branch, in both the samples and installed copies (kept byte-identical); version bumped 1.2.0 -> 1.3.0 with an identity migration registered.",
@@ -2368,8 +2368,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "8a55eb6051b2bba55e0b4a809449ce67",
-      "content_hash": "4773d033260a47ec7b2952a475c777d8fc2faf1ac26f6909faaaca1955e80319",
-      "content_parent": "e920cd349ca88a1d90d7c2fbfabe610a6052e891dfb2c7fb2cfe29dc82e87f6f"
+      "content_hash": "708b098329b5d49dbe1aed0718e5f4672888ba628cdb68f4ad86dc9c0b401471",
+      "content_parent": "4773d033260a47ec7b2952a475c777d8fc2faf1ac26f6909faaaca1955e80319"
     }
   ],
   "schema_version": "1.0.1"

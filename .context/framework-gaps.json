@@ -4564,7 +4564,7 @@
     },
     {
       "title": "revision-moved stale_conditions has no scoping mechanism (fires on any commit reaching a moving ref) and is missing a ref-gone fired-reason arm",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "Follow-on investigation from FGAP-137/TASK-116 (file-changed's line-range scoping fix), examining the sibling stale_conditions kind revision-moved as that closure's own recorded open question. revision-moved is mechanistically distinct from file-changed -- it compares a git ref's resolved commit SHA (resolveGitRefOrNull, block-api.ts/context-sdk.ts) at stamp time vs. evaluation time, not a file/line content hash -- so it does not share file-changed's literal bug. But it shares the same underlying class of concern: it has NO scoping mechanism at all (no lines/path-equivalent), so a ref naming a moving pointer (a development branch, HEAD) fires on the very next unrelated commit, with a strictly larger blast radius than file-changed's pre-fix whole-file hash. The schema neither documents nor enforces a distinction between a fixed/frozen ref (correct use: 'the ref moving IS the invalidating event') and a moving one (imprecise use). The only usage on record anywhere in the codebase -- the shipped test at install-subcommand.test.ts:3928,3964 -- exercises ref:'HEAD', the maximally imprecise case, with no discouraging comment. Separately, revision-moved's evaluation branch (context-sdk.ts evaluateStalenessCandidates) has no now===null arm the way file-changed does (which fires 'file is gone') -- so a deleted or renamed ref silently never fires instead of surfacing as stale, an asymmetric false-negative risk distinct from the scoping question. Zero live substrate items currently use kind:'revision-moved' (confirmed via full grep of .context/research.json and all other block files) -- this is a dormant, unexercised mechanism, not one causing active false positives today, unlike file-changed's confirmed live R-0030 misfire.",
@@ -4600,7 +4600,10 @@
       "created_at": "2026-07-10",
       "id": "FGAP-138",
       "oid": "3e602c529195d19406484aee27624390",
-      "content_hash": "76ea8f9977454a46726b0875c0cdf5148e20501162f9a7697cbcda8a6d700fa4"
+      "content_hash": "2945fc5065c11f0afe8c32dd140c495eaa694ae6da066f6c985c9a7f825ac452",
+      "closed_by": "TASK-117 / VER-096 — resolution superseded: this gap's proposed_resolution offered 3 candidate directions to fix revision-moved (restrict to non-moving refs; add a scoping field; accept-and-fix-only-the-ref-gone-arm) on the premise the mechanism would be kept. Investigation of its actual provenance (this session, via git log + claude-history) found revision-moved was never tied to a concrete use case anywhere in its history and had zero live substrate usage. Per the user's explicit direction (\"this is all llm invented over-complication\"), the disposition is removal, not repair — the same disposition the unmotivated content_pin mechanism received. TASK-117 deleted the schema oneOf branch (research 1.2.0->1.3.0, identity migration), resolveGitRefOrNull, both stamping/evaluation code branches, and all doc-surface mentions; edited (not deleted) the shared staleness tests to drop only the revision-moved-specific assertions. Independently re-verified (VER-096): build/check/test clean, check-changelog/parity-check/check-config-schema exit 0, grep sweep confirms zero live references outside historical substrate records.",
+      "closed_at": "2026-07-10",
+      "content_parent": "76ea8f9977454a46726b0875c0cdf5148e20501162f9a7697cbcda8a6d700fa4"
     }
   ]
 }

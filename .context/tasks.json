@@ -2213,6 +2213,117 @@
       "oid": "755a1cf49d52af9bcdca0ee5891c76cb",
       "content_hash": "e9a05c6383e9c13e3496fcab3d5a339a513dac4934440361300f4c3f601b1f02",
       "content_parent": "4980b777d2f5d0f92cabfba5b765e78e898aa0060d7dd80be48c3e17d60a0548"
+    },
+    {
+      "id": "TASK-109",
+      "title": "Convert scan-comment-citations.test.ts's live-repo integration cells to synthetic fixtures (FGAP-136 rollout prep)",
+      "status": "planned",
+      "description": "scripts/scan-comment-citations.test.ts's 'scanRepo -- live-repo integration' describe block currently asserts real citations are present in packages/pi-context/src/block-api.ts (FGAP-004, FEAT-011, TASK-089, FGAP-136) and elsewhere in pi-context/src. Once pi-context's own de-jargon task (TASK-110) removes those citations, this assertion goes stale the same way TASK-107's original pin broke during TASK-108 -- the same recurring defect. Fix: convert both cells to synthetic in-memory TS source-string fixtures, matching the file's existing 'scanFile -- synthetic fixtures' describe block, so the test proves the scanner's detection logic without depending on any real citation existing anywhere in the tree. Must merge before TASK-110 through TASK-115 do, since it is the only file any of those six package tasks would otherwise share.",
+      "acceptance_criteria": [
+        "The 'scanRepo -- live-repo integration' describe block's cells assert against synthetic fixture strings, not real file paths or real citations.",
+        "npx tsx --test scripts/scan-comment-citations.test.ts passes.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "ac276fad787ab9bc3d95dffe0a55bbaf",
+      "content_hash": "e7be006a560fa12c962ebadb0ccfa2024d2ab25b6637fa0d9c9b21d9521bd597"
+    },
+    {
+      "id": "TASK-110",
+      "title": "De-jargon every internal-tracker-ID citation in pi-context's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-context/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first (removes the one file this task would otherwise collide on). The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-context/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning (from .project-archived/*.json where the ID is stale, or the live .context substrate where still current) -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-context/src.",
+        "A direct grep of packages/pi-context/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "e57002748a23e7dd576daa1fceac233d",
+      "content_hash": "fbeb1395f8899cc0d17b97e0d7b4d4b47ad928fe38360c947fb804e1a25f063b"
+    },
+    {
+      "id": "TASK-111",
+      "title": "De-jargon every internal-tracker-ID citation in pi-workflows's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-workflows/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-workflows/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-workflows/src.",
+        "A direct grep of packages/pi-workflows/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "7cf38e4857403411d028259dfc89f965",
+      "content_hash": "7c29bd0b914f4abcdb50f9ea05fce863ce50bd77bdf9a0f1282753ad53f983de"
+    },
+    {
+      "id": "TASK-112",
+      "title": "De-jargon every internal-tracker-ID citation in pi-behavior-monitors's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-behavior-monitors/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-behavior-monitors/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-behavior-monitors/src.",
+        "A direct grep of packages/pi-behavior-monitors/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "2bd0d0c03577d850922c40f2de725a2a",
+      "content_hash": "931b46278301227683f790bee1c2c8703d7fdc18a8600891585bce89bce44df8"
+    },
+    {
+      "id": "TASK-113",
+      "title": "De-jargon every internal-tracker-ID citation in pi-jit-agents's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-jit-agents/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-jit-agents/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-jit-agents/src.",
+        "A direct grep of packages/pi-jit-agents/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "8e2ba0182251d0395cedf44b07693432",
+      "content_hash": "6342dc28625d3917d9759bc97dfc1cb59bd44e113578a83a86ed001ccb87c30e"
+    },
+    {
+      "id": "TASK-114",
+      "title": "De-jargon every internal-tracker-ID citation in pi-context-cli's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-context-cli/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-context-cli/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-context-cli/src.",
+        "A direct grep of packages/pi-context-cli/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "cf392f9869e3bde17bcfbf49b7f97e32",
+      "content_hash": "357c7d3abcdaf4873a24346d5448a45f6d4c08adf34ac9b3b5c127a340dde281"
+    },
+    {
+      "id": "TASK-115",
+      "title": "De-jargon every internal-tracker-ID citation in pi-project-workflows's code comments (FGAP-136 rollout)",
+      "status": "planned",
+      "description": "Rewrite every code comment in packages/pi-project-workflows/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself. Also confirm npm run build actually covers this package's own build step before relying on that gate here (unconfirmed coverage) -- add the correct invocation first if it doesn't.",
+      "acceptance_criteria": [
+        "Every internal-tracker-ID citation found in packages/pi-project-workflows/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+        "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-project-workflows/src.",
+        "A direct grep of packages/pi-project-workflows/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+        "npm run build actually builds this package (confirmed, corrected if it previously didn't) + npm run check + npm test exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "51f53c8c344969ee0e113e5153a7614a",
+      "content_hash": "4fa69a2c043193ab3b12b441139d0d392aecbccb76296d537d9c6dc69fcb6e7d"
     }
   ],
   "schema_version": "1.0.1"

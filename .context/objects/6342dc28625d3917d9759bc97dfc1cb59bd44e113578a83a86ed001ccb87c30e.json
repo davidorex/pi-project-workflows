@@ -1,0 +1,11 @@
+{
+  "title": "De-jargon every internal-tracker-ID citation in pi-jit-agents's code comments (FGAP-136 rollout)",
+  "status": "planned",
+  "description": "Rewrite every code comment in packages/pi-jit-agents/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
+  "acceptance_criteria": [
+    "Every internal-tracker-ID citation found in packages/pi-jit-agents/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
+    "npx tsx scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-jit-agents/src.",
+    "A direct grep of packages/pi-jit-agents/src's *.test.ts files for the same ID patterns shows zero remaining instances.",
+    "npm run build + npm run check + npm test exit 0."
+  ]
+}

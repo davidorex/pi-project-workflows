@@ -10929,5 +10929,31 @@
       "refname": "TASK-117"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "a7bb2b580a306ead6e4f64039e9092f9",
+      "refname": "TASK-103"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b473e28e5449a77db7470101067ba183",
+      "refname": "FEAT-014"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "f07c4fbfc8c2151a2f021b30b3248c52",
+      "refname": "DEC-0022"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b473e28e5449a77db7470101067ba183",
+      "refname": "FEAT-014"
+    },
+    "relation_type": "decision_addresses_feature"
   }
 ]

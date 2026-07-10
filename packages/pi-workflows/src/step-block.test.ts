@@ -709,10 +709,14 @@ describe("block step: removeNested", () => {
 	});
 });
 
-// ── DispatchContext stamping (TASK-006) ──────────────────────────────────────
+// ── DispatchContext stamping ──────────────────────────────────────────────
 // A block append performed by a workflow step must stamp created_by as
 // `workflow/<stepName>` on schemas that declare author fields. The step name
-// (the workflow_step_id) flows through executeBlock → wctx → block-api.
+// (the workflow_step_id) flows through executeBlock → wctx → block-api. This
+// is the pi-workflows half of a broader change that threaded a "who is
+// performing this write" identity (a dispatch context carrying the caller's
+// verified identity) through every block-write operation handler, replacing
+// handlers that had previously dropped that identity information.
 describe("block step: DispatchContext attestation", () => {
 	it("append stamps created_by = workflow/<stepName> on an attested-required schema", () => {
 		const projectDir = path.join(tmpDir, ".project");

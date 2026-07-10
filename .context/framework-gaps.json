@@ -4524,6 +4524,40 @@
       "closed_by": "TASK-108 (pi-agent-dispatch, triggering instance) plus the rollout: TASK-109 (scanner regression-test fix) through TASK-115 (all 6 remaining packages). Every internal-tracker-ID comment citation across the monorepo (588 originally enumerated by scripts/scan-comment-citations.ts) is now plain-English prose, except pi-project-workflows (TASK-115, verified zero citations, no-op) and a handful of deliberately-excluded non-citations (ID-shape pattern descriptions, illustrative placeholder examples) explicitly named in each package's meaning-table. The proposed delta-scoped extension of citation-rot-scanner.ts to gate future comment citations remains unbuilt -- filed here as future work, not part of this closure.",
       "closed_at": "2026-07-10",
       "content_parent": "815d04afd6ca4f449a6ee44b763088c7757f9f4d1ac0130f669576d9cbdfb4cb"
+    },
+    {
+      "title": "The file-changed stale_conditions kind shares content_pin's exact removed defect (whole-file hash fires on any edit, not the cited region) -- never cross-examined when content_pin was removed",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "description": "TASK-106 removed content_pin/anchor-drift specifically because it 'fires anchor-drift on ANY edit to a cited file regardless of whether the cited region changed, manufacturing false-positive drift and re-review debt.' The sibling file-changed stale_conditions kind was explicitly kept ('keep file-changed baseline_hash ... stamping') but pins the SAME whole-file SHA-256 (computeFileBytesHash) at both stamp time (block-api.ts stampDeclaredBaselines) and evaluation time (context-sdk.ts evaluateStalenessCandidates) -- so it fires on any edit anywhere in the cited file, exactly the defect content_pin was removed for. This project's binding gap-explore-surfaces-class convention requires asking 'is this an instance of a more general class' during gap investigation; that question was asked richly for content_pin's own history but never asked in the reverse direction (does file-changed share this class). Confirmed by reading TASK-106's filed text, its implementing commits (73b19bca, f330a523), the preceding forensic analysis (analysis/2026-07-08-anchor-drift-provenance.md, which never mentions file-changed), and the origin design report (analysis/2026-07-05-currency-foreclosure-shape.md, which introduces both mechanisms in the same design pass without ever comparing their false-positive risk). Live-fired instance: a 2026-07-10 currency audit found R-0030 (research, status complete) flagged stale because packages/pi-workflows/src/workflow-sdk.ts changed -- but the actual edit (TASK-111, comment-only de-jargon) never touched the cited lines (483-492,597-614,651-652).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "705-717",
+          "reference": "fileHashOrNull computes computeFileBytesHash(abs) -- whole-file bytes, no line-range parameter anywhere in the call chain"
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "2511-2547",
+          "reference": "evaluateStalenessCandidates' file-changed branch compares computeFileBytesHash(now) against baseline_hash with zero range awareness -- identical whole-file comparison"
+        },
+        {
+          "file": "analysis/2026-07-08-anchor-drift-provenance.md",
+          "reference": "the forensic investigation preceding TASK-106's filing analyzes content_pin's provenance/defect in depth but contains zero mentions of file-changed (confirmed via grep) -- the class question was never asked in reverse"
+        },
+        {
+          "file": ".context/research.json",
+          "reference": "R-0030's stale_conditions carries 7 file-changed entries at whole-file baseline_hash; 5 of its 7 sibling citations[] entries carry line ranges (e.g. workflow-sdk.ts: '483-492,597-614,651-652') that were never consulted when stamping the condition"
+        }
+      ],
+      "impact": "Every research item using file-changed stale_conditions is subject to false-positive staleness flags on any edit anywhere in a cited file, including comment-only or unrelated changes -- degrading trust in the currency-audit signal (a real drift and a cosmetic edit look identical) and creating re-review debt identical to what content_pin's removal was meant to eliminate.",
+      "proposed_resolution": "Add an optional lines field to the file-changed stale_conditions branch (research.schema.json, additive, schema 1.1.0 -> 1.2.0, identity migration). When lines is present, stamp and evaluate using a new line-range-scoped hash (computeFileLineRangeHash) instead of the whole-file hash; when absent, keep whole-file behavior unchanged (some citations have no narrower region to scope to). State the residual limitation explicitly: this is line-number-based, not content-anchored, so an unrelated edit earlier in the file that shifts line numbers can still mis-fire -- a smaller-scope version of the same imprecision, not a total fix. Correct R-0030's own live-fired entries by adding lines from its sibling citations[] entries where available and re-stamping baseline_hash under the new algorithm, through the sanctioned write path only.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "id": "FGAP-137",
+      "oid": "9f6a7216b04640499b90a1657396e9ad",
+      "content_hash": "9b32cc311ecdc89559ab8a44be7f967e266521f25fa6f78461f5acda0a02753c"
     }
   ]
 }

@@ -2329,6 +2329,26 @@
       "oid": "51f53c8c344969ee0e113e5153a7614a",
       "content_hash": "3fc665607735f6d3d5639fc35040c64931bb6f5f0d5bd8119b367bf1cdf56bd2",
       "content_parent": "7dfc63abc8cd48f0d708a9c1499f19c1ae5a8180d04bea894d9a475c7507237d"
+    },
+    {
+      "id": "TASK-116",
+      "title": "Scope file-changed stale_conditions to the cited line range instead of whole-file hash",
+      "status": "in-progress",
+      "description": "Add an optional lines field to the file-changed stale_conditions schema branch (research.schema.json, additive, 1.1.0 -> 1.2.0, identity migration -- no data transform needed). Add a new computeFileLineRangeHash helper (packages/pi-context/src/content-hash.ts) that parses a comma-separated lines spec (e.g. '483-492,597-614,651-652'), extracts and hashes only those lines' content. Wire it into block-api.ts's stampDeclaredBaselines and context-sdk.ts's evaluateStalenessCandidates: when a file-changed condition carries lines, use the line-scoped hash; when absent, keep the existing whole-file hash unchanged. State the residual limitation explicitly in code comments and at closure: this is line-number-based, not content-anchored, so an unrelated edit earlier in the file that shifts line numbers can still mis-fire -- a smaller-scope version of the prior imprecision, not a total fix. Also correct R-0030's own live-fired stale_conditions entries (the triggering instance): add lines from its sibling citations[] entries where available (5 of its 7 file-changed entries have a matching citations[] lines value) and re-stamp baseline_hash under the new algorithm via the sanctioned write path (update-block-item), never a direct edit. Fixes FGAP-137.",
+      "acceptance_criteria": [
+        "research.schema.json's file-changed branch declares an optional lines field (type string, no pattern, matching the existing citations[].lines/evidence[].lines convention); schema version bumped 1.1.0 -> 1.2.0 with an identity migration registered.",
+        "computeFileLineRangeHash exists, correctly parses comma-separated N and N-M segments, and produces a deterministic hash over only the referenced lines' content.",
+        "stampDeclaredBaselines and evaluateStalenessCandidates both use the line-scoped hash when lines is present on a file-changed condition, and the unchanged whole-file hash when it is absent.",
+        "Runtime demo (load-bearing, not just R-0030 looking clean): a fresh file-changed condition with lines set, an edit OUTSIDE that range does NOT fire the condition, an edit INSIDE that range DOES fire it.",
+        "R-0030's stale_conditions updated through update-block-item: the 5 entries with a matching citations[] lines value carry that lines value and a freshly-stamped baseline_hash under the new algorithm; the 2 entries with no matching lines are left as whole-file conditions, unchanged. R-0030's status remains complete (not transitioned to stale) -- the substantive findings were never in question.",
+        "npx tsx scripts/check-context-currency.ts and pi-context context-validate --json no longer report R-0030 as a staleness-candidate.",
+        "npm run build + npm run check + npm test (+ check-changelog + parity-check + check-config-schema) all exit 0."
+      ],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10",
+      "oid": "649f40c0a51c5768e6af95f67464767f",
+      "content_hash": "273cca31846adaed5eea860ba3536abdd7423663862b11b53f6a6cd164787335",
+      "content_parent": "0e7ebc7b507e0f1d1182912ed0603d4a7839315c32fc502842206ab169edf018"
     }
   ],
   "schema_version": "1.0.1"

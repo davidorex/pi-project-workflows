@@ -10747,5 +10747,18 @@
       "refname": "gap-explore-surfaces-class"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "be30681cb82944bbacdb7d1f52aca7de",
+      "refname": "VER-088"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "ac276fad787ab9bc3d95dffe0a55bbaf",
+      "refname": "TASK-109"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

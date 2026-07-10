@@ -2775,6 +2775,32 @@
       ],
       "oid": "f2ddd7f5bc684c09b4202984b0ce970f",
       "content_hash": "517e323761bc778a85fc150efdf96a24b53d26f81fe64411f9e7ad0df722c054"
+    },
+    {
+      "id": "VER-088",
+      "status": "passed",
+      "method": "test",
+      "timestamp": "2026-07-10",
+      "evidence": "Runtime demo, independently re-run by the orchestrator: npx tsx --test scripts/scan-comment-citations.test.ts on the merged main branch -- 12/12 cells pass across 4 suites (classifyComment, scanFile synthetic fixtures, scanRepo synthetic fixtures directory-walk+aggregation, scanRepo full monorepo run). The scanRepo synthetic-fixtures block replaces the prior real-file-dependent live-repo integration cells with 3 cells built on a temp-directory helper (makeTempRepo/removeTempRepo) mirroring the existing scanFile fixture style: full-entry-point citation finding, repeated-id aggregation across files, and node_modules/dist/*.test.ts exclusion coverage (a check the removed real-repo cells never isolated). No dependency remains on any specific real citation's continued existence in any package -- the conflict class that broke TASK-107's original pin during TASK-108 cannot recur for TASK-110 through TASK-115.",
+      "criteria_results": [
+        {
+          "criterion": "The 'scanRepo -- live-repo integration' describe block's cells assert against synthetic fixture strings, not real file paths or real citations.",
+          "status": "passed",
+          "evidence": "Block renamed to 'scanRepo -- synthetic fixtures (directory-walk + aggregation)'; all 3 cells use makeTempRepo-constructed temp directories, zero references to real package file paths."
+        },
+        {
+          "criterion": "npx tsx --test scripts/scan-comment-citations.test.ts passes.",
+          "status": "passed",
+          "evidence": "12/12 pass, independently re-run by the orchestrator on merged main."
+        },
+        {
+          "criterion": "npm run build + npm run check + npm test exit 0.",
+          "status": "passed",
+          "evidence": "Husky pre-commit gate passed on the implementing commit (d4397f31) and the merge introduces no new failures."
+        }
+      ],
+      "oid": "be30681cb82944bbacdb7d1f52aca7de",
+      "content_hash": "780c7cf1c8bcfddd0d503964d768d0a428640a02212a492dc5c6f306df7e3d74"
     }
   ],
   "schema_version": "1.0.1"

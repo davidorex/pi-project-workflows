@@ -1,0 +1,10 @@
+{
+  "title": "Convert scan-comment-citations.test.ts's live-repo integration cells to synthetic fixtures (FGAP-136 rollout prep)",
+  "status": "in-progress",
+  "description": "scripts/scan-comment-citations.test.ts's 'scanRepo -- live-repo integration' describe block currently asserts real citations are present in packages/pi-context/src/block-api.ts (FGAP-004, FEAT-011, TASK-089, FGAP-136) and elsewhere in pi-context/src. Once pi-context's own de-jargon task (TASK-110) removes those citations, this assertion goes stale the same way TASK-107's original pin broke during TASK-108 -- the same recurring defect. Fix: convert both cells to synthetic in-memory TS source-string fixtures, matching the file's existing 'scanFile -- synthetic fixtures' describe block, so the test proves the scanner's detection logic without depending on any real citation existing anywhere in the tree. Must merge before TASK-110 through TASK-115 do, since it is the only file any of those six package tasks would otherwise share.",
+  "acceptance_criteria": [
+    "The 'scanRepo -- live-repo integration' describe block's cells assert against synthetic fixture strings, not real file paths or real citations.",
+    "npx tsx --test scripts/scan-comment-citations.test.ts passes.",
+    "npm run build + npm run check + npm test exit 0."
+  ]
+}

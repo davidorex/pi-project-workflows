@@ -669,9 +669,12 @@ const extension = (pi: ExtensionAPI) => {
 				source: w.source,
 			}));
 
-			// FGAP-089: route through the shared serializer (no parallel truncation
-			// path). Edge surface — no finer addressing tool → head-leading marked
-			// partial on over-cap.
+			// Route through the shared serializeForRead helper rather than a
+			// one-off truncation, so an over-cap response degrades the same way
+			// everywhere. This result list has no narrower drill-down tool, so
+			// there is no finer address to redirect the caller to: an over-cap
+			// read returns a clearly marked head-truncated partial instead of
+			// silently dropping data.
 			const envelope = serializeForRead(items, { label: "workflows" });
 			return {
 				details: undefined,
@@ -706,9 +709,11 @@ const extension = (pi: ExtensionAPI) => {
 				if (!agent) {
 					throw new Error(`Agent '${params.name}' not found. Available: ${agents.map((a) => a.name).join(", ")}`);
 				}
-				// FGAP-089: a single agent spec is already the addressed element —
-				// whole (don't page intrinsic arrays); over-cap on one agent has no
-				// finer addressing → head-leading marked partial.
+				// Routed through the shared serializeForRead helper. A single agent
+				// addressed by name is already the "edge" object — the one item the
+				// caller asked for — so there is no narrower address to redirect to;
+				// an over-cap response here returns a clearly marked head-truncated
+				// partial instead of silently dropping data.
 				const envOne = serializeForRead(agent, { whole: true, label: `agent ${params.name}` });
 				return {
 					details: undefined,
@@ -730,7 +735,10 @@ const extension = (pi: ExtensionAPI) => {
 				taskTemplate: a.taskTemplate,
 			}));
 
-			// FGAP-089: the agent list narrows to one agent via name=<agent>.
+			// Routed through the shared serializeForRead helper. Unlike the
+			// single-agent case above, a narrower address does exist here — the
+			// full agent list can be narrowed via name=<agent> — so an over-cap
+			// response points the caller at that narrower query.
 			const envelope = serializeForRead(items, {
 				label: "agents",
 				overCapDirective: { tool: "workflow-agents", hint: "name=<agent>" },
@@ -766,8 +774,10 @@ const extension = (pi: ExtensionAPI) => {
 				throw new Error(`Workflow '${params.name}' not found. Available workflows: ${listWorkflowNames(ctx.cwd)}`);
 			}
 
-			// FGAP-089: validation results — edge surface (no finer addressing) →
-			// head-leading marked partial on over-cap.
+			// Routed through the shared serializeForRead helper. Validation results
+			// have no narrower drill-down tool, so there is no finer address to
+			// redirect to; an over-cap response returns a clearly marked
+			// head-truncated partial instead of silently dropping data.
 			const envelope = serializeForRead(results, { label: "validation results" });
 			return {
 				details: undefined,
@@ -794,8 +804,11 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const status = gatherWorkflowStatus(ctx.cwd);
 
-			// FGAP-089: a structured vocabulary object — edge surface (no finer
-			// addressing) → head-leading marked partial on over-cap.
+			// Routed through the shared serializeForRead helper. This is a small
+			// structured object with no narrower drill-down tool, so there is no
+			// finer address to redirect to; an over-cap response returns a
+			// clearly marked head-truncated partial instead of silently dropping
+			// data.
 			const envelope = serializeForRead(status, { whole: true, label: "workflow status" });
 			return {
 				details: undefined,
@@ -822,8 +835,10 @@ const extension = (pi: ExtensionAPI) => {
 		): Promise<AgentToolResult<undefined>> {
 			const result = initWorkflowDirs(ctx.cwd);
 
-			// FGAP-089: init result — edge surface (no finer addressing) →
-			// head-leading marked partial on over-cap.
+			// Routed through the shared serializeForRead helper. This init result
+			// has no narrower drill-down tool, so there is no finer address to
+			// redirect to; an over-cap response returns a clearly marked
+			// head-truncated partial instead of silently dropping data.
 			const envelope = serializeForRead(result, { whole: true, label: "workflow init" });
 			return {
 				details: undefined,

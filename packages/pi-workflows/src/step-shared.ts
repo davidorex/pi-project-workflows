@@ -160,11 +160,16 @@ export function compileAgentSpec(
 		typeof resolvedInput === "object" && resolvedInput !== null ? (resolvedInput as Record<string, unknown>) : {};
 
 	// Inject block data into template context when contextBlocks is declared.
-	// tryResolveContextDir returns null when no .pi-context.json pointer exists at
-	// cwd (DEC-0015 strict resolver) — treat as "no substrate, skip injection"
-	// rather than propagating the throw. A malformed pointer / read failure still
-	// throws from within the primitive. Same intent as the audit-fix cluster
-	// D-B-3/D-B-4 absent-substrate-catch at commit 7cd3c6c.
+	// tryResolveContextDir(cwd) returning null means there is no
+	// .pi-context.json bootstrap pointer at that directory — i.e. no substrate
+	// has been set up there at all. That specific case (pointer absent) is
+	// treated as "no substrate, skip injection" rather than propagated as an
+	// error, matching this project's rule that substrate location is resolved
+	// exclusively through a config pointer file rather than a hardcoded
+	// directory name. Only the missing-pointer case is swallowed this way — a
+	// malformed pointer file or a read failure inside the resolver itself
+	// still throws normally. Same intent as the audit-fix cluster D-B-3/D-B-4
+	// absent-substrate-catch at commit 7cd3c6c.
 	if (agentSpec.contextBlocks && agentSpec.contextBlocks.length > 0 && cwd) {
 		const projectDirPath = tryResolveContextDir(cwd);
 		if (projectDirPath !== null && fs.existsSync(projectDirPath)) {

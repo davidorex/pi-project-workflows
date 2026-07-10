@@ -4,6 +4,8 @@ All notable changes to `@davidorex/pi-workflows` are recorded here. Format follo
 
 ## [Unreleased]
 
+- Comments across `src/` no longer cite internal tracker IDs (FEAT-/TASK-/DEC-/FGAP-NNN forms) — the citations previously present in this package's comments are now plain-English prose describing the same rationale in place. Scoped to this package only; sibling packages are unaffected.
+
 ## [0.33.0] - 2026-07-08
 
 - The bundled `phase-author` agent spec's `output.schema` reference is now `schemas/phase.schema.json` (a path relative to the spec, resolved via the package-root sibling `schemas/` convention that the other bundled schema-bearing specs use) rather than `../../.workflow/schemas/phase.schema.json`. The prior value pointed outside the package to a path that does not resolve in a published checkout, so the spec's phantom validation tool could not read its schema when dispatched through `call-agent`; the sibling-relative reference lets the schema resolve to the bundled `schemas/phase.schema.json` on disk. With this, all schema-bearing bundled specs' relative output-schema refs resolve via the sibling convention and dispatch through `call-agent`.

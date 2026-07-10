@@ -43,8 +43,10 @@ const REQUIREMENTS_SCHEMA_SRC = path.resolve(
 	"requirements.schema.json",
 );
 
-// Templates relocated to pi-jit-agents per DEC-0049; resolve via package-layer
-// bundledTemplateDir() rather than hand-built ../templates/ arithmetic.
+// Agent-prompt templates now live entirely in the pi-jit-agents package (this
+// package keeps no per-consumer copy of template-resolution logic), so resolve
+// via package-layer bundledTemplateDir() rather than hand-built ../templates/
+// arithmetic.
 const TEMPLATES_ROOT = bundledTemplateDir();
 const MACROS_SRC = path.join(TEMPLATES_ROOT, "shared", "macros.md");
 const RENDER_HELPERS_SRC = path.join(TEMPLATES_ROOT, "shared", "render-helpers.md");

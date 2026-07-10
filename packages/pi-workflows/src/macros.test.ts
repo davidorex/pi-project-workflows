@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import nunjucks from "nunjucks";
 
-// Templates relocated to pi-jit-agents per DEC-0049; resolve via canonical
-// package-layer bundledTemplateDir() rather than hand-built ../templates/ path.
+// Agent-prompt templates now live entirely in the pi-jit-agents package (this
+// package keeps no per-consumer copy of template-resolution logic), so resolve
+// via canonical package-layer bundledTemplateDir() rather than hand-built
+// ../templates/ path.
 const templatesDir = bundledTemplateDir();
 const env = new nunjucks.Environment(new nunjucks.FileSystemLoader(templatesDir), {
 	autoescape: false,

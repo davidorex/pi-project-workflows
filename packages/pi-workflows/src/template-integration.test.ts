@@ -7,9 +7,10 @@ import { bundledTemplateDir } from "@davidorex/pi-jit-agents/template";
 import { createTemplateEnv, renderTemplateFile } from "./template.js";
 
 describe("analyzer template inheritance", () => {
-	// Templates relocated to pi-jit-agents per DEC-0049; resolve via
-	// canonical package-layer bundledTemplateDir() rather than hand-built
-	// ../templates/ path.
+	// Agent-prompt templates now live entirely in the pi-jit-agents package
+	// (this package keeps no per-consumer copy of template-resolution logic),
+	// so resolve via canonical package-layer bundledTemplateDir() rather than
+	// hand-built ../templates/ path.
 	const builtinDir = bundledTemplateDir();
 
 	it("structure analyzer inherits base and overrides blocks", () => {

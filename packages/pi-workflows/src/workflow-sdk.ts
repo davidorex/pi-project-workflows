@@ -614,10 +614,12 @@ export function validateWorkflow(spec: WorkflowSpec, cwd: string): ValidationRes
 	}
 
 	// 7c. contextBlocks existence — do declared context blocks exist in the substrate dir?
-	// No .pi-context.json bootstrap pointer → substrate not set up; tryResolveContextDir
-	// returns null and contextBlocks are treated as absent (restores prior PROJECT_DIR
-	// string behavior, which never threw). Only the missing-pointer case degrades; a
-	// malformed pointer / read failure still throws from within the primitive. DEC-0015.
+	// tryResolveContextDir(cwd) returning null means there is no .pi-context.json
+	// bootstrap pointer at that directory — i.e. no substrate has been set up
+	// there at all — so contextBlocks are treated as absent (restores prior
+	// PROJECT_DIR string behavior, which never threw). Only that
+	// missing-pointer case degrades this way; a malformed pointer file or a
+	// read failure inside the resolver itself still throws normally.
 	const projectDirPath = tryResolveContextDir(cwd);
 	const projectDirExists = projectDirPath !== null && fs.existsSync(projectDirPath);
 

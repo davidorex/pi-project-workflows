@@ -854,10 +854,13 @@ export async function executeWorkflow(
 		};
 
 		// Resolve the substrate-dir prefix once for artifact block-target classification.
-		// Graceful on a missing .pi-context.json pointer (DEC-0015): tryResolveContextDir
-		// returns null → no substrate → no artifact is a block target. Only the
-		// missing-pointer case degrades; a malformed pointer / read failure still throws
-		// from within the primitive. Mirrors the absent-substrate path in step-shared.ts.
+		// tryResolveContextDir(cwd) returning null means there is no
+		// .pi-context.json bootstrap pointer at that directory — i.e. no
+		// substrate has been set up there at all — so no artifact is a block
+		// target. Only that missing-pointer case degrades this way; a
+		// malformed pointer file or a read failure inside the resolver itself
+		// still throws normally. Mirrors the absent-substrate path in
+		// step-shared.ts.
 		const r = tryResolveContextDir(ctx.cwd);
 		const substratePrefix: string | null = r === null ? null : r + path.sep;
 

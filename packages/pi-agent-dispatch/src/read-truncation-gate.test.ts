@@ -242,7 +242,8 @@ describe("read-truncation-gate — TruncationResult variant: truncatedBy='bytes'
 		// On a bytes-variant truncation, outputLines reflects whole lines that fit; the
 		// directive's continuation hint still uses that value.
 		assert.match(text, /offset=50/, "nextOffset (=outputLines=50) rendered in continuation hint");
-		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): truncatedBy='bytes'
+		// Corrected behavior (the read-truncation refusal-directive fix's handling
+		// of the bytes-cap case): truncatedBy='bytes'
 		// surfaces an explicit BYTES-cap signal + warns that paginating-by-lines
 		// may again exceed the byte cap on the next page. Without this, the agent
 		// can loop offset=50 -> offset=100 -> ... hitting the same byte ceiling
@@ -302,7 +303,8 @@ describe("read-truncation-gate — TruncationResult variant: firstLineExceedsLim
 		assert.match(text, /1 lines/, "totalLines=1 rendered");
 		assert.match(text, /0 bytes/, "outputBytes=0 rendered");
 		assert.match(text, /95000 bytes/, "totalBytes=95000 rendered");
-		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): when firstLineExceedsLimit=true,
+		// Corrected behavior (the read-truncation refusal-directive fix's handling
+		// of the first-line-exceeds-limit case): when firstLineExceedsLimit=true,
 		// pagination via `offset=N` is operationally meaningless (offset=0 re-fires the
 		// same truncation; offset>=1 jumps past the unreadable line losing its content).
 		// The directive MUST NOT surface an `offset=...` continuation hint for this
@@ -364,7 +366,8 @@ describe("read-truncation-gate — TruncationResult variant: lastLinePartial=tru
 		assert.match(text, /2000 lines/, "outputLines=2000 rendered");
 		assert.match(text, /5000 lines/, "totalLines=5000 rendered");
 		assert.match(text, /offset=2000/, "nextOffset (=outputLines=2000) rendered in continuation hint");
-		// Corrected behavior (FGAP-135 CHECK 11 PARTIAL fix): lastLinePartial=true
+		// Corrected behavior (the read-truncation refusal-directive fix's handling
+		// of the partial-last-line case): lastLinePartial=true
 		// signals the last returned line was cut mid-content (mid-JSON-object, mid-
 		// source-expression, mid-log-entry). The directive MUST surface this so the
 		// agent does not trust the terminal characters of the returned content.

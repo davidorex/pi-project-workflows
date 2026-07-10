@@ -1,5 +1,8 @@
 /**
- * Subprocess dispatch for the work-order loop (FGAP-124).
+ * Subprocess dispatch for the work-order loop — in-process dispatch can't
+ * execute tools (pi-jit-agents' executeAgent is a single-turn completion
+ * primitive binding none), so real tool execution requires a `pi`
+ * subprocess.
  *
  * The work-order loop's target agent must ACT — write files, run bash — not
  * merely produce structured output. pi-jit-agents `executeAgent` is a
@@ -15,8 +18,9 @@
  * loop needs: build args, spawn `pi --mode json`, stream NDJSON stdout,
  * collect the final assistant text + usage, with timeout + cancellation.
  *
- * pi-jit-agents stays the classify / structured-output primitive per JI-021;
- * the acting-agent dispatch is a subprocess.
+ * pi-jit-agents is used directly as a library here, never wrapped by an
+ * intermediating extension, staying the classify / structured-output
+ * primitive; the acting-agent dispatch is a subprocess.
  */
 
 import { spawn } from "node:child_process";
@@ -45,7 +49,8 @@ export interface DispatchArgsParams {
 	 * `provider/id[:thinking]`). Optional: when omitted the `--model` flag is not
 	 * emitted at all, so pi resolves its own default model inside the subprocess
 	 * (the fall-through the dispatch-model resolution takes when neither the spec
-	 * nor the model-config block names a model — DEC-0023).
+	 * nor the model-config block names a model, per this project's dispatch
+	 * model-resolution precedence).
 	 */
 	model?: string;
 	/** Composed tool grant (already intersected at the dispatch boundary). */

@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Comments across `src/` no longer cite internal tracker IDs (FEAT-/TASK-/DEC-/FGAP-/JI-NNN forms) — the ~26 citations previously present in this package's comments are now plain-English prose describing the same rationale in place. Scoped to this package only; sibling packages are unaffected.
+
 ## [0.33.0] - 2026-07-08
 
 - Bundled agent-spec RESOLUTION from a fresh substrate: both dispatch loaders supply pi-workflows' bundled `agents/` directory as the LAST search tier (via `dispatchLoadContext(cwd)` in `dispatch-loader.ts`, consuming pi-workflows' `./bundled-dirs` subpath export); resolution order ahead of it is unchanged (substrate `agents/`, then `~/.pi/agent/agents/`, then bundled), so a local or user spec of the same name still wins. pi-behavior-monitors' classifier specs remain deliberately off this path (monitor-scoped via that package's own loader).

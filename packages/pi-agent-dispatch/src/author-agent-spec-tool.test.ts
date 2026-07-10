@@ -42,7 +42,8 @@ describe("authorAgentSpecTool", () => {
 	});
 
 	it("body trusts writer field as-is (auth-gate at pi-dispatch is the canonical identity check); writer.kind=agent passes through to the persistence path without throwing", async () => {
-		// This assertion encodes the canonical model post-FGAP-134: the
+		// This assertion encodes the canonical model, now that the dispatch-layer
+		// writer-identity gate exists: the
 		// tool body does not re-check writer.kind. The auth-gate handler
 		// on pi.on('tool_call') is the structural identity check; once
 		// the operator has authorized, the body trusts whatever writer

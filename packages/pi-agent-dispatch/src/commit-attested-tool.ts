@@ -1,9 +1,12 @@
 /**
  * commit-attested Pi tool — stages declared files + invokes git commit
- * with a writer.kind=agent attestation footer (DEC-0047). Husky pre-commit
- * runs as the backup gate; never bypass (--no-verify is forbidden per
- * feedback_no_destructive_git_ops). The primary verification gate is
- * run-real-checks (TASK-090) called BEFORE this tool.
+ * with a writer.kind=agent attestation footer, per this project's
+ * capability-governance model's writer-attestation requirement. Husky
+ * pre-commit runs as the backup gate; never bypass (--no-verify is
+ * forbidden per feedback_no_destructive_git_ops). The primary verification
+ * gate is run-real-checks — the real-check verdict gate whose passing
+ * verdict this tool's attested-commit step follows — called BEFORE this
+ * tool.
  */
 
 import { Type } from "@earendil-works/pi-ai";

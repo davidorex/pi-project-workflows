@@ -3,15 +3,27 @@
  *
  * Synthetic-fixture cells exercise scanFile directly against in-memory TS
  * source strings (JSDoc / line-comment / zero-citation), asserting exact
- * instances/commentKind shape. A live-repo integration cell reads the actual
- * on-disk pi-agent-dispatch files that motivated this task (issue-012's
- * stale-provenance-id investigation) and pins a subset of that finding as a
- * regression — see the in-line note below on the two ids (TASK-091, plus
- * DEC-0044/DEC-0018 not asserted here) that the task's acceptance criteria
- * named as present in these two files but which a direct grep of the live
- * files at implementation time did NOT confirm; those three ids were found
- * instead in sibling pi-agent-dispatch/src files (index.ts, real-check-runner.ts,
- * call-agent-tool.ts) during this task's own runtime-demo investigation.
+ * instances/commentKind shape. A live-repo integration cell originally read
+ * the on-disk pi-agent-dispatch files that motivated TASK-107 (issue-012's
+ * stale-provenance-id investigation) and pinned FEAT-006/TASK-088/DEC-0047/
+ * DEC-0014/TASK-091 as present there as a regression pin.
+ *
+ * TASK-108 (2026-07-10) rewrote all internal-tracker-ID citations in
+ * packages/pi-agent-dispatch/src/ (24 files) as plain English — that IS the
+ * pin's original citations now being absent from those files, by design, not
+ * a scanner defect. A direct grep confirms packages/pi-agent-dispatch/src/
+ * now carries zero comment-trivia citation instances (scanRepo's own report
+ * over the live tree returns an empty instance array scoped to that
+ * package) — the one FEAT-006-looking token still in
+ * work-order-loop.ts:251 lives inside a commit-message template-literal
+ * string, not a comment, so scanFile correctly does not surface it.
+ *
+ * The live-repo integration cells below are repointed at citations verified
+ * (by direct grep + a real scanRepo run over this repo, 2026-07-10) to still
+ * be genuinely present in packages/pi-context/src/ — a package TASK-108 was
+ * explicitly scoped to leave untouched — so the cells keep proving the
+ * scanner's detection logic against real, current source rather than only
+ * synthetic fixtures.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -89,36 +101,58 @@ describe("scanFile — synthetic fixtures", () => {
 	});
 });
 
-describe("scanRepo — live-repo integration (issue-012 regression pin)", () => {
-	it("finds FEAT-006 and TASK-088 in the two named pi-agent-dispatch files", () => {
-		const targets = [
-			"packages/pi-agent-dispatch/src/work-order-loop.ts",
-			"packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts",
-		];
-		const instances = targets.flatMap((rel) => {
-			const abs = path.join(repoRoot, rel);
-			const text = fs.readFileSync(abs, "utf-8");
-			return scanFile(rel, text);
-		});
+describe("scanRepo — live-repo integration (TASK-108 regression pin)", () => {
+	it("finds FGAP-004, FEAT-011, TASK-089, and FGAP-136 in the real pi-context/src/block-api.ts file", () => {
+		// block-api.ts is in packages/pi-context, a package TASK-108 explicitly
+		// did not touch (it was scoped to pi-agent-dispatch only) — these four
+		// ids were confirmed present (grep + a real scanRepo run, 2026-07-10) at
+		// the time this cell was written. Repoints the prior pi-agent-dispatch
+		// assertion (now false by design post-TASK-108) at a still-genuine
+		// live-repo example so this cell keeps proving the scanner's detection
+		// logic against real source, not a synthetic-only fixture.
+		const rel = "packages/pi-context/src/block-api.ts";
+		const abs = path.join(repoRoot, rel);
+		const text = fs.readFileSync(abs, "utf-8");
+		const instances = scanFile(rel, text);
 		const ids = new Set(instances.map((i) => i.id));
-		assert.ok(ids.has("FEAT-006"), "expected FEAT-006 among the two named files' instances");
-		assert.ok(ids.has("TASK-088"), "expected TASK-088 among the two named files' instances");
-		assert.ok(ids.has("DEC-0047"), "expected DEC-0047 among the two named files' instances");
-		assert.ok(ids.has("DEC-0014"), "expected DEC-0014 among the two named files' instances");
+		assert.ok(ids.has("FGAP-004"), "expected FGAP-004 among block-api.ts's instances");
+		assert.ok(ids.has("FEAT-011"), "expected FEAT-011 among block-api.ts's instances");
+		assert.ok(ids.has("TASK-089"), "expected TASK-089 among block-api.ts's instances");
+		assert.ok(ids.has("FGAP-136"), "expected FGAP-136 among block-api.ts's instances");
 	});
 
-	it("finds TASK-091 within the broader pi-agent-dispatch package (not confined to the two named files)", () => {
-		// TASK-107's acceptance criteria named TASK-091 as present in the two
-		// files above; a direct grep at implementation time did not confirm that
-		// (see this file's header note). It IS present elsewhere under
-		// packages/pi-agent-dispatch/src/ (index.ts), so the full-package scan
-		// pins that as the actual regression rather than asserting a location
-		// the live tree does not support.
+	it("finds TASK-089 across multiple pi-context/src files (not confined to block-api.ts)", () => {
+		// Mirrors this cell's prior purpose (proving a full-package scan surfaces
+		// an id beyond a single named file) against a still-genuine example:
+		// TASK-089 is present in block-api.ts AND in context-sdk.ts and index.ts
+		// (confirmed via a real scanRepo run, 2026-07-10).
 		const report = scanRepo(repoRoot);
-		const hit = report.instances.find(
-			(i) => i.id === "TASK-091" && i.file.startsWith("packages/pi-agent-dispatch/src/"),
+		const files = new Set(
+			report.instances
+				.filter((i) => i.id === "TASK-089" && i.file.startsWith("packages/pi-context/src/"))
+				.map((i) => i.file),
 		);
-		assert.ok(hit, "expected a TASK-091 instance somewhere under packages/pi-agent-dispatch/src/");
+		assert.ok(files.has("packages/pi-context/src/block-api.ts"), "expected TASK-089 in block-api.ts");
+		assert.ok(
+			files.size > 1,
+			`expected TASK-089 in more than one packages/pi-context/src/ file, found: ${[...files].join(", ")}`,
+		);
+	});
+
+	it("finds zero comment-citation instances under packages/pi-agent-dispatch/src/ (proves TASK-108's cleanup held)", () => {
+		// TASK-108 rewrote all internal-tracker-ID citations in
+		// packages/pi-agent-dispatch/src/ as plain English. A before/after
+		// regression pin in the OTHER direction from this describe block's other
+		// cells: asserts the scanner now finds none of the ids TASK-107's
+		// original pin named (FEAT-006, TASK-088, DEC-0047, DEC-0014, TASK-091)
+		// anywhere under this package's src/ tree.
+		const report = scanRepo(repoRoot);
+		const adInstances = report.instances.filter((i) => i.file.startsWith("packages/pi-agent-dispatch/src/"));
+		assert.deepEqual(
+			adInstances,
+			[],
+			`expected zero comment-citation instances under packages/pi-agent-dispatch/src/, found: ${JSON.stringify(adInstances)}`,
+		);
 	});
 });
 

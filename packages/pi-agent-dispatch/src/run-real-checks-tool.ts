@@ -1,9 +1,14 @@
 /**
  * run-real-checks Pi tool — loads a work-order by id from the substrate
- * `work-orders` block (TASK-088 schema) and invokes the real-check-runner
- * (TASK-090). The returned RealCheckResult carries the deterministic
- * verdict the orchestrator inspects — never the executing agent's
- * self-report (FGAP-102 + DEC-0047 clause 5).
+ * `work-orders` block (per the work-order schema/block covering
+ * target_agent, real_check_criteria, scope, input_contract) and invokes
+ * the real-check-runner (implementing the real-check verdict gate and the
+ * attested-commit step that follows a passing verdict). The returned
+ * RealCheckResult carries the deterministic verdict the orchestrator
+ * inspects — never the executing agent's self-report, per the rule that
+ * an agent's own self-reported status is never the pass/fail verdict
+ * (only a real external command's exit code is) and this project's
+ * capability-governance model's deterministic-real-checks requirement.
  */
 
 import { readBlock } from "@davidorex/pi-context/block-api";

@@ -1,9 +1,12 @@
 /**
- * Canonical operation-granular tool grant vocabulary (FEAT-005 / DEC-0047).
+ * Canonical operation-granular tool grant vocabulary — the JIT
+ * capability-composition layer's vocabulary of operations a subagent's tools
+ * are composed from, per this project's capability-governance model.
  * Each entry names a Pi tool that can be granted to a privileged JIT-agent.
- * Per DEC-0047: default grant is EMPTY; consumers must opt-in operations
- * per dispatch. Per-project config.tool_operations[] entries shadow these
- * defaults at resolve time via resolveOperationVocabulary().
+ * Per this project's capability-governance model: default grant is EMPTY;
+ * consumers must opt-in operations per dispatch. Per-project
+ * config.tool_operations[] entries shadow these defaults at resolve time via
+ * resolveOperationVocabulary().
  */
 
 export interface OperationDescriptor {
@@ -20,7 +23,8 @@ export interface OperationDescriptor {
  * alternative to an unrestricted original (feedback_no_parallel_ungated_paths).
  * Extending L1 (this list) requires source change + release (release-
  * gated, not config-mutable). L5 (config.tool_operations_forbidden[])
- * admits project-specific additions under writer.kind=human per DEC-0047.
+ * admits project-specific additions under writer.kind=human, per this
+ * project's capability-governance model's human-only capability-widening rule.
  */
 export const FORBIDDEN_WHOLESALE_OPERATIONS = ["bash", "write", "edit", "shell", "execute"] as const;
 

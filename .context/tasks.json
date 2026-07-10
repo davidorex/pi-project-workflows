@@ -2250,7 +2250,7 @@
     {
       "id": "TASK-111",
       "title": "De-jargon every internal-tracker-ID citation in pi-workflows's code comments (FGAP-136 rollout)",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Rewrite every code comment in packages/pi-workflows/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
       "acceptance_criteria": [
         "Every internal-tracker-ID citation found in packages/pi-workflows/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
@@ -2261,13 +2261,13 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "7cf38e4857403411d028259dfc89f965",
-      "content_hash": "2b1f072bfa2be4a2fd6bd24db12f187a9491417be0b258446ffa64b5d8d94fb2",
-      "content_parent": "7c29bd0b914f4abcdb50f9ea05fce863ce50bd77bdf9a0f1282753ad53f983de"
+      "content_hash": "48d5ced668323239d4d5b6305531b82ba7459a8f9198b8bc6179bf819eadb470",
+      "content_parent": "2b1f072bfa2be4a2fd6bd24db12f187a9491417be0b258446ffa64b5d8d94fb2"
     },
     {
       "id": "TASK-112",
       "title": "De-jargon every internal-tracker-ID citation in pi-behavior-monitors's code comments (FGAP-136 rollout)",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Rewrite every code comment in packages/pi-behavior-monitors (this package has no src/ subdirectory -- its code lives at the package root: index.ts, index.test.ts, auth-required.ts) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (grep of index.ts and index.test.ts, since scripts/scan-comment-citations.ts's package-discovery step correctly lists this package but its file-walk found nothing under a nonexistent src/ path -- the tool needs no fix, this task's own filed text originally did), not by re-deriving meaning itself.",
       "acceptance_criteria": [
         "Every internal-tracker-ID citation found in packages/pi-behavior-monitors/index.ts and index.test.ts is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
@@ -2277,13 +2277,13 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "2bd0d0c03577d850922c40f2de725a2a",
-      "content_hash": "026c60829d3f20e23272ebe5d517d2495e8d6cc34b208d959a67b09137139752",
-      "content_parent": "0eb68d2f51f833eec967e7ccf02dda5d575e420a4faf3c4f7b2a9b9fff517d91"
+      "content_hash": "e4177762ed02d459dd15327d65e5fc74e111c24c7bf0aa76d269522695a80676",
+      "content_parent": "026c60829d3f20e23272ebe5d517d2495e8d6cc34b208d959a67b09137139752"
     },
     {
       "id": "TASK-113",
       "title": "De-jargon every internal-tracker-ID citation in pi-jit-agents's code comments (FGAP-136 rollout)",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Rewrite every code comment in packages/pi-jit-agents/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
       "acceptance_criteria": [
         "Every internal-tracker-ID citation found in packages/pi-jit-agents/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
@@ -2294,8 +2294,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "8e2ba0182251d0395cedf44b07693432",
-      "content_hash": "e4de9fbc48c905c8a30011881a2c00e7feb5221603b40e9d315b7da14cdd0797",
-      "content_parent": "6342dc28625d3917d9759bc97dfc1cb59bd44e113578a83a86ed001ccb87c30e"
+      "content_hash": "e7d7600cd57d7ac1be7c1ac1b80d8d11d5e9bc43619d4133461add42c34d5d0f",
+      "content_parent": "e4de9fbc48c905c8a30011881a2c00e7feb5221603b40e9d315b7da14cdd0797"
     },
     {
       "id": "TASK-114",

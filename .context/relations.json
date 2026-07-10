@@ -10773,5 +10773,44 @@
       "refname": "TASK-115"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "26805757042f564d5e415ca9c0d8d857",
+      "refname": "VER-090"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2bd0d0c03577d850922c40f2de725a2a",
+      "refname": "TASK-112"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0a6c09fbd19d3e53a656ab3f029001e8",
+      "refname": "VER-091"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8e2ba0182251d0395cedf44b07693432",
+      "refname": "TASK-113"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "e1efd7cd06da856498e3b42ae8bb82e1",
+      "refname": "VER-092"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7cf38e4857403411d028259dfc89f965",
+      "refname": "TASK-111"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

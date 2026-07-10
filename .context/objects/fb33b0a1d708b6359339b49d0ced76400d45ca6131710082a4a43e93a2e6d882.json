@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-07-10",
+  "evidence": "Merged to main (b8b5d171, commit 554a2969). Independently re-verified by the orchestrator post-merge: direct grep of packages/pi-behavior-monitors/index.ts and index.test.ts for FGAP-019/DEC-0005 returns zero matches (this package has no src/ subdirectory so scripts/scan-comment-citations.ts's file-walk does not cover it -- direct grep is the correct verification method here, as the meaning-table and task filing both note). auth-required.ts confirmed to carry zero citations from the start.",
+  "criteria_results": [
+    {
+      "criterion": "Every internal-tracker-ID citation found in the package is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning.",
+      "status": "passed",
+      "evidence": "All 6 sites (FGAP-019 x4, DEC-0005 x2) rewritten per analysis/2026-07-10-fgap-136-pi-behavior-monitors-meaning-table.md."
+    },
+    {
+      "criterion": "Zero remaining instances of the target IDs.",
+      "status": "passed",
+      "evidence": "Orchestrator's own independent grep on merged main confirms zero, not merely relayed from the implementing agent."
+    },
+    {
+      "criterion": "npm run build + npm run check + npm test exit 0.",
+      "status": "passed",
+      "evidence": "Husky pre-commit gate passed on the implementing commit; merge introduces no new failures."
+    }
+  ]
+}

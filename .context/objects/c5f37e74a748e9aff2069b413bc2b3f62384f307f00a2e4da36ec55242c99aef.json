@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-07-10",
+  "evidence": "Merged to main (0550cdac, commit fb08ad0e). Independently re-verified by the orchestrator post-merge: scripts/scan-comment-citations.ts shows zero remaining instances under packages/pi-workflows/src; direct grep of this package's *.test.ts files for the target ID patterns finds only self-referential test-fixture data (e.g. { id: \"DEC-0001\", ... } constructed objects in render-*.test.ts), correctly excluded per the meaning-table's own guidance, never real citations. check-changelog, parity-check, and check-config-schema gate scripts all independently confirmed passing.\n\nRecovery incident: this task's content was originally produced on worktree branch task-111-dejargon-pi-workflows, which developed a corrupting 'baseline' commit during that worktree's own environment troubleshooting (untracked ~5300 files repo-wide across the branch's git history; the physical files on disk were never touched). The orchestrator verified the 9 edited files' content byte-for-byte against that corrupted worktree's working directory (matching the expected de-jargon transformation exactly, confirmed via diff against main's committed versions), then re-applied that verified-correct content onto a fresh branch cut from clean main, committed there, and merged. The corrupted branch and its worktree were deleted only after the content was safely recovered and merged elsewhere -- not before.",
+  "criteria_results": [
+    {
+      "criterion": "Every internal-tracker-ID citation found in the package is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning.",
+      "status": "passed",
+      "evidence": "All 5 unique IDs (DEC-0049, FGAP-088, FGAP-089, DEC-0015, TASK-006) across 9 files rewritten per analysis/2026-07-10-fgap-136-pi-workflows-meaning-table.md, with no off-table IDs or discrepancies found."
+    },
+    {
+      "criterion": "Zero remaining instances of the target IDs in source and test files.",
+      "status": "passed",
+      "evidence": "Orchestrator's own independent scanner run + grep on merged main confirms zero."
+    },
+    {
+      "criterion": "npm run build + npm run check + npm test exit 0, plus the 3 additional husky gate scripts (check-changelog, parity-check, check-config-schema).",
+      "status": "passed",
+      "evidence": "All 5 gate components independently run and confirmed passing by the orchestrator; a CHANGELOG [Unreleased] entry was added (matching TASK-108's precedent wording) to satisfy check-changelog's published-surface-change requirement, which the first commit attempts had missed."
+    }
+  ]
+}

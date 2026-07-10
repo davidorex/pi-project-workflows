@@ -10890,5 +10890,31 @@
       "refname": "FGAP-137"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a55eb6051b2bba55e0b4a809449ce67",
+      "refname": "TASK-117"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3e602c529195d19406484aee27624390",
+      "refname": "FGAP-138"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a55eb6051b2bba55e0b4a809449ce67",
+      "refname": "TASK-117"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

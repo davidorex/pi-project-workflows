@@ -1708,27 +1708,32 @@
         {
           "kind": "file-changed",
           "path": "packages/pi-workflows/src/expression.ts",
-          "baseline_hash": "dfeffc6e8e3e45ede7d0dca5ea5468bc66765ea18ef80cfb9e69e731b38246f8"
+          "lines": "10-29,32,110-114",
+          "baseline_hash": "1ecfd6146a5c98b4848a6e742d3ece38bcc3d720a0199ebebc37d0db9ed51156"
         },
         {
           "kind": "file-changed",
           "path": "packages/pi-workflows/src/template.ts",
-          "baseline_hash": "c27b83f005808febc720267d739b43f49294297fd48587f0ed745b210e6aa0a6"
+          "lines": "26-45",
+          "baseline_hash": "f595eaf57cf697ef84f21d8454711a47db83bdc23ae39571e35f6c931d972310"
         },
         {
           "kind": "file-changed",
           "path": "packages/pi-workflows/src/workflow-sdk.ts",
-          "baseline_hash": "3d43b592b9b5e65c2147516ebfd9aaf56bdc89c97dc5b3d67ea96a1d0cfd4c6b"
+          "lines": "483-492,597-614,651-652",
+          "baseline_hash": "6de20c936fbd85273db012e752ed81cbd8d32738e6b3f8111d091e7a7929c980"
         },
         {
           "kind": "file-changed",
           "path": "packages/pi-workflows/README.md",
-          "baseline_hash": "7ed7b2e0dbacf0c653ca1b937a800cef10232d027efb3cf1dbbe9793433f6d5a"
+          "lines": "95-104",
+          "baseline_hash": "441c2319412581f82a2ab9f17fd4ef7c0a022d0041527c5fc35944cd25c5d7b7"
         },
         {
           "kind": "file-changed",
           "path": "packages/pi-workflows/skill-narrative.md",
-          "baseline_hash": "97a0714a62601a734b4cd6be0611b2e31d6f19489d9f2715289931767e222bc1"
+          "lines": "40-42",
+          "baseline_hash": "17a4c7f3c5296dd6bdf09660375acd641811ab6ce07eca1d274044628a7a8b7d"
         },
         {
           "kind": "file-changed",
@@ -1780,10 +1785,11 @@
       "created_at": "2026-07-08",
       "id": "R-0030",
       "modified_by": "human/davidryan@gmail.com",
-      "modified_at": "2026-07-08T06:36:49.392Z",
+      "modified_at": "2026-07-10T04:00:27.841Z",
       "oid": "11f332104915181300a0d8429654f62c",
-      "content_hash": "66b767da9365d3e16ba6901bb6d589ba949ae407fb350714e136ab1836a32f4d"
+      "content_hash": "12cf6f8c4777bb1fe83e2ab10f05693e0cd0ea2b0e09d58576da8594eadcaa02",
+      "content_parent": "66b767da9365d3e16ba6901bb6d589ba949ae407fb350714e136ab1836a32f4d"
     }
   ],
-  "schema_version": "1.1.0"
+  "schema_version": "1.2.0"
 }

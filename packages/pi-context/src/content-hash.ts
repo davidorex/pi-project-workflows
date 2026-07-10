@@ -94,3 +94,47 @@ export function computeFileContentHash(filePath: string): string {
 export function computeFileBytesHash(filePath: string): string {
 	return createHash("sha256").update(fs.readFileSync(filePath)).digest("hex");
 }
+
+/**
+ * Line-range-scoped hash of the file at `filePath`: sha-256 over the UTF-8
+ * bytes of exactly the cited lines. `linesSpec` is a comma-separated list of
+ * 1-indexed single line numbers and inclusive ranges — the same shape
+ * `citations[].lines` carries (e.g. `"483-492,597-614,651-652"` or
+ * `"10-29,32,110-114"`). The referenced line numbers are collected into a
+ * sorted deduplicated set; the corresponding lines (file content split on
+ * `"\n"`) are extracted in ascending line-number order, joined with `"\n"`,
+ * and hashed with the same sha-256 hex scheme as {@link computeFileBytesHash}
+ * (64-char lowercase hex, matching the `baseline_hash` schema pattern). A
+ * referenced line number beyond the end of the file contributes nothing.
+ * Throws on a malformed spec (a segment that is not `N` or `N-M` with
+ * `1 <= N <= M`).
+ *
+ * Residual limitation, stated plainly: this hash is keyed by LINE NUMBER, not
+ * by a content anchor — an edit EARLIER in the file that shifts line numbers
+ * can still cause a false stale-fire (the cited content is unchanged but now
+ * sits at different numbers) or a false clean-pass (different content now
+ * occupies the cited numbers). It narrows the false-positive surface from
+ * "any byte in the file" to "any byte in or before the cited lines"; it does
+ * not eliminate false positives.
+ */
+export function computeFileLineRangeHash(filePath: string, linesSpec: string): string {
+	const lineNumbers = new Set<number>();
+	for (const segment of linesSpec.split(",")) {
+		const match = /^\s*(\d+)(?:-(\d+))?\s*$/.exec(segment);
+		if (match === null) {
+			throw new Error(`invalid lines spec segment '${segment}' in '${linesSpec}' (expected 'N' or 'N-M', 1-indexed)`);
+		}
+		const start = Number(match[1]);
+		const end = match[2] === undefined ? start : Number(match[2]);
+		if (start < 1 || end < start) {
+			throw new Error(`invalid lines spec segment '${segment}' in '${linesSpec}' (expected 'N' or 'N-M', 1-indexed)`);
+		}
+		for (let n = start; n <= end; n++) lineNumbers.add(n);
+	}
+	const lines = fs.readFileSync(filePath, "utf8").split("\n");
+	const cited = [...lineNumbers]
+		.sort((a, b) => a - b)
+		.filter((n) => n <= lines.length)
+		.map((n) => lines[n - 1]);
+	return createHash("sha256").update(cited.join("\n"), "utf8").digest("hex");
+}

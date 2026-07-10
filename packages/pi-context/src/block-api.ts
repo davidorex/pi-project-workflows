@@ -22,7 +22,13 @@ import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import _lockfile from "proper-lockfile";
-import { canonicalJson, computeContentHash, computeFileBytesHash, sha256Hex } from "./content-hash.js";
+import {
+	canonicalJson,
+	computeContentHash,
+	computeFileBytesHash,
+	computeFileLineRangeHash,
+	sha256Hex,
+} from "./content-hash.js";
 import {
 	assertSubstrateName,
 	resolveContextDir,
@@ -702,7 +708,17 @@ function stampDeclaredBaselines(
 	if (!itemProps) return;
 	const projectRoot = path.dirname(substrateDir);
 	const substrateAbs = path.resolve(substrateDir);
-	const fileHashOrNull = (rel: string): string | null => {
+	// With a `lines` spec on the condition element, the baseline is scoped to
+	// exactly the cited lines (computeFileLineRangeHash) instead of the whole
+	// file's bytes, so an edit elsewhere in the file no longer fires the
+	// condition. Residual limitation: the line-scoped hash is keyed by LINE
+	// NUMBER, not a content anchor — an edit earlier in the file that shifts
+	// line numbers can still false-fire (or false-pass); the false-positive
+	// surface narrows from "any byte in the file" to "any byte in or before
+	// the cited lines", it is not eliminated. A malformed `lines` spec throws
+	// inside the try and the element is left unstamped (human-only), the same
+	// degradation as an unreadable file.
+	const fileHashOrNull = (rel: string, lines?: string): string | null => {
 		const abs = path.resolve(projectRoot, rel);
 		// Substrate-internal paths are LIVING STATE, not groundable artifacts: a
 		// baseline on a block file would drift on every subsequent substrate
@@ -710,7 +726,7 @@ function stampDeclaredBaselines(
 		if (abs === substrateAbs || abs.startsWith(substrateAbs + path.sep)) return null;
 		try {
 			if (!fs.statSync(abs).isFile()) return null;
-			return computeFileBytesHash(abs);
+			return typeof lines === "string" ? computeFileLineRangeHash(abs, lines) : computeFileBytesHash(abs);
 		} catch {
 			return null;
 		}
@@ -742,7 +758,7 @@ function stampDeclaredBaselines(
 				typeof rec.baseline_hash !== "string" &&
 				typeof rec.path === "string"
 			) {
-				const hash = fileHashOrNull(rec.path);
+				const hash = fileHashOrNull(rec.path, typeof rec.lines === "string" ? rec.lines : undefined);
 				if (hash !== null) return { ...rec, baseline_hash: hash };
 			}
 			if (

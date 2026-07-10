@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/research",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "title": "Research",
   "description": "Factual and analytical substrate under decisions — each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them.",
   "type": "object",
@@ -151,31 +151,70 @@
                 {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["kind", "item", "bucket"],
+                  "required": [
+                    "kind",
+                    "item",
+                    "bucket"
+                  ],
                   "properties": {
-                    "kind": { "const": "item-status" },
-                    "item": { "type": "string", "description": "Selector of the substrate item whose status this condition watches (a reference predicate, not an embedded entity — deliberately not named 'id')." },
-                    "bucket": { "type": "string", "description": "Status bucket that fires the condition when the watched item's status maps to it." }
+                    "kind": {
+                      "const": "item-status"
+                    },
+                    "item": {
+                      "type": "string",
+                      "description": "Selector of the substrate item whose status this condition watches (a reference predicate, not an embedded entity — deliberately not named 'id')."
+                    },
+                    "bucket": {
+                      "type": "string",
+                      "description": "Status bucket that fires the condition when the watched item's status maps to it."
+                    }
                   }
                 },
                 {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["kind", "path"],
+                  "required": [
+                    "kind",
+                    "path"
+                  ],
                   "properties": {
-                    "kind": { "const": "file-changed" },
-                    "path": { "type": "string", "description": "Project-root-relative path whose content change fires the condition." },
-                    "baseline_hash": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the file at grounding time. Stamped by the write path when absent and the file is readable; the condition fires when the current hash differs (or the file is gone)." }
+                    "kind": {
+                      "const": "file-changed"
+                    },
+                    "path": {
+                      "type": "string",
+                      "description": "Project-root-relative path whose content change fires the condition."
+                    },
+                    "lines": {
+                      "type": "string",
+                      "description": "Optional comma-separated 1-indexed line numbers / inclusive ranges (e.g. '483-492,597-614,651-652'), the same shape citations[].lines carries. Scopes the condition to exactly the cited lines: baseline_hash is stamped and compared over those lines only, so an edit elsewhere in the file does not fire it. Keyed by line number, not a content anchor — an earlier edit that shifts line numbers can still false-fire or false-pass. Absent means whole-file."
+                    },
+                    "baseline_hash": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$",
+                      "description": "SHA-256 at grounding time — of the file's bytes, or of exactly the cited lines when 'lines' is present. Stamped by the write path when absent and the file is readable; the condition fires when the current hash differs (or the file is gone)."
+                    }
                   }
                 },
                 {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["kind", "ref"],
+                  "required": [
+                    "kind",
+                    "ref"
+                  ],
                   "properties": {
-                    "kind": { "const": "revision-moved" },
-                    "ref": { "type": "string", "description": "Git ref whose movement fires the condition." },
-                    "baseline_sha": { "type": "string", "description": "Commit the ref pointed at when grounding was current. Stamped by the write path when absent and the ref resolves; the condition fires when the ref moves." }
+                    "kind": {
+                      "const": "revision-moved"
+                    },
+                    "ref": {
+                      "type": "string",
+                      "description": "Git ref whose movement fires the condition."
+                    },
+                    "baseline_sha": {
+                      "type": "string",
+                      "description": "Commit the ref pointed at when grounding was current. Stamped by the write path when absent and the ref resolves; the condition fires when the ref moves."
+                    }
                   }
                 }
               ]

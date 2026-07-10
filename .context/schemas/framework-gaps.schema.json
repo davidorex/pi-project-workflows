@@ -1,75 +1,37 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/framework-gaps",
-  "version": "1.2.0",
-  "title": "Framework Gaps",
+  "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Capability gaps in the framework — pieces that must exist natively for the target artifact-ownership model to be expressible as configuration rather than hand-enactment. Each gap carries evidence (file + line references), impact, canonical engineering vocabulary for the missing capability, proposed resolution, and lifecycle state. Framework gaps are distinct from feature-level defects: they describe what the framework cannot yet express at all, not bugs in expressible functionality.",
-  "type": "object",
-  "required": [
-    "gaps"
-  ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
-    },
     "gaps": {
-      "type": "array",
       "items": {
-        "type": "object",
         "additionalProperties": false,
-        "required": [
-          "id",
-          "title",
-          "status",
-          "package",
-          "description",
-          "evidence",
-          "impact",
-          "proposed_resolution",
-          "created_by",
-          "created_at"
-        ],
         "properties": {
-          "id": {
-            "type": "string",
-            "pattern": "^FGAP-\\d{3}$"
-          },
-          "title": {
+          "canonical_vocabulary": {
+            "description": "The established engineering term for the capability that is missing",
             "type": "string"
           },
-          "status": {
-            "type": "string",
-            "enum": [
-              "identified",
-              "accepted",
-              "in-progress",
-              "closed",
-              "wontfix",
-              "superseded_by"
-            ]
-          },
-          "priority": {
-            "type": "string",
-            "enum": [
-              "P0",
-              "P1",
-              "P2",
-              "P3"
-            ]
-          },
-          "package": {
+          "closed_at": {
             "type": "string"
           },
-          "layer": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5"
-            ]
+          "closed_by": {
+            "type": "string"
+          },
+          "content_hash": {
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "content_parent": {
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain.",
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
           },
           "description": {
             "type": "string",
@@ -79,15 +41,14 @@
             }
           },
           "evidence": {
-            "type": "array",
             "items": {
-              "type": "object",
               "additionalProperties": false,
-              "required": [
-                "file",
-                "reference"
-              ],
               "properties": {
+                "content_pin": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$",
+                  "description": "SHA-256 of the referenced file at write time. Stamped by the write path when `file` names a readable file OUTSIDE the substrate dir (substrate-internal paths are living state, never pinned) and no pin exists; context-validate flags a pinned evidence entry whose current file hash drifted (anchor drift — re-review, never rewritten)."
+                },
                 "file": {
                   "type": "string"
                 },
@@ -95,15 +56,25 @@
                   "type": "string"
                 },
                 "reference": {
-                  "type": "string",
                   "description": "What specifically at this location demonstrates the gap",
+                  "type": "string",
                   "x-prompt-budget": {
                     "tokens": 1000,
                     "words": 800
                   }
                 }
-              }
-            }
+              },
+              "required": [
+                "file",
+                "reference"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "id": {
+            "pattern": "^FGAP-\\d{3}$",
+            "type": "string"
           },
           "impact": {
             "type": "string",
@@ -112,9 +83,32 @@
               "words": 800
             }
           },
-          "canonical_vocabulary": {
-            "type": "string",
-            "description": "The established engineering term for the capability that is missing"
+          "layer": {
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4",
+              "L5"
+            ],
+            "type": "string"
+          },
+          "oid": {
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write.",
+            "pattern": "^[0-9a-f]{32}$",
+            "type": "string"
+          },
+          "package": {
+            "type": "string"
+          },
+          "priority": {
+            "enum": [
+              "P0",
+              "P1",
+              "P2",
+              "P3"
+            ],
+            "type": "string"
           },
           "proposed_resolution": {
             "type": "string",
@@ -123,55 +117,66 @@
               "words": 800
             }
           },
-          "related_features": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
           "related_decisions": {
-            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "type": "array"
+          },
+          "related_features": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
           },
           "related_issues": {
-            "type": "array",
             "items": {
               "type": "string"
-            }
+            },
+            "type": "array"
           },
-          "created_by": {
+          "status": {
+            "enum": [
+              "accepted",
+              "closed",
+              "identified",
+              "in-progress",
+              "superseded_by",
+              "wontfix"
+            ],
             "type": "string"
           },
-          "created_at": {
+          "title": {
             "type": "string"
-          },
-          "closed_by": {
-            "type": "string"
-          },
-          "closed_at": {
-            "type": "string"
-          },
-          "oid": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{32}$",
-            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
-          },
-          "content_hash": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$",
-            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
-          },
-          "content_parent": {
-            "type": "string",
-            "pattern": "^[0-9a-f]{64}$",
-            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
-        }
-      }
+        },
+        "required": [
+          "created_at",
+          "created_by",
+          "description",
+          "evidence",
+          "id",
+          "impact",
+          "package",
+          "proposed_resolution",
+          "status",
+          "title"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "schema_version": {
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path.",
+      "type": "string"
     }
   },
+  "required": [
+    "gaps"
+  ],
+  "title": "Framework Gaps",
+  "type": "object",
+  "version": "1.2.0",
   "x-lifecycle": {
     "field": "status",
     "states": [

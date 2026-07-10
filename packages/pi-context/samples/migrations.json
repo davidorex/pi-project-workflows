@@ -162,6 +162,14 @@
       },
       "created_by": "migrate-strip-content-pin",
       "created_at": "2026-07-09T00:00:00.000Z"
+    },
+    {
+      "schemaName": "research",
+      "fromVersion": "1.1.0",
+      "toVersion": "1.2.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-10T00:00:00.000Z"
     }
   ]
 }

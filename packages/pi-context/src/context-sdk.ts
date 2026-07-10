@@ -9,7 +9,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readBlock, readBlockForDir, resolveGitRefOrNull, updateItemInBlock } from "./block-api.js";
-import { computeFileBytesHash } from "./content-hash.js";
+import { computeFileBytesHash, computeFileLineRangeHash } from "./content-hash.js";
 import {
 	appendRelation,
 	appendRelations,
@@ -2508,11 +2508,21 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 		const abs = path.resolve(projectRoot, rel);
 		return abs === substrateAbs || abs.startsWith(substrateAbs + path.sep);
 	};
-	const fileHashOrNull = (rel: string): string | null => {
+	// With a `lines` spec on the condition element, the comparison hash is
+	// scoped to exactly the cited lines (computeFileLineRangeHash) — the same
+	// scheme the write choke stamps — instead of the whole file's bytes, so an
+	// edit elsewhere in the file no longer fires the condition. Residual
+	// limitation: the line-scoped hash is keyed by LINE NUMBER, not a content
+	// anchor — an edit earlier in the file that shifts line numbers can still
+	// false-fire (or false-pass); the false-positive surface narrows from "any
+	// byte in the file" to "any byte in or before the cited lines", it is not
+	// eliminated. A malformed `lines` spec throws inside the try and reads as
+	// null (judged like an unreadable file).
+	const fileHashOrNull = (rel: string, lines?: string): string | null => {
 		const abs = path.resolve(projectRoot, rel);
 		try {
 			if (!fs.statSync(abs).isFile()) return null;
-			return computeFileBytesHash(abs);
+			return typeof lines === "string" ? computeFileLineRangeHash(abs, lines) : computeFileBytesHash(abs);
 		} catch {
 			return null;
 		}
@@ -2539,7 +2549,7 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 					typeof c.baseline_hash === "string" &&
 					!isSubstrateInternal(c.path)
 				) {
-					const now = fileHashOrNull(c.path);
+					const now = fileHashOrNull(c.path, typeof c.lines === "string" ? c.lines : undefined);
 					if (now === null) {
 						firedReasons.push(`stale condition fired: file '${c.path}' is gone`);
 					} else if (now !== c.baseline_hash) {

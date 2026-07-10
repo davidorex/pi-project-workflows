@@ -4492,9 +4492,9 @@
     },
     {
       "title": "Internal tracker-ID citations in code comments are opaque jargon to a reader outside this project, independent of whether the ID still resolves",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
-      "package": "pi-agent-dispatch",
+      "package": "monorepo-wide (pi-agent-dispatch, pi-context, pi-workflows, pi-behavior-monitors, pi-jit-agents, pi-context-cli, pi-project-workflows)",
       "description": "A code comment that cites this project's internal tracker IDs (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, VER-NNN, JI-NNN, etc.) is opaque to any reader without access to the active .context substrate -- a library consumer reading the published @davidorex/pi-agent-dispatch source, or a new contributor. This holds whether or not the cited ID still resolves to the correct current item: a comment citing a currently-valid ID (e.g. FGAP-134, DEC-0023) is exactly as unreadable to that outside reader as one citing a dangling ID, because the reader has no way to look either one up. Staleness (the concern issue-012 originally named) is a distinct, narrower defect from opacity (this gap): a citation can be perfectly accurate and still be jargon-noise. citation-rot-scanner.ts (packages/pi-context/src/citation-rot-scanner.ts) already forbids these ID-shaped tokens from shipped operator-facing surfaces (tool descriptions, thrown error messages, README/markdown bodies, JSON description fields) but its own test suite confirms it deliberately excludes JSDoc and line comments in source -- comments are assumed to be internal-provenance notes, not something that needs policing. scan-comment-citations.ts (TASK-107) enumerates citations in comments but is informational only, not a gate.",
       "evidence": [
         {
@@ -4520,7 +4520,10 @@
       "created_at": "2026-07-10",
       "id": "FGAP-136",
       "oid": "fd846f8be7f6520977bd45b6de15b0ce",
-      "content_hash": "815d04afd6ca4f449a6ee44b763088c7757f9f4d1ac0130f669576d9cbdfb4cb"
+      "content_hash": "dd35a9902b6e12e8e11bd69328ac4d45c33f7179359a56d7244a5243c7d574b3",
+      "closed_by": "TASK-108 (pi-agent-dispatch, triggering instance) plus the rollout: TASK-109 (scanner regression-test fix) through TASK-115 (all 6 remaining packages). Every internal-tracker-ID comment citation across the monorepo (588 originally enumerated by scripts/scan-comment-citations.ts) is now plain-English prose, except pi-project-workflows (TASK-115, verified zero citations, no-op) and a handful of deliberately-excluded non-citations (ID-shape pattern descriptions, illustrative placeholder examples) explicitly named in each package's meaning-table. The proposed delta-scoped extension of citation-rot-scanner.ts to gate future comment citations remains unbuilt -- filed here as future work, not part of this closure.",
+      "closed_at": "2026-07-10",
+      "content_parent": "815d04afd6ca4f449a6ee44b763088c7757f9f4d1ac0130f669576d9cbdfb4cb"
     }
   ]
 }

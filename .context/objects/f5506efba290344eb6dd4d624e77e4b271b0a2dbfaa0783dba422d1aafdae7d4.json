@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-07-10",
+  "evidence": "Merged to main. Independently re-verified by the orchestrator post-merge (not relayed from the implementing agent): npm run build + npm run check + npm test --workspaces + npm run test:migration all exit 0 (full monorepo, including pi-context's own 1271 tests). scripts/scan-comment-citations.ts shows exactly 3 remaining instances repo-wide (down from 588 originally) -- all 3 are the meaning-table's own pre-flagged non-citations (2x PHASE-NNN id-shape pattern descriptions, 1x FGAP-153 illustrative placeholder value), not real defects. Spot-check of test-file line-comments for real tracker-ID patterns (excluding known synthetic-fixture exclusions) found only 4 residual hits, all confirmed non-issues: one is citation-rot-scanner.test.ts's own meta-description of its test fixture (a test ABOUT detecting citations necessarily mentions example IDs), and three are sequential synthetic fixture ids (TASK-101/102/103, TASK-200/201/202/DEC-200/201) in execution-context.integration.test.ts's chain-testing scenario. This is the largest of the six FGAP-136 package tasks: 131 unique IDs across 59 files (26 source, 33 test).\n\nThe implementing agent surfaced several IDs whose meaning-table entry did not match their actual comment site (a second SPLIT the table didn't flag for DEC-0017, plus TASK-034/036/037/038 and FGAP-018/019/025/133 citing meanings unrelated to their site) -- handled by dropping the bare ID and keeping/expanding the accurate prose already present at each site rather than inventing or forcing the table's stated meaning, and reported rather than silently reconciled.",
+  "criteria_results": [
+    {
+      "criterion": "Every internal-tracker-ID citation found in the package is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning.",
+      "status": "passed",
+      "evidence": "All 131 unique IDs handled across 59 files per analysis/2026-07-10-fgap-136-pi-context-meaning-table.md, with table/site mismatches resolved by keeping accurate site-local prose rather than forcing an incorrect table meaning."
+    },
+    {
+      "criterion": "Zero remaining instances of the target IDs in source and test files (excluding pre-identified non-citations).",
+      "status": "passed",
+      "evidence": "Orchestrator's own independent scanner run + targeted test-file grep on merged main confirms only the 3 pre-flagged non-citations remain repo-wide; 4 additional test-file hits found by a broader sweep are confirmed synthetic fixture data / meta-test-description, not real citations."
+    },
+    {
+      "criterion": "npm run build + npm run check + npm test exit 0.",
+      "status": "passed",
+      "evidence": "Full monorepo build/check/test/test:migration independently re-run by the orchestrator on merged main, all exit 0."
+    }
+  ]
+}

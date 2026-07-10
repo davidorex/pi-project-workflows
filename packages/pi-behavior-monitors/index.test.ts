@@ -1495,7 +1495,8 @@ describe("executeWriteAction (Phase F — issue-065 routing)", () => {
 });
 
 // =============================================================================
-// Side-car writers (Step 6.1 — FGAP-019 closure):
+// Side-car writers (Step 6.1 — closing the gap where these writes bypassed
+// schema validation and lockfile protection):
 // saveInstructions + learnPattern now route through writeTypedFile /
 // appendToTypedFile from `@davidorex/pi-context/block-api`. The two retained
 // `fs.writeFileSync` sites are gone; AJV validates against the new monitor

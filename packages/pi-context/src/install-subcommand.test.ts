@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -3853,17 +3852,16 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 	});
 
 	/**
-	 * Project root with a git repo, two anchor files, and a substrate whose
-	 * research schema is the REAL catalog schema (identity fields + typed
-	 * stale_conditions declared).
+	 * Project root with two anchor files and a substrate whose research schema
+	 * is the REAL catalog schema (identity fields + typed stale_conditions
+	 * declared). No git repo is initialized here — the only typed condition
+	 * that consulted git (revision-moved) is gone; item-status and file-changed
+	 * baselining/evaluation are pure filesystem operations.
 	 */
 	function makeStalenessProject(): string {
 		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-stale-"));
-		execFileSync("git", ["init", "-q"], { cwd: dir });
 		fs.writeFileSync(path.join(dir, "cited.txt"), "cited v1\n");
 		fs.writeFileSync(path.join(dir, "watched.txt"), "watched v1\n");
-		execFileSync("git", ["add", "."], { cwd: dir });
-		execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "baseline"], { cwd: dir });
 		writeBootstrapPointer(dir, ".project");
 		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
 		fs.copyFileSync(
@@ -3925,7 +3923,6 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 				stale_conditions: [
 					"a bare human-only string",
 					{ kind: "file-changed", path: "watched.txt" },
-					{ kind: "revision-moved", ref: "HEAD" },
 					{ kind: "item-status", item: "R-0009", bucket: "complete" },
 				],
 			}),
@@ -3939,15 +3936,10 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 			computeFileBytesHash(path.join(root, "watched.txt")),
 			"file-changed condition gets the file's baseline hash",
 		);
-		assert.match(
-			String((conds[2] as Record<string, unknown>).baseline_sha),
-			/^[0-9a-f]{40}$/,
-			"revision-moved condition gets the ref's current commit",
-		);
 		assert.ok(typeof item.content_hash === "string", "identity stamping still ran");
 	});
 
-	it("evaluateStalenessCandidates + validate: fired item-status / file-changed / revision-moved conditions flag a complete item as a staleness candidate; bare strings never judged; conditionless items untouched", (t) => {
+	it("evaluateStalenessCandidates + validate: fired item-status / file-changed conditions flag a complete item as a staleness candidate; bare strings never judged; conditionless items untouched", (t) => {
 		staleRoot = makeStalenessProject();
 		const root = staleRoot;
 		t.after(() => undefined);
@@ -3961,7 +3953,6 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 				stale_conditions: [
 					{ kind: "item-status", item: "R-0009", bucket: "complete" },
 					{ kind: "file-changed", path: "watched.txt" },
-					{ kind: "revision-moved", ref: "HEAD" },
 					"bare string — never machine-judged",
 				],
 			}),
@@ -3973,10 +3964,8 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 			"research",
 			researchItem("R-0002", "complete", { stale_conditions: ["human judgment only"] }),
 		);
-		// Drift the watched file + move HEAD so file-changed + revision-moved fire.
+		// Drift the watched file so the file-changed condition fires.
 		fs.writeFileSync(path.join(root, "watched.txt"), "watched v2 — changed\n");
-		execFileSync("git", ["add", "."], { cwd: root });
-		execFileSync("git", ["-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "move HEAD"], { cwd: root });
 
 		const cands = evaluateStalenessCandidates(root);
 		const byId = new Map(cands.map((c) => [c.id, c]));
@@ -3986,7 +3975,6 @@ describe("declared-baseline staleness (typed stale_conditions)", () => {
 		const joined = (rA?.reasons ?? []).join(" | ");
 		assert.ok(joined.includes("item 'R-0009' bucketed 'complete'"), "item-status condition fired");
 		assert.ok(joined.includes("'watched.txt' changed"), "file-changed condition fired");
-		assert.ok(joined.includes("ref 'HEAD' moved"), "revision-moved condition fired");
 		assert.equal(byId.get("R-0002"), undefined, "bare-string-only item is never machine-judged");
 		assert.equal(byId.get("R-0009"), undefined, "an item with no conditions is untouched");
 

@@ -8,7 +8,7 @@ import { execSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { readBlock, readBlockForDir, resolveGitRefOrNull, updateItemInBlock } from "./block-api.js";
+import { readBlock, readBlockForDir, updateItemInBlock } from "./block-api.js";
 import { computeFileBytesHash, computeFileLineRangeHash } from "./content-hash.js";
 import {
 	appendRelation,
@@ -2489,8 +2489,8 @@ export interface StalenessCandidate {
  * carrying a `stale_conditions` array is condition-evaluable. Bare-string
  * conditions are never machine-judged. Typed conditions are judged only on
  * items whose status buckets `complete` (the transition's precondition).
- * Unstamped baselines (no `baseline_hash`/`baseline_sha` — e.g. the file/ref
- * was unreadable at write) are never judged.
+ * Unstamped baselines (no `baseline_hash` — e.g. the file was unreadable at
+ * write) are never judged.
  */
 export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex): StalenessCandidate[] {
 	const out: StalenessCandidate[] = [];
@@ -2554,13 +2554,6 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 						firedReasons.push(`stale condition fired: file '${c.path}' is gone`);
 					} else if (now !== c.baseline_hash) {
 						firedReasons.push(`stale condition fired: file '${c.path}' changed from its baseline`);
-					}
-				} else if (c.kind === "revision-moved" && typeof c.ref === "string" && typeof c.baseline_sha === "string") {
-					const now = resolveGitRefOrNull(projectRoot, c.ref);
-					if (now !== null && now !== c.baseline_sha) {
-						firedReasons.push(
-							`stale condition fired: ref '${c.ref}' moved from '${(c.baseline_sha as string).slice(0, 12)}'`,
-						);
 					}
 				}
 			}

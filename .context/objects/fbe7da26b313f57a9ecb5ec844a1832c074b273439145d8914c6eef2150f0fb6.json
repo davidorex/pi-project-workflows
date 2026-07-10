@@ -1,0 +1,12 @@
+{
+  "title": "pi-agent-dispatch loop/tool/type doc comments cite frozen .project-era IDs (FEAT-006/TASK-088/TASK-091/DEC-0044/DEC-0047/DEC-0018/DEC-0014) that collide with unrelated active-.context items of the same IDs",
+  "body": "The work-order loop and its tools carry provenance comments referencing IDs from the frozen .project-era substrate: run-work-order-loop-tool.ts:4 still says 'loads from .project/work-orders.json'; work-order-loop.ts and types.ts cite FEAT-006 'north-star loop', TASK-088, TASK-091, DEC-0044/0047/0018/0014 as dispatch decisions. In the active .context these IDs resolve to unrelated items — resolve-items-by-id: DEC-0044/DEC-0047 = null, FEAT-006 = the pi-context update feature, TASK-088 = write-time invariant evaluation. Anyone tracing the loop's provenance from the active substrate is misdirected. Surfaced by the 2026-07-07 work-order dogfood investigation (analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md §cross-cutting). Resolution: when FEAT-014 touches these files, re-anchor the comments to active-substrate IDs or mark them explicitly as frozen-.project-era provenance; correct the stale '.project/work-orders.json' path string.",
+  "location": "packages/pi-agent-dispatch/src/run-work-order-loop-tool.ts:4",
+  "status": "resolved",
+  "category": "issue",
+  "priority": "critical",
+  "package": "pi-agent-dispatch",
+  "source": "agent",
+  "resolved_by": "TASK-108 (commit ea27ee25, merged to main): work-order-loop.ts and run-work-order-loop-tool.ts's frozen .project-era ID citations (FEAT-006/TASK-088/TASK-091/DEC-0044/DEC-0047/DEC-0018/DEC-0014) and the stale .project/work-orders.json path string are replaced with plain-English rationale, per the broader FGAP-136 standard (opacity to an outside reader, not staleness, is the actual defect). Correction to this issue's own filed body: it names 'types.ts' alongside work-order-loop.ts, but no types.ts file exists in pi-agent-dispatch/src -- the DEC-0047 citations matching that description are in packages/pi-jit-agents/src/types.ts, a different package, out of this fix's scope and tracked as FGAP-136 follow-on.",
+  "resolved_at": "2026-07-10"
+}

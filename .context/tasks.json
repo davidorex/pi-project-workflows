@@ -2197,7 +2197,7 @@
     {
       "id": "TASK-108",
       "title": "De-jargon every internal-tracker-ID citation in pi-agent-dispatch's code comments (fixes issue-012, first instance of FGAP-136)",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Rewrite every code comment in packages/pi-agent-dispatch/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive engineering point in plain English instead. This closes issue-012 (the frozen .project-era IDs that now collide with unrelated live substrate items) and applies FGAP-136's broader standard (opacity to an outside reader is the defect, independent of whether the ID still resolves correctly) to every citation found in this package, not just the 7 originally named by issue-012. 25 distinct IDs across 24 files (14 source, 10 test) were enumerated and substantively resolved this session (each ID's actual meaning recovered from .project-archived/*.json where stale, or the live .context substrate where still current) -- the implementing agent's brief carries the full substantive-meaning table verbatim so it does not re-derive or guess. Also fixes the literal stale path string '.project/work-orders.json' in run-work-order-loop-tool.ts's tool-parameter description, named explicitly by issue-012's own filed text. Scope is bounded to this one package -- the other 6 packages' remaining ~500 comment-citations (found by scripts/scan-comment-citations.ts, TASK-107) are explicit follow-on work tracked by FGAP-136, not touched here.",
       "acceptance_criteria": [
         "Every one of the 25 identified ID citations (FEAT-006, TASK-088, TASK-091, DEC-0044, DEC-0047, DEC-0018, DEC-0014, FEAT-004, FEAT-005, TASK-081, DEC-0023, FGAP-124, FGAP-127, JI-021, FEAT-010, DEC-0002, TASK-086, FGAP-121, TASK-090, FGAP-102, FGAP-134, FGAP-135, FGAP-125, FGAP-136, TASK-094, TASK-059) is replaced with plain-English prose stating the same substantive point, grounded in the recovered meaning (not fabricated, not the unrelated live-substrate collision).",
@@ -2211,8 +2211,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "755a1cf49d52af9bcdca0ee5891c76cb",
-      "content_hash": "4980b777d2f5d0f92cabfba5b765e78e898aa0060d7dd80be48c3e17d60a0548",
-      "content_parent": "ebacbd8c50d4a809b6d2e9dd14a94f8465ab32d6c216cac66dcd30b1524cb4e9"
+      "content_hash": "e9a05c6383e9c13e3496fcab3d5a339a513dac4934440361300f4c3f601b1f02",
+      "content_parent": "4980b777d2f5d0f92cabfba5b765e78e898aa0060d7dd80be48c3e17d60a0548"
     }
   ],
   "schema_version": "1.0.1"

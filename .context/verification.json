@@ -2729,6 +2729,52 @@
       ],
       "oid": "f2e3380a426185c996223bfab928af84",
       "content_hash": "3d657e48567c3fec6da1e24fe4ba2aeaf6365a4b7b9d553b2049dbcc9be4a8df"
+    },
+    {
+      "id": "VER-087",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-10",
+      "evidence": "Runtime demo, independently re-verified by the orchestrator (not just relayed from the implementing agent): `npx tsx scripts/scan-comment-citations.ts` run against the merged main branch finds ZERO instances under packages/pi-agent-dispatch/src for any of the 25 target IDs (repo total dropped from 588 to 525, consistent with the ~63 rewritten occurrences across 24 files). Direct grep of all 10 named test files for the same 25 ID patterns also returns zero matches. Full npm run build + npm run check + npm test passed (husky pre-commit gate, re-confirmed by the merge). One unplanned complication during implementation: TASK-107's own regression-pin test (scripts/scan-comment-citations.test.ts) asserted the scanner would find FEAT-006/TASK-088/etc. in the exact files TASK-108 just cleaned -- structurally guaranteed to fail post-fix, not a scanner defect. Per user correction this session (a policy-determined continuation is not a stop point), the pin was repointed at real, still-present, out-of-scope citations in packages/pi-context/src/block-api.ts (verified present via grep before use) plus a new before/after cell confirming zero pi-agent-dispatch instances remain -- 12/12 cells pass. A CHANGELOG [Unreleased] entry was added to pi-agent-dispatch/CHANGELOG.md per the check-changelog gate (published-surface change); its wording itself avoids citing a literal tracker ID, since packages/pi-context/src/samples-catalog.test.ts's citation-rot-scanner gate flagged the first draft for doing exactly that -- consistent with this task's own point. Separately confirmed: issue-012's body text mentions 'types.ts' alongside work-order-loop.ts, but no types.ts file exists in pi-agent-dispatch/src -- the DEC-0047 citations actually matching that description live in packages/pi-jit-agents/src/types.ts, a different package, out of TASK-108's bounded scope and tracked as FGAP-136 follow-on, not silently closed as done.",
+      "criteria_results": [
+        {
+          "criterion": "Every one of the 25 identified ID citations is replaced with plain-English prose stating the same substantive point.",
+          "status": "passed",
+          "evidence": "Zero remaining instances across all 14 source + 10 test files, confirmed by scanner run + direct grep, independently re-verified by the orchestrator."
+        },
+        {
+          "criterion": "The literal '.project/work-orders.json' path string in run-work-order-loop-tool.ts is corrected.",
+          "status": "passed",
+          "evidence": "Confirmed in the merged diff -- tool schema description and header prose both corrected to describe the substrate's work-orders block."
+        },
+        {
+          "criterion": "scripts/scan-comment-citations.ts re-run finds zero remaining source-file instances.",
+          "status": "passed",
+          "evidence": "Orchestrator's own independent scan run confirms zero, not merely the implementing agent's claim."
+        },
+        {
+          "criterion": "Direct grep of the 10 test files finds zero remaining instances.",
+          "status": "passed",
+          "evidence": "Orchestrator's own independent grep confirms zero."
+        },
+        {
+          "criterion": "Spot-check confirms rewritten comments still accurately describe current code behavior.",
+          "status": "passed",
+          "evidence": "This session's investigation independently verified every site's surrounding technical claim matched current code before the rewrite; the rewrite was a wording substitution per that verified material, not a behavior audit redone after the fact."
+        },
+        {
+          "criterion": "npm run build + npm run check + npm test exit 0.",
+          "status": "passed",
+          "evidence": "Husky pre-commit gate passed on the final commit (ea27ee25); merge to main introduces no new failures."
+        },
+        {
+          "criterion": "issue-012 is explicitly re-checked against its own filed acceptance criteria at closure and closed if satisfied.",
+          "status": "passed",
+          "evidence": "issue-012's filed location (run-work-order-loop-tool.ts:4) and its core complaint (stale .project-era IDs in work-order-loop.ts/run-work-order-loop-tool.ts, plus the stale path string) are fully addressed. Its body's incidental 'types.ts' mention is a misattribution in the original filing -- that file doesn't exist in pi-agent-dispatch; the matching citations are in pi-jit-agents/src/types.ts, out of this task's scope and tracked separately via FGAP-136. issue-012 closed on this basis, with the types.ts note recorded rather than silently glossed."
+        }
+      ],
+      "oid": "f2ddd7f5bc684c09b4202984b0ce970f",
+      "content_hash": "517e323761bc778a85fc150efdf96a24b53d26f81fe64411f9e7ad0df722c054"
     }
   ],
   "schema_version": "1.0.1"

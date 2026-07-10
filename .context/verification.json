@@ -2957,6 +2957,52 @@
       ],
       "oid": "2669057a684e6088b2c55746e0c6de1d",
       "content_hash": "f5506efba290344eb6dd4d624e77e4b271b0a2dbfaa0783dba422d1aafdae7d4"
+    },
+    {
+      "id": "VER-095",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-10",
+      "evidence": "Merged to main (commit af5b9da9, merge follows). Independently re-verified by the orchestrator, not relayed from the implementing agent: diff of the two research.schema.json copies confirms byte-identical; npx tsx scripts/check-context-currency.ts reports 'derivable context is current' exit 0 (previously exited 1 on R-0030 before this fix); pi-context context-validate --json carries no staleness-candidate or R-0030 mention, only the pre-existing baseline warning classes; direct read of R-0030 confirms its 5 line-scoped stale_conditions entries carry the correct `lines` values matching their sibling citations, with freshly-stamped baseline_hash values distinct from the original whole-file hashes (e.g. workflow-sdk.ts's new hash 6de20c93... vs the original whole-file 3d43b592...), the 2 non-scopable entries untouched, and status still complete; the new computeFileLineRangeHash function read directly, confirmed correctly implemented with the residual limitation stated plainly in its doc comment. npm run build + npm run check + full npm test + npm run test:migration all independently re-run on merged main, all exit 0.",
+      "criteria_results": [
+        {
+          "criterion": "research.schema.json's file-changed branch declares an optional lines field; schema version bumped 1.1.0 -> 1.2.0 with an identity migration registered.",
+          "status": "passed",
+          "evidence": "Confirmed via direct schema read and migrations.json inspection; samples and installed copies byte-identical."
+        },
+        {
+          "criterion": "computeFileLineRangeHash exists, correctly parses comma-separated N and N-M segments, and produces a deterministic hash over only the referenced lines' content.",
+          "status": "passed",
+          "evidence": "Read the function directly in content-hash.ts -- correct parsing, sorted dedup, ascending extraction, sha-256 hex output matching baseline_hash pattern."
+        },
+        {
+          "criterion": "stampDeclaredBaselines and evaluateStalenessCandidates both use the line-scoped hash when lines is present, whole-file hash when absent.",
+          "status": "passed",
+          "evidence": "Confirmed via the implementing agent's runtime demo (scratch substrate, lines:2-3 over a 6-line file: edit outside range did not fire, edit inside range did fire) plus the orchestrator's own re-run of check-context-currency and context-validate on the real R-0030 data showing the same behavior."
+        },
+        {
+          "criterion": "Runtime demo proving the behavioral fix (not just R-0030 looking clean).",
+          "status": "passed",
+          "evidence": "Implementing agent's real CLI-driven scratch-substrate demo, reported verbatim with actual observed output for both the outside-range-no-fire and inside-range-fire cases."
+        },
+        {
+          "criterion": "R-0030 corrected via update-block-item (never a direct edit); 5 entries with matching citation lines re-stamped; 2 without left as whole-file; status remains complete.",
+          "status": "passed",
+          "evidence": "Orchestrator's own direct read-back of R-0030 confirms exactly this state."
+        },
+        {
+          "criterion": "check-context-currency and context-validate no longer report R-0030.",
+          "status": "passed",
+          "evidence": "Both independently re-run by the orchestrator on merged main, confirmed clean."
+        },
+        {
+          "criterion": "npm run build + npm run check + npm test (+ check-changelog + parity-check + check-config-schema) all exit 0.",
+          "status": "passed",
+          "evidence": "Independently re-run by the orchestrator on merged main; husky pre-commit gate also passed on the implementing commit itself."
+        }
+      ],
+      "oid": "a29793ede6e636d4b82bacd3cdbf03ef",
+      "content_hash": "a950ae18a0b1faee5ecba8b5a5b74a2d0438aaf473d42fe8ea24fcb9af2fa3d5"
     }
   ],
   "schema_version": "1.0.1"

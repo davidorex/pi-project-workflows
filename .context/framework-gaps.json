@@ -4527,7 +4527,7 @@
     },
     {
       "title": "The file-changed stale_conditions kind shares content_pin's exact removed defect (whole-file hash fires on any edit, not the cited region) -- never cross-examined when content_pin was removed",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "TASK-106 removed content_pin/anchor-drift specifically because it 'fires anchor-drift on ANY edit to a cited file regardless of whether the cited region changed, manufacturing false-positive drift and re-review debt.' The sibling file-changed stale_conditions kind was explicitly kept ('keep file-changed baseline_hash ... stamping') but pins the SAME whole-file SHA-256 (computeFileBytesHash) at both stamp time (block-api.ts stampDeclaredBaselines) and evaluation time (context-sdk.ts evaluateStalenessCandidates) -- so it fires on any edit anywhere in the cited file, exactly the defect content_pin was removed for. This project's binding gap-explore-surfaces-class convention requires asking 'is this an instance of a more general class' during gap investigation; that question was asked richly for content_pin's own history but never asked in the reverse direction (does file-changed share this class). Confirmed by reading TASK-106's filed text, its implementing commits (73b19bca, f330a523), the preceding forensic analysis (analysis/2026-07-08-anchor-drift-provenance.md, which never mentions file-changed), and the origin design report (analysis/2026-07-05-currency-foreclosure-shape.md, which introduces both mechanisms in the same design pass without ever comparing their false-positive risk). Live-fired instance: a 2026-07-10 currency audit found R-0030 (research, status complete) flagged stale because packages/pi-workflows/src/workflow-sdk.ts changed -- but the actual edit (TASK-111, comment-only de-jargon) never touched the cited lines (483-492,597-614,651-652).",
@@ -4557,7 +4557,10 @@
       "created_at": "2026-07-10",
       "id": "FGAP-137",
       "oid": "9f6a7216b04640499b90a1657396e9ad",
-      "content_hash": "9b32cc311ecdc89559ab8a44be7f967e266521f25fa6f78461f5acda0a02753c"
+      "content_hash": "5aafc33a128a966aa8c6eda76d8c41b54ea75064172a81a1aa09fa7925071e25",
+      "closed_by": "TASK-116 (commit af5b9da9, merged): file-changed stale_conditions now scope their hash to the cited line range when one is known (new computeFileLineRangeHash, wired into both stampDeclaredBaselines and evaluateStalenessCandidates), falling back to whole-file hashing when no line range is cited. R-0030, the triggering live instance, corrected via update-block-item -- 5 of its 7 entries now carry line-scoped baselines matching their sibling citations; the 2 without a citable line range remain whole-file, correctly. Residual limitation stated explicitly, not hidden: the hash is keyed by line NUMBER, not content anchor, so an unrelated edit earlier in the file that shifts line numbers can still cause a false stale-fire or false clean-pass -- this narrows the false-positive surface from 'any byte in the file' to 'any byte in or before the cited lines', it does not eliminate false positives. revision-moved (the sibling stale_conditions kind) was not examined and remains an open question for a future investigation to cross-check against this same class.",
+      "closed_at": "2026-07-10",
+      "content_parent": "9b32cc311ecdc89559ab8a44be7f967e266521f25fa6f78461f5acda0a02753c"
     }
   ]
 }

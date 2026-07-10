@@ -10812,5 +10812,18 @@
       "refname": "TASK-111"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "dbc4ae583e98d75ac9069374191f680c",
+      "refname": "VER-093"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf392f9869e3bde17bcfbf49b7f97e32",
+      "refname": "TASK-114"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

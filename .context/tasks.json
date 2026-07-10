@@ -2300,7 +2300,7 @@
     {
       "id": "TASK-114",
       "title": "De-jargon every internal-tracker-ID citation in pi-context-cli's code comments (FGAP-136 rollout)",
-      "status": "in-progress",
+      "status": "completed",
       "description": "Rewrite every code comment in packages/pi-context-cli/src (source and test files) that cites an internal .context-tracker ID (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) to state the same substantive point in plain English instead, regardless of whether the cited ID still resolves correctly -- opacity to a reader outside this project is the defect, per FGAP-136. Depends on TASK-109 merging first. The implementing agent works from a replacement-text table produced by a dedicated Explore pass over this package's citations (scripts/scan-comment-citations.ts output plus a direct grep of this package's *.test.ts files), not by re-deriving meaning itself.",
       "acceptance_criteria": [
         "Every internal-tracker-ID citation found in packages/pi-context-cli/src (source and test files) is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning -- never fabricated.",
@@ -2311,8 +2311,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "cf392f9869e3bde17bcfbf49b7f97e32",
-      "content_hash": "73c0183594fb3f171f26d85f018ddb36ba4375a41371a6f52613ab60498f827b",
-      "content_parent": "357c7d3abcdaf4873a24346d5448a45f6d4c08adf34ac9b3b5c127a340dde281"
+      "content_hash": "cfa24857b513fd9933dcc77d67640e8e28c7192e865bf41c8451c93201daff70",
+      "content_parent": "73c0183594fb3f171f26d85f018ddb36ba4375a41371a6f52613ab60498f827b"
     },
     {
       "id": "TASK-115",

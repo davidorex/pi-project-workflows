@@ -2905,6 +2905,32 @@
       ],
       "oid": "e1efd7cd06da856498e3b42ae8bb82e1",
       "content_hash": "c5f37e74a748e9aff2069b413bc2b3f62384f307f00a2e4da36ec55242c99aef"
+    },
+    {
+      "id": "VER-093",
+      "status": "passed",
+      "method": "command",
+      "timestamp": "2026-07-10",
+      "evidence": "Merged to main (commit ab03d512, merge commit follows). Original implementation left 2 STORY-010 citations in cli.test.ts unaddressed (misread scope as FEAT/TASK/FGAP-only when the meaning-table also covered STORY-NNN) and was missing the required CHANGELOG [Unreleased] entry -- both found and fixed by the orchestrator before merge, verified via direct grep and the full 5-component gate (build/check/test/check-changelog/parity-check/check-config-schema) all independently run and passing. Independently re-verified post-merge on main: cli.ts shows zero citation-pattern hits; cli.test.ts shows 12 hits, all confirmed to be the meaning-table's own known fixture-data exclusions (literal seeded TASK-001/FGAP-001/FGAP-999/TASK-002 JSON payloads and a bare 'FGAP-' prefix string), not real citations.",
+      "criteria_results": [
+        {
+          "criterion": "Every internal-tracker-ID citation found in the package is replaced with plain-English prose stating the same substantive point, grounded in recovered meaning.",
+          "status": "passed",
+          "evidence": "All 34 unique IDs (including STORY-007/010/013) rewritten per analysis/2026-07-10-fgap-136-pi-context-cli-meaning-table.md; the STORY-010 gap found and closed by the orchestrator before this closure."
+        },
+        {
+          "criterion": "Zero remaining instances of the target IDs in source and test files.",
+          "status": "passed",
+          "evidence": "Orchestrator's own independent grep on merged main confirms zero real citations; remaining hits are fixture data explicitly excluded by the meaning-table."
+        },
+        {
+          "criterion": "npm run build + npm run check + npm test exit 0, plus check-changelog/parity-check/check-config-schema.",
+          "status": "passed",
+          "evidence": "All 5 gate components independently run and confirmed passing by the orchestrator; the CHANGELOG entry the original commit was missing was added before this closure."
+        }
+      ],
+      "oid": "dbc4ae583e98d75ac9069374191f680c",
+      "content_hash": "134bfb34471c375bef9f1f771431f86219401c02b44bc531d602309e660946c1"
     }
   ],
   "schema_version": "1.0.1"

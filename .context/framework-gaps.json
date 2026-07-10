@@ -4179,13 +4179,13 @@
         }
       ],
       "impact": "Any harness or workflow driving pi non-interactively cannot complete the eight gated ceremonies at all — forcing hand-written artifacts that skip validation and attestation — while a composite tool can produce a gated ceremony's effect (an attested commit) with no confirm, inverting the gate's risk ordering.",
-      "proposed_resolution": "Under FEAT-014: apply the FGAP-068 caller-as-reconciler shape (the interactive orchestrator authors; non-interactive steps never need the gated ceremony) or give the pi-only gated tools an explicit pre-authorization channel equivalent to the CLI --yes, as a decision; close the coverage inconsistency by gating the composite (run-work-order-loop) or routing its commit through the gated tool path.",
+      "proposed_resolution": "Under FEAT-014: apply the FGAP-068 caller-as-reconciler shape (the interactive orchestrator authors; non-interactive steps never need the gated ceremony); close the coverage inconsistency by routing run-work-order-loop's commit through the gated commit-attested tool path instead of the ungated attestedCommit library call.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "a0e16b8838a3f3b7f90afb0ff1de0cabc2c6b96df881b162ed4350a59d6487d4",
-      "content_parent": "6cee31c3f2f3c93e3fa87b73f6a645b6d2d752c0f6ccadd5948ba30adcfea108"
+      "content_hash": "6148c019a7de3634a47c56fa13ae416880385fa2d5d4de5109b017839a229c27",
+      "content_parent": "a0e16b8838a3f3b7f90afb0ff1de0cabc2c6b96df881b162ed4350a59d6487d4"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",

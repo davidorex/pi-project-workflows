@@ -59,7 +59,8 @@ const SCHEMAS_DIR = path.join(PACKAGE_ROOT, "schemas");
  * and `saveInstructions` route through `appendToTypedFile` /
  * `writeTypedFile` from `@davidorex/pi-context/block-api`, threading these
  * schema paths so AJV validation, atomic write, and proper-lockfile gating
- * apply uniformly with `.project/<block>.json` writes (FGAP-019 closure;
+ * apply uniformly with `.project/<block>.json` writes (closing the gap
+ * where these writes previously happened via raw, unguarded file writes;
  * issue-065's three remaining bypass categories — no AJV, no
  * proper-lockfile, no centralized choke point — closed for monitor
  * framework state).
@@ -969,7 +970,9 @@ export function saveInstructions(monitor: Monitor, instructions: MonitorInstruct
 	// Routes through `writeTypedFile` so AJV validates the array against
 	// `monitor-instruction-list.schema.json`, the write goes through
 	// proper-lockfile, and the same atomic tmp+rename + cleanup-on-failure
-	// applies as for `.project/<block>.json` writes — FGAP-019 closure.
+	// applies as for `.project/<block>.json` writes — fixing the earlier raw
+	// `fs.writeFileSync` write that skipped schema validation and lockfile
+	// protection entirely.
 	try {
 		writeTypedFile(
 			monitor.resolvedInstructionsPath,
@@ -1285,10 +1288,13 @@ let getCliFlag: ((name: string) => boolean | string | undefined) | null = null;
  *   3. .workflows/monitors/<monitor.name>/trace-config.json (if exists)
  *   4. null (builtin patterns only)
  *
- * Per DEC-0005 the trace stream is push-write inside executeAgent and is
- * intentionally divergent from pi-mono's pull/replay session model — this
- * resolver feeds DispatchContext fields the runtime consumes; trace-write
- * failures are non-fatal and never abort classify.
+ * Monitors can't record their classification activity into the framework's
+ * session log, since it's read-only from an extension's perspective — so
+ * the trace stream is written by a dedicated writer inside executeAgent
+ * instead, a deliberate departure from pi-mono's pull/replay session model
+ * scoped only to monitors. This resolver feeds DispatchContext fields the
+ * runtime consumes; trace-write failures are non-fatal and never abort
+ * classify.
  */
 function resolveTraceSettings(monitorName: string): {
 	tracePath: string | null;
@@ -1397,9 +1403,10 @@ async function classifyViaAgent(
 	// --- Trace-capture wiring (issue-023 T6) -------------------------------
 	// Resolve effective tracePath / redactionConfigPath / monitorName for this
 	// classify call. See resolveTraceSettings() for precedence rules. The
-	// dispatch surface is pi-jit-agents' executeAgent (DEC-0005 push-write
-	// trace pipeline); failures inside the trace path are non-fatal and never
-	// abort the classify call.
+	// dispatch surface is pi-jit-agents' executeAgent, which runs its own
+	// push-write trace pipeline (monitors can't write into the framework's
+	// read-only session log); failures inside the trace path are non-fatal
+	// and never abort the classify call.
 	const { tracePath, redactionConfigPath } = resolveTraceSettings(monitor.name);
 
 	// Resolve absolute outputSchema path. The pi-workflows compileAgentSpec
@@ -1514,7 +1521,9 @@ export function learnPattern(monitor: Monitor, description: string, severity = "
 	// shape) so AJV validates the appended item + the whole array against
 	// `monitor-pattern-list.schema.json`, the read-modify-write critical
 	// section is wrapped in proper-lockfile, and the same atomic tmp+rename
-	// applies as for `.project/<block>.json` writes — FGAP-019 closure.
+	// applies as for `.project/<block>.json` writes — fixing the earlier raw
+	// `fs.writeFileSync` write that skipped schema validation and lockfile
+	// protection entirely.
 	// `appendToTypedFile` requires the file to already exist, so bootstrap
 	// an empty list here when the patterns file is absent (matching the
 	// prior "loadPatterns returns [] on read failure" behavior).

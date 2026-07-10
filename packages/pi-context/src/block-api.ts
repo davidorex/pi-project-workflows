@@ -17,7 +17,6 @@
  * Future extraction seam for pi-project extension.
  */
 
-import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -38,7 +37,6 @@ import {
 } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
-import { cleanGitEnv } from "./git-env.js";
 import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { hasObject, putObject } from "./object-store.js";
 import { validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
@@ -678,9 +676,7 @@ export function mintOid(substrateId: string, nonce?: string): string {
  * subschema admits kind-const object branches (oneOf), schema-gated per nested
  * field so a schema not declaring the shape is untouched (the identity-stamp
  * gating pattern): a `file-changed` element without `baseline_hash` gets the
- * file's current hash; a `revision-moved` element without `baseline_sha` gets
- * the ref's current commit (repo-resolved from the project root; unresolvable →
- * left unstamped, so the condition stays human-only).
+ * file's current hash.
  *
  * Paths resolve against the project root (the substrate dir's parent).
  * Mutated elements are copied first — the caller's nested objects are never
@@ -761,33 +757,8 @@ function stampDeclaredBaselines(
 				const hash = fileHashOrNull(rec.path, typeof rec.lines === "string" ? rec.lines : undefined);
 				if (hash !== null) return { ...rec, baseline_hash: hash };
 			}
-			if (
-				rec.kind === "revision-moved" &&
-				branchDeclares("revision-moved") &&
-				typeof rec.baseline_sha !== "string" &&
-				typeof rec.ref === "string"
-			) {
-				const sha = resolveGitRefOrNull(projectRoot, rec.ref);
-				if (sha !== null) return { ...rec, baseline_sha: sha };
-			}
 			return el;
 		});
-	}
-}
-
-/** Current commit of `ref` in the repo at `projectRoot`, or null (no repo / unresolvable). */
-export function resolveGitRefOrNull(projectRoot: string, ref: string): string | null {
-	try {
-		const out = execFileSync("git", ["rev-parse", "--verify", `${ref}^{commit}`], {
-			cwd: projectRoot,
-			env: cleanGitEnv(),
-			stdio: ["ignore", "pipe", "ignore"],
-		})
-			.toString()
-			.trim();
-		return out.length > 0 ? out : null;
-	} catch {
-		return null;
 	}
 }
 

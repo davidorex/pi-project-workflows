@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/research",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "title": "Research",
   "description": "Factual and analytical substrate under decisions — each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them.",
   "type": "object",
@@ -193,27 +193,6 @@
                       "type": "string",
                       "pattern": "^[0-9a-f]{64}$",
                       "description": "SHA-256 at grounding time — of the file's bytes, or of exactly the cited lines when 'lines' is present. Stamped by the write path when absent and the file is readable; the condition fires when the current hash differs (or the file is gone)."
-                    }
-                  }
-                },
-                {
-                  "type": "object",
-                  "additionalProperties": false,
-                  "required": [
-                    "kind",
-                    "ref"
-                  ],
-                  "properties": {
-                    "kind": {
-                      "const": "revision-moved"
-                    },
-                    "ref": {
-                      "type": "string",
-                      "description": "Git ref whose movement fires the condition."
-                    },
-                    "baseline_sha": {
-                      "type": "string",
-                      "description": "Commit the ref pointed at when grounding was current. Stamped by the write path when absent and the ref resolves; the condition fires when the ref moves."
                     }
                   }
                 }

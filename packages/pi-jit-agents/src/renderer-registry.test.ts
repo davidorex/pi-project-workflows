@@ -174,7 +174,7 @@ describe("createRendererRegistry", () => {
 	});
 });
 
-describe("CANONICAL_MACRO_NAMES array_key column (FEAT-001 template-relocation arc)", () => {
+describe("CANONICAL_MACRO_NAMES array_key column (agent-template-relocation arc)", () => {
 	it("every entry carries both macro_name + array_key (registry shape extension)", () => {
 		for (const [kind, entry] of Object.entries(CANONICAL_MACRO_NAMES)) {
 			assert.strictEqual(typeof entry.macro_name, "string", `kind ${kind}: macro_name must be string`);

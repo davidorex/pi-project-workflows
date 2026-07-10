@@ -41,7 +41,7 @@ describe("createTemplateEnv", () => {
 		assert.strictEqual(env.render("greet.md", {}), "from-project");
 	});
 
-	it("does not throw with no bootstrap pointer (project tier degrades; FGAP-074 C3)", (t) => {
+	it("does not throw with no bootstrap pointer (project tier degrades)", (t) => {
 		// Deliberately pointer-less mkdtemp — NO writeBootstrapPointer. The project
 		// tier must be omitted (not throw BootstrapNotFoundError); user/builtin tiers
 		// are unaffected and the returned env still renders.

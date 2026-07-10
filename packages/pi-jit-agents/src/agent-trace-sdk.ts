@@ -1,17 +1,28 @@
 /**
- * Agent trace read-side SDK for issue-023.
+ * Agent trace read-side SDK.
  *
- * Read-only query surface over JSONL trace files produced by TraceWriter (T4).
- * Each line of the trace file is a single TraceEntry per the schema at
+ * When an agent (in particular a monitor's classify call) runs, nothing about
+ * that run — the rendered prompt, the raw LLM response, the resolved context
+ * values, the verdict decision — is inspectable after the fact unless it was
+ * captured. This module is the read-only query surface over the JSONL trace
+ * files that TraceWriter produces for that purpose. Each line of the trace
+ * file is a single TraceEntry per the schema at
  * `packages/pi-jit-agents/schemas/agent-trace.schema.json`.
  *
- * Per DEC-0004 the entry shape is a discriminated union with
- * `{ type, id, parentId, timestamp, ...extra }` mirroring pi-coding-agent's
- * SessionEntry structurally without literal inheritance. Per DEC-0005 entries
- * are produced by a push-write trace stream — this SDK is the corresponding
- * pull/replay surface that reads entries back for inspection and tree
- * traversal. The shape mirrors pi-coding-agent's SessionManager read API
- * (tree traversal, no free-form search) per the canonical-compliance audit.
+ * The entry shape is a discriminated union with `{ type, id, parentId,
+ * timestamp, ...extra }`, deliberately mirroring pi-coding-agent's
+ * SessionEntry structurally (same tree-traversal query style) without literal
+ * inheritance — it is defined independently in this package's own schema so a
+ * future change to pi-coding-agent's session format cannot silently break
+ * trace files. Entries are produced by a one-way push-write trace stream
+ * (written the instant each event happens, inside the agent-execution call
+ * itself) rather than pi-coding-agent's own pull/replay session model —
+ * because pi-coding-agent gives extensions no write access to sessions at
+ * all, an independent push-write mechanism was the only way to capture this
+ * data as it happens. This SDK is the corresponding pull/replay surface that
+ * reads those entries back for inspection and tree traversal, matching
+ * pi-coding-agent's SessionManager read API (tree traversal, no free-form
+ * search).
  *
  * Read-only. No mutation helpers. No schema validation on read — entries are
  * trusted as validated at write time, matching SessionManager's pattern.

@@ -1,11 +1,12 @@
 // trace-redactor: credential / sensitive-data redaction for monitor-classify trace records.
 //
-// Per DEC-0005 and the canonical-compliance audit for issue-023, trace records produced by
-// the monitor-classify capture path may contain rendered LLM prompts and full assistant
-// responses. Those payloads can carry credentials echoed by users (pasted API keys, OAuth
-// tokens, secrets in code samples). Pi-mono's SessionManager performs no redaction; this
-// module is the pre-write filter that aims to strip well-known sensitive shapes BEFORE
-// trace records are persisted.
+// Trace records are written push-style, as each event happens inside the agent-execution
+// call itself, and per the canonical-compliance audit against pi-coding-agent's own session
+// handling, trace records produced by the monitor-classify capture path may contain rendered
+// LLM prompts and full assistant responses. Those payloads can carry credentials echoed by
+// users (pasted API keys, OAuth tokens, secrets in code samples). Pi-mono's SessionManager
+// performs no redaction; this module is the pre-write filter that aims to strip well-known
+// sensitive shapes BEFORE trace records are persisted.
 //
 // Scope intent (not a guarantee):
 //   - Match known credential surface shapes via the BUILTIN_PATTERNS set.

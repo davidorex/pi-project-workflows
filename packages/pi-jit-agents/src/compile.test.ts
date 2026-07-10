@@ -112,7 +112,7 @@ describe("compileAgent", () => {
 
 		// Minimal schema + block data so readBlock succeeds. The body carries
 		// structural chars + a forged </context_block> close tag — escaping must
-		// neutralise it so the data boundary cannot be broken (FGAP-081).
+		// neutralise it so the data boundary cannot be broken.
 		const schemasDir = path.join(cwd, ".project", "schemas");
 		fs.mkdirSync(schemasDir, { recursive: true });
 		fs.writeFileSync(

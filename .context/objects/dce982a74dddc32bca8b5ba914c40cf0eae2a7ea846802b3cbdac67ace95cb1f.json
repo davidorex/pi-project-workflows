@@ -1,0 +1,14 @@
+{
+  "description": "Implement FGAP-126's corrected resolution: (1) apply the FGAP-068 caller-as-reconciler shape so a non-interactive run-work-order-loop dispatch never needs to invoke the 8 pi-only gated tools (author-agent-spec, author-tool-grant, commit-attested, workflow-execute, workflow-resume, workflow-init, monitors-control, monitors-rules) itself -- the interactive orchestrator performs any of these when needed, not the headless dispatch; (2) route run-work-order-loop's own commit through the gated commit-attested tool path in place of the current ungated _internals.attestedCommit library call (work-order-loop.ts:254), closing the gate-coverage inconsistency where a passing non-interactive run could already produce an attested commit with no operator confirm while the less consequential spec-authoring is refused outright.",
+  "acceptance_criteria": [
+    "A non-interactive run-work-order-loop dispatch does not invoke, and is not refused on, any of the 8 pi-only gated tools -- verified by runtime demo, per the caller-as-reconciler shape (the interactive orchestrator performs these when needed, not the headless dispatch).",
+    "run-work-order-loop's commit is produced via the gated commit-attested tool path, not the current ungated library call at work-order-loop.ts:254 -- verified by runtime demo that the same authorization commit-attested enforces for every other caller now applies here.",
+    "Regression tests pin both behaviors.",
+    "npm run build, npm run check, npm test all pass clean; docs-surface-sync applied to any changed op/tool description (ops-registry.ts, package README, skill-narrative.md) per this project's binding convention."
+  ],
+  "files": [
+    "packages/pi-agent-dispatch/src/auth-gate.ts",
+    "packages/pi-agent-dispatch/src/work-order-loop.ts"
+  ],
+  "status": "planned"
+}

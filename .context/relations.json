@@ -10955,5 +10955,44 @@
       "refname": "FEAT-014"
     },
     "relation_type": "decision_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
+      "refname": "TASK-118"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "22ea947619580149dfacd0c2ef4fdefe",
+      "refname": "FGAP-126"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
+      "refname": "TASK-118"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "b473e28e5449a77db7470101067ba183",
+      "refname": "FEAT-014"
+    },
+    "relation_type": "task_addresses_feature"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
+      "refname": "TASK-118"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "600e4c269282ce170865645c9d143145",
+      "refname": "correctness-over-cost"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

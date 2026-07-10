@@ -1,0 +1,24 @@
+{
+  "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "non-interactive completion path for gated ceremonies",
+  "description": "The auth gate refuses unconditionally when ctx.hasUI === false (auth-gate.ts:156-161) — deliberate, documented ('closes the JSON-mode / workflow-subprocess bypass', :22-25). The gap is compositional, two facets: (1) the 13 pi-context auth-gated ops are also reflected on the pi-context CLI with --yes pre-authorization, but the 8 pi-only gated tools (author-agent-spec, author-tool-grant, commit-attested, workflow-execute/resume/init, monitors-control/rules) exist only as pi tools — zero non-interactive route; hand-writing the artifact (what the WO-001 probe did for the agent spec) is the only workaround and bypasses the sanctioned ceremony entirely. (2) Gate-coverage inconsistency: the gate operates on tool NAMES; run-work-order-loop is ungated and invokes the commit path as a library call (work-order-loop.ts:254 _internals.attestedCommit), not via the gated commit-attested tool — a passing pi -p run would produce an attested commit with no operator confirm while the less consequential spec authoring is refused. Class: instance of the FGAP-068/069 hasUI=false refusal class (tracked-closed for the schema-conflict instance; resolution vocabulary caller-as-reconciler); this instance and the coverage inconsistency are untracked.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/auth-gate.ts",
+      "reference": ":67 dispatchGatedTools; :91-96 AUTH_REQUIRED_TOOLS aggregation; :156-161 unconditional hasUI=false refusal; :22-25 the documented intent"
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": "attestedCommit invoked as a library call inside the ungated run-work-order-loop — the gated commit-attested tool's effect without its gate"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 1: the pi -p refusal reproduction, the 13-vs-8 tool inventory, the coverage-inconsistency analysis"
+    }
+  ],
+  "impact": "Any harness or workflow driving pi non-interactively cannot complete the eight gated ceremonies at all — forcing hand-written artifacts that skip validation and attestation — while a composite tool can produce a gated ceremony's effect (an attested commit) with no confirm, inverting the gate's risk ordering.",
+  "proposed_resolution": "Under FEAT-014: apply the FGAP-068 caller-as-reconciler shape (the interactive orchestrator authors; non-interactive steps never need the gated ceremony) or give the pi-only gated tools an explicit pre-authorization channel equivalent to the CLI --yes, as a decision; close the coverage inconsistency by gating the composite (run-work-order-loop) or routing its commit through the gated tool path."
+}

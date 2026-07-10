@@ -2313,7 +2313,7 @@
     {
       "id": "TASK-115",
       "title": "De-jargon every internal-tracker-ID citation in pi-project-workflows's code comments (FGAP-136 rollout)",
-      "status": "planned",
+      "status": "completed",
       "description": "packages/pi-project-workflows has no src/ subdirectory and no test files -- its entire code surface is 4 tiny root-level re-export files (workflows-extension.ts, monitors-extension.ts, project-extension.ts, dispatch-extension.ts, each under 60 bytes). A direct grep of all 4 for every FGAP-136-relevant ID pattern (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) found zero citations. This task's filed text originally referenced a src/ path that does not exist for this package; corrected here to the package's actual layout and finding.",
       "acceptance_criteria": [
         "Confirmed (already true at filing, re-verify at closure): a direct grep of packages/pi-project-workflows's 4 root-level .ts files for every FGAP-136-relevant ID pattern shows zero instances.",
@@ -2323,8 +2323,8 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10",
       "oid": "51f53c8c344969ee0e113e5153a7614a",
-      "content_hash": "7dfc63abc8cd48f0d708a9c1499f19c1ae5a8180d04bea894d9a475c7507237d",
-      "content_parent": "4fa69a2c043193ab3b12b441139d0d392aecbccb76296d537d9c6dc69fcb6e7d"
+      "content_hash": "3fc665607735f6d3d5639fc35040c64931bb6f5f0d5bd8119b367bf1cdf56bd2",
+      "content_parent": "7dfc63abc8cd48f0d708a9c1499f19c1ae5a8180d04bea894d9a475c7507237d"
     }
   ],
   "schema_version": "1.0.1"

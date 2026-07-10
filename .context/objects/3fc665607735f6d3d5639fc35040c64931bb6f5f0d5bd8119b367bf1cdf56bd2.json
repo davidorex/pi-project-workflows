@@ -1,0 +1,10 @@
+{
+  "title": "De-jargon every internal-tracker-ID citation in pi-project-workflows's code comments (FGAP-136 rollout)",
+  "status": "completed",
+  "description": "packages/pi-project-workflows has no src/ subdirectory and no test files -- its entire code surface is 4 tiny root-level re-export files (workflows-extension.ts, monitors-extension.ts, project-extension.ts, dispatch-extension.ts, each under 60 bytes). A direct grep of all 4 for every FGAP-136-relevant ID pattern (FEAT-NNN, TASK-NNN, DEC-NNNN, FGAP-NNN, JI-NNN) found zero citations. This task's filed text originally referenced a src/ path that does not exist for this package; corrected here to the package's actual layout and finding.",
+  "acceptance_criteria": [
+    "Confirmed (already true at filing, re-verify at closure): a direct grep of packages/pi-project-workflows's 4 root-level .ts files for every FGAP-136-relevant ID pattern shows zero instances.",
+    "No code change is required for this task if the re-verify confirms zero instances; close as a verified no-op rather than leaving unaddressed or fabricating a change.",
+    "npm run build + npm run check + npm test exit 0 (unaffected, since no change is expected)."
+  ]
+}

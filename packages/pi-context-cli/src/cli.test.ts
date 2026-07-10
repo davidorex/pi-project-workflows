@@ -99,7 +99,8 @@ test("parseOpArgs treats boolean field as a presence flag and accepts explicit t
 	assert.equal(explicit.params.autoId, false);
 });
 
-// ── update op (FEAT-006 T1 / TASK-034) reflection ─────────────────────────────
+// ── update op reflection (brings an installed substrate current with the catalog
+// without clobbering locally-modified schemas) ────────────────────────────────
 test("resolveOp('update') resolves the reflected update op", () => {
 	const op = resolveOp("update");
 	assert.ok(op, "the update op must be surfaced via the CLI (surface === use)");
@@ -280,7 +281,8 @@ test("authDecision defers to a prompt for a gated op on an interactive TTY", () 
 	if (d.allow === false) assert.equal(d.needsPrompt, true);
 });
 
-// TASK-051 — FGAP-080: resolve-blocked is authGated. The pure decision refuses it
+// resolve-blocked (re-validates and completes a previously-blocked schema update)
+// is authGated. The pure decision refuses it
 // non-interactively without --yes with the authorization-refusal message, and main
 // returns non-zero (the refusal is written to stderr + exits 1).
 test("authDecision refuses resolve-blocked non-interactively without --yes", () => {
@@ -348,7 +350,7 @@ test("deriveHelp renders a string-enum field's choices as the TYPE tag", () => {
 	assert.ok(help.includes("--op <eq|neq|in|matches>"));
 });
 
-// ── TASK-042: best-of-breed per-op help template ─────────────────────────────
+// ── best-of-breed per-op help template ────────────────────────────────────────
 test("deriveHelp renders SYNOPSIS, EXAMPLES, RELATED and the footer", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
@@ -378,7 +380,8 @@ test("deriveHelp synopsis brackets arrayKey as optional (auto-derived); block/it
 	assert.ok(!synopsisLine.includes("[--block"));
 });
 
-// ── TASK-042 iterate-to-zero: auto-supplied Flags-line annotation ────────────
+// ── auto-supplied Flags-line annotation (reconciling the Flags block's
+// schema-required truth with the bracketed-optional synopsis) ───────────────
 // A CLI-auto-supplied param (arrayKey/writer) is schema-required, so the Flags
 // block shows (required) — reconciled with the bracketed-optional synopsis by
 // appending the provenance phrase. Non-auto-supplied required params keep a plain
@@ -411,7 +414,7 @@ test("deriveHelp annotates the writer Flags line auto-injected on promote-item",
 	assert.ok(writerLine.includes("(required; auto-injected)"));
 });
 
-// ── TASK-042 iterate-to-zero: auto-supplied carried in the help model ────────
+// ── auto-supplied provenance carried through into the structured help model ──
 test("buildHelpModel carries autoSupplied on arrayKey (schema-required) and omits it on block", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
@@ -446,7 +449,7 @@ test("per-op --help --format json carries autoSupplied on arrayKey, not on block
 	assert.equal(blockFlag.autoSupplied, undefined);
 });
 
-// ── TASK-042: examples-coverage guard ────────────────────────────────────────
+// ── examples-coverage guard ───────────────────────────────────────────────────
 // Every surfaced op MUST carry ≥1 authored example. A future use-op added without
 // examples FAILS here — the guard against a synthetic/empty floor.
 test("every use-op carries at least one authored example", () => {
@@ -458,7 +461,7 @@ test("every use-op carries at least one authored example", () => {
 	}
 });
 
-// ── TASK-042: buildHelpModel pure unit ───────────────────────────────────────
+// ── buildHelpModel pure unit ──────────────────────────────────────────────────
 test("buildHelpModel treats arrayKey as non-synopsis-required and derives related from the help group", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
@@ -480,7 +483,7 @@ test("buildHelpModel treats arrayKey as non-synopsis-required and derives relate
 	assert.ok(!model.related.includes("append-block-item"));
 });
 
-// ── TASK-042: writer-exemption applies where the op genuinely declares writer ─
+// ── writer-exemption applies where the op genuinely declares writer ──────────
 // promote-item declares a `writer` property in its op schema (ops-registry.ts),
 // so the auto-inject exemption (`&& f !== "writer"`) must render it
 // bracketed-optional rather than as a bare required token.
@@ -491,7 +494,7 @@ test("buildHelpModel brackets writer as optional on promote-item (which declares
 	assert.ok(m.synopsis.includes("[--writer"));
 });
 
-// ── TASK-042: machine-readable help (--help --format json) ───────────────────
+// ── machine-readable help (--help --format json) ──────────────────────────────
 test("per-op --help --format json emits the HelpModel", async () => {
 	const { code, out } = await captureMainStdout(["append-block-item", "--help", "--format", "json"]);
 	assert.equal(code, 0);
@@ -514,7 +517,7 @@ test("per-op --help text round-trip exits 0 with SYNOPSIS/EXAMPLES/RELATED", asy
 	assert.ok(out.includes("RELATED"));
 });
 
-// ── DispatchContext threading (TASK-006) ─────────────────────────────────────
+// ── DispatchContext threading (writer/identity recorded on every write) ──────
 // buildCliDispatchContext: explicit --writer passes through verbatim; otherwise
 // a human writer is built from the resolved identity (falling back to operator).
 test("buildCliDispatchContext falls back to human/operator when no identity + no --writer", () => {
@@ -624,9 +627,10 @@ test("append-block-item CLI write stamps created_by on an attested-required sche
 	}
 });
 
-// ── FGAP-013 contract: --json `output` is a JSON value, never a stringified
+// ── contract: --json `output` is a JSON value, never a stringified
 // JSON string ─────────────────────────────────────────────────────────────────
-// The regression guard FGAP-013 lacked: run a read op, a JSON.stringify (data)
+// The regression this guards against (the CLI used to double-encode `output`,
+// forcing callers to JSON.parse it twice): run a read op, a JSON.stringify (data)
 // op, and a prose op through the CLI `--json` path and assert the envelope's
 // `output` field is the right SHAPE — a parsed JSON value for data/read ops
 // (single-parse: `output` is already an object/array, not a string needing a
@@ -664,7 +668,7 @@ function seedTasksSubstrate(): string {
 			// canonical_id/display_name/prefix/schema_path/array_key/data_path and
 			// forbids extras (additionalProperties:false). An invalid entry makes
 			// loadConfig throw inside buildIdIndex — which resolve-item-by-id walks —
-			// so the prior shorthand silently failed that op (the FGAP-013 case below).
+			// so the prior shorthand silently failed that op (the double-encode case below).
 			block_kinds: [
 				{
 					canonical_id: "tasks",
@@ -785,7 +789,7 @@ test("CLI --json: a READ op emits `output` as a structured JSON value (single-pa
 		assert.equal(envelope.ok, true);
 		assert.equal(envelope.op, "read-block-item");
 		// THE load-bearing assertion: `output` is already a structured value — NOT a
-		// string that would need a second JSON.parse (the FGAP-013 double-encode).
+		// string that would need a second JSON.parse (the double-encode this guards against).
 		assert.equal(typeof envelope.output, "object");
 		assert.notEqual(envelope.output, null);
 		// A read op's output is a ReadStructured carrying the un-stringified `data`.
@@ -799,7 +803,7 @@ test("CLI --json: a READ op emits `output` as a structured JSON value (single-pa
 	}
 });
 
-// FGAP-030 / FGAP-078 / TASK-049: context-check-status is a {json} data op — its
+// context-check-status is a {json} data op — its
 // `--json` envelope must carry the CheckStatusReport (perAsset + summary) as a real
 // structured value (single-parse), so a caller can read the drift report + the
 // per-asset version gap without a second JSON.parse.
@@ -825,10 +829,12 @@ test("CLI --json: context-check-status emits the drift report (perAsset + summar
 	}
 });
 
-// STORY-010 / FGAP-079 / TASK-050: read-catalog-schema is a raw-string op — its
-// `--json` envelope carries the VERBATIM catalog schema text as a string (the
-// raw JSON Schema bytes, not the read-samples-catalog projection), so a caller
-// can capture the body and diff it locally. Package-intrinsic: no substrate.
+// An operator needs to fetch the catalog schema body and diff it locally
+// against an installed schema, without digging through node_modules — so
+// read-catalog-schema is a raw-string op: its `--json` envelope carries the
+// VERBATIM catalog schema text as a string (the raw JSON Schema bytes, not
+// the read-samples-catalog projection), so a caller can capture the body and
+// diff it locally. Package-intrinsic: no substrate.
 test("CLI --json: read-catalog-schema carries the verbatim catalog schema text as a string (raw JSON Schema)", async () => {
 	const { code, out } = await captureMainStdout(["read-catalog-schema", "--kind", "tasks", "--json"]);
 	assert.equal(code, 0);
@@ -845,7 +851,7 @@ test("CLI --json: read-catalog-schema carries the verbatim catalog schema text a
 	assert.equal(typeof parsed.$id, "string", "raw schema carries a top-level $id");
 });
 
-// STORY-010 / FGAP-079 / TASK-050: on the TEXT surface read-catalog-schema is
+// For the same local-diffing need, on the TEXT surface read-catalog-schema is
 // declared `verbatimText`, so the CLI emits the raw catalog schema bytes byte-exact
 // — it reproduces the file's own bytes (its single trailing `\n` included) and does
 // NOT append a second newline. The catalog *.schema.json files DO end with a trailing
@@ -884,7 +890,7 @@ test("CLI text: a non-verbatimText string op still gets its appended trailing ne
 });
 
 test("CLI --json: resolve-item-by-id emits a structured {read} value (single-parse; ItemLocation under data)", async () => {
-	// TASK-013 / FGAP-015: resolve-item-by-id now routes through {read}, so its
+	// resolve-item-by-id now routes through {read}, so its
 	// `--json` output is a ReadStructured carrying the un-stringified ItemLocation
 	// under `data` (single-parse, no nested JSON string), bounded at the read cap.
 	const cwd = seedTasksSubstrate();
@@ -937,7 +943,7 @@ test("CLI --json: a PROSE op emits `output` as a string", async () => {
 	}
 });
 
-// ── TASK-013 / FGAP-015: output-boundary cap unit tests ───────────────────────
+// ── output-boundary cap unit tests ────────────────────────────────────────────
 // boundedJsonOutput (the CLI `--json` value) and renderOpResultText (the default
 // CLI text surface + the in-pi Pi-tool surface) now enforce the 50KB read cap for
 // EVERY OpResult channel. {read} passes through (already fail-closed at
@@ -1000,7 +1006,7 @@ test("renderOpResultText: under-cap prose → itself; over-cap prose → REFUSAL
 	assert.equal(over.includes("z".repeat(1000)), false);
 });
 
-// ── TASK-037 (reopened) / FGAP-068: the `update` post-op SURFACES conflicts ────
+// ── the `update` post-op SURFACES conflicts rather than resolving them itself ─
 // The CLI no longer spawns a subordinate resolver/mergetool. On the default text
 // surface, an `update` that surfaces irreconcilable 3-way-merge conflicts prints
 // the `renderConflicts` report (including its reconcile-then-`resolve-conflict`
@@ -1083,7 +1089,8 @@ test("CLI update (text surface): an irreconcilable conflict is SURFACED via rend
 	}
 });
 
-// ── TASK-048 / FGAP-077: blocked-resync diagnostic surface ───────────────────
+// ── blocked-resync diagnostic surface (per-item validation failures reported,
+// not discarded at an unbound catch) ─────────────────────────────────────────
 // Build a catalog-ahead `tasks` substrate at the older 1.0.0 version with a
 // populated block whose item fails the catalog 1.0.1 schema (a bad `status`
 // enum) → the 1.0.0 → 1.0.1 identity migration passes it through unchanged, the
@@ -1178,14 +1185,15 @@ test("CLI validate-block-items: an unknown block exits non-zero", async () => {
 	}
 });
 
-// ── TASK-015 (FEAT-008 1/6): CLI pre-call input layer ─────────────────────────
+// ── CLI pre-call input layer (one pass of input-ergonomics fixes, part of the
+// umbrella script-parity effort) ──────────────────────────────────────────────
 // Four additive affordances entirely in cli.ts's pre-call path — the in-pi op
 // schemas + handlers stay byte-unchanged (the ops still receive + require their
 // declared params; the CLI normalizes/supplies them). Every currently-working
 // flag form keeps working.
 
-// ── FGAP-064: kebab-case flag normalization ──────────────────────────────────
-test("parseOpArgs resolves a kebab `--dry-run` to the camelCase `dryRun` key (FGAP-064)", () => {
+// ── kebab-case flag normalization ─────────────────────────────────────────────
+test("parseOpArgs resolves a kebab `--dry-run` to the camelCase `dryRun` key", () => {
 	const op = resolveOp("update");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, ["--dry-run"]);
@@ -1195,7 +1203,7 @@ test("parseOpArgs resolves a kebab `--dry-run` to the camelCase `dryRun` key (FG
 	assert.equal(camel.params.dryRun, true);
 });
 
-test("parseOpArgs still rejects an unknown kebab flag with unknown-flag (FGAP-064)", () => {
+test("parseOpArgs still rejects an unknown kebab flag with unknown-flag", () => {
 	const op = resolveOp("update");
 	assert.ok(op);
 	assert.throws(
@@ -1204,8 +1212,8 @@ test("parseOpArgs still rejects an unknown kebab flag with unknown-flag (FGAP-06
 	);
 });
 
-// ── FGAP-032: `--id` aliases the op's single declared id-param ────────────────
-test("parseOpArgs resolves `--id` to the op's single id-param (FGAP-032)", () => {
+// ── `--id` aliases the op's single declared id-param ──────────────────────────
+test("parseOpArgs resolves `--id` to the op's single id-param", () => {
 	// find-references + walk-ancestors each declare exactly one id-param: itemId.
 	const fr = resolveOp("find-references");
 	assert.ok(fr);
@@ -1216,7 +1224,7 @@ test("parseOpArgs resolves `--id` to the op's single id-param (FGAP-032)", () =>
 	assert.equal(parseOpArgs(wa, ["--id", "TASK-1", "--relationType", "r"]).params.itemId, "TASK-1");
 });
 
-test("parseOpArgs rejects `--id` as ambiguous when the op declares ≥2 id-params (FGAP-032)", () => {
+test("parseOpArgs rejects `--id` as ambiguous when the op declares ≥2 id-params", () => {
 	// complete-task declares taskId + verificationId; rename-canonical-id declares oldId + newId.
 	const ct = resolveOp("complete-task");
 	assert.ok(ct);
@@ -1232,7 +1240,7 @@ test("parseOpArgs rejects `--id` as ambiguous when the op declares ≥2 id-param
 	);
 });
 
-test("parseOpArgs leaves `--id` as unknown-flag when the op declares 0 id-params (FGAP-032)", () => {
+test("parseOpArgs leaves `--id` as unknown-flag when the op declares 0 id-params", () => {
 	// append-relation uses parent/child, not *Id — 0 id-params, so --id stays unknown.
 	const ar = resolveOp("append-relation");
 	assert.ok(ar);
@@ -1242,7 +1250,7 @@ test("parseOpArgs leaves `--id` as unknown-flag when the op declares 0 id-params
 	);
 });
 
-test("parseOpArgs does NOT bind `--id` to a boolean *Id flag like autoId (FGAP-032 string-type guard)", () => {
+test("parseOpArgs does NOT bind `--id` to a boolean *Id flag like autoId (the string-type guard)", () => {
 	// append-block-item's only `/Id$/` property is `autoId` — a Type.Boolean allocation
 	// flag, NOT a string identity selector. The string-type guard means it is not counted
 	// as an id-param, so `--id` finds 0 id-params and falls through to unknown-flag rather
@@ -1262,7 +1270,7 @@ test("parseOpArgs does NOT bind `--id` to a boolean *Id flag like autoId (FGAP-0
 	);
 });
 
-test("parseOpArgs still resolves `--id` for a single string id-param op (read-config, FGAP-032)", () => {
+test("parseOpArgs still resolves `--id` for a single string id-param op (read-config)", () => {
 	// read-config declares `id` as Type.Optional(Type.String); fieldType unwraps the
 	// Optional → "string", so the guard keeps it as a valid single id-param.
 	const rc = resolveOp("read-config");
@@ -1270,8 +1278,8 @@ test("parseOpArgs still resolves `--id` for a single string id-param op (read-co
 	assert.equal(parseOpArgs(rc, ["--id", "block_kinds"]).params.id, "block_kinds");
 });
 
-// ── FGAP-019: arrayKey derived from config; required-filter exemption ─────────
-test("parseOpArgs accepts a block-mutation op without --arrayKey (FGAP-019 required-filter exemption)", () => {
+// ── arrayKey derived from config; required-filter exemption ───────────────────
+test("parseOpArgs accepts a block-mutation op without --arrayKey (required-filter exemption)", () => {
 	// append-block-item declares arrayKey required; the CLI must NOT flag it missing
 	// pre-injection (injectArrayKey supplies it after parse).
 	const op = resolveOp("append-block-item");
@@ -1327,7 +1335,7 @@ test("parseOpArgs missing-required check exempts every AUTO_SUPPLIED key (single
 	assert.ok(coveredArrayKey, "AUTO_SUPPLIED must include and this test must cover 'arrayKey'");
 });
 
-test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ array_key) (FGAP-019)", () => {
+test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ array_key)", () => {
 	// Seed a substrate whose framework-gaps block_kind has array_key 'gaps' (≠ its
 	// canonical_id 'framework-gaps') so the derivation is genuinely load-bearing.
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-arraykey-"));
@@ -1362,7 +1370,7 @@ test("injectArrayKey derives arrayKey from config.block_kinds (canonical_id ≠ 
 	}
 });
 
-test("injectArrayKey preserves an explicit --arrayKey and skips a non-arrayKey op (FGAP-019)", () => {
+test("injectArrayKey preserves an explicit --arrayKey and skips a non-arrayKey op", () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const append = resolveOp("append-block-item");
@@ -1382,7 +1390,7 @@ test("injectArrayKey preserves an explicit --arrayKey and skips a non-arrayKey o
 	}
 });
 
-test("injectArrayKey leaves arrayKey unset for an unknown block or no substrate (no throw) (FGAP-019)", () => {
+test("injectArrayKey leaves arrayKey unset for an unknown block or no substrate (no throw)", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
 	// No substrate at this cwd → loadConfig returns null → arrayKey stays unset.
@@ -1405,8 +1413,8 @@ test("injectArrayKey leaves arrayKey unset for an unknown block or no substrate 
 	}
 });
 
-// ── FGAP-025: --writer kind:id, --where field:op:value, CSV --op in ───────────
-test("parseOpArgs expands a `--writer human:<email>` shorthand to the canonical WriterIdentity (FGAP-025)", () => {
+// ── --writer kind:id, --where field:op:value, CSV --op in shorthands ─────────
+test("parseOpArgs expands a `--writer human:<email>` shorthand to the canonical WriterIdentity", () => {
 	const op = resolveOp("write-schema-migration");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, [
@@ -1429,7 +1437,7 @@ test("parseOpArgs expands a `--writer human:<email>` shorthand to the canonical 
 	assert.deepEqual(dctx, { writer: { kind: "human", user: "davidryan@gmail.com" } });
 });
 
-test("parseOpArgs expands a `--writer agent:<id>` shorthand to {kind,agent_id} (FGAP-025)", () => {
+test("parseOpArgs expands a `--writer agent:<id>` shorthand to {kind,agent_id}", () => {
 	const op = resolveOp("write-schema-migration");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, [
@@ -1449,7 +1457,7 @@ test("parseOpArgs expands a `--writer agent:<id>` shorthand to {kind,agent_id} (
 	assert.deepEqual(parsed.explicitWriter, { kind: "agent", agent_id: "claude" });
 });
 
-test("parseOpArgs passes a canonical JSON `--writer` through unchanged (FGAP-025 additive)", () => {
+test("parseOpArgs passes a canonical JSON `--writer` through unchanged (shorthand is additive)", () => {
 	const op = resolveOp("write-schema-migration");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, [
@@ -1469,7 +1477,7 @@ test("parseOpArgs passes a canonical JSON `--writer` through unchanged (FGAP-025
 	assert.deepEqual(parsed.explicitWriter, { kind: "human", user: "explicit@x.com" });
 });
 
-test("parseOpArgs expands `--where field:op:value` to the op's field/op/value params (FGAP-025)", () => {
+test("parseOpArgs expands `--where field:op:value` to the op's field/op/value params", () => {
 	const op = resolveOp("filter-block-items");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, ["--block", "tasks", "--where", "status:eq:done"]);
@@ -1478,7 +1486,7 @@ test("parseOpArgs expands `--where field:op:value` to the op's field/op/value pa
 	assert.equal(parsed.params.value, "done");
 });
 
-test("parseOpArgs splits `--where` on the first two colons only — value may contain colons (FGAP-025)", () => {
+test("parseOpArgs splits `--where` on the first two colons only — value may contain colons", () => {
 	const op = resolveOp("filter-block-items");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, ["--block", "tasks", "--where", "url:eq:https://x.com/a"]);
@@ -1487,7 +1495,7 @@ test("parseOpArgs splits `--where` on the first two colons only — value may co
 	assert.equal(parsed.params.value, "https://x.com/a");
 });
 
-test("parseOpArgs leaves explicit --field/--op/--value unchanged (FGAP-025 additive)", () => {
+test("parseOpArgs leaves explicit --field/--op/--value unchanged (shorthand is additive)", () => {
 	const op = resolveOp("filter-block-items");
 	assert.ok(op);
 	const parsed = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "eq", "--value", '"x"']);
@@ -1496,7 +1504,7 @@ test("parseOpArgs leaves explicit --field/--op/--value unchanged (FGAP-025 addit
 	assert.equal(parsed.params.value, "x");
 });
 
-test("parseOpArgs splits a CSV value into an array when --op is `in` (FGAP-025)", () => {
+test("parseOpArgs splits a CSV value into an array when --op is `in`", () => {
 	const op = resolveOp("filter-block-items");
 	assert.ok(op);
 	const a = parseOpArgs(op, ["--block", "b", "--field", "f", "--op", "in", "--value", "a,b,c"]);
@@ -1509,7 +1517,8 @@ test("parseOpArgs splits a CSV value into an array when --op is `in` (FGAP-025)"
 	assert.equal(eq.params.value, "a,b,c");
 });
 
-// ── TASK-016 / FGAP-021: --format render dispatch ─────────────────────────────
+// ── --format render dispatch (human-readable output modes, part of the CLI's
+// output/error-shaping layer) ─────────────────────────────────────────────────
 
 /** Capture everything main() writes to stderr while it runs. */
 async function captureMainStderr(argv: string[]): Promise<{ code: number; err: string }> {
@@ -1528,7 +1537,7 @@ async function captureMainStderr(argv: string[]): Promise<{ code: number; err: s
 	}
 }
 
-test("parseOpArgs parses --format and rejects an unknown value (FGAP-021)", () => {
+test("parseOpArgs parses --format and rejects an unknown value", () => {
 	const op = resolveOp("read-block");
 	assert.ok(op);
 	assert.equal(parseOpArgs(op, ["--block", "tasks", "--format", "table"]).format, "table");
@@ -1540,7 +1549,7 @@ test("parseOpArgs parses --format and rejects an unknown value (FGAP-021)", () =
 	);
 });
 
-test("CLI --format zzz exits 2 (UsageError surfaced by main) (FGAP-021)", async () => {
+test("CLI --format zzz exits 2 (UsageError surfaced by main)", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const { code, err } = await captureMainStderr(["read-block", "--block", "tasks", "--format", "zzz", "--cwd", cwd]);
@@ -1551,7 +1560,7 @@ test("CLI --format zzz exits 2 (UsageError surfaced by main) (FGAP-021)", async 
 	}
 });
 
-test("CLI --format table on an array {read} result renders a markdown table (FGAP-021)", async () => {
+test("CLI --format table on an array {read} result renders a markdown table", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const { code, out } = await captureMainStdout([
@@ -1575,7 +1584,7 @@ test("CLI --format table on an array {read} result renders a markdown table (FGA
 	}
 });
 
-test("CLI --format table on a PROSE result falls back to text (no degenerate table) (FGAP-021)", async () => {
+test("CLI --format table on a PROSE result falls back to text (no degenerate table)", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const { code, out } = await captureMainStdout([
@@ -1600,7 +1609,7 @@ test("CLI --format table on a PROSE result falls back to text (no degenerate tab
 	}
 });
 
-test("CLI --format table on an OVER-CAP read falls back to text (over-cap is not tabular) (FGAP-021)", async () => {
+test("CLI --format table on an OVER-CAP read falls back to text (over-cap is not tabular)", async () => {
 	const cwd = seedOverCapTasksSubstrate();
 	try {
 		const { code, out } = await captureMainStdout([
@@ -1620,7 +1629,7 @@ test("CLI --format table on an OVER-CAP read falls back to text (over-cap is not
 	}
 });
 
-test("CLI --json and --format json produce identical envelopes (compose regression) (FGAP-021)", async () => {
+test("CLI --json and --format json produce identical envelopes (compose regression)", async () => {
 	const cwdA = seedTasksSubstrate();
 	const cwdB = seedTasksSubstrate();
 	try {
@@ -1636,9 +1645,9 @@ test("CLI --json and --format json produce identical envelopes (compose regressi
 	}
 });
 
-// ── TASK-016 / FGAP-023: AJV ValidationError → field-named guidance ────────────
+// ── AJV ValidationError → field-named guidance ────────────────────────────────
 
-test("CLI --json: a schema-invalid append surfaces a field-named validation error, not the raw AJV phrasing (FGAP-023)", async () => {
+test("CLI --json: a schema-invalid append surfaces a field-named validation error, not the raw AJV phrasing", async () => {
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-ajv-"));
 	try {
 		writeBootstrapPointer(cwd, ".project");
@@ -1692,7 +1701,7 @@ test("CLI --json: a schema-invalid append surfaces a field-named validation erro
 			cwd,
 			"--json",
 		]);
-		// FGAP-026 — a validation failure now exits 5 (was 1 before granular exit codes).
+		// A validation failure now exits 5 (was 1 before granular exit codes were added).
 		assert.equal(code, 5);
 		const envelope = JSON.parse(out) as { ok: boolean; op: string; error: string };
 		assert.equal(envelope.ok, false);
@@ -1711,7 +1720,7 @@ test("CLI --json: a schema-invalid append surfaces a field-named validation erro
 // override was retired. These tests assert the observable envelope the op produces
 // on both surfaces, so they remain valid after the override removal.
 
-test("CLI read-schema --path at an object node returns the full subtree, not a 50-item page (FGAP-020)", async () => {
+test("CLI read-schema --path at an object node returns the full subtree, not a 50-item page", async () => {
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-addr-"));
 	try {
 		writeBootstrapPointer(cwd, ".project");
@@ -1765,7 +1774,7 @@ test("CLI read-schema --path at an object node returns the full subtree, not a 5
 	}
 });
 
-test("CLI read-config --registry block_kinds --id tasks returns the whole entry (FGAP-020)", async () => {
+test("CLI read-config --registry block_kinds --id tasks returns the whole entry", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const { code, out } = await captureMainStdout([
@@ -1793,9 +1802,9 @@ test("CLI read-config --registry block_kinds --id tasks returns the whole entry 
 	}
 });
 
-// ── TASK-017 / FGAP-022: --show-schema contract preview ────────────────────────
+// ── --show-schema contract preview ────────────────────────────────────────────
 
-test("CLI append-block-item --show-schema previews the block contract and writes nothing (FGAP-022)", async () => {
+test("CLI append-block-item --show-schema previews the block contract and writes nothing", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as {
@@ -1821,7 +1830,7 @@ test("CLI append-block-item --show-schema previews the block contract and writes
 	}
 });
 
-test("CLI --show-schema on a block whose schema is absent exits 3 (FGAP-022)", async () => {
+test("CLI --show-schema on a block whose schema is absent exits 3", async () => {
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-showschema-"));
 	try {
 		writeBootstrapPointer(cwd, ".project");
@@ -1860,9 +1869,9 @@ test("CLI --show-schema on a block whose schema is absent exits 3 (FGAP-022)", a
 	}
 });
 
-// ── TASK-017 / FGAP-024: append-block-item --dry-run ───────────────────────────
+// ── append-block-item --dry-run ───────────────────────────────────────────────
 
-test("parseOpArgs: --dryRun and --dry-run set parsed.dryRun and never enter params (FGAP-024)", () => {
+test("parseOpArgs: --dryRun and --dry-run set parsed.dryRun and never enter params", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
 	const camel = parseOpArgs(op, ["--block", "tasks", "--dryRun", "--arrayKey", "tasks", "--item", "{}"]);
@@ -1874,7 +1883,7 @@ test("parseOpArgs: --dryRun and --dry-run set parsed.dryRun and never enter para
 	assert.equal("dry-run" in kebab.params, false);
 });
 
-test("CLI append-block-item --dry-run with a valid item PASSes and writes nothing (FGAP-024)", async () => {
+test("CLI append-block-item --dry-run with a valid item PASSes and writes nothing", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as {
@@ -1899,7 +1908,7 @@ test("CLI append-block-item --dry-run with a valid item PASSes and writes nothin
 	}
 });
 
-test("CLI append-block-item --dry-run with a schema-invalid item exits 5 and writes nothing (FGAP-024)", async () => {
+test("CLI append-block-item --dry-run with a schema-invalid item exits 5 and writes nothing", async () => {
 	// gaps items require `description`; an item lacking it fails the prospective-file validation.
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-dryrun-invalid-"));
 	try {
@@ -1961,7 +1970,7 @@ test("CLI append-block-item --dry-run with a schema-invalid item exits 5 and wri
 	}
 });
 
-test("CLI append-block-item --dry-run --autoId names the prospective id (FGAP-024)", async () => {
+test("CLI append-block-item --dry-run --autoId names the prospective id", async () => {
 	// id pattern + a populated block so nextId allocates a deterministic successor.
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-dryrun-autoid-"));
 	try {
@@ -2023,9 +2032,9 @@ test("CLI append-block-item --dry-run --autoId names the prospective id (FGAP-02
 	}
 });
 
-// ── TASK-017 / FGAP-026: granular exit codes ───────────────────────────────────
+// ── granular exit codes ────────────────────────────────────────────────────────
 
-test("CLI a not-initialized op exits 1 (BootstrapNotFound) (FGAP-026)", async () => {
+test("CLI a not-initialized op exits 1 (BootstrapNotFound)", async () => {
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-noinit-"));
 	try {
 		// No .pi-context.json pointer at all → the op throws BootstrapNotFoundError.
@@ -2036,7 +2045,7 @@ test("CLI a not-initialized op exits 1 (BootstrapNotFound) (FGAP-026)", async ()
 	}
 });
 
-test("CLI an unknown flag is a usage error → exit 2 (FGAP-026)", async () => {
+test("CLI an unknown flag is a usage error → exit 2", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const { code } = await captureMainStderr(["read-block", "--block", "tasks", "--bogus", "x", "--cwd", cwd]);
@@ -2046,7 +2055,7 @@ test("CLI an unknown flag is a usage error → exit 2 (FGAP-026)", async () => {
 	}
 });
 
-// ── TASK-017 / FGAP-024 follow-up: --dryRun is op-scoped to append-block-item ───
+// ── follow-up: --dryRun is op-scoped to append-block-item ────────────────────
 // The global `--dry-run` swallow used to fire for EVERY op that declared no `dryRun`
 // param, but the main() honor branch only acts for append-block-item. So a no-dryRun
 // MUTATION op (update-block-item, remove-block-item, …) swallowed the flag and then
@@ -2055,7 +2064,7 @@ test("CLI an unknown flag is a usage error → exit 2 (FGAP-026)", async () => {
 // for ops that DECLARE dryRun (upsert-block-item, update, relation ops) the token still
 // flows to their own dryRun param.
 
-test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the swallow is append-scoped) (FGAP-024)", () => {
+test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the swallow is append-scoped)", () => {
 	const op = resolveOp("update-block-item");
 	assert.ok(op);
 	assert.throws(
@@ -2064,7 +2073,7 @@ test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the s
 	);
 });
 
-test("CLI update-block-item --dryRun rejects (exit 2) and writes NOTHING — no silent write (FGAP-024)", async () => {
+test("CLI update-block-item --dryRun rejects (exit 2) and writes NOTHING — no silent write", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
@@ -2090,7 +2099,7 @@ test("CLI update-block-item --dryRun rejects (exit 2) and writes NOTHING — no 
 	}
 });
 
-test("CLI remove-block-item --dry-run rejects (exit 2) and writes NOTHING (FGAP-024)", async () => {
+test("CLI remove-block-item --dry-run rejects (exit 2) and writes NOTHING", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
@@ -2112,7 +2121,7 @@ test("CLI remove-block-item --dry-run rejects (exit 2) and writes NOTHING (FGAP-
 	}
 });
 
-test("CLI upsert-block-item --dryRun reaches its own dryRun param (preview, exit 0, no write) (FGAP-024)", async () => {
+test("CLI upsert-block-item --dryRun reaches its own dryRun param (preview, exit 0, no write)", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8");
@@ -2136,12 +2145,12 @@ test("CLI upsert-block-item --dryRun reaches its own dryRun param (preview, exit
 	}
 });
 
-// ── TASK-017 / FGAP-026 follow-up: schema-absent classifies to 3, not 4 ─────────
+// ── follow-up: schema-absent classifies to 3, not 4 ───────────────────────────
 // nextId's schema-missing throw ("nextId: schema not found for block …") matched the
 // id-allocation pattern first → exit 4, masking the true cause (absent schema → 3).
 // The catch classifier now tests schema-not-found BEFORE id-allocation.
 
-test("CLI autoId append against a block whose schema file is absent exits 3 (schema-absent, not 4) (FGAP-026)", async () => {
+test("CLI autoId append against a block whose schema file is absent exits 3 (schema-absent, not 4)", async () => {
 	// config declares the block_kind (so arrayKey resolves) but NO schema file on disk.
 	// The autoId allocation calls nextId → throws "nextId: schema not found …" → exit 3.
 	const cwd = mkdtempSync(path.join(tmpdir(), "picli-noschema-autoid-"));
@@ -2280,7 +2289,7 @@ test("--help round-trips deriveTopHelp through main()", async () => {
 	assert.ok(out.includes("pi-bound"), "--help missing pi-bound");
 });
 
-// ── TASK-043 / FGAP-073: context-lens-view (binned item-view) ────────────────
+// ── context-lens-view (binned item-view) ──────────────────────────────────────
 // Seed a substrate with one auto-derived lens (target=issues, binned by `package`)
 // plus the issues block it projects. Mirrors seedTasksSubstrate's config shape.
 function seedLensSubstrate(): { cwd: string; lensId: string; bin: string } {

@@ -189,16 +189,16 @@ export interface ParsedArgs {
 	json: boolean;
 	yes: boolean;
 	help: boolean;
-	/** --show-schema (FGAP-022): print the block contract and exit before any write. */
+	/** --show-schema: print the block contract and exit before any write. */
 	showSchema?: boolean;
 	/**
-	 * --dryRun / --dry-run (FGAP-024): for append-block-item, validate the prospective
+	 * --dryRun / --dry-run: for append-block-item, validate the prospective
 	 * whole file and write nothing. Parsed as a global flag — never injected into
 	 * `params` — because the frozen append op declares no `dryRun` param and would
 	 * reject it as an unknown flag.
 	 */
 	dryRun?: boolean;
-	/** Selected output render (FGAP-021). Unset → resolved from `json` at emit time. */
+	/** Selected output render. Unset → resolved from `json` at emit time. */
 	format?: "text" | "json" | "table";
 	explicitWriter?: unknown;
 	params: Record<string, unknown>;
@@ -230,12 +230,12 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			continue;
 		}
 		if (tok === "--show-schema") {
-			// FGAP-022 — global flag (not an op param): print the block contract and exit.
+			// Global flag (not an op param): print the block contract and exit.
 			out.showSchema = true;
 			continue;
 		}
 		if (op.name === "append-block-item" && (tok === "--dryRun" || tok === "--dry-run") && props.dryRun === undefined) {
-			// FGAP-024 — `--dry-run` is a GLOBAL flag scoped to append-block-item, the
+			// `--dry-run` is a GLOBAL flag scoped to append-block-item, the
 			// sole op the main() honor branch handles: it declares no `dryRun` param yet
 			// supports a client-side prospective-whole-file dry run. The token is captured
 			// here and NEVER routed into params, because the frozen op would reject
@@ -267,7 +267,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			continue;
 		}
 		if (tok === "--format") {
-			// FGAP-021 — explicit render selector. `text` reproduces each op's prior
+			// Explicit render selector. `text` reproduces each op's prior
 			// run() text; `json` is the `--json` envelope; `table` projects a renderable
 			// array (read-page / data array) as markdown. An unknown value is an operator
 			// error, not a silent fallback.
@@ -282,7 +282,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		if (tok === "--writer") {
 			const v = argv[++i];
 			if (v === undefined) throw new UsageError("--writer requires a JSON argument");
-			// Shorthand `kind:id` (FGAP-025): a value that is neither `{`-prefixed JSON
+			// Shorthand `kind:id`: a value that is neither `{`-prefixed JSON
 			// nor an `@file` reference and matches `<kind>:<identifier>` expands to the
 			// canonical {kind, <id-field>:<rest>} WriterIdentity (the id-field per
 			// WRITER_KIND_IDENTIFIER_FIELD). The rest may itself contain colons (an
@@ -301,7 +301,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 			}
 			continue;
 		}
-		// `--where field:op:value` shorthand (FGAP-025): a single token expanding to
+		// `--where field:op:value` shorthand: a single token expanding to
 		// the op's declared field/op/value params. Split on the FIRST TWO colons only —
 		// the value segment may itself contain colons. The canonical explicit
 		// `--field/--op/--value` flags remain available and pass through unchanged.
@@ -325,7 +325,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		// Raw token kept verbatim for error messages; `field` resolves to the op's
 		// actual property key via the normalization layer below.
 		let field = tok.slice(2);
-		// FGAP-032 — `--id` aliases the op's single declared id-param. An op may key
+		// `--id` aliases the op's single declared id-param. An op may key
 		// its id param `id`, or `<x>Id` (itemId/parentId/taskId/unitId/…). When the op
 		// has no literal `id` property and exactly one such param, `--id` resolves to
 		// it; zero leaves `field` as-is (the unknown-flag error fires); two or more is
@@ -346,7 +346,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 				);
 			}
 		} else if (props[field] === undefined && field.includes("-")) {
-			// FGAP-064 — kebab→camel normalization: a conventional `--dry-run` / `--id`
+			// Kebab→camel normalization: a conventional `--dry-run` / `--id`
 			// kebab form resolves to the camelCase op-schema key (`dryRun`) when that
 			// camel key exists. An unresolved kebab token stays raw → unknown-flag error.
 			const camel = field.replace(/-([a-z0-9])/g, (_m, c: string) => c.toUpperCase());
@@ -392,7 +392,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 					? JSON.parse(readFileSync(value.slice(1), "utf8"))
 					: JSON.parse(value);
 			} catch (err) {
-				// FGAP-025: the `value` field (the comparison operand of
+				// The `value` field (the comparison operand of
 				// filter-block-items, Type.Unknown) is the sole CSV-shorthand target. A
 				// bare unquoted operand that is not valid JSON is retained as the raw
 				// string so the post-loop `--op in` CSV pass can split it (and an
@@ -412,7 +412,7 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		out.params.writer = out.explicitWriter;
 	}
 
-	// CSV `--op in` normalization (FGAP-025): the `in` membership operator takes a
+	// CSV `--op in` normalization: the `in` membership operator takes a
 	// list value. When `op === "in"` and the value arrived as a single string,
 	// split it on commas into the string array the op's declared shape expects.
 	// Argv-order-independent — runs after the whole loop, so `--value a,b,c --op in`
@@ -428,13 +428,13 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 	// per-op synopsis (isSynopsisRequired), and `autoSupplied`-annotated in the Flags
 	// block. Concretely today: `writer` (injectWriter fills it from the resolved operator
 	// identity after parse) and `arrayKey` (injectArrayKey derives it from
-	// config.block_kinds[].array_key for the block-mutation ops after parse, FGAP-019, so
+	// config.block_kinds[].array_key for the block-mutation ops after parse, so
 	// a `--block` without an explicit `--arrayKey` must not be flagged missing here).
 	// Adding a new AUTO_SUPPLIED key also requires adding its injector (injectWriter /
 	// injectArrayKey-style): the map single-sources the exemption/help CONTRACT, not the
 	// value-supply wiring.
 	// `--help` and `--show-schema` exit before any op invocation and need no item, so
-	// the required-field check is skipped for them (FGAP-022). `--dryRun` still requires
+	// the required-field check is skipped for them. `--dryRun` still requires
 	// the op's declared inputs (it validates a prospective item) and so is NOT exempt.
 	if (!out.help && !out.showSchema) {
 		const required = (schema.required ?? []).filter((r) => !(r in AUTO_SUPPLIED));
@@ -465,7 +465,7 @@ export function injectWriter(
 }
 
 /**
- * Schema- + config-driven arrayKey injection (FGAP-019), mirroring injectWriter.
+ * Schema- + config-driven arrayKey injection, mirroring injectWriter.
  * The 7 block-mutation ops still DECLARE `arrayKey` required (their in-pi schema +
  * handler are byte-unchanged and still receive + require it) — the CLI supplies it
  * pre-call so a caller passes only `--block`. When the op declares `arrayKey`, none
@@ -571,7 +571,7 @@ export function authDecision(op: OpDefinition, opts: { yes: boolean; interactive
 }
 
 /**
- * One flag descriptor in the machine-readable help model (CHANGE 3 / TASK-042).
+ * One flag descriptor in the machine-readable help model.
  * `type` is the enum-join (`eq|neq|in|matches`) for string-enum fields, else the
  * coarse FieldType tag. `required` reflects the op's declared schema `required` set
  * verbatim (writer/arrayKey ARE marked required here — schema-truth). `autoSupplied`
@@ -618,7 +618,8 @@ export interface HelpModel {
  * both the synopsis exemption (bracketed-optional, `isSynopsisRequired`) and the
  * per-flag `autoSupplied` annotation surfaced in the Flags block + json help —
  * reconciling the Flags `(required)` schema-truth with the optional synopsis so
- * neither surface contradicts the other (TASK-042 iterate-to-zero finding):
+ * neither surface contradicts the other (the two had drifted apart before this map
+ * unified them as one source):
  *   - writer:   injectWriter fills it from the resolved operator identity
  *   - arrayKey: injectArrayKey derives it from config.block_kinds[].array_key
  */
@@ -686,7 +687,7 @@ export function buildHelpModel(op: OpDefinition): HelpModel {
 }
 
 /**
- * Best-of-breed per-op help text (TASK-042): `<name> — <description>` → SYNOPSIS →
+ * Best-of-breed per-op help text: `<name> — <description>` → SYNOPSIS →
  * Flags (per-field, enum joins + required/optional + desc; json fields show
  * `<json | @file>`) → EXAMPLES → RELATED (omitted when empty) → footer →
  * the Global flags trailer. Plain text.
@@ -919,7 +920,7 @@ function promptConfirm(opName: string): Promise<boolean> {
 }
 
 /**
- * FGAP-021 — extract the renderable row array from an OpResult for `--format table`,
+ * Extract the renderable row array from an OpResult for `--format table`,
  * or null when the result is not a complete tabular collection. Precedence:
  *   - `{read}` whose `data` is an array AND `complete !== false` (an over-cap read,
  *     complete:false with data:null, is NOT tabular) → that array;
@@ -999,7 +1000,7 @@ export async function main(argv: string[]): Promise<number> {
 		return 0;
 	}
 
-	// FGAP-022 — `--show-schema`: preview the block contract (array_key / required /
+	// `--show-schema`: preview the block contract (array_key / required /
 	// field types / id pattern) and exit 0 BEFORE any write. Only meaningful for the
 	// block-mutation ops (the ops that declare `arrayKey` and take a `--block`); on any
 	// other op it is a misuse (exit 2). Reads the installed schema through the lifted
@@ -1048,7 +1049,7 @@ export async function main(argv: string[]): Promise<number> {
 	injectWriter(op, parsed.params, identity);
 	injectArrayKey(op, parsed.params, parsed.cwd);
 
-	// FGAP-024 — append-block-item `--dry-run`: client-side prospective-whole-file
+	// append-block-item `--dry-run`: client-side prospective-whole-file
 	// validation. Replicates the op's autoId allocation, builds the prospective file
 	// {...existing, [arrayKey]: [...items, item]}, and validates it against the WHOLE
 	// block schema (matching exactly what appendToBlock validates on write) — then
@@ -1123,20 +1124,20 @@ export async function main(argv: string[]): Promise<number> {
 		const r: OpResult = await op.run(parsed.cwd, parsed.params, dctx);
 
 		if (format === "json") {
-			// FGAP-013: emit `output` as a JSON VALUE, not a stringified JSON string.
-			// Prose → the string itself; a read op → its structured ReadStructured
-			// (data + paging/cap metadata); a data op → its raw JSON value. No
-			// double-encode: the value is placed directly into the envelope and
-			// JSON.stringify'd ONCE here.
-			// TASK-013 / FGAP-015: boundedJsonOutput enforces the 50KB read cap at this
-			// boundary — under-cap values pass through unchanged; an over-cap `{json}`
-			// (or prose) result fails closed (`{ data: null, truncated: true, … }` /
-			// REFUSAL string) so a `{json}` op can no longer leak substrate content
-			// past the cap on the `--json` surface.
+			// Emit `output` as a JSON VALUE, not a stringified JSON string, so a caller
+			// never has to JSON.parse it twice. Prose → the string itself; a read op →
+			// its structured ReadStructured (data + paging/cap metadata); a data op →
+			// its raw JSON value. No double-encode: the value is placed directly into
+			// the envelope and JSON.stringify'd ONCE here.
+			// boundedJsonOutput enforces the 50KB read-size cap at this single output
+			// boundary (rather than inside each read-op renderer) — under-cap values
+			// pass through unchanged; an over-cap `{json}` (or prose) result fails closed
+			// (`{ data: null, truncated: true, … }` / REFUSAL string) so a `{json}` op
+			// can no longer leak substrate content past the cap on the `--json` surface.
 			const output = boundedJsonOutput(r);
 			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output })}\n`);
 		} else if (format === "table") {
-			// FGAP-021 — extract the renderable array, falling back to text whenever the
+			// Extract the renderable array, falling back to text whenever the
 			// result is not a complete tabular collection (over-cap, prose, or a non-array
 			// data op) so a degenerate one-row table never substitutes for the real output.
 			const arr = tabularRows(r);
@@ -1161,10 +1162,13 @@ export async function main(argv: string[]): Promise<number> {
 			}
 		}
 
-		// TASK-037 — FEAT-006 T4: the `update` op returns the whole UpdateResult under
-		// `{ json }`; if it recorded any irreconcilable 3-way-merge conflicts, the CLI
-		// SURFACES them — it does NOT spawn a subordinate resolver. The CALLING agent
-		// reconciles via the existing `read-schema` / `write-schema` ops. On a NON-json
+		// The `update` op returns the whole UpdateResult under `{ json }`; if it recorded
+		// any irreconcilable 3-way-merge conflicts, the CLI SURFACES them — it does NOT
+		// spawn a subordinate resolver agent to reconcile and write the merge itself (an
+		// earlier plan for this was abandoned because that subordinate's write was always
+		// refused by the write-schema auth gate, which requires an interactive session).
+		// The CALLING agent reconciles via the existing `read-schema` / `write-schema`
+		// ops instead. On a NON-json
 		// surface (text or table), render the conflict report (renderConflicts carries the
 		// reconcile-via-write-schema guidance line) below the op's own output. Under
 		// `--format json` the structured `conflicts` array already prints in the op-result
@@ -1183,7 +1187,7 @@ export async function main(argv: string[]): Promise<number> {
 			if (Array.isArray(conflicts) && conflicts.length > 0) {
 				process.stdout.write(`${renderConflicts(conflicts)}\n`);
 			}
-			// TASK-048 — FGAP-077: surface the per-schema blocked-resync diagnostic
+			// Surface the per-schema blocked-resync diagnostic
 			// (reason, version pair, per-item failures) below the op's own output on the
 			// non-json surface. Under --format json the structured blockedDetail array
 			// already prints in the op-result envelope above — do NOT double-emit.
@@ -1194,7 +1198,7 @@ export async function main(argv: string[]): Promise<number> {
 		}
 		return 0;
 	} catch (err) {
-		// FGAP-023 — an AJV ValidationError surfaces field-named guidance (which field,
+		// An AJV ValidationError surfaces field-named guidance (which field,
 		// what constraint) rather than the raw concatenated `.message`. The shaped message
 		// flows through both the `--json` envelope and the stderr line below.
 		const message = isValidationError(err) ? formatAjvError(err) : err instanceof Error ? err.message : String(err);
@@ -1203,7 +1207,7 @@ export async function main(argv: string[]): Promise<number> {
 		} else {
 			process.stderr.write(`error: ${message}\n`);
 		}
-		// FGAP-026 — granular exit codes distinguishing error classes. Name/message-based
+		// Granular exit codes distinguishing error classes. Name/message-based
 		// (instanceof is unreliable across the package boundary): validation → 5;
 		// not-initialized / BootstrapNotFoundError → 1 (generic runtime); schema-absent →
 		// 3; id-allocation failure → 4; everything else → 1. Usage/arg errors are 2,

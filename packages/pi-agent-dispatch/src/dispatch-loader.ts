@@ -1,5 +1,7 @@
 /**
- * dispatch-loader — the dispatch-side builtin agent tier (FGAP-127).
+ * dispatch-loader — the dispatch-side builtin agent tier, wiring the bundled
+ * pi-workflows agent specs in as the dispatch loader's last-resort tier so a
+ * fresh substrate can still resolve a named target agent.
  *
  * Both dispatch entry points (call-agent, run-work-order-loop) build their
  * pi-jit-agents `createAgentLoader` LoadContext here so the bundled
@@ -12,7 +14,8 @@
  * with `builtinDir = bundledTemplateDir()` so a bundled spec's task/system
  * templates resolve against the bundled pi-jit-agents `templates/` tier (no
  * local copy needed). Model resolution then follows the derived dispatch-model
- * precedence (DEC-0023, `dispatch-model.ts`): spec → model-config `by_role` →
+ * precedence (this project's dispatch model-resolution order, `dispatch-model.ts`):
+ * spec → model-config `by_role` →
  * `default`. work-order subprocess dispatch treats a still-null model as
  * "let pi pick its own default" (no `--model` passed); in-process call-agent —
  * which must resolve a concrete model + auth before it can call — keeps an

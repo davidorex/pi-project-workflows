@@ -1,7 +1,13 @@
 /**
- * Capability composition (FEAT-005). Composes a child grant from a parent
- * grant and a requested grant by intersection — DEC-0047 clamp semantics.
- * The TASK-081 executeAgent boundary enforces compiled.tools ⊆ parentGrant;
+ * Capability composition — the JIT capability-composition layer that
+ * composes a subagent's tools per-invocation from an empty-state default,
+ * scoped to exactly the operations its task needs. Composes a child grant
+ * from a parent grant and a requested grant by intersection, per this
+ * project's capability-governance model's clamp semantics (default-empty
+ * grants, operation-granular composition, human-only capability widening,
+ * and deterministic real-checks — never agent self-report — as the
+ * pass/fail verdict). The executeAgent boundary enforces compiled.tools ⊆
+ * parentGrant as the child-grant-must-be-a-subset-of-parent-grant clamp;
  * composeToolGrant prepares the parentGrant passed to that boundary so the
  * child can never exceed what the parent itself was granted.
  */

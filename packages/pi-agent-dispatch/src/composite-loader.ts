@@ -1,6 +1,9 @@
 /**
  * composite-loader — dynamic per-instance Pi tool registration from
- * config.tool_operations[] entries declaring a KIND (FEAT-010 Hybrid 3 v2).
+ * config.tool_operations[] entries declaring a KIND, per this package's
+ * per-kind composite-tool registration model (Hybrid 3 v2), with layered
+ * enforcement forbidding any wholesale (bash/write/edit/shell/execute)
+ * operation from being registered this way.
  *
  * Reads config via loadContext(cwd). For each entry with `kind` set:
  *   1. Reject if canonical_id is in the forbidden union (L1 framework list ∪
@@ -14,8 +17,8 @@
  *      callsite supplies args only; instance scope is fixed at this
  *      registration point.
  *
- * Entries without `kind` are FEAT-005 static-tool references and skipped here
- * (not the composite path).
+ * Entries without `kind` are static-tool references belonging to the JIT
+ * capability-composition layer and skipped here (not the composite path).
  */
 
 import { randomUUID } from "node:crypto";
@@ -148,10 +151,14 @@ export function loadComposites(cwd: string, pi: ExtensionAPI): LoadCompositesRes
 	const registered: string[] = [];
 	const skipped: { canonical_id: string; reason: string }[] = [];
 
-	// Config-absent degrade path (FGAP-121 layer-a): observe via the canonical
-	// TraceEntry pipeline (DEC-0002 / TASK-086 precedent). pi.ui.notify is
-	// surfaced at the index.ts factory caller IF available there; here we use
-	// the trace pipeline so observability is unconditional + queryable.
+	// Config-absent degrade path — closes the gap where a config-absent
+	// substrate silently registered zero composite tools with no signal at
+	// all: observe via the canonical TraceEntry pipeline, per this project's
+	// precedent for reporting a degraded-but-non-fatal condition (emit a
+	// warning through the trace pipeline rather than staying silent or
+	// throwing). pi.ui.notify is surfaced at the index.ts factory caller IF
+	// available there; here we use the trace pipeline so observability is
+	// unconditional + queryable.
 	if (config === null) {
 		emitExtensionLoadWarning(
 			"pi-agent-dispatch",
@@ -163,7 +170,7 @@ export function loadComposites(cwd: string, pi: ExtensionAPI): LoadCompositesRes
 
 	const ops: ToolOperationDecl[] = config?.tool_operations ?? [];
 	for (const entry of ops) {
-		if (!entry.kind) continue; // FEAT-005 static-tool reference, not composite
+		if (!entry.kind) continue; // static-tool reference from the JIT capability-composition layer, not composite
 		if (forbidden.has(entry.canonical_id)) {
 			throw new Error(
 				`composite-loader: refusing to register forbidden token: ${entry.canonical_id} (framework L1 + config L5 forbidden union; feedback_no_parallel_ungated_paths).`,

@@ -48,7 +48,7 @@ describe("loadComposites", () => {
 		assert.equal(registered.length, 0);
 	});
 
-	it("config_absent flag flips when loadContext returns config:null (FGAP-121 layer-a)", () => {
+	it("config_absent flag flips when loadContext returns config:null (closing the gap where a config-absent substrate silently registered zero composite tools with no signal at all)", () => {
 		// no .pi-context.json pointer at all → loadContext degrades to config=null
 		const dir = mkdtempSync(join(tmpdir(), "composite-loader-no-pointer-"));
 		const { pi, registered } = makeStubPi();

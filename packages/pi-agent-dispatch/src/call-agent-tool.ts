@@ -1,9 +1,14 @@
 /**
- * call-agent Pi tool — the in-pi sub-agent agent-as-tool registration site
- * (FEAT-004, per narrowed DEC-0044). Loads spec via jit-agents library,
- * compiles with input + ctx, composes grant (parentGrant ∩ requestedGrant
- * per FEAT-005), invokes executeAgent (TASK-081 clamp enforces at
- * dispatch boundary). Returns the typed result.
+ * call-agent Pi tool — the in-pi sub-agent agent-as-tool dispatch surface's
+ * registration site, reflecting this project's decision to home agent-as-tool
+ * dispatch in its own dedicated extension, with pi-jit-agents used as a
+ * directly-imported library rather than a dispatch target. Loads spec via
+ * jit-agents library, compiles with input + ctx, composes grant (parentGrant
+ * ∩ requestedGrant, per the JIT capability-composition layer that scopes a
+ * subagent's tools per-invocation from an empty-state default to exactly the
+ * operations its task needs), invokes executeAgent (the child-grant-must-be-
+ * a-subset-of-parent-grant clamp enforces at dispatch boundary). Returns the
+ * typed result.
  */
 
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
@@ -81,8 +86,9 @@ export const callAgentTool = {
 		const env = createTemplateEnv({ cwd: ctx.cwd, builtinDir: bundledTemplateDir() });
 		const compiled = compileAgent(spec, { env, input: params.input, cwd: ctx.cwd });
 
-		// 3. Resolve model + auth via ExtensionContext.modelRegistry. Precedence
-		// (DEC-0023): compiled/spec model → model-config by_role[role] → default.
+		// 3. Resolve model + auth via ExtensionContext.modelRegistry, per this
+		// project's dispatch model-resolution precedence: compiled/spec model →
+		// model-config by_role[role] → default.
 		// In-process dispatch has no pi subprocess to fall through to, so a still-null
 		// resolution is an informed throw naming the model-config block as the remedy.
 		const modelSpec = compiled.model ?? spec.model ?? resolveDispatchModel(ctx.cwd, spec);
@@ -102,10 +108,13 @@ export const callAgentTool = {
 			throw new Error(`call-agent: auth resolution failed for '${modelSpec}': ${auth.error}`);
 		}
 
-		// 4. Compose grant (FEAT-005): intersect parent_grant ∩ requested_grant
+		// 4. Compose grant (the JIT capability-composition layer scoping a
+		// subagent's tools per-invocation to exactly the operations its task
+		// needs): intersect parent_grant ∩ requested_grant
 		const composedGrant = composeToolGrant(params.parent_grant, params.requested_grant);
 
-		// 5. Build DispatchContext + dispatch (TASK-081 clamp enforces at executeAgent boundary)
+		// 5. Build DispatchContext + dispatch (the child-grant-must-be-a-subset-of-
+		// parent-grant clamp enforces at executeAgent boundary)
 		const dispatch: DispatchContext = {
 			model: model as Model<Api>,
 			auth: { apiKey: auth.apiKey ?? "", headers: auth.headers ?? {} },

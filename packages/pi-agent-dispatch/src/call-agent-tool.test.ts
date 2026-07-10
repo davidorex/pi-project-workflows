@@ -106,8 +106,8 @@ describe("callAgentTool", () => {
 	});
 
 	it("throws naming the model-config remedy when neither the spec nor model-config resolves a model", async () => {
-		// The substrate has no model-config block, so the DEC-0023 fall-through
-		// (spec → model-config by_role → default) yields nothing and in-process
+		// The substrate has no model-config block, so the dispatch model-resolution
+		// fall-through (spec → model-config by_role → default) yields nothing and in-process
 		// dispatch throws an informed error pointing at the model-config block.
 		writeAgentSpec(substrateRoot, "no-model", minimalSpec("no-model"));
 		await assert.rejects(

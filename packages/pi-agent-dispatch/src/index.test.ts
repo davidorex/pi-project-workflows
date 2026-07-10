@@ -11,7 +11,7 @@ describe("pi-agent-dispatch extension", () => {
 			registerTool: (tool: { name: string }) => {
 				registered.push(tool.name);
 			},
-			// FGAP-134: registerAuthGate calls pi.on('tool_call', ...); the
+			// The dispatch-layer writer-identity gate: registerAuthGate calls pi.on('tool_call', ...); the
 			// extension factory now performs this registration so the smoke
 			// test must mock the event-listener surface to avoid a
 			// TypeError. The handler is exercised in dedicated coverage at

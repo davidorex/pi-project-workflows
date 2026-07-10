@@ -1,17 +1,24 @@
 /**
- * run-work-order-loop Pi tool — single-call wrapper around the FEAT-006
- * north-star loop. The orchestrator names a work-order id (loaded from
- * .project/work-orders.json per TASK-088 schema) and the loop drives:
- * dispatch the target_agent → run-real-checks → on pass commit-attested
- * → on fail human-OK retry. Bounded iterations (default 3) per FEAT-006;
- * human-OK gate per DEC-0047 governance.
+ * run-work-order-loop Pi tool — single-call wrapper around the end-to-end
+ * orchestrator-declared work-order execution loop. The orchestrator names a
+ * work-order id (loaded from the substrate's work-orders block, per the
+ * work-order schema/block covering target_agent, real_check_criteria, scope,
+ * input_contract) and the loop drives: dispatch the target_agent →
+ * run-real-checks → on pass commit-attested → on fail human-OK retry.
+ * Bounded iterations (default 3) per the loop's design; human-OK gate per
+ * this project's capability-governance model (default-empty grants,
+ * operation-granular composition, human-only capability widening, and
+ * deterministic real-checks — never agent self-report — as the pass/fail
+ * verdict).
  *
- * Per DEC-0014 this tool is the harness-confined orchestrator's positive-
- * clause shortcut: previously the orchestrator hand-chained call-agent /
- * run-real-checks / commit-attested per iteration; now one Pi call closes
- * the loop while preserving every gate (capability composition at the
- * call boundary, deterministic real-check verdict, human-OK retry, writer-
- * attestation footer).
+ * Per this harness's confinement of the main LLM to acting only through
+ * extension tools / JIT-agent dispatch / workflows (never default
+ * bash/read/write/edit directly), this tool is the harness-confined
+ * orchestrator's positive-clause shortcut: previously the orchestrator
+ * hand-chained call-agent / run-real-checks / commit-attested per iteration;
+ * now one Pi call closes the loop while preserving every gate (capability
+ * composition at the call boundary, deterministic real-check verdict,
+ * human-OK retry, writer-attestation footer).
  */
 
 import { Type } from "@earendil-works/pi-ai";
@@ -26,7 +33,7 @@ export const runWorkOrderLoopTool = {
 	promptSnippet: "Execute the end-to-end work-order loop for a declared spec.",
 	parameters: Type.Object({
 		work_order_id: Type.String({
-			description: "ID of the work-order to execute (loads from .project/work-orders.json schema).",
+			description: "ID of the work-order to execute (loads from the substrate's work-orders block).",
 		}),
 		max_iterations: Type.Optional(Type.Number({ description: "Max iteration count before fail-final. Default 3." })),
 		agent_grant: Type.Optional(

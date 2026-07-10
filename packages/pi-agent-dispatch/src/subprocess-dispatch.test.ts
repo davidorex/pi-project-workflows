@@ -41,7 +41,7 @@ describe("buildDispatchArgs", () => {
 		assert.equal(args[pIdx + 1], "@/tmp/prompt.md");
 	});
 
-	it("emits --no-tools (not an absent flag) for an empty grant — DEC-0047 default-empty", () => {
+	it("emits --no-tools (not an absent flag) for an empty grant — this project's capability-governance model's default-empty grant rule", () => {
 		const args = buildDispatchArgs({ model: "m", tools: [], promptArg: "x" });
 		assert.ok(args.includes("--no-tools"));
 		assert.equal(args.indexOf("--tools"), -1);
@@ -54,7 +54,7 @@ describe("buildDispatchArgs", () => {
 		assert.equal(args[modelIdx + 1], "anthropic/claude-haiku-4.5");
 	});
 
-	it("omits --model entirely when no model is supplied — pi resolves its own default (DEC-0023)", () => {
+	it("omits --model entirely when no model is supplied — pi resolves its own default, per this project's dispatch model-resolution precedence", () => {
 		const args = buildDispatchArgs({ tools: ["bash"], promptArg: "x" });
 		assert.equal(args.indexOf("--model"), -1);
 		// The rest of the surface is unaffected.

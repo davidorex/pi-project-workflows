@@ -1,12 +1,15 @@
 /**
- * Unit tests for auth-gate (FGAP-134).
+ * Unit tests for auth-gate, which closes a spoofable writer-identity field
+ * by gating sensitive tool calls at the dispatch layer regardless of
+ * caller-supplied values.
  *
  * Aim: verify the pi.on('tool_call') handler enforces user-confirmation
  * on the 14 Bucket-2 sensitive tools while passing other tool calls
  * through unchanged. The tests invoke `authGateHandler` directly with
  * synthetic ToolCallEvent + ExtensionContext shapes; no pi runtime is
  * required. The registration helper `registerAuthGate` is exercised by
- * the extension-load smoke test in index.test.ts (FGAP-134 plan step 3).
+ * the extension-load smoke test in index.test.ts (step 3 of the plan for
+ * closing the spoofable writer-identity field via dispatch-layer gating).
  *
  * Mock shape notes:
  *   - ctx is `as unknown as ExtensionContext` so we only need the
@@ -87,12 +90,13 @@ afterEach(() => {
 });
 
 describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
-	it("contains all 21 canonical Bucket-2 tool names (FGAP-134 + FGAP-136 + TASK-094 extensions + resolve-conflict + resolve-blocked + context-install + context-reconcile)", () => {
-		// Aim: pin the list verbatim against the FGAP-134 plan + the
-		// FGAP-136 write-schema-migration extension + the TASK-094
+	it("contains all 21 canonical Bucket-2 tool names (the dispatch-layer writer-identity gating set, the write-schema-migration schema-evolution tool, the /context switch command family's gated members, plus resolve-conflict + resolve-blocked + context-install + context-reconcile)", () => {
+		// Aim: pin the list verbatim against the plan for closing the
+		// spoofable writer-identity field via dispatch-layer gating, plus
+		// the write-schema-migration schema-evolution extension, plus the
 		// /context switch family extension (context-switch + context-archive;
 		// context-list is read-only and intentionally NOT in the gated set)
-		// plus TASK-059's context-install (the reflected install ceremony, authGated)
+		// plus the reflected context-install ceremony op (authGated)
 		// plus the derivation-truthfulness arc's context-reconcile (converges
 		// stored rollup-kind statuses — a substrate-mutating ceremony, authGated)
 		// so future substrate evolutions surface as test failures requiring
@@ -125,8 +129,8 @@ describe("auth-gate — AUTH_REQUIRED_TOOLS canonical Bucket-2 list", () => {
 		assert.deepStrictEqual(actual, expected, `AUTH_REQUIRED_TOOLS drift; got: ${[...actual].sort().join(", ")}`);
 	});
 
-	it("context-switch + context-archive are in the gated set; context-list is NOT (TASK-094 read-only exception)", () => {
-		// Targeted assertion on the TASK-094 additions so a regression that
+	it("context-switch + context-archive are in the gated set; context-list is NOT (the /context switch command family's read-only exception)", () => {
+		// Targeted assertion on the /context switch command family's additions so a regression that
 		// inadvertently flips context-list into the gated set (or drops the
 		// mutation tools out of it) surfaces as a focused failure rather than
 		// only through the deepStrictEqual canon pin.

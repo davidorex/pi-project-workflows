@@ -1,9 +1,12 @@
 /**
  * attested-commit — stage declared files + invoke `git commit` with a
- * DispatchContext-style attestation footer encoding writer.kind=agent
- * per DEC-0047. The husky pre-commit hook (`npm run check && npm test`)
+ * DispatchContext-style attestation footer encoding writer.kind=agent, per
+ * this project's capability-governance model's writer-attestation
+ * requirement. The husky pre-commit hook (`npm run check && npm test`)
  * runs as the backup gate; never bypass via --no-verify. The primary
- * gate is run-real-checks (TASK-090) called BEFORE this tool.
+ * gate is run-real-checks — the real-check verdict gate whose passing
+ * verdict this tool's attested-commit step follows — called BEFORE this
+ * tool.
  *
  * Refusal gates fire before any git op: missing agent_id, empty files
  * array, or empty message throws CommitAttestedRefusedError. Stages

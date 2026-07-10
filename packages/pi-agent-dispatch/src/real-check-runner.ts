@@ -1,6 +1,11 @@
 /**
- * real-check-runner — deterministic verdict gate for agent-authored work-orders
- * (TASK-090 / DEC-0018 / FGAP-102 / DEC-0047 clause 5). Runs the real-checks
+ * real-check-runner — deterministic verdict gate for agent-authored work-orders,
+ * implementing the real-check verdict step and the attested-commit step that
+ * follows a passing verdict, per the rule that tests passing alone is
+ * insufficient (a runtime demonstration and an adversarial verification probe
+ * are required too) and the rule that an agent's own self-reported status is
+ * never the pass/fail verdict — only a real external command's exit code is,
+ * as this project's capability-governance model requires. Runs the real-checks
  * declared in a work-order's `real_check_criteria`: build/check/test exit,
  * runtime-demo invocation + expected-substring presence, adversarial-probe
  * grep-based evidence enumeration. Returns a structured RealCheckResult; the
@@ -130,8 +135,10 @@ async function runRD(
 ): Promise<RuntimeDemoResult> {
 	const r = await runShell(cwd, demo.invocation, timeoutMs);
 	// pass requires BOTH clean exit and expected-substring presence in stdout —
-	// covers the "side-effect masks feature" failure mode (DEC-0018) where the
-	// invocation exits 0 but produces unexpected output.
+	// covers the "side-effect masks feature" failure mode where the invocation
+	// exits 0 but produces unexpected output, the same failure mode behind the
+	// rule that tests passing alone is insufficient and a runtime demonstration
+	// is also required.
 	const passed = r.exitCode === 0 && r.stdout.includes(demo.expected);
 	return {
 		passed,

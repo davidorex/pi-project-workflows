@@ -7,7 +7,8 @@ import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { resolveDispatchModel } from "./dispatch-model.js";
 
 // resolveDispatchModel mirrors the workflow executor's model precedence at the
-// dispatch boundary (DEC-0023): spec.model → model-config by_role[role] →
+// dispatch boundary, per this project's dispatch model-resolution precedence:
+// spec.model → model-config by_role[role] →
 // model-config default → null. model-config is read via pi-context readBlock,
 // which reads <cwd>/<substrate>/model-config.json; a substrate with no such file
 // is the absent-block case (readBlock throws → resolution falls through to null).

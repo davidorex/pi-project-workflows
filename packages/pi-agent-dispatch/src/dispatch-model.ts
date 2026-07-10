@@ -1,5 +1,7 @@
 /**
- * dispatch-model — derived dispatch-model resolution (DEC-0023).
+ * dispatch-model — derived dispatch-model resolution, per this project's
+ * dispatch model-resolution precedence: spec model, then a per-role
+ * model-config assignment, then the block's default.
  *
  * Mirrors the workflow executor's model-precedence policy at the agent-dispatch
  * boundary: an agent spec that names no `model` of its own falls back to the

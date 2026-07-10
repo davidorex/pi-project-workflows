@@ -255,7 +255,7 @@ describe("runWorkOrderLoop", () => {
 	});
 });
 
-describe("clampToScope — scope.operations capability clamp (FGAP-125)", () => {
+describe("clampToScope — the work-order scope clamp intersecting the composed capability grant with the work-order's declared scope.operations", () => {
 	it("intersects the composed grant to scope.operations (['write','bash'] ∩ ['write'] = ['write'])", () => {
 		assert.deepEqual(clampToScope(["write", "bash"], ["write"]), ["write"]);
 	});
@@ -279,7 +279,7 @@ describe("clampToScope — scope.operations capability clamp (FGAP-125)", () => 
 	});
 });
 
-describe("validateWorkOrderInput — input_contract validation (FGAP-125)", () => {
+describe("validateWorkOrderInput — the work-order's input_contract validation", () => {
 	const CONTRACT = {
 		type: "object",
 		required: ["work_order_id"],

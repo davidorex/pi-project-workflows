@@ -1,14 +1,18 @@
 /**
- * work-order-loop — bounded FEAT-006 north-star loop implementation.
+ * work-order-loop — bounded implementation of the end-to-end
+ * orchestrator-declared work-order execution loop.
  *
- * The orchestrator declares a work-order (TASK-088 schema). This library
- * drives the end-to-end loop the work-order encodes:
+ * The orchestrator declares a work-order (per the work-order schema/block
+ * covering target_agent, real_check_criteria, scope, input_contract). This
+ * library drives the end-to-end loop the work-order encodes:
  *
  *   for iteration in 0..max_iterations:
- *     1. dispatch the work-order's target_agent as a `pi` subprocess (FGAP-124
- *        — the only path that binds real, callable tools; pi-jit-agents'
- *        executeAgent binds none). pi-jit-agents stays the classify /
- *        structured-output library primitive per JI-021.
+ *     1. dispatch the work-order's target_agent as a `pi` subprocess —
+ *        in-process dispatch can't execute tools (pi-jit-agents'
+ *        executeAgent is a single-turn completion primitive binding none),
+ *        so real tool execution requires a `pi` subprocess. pi-jit-agents is
+ *        used directly as a library here, never wrapped by an intermediating
+ *        extension, staying the classify / structured-output primitive.
  *     2. run the work-order's real_check_criteria via runRealChecks
  *        (deterministic verdict — never the
  *        executing agent's self-report).
@@ -22,8 +26,10 @@
  * — the orchestrator no longer manually chains call-agent / run-real-checks
  * / commit-attested per iteration.
  *
- * Per DEC-0014 the orchestrator-side composite is the only authorized
- * driver of this loop; the agent_grant the orchestrator
+ * Per this harness's confinement of the main LLM to acting only through
+ * extension tools / JIT-agent dispatch / workflows (never default
+ * bash/read/write/edit directly), the orchestrator-side composite is the
+ * only authorized driver of this loop; the agent_grant the orchestrator
  * passes is composed (intersected) at the call-agent dispatch boundary.
  */
 
@@ -145,7 +151,10 @@ export const _internals = {
 };
 
 /**
- * Dispatch the work-order's target agent as a `pi` subprocess (FGAP-124).
+ * Dispatch the work-order's target agent as a `pi` subprocess — in-process
+ * dispatch can't execute tools (pi-jit-agents' executeAgent is a
+ * single-turn completion primitive binding none), so real tool execution
+ * requires a `pi` subprocess.
  *
  * The subprocess is the ONLY execution path that binds real, callable tools —
  * pi-jit-agents `executeAgent` binds none (it materializes only a phantom
@@ -174,7 +183,8 @@ async function dispatchTargetAgent(
 	const input = { work_order_id: wo.id };
 	validateWorkOrderInput(input, wo.input_contract, wo.id);
 	const compiled = compileAgent(spec, { env, input, cwd });
-	// Model precedence (DEC-0023): compiled/spec model → model-config by_role[role]
+	// Model precedence, per this project's dispatch model-resolution order:
+	// compiled/spec model → model-config by_role[role]
 	// → default → null. A null result is NOT an error for subprocess dispatch — no
 	// `--model` is passed and pi resolves its own default inside the subprocess.
 	const modelSpec = compiled.model ?? spec.model ?? resolveDispatchModel(cwd, spec) ?? undefined;

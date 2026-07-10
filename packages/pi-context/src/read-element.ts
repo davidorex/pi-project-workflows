@@ -1,6 +1,8 @@
 /**
  * read-element — ONE pure, DRY element-read primitive every JSON read surface
- * routes through (FGAP-103). No I/O: it operates only on already-loaded JS
+ * routes through, closing the earlier gap where every JSON-backed read
+ * surface except blocks was read-all-or-nothing (no way to fetch one config
+ * registry, one schema field, one roadmap phase). No I/O: it operates only on already-loaded JS
  * values (callers do the file/substrate reads, then hand the value in). This
  * keeps the module unit-testable in isolation and mirrors the orientation.ts
  * precedent (pure transform, no substrate coupling).
@@ -13,7 +15,9 @@
  *     a single serialize+cap path. When the value is a collection it pages by
  *     offset/limit and reports total/hasMore; the prose "[Truncated …]" note
  *     is replaced by a STRUCTURED, machine-parseable + human-readable footer
- *     (prefix `[read-element:`) carrying the same signal (FGAP-089).
+ *     (prefix `[read-element:`) carrying the same signal — a machine-checkable
+ *     completeness flag, since a soft prose-only note let a satisficing LLM
+ *     silently treat a partial (over-cap) result as the whole thing.
  *
  *   addressInto(value, addr) → { found, value, resolved }
  *     Element addressing — fetch ONE registry / property / item / path out of
@@ -51,9 +55,10 @@ export function discoverArrayKey(data: Record<string, unknown>): string | null {
  * The readable envelope every read surface emits. `content` is the text for
  * the AgentToolResult (JSON body plus a structured footer when paged and/or
  * truncated). The structured fields (`total`/`hasMore`/`truncated`/
- * `totalBytes`) generalize readBlockPage's `{items,total,hasMore}` and add the
- * FGAP-089 truncation signal so consumers (or the agent) can react
- * programmatically rather than parse prose.
+ * `totalBytes`) generalize readBlockPage's `{items,total,hasMore}` and add a
+ * machine-checkable truncation signal (replacing a soft prose-only note that
+ * let a satisficing LLM silently treat a truncated result as complete) so
+ * consumers (or the agent) can react programmatically rather than parse prose.
  */
 export interface ReadEnvelope {
 	/** Readable text for the tool result: JSON body + optional structured footer. */
@@ -67,7 +72,9 @@ export interface ReadEnvelope {
 	/** Total bytes of the un-capped serialized JSON. */
 	totalBytes: number;
 	/**
-	 * Whether the full content was returned (machine-checkable, FGAP-089). True
+	 * Whether the full content was returned — machine-checkable, rather than a
+	 * soft prose note a satisficing LLM could silently treat a truncated result
+	 * as complete. True
 	 * for every non-over-cap return — including a paged-but-not-truncated page
 	 * (the page itself is complete; `hasMore` signals more pages). False ONLY on
 	 * the over-CAP fail-closed paths (directive-only refusal, or head-leading
@@ -81,7 +88,9 @@ export interface ReadEnvelope {
 export const READ_ELEMENT_FOOTER_PREFIX = "[read-element:";
 
 /**
- * The STRUCTURED read result (TASK-012 / FGAP-013). `data` is the un-stringified,
+ * The STRUCTURED read result, introduced so the CLI's `--json` envelope emits a
+ * real JSON value instead of a stringified-JSON string requiring a double-parse.
+ * `data` is the un-stringified,
  * un-footered value — the actual page slice or whole object — so the CLI `--json`
  * envelope can emit a real JSON value instead of a stringified JSON string
  * (no double-encode). The metadata fields mirror {@link ReadEnvelope} exactly:
@@ -152,7 +161,8 @@ export interface SerializeForReadOptions {
 	/** Optional human label included in the footer (e.g. the addressed thing). */
 	label?: string;
 	/**
-	 * Fail-closed narrowing directive (FGAP-089). When set AND the serialized
+	 * Fail-closed narrowing directive — over-cap reads must not silently pass a
+	 * partial result off as complete. When set AND the serialized
 	 * value exceeds the read cap, serializeForRead returns the DIRECTIVE ONLY —
 	 * NO partial body — naming the narrowing tool + addressing the caller should
 	 * use instead (a partial read would mislead a constrained agent into
@@ -231,8 +241,10 @@ function resolveCollection(
  * paged (offset/limit) and report total/hasMore; non-collections serialize
  * whole. JSON text is capped via truncateHead.
  *
- * Over-CAP reads FAIL CLOSED (FGAP-089): a value that exceeds the 50KB read cap
- * does NOT return a partial body dressed as the whole value. Instead —
+ * Over-CAP reads FAIL CLOSED: a value that exceeds the 50KB read cap
+ * does NOT return a partial body dressed as the whole value, and a
+ * machine-checkable completeness flag replaces the old soft prose-only
+ * truncation note a satisficing LLM could silently treat as complete. Instead —
  *   - with `overCapDirective`: a directive-only REFUSAL (no body) naming the
  *     narrowing tool + addressing;
  *   - without it (edge surfaces, no finer addressing): an UNMISSABLE
@@ -255,7 +267,9 @@ export function serializeForRead(value: unknown, opts: SerializeForReadOptions =
 
 /**
  * The cap / pagination / metadata computation that previously lived inside
- * serializeForRead, returning the value UN-stringified (TASK-012 / FGAP-013).
+ * serializeForRead, returning the value UN-stringified so the CLI `--json`
+ * envelope can emit a real JSON value instead of a stringified JSON string
+ * (closing the earlier double-encoding defect).
  * `data` is the page slice (collections) or the whole object — never stringified,
  * never footered. The metadata fields mirror {@link ReadEnvelope}; the text-render
  * inputs (label / offset / overCapDirective / paged / capped head) ride along
@@ -297,7 +311,7 @@ export function structureForRead(value: unknown, opts: SerializeForReadOptions =
 		cappedContent: cap.content,
 	};
 
-	// Over-cap fail-closed (FGAP-089) → complete:false; under-cap → complete:true.
+	// Over-cap fail-closed → complete:false; under-cap → complete:true.
 	// The over-cap REFUSAL/PARTIAL *text* rendering is a renderReadText concern,
 	// but the structured `data` must ALSO fail closed: on over-cap (cap.truncated)
 	// `data` is bounded to null so the `--json` surface (which emits `data` directly
@@ -323,9 +337,10 @@ export function structureForRead(value: unknown, opts: SerializeForReadOptions =
 
 /**
  * Render a {@link ReadStructured} to the EXACT text serializeForRead's `content`
- * produced before the TASK-012 split: the stringified body + the structured
- * `[read-element:` paging footer, OR — on the over-cap fail-closed paths
- * (FGAP-089) — the directive-only REFUSAL (no body) when a narrowing tool was
+ * produced before the structured-`data`/rendered-`content` split (introduced to
+ * fix the CLI `--json` double-encoding): the stringified body + the structured
+ * `[read-element:` paging footer, OR — on the over-cap fail-closed paths —
+ * the directive-only REFUSAL (no body) when a narrowing tool was
  * named, else the head-leading marked PARTIAL. Reads its render inputs from the
  * private symbol attached by {@link structureForRead}.
  */
@@ -337,7 +352,7 @@ export function renderReadText(s: ReadStructured): string {
 
 	const { label, offset, paged, overCapDirective, cappedContent } = ctx;
 
-	// ── FGAP-089 over-CAP fail-closed path ──────────────────────────────────
+	// ── Over-CAP fail-closed path ──────────────────────────────────
 	// When the serialized value exceeds the read cap, a partial body must NOT be
 	// returned as if it were the whole value — a constrained agent skimmed past
 	// the old trailing `[read-element: truncated …]` footer and treated a

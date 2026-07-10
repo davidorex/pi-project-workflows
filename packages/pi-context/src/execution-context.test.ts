@@ -1,5 +1,5 @@
 /**
- * Tests for gatherExecutionContext — TASK-039 / Phase 3 sub-phase 3.2.
+ * Tests for gatherExecutionContext — Phase 3 sub-phase 3.2.
  *
  * Per per-test-fixture pattern (each test owns its tmp substrate dir +
  * synthetic relations.json + per-block files). Mirrors the fixture
@@ -9,7 +9,7 @@
  * write-time schema validation pressure unrelated to the primitive
  * under test.
  *
- * Coverage per TASK-039 acceptance criteria:
+ * Coverage per that phase's acceptance criteria:
  *   1. Happy path — single relation_type / out / depth 2 / 2 edges →
  *      bucket has 2 items.
  *   2. Multi-relation — 3 declared bundle_relation_types with distinct
@@ -263,7 +263,7 @@ describe("gatherExecutionContext: maxDepth bound", () => {
 		// is not currently depth-bounded in implementation (visited-set
 		// bounded only) — the traversal_depth field reflects the
 		// effective cap applied at the bundle contract layer; reach
-		// behavior is depth-bound territory tracked under FGAP-029.
+		// behavior is depth-bound territory for a future variant of context-bundling.
 		// Verify the bound is recorded on the bundle.
 		const result = gatherExecutionContext(tmpDir, { unitId: "A", kind: "task", maxDepth: 2 });
 		assert.ok(!("error" in result), `expected ContextBundle, got: ${JSON.stringify(result)}`);

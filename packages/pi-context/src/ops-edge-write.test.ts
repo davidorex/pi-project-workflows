@@ -1,9 +1,9 @@
 /**
- * Op-level tests for the five write ops added in TASK-007 (cli-arc β):
+ * Op-level tests for the five write ops added (cli-arc β):
  * remove-relation, replace-relation, append-relations, upsert-block-item — driven
  * through the exported `ops` registry entries (the SAME OpDefinition.run the
- * in-pi tool surface and the CLI reflect), plus the FGAP-009 non-exposure
- * allowlist assertions.
+ * in-pi tool surface and the CLI reflect), plus the non-exposure
+ * allowlist assertions for the op-surface ↔ library-write-surface coverage contract.
  *
  * Each op's `run(cwd, params, ctx)` is exercised against a real on-disk
  * substrate. ctx forwarding is proven where it is observable: for relation ops
@@ -220,8 +220,9 @@ describe("TASK-012 / FGAP-013 structured OpResult", () => {
 		const cwd = makeBlockDir("opresult-json");
 		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
 		// context-validate is a `return { json: validateContext(cwd) }` data op.
-		// (resolve-item-by-id / promote-item moved to { read } under TASK-013/FGAP-015,
-		// so context-validate is now the representative still-{json} op here.)
+		// (resolve-item-by-id / promote-item moved to { read } once the output-boundary
+		// cap enforcement landed, so context-validate is now the representative
+		// still-{json} op here.)
 		const r = op("context-validate").run(cwd, {});
 		assert.ok(typeof r === "object" && r !== null && "json" in r, "data op returns { json }");
 		// THE point: the structured value is the un-stringified object (single value),

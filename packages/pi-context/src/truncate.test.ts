@@ -1,5 +1,5 @@
 /**
- * Unit coverage for the vendored truncateHead (FGAP-104).
+ * Unit coverage for the vendored truncateHead.
  *
  * truncateHead is transcribed verbatim from @earendil-works/pi-coding-agent
  * (dist/core/tools/truncate.js) so context-sdk's import graph carries no SDK

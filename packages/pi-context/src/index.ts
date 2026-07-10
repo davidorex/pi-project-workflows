@@ -246,7 +246,7 @@ ${blockInfo.join("\n\n")}
 
 /**
  * Thrown by `initProject` when an existing `.pi-context.json` bootstrap pointer
- * declares a different `contextDir` than the caller is requesting. Pre-FGAP-179
+ * declares a different `contextDir` than the caller is requesting. Previously
  * the divergence was silent — `initProject` only wrote the pointer when absent
  * and then operated against the EXISTING pointer's contextDir, completely
  * dropping the caller's argument and emitting a misleading "Project
@@ -277,11 +277,13 @@ export class ContextInitMismatchError extends Error {
 /**
  * Initialize the substrate dir: write the bootstrap pointer and scaffold the
  * substrate + schemas directories ONLY. No schema/block assets are copied here
- * (FGAP-067 / DEC-0011: init must not impose a catalog). Run accept-all to adopt
+ * (init must not impose a catalog — the package ships no default schemas or
+ * block files; users opt in via `config.installed_schemas`/`installed_blocks`).
+ * Run accept-all to adopt
  * a config + install to materialize the declared assets. Shared by the /context
  * init command handler and the context-init tool.
  *
- * Hard-fail-on-mismatch (post-FGAP-179): when `.pi-context.json` already exists
+ * Hard-fail-on-mismatch: when `.pi-context.json` already exists
  * AND its declared contextDir differs from the caller's `contextDir` argument,
  * throws ContextInitMismatchError naming `/context switch -c <new-dir>` as the
  * correct command. When the existing pointer matches the caller's arg, behavior
@@ -320,7 +322,7 @@ export function initProject(cwd: string, contextDir: string): { created: string[
 		// forensic).
 	} else {
 		// No pointer — write a fresh one carrying the caller's contextDir
-		// (required per DEC-0015). writeBootstrapPointer is atomic + invalidates
+		// (required — the substrate dir name is never hardcoded). writeBootstrapPointer is atomic + invalidates
 		// the bootstrapCache so the immediate-next resolveContextDir call reads
 		// the freshly-written value.
 		writeBootstrapPointer(cwd, contextDir);
@@ -337,7 +339,7 @@ export function initProject(cwd: string, contextDir: string): { created: string[
 			skipped.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
-	// Write the minimal schema-valid SKELETON config (FGAP-001 / DEC-0001) so the
+	// Write the minimal schema-valid SKELETON config so the
 	// substrate has a tool-driven config from bootstrap — onward paths are
 	// /context accept-all (adopt the packaged catalog) OR amend-config / edit
 	// (build a custom vocabulary). NEVER-CLOBBER: an idempotent re-init over an
@@ -361,7 +363,10 @@ export interface InstallResult {
 	notFound: string[];
 	preserved: string[];
 	/**
-	 * FGAP-029 safe re-sync (slice S4) — SCHEMA --update outcomes.
+	 * Safe re-sync (slice S4) — closing the earlier footgun where
+	 * `/context install --update` blindly overwrote installed schemas AND block
+	 * data with empty catalog starters, with no safe way to re-sync a stale
+	 * schema. SCHEMA --update outcomes.
 	 *   - `resynced`: an installed schema re-synced from the catalog where no
 	 *     block-item migration was required (same `version` as installed — a
 	 *     description-only / non-versioned drift — OR a version bump whose block
@@ -379,7 +384,9 @@ export interface InstallResult {
 	migrated: string[];
 	blocked: string[];
 	/**
-	 * Ceremony-entry identity establishment (DEC-0020): the `substrate_id` this
+	 * Ceremony-entry identity establishment — mint, persist, register substrate
+	 * identity at entry when absent, rather than refusing outright: the
+	 * `substrate_id` this
 	 * run minted + persisted + registered because the config lacked one. Absent
 	 * when identity was already established (never re-minted).
 	 */
@@ -388,7 +395,9 @@ export interface InstallResult {
 
 /**
  * One per-item validation failure mapped from an AJV `ErrorObject`, in the
- * minimal shape the blocked-diagnostic surfaces consume (TASK-048 / FGAP-077).
+ * minimal shape the blocked-diagnostic surfaces consume — surfacing which
+ * item/field/constraint actually failed instead of discarding the AJV error
+ * and returning a bare "blocked."
  * `itemId` is the failing block item's `id` when the AJV `instancePath` resolves
  * to one (envelope-level errors leave it undefined); `instancePath` is AJV's raw
  * JSON pointer; `keyword` + `message` carry the constraint that failed and its
@@ -402,7 +411,9 @@ export interface BlockValidationFailure {
 }
 
 /**
- * Per-schema blocked-resync diagnostic detail (TASK-048 / FGAP-077). Carried by
+ * Per-schema blocked-resync diagnostic detail — surfacing which
+ * item/field/constraint actually failed instead of discarding the AJV error
+ * and returning a bare "blocked." Carried by
  * `simulateResyncOutcome` / `resyncSchema` on the blocked arms and surfaced via
  * `UpdateResult.blockedDetail`, so a refused catalog-ahead resync reports WHY it
  * refused — distinguishing a missing migration chain from items that fail the
@@ -415,7 +426,8 @@ export interface BlockValidationFailure {
  *     per-item constraint failures.
  *   - `write-failed`: a NON-validation throw at the resync write boundary (e.g.
  *     the mandatory identity stamp refusing a substrate with no `substrate_id`,
- *     or an unreadable catalog body) — FGAP-115. The items were NOT flagged
+ *     or an unreadable catalog body) — classified at the catch site rather
+ *     than lumped in with item-validation failures. The items were NOT flagged
  *     invalid; `failures` carries a single `{instancePath:"", keyword:"error"}`
  *     entry whose `message` is the thrown error. A `write-failed` refusal
  *     inscribes NO failure markers and persists NO pending-blocked record —
@@ -431,7 +443,7 @@ export interface BlockedDetail {
 	/**
 	 * content_hash of the pinned pre-marker block bytes, set ONLY when the live
 	 * update actually inscribed git-style failure markers into this schema's block
-	 * file (TASK-052 / FGAP-081). `renderBlocked` keys its past-tense "markers were
+	 * file. `renderBlocked` keys its past-tense "markers were
 	 * written INTO the block file" claim on this field's presence: a dryRun preview
 	 * (writes nothing) and a `no-migration-chain` entry (never marked) leave it
 	 * omitted, so the rendered guidance for those does not falsely claim a write.
@@ -440,7 +452,7 @@ export interface BlockedDetail {
 }
 
 /**
- * Resolve the failing block item's `id` from an AJV `instancePath` (TASK-048).
+ * Resolve the failing block item's `id` from an AJV `instancePath`.
  * The AJV pointer for a block-item error is `/<arrayKey>/<index>/<field>…`; this
  * matches the leading `/<arrayKey>/<index>` segment, resolves
  * `blockData[arrayKey][index]`, and returns its `id` when that is a string.
@@ -475,7 +487,7 @@ function mapValidationFailures(errors: ErrorObject[], blockData: unknown): Block
 }
 
 /**
- * TASK-052 / FGAP-081: locate the 0-based source-text line index of the field a
+ * Locate the 0-based source-text line index of the field a
  * `validation-failed` failure's `instancePath` points at, within the pretty-printed
  * block-file lines. The AJV pointer is `/<arrayKey>/<index>/<field>…`; this finds the
  * `"<arrayKey>":` line, then walks forward counting STRUCTURAL `{`/`[`/`}`/`]` (a
@@ -571,8 +583,9 @@ const MARKER_LINE_RE = new RegExp(`^(${MARKER_OPEN}|${MARKER_CLOSE})`);
 const MARKER_LINE_RE_MULTILINE = new RegExp(MARKER_LINE_RE.source, "m");
 
 /**
- * TASK-052 / FGAP-081: compose the marker-bearing block-file text for a
- * validation-blocked resync. Given the raw pretty-printed block bytes and the
+ * Compose the marker-bearing block-file text for a
+ * validation-blocked resync (git-merge-style in-file failure markers, the
+ * default behavior for a blocked schema update). Given the raw pretty-printed block bytes and the
  * per-item failures, inserts FULL-LINE git-style conflict sentinels around the
  * offending line(s):
  *
@@ -637,10 +650,10 @@ function composeMarkerText(
  * extracted from `installContext` so the installer and the read-only
  * `checkStatus` drift detector resolve the catalog identically (no divergence).
  *
- * lazy fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined under
+ * lazy fileURLToPath idiom: import.meta.dirname is undefined under
  * tsx's CJS-interop dist-load; import.meta.url is not. Reads the conception once
  * for the canonical_id→paths map so callers resolve sources by the same
- * block_kind declarations the accept-all conception ships (DEC-0037/0038).
+ * block_kind declarations the accept-all onboarding mode ships.
  */
 function resolveCatalog(): { samplesRoot: string; byId: Map<string, { schema_path: string; data_path: string }> } {
 	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
@@ -677,7 +690,7 @@ function readDeclaredVersion(file: string): string | undefined {
  * `text` is the unparsed source (raw JSON Schema — properties/definitions/$id),
  * NOT the `read-samples-catalog` projection, so an operator can diff it locally
  * against the installed `<substrate>/schemas/<name>.schema.json` without
- * touching node_modules (STORY-010 / FGAP-079, TASK-050).
+ * touching node_modules.
  *
  * Read-only and substrate-independent: it touches only the package's bundled
  * `samplesRoot` and takes no cwd, so no installed schema, block, or config is
@@ -740,7 +753,9 @@ function findCatalogMigrationChain(
 /**
  * Read-only computation of the migration declarations a version-bump re-sync of
  * `name` WOULD register into the substrate's migrations.json, WITHOUT writing
- * anything (FGAP-050 — surfaced migration reporting). Mirrors the filter
+ * anything — closing the earlier gap where `/context install --update`
+ * silently appended catalog migration declarations with no report of what was
+ * added. Mirrors the filter
  * `resyncSchema`'s registration loop applies: read the installed vs catalog
  * `version`, walk the shipped catalog chain, and subtract the decls whose
  * `(schemaName, fromVersion)` pair is already present on disk. Returns the
@@ -778,8 +793,10 @@ function computeWouldRegisterMigrations(
 }
 
 /**
- * Pure-read simulation of `resyncSchema`'s outcome for ONE catalog-ahead schema
- * (FGAP-066 / TASK-046 faithful dryRun). Predicts which of `resyncSchema`'s
+ * Pure-read simulation of `resyncSchema`'s outcome for ONE catalog-ahead schema —
+ * closing the earlier gap where `--dryRun` optimistically reported every
+ * catalog-ahead schema as "resynced" even when a live run would actually
+ * migrate or block it. Predicts which of `resyncSchema`'s
  * three terminal statuses (`resynced` / `migrated` / `blocked`) a live re-sync
  * WOULD produce, by mirroring `resyncSchema`'s five decision arms 1:1 over an
  * IN-MEMORY forward-migration + re-validation — WITHOUT writing any file and
@@ -808,7 +825,7 @@ function computeWouldRegisterMigrations(
  *      catalogVersion, blockData)`; absent ⇒ validate as-is. Then
  *      `validate(catalogSchema, migrated, name)`. Pass → `migrated`; any throw
  *      (no path, migration throw, validation failure) → `blocked` with
- *      `wouldRegister: []` and a `detail` (TASK-048): `reason:"validation-failed"`,
+ *      `wouldRegister: []` and a `detail` (the per-item validation diagnostic): `reason:"validation-failed"`,
  *      the version pair, and the per-item failures mapped from
  *      `ValidationError.errors` (a single synthetic failure for a non-AJV throw).
  *
@@ -871,7 +888,7 @@ function simulateResyncOutcome(
 
 	// Arm 2 — version bump with NO shipped chain reaching the catalog version: the
 	// live path refuses, leaving everything unchanged → blocked, no decls. The
-	// blocked detail records the no-chain reason + the version pair (TASK-048).
+	// blocked detail records the no-chain reason + the version pair.
 	const chain = findCatalogMigrationChain(samplesRoot, name, installedVersion, catalogVersion);
 	if (chain === null) {
 		return {
@@ -938,7 +955,7 @@ function simulateResyncOutcome(
 		// truth: nothing registers, so report no decls. The blocked detail records
 		// the validation-failed reason + the version pair + (when the throw is an AJV
 		// ValidationError) the per-item failures mapped against the loaded block data;
-		// a non-AJV throw becomes a single synthetic failure (TASK-048).
+		// a non-AJV throw becomes a single synthetic failure.
 		const failures =
 			err instanceof ValidationError
 				? mapValidationFailures(err.errors, blockData)
@@ -953,7 +970,8 @@ function simulateResyncOutcome(
 
 /**
  * Validate ONE installed block's items against the CATALOG schema version,
- * read-only (TASK-048 — FGAP-077). The standalone diagnostic underneath the
+ * read-only — surfacing which item/field/constraint actually failed instead of
+ * discarding the AJV error. The standalone diagnostic underneath the
  * `validate-block-items` op: it answers "would these items pass the catalog
  * schema (after the shipped forward-migration, when the block lags the catalog
  * version)?" WITHOUT writing anything — no schema overwrite, no block re-write, no
@@ -1045,7 +1063,9 @@ export function validateBlockItemsAgainstCatalog(
 
 /**
  * Migration-aware re-sync of ONE installed schema under `/context install
- * --update` (FGAP-029 safe re-sync, slice S4). Replaces the blind
+ * --update` (safe re-sync, slice S4, closing the earlier footgun where
+ * `--update` blindly overwrote installed schemas AND block data with empty
+ * catalog starters). Replaces the blind
  * `fs.copyFileSync` the schema loop used to perform with a forward-migrate-or-
  * refuse decision so a catalog schema version bump never strands the block's
  * already-filed items under a schema they no longer satisfy.
@@ -1093,7 +1113,9 @@ function resyncSchema(
 	const catalogVersion = readDeclaredVersion(sourceFile);
 	const installedVersion = readDeclaredVersion(destFile);
 
-	// TASK-051 / FGAP-080: build the pending-blocked record for a refused resync.
+	// Build the pending-blocked record for a refused resync — closing the
+	// earlier gap where blocked was a dead-end with no persisted state or
+	// resolution command.
 	// Pin the TARGET catalog schema body into the object store (computeContentHash
 	// + putObject — idempotent on the content hash) so resolve-blocked can later
 	// re-validate the corrected block against the SAME pinned target this run
@@ -1153,7 +1175,8 @@ function resyncSchema(
 					const catalogSchema = JSON.parse(fs.readFileSync(sourceFile, "utf-8")) as Record<string, unknown>;
 					validate(catalogSchema, sameVersionBlockData, name);
 				} catch (err) {
-					// Classify the refusal (FGAP-115): only an AJV ValidationError is an
+					// Classify the refusal at the catch site rather than lumping every
+					// throw in with item-validation failures: only an AJV ValidationError is an
 					// item-validation failure; any other throw (unreadable catalog body,
 					// a write-boundary precondition) is `write-failed` — no pending entry,
 					// so the marker/pending pipeline (validation-only consequences) never
@@ -1191,7 +1214,7 @@ function resyncSchema(
 	if (chain === null) {
 		// No shipped chain reaches the catalog version → refuse, leave unchanged.
 		// Nothing was registered, so the report is empty. The blocked detail records
-		// the no-chain reason + the version pair (TASK-048).
+		// the no-chain reason + the version pair.
 		return {
 			status: "blocked",
 			registeredMigrations: [],
@@ -1215,7 +1238,8 @@ function resyncSchema(
 	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName}\u0000${m.fromVersion}`));
 	// Accumulate the decls THIS call actually appends (the not-already-present
 	// subset), reported as the { schema, from, to } shape for the caller to
-	// surface (FGAP-050). On the blocked rollback path below this list is
+	// surface — closing the earlier gap where migration declarations were
+	// silently appended with no report of what was added. On the blocked rollback path below this list is
 	// discarded and [] is returned (post-rollback truth: nothing stuck).
 	const registeredMigrations: Array<{ schema: string; from: string; to: string }> = [];
 	for (const decl of chain) {
@@ -1299,8 +1323,9 @@ function resyncSchema(
 		// registered migrations (post-rollback truth — nothing is stuck on disk). The
 		// blocked detail records the validation-failed reason + the version pair + the
 		// per-item failures (a single synthetic failure for a non-AJV throw) so the
-		// caller surfaces WHY the resync refused (TASK-048).
-		// Classify the refusal (FGAP-115): only an AJV ValidationError means the
+		// caller surfaces WHY the resync refused.
+		// Classify the refusal at the catch site rather than lumping every throw in
+		// with item-validation failures: only an AJV ValidationError means the
 		// migrated items fail the catalog schema. Any other throw — the mandatory
 		// identity stamp refusing a substrate with no substrate_id, an I/O failure —
 		// is `write-failed`: the items were never flagged invalid, so no pending
@@ -1329,7 +1354,8 @@ function resyncSchema(
 }
 
 /**
- * /context install opt-in mechanism (DEC-0011). Reads config.installed_schemas
+ * /context install opt-in mechanism — the package ships no default schemas or
+ * block files; a fresh substrate gets nothing auto-seeded. Reads config.installed_schemas
  * and config.installed_blocks, copies declared assets from the package
  * samples catalog (samples/, keyed by conception.json's block_kinds) into the
  * project's substrate root + schemas dir.
@@ -1340,7 +1366,9 @@ function resyncSchema(
  *   - Empty install lists are not an error — the result is a clean no-op.
  */
 /**
- * Ceremony-entry identity establishment (DEC-0020 — FGAP-033). When the
+ * Ceremony-entry identity establishment — closing the earlier gap where, on a
+ * substrate with no established `substrate_id`, schema re-sync's migrate path
+ * threw and was misreported as "blocked." When the
  * substrate's config.json lacks a `substrate_id`, mint one (the SAME
  * `mintSubstrateId` init uses), persist it through the sanctioned config write
  * path, and register it in the project registry (the SAME `registerSubstrate`
@@ -1355,7 +1383,8 @@ function resyncSchema(
  * ceremony's own config handling reports that). This is explicit
  * ceremony-boundary provisioning, not a lazy mint inside a block write —
  * `substrateIdForDir`'s loud guard stays load-bearing for any write reaching
- * it without identity (defense in depth, DEC-0012 preserved).
+ * it without identity (defense in depth: identity is never lazily minted as a
+ * side-effect of an arbitrary block write).
  */
 function establishSubstrateIdentityAtEntry(cwd: string, destRoot: string): string | undefined {
 	let config: ConfigBlock | null;
@@ -1398,7 +1427,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	// — so a blocked-resync rollback restores to the seeded state, preserving the
 	// seed.
 	seedCatalogConfigMigrationDecls(destRoot);
-	// Ceremony-entry identity establishment (DEC-0020) — before any write that
+	// Ceremony-entry identity establishment — before any write that
 	// stamps identity (the --update resync path's writeBlockForDir).
 	const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
 	if (establishedId) result.substrateIdEstablished = establishedId;
@@ -1411,7 +1440,8 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	// destRoot is resolver-aware via tryResolveContextDir(cwd) — it already
 	// cascades through resolveContextDir under the hood (context-dir.ts).
 	// SCHEMAS_DIR is composed as a bare segment off that
-	// resolver-aware root; this is intentional and DEC-0015-compliant
+	// resolver-aware root; this is intentional and consistent with the
+	// substrate-dir-name-never-hardcoded convention
 	// (no hardcoded substrate-dir literal here — `schemas/` is a substrate
 	// internal-layout constant, not the substrate-dir name itself).
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
@@ -1449,13 +1479,14 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 			result.installed.push(relDest);
 			continue;
 		}
-		// destExists && overwrite — migration-aware schema re-sync (FGAP-029 S4).
+		// destExists && overwrite — migration-aware schema re-sync (safe re-sync, slice S4).
 		// resyncSchema decides between same-version overwrite, version-bump
 		// forward-migration, and refuse-and-leave-unchanged; it never strands the
 		// block's items under a schema they fail.
 		// resyncSchema now returns { status, registeredMigrations }; installContext
 		// reports only the status bucket (the migration-decl reporting surface is on
-		// /context update — FGAP-050 — so the appended decls are intentionally
+		// /context update — where every registered declaration is surfaced in the
+		// update output/dry-run — so the appended decls are intentionally
 		// ignored here).
 		const { status: outcome } = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
 		switch (outcome) {
@@ -1486,7 +1517,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		}
 		const destExists = fs.existsSync(destFile);
 		if (destExists) {
-			// Block-data preservation (FGAP-029 safe re-sync): never copy a catalog
+			// Block-data preservation (safe re-sync): never copy a catalog
 			// starter over a block that already holds items, even under --update.
 			// Catalog block starters are empty ({"tasks": []}); copying one over a
 			// populated block would delete the filed items. Read the existing block
@@ -1513,7 +1544,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 				result.skipped.push(relDest);
 				continue;
 			}
-			// FGAP-051 idempotent skip: the on-disk empty block already equals the
+			// Idempotent skip: the on-disk empty block already equals the
 			// catalog starter (JCS-canonical content equality, key-order/whitespace
 			// insensitive) — rewriting it would be a no-op churn (mtime bump, identical
 			// bytes), so skip it and report `skipped` rather than `updated`. Reaches
@@ -1531,7 +1562,7 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		result.installed.push(relDest);
 	}
 
-	// ── Install baseline of the installed SCHEMAS (FGAP-029 safe re-sync) ──────
+	// ── Install baseline of the installed SCHEMAS (safe re-sync) ──────
 	// Record where the installed schema model came from + a per-schema content
 	// fingerprint, so a later slice can detect installed-vs-catalog drift. BLOCKS
 	// are user data and are deliberately NOT baselined (only the re-syncable model
@@ -1551,9 +1582,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		try {
 			const schemaJson = JSON.parse(fs.readFileSync(destSchemaFile, "utf-8")) as { version?: string };
 			const content_hash = computeFileContentHash(destSchemaFile);
-			// Base-stamp (TASK-035 / FEAT-006 T2): persist the as-installed schema body
+			// Base-stamp: persist the as-installed schema body
 			// into the content-addressed object store keyed by its install-baseline
-			// content_hash, so the merge base is retrievable later (TASK-036 precondition).
+			// content_hash, so the merge base is retrievable later (a precondition for
+			// the deterministic 3-way schema merge).
 			// putObject is idempotent (content-addressed) — re-installing unchanged content
 			// re-stamps identical bytes harmlessly. Reuses the already-parsed schemaJson and
 			// already-computed content_hash; no re-read or re-hash.
@@ -1637,12 +1669,13 @@ export interface CheckStatusAsset {
 	/**
 	 * True for an asset whose CATALOG copy has moved past the install baseline
 	 * (states `catalog-ahead` / `both-diverged`) — i.e. the installed schema is
-	 * behind the catalog. Absent (undefined) on not-behind assets. (FGAP-078 /
-	 * STORY-007: "report which installed schemas are behind the catalog".)
+	 * behind the catalog. Absent (undefined) on not-behind assets. Closes the
+	 * earlier gap where check-status computed per-asset version info but never
+	 * surfaced which installed schemas are behind the catalog.
 	 */
 	behind?: boolean;
 	/**
-	 * The version gap for a `behind` asset (FGAP-078). `from`/`to` are the
+	 * The version gap for a `behind` asset. `from`/`to` are the
 	 * baseline and catalog versions (either may be undefined when a schema body
 	 * omits `version`). `basis` distinguishes a declared version bump
 	 * (`from !== to`, both present) from a content-only drift (same or
@@ -1664,7 +1697,7 @@ export interface CheckStatusReport {
 }
 
 /**
- * PURE-READ drift detector for `/context check-status` (FGAP-029 safe
+ * PURE-READ drift detector for `/context check-status` (safe
  * re-sync, slice S3). Compares, per installed schema, the S2 install baseline
  * against the catalog's current schema file and the currently-installed schema
  * file, classifies the drift, and RETURNS the report. Writes NOTHING anywhere —
@@ -1766,7 +1799,7 @@ export function checkStatus(cwd: string): CheckStatusReport {
 			}
 		}
 
-		// FGAP-078 / STORY-007: surface, per asset, whether the catalog has moved
+		// Surface, per asset, whether the catalog has moved
 		// past the install baseline and by what version gap. Computed AFTER the
 		// classification arm above (the arm is unchanged). `behind` is true exactly
 		// for the catalog-moved states; the version delta carries the baseline →
@@ -1830,7 +1863,7 @@ export function renderCheckStatus(report: CheckStatusReport): string {
 		// the version gap: `name (1.0.0 -> 1.0.1)` for a declared bump, or
 		// `name (1.0.1, content changed)` / `name (content changed)` (versions
 		// undefined) for a content-only drift — so the version pair is scannable
-		// inline (FGAP-078 / STORY-007).
+		// inline.
 		const labels = assets.map((a) => {
 			if (!a.behind || !a.version_delta) return a.name;
 			const { from, to, basis } = a.version_delta;
@@ -1848,8 +1881,9 @@ export function renderCheckStatus(report: CheckStatusReport): string {
 }
 
 /**
- * The per-schema action plan produced by `updateContext` (FEAT-006 T1 — TASK-034 /
- * DEC-0017). `updateContext` classifies every installed schema via the read-only
+ * The per-schema action plan produced by `updateContext` — the `pi-context
+ * update` command shell's first slice, delivering "never silently clobber"
+ * via refuse-and-report for locally-modified schemas. `updateContext` classifies every installed schema via the read-only
  * `checkStatus` detector, then routes by drift state:
  *
  *   - `resynced` / `migrated`: a `catalog-ahead` schema (the package shipped a
@@ -1864,11 +1898,12 @@ export function renderCheckStatus(report: CheckStatusReport): string {
  *     recorded under `blocked` — schema, block, and migrations.json all left
  *     byte-unchanged (per `resyncSchema`'s blocked guarantee).
  *   - `refused`: a `locally-modified` or `both-diverged` schema — the installed
- *     file was edited on disk. This first increment (DEC-0017) REFUSES to
+ *     file was edited on disk. This first increment REFUSES to
  *     overwrite a locally-modified schema: no `resyncSchema` call, no copy, no
  *     write of any kind for these. The schema name is recorded here so the
  *     operator can reconcile; an automatic three-way merge is the deferred
- *     follow-on (TASK-036), out of scope for T1.
+ *     follow-on (the deterministic 3-way schema merge), out of scope for this
+ *     first increment.
  *   - `reported`: a schema whose drift is undecidable or whose files are absent
  *     (`no-baseline` / `missing-catalog` / `missing-installed`). Recorded with
  *     its `state` (no write attempted) so the operator sees why it was not acted
@@ -1894,7 +1929,8 @@ export interface UpdateResult {
 	/** `catalog-ahead` schemas whose resync was refused by `resyncSchema` (no safe migration). */
 	blocked: string[];
 	/**
-	 * Per-schema blocked-resync diagnostic detail (TASK-048 — FGAP-077), one entry
+	 * Per-schema blocked-resync diagnostic detail — surfacing which
+	 * item/field/constraint actually failed instead of a bare "blocked" — one entry
 	 * per name in `blocked`. Each carries the refusal `reason` (`no-migration-chain`
 	 * — no shipped chain reaches the catalog version — vs `validation-failed` — the
 	 * forward-migrated items fail the catalog schema), the installed→catalog version
@@ -1904,11 +1940,12 @@ export interface UpdateResult {
 	 * `resyncSchema` produced on refusal. The `blocked: string[]` list is unchanged.
 	 */
 	blockedDetail: BlockedDetail[];
-	/** `locally-modified` / `both-diverged` schemas — refused, never overwritten (DEC-0017). */
+	/** `locally-modified` / `both-diverged` schemas — refused, never overwritten. */
 	refused: string[];
 	/**
 	 * `locally-modified` / `both-diverged` schemas whose recorded base, local
-	 * body, and catalog body merged conflict-free (TASK-036 — FEAT-006 T3). The
+	 * body, and catalog body merged conflict-free (the deterministic 3-way
+	 * schema merge). The
 	 * merged body was written (live run) or validated only (`dryRun`).
 	 */
 	merged: string[];
@@ -1924,7 +1961,8 @@ export interface UpdateResult {
 	inSync: string[];
 	/**
 	 * Catalog-new config-registry entries this run additively propagated into the
-	 * substrate config (TASK-038 — FEAT-006 T5). Per registry, the identity-keyed
+	 * substrate config (the additive config-registry propagation slice of
+	 * `pi-context update`). Per registry, the identity-keyed
 	 * ids brought current (`relation_types` / `block_kinds` by `canonical_id`,
 	 * `invariants` / `lenses` by `id`). User-authored entries absent from the
 	 * catalog, and existing entries whose body diverges from the catalog, are
@@ -1934,7 +1972,7 @@ export interface UpdateResult {
 	registryAdditions: RegistryAdditions;
 	/**
 	 * Migration declarations this run registered into the substrate's
-	 * migrations.json (FGAP-050). A version-bump `catalog-ahead` re-sync registers
+	 * migrations.json. A version-bump `catalog-ahead` re-sync registers
 	 * the shipped catalog chain's not-already-present decls before migrating; each
 	 * appears here as `{ schema, from, to }`. Mirrors `registryAdditions`: under
 	 * `dryRun` this lists what WOULD be registered (computed read-only from the
@@ -1943,7 +1981,8 @@ export interface UpdateResult {
 	 */
 	migrationsRegistered: Array<{ schema: string; from: string; to: string }>;
 	/**
-	 * Partial-application legibility (FGAP-076). Present EXACTLY when this run
+	 * Partial-application legibility — a blocked update result must surface what
+	 * applied alongside what was refused. Present EXACTLY when this run
 	 * both refused something (`blocked` / `refused` / `conflicts` non-empty) AND
 	 * applied something (`resynced` / `migrated` / `merged` /
 	 * `migrationsRegistered` / any `registryAdditions` array non-empty) — the
@@ -1975,7 +2014,7 @@ export interface UpdateResult {
 		summary: string;
 	};
 	/**
-	 * Ceremony-entry identity establishment (DEC-0020): the `substrate_id` this
+	 * Ceremony-entry identity establishment: the `substrate_id` this
 	 * LIVE run minted + persisted + registered because the config lacked one, so
 	 * the run's stamping writes proceed instead of refusing. Absent when
 	 * identity was already established (never re-minted) and always absent under
@@ -1985,7 +2024,9 @@ export interface UpdateResult {
 }
 
 /**
- * `/context update` engine (FEAT-006 T1 — TASK-034 / DEC-0017). Brings the
+ * `/context update` engine — the command shell's first slice, delivering
+ * "never silently clobber" via refuse-and-report for locally-modified schemas.
+ * Brings the
  * installed substrate MODEL (schemas) current with the packaged catalog by
  * consulting the read-only `checkStatus` drift detector per installed schema and
  * routing each by its drift `state`:
@@ -2002,9 +2043,9 @@ export interface UpdateResult {
  *   - `locally-modified` /
  *     `both-diverged`      → REFUSE-AND-REPORT: do NOT call `resyncSchema`, do NOT
  *                            overwrite; record under `refused`. The first increment
- *                            (DEC-0017) never clobbers a locally-edited schema; the
- *                            three-way merge is deferred (TASK-036).
- *                            [TASK-036 — FEAT-006 T3, now implemented]: the merge is no
+ *                            never clobbers a locally-edited schema; the
+ *                            three-way merge was originally deferred.
+ *                            [The deterministic 3-way schema merge, now implemented]: the merge is no
  *                            longer deferred. BASE is reconstructed from the baseline's
  *                            content-addressed body (`getObject(destRoot,
  *                            installed_from.assets[name].content_hash)`) and key/path-
@@ -2025,10 +2066,10 @@ export interface UpdateResult {
  * plan is computed, but `resyncSchema` is NOT invoked. For each `catalog-ahead`
  * schema the dryRun arm calls `simulateResyncOutcome`, which mirrors
  * `resyncSchema`'s decision arms 1:1 over an IN-MEMORY forward-migration +
- * re-validation (FGAP-066 / TASK-046) and predicts the precise outcome bucket —
+ * re-validation and predicts the precise outcome bucket —
  * `resynced` / `migrated` / `blocked` — the live path would land, so the schema is
  * pushed onto `result[outcome]` rather than unconditionally onto `resynced`. The
- * would-register migration decls it returns (the same FGAP-050 read-only set:
+ * would-register migration decls it returns (the same read-only set:
  * catalog chain minus the decls already on disk; empty on a blocked prediction)
  * are surfaced onto `migrationsRegistered` without writing. The live path mutates
  * only via `resyncSchema` (the catalog-ahead branch) and surfaces the decls it
@@ -2063,7 +2104,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// read below — every ceremony entry point seeds before its first config read,
 	// so a version-lagging legacy substrate heals on update instead of throwing.
 	seedCatalogConfigMigrationDecls(destRoot);
-	// Ceremony-entry identity establishment (DEC-0020) — before any write that
+	// Ceremony-entry identity establishment — before any write that
 	// stamps identity (the version-bump resync's writeBlockForDir), so a
 	// pre-identity substrate heals here instead of refusing at the stamping
 	// guard. LIVE runs only: a dryRun performs no stamping write, so there is
@@ -2090,7 +2131,8 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// installer + detector use, so the sourceFile derivation matches checkStatus's.
 	const { samplesRoot, byId } = resolveCatalog();
 
-	// TASK-051 / FGAP-080: the live run's pending-blocked records. Each blocked
+	// The live run's pending-blocked records — closing the earlier gap where
+	// blocked was a dead-end with no persisted state or resolution command. Each blocked
 	// catalog-ahead resync returns a pinned `pendingEntry`; after the schema loop
 	// the LIVE path reconciles pending-blocked.json to exactly this set (an empty
 	// set removes the sidecar — no stale empty file). The dryRun path collects
@@ -2108,11 +2150,13 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 			case "catalog-ahead": {
 				if (dryRun) {
 					// Preview only — never call resyncSchema (it writes).
-					// FGAP-066 / TASK-046: predict the PRECISE per-schema outcome by running
+					// Predict the PRECISE per-schema outcome by running
 					// resyncSchema’s decision arms 1:1 over an in-memory forward-migration +
 					// re-validation (simulateResyncOutcome), so the plan buckets the schema as
 					// the resynced / migrated / blocked it WOULD land — not as resynced
-					// unconditionally. The would-register decls it returns are the same FGAP-050
+					// unconditionally, closing the earlier gap where --dryRun optimistically
+					// reported every catalog-ahead schema as "resynced." The would-register
+					// decls it returns are the same read-only
 					// set (empty on a blocked prediction — post-rollback truth that a refused
 					// resync registers nothing). Wrapped in the merge-arm per-asset error
 					// tolerance: on a thrown helper failure, fall back to the prior behavior
@@ -2131,7 +2175,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 							);
 							result[outcome].push(name);
 							for (const m of wouldRegister) result.migrationsRegistered.push(m);
-							// TASK-048: a predicted-blocked schema carries its diagnostic detail
+							// A predicted-blocked schema carries its diagnostic detail
 							// (reason + version pair + per-item failures) into blockedDetail so the
 							// dryRun plan surfaces WHY it would refuse, matching the live run.
 							if (outcome === "blocked" && detail) {
@@ -2161,7 +2205,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 					blockedDetail,
 					pendingEntry,
 				} = resyncSchema(destRoot, samplesRoot, sourceFile, destFile, name);
-				// FGAP-050: surface the decls the live resync actually appended.
+				// Surface the decls the live resync actually appended.
 				for (const m of registeredMigrations) result.migrationsRegistered.push(m);
 				switch (outcome) {
 					case "resynced":
@@ -2172,10 +2216,10 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						break;
 					case "blocked":
 						result.blocked.push(name);
-						// TASK-048: carry the live refusal diagnostic (reason + version pair +
+						// Carry the live refusal diagnostic (reason + version pair +
 						// per-item failures) into blockedDetail alongside the bare name.
 						if (blockedDetail) result.blockedDetail.push({ name, ...blockedDetail });
-						// TASK-051 / FGAP-080: collect the pinned pending-blocked record so the
+						// Collect the pinned pending-blocked record so the
 						// post-loop reconcile persists it (resolve-blocked consumes it later).
 						if (pendingEntry) pendingBlockedEntries.push(pendingEntry);
 						break;
@@ -2184,7 +2228,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 			}
 			case "locally-modified":
 			case "both-diverged": {
-				// 3-way merge (TASK-036 — FEAT-006 T3): a locally-edited schema is no
+				// 3-way merge: a locally-edited schema is no
 				// longer blindly refused. Reconstruct BASE from the recorded install
 				// baseline's content-addressed body, take OURS = the installed file and
 				// THEIRS = the catalog file, and key/path-merge. Conflict-free → write
@@ -2203,7 +2247,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 				const base = baseHash ? getObject(destRoot, baseHash) : null;
 				if (!base) {
 					// No retrievable stamped base body ⇒ no safe 3-way merge possible;
-					// fall back to refuse-and-report (DEC-0017) so the drift signal stays.
+					// fall back to refuse-and-report so the drift signal stays.
 					result.refused.push(name);
 					break;
 				}
@@ -2218,7 +2262,11 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						writeSchemaCheckedForDir(destRoot, name, merged, "replace", undefined, { dryRun });
 						result.merged.push(name);
 						// Stamp the merge BASE := the CATALOG body (theirs), not the merged
-						// on-disk body (FGAP-070). A 3-way merge that KEEPS a local divergence
+						// on-disk body — closing the earlier gap where the post-merge baseline
+						// refresh stamped the merge base from the merged on-disk body rather
+						// than the catalog body, so a kept local divergence survived exactly
+						// one update before being silently overwritten by the catalog on the
+						// next one. A 3-way merge that KEEPS a local divergence
 						// (a reconciled conflict OR a disjoint auto-merge: installed === merged
 						// === R, R ≠ catalog) must persist as `locally-modified` on the next
 						// check-status — so the next update re-derives base === theirs (catalog)
@@ -2247,17 +2295,21 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		}
 	}
 
-	// TASK-051 / FGAP-080: reconcile pending-blocked.json to THIS run's blocked set
+	// Reconcile pending-blocked.json to THIS run's blocked set — closing the
+	// earlier gap where blocked was a dead-end with no persisted state or
+	// resolution command
 	// (live only — the dryRun arm collected nothing and writes nothing). When the
 	// run produced blocked entries, persist exactly them; when it produced none,
 	// REMOVE any prior sidecar so a now-unblocked model leaves no stale record. The
 	// blocked contract (schema/block/migrations.json byte-unchanged) is untouched —
 	// this sidecar + the pinned object are additive, outside that contract.
-	// TASK-052 / FGAP-081: git-style in-file failure markers are the DEFAULT behavior
-	// of a live validation-blocked schema (no flag, no mode). For every blocked entry
+	// Git-style in-file failure markers are the DEFAULT behavior
+	// of a live validation-blocked schema (no flag, no mode) — the requirement
+	// that when update blocks a schema, failure markers are written into the
+	// block file at the offending items/fields, not just in a CLI report. For every blocked entry
 	// whose reason is validation-failed with non-empty failures, inscribe full-line
 	// conflict sentinels INTO the block file at the offending items/fields so the
-	// operator sees the problem inline (STORY-013). (1) Pin the PRE-MARKER block-file
+	// operator sees the problem inline. (1) Pin the PRE-MARKER block-file
 	// bytes (wrapped so the object faithfully identifies the raw text) into the object
 	// store and set `premarker_hash` on the entry BEFORE the sidecar write, so the
 	// record carries the byte-exact restore point. (2) Compose the marker-bearing text
@@ -2329,8 +2381,8 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// (installed === catalog ≠ stale-baseline → both-diverged) on the next
 	// check-status. Mirror installContext's post-loop baseline write, but SURGICALLY:
 	// refresh ONLY the resynced/migrated assets (their on-disk body IS the catalog
-	// post-resync, so base === catalog either way). A merged schema is EXCLUDED here
-	// (FGAP-070): it already stamped its baseline := the CATALOG body in the merge
+	// post-resync, so base === catalog either way). A merged schema is EXCLUDED here:
+	// it already stamped its baseline := the CATALOG body in the merge
 	// arm, so re-fingerprinting its merged on-disk body would overwrite that with
 	// the merged body and resync away a kept-local divergence on the next update. A
 	// `refused` (locally-modified) schema is likewise not in `brought_current`, so it
@@ -2339,7 +2391,7 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	if (!dryRun && brought_current.length > 0) {
 		// Refresh the install baseline + base-stamp the body for each schema this run
 		// actually brought current, via the shared `refreshBaselineForSchema` helper
-		// (TASK-037 — FEAT-006 T4 DRY-out of the prior inline body). The helper owns
+		// (a DRY-out of the prior inline body). The helper owns
 		// its own per-name config load + content-addressed stamp + config write, and
 		// is internally guarded against an absent / corrupt schema file (returns
 		// false, leaving the stale baseline entry untouched) — so a present-but-
@@ -2353,7 +2405,8 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		}
 	}
 
-	// Config-registry propagation (TASK-038 — FEAT-006 T5). Bring catalog-new
+	// Config-registry propagation — the additive config-registry propagation
+	// slice of `pi-context update`. Bring catalog-new
 	// keyed-array config-registry entries (relation_types / invariants /
 	// block_kinds / lenses) that are ABSENT from the substrate config current with
 	// the packaged catalog, ADDITIVELY: a user-authored entry (absent from the
@@ -2385,7 +2438,8 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 		// (its initialized value) and return the schema-update result unchanged.
 	}
 
-	// Partial-application legibility (FGAP-076): computed LAST, after every
+	// Partial-application legibility — a blocked update result must surface what
+	// applied alongside what was refused: computed LAST, after every
 	// channel above is final (the registry propagation just ran), so the field is
 	// a pure derivation of the finished result. Populated exactly when the run
 	// both refused something and applied something; a blocked run whose registry
@@ -2455,8 +2509,10 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 
 /**
  * Stamp an in-memory schema `body` as the install baseline
- * (`config.installed_from.assets[name]`) for one schema (TASK-037 — FEAT-006 T4
- * / FGAP-069). The shared stamp mechanics extracted from
+ * (`config.installed_from.assets[name]`) for one schema — the mechanism that
+ * lets the resolve-conflict op advance the merge base to the catalog body on
+ * commit, so resolving a conflict actually stops it from being re-flagged.
+ * The shared stamp mechanics extracted from
  * `refreshBaselineForSchema`: compute the content_hash of `body`, store it into
  * the content-addressed object store (`putObject`) under that hash, set
  * `config.installed_from.assets[name] = { content_hash, version }` (refreshing
@@ -2495,7 +2551,7 @@ export function stampBaselineFromBody(
 
 /**
  * Re-stamp the install baseline (`config.installed_from.assets[name]`) for one
- * schema from its CURRENT on-disk body (TASK-037 — FEAT-006 T4). Self-contained
+ * schema from its CURRENT on-disk body. Self-contained
  * + idempotent. Used by `updateContext`'s post-loop refresh to re-baseline each
  * brought-current schema (resynced / migrated / auto-merged) so a follow-up
  * `/context check-status` reports it `in-sync`:
@@ -2526,7 +2582,11 @@ export function refreshBaselineForSchema(cwd: string, name: string): boolean {
 }
 
 /**
- * Reconciliation-commit op (FGAP-069) — completes the caller-as-reconciler model
+ * Reconciliation-commit op — closing the earlier gap where resolving a
+ * conflict via write-schema still didn't fix anything (the merge base never
+ * advanced to match, so update kept re-flagging the same schema as conflicted
+ * forever); this op advances the merge base to the catalog body on commit,
+ * completing the caller-as-reconciler model
  * end-to-end. After `update` surfaces a both-diverged schema CONFLICT, the
  * calling agent reconciles the conflicting paths into a resolved body R and runs
  * this op. It does two things atomically per call:
@@ -2609,7 +2669,8 @@ export function resolveConflict(
 }
 
 /**
- * `context-reconcile` result (FEAT-011 — FGAP-116). `deltas` lists every
+ * `context-reconcile` result — the repair half of currency-by-construction.
+ * `deltas` lists every
  * rollup-kind item whose STORED status diverges from its DERIVED membership-
  * rollup status (from → stored value, to → derived value, per the declaring
  * derived-status invariant). Under `dryRun` the deltas are the exact set a
@@ -2626,7 +2687,8 @@ export interface ReconcileResult {
 	deltas: Array<{ id: string; block: string; from: string; to: string; invariant: string }>;
 	applied: number;
 	/**
-	 * Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089):
+	 * Declared-baseline staleness sweep — the machine-evaluable
+	 * typed-condition-baseline mechanism, in service of currency-by-construction:
 	 * every stale_conditions-bearing item whose status buckets complete and
 	 * whose typed condition fired, transitioned to `stale`. Under dryRun the
 	 * exact set a live run would apply; a live run applies it through the
@@ -2634,13 +2696,13 @@ export interface ReconcileResult {
 	 */
 	stalenessTransitions: Array<{ id: string; block: string; from: string; to: string; reasons: string[] }>;
 	stalenessApplied: number;
-	/** Ceremony-entry identity establishment (DEC-0020), live runs only. */
+	/** Ceremony-entry identity establishment, live runs only. */
 	substrateIdEstablished?: string;
 }
 
 /**
- * `/context reconcile` engine (FEAT-011 — the repair half of the derived-status
- * invariant class). Computes every stored-vs-derived status delta for the
+ * `/context reconcile` engine — the repair half of the derived-status
+ * invariant class, in service of currency-by-construction. Computes every stored-vs-derived status delta for the
  * kinds the config's derived-status invariants declare (paired with their
  * `state_derivation.rollups` entries), using the SAME shared completeness
  * helper the state derivation and the invariant class use
@@ -2650,8 +2712,8 @@ export interface ReconcileResult {
  * writer via `ctx`): a converge-write is not authoring — the written value IS
  * the derivation (the schema_version stamp argument). Ceremony discipline:
  * seeds the catalog config decls at entry, and a LIVE run establishes
- * substrate identity when absent (it reaches identity-stamping writes;
- * DEC-0020). Deltas are deduplicated per (block, id) across invariants.
+ * substrate identity when absent (it reaches identity-stamping writes).
+ * Deltas are deduplicated per (block, id) across invariants.
  */
 export function reconcileContext(
 	cwd: string,
@@ -2792,8 +2854,10 @@ function applyDerivedStatusDeltas(
 }
 
 /**
- * Converge-on-write hook (FEAT-011 criterion 2 — FGAP-116's last mechanism,
- * the schema_version template applied to rollup-kind stored status). Invoked
+ * Converge-on-write hook — part of currency-by-construction (the schema_version
+ * template applied to rollup-kind stored status), closing the gap where a
+ * milestone could read as "reached" by live derivation while still
+ * gate-blocking its own tasks via a stale stored status. Invoked
  * AFTER a sanctioned mutating op's write lands (the op's own lock is already
  * released — sequential lock acquisition, no nesting): recomputes the
  * derived-status delta set with the SAME core the reconcile ceremony uses and
@@ -2804,7 +2868,8 @@ function applyDerivedStatusDeltas(
  * empty set and performs no writes, so non-declaring and legacy substrates
  * are byte-identical to before. BEST-EFFORT by design: it never establishes
  * identity (a convergence side-effect minting a substrate_id would be a lazy
- * mint, DEC-0012) and never fails the caller's already-landed write — an
+ * mint — identity is never lazily minted as a side-effect of an arbitrary
+ * block write) and never fails the caller's already-landed write — an
  * apply failure leaves the divergence for the `derived-status` invariant to
  * detect and `context-reconcile` (the ceremony with the establishment +
  * error surface) to repair. Returns the converged set, or null when there was
@@ -2828,7 +2893,9 @@ export function convergeDerivedStatusAfterWrite(cwd: string, ctx?: DispatchConte
 }
 
 /**
- * Blocked-resolution commit op (TASK-051 — FGAP-080) — the resolution half of
+ * Blocked-resolution commit op — closing the earlier gap where blocked was a
+ * dead-end with no persisted state or resolution command; this is the
+ * resolution half of
  * the blocked-resync loop `update` opens. After `update` REFUSES a catalog-ahead
  * resync (blocked) it persists a pending-blocked record pinning the TARGET
  * catalog schema body (in the object store) + the migration chain reaching it.
@@ -2883,7 +2950,7 @@ export function resolveBlocked(
 	// config read (here reached via stampBaselineFromBody's loadConfig on the
 	// pass path).
 	seedCatalogConfigMigrationDecls(destRoot);
-	// Ceremony-entry identity establishment (DEC-0020) — before the commit's
+	// Ceremony-entry identity establishment — before the commit's
 	// writeBlockForDir stamping write, so a pre-identity substrate's resolution
 	// heals identity instead of refusing mid-commit.
 	const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
@@ -2901,7 +2968,7 @@ export function resolveBlocked(
 	}
 
 	// Load the installed block (the validateBlockItemsAgainstCatalog load pattern).
-	// TASK-052 / FGAP-081: read the RAW text first. A live update inscribes git-style
+	// Read the RAW text first. A live update inscribes git-style
 	// failure markers INTO the block file (full-line `<<<<<<<`/`>>>>>>>` sentinels), so
 	// the file is no longer valid JSON. Detect the sentinels by a full-line scan, STRIP
 	// the marker lines, and parse the remainder. `strippedText` is retained so the PASS
@@ -2980,13 +3047,18 @@ export function resolveBlocked(
 		};
 	}
 
-	// PASS — commit the resolution, ALL-OR-NOTHING (FGAP-115). The commit touches
+	// PASS — commit the resolution, ALL-OR-NOTHING — closing the earlier gap where
+	// the resync/resolve-blocked pipeline classified every throw as an
+	// item-validation failure, corrupting the all-or-nothing refusal guarantee.
+	// The commit touches
 	// up to five files; a throw partway (e.g. the mandatory identity stamp inside
 	// writeBlockForDir refusing a substrate with no substrate_id) previously
 	// stranded a partial commit — schema advanced, markers stripped, block
 	// unwritten, pending entry stale. Capture the raw pre-commit bytes of every
 	// touched file up front; on any commit-phase throw restore them byte-exact
-	// (per-component byte-exact refuse discipline, DEC-0017/DEC-0018), invalidate
+	// (the per-component transactional model — a blocked schema doesn't withhold
+	// sibling schema resyncs or the additive registry propagation — and the
+	// never-silently-overwrite-or-hard-block update discipline), invalidate
 	// the migration-registry cache warmed by the reverted decl appends, and
 	// return resolved:false carrying the truthful failure. Object-store putObject
 	// entries are content-addressed and harmless to leave behind.
@@ -3022,7 +3094,7 @@ export function resolveBlocked(
 		// it (skip when the block had no items — schema still written, base still advanced,
 		// mirroring the live no-items handling). Identity stamping re-runs on the write.
 		if (hasItems) {
-			// TASK-052 / FGAP-081 (oid stability): when the on-disk block carried markers,
+			// oid stability: when the on-disk block carried markers,
 			// raw-write the STRIPPED text to the block file (tmp+rename) BEFORE
 			// writeBlockForDir, so the identity-stamp prior-read parses the marker-free
 			// on-disk file and preserves each item's oid (no re-mint; content_parent advances
@@ -3079,8 +3151,8 @@ export function resolveBlocked(
 }
 
 /**
- * Render an `UpdateResult["conflicts"]` set as a readable conflict report
- * (TASK-037 — FEAT-006 T4 / FGAP-069) — the surface the `update` op + CLI hand
+ * Render an `UpdateResult["conflicts"]` set as a readable conflict report —
+ * the surface the `update` op + CLI hand
  * to the CALLING agent, which reconciles each conflict into a resolved body and
  * commits it via the `resolve-conflict` op (writes the body AND advances the
  * merge base to the catalog so `update` stops re-reporting it; no subordinate
@@ -3113,7 +3185,8 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
 }
 
 /**
- * Render the per-schema blocked-resync diagnostic (TASK-048 — FGAP-077) as a
+ * Render the per-schema blocked-resync diagnostic — surfacing which
+ * item/field/constraint actually failed instead of a bare "blocked" — as a
  * readable report the CLI surfaces below `update`'s output when a catalog-ahead
  * resync was refused. One section per blocked schema `name`:
  *   - header `blocked: <name> (<from> -> <to>)` (the installed→catalog version
@@ -3128,7 +3201,7 @@ export function renderConflicts(conflicts: UpdateResult["conflicts"]): string {
  *     avoid a pi-context → pi-context-cli dependency cycle (render.ts imports this
  *     package). A failure carrying no AJV `keyword` mapping prints its raw message.
  *
- * TASK-052 / FGAP-081: a LIVE `update` that blocks a `validation-failed` resync
+ * A LIVE `update` that blocks a `validation-failed` resync
  * inscribes git-style failure markers INTO the block file at the offending items —
  * and ONLY then does the trailing guidance claim, in the past tense, that markers
  * "were written INTO the block file(s)". That claim is keyed on the per-entry
@@ -3154,7 +3227,7 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 			continue;
 		}
 		if (d.reason === "write-failed") {
-			// FGAP-115: a non-validation refusal at the write boundary. The items were
+			// Classified at the catch site: a non-validation refusal at the write boundary. The items were
 			// NOT flagged invalid — do not direct the operator at them.
 			for (const f of d.failures ?? []) {
 				lines.push(`    ${f.message}`);
@@ -3186,7 +3259,7 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 		// persist a pending record (validation-failed / no-migration-chain). A
 		// report whose entries are ALL write-failed carries its own per-entry
 		// guidance (address the precondition, re-run update) — appending the
-		// item-fixing flow here would contradict it (FGAP-115).
+		// item-fixing flow here would contradict it.
 		lines.push(
 			"No markers were written (preview, or no migration chain to mark against). Resolve a validation-failed block by correcting the offending items in the block file, then resolve-blocked --schemaName <name> --yes — it re-validates the corrected block against the pinned target, writes the target schema, advances the merge base, and clears the block so update converges.",
 		);
@@ -3196,7 +3269,7 @@ export function renderBlocked(blockedDetail: BlockedDetail[]): string {
 
 /**
  * Phrase ONE blocked validation failure keyword-aware, mirroring the CLI's
- * `formatAjvError` keyword switch (TASK-048). The minimal {@link
+ * `formatAjvError` keyword switch. The minimal {@link
  * BlockValidationFailure} shape drops the AJV `params`, so the required /
  * additionalProperties branches that need `missingProperty` / `additionalProperty`
  * fall back to the raw AJV `message` (which already names them); type / enum and
@@ -3260,8 +3333,8 @@ function handleInit(args: string, ctx: ExtensionCommandContext): void {
 /**
  * /context accept-all — adopt the canonical packaged conception
  * (samples/conception.json) as this substrate's config.json. Writes config only
- * (no asset materialization — run /context install after). Skeleton-aware
- * (FGAP-001 / DEC-0001): overwrites a SKELETON config (the empty-of-vocabulary
+ * (no asset materialization — run /context install after). Skeleton-aware:
+ * overwrites a SKELETON config (the empty-of-vocabulary
  * config init / switch -c writes) but never a POPULATED one. Requires the
  * substrate to be initialized first (a bootstrap pointer must exist).
  */
@@ -3376,7 +3449,7 @@ export function switchAndCreate(cwd: string, newContextDir: string, writerIdenti
 			created.push(`${path.relative(cwd, dir)}/`);
 		}
 	}
-	// Write the minimal schema-valid SKELETON config (FGAP-001 / DEC-0001) so the
+	// Write the minimal schema-valid SKELETON config so the
 	// freshly-created substrate has a tool-driven config from bootstrap — onward
 	// paths are /context accept-all OR amend-config / edit. NEVER-CLOBBER via
 	// writeSkeletonConfig (a re-creation over an existing config leaves it).
@@ -3660,7 +3733,7 @@ const extension = (pi: ExtensionAPI) => {
 		checkForUpdates((msg, level) => ctx.ui.notify(msg, level)).catch(() => {});
 	});
 
-	// ── Eager framework guidance (FGAP-090) ────────────────────────────
+	// ── Eager framework guidance ────────────────────────────
 	// Append (never replace) the orientation block to the assembled system
 	// prompt so the in-pi agent receives a topic→tool-call map up front.
 	// The runtime chains extensions' systemPrompt outputs; returning the
@@ -3938,10 +4011,10 @@ const extension = (pi: ExtensionAPI) => {
 
 export default extension;
 
-// Re-export the config-registry-propagation surface (TASK-038 — FEAT-006 T5) so
+// Re-export the config-registry-propagation surface so
 // consumers can type `UpdateResult.registryAdditions` and call the pure merge
 // helper against the public `@davidorex/pi-context` surface.
-// mergeCatalogRegistries + the FGAP-113 edge-orientation helpers
+// mergeCatalogRegistries + the edge-orientation helpers
 // (counterEndpoint / primaryEndpoint — the single source of truth for reading a
 // relation's primary/counter endpoint under its config-declared role_direction).
 export { counterEndpoint, mergeCatalogRegistries, primaryEndpoint, type RegistryAdditions } from "./context.js";
@@ -3985,7 +4058,7 @@ export {
 	validateRoadmap,
 } from "./roadmap-plan.js";
 // Re-export the 3-way merge conflict type so cross-package consumers (the
-// pi-context-cli conflict resolver, TASK-037) can type `UpdateResult.conflicts`
+// pi-context-cli conflict resolver) can type `UpdateResult.conflicts`
 // against the public `@davidorex/pi-context` surface without reaching into the
 // unexported `./schema-merge` subpath.
 export type { SchemaConflict } from "./schema-merge.js";

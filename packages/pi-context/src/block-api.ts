@@ -4,7 +4,7 @@
  * Read-modify-write operations (append, update) use file-level locking via proper-lockfile
  * to prevent data loss from concurrent workflow steps targeting the same block.
  *
- * DispatchContext (FGAP-004): every write function accepts an optional final
+ * DispatchContext — authorship attestation: every write function accepts an optional final
  * argument `ctx?: DispatchContext`. When provided AND the target block's
  * schema declares any of {created_by, created_at, modified_by, modified_at},
  * items are stamped via `stampItem` from `./dispatch-context` before AJV
@@ -66,7 +66,7 @@ function blockSchemaPathForDir(substrateDir: string, blockName: string): string 
 	return schemaPathForDir(substrateDir, blockName);
 }
 
-// ── Schema introspection cache (DispatchContext support, FGAP-004) ───────────
+// ── Schema introspection cache (DispatchContext / authorship-attestation support) ───────────
 
 /**
  * Author fields recognized by `stampItem`. If the target schema's
@@ -663,8 +663,12 @@ export function mintOid(substrateId: string, nonce?: string): string {
  * `"create"` it is ignored.
  */
 /**
- * Declared-baseline currency capture at the write choke (FEAT-011 criterion 6
- * — TASK-089). TYPED STALE-CONDITION BASELINES — an array field whose item
+ * Declared-baseline currency capture at the write choke — the machine-evaluable
+ * typed-condition-baseline mechanism (beyond bare strings) that lets
+ * context-validate/context-reconcile flag/transition a complete-but-now-stale
+ * item instead of relying on free-text human judgment, in service of
+ * currency-by-construction (stored substrate state never silently diverging
+ * from what's derivable). TYPED STALE-CONDITION BASELINES — an array field whose item
  * subschema admits kind-const object branches (oneOf), schema-gated per nested
  * field so a schema not declaring the shape is untouched (the identity-stamp
  * gating pattern): a `file-changed` element without `baseline_hash` gets the
@@ -788,8 +792,9 @@ export function prepareItemIdentityForWrite(
 	}
 
 	const out: Record<string, unknown> = { ...item };
-	// Declared-baseline currency capture (FEAT-011 criterion 6) rides the
-	// identity choke: typed stale-condition baselines are stamped BEFORE the
+	// Declared-baseline currency capture — in service of currency-by-construction,
+	// where stored substrate state never silently diverges from what's derivable —
+	// rides the identity choke: typed stale-condition baselines are stamped BEFORE the
 	// content projection is hashed, so content_hash covers them and a later
 	// metadata-only write never sees a phantom content change. Schema-gated per
 	// nested field (a schema not declaring the typed condition shapes is untouched).
@@ -890,7 +895,11 @@ export function readBlockForDir(
 		throw new Error(`Invalid JSON in block file: ${filePath}: ${msg}`);
 	}
 
-	// Version-aware validation hook (FGAP-136 plan step 4). When the block has
+	// Version-aware validation hook (part of the schema-versioning plan closing
+	// the gap where a write-schema "replace" that bumps `version` had no
+	// tool-surface migration path — only a code-level MigrationFn registration
+	// could carry existing block items forward, defeating in-pi schema
+	// customization mid-project). When the block has
 	// an existing schema AND the parsed data carries a schema_version field,
 	// route through validateBlockWithMigration with the substrate-loaded
 	// project MigrationRegistry. The hook is conditional on schema_version
@@ -924,8 +933,9 @@ export function readBlock(
 	blockName: string,
 	filter?: { arrayKey: string; predicate: (item: Record<string, unknown>) => boolean },
 ): unknown {
-	// Assert the name BEFORE resolving the substrate dir so the FGAP-079
-	// path-traversal guard fires ahead of BootstrapNotFoundError (preserves the
+	// Assert the name BEFORE resolving the substrate dir so the
+	// path-traversal guard — closing the earlier schema-path read/write
+	// resolver divergence — fires ahead of BootstrapNotFoundError (preserves the
 	// pre-Phase-0 ordering: name-guard precedes pointer resolution).
 	assertSubstrateName(blockName);
 	return readBlockForDir(resolveContextDir(cwd), blockName, filter);
@@ -969,7 +979,7 @@ function readTypedFile(filePath: string, errorLabel: string): unknown {
  * `schemaPath = null` skips AJV validation entirely (matches `writeBlock`'s
  * "no schema file present" semantic).
  *
- * `ctx` (FGAP-004): when provided AND the schema declares author fields at
+ * `ctx` (the authorship-attestation DispatchContext parameter): when provided AND the schema declares author fields at
  * the top-level envelope (and `data` is object-shaped, NOT array-shaped),
  * the envelope is stamped before AJV runs. Top-level array files (e.g.
  * monitor pattern lists) skip envelope-stamping silently — the envelope
@@ -1013,7 +1023,10 @@ export function writeTypedFile(
 		? (JSON.parse(fs.readFileSync(schemaPath, "utf-8")) as Record<string, unknown>)
 		: null;
 
-	// Envelope schema_version stamp (TASK-073; the FGAP-105 fold-locus lands
+	// Envelope schema_version stamp — closing the gap where config (and other
+	// versioned substrate documents) never converged their persisted
+	// schema_version at write time (reads migrated forward only in memory, so
+	// every write persisted the stale version back forever); the fold-locus lands
 	// generically here so EVERY versioned-document write converges — block
 	// wrappers, whole-block writes, config, migrations.json all funnel through
 	// writeTypedFile). When the schema declares a top-level `schema_version`
@@ -1091,7 +1104,7 @@ export function writeTypedFile(
  * "data[arrayPath] is the target array" (object-with-array-field shape, the
  * `.project/` block convention).
  *
- * `ctx` (FGAP-004): when provided AND the schema declares author fields on
+ * `ctx` (the authorship-attestation DispatchContext parameter): when provided AND the schema declares author fields on
  * the items reached by `arrayPath` (or, for the flat-array case, on the
  * array's `items.properties.*`), the appended item is stamped via
  * `stampItem` in create-mode before AJV validation. For the flat-array
@@ -1392,7 +1405,7 @@ function resolveTypedArrayShape(
  * the lookup uses the `__top__` sentinel which `collectArrayItemAuthorDecisions`
  * never populates — flat-array stamping is intentionally a no-op until a
  * schema actually declares author fields on a top-level array shape (no
- * current consumer does so). Documented in the FGAP-019 closure commit.
+ * current consumer does so). Documented in the commit that closed this gap.
  */
 function maybeStampTypedItem(
 	schemaPath: string | null,
@@ -1502,10 +1515,10 @@ export function updateItemInTypedFile(
  * arbitrary `(filePath, schemaPath, arrayPath)` triples, including
  * top-level array files via `arrayPath === null`.
  *
- * FGAP-018 fix lives here (was in `upsertItemInBlock` prior to Step 6.3):
+ * The attestation-carry-forward fix lives here (was in `upsertItemInBlock` prior to Step 6.3):
  * on the update branch, declared create-time attestation fields are
  * pre-merged from the existing on-disk item onto the supplied item if
- * absent, so attestation integrity (FGAP-004) holds across replacement.
+ * absent, so attestation integrity (per the authorship-attestation DispatchContext contract) holds across replacement.
  * The wrapper `upsertItemInBlock` inherits the fix structurally.
  *
  * For the flat-array case the pre-merge is a structural no-op — the
@@ -1544,10 +1557,10 @@ export function upsertItemInTypedFile(
 		const mode: "appended" | "updated" = idx === -1 ? "appended" : "updated";
 		const stampMode: "create" | "update" = mode === "appended" ? "create" : "update";
 
-		// FGAP-018 fix: on update branch, pre-merge create-time attestation fields
+		// Attestation-carry-forward fix: on update branch, pre-merge create-time attestation fields
 		// from the existing on-disk item onto the supplied item if absent. stampItem
 		// in update-mode does not touch created_*; this carries them forward across
-		// replacement so attestation integrity (FGAP-004) holds. For the flat-array
+		// replacement so attestation integrity (per the authorship-attestation DispatchContext contract) holds. For the flat-array
 		// case (arrayPath === null) the declared-fields lookup returns an empty set
 		// and no carry happens — see the function-doc note.
 		let itemForStamp = item;
@@ -1570,7 +1583,7 @@ export function upsertItemInTypedFile(
 		// update with the on-disk item as prior, so prepareItemIdentityForWrite
 		// preserves the prior oid even though upsert REPLACES (the supplied item
 		// carries no oid) and advances content_parent on content change. This is
-		// the identity analogue of the FGAP-018 created_* carry-forward above.
+		// the identity analogue of the created_* carry-forward fix above.
 		const priorForIdentity = idx === -1 ? undefined : arr[idx];
 		const stamped = maybeIdentityStampTypedItem(
 			filePath,
@@ -1857,7 +1870,7 @@ export function removeFromNestedTypedFile(
  * Files without a corresponding schema are written without validation.
  *
  * Thin wrapper over `writeTypedFile` — see that function for full semantics.
- * `ctx` (FGAP-004): whole-block writes are treated as create-mode envelope
+ * `ctx` (the authorship-attestation DispatchContext parameter): whole-block writes are treated as create-mode envelope
  * stamping; callers wanting per-item attribution should prefer the
  * array-grained writers.
  */
@@ -1893,7 +1906,11 @@ export function writeBlockForDir(substrateDir: string, blockName: string, data: 
 		);
 	}
 
-	// Version-aware pre-write validation (FGAP-136 plan step 4). When a
+	// Version-aware pre-write validation (part of the schema-versioning plan
+	// closing the gap where a write-schema "replace" that bumps `version` had no
+	// tool-surface migration path — only a code-level MigrationFn registration
+	// could carry existing block items forward, defeating in-pi schema
+	// customization mid-project). When a
 	// schema is present AND the data envelope carries a schema_version,
 	// run validateBlockWithMigration with the substrate-loaded
 	// MigrationRegistry. A version-mismatch with no declared migration
@@ -1979,7 +1996,8 @@ function stampWholeBlockIdentity(
 }
 
 export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	writeBlockForDir(resolveContextDir(cwd), blockName, data, ctx);
 }
@@ -1989,7 +2007,7 @@ export function writeBlock(cwd: string, blockName: string, data: unknown, ctx?: 
  * against schema, write atomically. Throws if file doesn't exist, if
  * arrayKey is missing or not an array, or if validation fails.
  *
- * `ctx` (FGAP-004): when provided AND the schema declares author fields on
+ * `ctx` (the authorship-attestation DispatchContext parameter): when provided AND the schema declares author fields on
  * `properties.<arrayKey>.items.properties.*`, the appended item is stamped
  * via `stampItem` in create-mode before AJV validation. Schemas that don't
  * declare author fields fall through unstamped — guards against
@@ -2044,7 +2062,8 @@ export function appendToBlock(
 	item: unknown,
 	ctx?: DispatchContext,
 ): void {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	appendToBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, ctx);
 }
@@ -2054,7 +2073,7 @@ export function appendToBlock(
  * validate whole file against schema, write atomically. Throws if no item
  * matches, if arrayKey is missing or not an array, or if validation fails.
  *
- * `ctx` (FGAP-004): when provided AND the schema declares author fields on
+ * `ctx` (the authorship-attestation DispatchContext parameter): when provided AND the schema declares author fields on
  * the array's items, the merged item is run through `stampItem` in
  * update-mode after the shallow merge — `created_by` / `created_at` are
  * preserved, `modified_by` / `modified_at` refresh.
@@ -2080,7 +2099,8 @@ export function updateItemInBlock(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	updateItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, predicate, updates, ctx);
 }
@@ -2143,7 +2163,8 @@ export function upsertItemInBlock(
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { mode: "appended" | "updated"; dryRun?: boolean } {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	return upsertItemInBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, idField, ctx, opts);
 }
@@ -2192,7 +2213,8 @@ export function appendToNestedArray(
 	item: unknown,
 	ctx?: DispatchContext,
 ): void {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	appendToNestedArrayForDir(resolveContextDir(cwd), blockName, parentArrayKey, predicate, nestedArrayKey, item, ctx);
 }
@@ -2244,7 +2266,8 @@ export function updateNestedArrayItem(
 	updates: Record<string, unknown>,
 	ctx?: DispatchContext,
 ): void {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	updateNestedArrayItemForDir(
 		resolveContextDir(cwd),
@@ -2286,7 +2309,8 @@ export function removeFromBlock(
 	predicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	return removeFromBlockForDir(resolveContextDir(cwd), blockName, arrayKey, predicate, ctx);
 }
@@ -2333,7 +2357,8 @@ export function removeFromNestedArray(
 	nestedPredicate: (item: Record<string, unknown>) => boolean,
 	ctx?: DispatchContext,
 ): { removed: number } {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	return removeFromNestedArrayForDir(
 		resolveContextDir(cwd),
@@ -2395,7 +2420,7 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
 	return readBlockDirForDir(root, subdir);
 }
 
-// ── Item-schema resolution + id allocation (FGAP-083 / FGAP-084) ──────────────
+// ── Item-schema resolution + id allocation ──────────────
 
 /**
  * Resolve the item subschema for a block schema: find the first array property
@@ -2405,8 +2430,8 @@ export function readBlockDir(cwd: string, subdir: string): unknown[] {
  * its `properties` / `required` / `id`). Throws when no array property is found
  * or the `$ref` cannot be resolved.
  *
- * FGAP-083: callers that read `items.properties.id.pattern` / `items.required`
- * straight off `props[arrayKey].items` get `undefined` for `$ref` items; this
+ * Closes the gap where callers that read `items.properties.id.pattern` / `items.required`
+ * straight off `props[arrayKey].items` got `undefined` for `$ref` items; this
  * one dereference is the fix shared by auto-id, author-field auto-stamp, and
  * whole-file validation.
  */
@@ -2444,7 +2469,10 @@ export function resolveBlockItemSchema(schema: Record<string, unknown>): {
 
 /**
  * Allocate the next id for a block from its schema's id pattern — canonical and
- * `$ref`-aware (FGAP-084 / FGAP-083). Reads the block schema, resolves the item
+ * `$ref`-aware, closing the earlier gap where there was no canonical block-api
+ * id-allocation helper (the orchestrator script re-implemented next-id
+ * allocation inline instead of it living here as a shared, `$ref`-aware
+ * primitive). Reads the block schema, resolves the item
  * subschema, parses the `id` pattern's prefix + minimum digit width
  * (`^FGAP-\d{3}$` → `FGAP-`/3; `^TASK-\d{3,}$` → `TASK-`/3), scans existing item
  * ids for the max numeric suffix, and returns `prefix` + zero-padded (maxN+1).
@@ -2486,7 +2514,8 @@ export function nextIdForDir(substrateDir: string, blockName: string): string {
 }
 
 export function nextId(cwd: string, blockName: string): string {
-	// Name-guard before pointer resolution (FGAP-079 ordering; see readBlock).
+	// Name-guard before pointer resolution — closing the earlier schema-path
+	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
 	return nextIdForDir(resolveContextDir(cwd), blockName);
 }

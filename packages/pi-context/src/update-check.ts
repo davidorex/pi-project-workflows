@@ -18,7 +18,7 @@ const TIMEOUT_MS = 10_000;
  */
 function getInstalledVersion(): string | null {
 	try {
-		// fileURLToPath idiom (FGAP-088): import.meta.dirname is undefined when this
+		// fileURLToPath idiom: import.meta.dirname is undefined when this
 		// built module loads under tsx's CJS-interop path; import.meta.url is not.
 		let dir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 		for (let i = 0; i < 5; i++) {

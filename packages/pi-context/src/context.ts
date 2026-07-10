@@ -12,11 +12,16 @@
  * lower layer than context-sdk.
  *
  * Closes structurally:
- *   - FGAP-001 (hierarchical block storage via closure-table per DEC-0009)
- *   - FGAP-013 (status vocabulary registry — `config.status_buckets`)
- *   - issue-089 class (PLAN- prefix collision — `config.block_kinds[].prefix`
+ *   - Hierarchical block storage via closure-table `(parent, child, relation_type)`
+ *     edges in relations.json — one storage primitive for all hierarchy, not
+ *     subpath/nested block names.
+ *   - Status vocabulary registry (`config.status_buckets`) — closing the earlier
+ *     gap where status rollup was hardcoded in TS rather than user-extensible.
+ *   - The PLAN- id-prefix collision class (between the pre-existing layer-plans
+ *     block and a newly-added plan block, both using PLAN-NNN ids) —
+ *     `config.block_kinds[].prefix`
  *     makes prefix conflicts a config-registration-time concern, not a
- *     fixture-write-time crash)
+ *     fixture-write-time crash.
  */
 
 import fs from "node:fs";
@@ -56,11 +61,13 @@ export interface ConfigBlock {
 	block_kinds: BlockKindDecl[];
 	status_buckets?: Record<string, StatusBucket>;
 	/**
-	 * Config-declared derivation registry consumed by `currentState` (TASK-020 /
-	 * FGAP-017 / FEAT-004). Replaces the previously-hardcoded kind / relation /
+	 * Config-declared derivation registry consumed by `currentState` — the
+	 * registry added so `currentState`'s hardcoded stock kinds
+	 * (tasks/framework-gaps/phase/milestone) no longer left it inert on a
+	 * custom-vocabulary substrate. Replaces the previously-hardcoded kind / relation /
 	 * rank / status / head-size couplings in the deriver with config reads,
 	 * mirroring how `status_buckets` makes the status vocabulary config-driven.
-	 * Optional on the type so pre-TASK-020 configs (and substrates that simply
+	 * Optional on the type so configs predating this registry (and substrates that simply
 	 * have not adopted it) remain valid; `currentState` reports a truthful
 	 * "state-derivation not configured" signal when it is absent. The packaged
 	 * conception ships the stock object (kinds tasks/phase/framework-gaps/
@@ -75,7 +82,10 @@ export interface ConfigBlock {
 	installed_schemas?: string[];
 	installed_blocks?: string[];
 	/**
-	 * Install baseline of the installed SCHEMAS (FGAP-029 safe re-sync). Records
+	 * Install baseline of the installed SCHEMAS — part of the safe-re-sync fix for
+	 * the earlier footgun where `/context install --update` blindly overwrote
+	 * installed schemas AND block data with empty catalog starters, with no safe
+	 * way to re-sync a stale schema. Records
 	 * the catalog source + per-schema content fingerprint at install time so later
 	 * slices can detect installed-vs-catalog drift. Blocks are user DATA and are
 	 * NOT baselined — only the re-syncable model (schemas) is fingerprinted.
@@ -98,8 +108,9 @@ export interface ConfigBlock {
 }
 
 /**
- * Config-declared `currentState` derivation registry (TASK-020 / FGAP-017 /
- * FEAT-004). A SINGLETON config object modeled as a `map`-kind registry: its six
+ * Config-declared `currentState` derivation registry — the registry added so
+ * `currentState`'s hardcoded stock kinds no longer left it inert on a
+ * custom-vocabulary substrate. A SINGLETON config object modeled as a `map`-kind registry: its six
  * top-level keys ARE the map entries (so `amend-config --registry
  * state_derivation` writes per-key through the existing map path), while
  * `currentState` reads the whole object as one singleton. Every field replaces a
@@ -180,9 +191,13 @@ export interface RollupDecl {
 }
 
 /**
- * Operation-granular tool grant vocabulary entry (FEAT-005 / DEC-0047). Each
+ * Operation-granular tool grant vocabulary entry — part of the JIT
+ * capability-composition/sandboxing layer for dispatched subagents, where each
+ * gets its own tool+permission grant composed per-invocation from an
+ * empty-by-default, config-declared, human-ratified registry, scoped to
+ * exactly the operations its task needs. Each entry
  * names a Pi tool (or coarser operation) that can be granted to a privileged
- * JIT-agent. Default grant is EMPTY per DEC-0047; consumers opt-in operations
+ * JIT-agent. Default grant is EMPTY; consumers opt-in operations
  * per dispatch.
  */
 export interface ToolOperationDecl {
@@ -190,14 +205,18 @@ export interface ToolOperationDecl {
 	display_name?: string;
 	category?: string;
 	/**
-	 * Composite-tool KIND identifier (FEAT-010). When present, composite-loader
+	 * Composite-tool KIND identifier — part of the Hybrid-3 composite-tool
+	 * infrastructure, where canonical composite tool KINDS are implemented once
+	 * in framework code and config declares per-project INSTANCES dynamically
+	 * registered as scoped Pi tools. When present, composite-loader
 	 * binds `instance_params` to the named KIND library function and registers
 	 * a per-instance Pi tool. Absent → entry is a static-tool reference only
-	 * (FEAT-005 shape).
+	 * (the original JIT capability-grant shape, before composite-tool KINDS).
 	 */
 	kind?: string;
 	/**
-	 * Instance-scoped parameters (FEAT-010) — fixed at registration; closure-
+	 * Instance-scoped parameters (the Hybrid-3 composite-tool per-instance
+	 * binding) — fixed at registration; closure-
 	 * bound by composite-loader so the runtime callsite cannot widen scope
 	 * (e.g. read-files.allowed_roots, command-allowlist.allowed_commands).
 	 */
@@ -272,7 +291,7 @@ export interface RelationTypeDecl {
 	target_kinds?: string[];
 	/**
 	 * Which stored endpoint holds the relation's PRIMARY semantic role — the ONE
-	 * source of truth for edge orientation (FGAP-113). Category interprets what the
+	 * source of truth for edge orientation, so a caller need not guess it. Category interprets what the
 	 * primary role IS (`ordering`→antecedent: prerequisite/predecessor/gate;
 	 * `membership`→container; `data_flow`→source); this field names WHERE it sits:
 	 * `as_parent` = primary is `edge.parent`, `as_child` = primary is `edge.child`.
@@ -295,8 +314,9 @@ export interface HierarchyDecl {
 }
 
 /**
- * Config-declared substrate invariant (DEC-0025: vocabulary lives in DATA, not
- * source). Two classes, both enforced generically by validateContext — no
+ * Config-declared substrate invariant — per the vocabulary-neutral-canon
+ * convention (block kinds/relation types/statuses/lenses/layers are all
+ * config-declared data, never hardcoded in source). Two classes, both enforced generically by validateContext — no
  * block/status/relation_type literal appears in the consumer loops:
  *
  *  - `requires-edge`: items in `block` matching the optional `where` predicate
@@ -436,8 +456,9 @@ export function endpointBin(e: RawEndpoint): string | null {
 }
 
 /**
- * The PRIMARY-role endpoint of an edge under a declared `role_direction`
- * (FGAP-113). `as_parent` → the role sits on `edge.parent`; `as_child` → on
+ * The PRIMARY-role endpoint of an edge under a declared `role_direction` —
+ * the explicit field carrying edge orientation rather than a guessed
+ * direction. `as_parent` → the role sits on `edge.parent`; `as_child` → on
  * `edge.child`. Pure endpoint selection (no normalization, no resolution): the
  * single derivation every per-relation-role consumer (deriver gate-direction,
  * membership rollup container, roadmap precedes/membership, promote lineage
@@ -527,7 +548,7 @@ function bundledSchemaPath(name: "config" | "relations"): string {
 // ── Substrate-dir-relative file paths ────────────────────────────────────────
 
 /** `<resolveContextDir(cwd)>/config.json` — substrate-dir-relative; bootstrap
- * pointer at `<cwd>/.pi-context.json` declares the substrate dir per DEC-0015.
+ * pointer at `<cwd>/.pi-context.json` declares the substrate dir — never hardcoded.
  * Previous `.project/`-fixed exemption removed — initProject writes the
  * bootstrap pointer FIRST so the resolver finds the dir before any path-builder
  * runs. */
@@ -544,8 +565,8 @@ function configPathForDir(substrateDir: string): string {
 }
 
 /** `<resolveContextDir(cwd)>/relations.json` — same substrate-dir-relative
- * resolution as configPath; previous `.project/`-fixed exemption removed for
- * DEC-0015 compliance. */
+ * resolution as configPath; previous `.project/`-fixed exemption removed so
+ * the substrate-dir name is never hardcoded. */
 function relationsPath(cwd: string): string {
 	return path.join(resolveContextDir(cwd), "relations.json");
 }
@@ -560,7 +581,10 @@ function relationsPathForDir(substrateDir: string): string {
 // ── Loaders ─────────────────────────────────────────────────────────────────
 
 /**
- * Resolve the substrate root for `cwd` — pointer-canonical (DEC-0045 / FGAP-079).
+ * Resolve the substrate root for `cwd` — pointer-canonical, per the convention
+ * that all substrate path resolution (blocks, schemas, config, relations; read
+ * and write) goes through the single pointer-based resolver, with
+ * `config.root` playing no role in path resolution.
  *
  * Returns `resolveContextDir(cwd)` (the `.pi-context.json` pointer dir) for ALL
  * substrate path resolution. `config.root` is NOT a path-resolution input:
@@ -569,15 +593,17 @@ function relationsPathForDir(substrateDir: string): string {
  * cannot itself relocate), so honoring `config.root` for blocks/schemas would
  * split the substrate across two dirs (config/relations at the pointer; blocks/
  * schemas at config.root) — incoherent. Substrate relocation is properly done
- * by flipping the pointer (future `/context migrate`, DEC-0036 step-5), which
- * moves the whole substrate coherently.
+ * by flipping the pointer (future `/context migrate`, part of the
+ * substrate-re-derives-cleanly-rather-than-migrates-in-place decision's
+ * step-5), which moves the whole substrate coherently.
  *
- * `config.root` is retained as optional config DATA (DEC-0041 — config carries
- * the substrate dir name for display/round-trip) but is unused for resolution.
+ * `config.root` is retained as optional config DATA — an optional,
+ * display-only override, not the source of truth for substrate location —
+ * but is unused for resolution.
  * In practice `adoptConception` sets `config.root` == the pointer dir, so this
  * is behavior-preserving wherever the two coincide; it removes the latent
  * divergence (writes honoring config.root while reads/validation use the
- * pointer) that surfaced under FGAP-077.
+ * pointer) that this resolution closes.
  */
 
 /**
@@ -640,7 +666,8 @@ export function loadConfigForDir(substrateDir: string): ConfigBlock | null {
 	return toValidate as ConfigBlock;
 }
 
-// ── Installed-asset materialization (shared with installContext; DEC-0042 / FGAP-095) ──
+// ── Installed-asset materialization (shared with installContext; part of the
+// /context start single-entry-point bootstrap state machine) ──
 
 /**
  * Destination path of an installed SCHEMA asset — `<root>/<SCHEMAS_DIR>/<name>.schema.json`.
@@ -912,7 +939,9 @@ export function writeConfigForDir(substrateDir: string, config: ConfigBlock, ctx
 /**
  * A config is a SKELETON when it carries NO vocabulary content — the minimal
  * schema-valid shape that `initProject` / `switchAndCreate` write so a substrate
- * has a tool-driven config from bootstrap (FGAP-001 / DEC-0001). Identity /
+ * has a tool-driven config from bootstrap — closing the earlier gap where
+ * init/switch -c left the substrate config-less with no op-driven path to a
+ * custom-vocabulary config. Identity /
  * scaffold fields (`schema_version`, `root`, `substrate_id`) are IGNORED here —
  * a skeleton can carry a minted `substrate_id` and still be empty of vocabulary.
  *
@@ -944,7 +973,8 @@ export function isSkeletonConfig(config: ConfigBlock): boolean {
 
 /**
  * Write the minimal schema-valid SKELETON config to the active substrate's
- * `config.json` (FGAP-001 / DEC-0001) — pointer-resolving like `adoptConception`:
+ * `config.json` — the fix for the earlier gap where init/switch -c left the
+ * substrate config-less — pointer-resolving like `adoptConception`:
  * resolves the substrate dir from the `.pi-context.json` pointer. NEVER-CLOBBER:
  * returns `{ written: false }` without writing when a config already exists, so a
  * populated (or already-skeleton) config is preserved. Otherwise builds
@@ -1043,11 +1073,17 @@ export interface AdoptResult {
 
 /**
  * accept-all: adopt the package's canonical packaged conception
- * (samples/conception.json) as this substrate's config.json (DEC-0037 / DEC-0038
- * accept-all mode). Writes config ONLY (does not install assets — run
+ * (samples/conception.json) as this substrate's config.json (the accept-all
+ * onboarding mode, one of the two onboarding modes alongside step-through,
+ * over the package's own shipped sample catalog treated as this project's
+ * real dogfooded conception). Writes config ONLY (does not install assets — run
  * installContext after). Idempotent: never clobbers an existing config
- * (DEC-0011/0038 offer-don't-impose). The conception ships NO root (it is a
- * template, not an instance — DEC-0041/FGAP-094); this function SETS root to the
+ * (the offer-don't-impose onboarding convention: init never imposes a catalog,
+ * users opt in). The conception ships NO root (it is a
+ * template, not an instance, per the config.root-is-display-only-override
+ * convention — closing the earlier defect where the packaged conception
+ * shipped a hidden `root: ".project"` default that the no-hardcoded-substrate-dir
+ * decisions forbid); this function SETS root to the
  * ACTUAL substrate dir name (resolved from the .pi-context.json pointer) on the
  * adopted config. Validated via writeConfig (whole-config AJV). Ensures the
  * substrate dir exists (a write ceremony materializes its own dir), then seeds
@@ -1064,8 +1100,9 @@ export function adoptConception(cwd: string): AdoptResult {
 	const root = path.relative(cwd, contextDirAbs);
 	const cfgPath = configPath(cwd);
 	const existing = loadConfig(cwd);
-	// Never-clobber a POPULATED config (DEC-0011/0038 offer-don't-impose). A
-	// SKELETON config (FGAP-001 / DEC-0001 — written by init / switch -c, empty of
+	// Never-clobber a POPULATED config (the offer-don't-impose onboarding
+	// convention). A
+	// SKELETON config (written by init / switch -c, empty of
 	// vocabulary) IS overwritten by the catalog: it carries no vocabulary to
 	// protect, and the existing on-disk substrate_id is read + preserved below.
 	if (existing && !isSkeletonConfig(existing)) {
@@ -1080,7 +1117,7 @@ export function adoptConception(cwd: string): AdoptResult {
 	const here = path.dirname(fileURLToPath(import.meta.url));
 	const samplesRoot = path.resolve(here, "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as ConfigBlock;
-	conception.root = root; // SET root from the resolved substrate dir — the conception template ships none (DEC-0041)
+	conception.root = root; // SET root from the resolved substrate dir — the conception template ships none, since config.root is display-only, never the source of truth for substrate location
 
 	// Resolve + register the per-substrate content-addressed substrate_id.
 	// config.json is the SoT for substrate_id. When a SKELETON config already
@@ -1105,7 +1142,9 @@ export function adoptConception(cwd: string): AdoptResult {
 	};
 }
 
-// ── Scoped config amend (FGAP-076 / DEC-0019/0020 A2) ─────────────────────────
+// ── Scoped config amend — closing the earlier gap where no config-write Pi
+// tool existed (in-pi agents couldn't author/amend config.json); part of the
+// dual-surface ceremony-ops decomposition, sub-step A2 ─────────────────────────
 
 /**
  * Storage shape of a config registry, dictating how `amendConfigEntry` locates,
@@ -1152,8 +1191,9 @@ function hierarchyKey(h: { parent_block: string; child_block: string; relation_t
 
 /**
  * Per-registry list of the config-registry entry IDs `mergeCatalogRegistries`
- * brought into a substrate config from the catalog (TASK-038 — FEAT-006 T5).
- * Empty arrays when an `update` found nothing absent (or under `dryRun`, the
+ * brought into a substrate config from the catalog — the additive
+ * config-registry propagation slice of the drift-aware, customization-preserving
+ * `pi-context update` command. Empty arrays when an `update` found nothing absent (or under `dryRun`, the
  * arrays still report what WOULD be added). Keyed by each registry's IDENTITY
  * field value: `relation_types` / `block_kinds` by `canonical_id`,
  * `invariants` / `lenses` by `id` (per `REGISTRY_DESCRIPTORS`).
@@ -1168,7 +1208,9 @@ export interface RegistryAdditions {
 /**
  * Additively merge the four KEYED-ARRAY config registries `relation_types`,
  * `invariants`, `block_kinds`, `lenses` from a catalog `ConfigBlock` into an
- * existing substrate `ConfigBlock` (TASK-038 — FEAT-006 T5). PURE: no I/O,
+ * existing substrate `ConfigBlock` — the additive config-registry propagation
+ * slice of the drift-aware, customization-preserving `pi-context update`
+ * command. PURE: no I/O,
  * operates on a deep clone of `existing` (the
  * load → JSON.parse(JSON.stringify(config)) → mutate precedent from
  * `amendConfigEntry`).
@@ -1503,7 +1545,10 @@ function safeMtimeMs(p: string): number {
 export function loadContext(cwd: string): ContextData {
 	const key = path.resolve(cwd);
 	const bMtime = safeMtimeMs(path.join(cwd, ".pi-context.json"));
-	// Chokepoint guard (FGAP-074 C3): when no `.pi-context.json` bootstrap
+	// Chokepoint guard — introduced as part of the /project→/context
+	// source-identifier rename's consumer-migration chunk, so that any consumer
+	// of `loadContext` reached before a bootstrap pointer exists degrades to an
+	// empty context rather than throwing: when no `.pi-context.json` bootstrap
 	// pointer resolves, `configPath`/`relationsPath` would throw
 	// BootstrapNotFoundError. Degrade to an empty context instead so READ /
 	// VALIDATE / SNAPSHOT callers reaching here indirectly

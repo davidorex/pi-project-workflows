@@ -1,7 +1,7 @@
 /**
  * pi-context substrate-dir resolution surface.
  *
- * Per DEC-0015 (config drives substrate location, permanently): NO hardcoded
+ * Per the config-drives-substrate-location convention (permanent): NO hardcoded
  * substrate-dir paths anywhere in pi-context / pi-jit-agents / pi-workflows /
  * pi-behavior-monitors. The substrate dir name is declared per-cwd in the
  * `.pi-context.json` bootstrap pointer; `resolveContextDir(cwd)` reads that
@@ -9,21 +9,23 @@
  * returns the absolute path of the substrate dir.
  *
  * Hard-throw policy on absent pointer (no graceful fallback to ".project"):
- * a default would be hardcode-dressed-as-default, which DEC-0015 explicitly
- * rejects. Callers needing to bootstrap a fresh repo write the pointer first
+ * a default would be hardcode-dressed-as-default, which the
+ * config-drives-substrate-location convention explicitly rejects. Callers
+ * needing to bootstrap a fresh repo write the pointer first
  * via `writeBootstrapPointer(cwd, contextDir)` before any path-builder is
- * invoked; `contextDir` is a required parameter chosen by the caller per
- * DEC-0015.
+ * invoked; `contextDir` is a required parameter chosen by the caller —
+ * never defaulted.
  *
  * Path-builders (schemasDir / schemaPath / agentsDir / contextTemplatesDir)
  * all cascade through `resolveContextDir(cwd)` so the literal substrate-dir
- * name lives exactly nowhere in pi-context source after Phase 1.2 of FGAP-026
- * closure lands.
+ * name lives exactly nowhere in pi-context source after Phase 1.2 of the
+ * closure removing the `.project/` literal that persisted at the bootstrap
+ * entry edge (despite `config.root` already existing) lands.
  *
  * The `SCHEMAS_DIR` export is retained as `@deprecated` for transitional
  * cross-package compat (pi-workflows: workflow-sdk.ts, step-block.ts,
  * workflow-executor.ts still import it as a bare segment); Phase 7 of
- * FGAP-026 closure cascades those sites and removes the export.
+ * that same closure cascades those sites and removes the export.
  */
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -38,8 +40,8 @@ export const SCHEMAS_DIR = "schemas";
  * Thrown by `resolveContextDir(cwd)` when no `.pi-context.json` bootstrap
  * pointer exists at the cwd. Carries `cwd` and `bootstrapPath` fields so
  * callers can surface the absent-pointer site in error messages without
- * re-deriving the path. Per DEC-0015 hard-throw policy — there is no
- * fallback default; callers must materialize the pointer (via
+ * re-deriving the path. Per the hard-throw-on-absent-pointer policy — there
+ * is no fallback default; callers must materialize the pointer (via
  * `writeBootstrapPointer`) before any substrate operation.
  */
 export class BootstrapNotFoundError extends Error {
@@ -85,13 +87,14 @@ const BOOTSTRAP_REF_SCHEMA: Record<string, unknown> = {
 /**
  * Resolve the substrate dir for a given cwd. Reads the
  * `<cwd>/.pi-context.json` bootstrap pointer, AJV-validates the parsed
- * pointer object against the URN-registered bootstrap schema (FGAP-026
- * phase 1.1 schema), caches the resolution by absolute cwd keyed on
+ * pointer object against the URN-registered bootstrap schema (the
+ * bootstrap-hardcoding closure's phase 1.1 schema), caches the resolution by
+ * absolute cwd keyed on
  * pointer mtime, and returns `path.join(cwd, contextDir)` as an absolute
  * path (subject to whatever cwd the caller passed).
  *
  * Hard-throws `BootstrapNotFoundError` when the pointer file is absent —
- * no fallback to `.project`. Per DEC-0015 the substrate dir name is
+ * no fallback to `.project`. The substrate dir name is
  * config-driven; defaulting would be hardcode-dressed-as-default. Callers
  * bootstrapping a fresh repo write the pointer first via
  * `writeBootstrapPointer(cwd, contextDir)` before any path-builder runs.
@@ -145,7 +148,7 @@ export function resolveContextDir(cwd: string): string {
 /**
  * Non-throwing variant of `resolveContextDir` for READ / CLASSIFY / SNAPSHOT
  * consumers that must degrade gracefully when no `.pi-context.json` bootstrap
- * pointer exists (DEC-0015) rather than hard-throwing `BootstrapNotFoundError`.
+ * pointer exists rather than hard-throwing `BootstrapNotFoundError`.
  *
  * Returns the resolved substrate dir when the pointer is present (identical to
  * `resolveContextDir`); returns `null` only on the absent-pointer
@@ -153,8 +156,9 @@ export function resolveContextDir(cwd: string): string {
  * pointer / read failure is NOT degradation and must still surface (the
  * pointer-present error semantics of `resolveContextDir` are preserved).
  *
- * Name-based catch per FGAP-080 (instanceof is unreliable across module-instance
- * boundaries under tsx/dist dual-load).
+ * Name-based catch: `instanceof` is unreliable across module-instance
+ * boundaries under tsx/dist dual-load, so orchestrator CLIs catching this
+ * transitively-thrown error must check the constructor `name` instead.
  */
 export function tryResolveContextDir(cwd: string): string | null {
 	try {
@@ -189,7 +193,7 @@ export interface BootstrapPointerExtras {
 
 /**
  * Atomically write a `.pi-context.json` bootstrap pointer at `<cwd>/.pi-context.json`.
- * `contextDir` is a required parameter chosen by the caller per DEC-0015 —
+ * `contextDir` is a required parameter chosen by the caller —
  * no default, no transitional bridge.
  *
  * Pre-validates the pointer object against the URN-registered bootstrap
@@ -342,7 +346,9 @@ export function flipBootstrapPointer(cwd: string, newContextDir: string, writerI
 }
 
 /**
- * Reject substrate names that are not bare path segments (FGAP-079 / DEC-0045).
+ * Reject substrate names that are not bare path segments — closing the earlier
+ * gap where read/write schema-path resolution could diverge and `schemaName`
+ * had no path-traversal sanitization.
  *
  * Every name→path builder below (and in block-api / context /
  * schema-write) interpolates a raw `name` into a substrate-relative file path
@@ -352,10 +358,12 @@ export function flipBootstrapPointer(cwd: string, newContextDir: string, writerI
  * block_kind canonical_id alphabet (`[A-Za-z0-9_-]+`) — which has no separators,
  * dots, or empty form — so a traversal name throws BEFORE any path resolution.
  *
- * Guards BOTH read and write sides (the resolver unification of DEC-0045 routes
- * `schemaWritePath` through `schemaPath`, so guarding here covers writes too).
- * Now reachable from the in-pi tool surface — the write-schema tool (FGAP-077)
- * exposes the schema name directly to in-pi agents.
+ * Guards BOTH read and write sides (the single-pointer-based-resolver
+ * unification routes `schemaWritePath` through `schemaPath`, so guarding here
+ * covers writes too). Now reachable from the in-pi tool surface — the
+ * write-schema tool (added so in-pi agents can define/evolve block-kind
+ * schemas, where previously no such Pi tool existed) exposes the schema name
+ * directly to in-pi agents.
  */
 export function assertSubstrateName(name: string): void {
 	if (!/^[A-Za-z0-9_-]+$/.test(name)) {
@@ -367,7 +375,7 @@ export function assertSubstrateName(name: string): void {
 
 /**
  * Canonical path-builder helpers for the substrate directory (config-driven
- * via `resolveContextDir(cwd)` per DEC-0015). Every site that previously
+ * via `resolveContextDir(cwd)`). Every site that previously
  * hand-built `path.join(cwd, ".project", ...)` now routes through these so
  * the substrate-dir name is read from the bootstrap pointer rather than
  * hardcoded.
@@ -389,7 +397,7 @@ export function schemaPathForDir(substrateDir: string, blockName: string): strin
 }
 
 export function schemaPath(cwd: string, blockName: string): string {
-	// Assert the name BEFORE resolving the substrate dir so the FGAP-079
+	// Assert the name BEFORE resolving the substrate dir so the
 	// path-traversal guard fires ahead of BootstrapNotFoundError (a traversal
 	// name must reject even when no `.pi-context.json` pointer exists). The
 	// ForDir body asserts again — harmless double-assert; the boundary guard

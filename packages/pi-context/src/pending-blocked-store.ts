@@ -68,9 +68,9 @@ export interface PendingBlockedEntry {
 	/**
 	 * content_hash of the wrapped pre-marker block-file bytes (`{kind:"raw-block-bytes",
 	 * block, bytes}`) stored in the object store, set when a live update inscribed
-	 * git-style failure markers into the validation-blocked block file (TASK-052 /
-	 * FGAP-081). Present only on marker-bearing entries; lets a consumer restore the
-	 * block file to its pre-marker bytes. Omitted when no markers were written.
+	 * git-merge-style failure markers into the validation-blocked block file at the
+	 * offending items/fields. Present only on marker-bearing entries; lets a consumer
+	 * restore the block file to its pre-marker bytes. Omitted when no markers were written.
 	 */
 	premarker_hash?: string;
 	blocked_at: string;

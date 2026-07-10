@@ -1,7 +1,8 @@
 /**
- * Integration test for FGAP-136: end-to-end version-bump scenario.
+ * Integration test for the schema-versioning migration story: end-to-end
+ * version-bump scenario.
  *
- * Exercises the canonical loop the FGAP filing described:
+ * Exercises the canonical loop the gap filing described:
  *   1. create schema v1 + write block item at v1 → succeeds
  *   2. bump schema → v2 via write-schema replace
  *   3. write block item at v1 against v2 schema with NO migration declared →
@@ -117,7 +118,7 @@ describe("FGAP-136 end-to-end: identity migration unblocks version-bumped block 
 		const persisted = JSON.parse(fs.readFileSync(path.join(cwd, ".project", "thing.json"), "utf-8"));
 		// Identity migration is byte-cheap on the DATA (items pass through
 		// unchanged), and the write path stamps the envelope to the schema's
-		// current version (TASK-073): the persisted schema_version converges to
+		// current version: the persisted schema_version converges to
 		// v2 on the write rather than echoing the writer-supplied v1 claim.
 		assert.equal(persisted.schema_version, "2.0.0");
 		assert.deepEqual(persisted.items, [{ id: "a" }]);

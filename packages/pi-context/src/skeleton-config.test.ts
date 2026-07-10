@@ -1,5 +1,5 @@
 /**
- * Skeleton-config coverage (FGAP-001 / DEC-0001).
+ * Skeleton-config coverage.
  *
  * init / switch -c now write a minimal schema-valid SKELETON config (empty of
  * vocabulary) so a fresh substrate has a tool-driven config from bootstrap.

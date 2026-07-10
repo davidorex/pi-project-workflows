@@ -286,7 +286,7 @@ describe("structured-endpoints: porcelain resolution", () => {
 		assert.equal((ep as { substrate_id?: string }).substrate_id, undefined);
 
 		// relation_type must be registered in the adopted conception catalog (the
-		// write-time edge-registry gate, TASK-062, now rejects unregistered types):
+		// write-time edge-registry gate now rejects unregistered types):
 		// gap_relates_to_gap carries framework-gaps as both source and target kinds,
 		// matching the FGAP-1/FGAP-2 endpoints (which dangle here — no items written —
 		// so the presence-gated kind check is skipped; registration is what passes).

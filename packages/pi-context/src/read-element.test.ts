@@ -1,9 +1,9 @@
 /**
- * Unit coverage for the pure read-element primitive (FGAP-103).
+ * Unit coverage for the pure read-element primitive.
  *
  * serializeForRead: pages collections (correct total/hasMore), emits the
  * structured greppable paging footer ONLY when paged (absent otherwise), and
- * FAILS CLOSED on an over-cap value (FGAP-089) — directive-only refusal with NO
+ * FAILS CLOSED on an over-cap value — directive-only refusal with NO
  * partial body when a narrowing tool is named, else an unmissable head-leading
  * marked partial; both set complete:false. addressInto: resolves id / key /
  * path and returns a clean found:false on a miss without throwing. No I/O —
@@ -155,7 +155,7 @@ describe("read-element: serializeForRead over-cap fail-closed (FGAP-089)", () =>
 	// ── structured `data` MUST fail closed on over-cap (the `--json` leak guard) ──
 	// structureForRead's `data` feeds the CLI `--json` envelope directly (it never
 	// routes through cappedContent). Pre-fix it carried the FULL un-truncated value
-	// past the 50KB cap, defeating the FGAP-089 fail-closed under `--json`. On
+	// past the 50KB cap, defeating the fail-closed guarantee under `--json`. On
 	// over-cap `data` must be null (no unbounded value, no misleading partial);
 	// the metadata stays as computed.
 	it("structureForRead over-cap WITH overCapDirective → data null, truncated true, complete false", () => {

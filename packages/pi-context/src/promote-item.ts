@@ -101,7 +101,8 @@ function supersessionStatusFor(srcDir: string, block: string): string | null {
 
 /**
  * Read the declared `role_direction` of a relation_type from a substrate dir's
- * config (FGAP-113), or `undefined` when the config is absent, the relation is
+ * config — the explicit field that carries edge orientation so it need not be
+ * guessed — or `undefined` when the config is absent, the relation is
  * unregistered, or it carries no `role_direction`. Reads the raw config JSON
  * (same non-migrating pattern as `relationTypeIds`) — the field is a plain
  * optional string, so no schema migration is needed to read it.
@@ -245,7 +246,8 @@ export function promoteItem(cwd: string, input: PromoteItemInput, ctx?: Dispatch
 	}
 
 	// (9) File the lineage edge into the DESTINATION, oriented by the destination
-	// config's declared role_direction for item_derived_from_item (FGAP-113): the
+	// config's declared role_direction for item_derived_from_item — the explicit
+	// field carrying edge orientation, rather than a guessed direction: the
 	// SOURCE (the item being derived FROM) holds the PRIMARY data_flow role, the
 	// NEW-DERIVED item the COUNTER role. item_derived_from_item is `as_child`
 	// (source at edge.child), reproducing the prior parent=new-derived / child=source

@@ -1,10 +1,11 @@
 /**
- * Tests for the samples-catalog discovery surface (FGAP-068 / DEC-0037).
+ * Tests for the samples-catalog discovery surface (the package's shipped
+ * sample catalog treated as this project's real dogfooded conception).
  *
  * The catalog reads the extension's OWN bundled samples/ — it is
  * package-intrinsic (no cwd). These cases pin the live conception:
  *   - structural completeness (18 kinds; 44 relation_types; registries present)
- *   - DEC-0023 live-data guard (every kind has title + description + shape)
+ *   - live-data guard (every kind has title + description + shape)
  *   - endpoint-participation semantics (wildcard, alias/split, convergence)
  *   - per-kind invariant / lens attachment
  *   - filter + unknown-kind behavior (warning, never throw)
@@ -153,10 +154,11 @@ describe("samplesCatalog", () => {
 		assert.doesNotThrow(() => validate(schema, conception, "samples/conception.json"));
 	});
 
-	it("FGAP-094 / DEC-0041: the packaged conception ships NO substrate-dir default (no 'root' key)", () => {
+	it("the packaged conception ships NO substrate-dir default (no 'root' key)", () => {
 		// The conception is a template, not an instance. Shipping a concrete root
-		// (e.g. '.project') would be a hidden default — DEC-0015 (no default
-		// substrate dir) + DEC-0011 (ship-no-defaults). adoptConception sets root
+		// (e.g. '.project') would be a hidden default — the substrate dir is never
+		// hardcoded, and the package ships no default schemas or block files.
+		// adoptConception sets root
 		// at accept-all from the .pi-context.json pointer; resolveContextDir resolves via
 		// the pointer when root is absent. Regression guard against re-introduction.
 		const conception = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "conception.json"), "utf-8"));
@@ -187,8 +189,10 @@ describe("samplesCatalog", () => {
 		assert.ok(chain.length > 0, "packaged config migration chain must be non-empty");
 	});
 
-	// FGAP-131 + FGAP-132: rigorous AST + JSON + markdown/YAML scanner replaces
-	// the FGAP-130 naive line-by-line CITATION_RE scan (commit 4fd28a6).
+	// The rigorous AST + JSON + markdown/YAML scanner replaces
+	// the naive line-by-line CITATION_RE scan (commit 4fd28a6), and its
+	// audit scope extends beyond the original pi-context-only pass to every
+	// monorepo package.
 	//
 	// Scope: scans every monorepo package (pi-context including its legacy
 	// registry/ + defaults/ fixtures; pi-workflows; pi-behavior-monitors;

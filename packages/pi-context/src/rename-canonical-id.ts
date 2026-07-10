@@ -1,5 +1,8 @@
 /**
- * canonical_id rename engine (FGAP-060 / DEC-0035).
+ * canonical_id rename engine — closes the earlier gap where no automatic
+ * cross-file value-rename engine existed for canonical_id changes
+ * (relation-type renames, item-id-prefix renumbering): schema-shape migration
+ * existed, but not value-rename-across-files.
  *
  * canonical_ids are primary-key-permanent — the steady state is "never rename".
  * The rare, deliberate rename routes exclusively through `renameCanonicalId`,
@@ -7,13 +10,13 @@
  * REPORTS (never rewrites) every out-of-substrate occurrence (analysis MDs,
  * git history) so the operator can follow up manually.
  *
- * Edge model (DEC-0013): inter-item references live ONLY as relations.json
+ * Edge model: inter-item references live ONLY as relations.json
  * edges — there is NO inline-FK field on item schemas, so the engine performs
  * NO inline-FK sweep. Item renames touch (1) the item's home block id field and
  * (2) every edge whose parent/child equals the old id.
  *
  * Five canonical_id kinds exist; this engine implements four:
- *   - item          (a block item's id, e.g. DEC-0001)
+ *   - item          (a block item's own id field, e.g. a decision item's id)
  *   - relation_type (a config.relation_types[].canonical_id)
  *   - lens          (a config.lenses[].id)
  *   - layer         (a config.layers[].id)

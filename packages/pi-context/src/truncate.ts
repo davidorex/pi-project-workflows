@@ -4,7 +4,8 @@
  * map is "." + "./hooks" only) and the root barrel is unresolvable under `tsx -e`
  * (ERR_PACKAGE_PATH_NOT_EXPORTED), which silently breaks the orchestrator's tsx-eval
  * verification path (validateContext / contextState) once pulled into context-sdk's import
- * graph (FGAP-104). truncateHead is pure (Buffer.byteLength only), so it is vendored verbatim.
+ * graph — a tsx-eval-reachable module must never statically import the SDK's root barrel for
+ * values (only types). truncateHead is pure (Buffer.byteLength only), so it is vendored verbatim.
  * Re-sync if the SDK adds a resolving `tools` export.
  */
 

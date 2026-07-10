@@ -1,7 +1,8 @@
 /**
- * Integration test for gatherExecutionContext — TASK-040 / Phase 3 sub-phase 3.3.
+ * Integration test for gatherExecutionContext — Phase 3 sub-phase 3.3, closing
+ * the gatherExecutionContext gap cluster.
  *
- * Scope vs the unit test (execution-context.test.ts; TASK-039 / sub-phase 3.2):
+ * Scope vs the unit test (execution-context.test.ts; sub-phase 3.2):
  * the unit test exercises gatherExecutionContext against per-test fixture
  * inputs with minimal permissive schemas next to each block file. Block-api
  * read paths are exercised but loadConfig is not (no config.json), so the
@@ -12,12 +13,14 @@
  * synthetic substrate at dispatch time:
  *
  *   mkdtempSync(<prefix>)/
- *   ├── .pi-context.json                  ← bootstrap pointer (DEC-0015)
+ *   ├── .pi-context.json                  ← bootstrap pointer (never hardcoded)
  *   └── .project/
  *       ├── config.json                   ← AJV-validated config block_kinds[]
  *       │                                   + relation_types[]
  *       ├── relations.json                ← AJV-validated Edge[]
- *       ├── context-contracts.json        ← bundle composition spec (FGAP-030)
+ *       ├── context-contracts.json        ← bundle composition spec (the
+ *       │                                   context-contracts substrate schema
+ *       │                                   side of gatherExecutionContext)
  *       ├── tasks.json                    ← work-unit block (cross-block #1)
  *       ├── decisions.json                ← related block (cross-block #2)
  *       └── schemas/
@@ -32,11 +35,13 @@
  * relations.schema.json. No mocks, no stubs — the integration test
  * exercises the substrate-canonical surface end-to-end.
  *
- * Per DEC-0018 this is the runtime-demo equivalent within tests (no
+ * Per the convention that every implementation step requires a real runtime
+ * demonstration plus an adversarial verification probe (not tests-pass alone),
+ * this is the runtime-demo equivalent within tests (no
  * live-repo-substrate runtime demo possible per Phase 5 deferral of
  * arc-tracking-block authoring as dogfood substrate).
  *
- * Coverage per TASK-040 acceptance criteria:
+ * Coverage per that phase's acceptance criteria:
  *   A. Single-relation_type contract — happy path through full substrate
  *      with same-block (tasks) walk; loadConfig succeeds, buildIdIndex
  *      respects block_kinds[].prefix invariant.
@@ -325,7 +330,7 @@ describe("gatherExecutionContext integration: scenario C — deep chain hits max
 		// walkDescendants is visited-set bounded (cycle-safe) but not
 		// depth-bounded in the current primitive — the traversal_depth field
 		// records the effective cap at the contract layer (depth-bound
-		// territory tracked under FGAP-029). All 4 reachable descendants
+		// territory for a future variant of context-bundling). All 4 reachable descendants
 		// resolve regardless of recorded cap; the assertion exercises the
 		// contract surface (cap recorded), not the primitive's depth filter.
 		const result = gatherExecutionContext(tmpDir, { unitId: "TASK-200", kind: "task", maxDepth: 3 });

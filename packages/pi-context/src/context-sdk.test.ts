@@ -47,7 +47,8 @@ function makeTmpDir(prefix: string): string {
 	return cwd;
 }
 
-// ── Bootstrap state (FGAP-095 P1 / DEC-0042) ─────────────────────────────────
+// ── Bootstrap state (part of the /context start single-entry-point bootstrap
+// state machine, phase 1) ─────────────────────────────────
 
 describe("deriveBootstrapState", () => {
 	const ctxDir = ".project";
@@ -194,7 +195,7 @@ describe("availableSchemas", () => {
 	});
 });
 
-// ── Pointer-less schema-discovery degradation (FGAP-074 C3) ──────────────────
+// ── Pointer-less schema-discovery degradation ──────────────────
 // These functions reach the throwing resolveContextDir indirectly via the
 // schemasDir path-builder. With no `.pi-context.json` bootstrap pointer they
 // must degrade to [] rather than throwing BootstrapNotFoundError. (NOTE: no
@@ -249,7 +250,7 @@ describe("contextState", () => {
 		fs.mkdirSync(schemasDir, { recursive: true });
 		fs.writeFileSync(path.join(schemasDir, "issues.schema.json"), "{}");
 
-		// Set up phases as an array-block (DEC-0028): single phase.json holding
+		// Set up phases as an array-block: single phase.json holding
 		// phases[] with PHASE-NNN ids. Two completed + one in-progress exercises
 		// the completed-count `current` measure.
 		fs.writeFileSync(
@@ -360,7 +361,9 @@ describe("contextState", () => {
 
 // ── validateContext ─────────────────────────────────────────────────────────
 
-// Edge-model validation (DEC-0013 / DEC-0036): validateContext now checks the
+// Edge-model validation (all inter-item relationships authored exclusively as
+// closure-table edges; the substrate re-derives cleanly through canonical
+// authoring surfaces rather than migrating in place): validateContext now checks the
 // closure-table edge graph (relations.json) for reference integrity, plus two
 // relocated invariants (completed-task verification edge; decision forcing-artifact
 // edge). The per-block inline-FK reference checks were dropped. Fixtures therefore
@@ -379,7 +382,7 @@ const REL_TYPES = [
 	},
 	// The stock gate relation carries role_direction as_child (the gate/primary at
 	// edge.child, the waiting task at edge.parent) so the deriver classifies it as
-	// gate-direction from config rather than a source literal (FGAP-113).
+	// gate-direction from config rather than a source literal.
 	{
 		canonical_id: "task_gated_by_item",
 		display_name: "gated by",
@@ -388,7 +391,8 @@ const REL_TYPES = [
 	},
 ];
 
-// Canonical config-declared invariants (DEC-0025): the two previously-hardcoded
+// Canonical config-declared invariants (per the vocabulary-neutral-canon
+// convention): the two previously-hardcoded
 // substrate invariants relocated into config DATA. Default-injected by
 // writeConfig so existing edge-model fixtures fire the SAME invariants as before
 // (regression parity). Messages use the {id} token so rendered text contains the
@@ -416,7 +420,8 @@ const CANONICAL_INVARIANTS = [
 ];
 
 /**
- * The stock `state_derivation` registry (TASK-020 / FGAP-017) — the exact values
+ * The stock `state_derivation` registry — the config-declared registry added
+ * so `currentState` no longer hardcodes stock kinds — the exact values
  * the packaged catalog ships, mirroring currentState's pre-rewire hardcoded
  * couplings 1:1. Injected by default into `writeConfig` so the existing
  * edge-model + currentState fixtures derive normally (byte-equivalent to the
@@ -453,9 +458,9 @@ const STOCK_STATE_DERIVATION = {
  * left empty so buildIdIndex's prefix-vs-block invariant does not constrain the
  * fixtures' ad-hoc ids (t1/d1/etc.) — this isolates the edge-integrity surface
  * under test from prefix enforcement. By default declares the two canonical
- * invariants (DEC-0025) so existing fixtures retain their prior invariant
+ * invariants (per the vocabulary-neutral-canon convention) so existing fixtures retain their prior invariant
  * coverage; pass a custom `invariants` array to exercise other invariant shapes.
- * Also injects the stock `state_derivation` registry by default (TASK-020) so
+ * Also injects the stock `state_derivation` registry by default so
  * currentState derives normally; pass `stateDerivation: null` to OMIT it (the
  * not-configured signal) or a custom object to exercise custom vocabulary.
  */
@@ -696,7 +701,7 @@ describe("validateContext", () => {
 	});
 });
 
-// ── Config-declared invariants (DEC-0025: vocabulary-neutral generic loop) ────
+// ── Config-declared invariants (per the vocabulary-neutral-canon convention: generic loop) ────
 // validateContext enforces config.invariants[] generically per the requires-edge
 // class. These tests drive that loop with CUSTOM invariant data — including
 // FOREIGN vocabulary the source has zero literals for — to prove the engine
@@ -1903,7 +1908,8 @@ describe("verification gate — AJV if/then enforcement", () => {
 		fs.mkdirSync(projectDir, { recursive: true });
 
 		// Write directly via fs.writeFileSync — bypasses schema validation.
-		// Edge-model (DEC-0036): completed task requires a verification_verifies_item
+		// Edge-model (the substrate re-derives cleanly through canonical authoring
+		// surfaces, references as edges from the start): completed task requires a verification_verifies_item
 		// edge (child=task); config + relations present so the relocated invariant runs.
 		writeConfig(projectDir);
 		writeRelations(projectDir, []);
@@ -1929,7 +1935,7 @@ describe("verification gate — AJV if/then enforcement", () => {
 		const projectDir = path.join(tmpDir, ".project");
 		fs.mkdirSync(projectDir, { recursive: true });
 
-		// FGAP-014: completeTask now targets the canonical edge model — task is
+		// completeTask now targets the canonical edge model — task is
 		// completed by setting { status: "completed" } with NO embedded verification
 		// field; the verification_verifies_item edge is the linkage. So validate
 		// against the CANONICAL tasks schema shape (samples/.context), which has no
@@ -2124,7 +2130,8 @@ describe("filterBlockItems", () => {
 	});
 });
 
-// ── readBlockItem / readBlockPage (item-level reads, FGAP-045) ───────────────
+// ── readBlockItem / readBlockPage (item-level reads, closing the earlier
+// all-or-nothing read gap) ───────────────
 
 /**
  * Build N items with ids ITEM-001..ITEM-NNN (1-indexed, zero-padded to 3).
@@ -2276,7 +2283,8 @@ describe("readBlockPage", () => {
 	});
 });
 
-// ── joinBlocks (cross-block HYBRID join, FGAP-043) ───────────────────────────
+// ── joinBlocks (cross-block HYBRID join, closing the earlier N+1-round-trip
+// join gap) ───────────────────────────
 
 /**
  * relation_types registry for the edge-mode join fixtures. Two relation types so
@@ -2899,7 +2907,7 @@ describe("currentState", () => {
 	});
 
 	it("rollup-kind gate: releases on member completion regardless of stored status, and milestones[] agrees in the same read", (t) => {
-		// The FGAP-116 live case: milestone stored status lags at the incomplete
+		// The currency-by-construction case: milestone stored status lags at the incomplete
 		// value while its members are all complete. Gate satisfaction must consult
 		// the rollup (released), and the milestones[] entry must report the SAME
 		// verdict — no split-brain within one currentState payload.
@@ -3117,7 +3125,7 @@ describe("currentState", () => {
 		fs.mkdirSync(projectDir, { recursive: true });
 		// feature_gated_by_item shares the gate SHAPE of task_gated_by_item
 		// (as_child: the gate/primary at edge.child, the waiter at edge.parent). The
-		// pre-FGAP-113 deriver keyed the gate direction off the single literal
+		// the pre-explicit-orientation deriver keyed the gate direction off the single literal
 		// "task_gated_by_item", so this sibling — if placed in blocked_by — read the
 		// SWAPPED (dependency) direction. Driven from role_direction it now reads
 		// gate=child by construction.
@@ -3342,7 +3350,7 @@ describe("currentState", () => {
 		// A `contains`-shaped membership relation: role_direction as_parent, so the
 		// CONTAINER (milestone) is the edge PARENT and the MEMBER (phase) the CHILD —
 		// the mirror image of the stock phase_positioned_in_milestone (as_child)
-		// layout. Under the pre-FGAP-113 hardcoded container=child rollup this edge
+		// layout. Under the pre-explicit-orientation hardcoded container=child rollup this edge
 		// would find zero members (the milestone is the parent, never scanned as the
 		// child); driven from role_direction the member is correctly read at the
 		// child endpoint.
@@ -3394,7 +3402,7 @@ describe("currentState", () => {
 		assert.strictEqual(mile!.status, "planned", "incomplete member → planned");
 	});
 
-	// ── TASK-020: config-driven state_derivation rewire ─────────────────────────
+	// ── config-driven state_derivation rewire ─────────────────────────
 
 	it("STOCK byte-equivalence: stock state_derivation reproduces the pre-rewire output shape", (t) => {
 		const tmpDir = makeTmpDir("cs-stock");
@@ -3695,7 +3703,8 @@ describe("currentState", () => {
 	});
 });
 
-// ── status-consistency invariants (DEC-0040 / FGAP-073) ───────────────────────
+// ── status-consistency invariants (closing the earlier gap where validateProject
+// had no cross-block status-consistency checks to catch status drift) ───────────────────────
 // validateContext's second config-invariants consumer: cross-block status drift.
 // A qualifying item (block + optional when_bucket gate) whose related item across
 // an edge has a target bucket that violates require_target_bucket /
@@ -3925,7 +3934,8 @@ describe("status-consistency invariants", () => {
 	});
 });
 
-// ── Edge endpoint-kind check (FGAP-086 / DEC-0037) ───────────────────────────
+// ── Edge endpoint-kind check (closing the gap where relation_types carried no
+// endpoint-kind metadata) ───────────────────────────
 // validateContext flags an edge whose endpoint's resolved block is not in the
 // relation_type's declared source_kinds / target_kinds (unless the set is the
 // "*" wildcard). Presence-gated: a relation_type with neither field is
@@ -4038,7 +4048,8 @@ describe("edge endpoint-kind check (FGAP-086)", () => {
 	});
 });
 
-// ── expectedBlockForId empty-prefix guard (FGAP-062) ─────────────────────────
+// ── expectedBlockForId empty-prefix guard (closing the earlier defect where an
+// empty prefix accidentally matched everything) ─────────────────────────
 
 describe("expectedBlockForId", () => {
 	const bk = (canonical_id: string, prefix: string) => ({
@@ -4067,9 +4078,9 @@ describe("expectedBlockForId", () => {
 	});
 });
 
-// ── validateContext cross-block status-vocabulary check (FGAP-025) ────────────
+// ── validateContext cross-block status-vocabulary check ────────────
 
-// ── derived-status invariants (FEAT-011 — FGAP-116) ──────────────────────────
+// ── derived-status invariants (part of currency-by-construction) ──────────────────────────
 // Stored-vs-derived divergence for rollup-declared kinds, both directions, via
 // the shared derivedRollupComplete helper (identical verdicts with currentState).
 describe("derived-status invariants", () => {

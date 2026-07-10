@@ -1,7 +1,7 @@
 /**
  * Tests for the /context switch family's shared-engine surface that powers
  * both the slash command handlers and the context-switch + context-list +
- * context-archive Pi tools. Per TASK-094 step 8 acceptance criteria.
+ * context-archive Pi tools. Per the /context switch command family's step 8 acceptance criteria.
  *
  * Asserts:
  * - switchToExisting flips pointer to existing-substrate target; refuses
@@ -85,8 +85,8 @@ function makeSubstrateValidNoId(cwd: string, name: string): void {
  * migrations.json — the pre-seeding era's on-disk state. Reading its config
  * without the catalog `config` chain seeded throws a version mismatch, so the
  * switch ceremonies must seed the target right after the pointer flip
- * (TASK-070 class rule: every ceremony entry point seeds before its first
- * config read).
+ * (the ceremony-seeding class rule: every ceremony entry point seeds before
+ * its first config read).
  */
 function makeLegacySubstrate(cwd: string, name: string): void {
 	const dir = path.join(cwd, name);

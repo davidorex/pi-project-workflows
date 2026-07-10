@@ -2,7 +2,7 @@
  * Dispatch context — authorship attestation surface for block-api writes.
  *
  * Closes structurally:
- *   - FGAP-004 (authorship attestation at block write time): block-api write
+ *   - Authorship attestation at block write time: block-api write
  *     functions accept an optional `DispatchContext`. When provided AND the
  *     target schema declares author fields (created_by / created_at /
  *     modified_by / modified_at), the write surface stamps the item before
@@ -15,8 +15,8 @@
  * across the four `WriterIdentity` discriminants.
  *
  * Out-of-scope for step 3:
- *   - Adding author fields to schemas that lack them (FGAP-006 schema
- *     versioning territory; step 4)
+ *   - Adding author fields to schemas that lack them (schema versioning +
+ *     identity + migration territory; step 4)
  *   - Migrating existing block-api callers to pass `ctx` (incremental;
  *     opt-in by design — never required)
  *   - Deprecating non-ctx writes (no — `ctx` remains optional for the

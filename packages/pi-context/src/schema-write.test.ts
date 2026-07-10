@@ -117,8 +117,8 @@ describe("writeSchema", () => {
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 		setupProjectDir(tmpDir);
 
-		// Set config.root to a value DIFFERENT from the pointer dir (.project). Pre
-		// DEC-0045 this would make writeSchema (a config.root-honoring path-builder) land under
+		// Set config.root to a value DIFFERENT from the pointer dir (.project). Before
+		// the single-pointer-based-resolver unification this would make writeSchema (a config.root-honoring path-builder) land under
 		// alt-substrate/ while readSchema/schemaPath (pointer-based) look under
 		// .project/ — a divergence. Post-unification both resolve to the pointer dir.
 		writeConfig(tmpDir, { schema_version: "1.8.0", root: "alt-substrate", block_kinds: [] });

@@ -5,8 +5,11 @@
  * STORY-N / PLAN-N / REQ-N / R-NNNN / ISSUE-N / issue-N / PHASE-NNN+ / JI-NNN)
  * inside shipped artifacts of all monorepo packages.
  *
- * Aim: replace the naive line-by-line CITATION_RE scan that landed at FGAP-130
- * (commit 4fd28a6) with an AST-aware enumerator that discriminates by node
+ * Aim: replace the naive line-by-line CITATION_RE scan — introduced after
+ * bundled/packaged schema field descriptions were found leaking this repo's
+ * own internal development-substrate canonical-id citations verbatim into
+ * operator-facing text a downstream consumer could never resolve (commit
+ * 4fd28a6) — with an AST-aware enumerator that discriminates by node
  * type and JSON path. The naive scan carried six fragility classes:
  *   (a) multi-line strings not captured by line iteration,
  *   (b) JSDoc / comment exclusion based on line-prefix regex producing both
@@ -55,8 +58,11 @@ const CITATION_RE_G = new RegExp(CITATION_RE.source, "g");
  * One enumerated citation-rot hit. The `surface` discriminator names the
  * node-kind that surfaced the value; downstream test renders per-hit detail.
  *
- * `ast-error-message` (FGAP-133): added 2026-05-29 to capture runtime
- * error-message string-literals constructed at NewExpression sites where
+ * `ast-error-message` — added 2026-05-29 to close the gap where the scanner
+ * extracted string literals from description/registerTool fields but not from
+ * `throw new Error(...)`-style constructor arguments, letting canonical-id
+ * citations embedded in thrown error messages reach operators ungated — to
+ * capture runtime error-message string-literals constructed at NewExpression sites where
  * the constructor identifier ends in `Error`. These flow to the operator
  * via exception propagation and constitute a separate shipped artifact
  * surface distinct from tool-description literals.
@@ -131,7 +137,8 @@ function isTypeBoxCall(node: ts.CallExpression): boolean {
 }
 
 /**
- * AST predicate (FGAP-133): identifies NewExpression nodes whose constructor
+ * AST predicate — closes the gap where thrown-error constructor arguments
+ * went unscanned by identifying NewExpression nodes whose constructor
  * identifier ends in `Error`. Matches both plain `new Error(...)` and custom
  * subclasses (e.g. `new CommitAttestedRefusedError(...)`). Constructor first
  * argument string-literal values flow to the operator surface via exception
@@ -156,8 +163,8 @@ function isErrorConstructorCall(node: ts.NewExpression): boolean {
 /**
  * Walk a .ts source file and enumerate every CallExpression whose callee is
  * a tool-registration entry-point or a typebox descriptor; pull description
- * string-literal values out of those subtrees. Additionally (FGAP-133)
- * enumerate NewExpression argument string-literals where the constructor
+ * string-literal values out of those subtrees. Additionally — closing the same
+ * thrown-error-message scanning gap — enumerate NewExpression argument string-literals where the constructor
  * identifier ends in `Error` — error messages are an operator-visible
  * surface via exception propagation.
  */
@@ -219,8 +226,9 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 				for (const arg of node.arguments) collect(arg);
 			}
 		} else if (ts.isNewExpression(node) && isErrorConstructorCall(node)) {
-			// FGAP-133: extract first string-literal argument from Error
-			// constructors. Only the first arg is examined — Error subclasses
+			// Extract first string-literal argument from Error
+			// constructors, closing the gap where thrown-error messages went
+			// unscanned. Only the first arg is examined — Error subclasses
 			// conventionally place the human-readable reason there. Template
 			// literals with substitutions are not extracted (their static
 			// text fragments would need separate handling; the empirical
@@ -288,7 +296,7 @@ function isSchemaFile(file: string): boolean {
  *   - .project/ — live substrate
  *   - registry/blocks/ + defaults/blocks/ — legacy on-disk fixtures
  *     (structurally identical to samples/blocks/; the scanner gates them
- *     defensively per FGAP-131 plan step 3 scope)
+ *     defensively per the monorepo-wide audit-scope-extension plan's step 3)
  *   - test-fixtures/blocks/ — per-package test-fixture block-data, the same
  *     item-data category as samples/blocks/ (array-of-items files whose
  *     top-level `id` values are canonical_ids, not citations)
@@ -397,7 +405,8 @@ function scanJsonFile(file: string, packageDir: string): ScanResult[] {
 /**
  * Full-text body scan; catches multi-line straddle. Each match's line is
  * derived by counting newlines up to the match index — robust to multi-line
- * citation references that the FGAP-130 naive line-by-line scan misses.
+ * citation references that the naive line-by-line scan (which previously let
+ * internal canonical-id citations leak into operator-facing text) misses.
  */
 function scanTextBody(file: string, packageDir: string, surface: "markdown-body" | "yaml-value"): ScanResult[] {
 	const text = fs.readFileSync(file, "utf-8");

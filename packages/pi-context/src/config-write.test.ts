@@ -1,5 +1,7 @@
 /**
- * Tests for the config-write surface (FGAP-076): amendConfigEntry in
+ * Tests for the config-write surface — closing the earlier gap where no
+ * config-write Pi tool existed (in-pi agents couldn't author/amend
+ * config.json): amendConfigEntry in
  * context.ts, the scoped add / replace / remove of one config registry
  * entry layered on writeConfig.
  *

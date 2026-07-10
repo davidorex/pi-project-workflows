@@ -109,7 +109,7 @@ export function availableBlocks(cwd: string): BlockInfo[] {
 
 /**
  * Discover schemas in the substrate dir's `schemas/` subdirectory (resolved
- * via `schemasDir(cwd)` per DEC-0015). Returns sorted list of
+ * via `schemasDir(cwd)`). Returns sorted list of
  * absolute paths to .schema.json files.
  */
 export function availableSchemas(cwd: string): string[] {
@@ -128,8 +128,7 @@ export function availableSchemas(cwd: string): string[] {
 
 /**
  * Discover blocks with array properties by scanning the substrate dir's
- * `schemas/` subdirectory (resolved via `schemasDir(cwd)` per
- * DEC-0015) for schemas whose root type has at least one array property.
+ * `schemas/` subdirectory (resolved via `schemasDir(cwd)`) for schemas whose root type has at least one array property.
  * Returns block name, first array key, and schema path for each.
  */
 export function findAppendableBlocks(cwd: string): Array<{ block: string; arrayKey: string; schemaPath: string }> {
@@ -274,7 +273,7 @@ function extractType(prop: Record<string, unknown>): string {
 /**
  * All schemas with their property metadata.
  * Scans the substrate dir's `schemas/` subdirectory (resolved via
- * `schemasDir(cwd)` per DEC-0015) and parses each schema.
+ * `schemasDir(cwd)`) and parses each schema.
  */
 export function schemaVocabulary(cwd: string): SchemaInfo[] {
 	const root = tryResolveContextDir(cwd);
@@ -339,8 +338,13 @@ export interface BlockSummary {
 }
 
 /**
- * Zero-loss derived "where are we + what's next" state (DEC-0040 / FGAP-072 /
- * FGAP-059). A pure function of `.project` substrate — focus, in-flight units,
+ * Zero-loss derived "where are we + what's next" state — the canonical
+ * primitive for atomic self-direction (previously filtering/walking/
+ * cross-referencing existed only as separate primitives the caller had to
+ * compose by hand), exposed dual-surface to both the Pi runtime and the
+ * Claude Code harness rather than hand-maintained files like
+ * MEMORY.md/HANDOFF.md drifting independently. A pure function of `.project`
+ * substrate — focus, in-flight units,
  * atomic-next ranked actions, and blocked tasks are all DERIVED, never
  * hand-stored. Built to serve `.context` identically once that substrate-dir
  * lands. Reuses existing primitives (buildIdIndex / loadRelations / topoSort);
@@ -367,11 +371,13 @@ export interface CurrentState {
 }
 
 /**
- * The five-state bootstrap progression, derived purely from the filesystem
- * (DEC-0040 — nothing stored). Consumed by the `/context start` conductor, the
- * dispatch READY-gate, and the startup-slot hint (DEC-0042 / FGAP-095).
+ * The five-state bootstrap progression, derived purely from the filesystem —
+ * nothing stored. Consumed by the `/context start` conductor (the single,
+ * always-safe, state-derived bootstrap entry point that makes out-of-order
+ * init/accept-all/install unrepresentable), the
+ * dispatch READY-gate, and the startup-slot hint.
  *
- * `skeleton` (FGAP-001 / DEC-0001) sits between `no-config` and `not-installed`:
+ * `skeleton` sits between `no-config` and `not-installed`:
  * init / switch -c now write a minimal schema-valid config empty of vocabulary,
  * so a freshly-bootstrapped substrate lands at `skeleton` rather than `no-config`
  * — onward paths are accept-all (adopt the packaged catalog) OR amend/edit.
@@ -394,7 +400,8 @@ export interface BootstrapStatus {
  *                   harness-confined LLM uses to redirect the human to `/context start`)
  *   no-config     — pointer present, no `config.json`
  *   skeleton      — config present but empty of vocabulary (the init / switch -c
- *                   minimal config — FGAP-001 / DEC-0001); onward via accept-all
+ *                   minimal config, written instead of leaving the substrate
+ *                   config-less); onward via accept-all
  *                   OR amend/edit
  *   not-installed — config present + populated, some declared installed_* asset is absent
  *   ready         — config present, all declared assets materialized (or none declared)
@@ -583,7 +590,8 @@ export function contextState(cwd: string): ContextState {
 		/* no block dir */
 	}
 
-	// Phases from the <substrateDir>/phase.json array-block (DEC-0028).
+	// Phases from the <substrateDir>/phase.json array-block (a top-level
+	// array-block, not one file per phase keyed by integer).
 	// Singular file basename matches phase.schema.json + the verification.json
 	// precedent (singular file + singular schema + plural array_key "phases").
 	// `total` is phases[].length; `current` counts completed phases — a
@@ -698,7 +706,9 @@ export function contextState(cwd: string): ContextState {
  * the source/dependent, parent is the target/prerequisite; config display_name
  * "depends on task".)
  *
- * Readiness ALSO honors `task_gated_by_item` gates (FGAP-061 NOW slice): a
+ * Readiness ALSO honors `task_gated_by_item` gates (the NOW slice of
+ * feature/story-level gating — task-level gate-awareness shipped first,
+ * leaving feature/story as residual future work): a
  * `task_gated_by_item` edge `{parent: T, child: G}` means task T is GATED BY
  * item G (the gate target, of any kind — gap/decision/feature/task/…), so G must
  * reach the "complete" bucket before T's gate releases. A planned task with any
@@ -717,7 +727,8 @@ export function contextState(cwd: string): ContextState {
  * status (wontfix/superseded/cancelled — buckets to "unknown", NOT "complete")
  * keeps the gated task blocked under the `=== "complete"` rule; promoting such
  * states to gate-releasing, and config-driven generalization to all gate
- * relation kinds, is the FEAT-004 refinement boundary, out of scope here.
+ * relation kinds, is a refinement boundary for the config-declared
+ * state-derivation registry, out of scope here.
  */
 
 /**
@@ -736,8 +747,10 @@ function renderReasonTemplate(template: string | undefined, tokens: Record<strin
 }
 
 /**
- * Rollup-aware completeness — the ONE truth model for "is this item complete"
- * (FEAT-011 — FGAP-116). A kind declared in `state_derivation.rollups` is
+ * Rollup-aware completeness — the ONE truth model for "is this item complete",
+ * in service of currency-by-construction (closing the gap where a milestone
+ * could read as "reached" by live derivation while still gate-blocking its own
+ * tasks via a stale stored status). A kind declared in `state_derivation.rollups` is
  * DERIVED-status: complete iff it has ≥1 member (via the rollup's membership
  * relation, oriented by `role_direction`) and every member is complete under
  * this same function (recursively rollup-aware; a `visiting` guard makes a
@@ -793,12 +806,13 @@ export function currentState(cwd: string): CurrentState {
 	// Resolve the active status-vocabulary ONCE (defaults shadowed by
 	// config.status_buckets). Every status comparison below routes through the
 	// resulting bucket — no raw status literal ("in-progress"/"completed"/etc.)
-	// is compared in source (DEC-0025 vocabulary-neutrality). bucket(item) maps
+	// is compared in source (per the vocabulary-neutral-canon convention). bucket(item) maps
 	// a raw item.status string to its StatusBucket, defaulting to "unknown".
 	const vocab = resolveStatusVocabulary(cwd);
 	const bucket = (item: Record<string, unknown>): string => vocab[String(item.status)] ?? "unknown";
 
-	// Resolve the config-declared derivation registry (TASK-020 / FGAP-017). When
+	// Resolve the config-declared derivation registry — added so this deriver no
+	// longer hardcodes stock kinds and is inert on a custom-vocabulary substrate. When
 	// it is ABSENT, every coupling below is unconfigured, so the function returns
 	// the truthful "state-derivation not configured" signal — a state distinct
 	// from a configured-but-empty substrate (which derives normally to
@@ -821,7 +835,8 @@ export function currentState(cwd: string): CurrentState {
 		});
 	}
 
-	// Per-relation role_direction declarations (FGAP-113) — consulted by the
+	// Per-relation role_direction declarations (the explicit field carrying edge
+	// orientation, rather than a guessed direction) — consulted by the
 	// rollup-aware completeness check below, the blocking partition, and the
 	// milestones rollup. Hoisted above isCompleted so all three read ONE map.
 	const roleDirection = new Map<string, "as_parent" | "as_child">();
@@ -830,14 +845,17 @@ export function currentState(cwd: string): CurrentState {
 	}
 
 	// A target is complete when it resolves to a known item that IS complete under
-	// its kind's truth model (FEAT-011 criterion 1 — FGAP-116):
+	// its kind's truth model (part of currency-by-construction, closing the gap
+	// where a milestone could read as "reached" by live derivation while still
+	// gate-blocking its own tasks via a stale stored status):
 	//   • a kind declared in `sd.rollups` is DERIVED-status — its stored status
 	//     field is canon-forbidden to author and may lag, so completeness is the
 	//     membership rollup itself (≥1 member, every member complete), recursively
 	//     rollup-aware for nested rollup kinds, with a visiting-set guard so a
 	//     membership cycle derives not-complete instead of recursing forever;
-	//   • every other kind keeps the SHARED status-vocab bucketing (as TASK-065
-	//     left it, the same check the status-consistency invariant engine uses),
+	//   • every other kind keeps the SHARED status-vocab bucketing (extended so a
+	//     task's `task_gated_by_item` gate, not just `task_depends_on_task`
+	//     dependency, is honored, the same check the status-consistency invariant engine uses),
 	//     byte-identical to the prior behavior.
 	// The milestones[] rollup below consumes THIS function for its reached
 	// verdict, so gate satisfaction and the reported milestone status agree by
@@ -845,7 +863,8 @@ export function currentState(cwd: string): CurrentState {
 	// derived-status invariant class evaluates the SAME shared helper, so
 	// validate-side divergence verdicts match the derivation too.
 	// Kind set + membership relation come from config (`sd.rollups` +
-	// role_direction); no kind / relation literal here (DEC-0025).
+	// role_direction); no kind / relation literal here (per the
+	// vocabulary-neutral-canon convention).
 	const rollupEntryByKind = new Map(sd.rollups.map((entry) => [entry.kind, entry]));
 	const isCompleted = (itemId: string): boolean =>
 		derivedRollupComplete(index, edges, roleDirection, rollupEntryByKind, bucket, itemId);
@@ -861,7 +880,8 @@ export function currentState(cwd: string): CurrentState {
 	// participate is gated on membership in `sd.blocked_by.relation_types`, so an
 	// empty/absent relation is simply not consulted.
 	// Partition the configured blocking relations into GATE-direction vs
-	// DEPENDENCY-direction by each relation's declared `role_direction` (FGAP-113),
+	// DEPENDENCY-direction by each relation's declared `role_direction` (the
+	// explicit field carrying edge orientation, rather than a guessed direction),
 	// replacing the former single `task_gated_by_item` string literal:
 	//   • role_direction === "as_child" → GATE direction: the relation's PRIMARY
 	//     role (the gate) sits at edge.child and the waiting item at edge.parent, so
@@ -989,14 +1009,14 @@ export function currentState(cwd: string): CurrentState {
 
 	// ── milestones: config-declared membership rollups ──────────────────────────
 	// For each `sd.rollups` entry, orientation is read from the membership
-	// relation's declared `role_direction` (FGAP-113): the CONTAINER (the rollup
+	// relation's declared `role_direction`: the CONTAINER (the rollup
 	// item itself) sits at the PRIMARY endpoint, its MEMBERS at the COUNTER
 	// endpoint. `phase_positioned_in_milestone` is `as_child` (container=milestone
 	// at edge.child, member=phase at edge.parent), so `primaryEndpoint`===child /
 	// `counterEndpoint`===parent reproduces the prior filter-child / map-parent
 	// selection exactly. A membership relation the config does not register with a
-	// `role_direction` defaults to `as_child` (the pre-FGAP-113 container=child
-	// convention). The rollup emits `complete_status` when ≥1 member exists and
+	// `role_direction` defaults to `as_child` (the pre-explicit-orientation
+	// container=child convention). The rollup emits `complete_status` when ≥1 member exists and
 	// every member id resolves to a known item bucketing to complete; else
 	// `incomplete_status` (covering no-members + any-incomplete). Every comparison
 	// routes through bucket() — no raw status literal.
@@ -1011,7 +1031,7 @@ export function currentState(cwd: string): CurrentState {
 			const phaseCount = memberIds.length;
 			// The reached verdict IS the rollup-aware isCompleted — the same function
 			// gate satisfaction consults — so the reported milestone status and the
-			// gates it releases cannot diverge within this read (FEAT-011 criterion 1).
+			// gates it releases cannot diverge within this read (currency-by-construction).
 			const reached = isCompleted(loc.id);
 			milestones.push({
 				id: loc.id,
@@ -1093,7 +1113,8 @@ export interface FilterPredicate {
  *   - `op: "matches"` constructs `new RegExp(String(value))`; a malformed
  *     regex pattern throws synchronously from the RegExp constructor.
  *
- * Closes part of the FGAP-026 phase 2 query-surface gap (TASK-034).
+ * Closes part of the phase-2 query-surface work in the multi-phase closure of
+ * the earlier substrate-bootstrap-hardcoding gap.
  */
 export function filterBlockItems(cwd: string, blockName: string, predicate: FilterPredicate): unknown[] {
 	const data = readBlock(cwd, blockName) as Record<string, unknown>;
@@ -1134,7 +1155,9 @@ export interface BlockPage {
  * Reads the block then routes id-resolution through the shared addressInto primitive
  * (id matches `.id` or `.canonical_id`), so block-item lookup uses the same element
  * addressing as every other read surface. Missing block / multiple top-level arrays
- * THROW (readBlock + discoverArrayKey via addressInto); no-array block or id-not-found → null. FGAP-045.
+ * THROW (readBlock + discoverArrayKey via addressInto); no-array block or id-not-found → null —
+ * closing the earlier gap where read-block was all-or-nothing, with no way to
+ * fetch one item by id without fetching the whole (often 100KB+) block.
  */
 export function readBlockItem(cwd: string, blockName: string, id: string): unknown | null {
 	const data = readBlock(cwd, blockName) as Record<string, unknown>;
@@ -1153,7 +1176,8 @@ export function readBlockItem(cwd: string, blockName: string, id: string): unkno
  * count as `total` (not the page length) and `hasMore = offset + limit < total`.
  * No-array block → {items:[],total:0,hasMore:false}; offset ≥ total → empty items
  * with correct total. Missing block / multiple top-level arrays propagate the throw
- * (consistent with filterBlockItems). FGAP-045.
+ * (consistent with filterBlockItems) — the same fetch-one-page-without-the-whole-block
+ * primitive that closes the earlier all-or-nothing read gap.
  */
 export function readBlockPage(
 	cwd: string,
@@ -1200,12 +1224,16 @@ export interface JoinResult {
 }
 
 /**
- * Cross-block join (FGAP-043, HYBRID). Mode = exactly one of relationType (edge) XOR
+ * Cross-block join (HYBRID) — closing the earlier gap where natural queries
+ * like "completed tasks with their verifications" required N+1 round-trip
+ * tool calls. Mode = exactly one of relationType (edge) XOR
  * leftField+rightField (field). Returns one JoinResult per left item (after leftPredicate),
- * right always an array. Edge mode is DEC-0013-native (relations.json); field mode is a
+ * right always an array. Edge mode is native to the closure-table-edges-only
+ * reference model (relations.json); field mode is a
  * DEPRECATED backward-compat path that joins on a shared field value (formerly inline-FK,
  * now arbitrary shared fields). NO validation uses field mode — cross-block validation is
- * edge-only since DEC-0036; field mode here is a query convenience, not a reference surface.
+ * edge-only since references became edges from the start (rather than migrated
+ * in place); field mode here is a query convenience, not a reference surface.
  * Reuses filterBlockItems / readBlock / discoverArrayKey / loadRelations / buildIdIndex.
  */
 export function joinBlocks(cwd: string, spec: JoinSpec): JoinResult[] {
@@ -1324,8 +1352,9 @@ export interface SubstrateIndex {
  *     unprefixed IDs, future prefixes not yet registered)
  *
  * Registry is config-driven from line 1 — prefix conflicts surface at
- * config-registration time rather than fixture-write time. Closes issue-089
- * class (PLAN- vs PLAN-NNN collision) structurally.
+ * config-registration time rather than fixture-write time. Closes the PLAN-
+ * id-prefix collision class (between the layer-plans and plan block kinds,
+ * both using PLAN-NNN ids) structurally.
  *
  * Longest-prefix wins so that compatible registrations like `R-` and
  * `REVIEW-` resolve unambiguously.
@@ -1335,8 +1364,11 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
 	let best: { prefix: string; canonical: string } | null = null;
 	for (const bk of cfg.block_kinds) {
 		// An empty prefix matches every id (startsWith("")) — it must never act as
-		// a catch-all claiming unprefixed ids (FGAP-062). Empty prefix is a LEGITIMATE
-		// signal for slug-id blocks (e.g. conventions, FGAP-051) that don't use
+		// a catch-all claiming unprefixed ids (the earlier defect where an empty
+		// prefix accidentally matched everything, breaking the id-index invariant
+		// for freeform-slug-id blocks like conventions). Empty prefix is a LEGITIMATE
+		// signal for slug-id blocks (e.g. conventions, whose flat slug-ids reflect an
+		// underspecified schema for lens/relational discoverability) that don't use
 		// prefix+number ids; such blocks are simply excluded from prefix-based
 		// resolution (their items index under their own block file with no
 		// prefix-vs-block enforcement).
@@ -1356,7 +1388,7 @@ export function expectedBlockForId(id: string, cfg: ConfigBlock | null): string 
  * Scan strategy:
  *   - `.project/*.json` — every array property whose items are objects with
  *     a string `id` field becomes an indexed entry. Phases participate as an
- *     ordinary array-block since DEC-0028 (PHASE-NNN ids in `phase.json` under
+ *     ordinary array-block, not one file per phase keyed by integer (PHASE-NNN ids in `phase.json` under
  *     the plural `phases` array key); there is no dedicated file-per-phase branch.
  *
  * Prefix invariant: when an item ID starts with one of the prefixes registered
@@ -1503,7 +1535,9 @@ export function resolveItemById(cwd: string, id: string): ItemLocation | null {
  *   - Prefix-vs-block invariant violations inside the index build propagate
  *     out as-is — same surface contract as `resolveItemById`.
  *
- * Closes part of the FGAP-026 phase 2 query-surface gap (TASK-035).
+ * Closes part of the phase-2 query-surface work in the multi-phase closure of
+ * the earlier substrate-bootstrap-hardcoding gap — shipping resolveItemsByIds,
+ * the bulk-lookup variant.
  */
 export function resolveItemsByIds(cwd: string, ids: string[]): Map<string, ItemLocation | null> {
 	const out = new Map<string, ItemLocation | null>();
@@ -1614,8 +1648,9 @@ export function resolveRelationSelector(cwd: string, selector: string): EdgeEndp
  * module so it works from both `src/` (tsx --test) and `dist/` (after tsc) —
  * the `schemas/` dir lives one directory up in either case. Used by the
  * `dryRun` preview branch of the relation porcelain to apply the write path's
- * validation WITHOUT writing (TASK-010: the shared library preview the
- * orchestrator scripts and the `--dryRun` ops both call).
+ * validation WITHOUT writing (the shared library preview the
+ * orchestrator scripts and the `--dryRun` ops both call, added for
+ * relation-mutation ops' `--dryRun` parity).
  */
 function relationsSchemaPath(): string {
 	const here = path.dirname(fileURLToPath(import.meta.url));
@@ -1629,7 +1664,9 @@ function edgeIdentityKey(edge: Edge): string {
 }
 
 /**
- * Shared edge-registry validator (TASK-062). The single source of edge
+ * Shared edge-registry validator — an edge whose parent/child kind doesn't
+ * match the relation-type's declared source_kinds/target_kinds is rejected at
+ * write, not just flagged later by validate. The single source of edge
  * registration + endpoint-kind semantics, invoked BOTH at write time (the
  * `appendRelationByRef` / `appendRelationsByRef` porcelain, so a bad edge throws
  * before the raw write) AND post-hoc in {@link validateContext} (so write-time
@@ -1714,7 +1751,8 @@ function buildWriteTimeEdgeValidator(
 }
 
 /**
- * Single-edge write-time gate (TASK-062): build the validator for `cwd` and
+ * Single-edge write-time gate (the same write/validate-parity edge-registry
+ * check): build the validator for `cwd` and
  * THROW if `edge` fails the shared registry check. A no-op when no config is
  * present (pre-bootstrap substrate). The thrown message names the offending
  * endpoint kind / relation_type / expected kinds (the helper's wording).
@@ -1731,7 +1769,8 @@ function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
 /**
  * Input to the relation-append porcelain: EITHER the raw `{parent, child}`
  * endpoint selectors (the storage orientation directly) OR the role-typed
- * `{primary, counter}` form (FGAP-113 — name the semantic roles, let the porcelain
+ * `{primary, counter}` form (the explicit role-typed orientation — name the
+ * semantic roles, let the porcelain
  * map them to parent/child via the relation's declared `role_direction`).
  * `relation_type` + optional `ordinal` are common to both. The two orientation
  * pairs are mutually exclusive.
@@ -1764,7 +1803,7 @@ function relationKindsOverlap(rt: RelationTypeDecl | undefined): boolean {
 /**
  * Resolve a {@link RelationAppendInput} (raw `{parent,child}` OR role-typed
  * `{primary,counter}`) to the canonical `{parent, child}` STRING selectors the raw
- * plumbing consumes, applying the FGAP-113 write-orientation rules:
+ * plumbing consumes, applying the explicit-role-typed-orientation write rules:
  *  - the raw and role-typed pairs are mutually exclusive; exactly one complete
  *    pair must be supplied.
  *  - the role-typed form maps `primary`/`counter` → `parent`/`child` via the
@@ -1823,7 +1862,7 @@ export function orientAppendInput(
 /**
  * Friendly-selector relation append (Cycle 5 porcelain). Accepts EITHER raw
  * `{parent, child}` selectors OR the role-typed `{primary, counter}` form
- * (FGAP-113), resolves the (possibly role-mapped) STRING selectors to structured
+ * (the explicit orientation form), resolves the (possibly role-mapped) STRING selectors to structured
  * `EdgeEndpoint`s via `resolveRelationSelector`, then delegates to the raw
  * `appendRelation` plumbing (atomic, AJV-validated, exact-duplicate no-op — same
  * deferred-integrity semantics). Keeps the string param surface its callers (the
@@ -1846,7 +1885,8 @@ export function appendRelationByRef(
 		relation_type: oriented.relation_type,
 		...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 	};
-	// Write-time edge-registry gate (TASK-062): reject an unregistered
+	// Write-time edge-registry gate (the write/validate-parity edge-kind check):
+	// reject an unregistered
 	// relation_type or a source/target-kind-violating endpoint BEFORE any write
 	// (dryRun included — preview must surface the same rejection). The shared
 	// helper guarantees this verdict is identical to validateContext's.
@@ -1982,7 +2022,8 @@ export function appendRelationsByRef(
 	ctx?: DispatchContext,
 	opts?: { dryRun?: boolean },
 ): { appended: number; skipped: number; edges: Edge[]; dryRun?: boolean } {
-	// Orient every input once against the loaded config (FGAP-113): a role-typed
+	// Orient every input once against the loaded config (the explicit
+	// role-typed-orientation contract): a role-typed
 	// {primary,counter} edge maps to parent/child via role_direction; a bare
 	// {parent,child} append of an orientation-ambiguous role-bearing relation is
 	// rejected here (before any write), directing the author to --primary/--counter.
@@ -1996,7 +2037,8 @@ export function appendRelationsByRef(
 			...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 		};
 	});
-	// Write-time edge-registry gate (TASK-062): every resolved edge in the batch
+	// Write-time edge-registry gate (the write/validate-parity edge-kind check):
+	// every resolved edge in the batch
 	// is checked BEFORE any write (dryRun included). Build the validator once for
 	// the batch (config + active index built once) and reject if any edge fails —
 	// an all-or-nothing batch (no partial write past a bad edge).
@@ -2295,7 +2337,7 @@ export function evaluateConfigInvariants(
 	relations: Edge[],
 ): ContextValidationIssue[] {
 	const issues: ContextValidationIssue[] = [];
-	// ── Config-declared invariants (DEC-0025: vocabulary-neutral) ─────────
+	// ── Config-declared invariants (per the vocabulary-neutral-canon convention) ─────────
 	// Replaces the two previously-hardcoded invariants (completed-task-has-
 	// verification, decision-cites-forcing-artifact). Every block / status /
 	// relation_type / direction literal comes from config.invariants[] DATA;
@@ -2327,7 +2369,9 @@ export function evaluateConfigInvariants(
 		}
 	}
 
-	// ── status-consistency invariants (DEC-0040 / FGAP-073) ──────────────
+	// ── status-consistency invariants — closing the earlier gap where
+	// validateProject had no cross-block status-consistency checks to catch
+	// status drift ──────────────
 	// Cross-block status drift: for each item in inv.block (optionally gated
 	// by when_bucket on the item's own status bucket), inspect edges whose
 	// relation_type ∈ inv.relation_types and whose inv.direction endpoint is
@@ -2370,7 +2414,9 @@ export function evaluateConfigInvariants(
 		}
 	}
 
-	// ── derived-status invariants (FEAT-011 — FGAP-116) ───────────────────
+	// ── derived-status invariants — part of currency-by-construction, closing
+	// the gap where a milestone could read as "reached" by live derivation
+	// while still gate-blocking its own tasks via a stale stored status ───────────────────────
 	// For a rollup-declared kind (state_derivation.rollups), each item's
 	// STORED status must equal its DERIVED membership-rollup status —
 	// divergence in EITHER direction (stored behind or ahead of the
@@ -2435,7 +2481,8 @@ export interface StalenessCandidate {
 }
 
 /**
- * Declared-baseline currency sweep (FEAT-011 criterion 6 — TASK-089), the ONE
+ * Declared-baseline currency sweep — the machine-evaluable typed-condition-baseline
+ * mechanism (beyond bare strings) in service of currency-by-construction, the ONE
  * evaluation path shared by `validateContext` (flags) and `reconcileContext`
  * (the complete-to-stale transition) — detector and repair cannot disagree.
  * Field-driven and vocabulary-neutral: no block-name literals — any item
@@ -2523,19 +2570,22 @@ export function evaluateStalenessCandidates(cwd: string, index?: SubstrateIndex)
 
 /**
  * Validate cross-block referential integrity against the EDGE model
- * (DEC-0013: `relations.json` closure-table edges are THE reference surface).
+ * (`relations.json` closure-table edges are THE reference surface, authored
+ * exclusively as edges — no inline foreign-key field on any item schema).
  * Returns structured issues rather than throwing.
  *
- * Edge integrity replaces the pre-DEC-0036 per-block inline-FK reference scan:
+ * Edge integrity replaces the pre-clean-re-derivation per-block inline-FK reference scan:
  * each edge's `parent`/`child` must resolve to a known item id (via the unified
  * `buildIdIndex`), and each edge's `relation_type` must be registered in
- * `config.relation_types[]` (DEC-0030 tripartite canonical_ids). Cycle
+ * `config.relation_types[]` (following the tripartite `source_verb_target`
+ * canonical-id naming convention). Cycle
  * detection is delegated to `validateRelations` (its `edge_cycle_detected`
  * diagnostics are merged in).
  *
  * Substrate invariants beyond edge integrity are enforced generically from
  * `config.invariants[]` per the `requires-edge` class — no invariant vocabulary
- * (block kind / status / relation_type / direction) lives in source (DEC-0025).
+ * (block kind / status / relation_type / direction) lives in source (per the
+ * vocabulary-neutral-canon convention).
  * The canonical pi-context conception declares two invariants as config DATA:
  * `completed-task-has-verification` and `decision-cites-forcing-artifact`; a
  * project ships only the invariants its own conception requires.
@@ -2550,7 +2600,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// callers (intended — corrupted IDs are not recoverable cross-ref issues).
 	const index = buildIdIndex(cwd);
 
-	// ── Edge integrity (DEC-0013 closure-table reference surface) ─────────────
+	// ── Edge integrity (closure-table reference surface — the exclusive
+	// authoring model for all inter-item relationships) ─────────────
 	// Load config + relations; both absent in a pre-bootstrap project, in which
 	// case edge checks (and the relocated invariants, which depend on edges)
 	// are skipped gracefully — there is no edge model to validate yet.
@@ -2659,7 +2710,11 @@ export function validateContext(cwd: string): ContextValidationResult {
 			}
 		}
 
-		// ── Edge registration + endpoint-kind check (FGAP-086, DEC-0037; TASK-062
+		// ── Edge registration + endpoint-kind check — closing the earlier gap
+		// where relation_types carried no endpoint-kind metadata (so validation
+		// checked that edge endpoints exist but never that their kinds were legal
+		// for that relation type — e.g. a task-addresses-gap edge whose child was
+		// actually a decision would pass validation);
 		// factored into the shared validateEdgeAgainstRegistry helper so the
 		// write-time porcelain and this validate-time loop reach an IDENTICAL
 		// verdict). The helper performs (a) relation_type-registration and
@@ -2670,7 +2725,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 		// wording this loop historically emitted inline (registration message +
 		// source/target kind messages), each mapped to the same issue shape
 		// (severity error, block "relations", field parent->child, no code).
-		// Order discipline (TASK-062): context-validate prints issues[], so the
+		// Order discipline (the write/validate-parity edge-registry lift): context-validate prints issues[], so the
 		// emission order is a UX surface and must match the pre-refactor two-pass
 		// shape — ALL relation_type-registration issues across every edge first,
 		// THEN ALL source/target-kind issues across every edge (class-grouped, not
@@ -2728,11 +2783,12 @@ export function validateContext(cwd: string): ContextValidationResult {
 		// ── Config-declared invariants — the three classes evaluate through the
 		// SHARED evaluateConfigInvariants helper (also consumed by the write-time
 		// gate at the ops layer), so validate-side and write-side verdicts are
-		// identical by construction (the TASK-062 edge-gate lift pattern).
+		// identical by construction (the same write/validate-parity lift pattern
+		// used for edge kind/category checks).
 		issues.push(...evaluateConfigInvariants(cwd, config, index, relations));
 	}
 
-	// Cross-block status-vocabulary check (FGAP-025): an item status value absent
+	// Cross-block status-vocabulary check: an item status value absent
 	// from the declared vocabulary silently buckets to "unknown" in currentState /
 	// status-consistency invariants — surface it. Vocabulary-neutral: reads the
 	// config-driven vocab ("status" is the established item status field, same read
@@ -2756,7 +2812,8 @@ export function validateContext(cwd: string): ContextValidationResult {
 		}
 	}
 
-	// ── Declared-baseline staleness sweep (FEAT-011 criterion 6 — TASK-089) ──
+	// ── Declared-baseline staleness sweep — the machine-evaluable
+	// typed-condition-baseline mechanism, in service of currency-by-construction ──
 	// Fired typed stale_conditions, through the SAME
 	// evaluateStalenessCandidates helper context-reconcile's transition sweep
 	// uses (identical verdicts). Warning-only, and validate NEVER mutates — the

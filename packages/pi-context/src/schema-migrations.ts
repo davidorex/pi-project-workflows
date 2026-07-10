@@ -1,6 +1,6 @@
 /**
- * Schema migration registry — closes FGAP-006 (schema versioning + identity +
- * composition + migration story) at the runtime-migration layer. Pairs with
+ * Schema migration registry — closes the schema versioning + identity +
+ * composition + migration story at the runtime-migration layer. Pairs with
  * the `$id` + `version` schema-identity surface landed alongside this module
  * in the framework schemas under `packages/pi-context/schemas/`.
  *

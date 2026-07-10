@@ -1,5 +1,5 @@
 /**
- * Tests for the edge-write surface (FGAP-075): appendRelation / appendRelations
+ * Tests for the edge-write surface: appendRelation / appendRelations
  * in context.ts, layered on block-api's appendManyToTypedFileIfAbsent.
  *
  * Covers the write-surface guarantees in isolation (AJV-shape + exact-duplicate
@@ -232,7 +232,7 @@ describe("deferred guards (write succeeds; validateContext catches)", () => {
 	});
 });
 
-// ── TASK-062: write-time edge-registry rejection (the ByRef porcelain) ────────
+// ── Write-time edge-registry rejection (the ByRef porcelain) ────────
 //
 // The shared validateEdgeAgainstRegistry helper is invoked at write time by
 // appendRelationByRef / appendRelationsByRef, so a kind-mismatched or
@@ -376,7 +376,7 @@ describe("write-time edge-registry rejection (TASK-062)", () => {
 	});
 });
 
-// ── TASK-062: write-time ↔ validate-time PARITY ──────────────────────────────
+// ── Write-time ↔ validate-time PARITY ──────────────────────────────
 //
 // The same edge reaches the same verdict at write time (appendRelationByRef)
 // and at validate time (validateContext), because both route through the shared
@@ -461,7 +461,8 @@ describe("write-time ↔ validate-time parity (TASK-062)", () => {
 	});
 });
 
-// ── FGAP-113: role-typed authoring + ambiguous-bare-append reject ─────────────
+// ── Role-typed authoring + ambiguous-bare-append reject (explicit edge
+// orientation) ─────────────
 //
 // A role-bearing relation (one declaring role_direction) that is
 // orientation-ambiguous (its source_kinds ∩ target_kinds ≠ ∅, incl. "*") cannot
@@ -602,7 +603,7 @@ function KINDED_REL_CONFIG(): never {
 	} as never;
 }
 
-// ── TASK-062 regression: issues[] is class-grouped (registration before kind) ──
+// ── Regression: issues[] is class-grouped (registration before kind) ──
 //
 // context-validate prints issues[], so the emission ORDER of the edge-registry
 // diagnostics is a UX surface. The pre-refactor validateContext ran two passes —

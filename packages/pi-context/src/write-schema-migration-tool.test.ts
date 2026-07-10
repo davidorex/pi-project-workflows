@@ -21,7 +21,8 @@ function baseParams(over: Partial<WriteSchemaMigrationParams>): WriteSchemaMigra
 }
 
 /**
- * The attestation DispatchContext threaded as the 3rd arg post-TASK-006. In
+ * The attestation DispatchContext threaded as the 3rd arg (writer-identity
+ * threaded through the whole op-execution contract). In
  * production registerAll (in-pi) / the CLI build this from the auth-gate-stamped
  * writer; here we derive a human ctx from the params writer so the recorded
  * `created_by` continues to be the bare human user.
@@ -109,7 +110,7 @@ describe("writeSchemaMigrationExecute", () => {
 	});
 
 	it("body trusts writer field as-is (auth-gate at pi-dispatch is the canonical identity check); writer.kind=agent passes through to the persistence path without throwing", async () => {
-		// Canonical model post-FGAP-134: tool body does NOT re-check
+		// Canonical model: tool body does NOT re-check
 		// writer.kind. The auth-gate handler registered by pi-agent-
 		// dispatch is the structural identity check; once the operator
 		// has authorized, the body trusts the (possibly auth-gate-

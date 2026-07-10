@@ -25,13 +25,18 @@ export type { StatusBucket } from "./context.js";
  * the user map over the defaults so user keys win on collision).
  *
  * Mappings cover the going-forward conception vocabulary — the status enums
- * of packages/pi-context/samples/schemas/ (the DEC-0037 15-kind canon, all
- * also live in this repo's .project/ registered block_kinds). Per DEC-0036
+ * of packages/pi-context/samples/schemas/ (the packaged-conception 15-kind
+ * canon, where every block kind ships as a complete package of schema +
+ * relation_types + invariants + a starter lens; all
+ * also live in this repo's .project/ registered block_kinds). Per the
+ * decision that the substrate re-derives cleanly through canonical authoring
+ * surfaces rather than migrating in place from the old ad-hoc structure
  * (registry/ is retiring in favor of samples/→.context) these defaults track
  * the conception, NOT the retired registry-only vocab (audit pass/fail/warn/
  * skip, project inception/planning/development/maintenance, decisions
  * revisit/tentative) — a substrate needing such vocab declares it via
- * config.status_buckets (DEC-0025 override surface), never here.
+ * config.status_buckets (the vocabulary-neutral config-declared-canon override
+ * surface), never here.
  *   - decisions.status:      open | enacted | superseded
  *   - framework-gaps.status: identified | accepted | in-progress | closed | wontfix
  *   - tasks.status:          planned | in-progress | completed | blocked | cancelled
@@ -65,7 +70,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	archived: "complete",
 	closed: "complete", // framework-gaps: gap resolved/done
 	verified: "complete", // requirements: terminal-done, beyond "implemented"
-	"real-check-passed": "complete", // work-orders: real-check verdict pass = lifecycle-complete equivalent (DEC-0018)
+	"real-check-passed": "complete", // work-orders: real-check verdict pass = lifecycle-complete equivalent (the runtime-demo + adversarial-probe gate every implementation step must pass, not tests alone)
 	reached: "complete", // milestone: derived phase-rollup terminal state (all positioned phases complete)
 	// → in_progress
 	in_progress: "in_progress",
@@ -79,7 +84,7 @@ export const STATUS_VOCABULARY_DEFAULTS: Record<string, StatusBucket> = {
 	blocked: "blocked",
 	paused: "blocked",
 	failed: "blocked",
-	"real-check-failed": "blocked", // work-orders: real-check verdict fail = lifecycle-blocked equivalent (DEC-0018)
+	"real-check-failed": "blocked", // work-orders: real-check verdict fail = lifecycle-blocked equivalent (same runtime-demo + adversarial-probe gate)
 	// → todo
 	open: "todo",
 	todo: "todo",
@@ -118,8 +123,11 @@ export function resolveStatusVocabulary(cwd: string): Record<string, StatusBucke
 }
 
 /**
- * Resolve the config-declared `state_derivation` registry for `cwd` (TASK-020 /
- * FGAP-017 / FEAT-004), or `null` when the substrate's config has none. Mirrors
+ * Resolve the config-declared `state_derivation` registry for `cwd` — the
+ * registry that replaced `currentState()`'s hardcoded stock kind/relation/
+ * rank/status literals (tasks/framework-gaps/phase/milestone), so a
+ * custom-vocabulary substrate is no longer inert, while keeping stock
+ * substrate behavior byte-identical — or `null` when the substrate's config has none. Mirrors
  * `resolveStatusVocabulary`'s loadContext precedent, but — unlike the status
  * vocabulary — there is NO source-level default: `currentState` reads a `null`
  * return as the "state-derivation not configured" signal (distinguishable from a

@@ -1,0 +1,50 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "npm run build && npm run check && npm test all exit 0 (full monorepo, multiple runs across 3 commits). Real pi-context CLI runtime demos: top-level compliant/forbidden-pattern write (issues block), nested-array writer over-cap/compliant (layer-plans.layers[]), and whole-item inline-nested-content over-cap/compliant (layer-plans plan created with layers[] populated inline) all confirmed refusal/success as expected. Two independent fresh adversarial re-audits found real defects (nested-writer wrong-subschema resolution; enforcement not descending into inline nested content), each fixed via full explore-plan-agent cycles (commits dc4f757c, 41376b0a) and re-audited to zero findings. docs-surface-sync audit found the README paragraph stale after both fixes; corrected (commit f0c4f80f). Follow-on out-of-scope class (budgeted primitive-string arrays) filed as FGAP-139 after explore-before-file prior-art search confirmed no duplicate.",
+  "criteria_results": [
+    {
+      "criterion": "packages/pi-context/src/rhetorical-criteria.ts exists exporting RhetoricalValidationError, DEFAULT_PROHIBITED_PATTERNS, readRhetoricalCriteria, validateRhetoricalCriteriaForItems",
+      "status": "passed"
+    },
+    {
+      "criterion": "writeTypedFile accepts changedItems and all call sites pass their actual changed item(s); whole-block overwrites opt out",
+      "status": "passed",
+      "evidence": "Extended beyond the original 11-site census to include appendToBlockForDir (the primary append-block-item op path), found missing during implementation; both adversarial audits confirmed no over-scoping and correct nested/inline resolution after two fix cycles"
+    },
+    {
+      "criterion": "all 18 block schemas carry x-rhetorical-criteria with schema-derived content, catalog + active reconciled",
+      "status": "passed",
+      "evidence": "15 schemas reconciled via /context update; research resolved via authorized resolve-conflict; framework-gaps merged with a missing migration discovered and registered"
+    },
+    {
+      "criterion": "session-notes.schema.json active copy backfilled",
+      "status": "passed",
+      "evidence": "write-schema --operation replace, authorized; validate-block-items confirms zero failures"
+    },
+    {
+      "criterion": "new tests cover word-cap, forbidden-pattern, and scoping-safety control cases",
+      "status": "passed",
+      "evidence": "145 tests passing in the final state across rhetorical-criteria.test.ts + block-api.test.ts, including nested and inline-nested coverage added by the two fix cycles"
+    },
+    {
+      "criterion": "npm run build && npm run check && npm test exit 0",
+      "status": "passed"
+    },
+    {
+      "criterion": "CLI runtime demo: forbidden pattern refused, compliant succeeds, unrelated item in violator block still succeeds",
+      "status": "passed",
+      "evidence": "Three separate demo rounds covering top-level, nested-writer, and inline-nested-on-whole-item scenarios"
+    },
+    {
+      "criterion": "docs-surface-sync: README, CHANGELOG, skill-narrative/SKILL.md",
+      "status": "passed",
+      "evidence": "README corrected for both fixes (f0c4f80f); CHANGELOG has 4 non-duplicative entries; skill-narrative/SKILL.md confirmed not applicable at this surfaces granularity"
+    },
+    {
+      "criterion": "fresh adversarial re-audit probes for missing changedItems and thin register_notes",
+      "status": "passed",
+      "evidence": "Two independent rounds; first found and fixed two real defects, second (post-fix) found zero"
+    }
+  ]
+}

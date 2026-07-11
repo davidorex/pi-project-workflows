@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/verification",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Verification",
   "description": "Evidence that work meets its criteria. Per-item completion evidence linking implementation to acceptance via a verification_verifies_item edge.",
   "type": "object",
@@ -92,6 +92,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Closure gates and reviewers confirming a task's acceptance criteria were actually met; read as the evidence record backing a completion, linked to the verified item by a verification_verifies_item edge.",
+          "register_notes": "State the concrete evidence that the work meets its criteria — what was checked and the observed result — terse, specific, and verifiable, not a narrative of the work performed. Evidence is a present-tense assertion of met criteria; no provenance or prior-state narration.",
+          "prohibited_patterns": []
         }
       }
     }

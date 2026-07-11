@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/phase",
+  "version": "2.1.0",
+  "title": "Phases",
+  "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
+  "type": "object",
+  "required": [
+    "phases"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
+    },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "intent",
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^PHASE-[A-Z0-9-]+$",
+            "description": "Canonical phase id (e.g.). Replaces the integer `number` discriminator of the file-per-phase form."
+          },
+          "name": {
+            "type": "string"
+          },
+          "intent": {
+            "type": "string"
+          },
+          "goal": {
+            "type": "string",
+            "description": "What is true after this phase that was not true before"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "in-progress",
+              "completed"
+            ]
+          },
+          "success_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "criterion",
+                "verify_method"
+              ],
+              "properties": {
+                "criterion": {
+                  "type": "string"
+                },
+                "verify_method": {
+                  "type": "string",
+                  "enum": [
+                    "command",
+                    "inspect",
+                    "human"
+                  ]
+                }
+              }
+            }
+          },
+          "specs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "number",
+                "name",
+                "intent",
+                "status"
+              ],
+              "properties": {
+                "number": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "intent": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "in-progress",
+                    "completed"
+                  ]
+                },
+                "acceptance_criteria": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "artifacts_produced": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents planning and executing within a phase, and the roadmap rollup: `intent`, `goal`, and `success_criteria` are read verbatim as the phase's scope and exit bar.",
+          "register_notes": "State `intent` and `success_criteria` terse and self-contained — the phase's purpose and the bar that marks it complete — in the present. Inter-phase dependencies belong in relations.json edges, not the body; no prior-state or status-history narration (the status field carries lifecycle).",
+          "prohibited_patterns": []
+        }
+      }
+    }
+  }
+}

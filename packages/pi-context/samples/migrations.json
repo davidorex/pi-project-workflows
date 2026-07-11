@@ -144,7 +144,12 @@
       "kind": "declarative-transform",
       "transform": {
         "operations": [
-          { "op": "map_each", "path": "$.gaps", "each": "evidence", "delete_field": "content_pin" }
+          {
+            "op": "map_each",
+            "path": "$.gaps",
+            "each": "evidence",
+            "delete_field": "content_pin"
+          }
         ]
       },
       "created_by": "migrate-strip-content-pin",
@@ -157,7 +162,12 @@
       "kind": "declarative-transform",
       "transform": {
         "operations": [
-          { "op": "map_each", "path": "$.research", "each": "citations", "delete_field": "content_pin" }
+          {
+            "op": "map_each",
+            "path": "$.research",
+            "each": "citations",
+            "delete_field": "content_pin"
+          }
         ]
       },
       "created_by": "migrate-strip-content-pin",
@@ -178,6 +188,150 @@
       "kind": "identity",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-10T00:00:00.000Z"
+    },
+    {
+      "schemaName": "decisions",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "framework-gaps",
+      "fromVersion": "1.2.0",
+      "toVersion": "1.3.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "tasks",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "verification",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "issues",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "features",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "research",
+      "fromVersion": "1.3.0",
+      "toVersion": "1.4.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "rationale",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "spec-reviews",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "layer-plans",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "requirements",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "conventions",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "context-contracts",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "phase",
+      "fromVersion": "2.0.1",
+      "toVersion": "2.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "story",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "milestone",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "work-orders",
+      "fromVersion": "1.0.1",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
+    },
+    {
+      "schemaName": "session-notes",
+      "fromVersion": "1.0.0",
+      "toVersion": "1.1.0",
+      "kind": "identity",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z"
     }
   ]
 }

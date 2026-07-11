@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/tasks",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Tasks",
   "description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled). The operational layer between gaps/requirements and code changes.",
   "type": "object",
@@ -87,6 +87,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "The implementing agent dispatched to execute the task: `description` and acceptance_criteria are composed verbatim as the work brief it acts on, so they must be self-sufficient and literally correct.",
+          "register_notes": "`description` states what to do and its scope at implementation-decision granularity — the operational bridge from a gap / requirement to a code change — self-contained and actionable without external context; `notes` carries terse working intel, not a running log. State the task's current shape and scope; no narration of prior task framing or status history (the status field and edges carry lifecycle).",
+          "prohibited_patterns": []
         }
       }
     }

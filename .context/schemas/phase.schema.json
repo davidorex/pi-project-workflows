@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/phase",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "title": "Phases",
   "description": "Array-block of planned implementation phases. Each phase carries a PHASE-NNN string id, intent, optional goal, success criteria, decomposed specs, and status lifecycle (planned, in-progress, completed). Inter-phase dependencies live in relations.json edges, not inline.",
   "type": "object",
@@ -130,6 +130,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents planning and executing within a phase, and the roadmap rollup: `intent`, `goal`, and `success_criteria` are read verbatim as the phase's scope and exit bar.",
+          "register_notes": "State `intent` and `success_criteria` terse and self-contained — the phase's purpose and the bar that marks it complete — in the present. Inter-phase dependencies belong in relations.json edges, not the body; no prior-state or status-history narration (the status field carries lifecycle).",
+          "prohibited_patterns": []
         }
       }
     }

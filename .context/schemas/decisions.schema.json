@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/decisions",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Decisions",
   "description": "Live decision log; each entry is open, enacted, or superseded, with supporting references and intra-item options.",
   "type": "object",
@@ -152,6 +152,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents and reviewers reading the decision log to understand what was decided and why before acting; each entry is composed verbatim into planning / implementation context as the standing decision it records.",
+          "register_notes": "`context` states the forcing situation that demanded a decision; `decision` states what was decided — terse, self-contained, a standing instruction a downstream agent acts on, not a discussion of alternatives (per-item options carry those, the rationale block carries the reasoning). State the enacted decision in the present; no narration of superseded prior decisions in the body (status + supersedes edges carry that).",
+          "prohibited_patterns": []
         }
       }
     }

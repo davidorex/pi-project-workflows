@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/context-contracts",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Context contracts",
   "description": "Per-work-unit-kind context contracts declaring which relation_types compose the execution bundle. Each contract is keyed by a plain-string unit_kind type tag (carve-out from the edges-only constraint on inter-item relationships — unit_kind is a type marker, not a reference to a substrate item).",
   "type": "object",
@@ -101,6 +101,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "The context compiler assembling an execution bundle for a work unit: a contract declares, per unit_kind, which relation_types compose that bundle; read as the machine-consumed bundling spec.",
+          "register_notes": "State the contract terse and exact — the unit_kind tag and the relation_types that compose its bundle — as a precise machine-consumed spec, not prose. No narration of prior contract shapes.",
+          "prohibited_patterns": []
         }
       }
     }

@@ -1,0 +1,101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/story",
+  "version": "1.1.0",
+  "title": "Stories",
+  "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
+  "type": "object",
+  "required": [
+    "stories"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
+    },
+    "stories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^STORY-\\d{3,}$",
+            "description": "Stable canonical id; STORY-NNN (3+ digits)."
+          },
+          "title": {
+            "type": "string"
+          },
+          "user_kind": {
+            "type": "string",
+            "description": "Which user the story speaks for (e.g. cli-user, operator, agent) — the 'As a <user_kind>' subject of the story statement."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "proposed",
+              "ready",
+              "in-progress",
+              "in-review",
+              "complete",
+              "blocked"
+            ],
+            "description": "Story lifecycle. Intentionally divergent from pi-context://schemas/status; reconciliation deferred to a future status-schema unification."
+          },
+          "description": {
+            "type": "string",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "acceptance_criteria": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "modified_by": {
+            "type": "string"
+          },
+          "modified_at": {
+            "type": "string"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents decomposing a story into tasks and verifying against it: `description` and acceptance_criteria are read verbatim as the story-altitude work statement between feature and task.",
+          "register_notes": "`description` states the story — the user-facing capability at the altitude between feature and task — terse and self-contained. Cross-altitude relationships (feature to story, story to task, dependencies, gating, milestone / phase) live in relations.json edges, not the body. State current scope; no prior-scope or status narration. Acceptance_criteria are diffed against the story's verbatim statement, not augmented.",
+          "prohibited_patterns": []
+        }
+      }
+    }
+  }
+}

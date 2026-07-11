@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.2.0",
+  "schema_version": "1.3.0",
   "gaps": [
     {
       "title": "init / switch -c bootstrap leaves the substrate config-less, with no op-driven path to a custom-vocabulary config",
@@ -1481,7 +1481,7 @@
     {
       "id": "FGAP-043",
       "title": "Schema descriptions carry no per-block rhetorical criteria; block writes are unvalidated against them",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "Each block schema's description states the block's purpose but omits the block's specific rhetorical demands/criteria for its entries (terseness, signal-density, self-containment, appropriateness to block type and downstream use, no narration or git/live-source restatement). The criteria must be embedded per-block and machine-checkable so a Claude Code hook can validate a block-item write against them at write time.",
@@ -1501,8 +1501,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "061588617bc6683d7d60cadde402b8ea8c0a3a0ca0209a975423abdb7324a966",
-      "content_parent": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a"
+      "content_hash": "cae7c2fa7d6b1bf1b3c510288356419576d965a8daeecc7f4a869da38c696ca3",
+      "content_parent": "061588617bc6683d7d60cadde402b8ea8c0a3a0ca0209a975423abdb7324a966",
+      "closed_by": "TASK-121 (commits 75b8775f/69806f0e/d313eede mechanism+rollout+docs, 634d79e3/79571844 active-substrate reconciliation, dc4f757c/41376b0a two iterate-to-zero fixes, f0c4f80f docs correction; verified VER-098)",
+      "closed_at": "2026-07-11T00:00:00.000Z"
     },
     {
       "id": "FGAP-044",
@@ -4604,6 +4606,42 @@
       "closed_by": "TASK-117 / VER-096 — resolution superseded: this gap's proposed_resolution offered 3 candidate directions to fix revision-moved (restrict to non-moving refs; add a scoping field; accept-and-fix-only-the-ref-gone-arm) on the premise the mechanism would be kept. Investigation of its actual provenance (this session, via git log + claude-history) found revision-moved was never tied to a concrete use case anywhere in its history and had zero live substrate usage. Per the user's explicit direction (\"this is all llm invented over-complication\"), the disposition is removal, not repair — the same disposition the unmotivated content_pin mechanism received. TASK-117 deleted the schema oneOf branch (research 1.2.0->1.3.0, identity migration), resolveGitRefOrNull, both stamping/evaluation code branches, and all doc-surface mentions; edited (not deleted) the shared staleness tests to drop only the revision-moved-specific assertions. Independently re-verified (VER-096): build/check/test clean, check-changelog/parity-check/check-config-schema exit 0, grep sweep confirms zero live references outside historical substrate records.",
       "closed_at": "2026-07-10",
       "content_parent": "76ea8f9977454a46726b0875c0cdf5148e20501162f9a7697cbcda8a6d700fa4"
+    },
+    {
+      "title": "x-rhetorical-criteria enforcement cannot reach arrays of budgeted primitive strings",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "description": "When a schema declares x-prompt-budget directly on an array propertys own items schema (a bare-string array, e.g. {type: array, items: {type: string, x-prompt-budget: {...}}}) rather than on a named string property of an object, the write-time rhetorical-criteria mechanism (FGAP-043/TASK-121) never checks it. collectWordCaps in rhetorical-criteria.ts only reads x-prompt-budget off named object properties; the recursive walkNestedArrays helper (added to fix nested-object-array coverage) explicitly skips non-object array elements before any per-element check runs, so a bare budgeted string is structurally invisible to the mechanism. This is a distinct code path from the nested-array-of-objects gap TASK-121 already fixed twice: those fixes cover an array whose items are objects with their own budgeted properties; this gap is an array whose items are themselves the budgeted value.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/rhetorical-criteria.ts",
+          "reference": "collectWordCaps (property-level x-prompt-budget read) and walkNestedArrays (skips non-object elements before checkFieldsAgainstSchema) together mean a primitive-string array items schemas x-prompt-budget is never read"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/decisions.schema.json",
+          "reference": "properties.decisions.items.properties.consequences.items carries x-prompt-budget directly on the string items schema"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+          "reference": "properties.tasks.items.properties.acceptance_criteria.items carries x-prompt-budget directly on the string items schema"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/requirements.schema.json",
+          "reference": "properties.requirements.items.properties.acceptance_criteria.items carries x-prompt-budget directly on the string items schema"
+        },
+        {
+          "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+          "reference": "properties.plans.items.properties.migration_phases.items.properties.exit_criteria.items carries x-prompt-budget directly on the string items schema"
+        }
+      ],
+      "impact": "Every acceptance_criteria entry, decision consequence, and migration-phase exit criterion across the substrate can carry an unbounded-length or provenance-narrating string with zero write-time enforcement, even though the schema itself declares a word budget for exactly these fields — the enforcement mechanism silently does not apply to the one shape (arrays of primitive budgeted strings) that these four concrete fields all use.",
+      "proposed_resolution": "Requires determination: extend collectWordCaps (or a sibling function) to also read x-prompt-budget off an array propertys own items schema when that items schema is a bare string (not an object), and have walkNestedArrays (or an adjacent check) run the word-cap/prohibited-pattern checks against each string element directly, without requiring an object wrapper — versus a narrower per-field fix limited to the four named instances. The general fix is the class-correct one per this projects gap-explore-surfaces-class convention.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-11T00:00:00.000Z",
+      "id": "FGAP-139",
+      "oid": "d60874eca4563066112c1e9aa823f91e",
+      "content_hash": "22a8c4e5bde70124dc987ecb66978970ddac7e99915f760e110a06dd9fed499b"
     }
   ]
 }

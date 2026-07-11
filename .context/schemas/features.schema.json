@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/features",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Features",
   "description": "L3 Work layer. Features with their own scope, acceptance criteria, and status lifecycle. A feature is atomically composable into prompt context as a self-contained unit of work.",
   "type": "object",
@@ -111,6 +111,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents planning or implementing the feature, which by design is atomically composed into prompt context as a self-contained unit of work; `description`, `motivation`, and acceptance_criteria are read verbatim as that unit.",
+          "register_notes": "`description` states the feature's scope as a self-contained L3 work-layer unit; `motivation` states why it is worth doing — both terse and self-sufficient, since the feature must stand alone when composed into context without the surrounding roadmap. State current scope; no narration of prior scope or status (the status lifecycle and edges carry that). Criteria are diffed against their bound user stories, not augmented.",
+          "prohibited_patterns": []
         }
       }
     }

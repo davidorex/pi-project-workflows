@@ -1,0 +1,31 @@
+{
+  "title": "x-rhetorical-criteria enforcement cannot reach arrays of budgeted primitive strings",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "When a schema declares x-prompt-budget directly on an array propertys own items schema (a bare-string array, e.g. {type: array, items: {type: string, x-prompt-budget: {...}}}) rather than on a named string property of an object, the write-time rhetorical-criteria mechanism (FGAP-043/TASK-121) never checks it. collectWordCaps in rhetorical-criteria.ts only reads x-prompt-budget off named object properties; the recursive walkNestedArrays helper (added to fix nested-object-array coverage) explicitly skips non-object array elements before any per-element check runs, so a bare budgeted string is structurally invisible to the mechanism. This is a distinct code path from the nested-array-of-objects gap TASK-121 already fixed twice: those fixes cover an array whose items are objects with their own budgeted properties; this gap is an array whose items are themselves the budgeted value.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/rhetorical-criteria.ts",
+      "reference": "collectWordCaps (property-level x-prompt-budget read) and walkNestedArrays (skips non-object elements before checkFieldsAgainstSchema) together mean a primitive-string array items schemas x-prompt-budget is never read"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/decisions.schema.json",
+      "reference": "properties.decisions.items.properties.consequences.items carries x-prompt-budget directly on the string items schema"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/tasks.schema.json",
+      "reference": "properties.tasks.items.properties.acceptance_criteria.items carries x-prompt-budget directly on the string items schema"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/requirements.schema.json",
+      "reference": "properties.requirements.items.properties.acceptance_criteria.items carries x-prompt-budget directly on the string items schema"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/layer-plans.schema.json",
+      "reference": "properties.plans.items.properties.migration_phases.items.properties.exit_criteria.items carries x-prompt-budget directly on the string items schema"
+    }
+  ],
+  "impact": "Every acceptance_criteria entry, decision consequence, and migration-phase exit criterion across the substrate can carry an unbounded-length or provenance-narrating string with zero write-time enforcement, even though the schema itself declares a word budget for exactly these fields — the enforcement mechanism silently does not apply to the one shape (arrays of primitive budgeted strings) that these four concrete fields all use.",
+  "proposed_resolution": "Requires determination: extend collectWordCaps (or a sibling function) to also read x-prompt-budget off an array propertys own items schema when that items schema is a bare string (not an object), and have walkNestedArrays (or an adjacent check) run the word-cap/prohibited-pattern checks against each string element directly, without requiring an object wrapper — versus a narrower per-field fix limited to the four named instances. The general fix is the class-correct one per this projects gap-explore-surfaces-class convention."
+}

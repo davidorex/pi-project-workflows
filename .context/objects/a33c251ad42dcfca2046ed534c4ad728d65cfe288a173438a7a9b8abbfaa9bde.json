@@ -1,0 +1,145 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pi-context://schemas/issues",
+  "version": "1.1.0",
+  "title": "Issues",
+  "description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
+  "type": "object",
+  "required": [
+    "issues"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "body",
+          "location",
+          "status",
+          "category",
+          "priority",
+          "package"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^issue-\\d{3}$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Scannable one-liner (GitHub issue title pattern)"
+          },
+          "body": {
+            "type": "string",
+            "description": "Full detail and context for downstream composition",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
+            }
+          },
+          "location": {
+            "type": "string",
+            "description": "File path + line number, e.g. src/module/file.ts:NNN"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "resolved",
+              "deferred"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "primitive",
+              "issue",
+              "cleanup",
+              "capability",
+              "composition"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "package": {
+            "type": "string",
+            "description": "Which package/module this issue touches (e.g. package-a, package-b)"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "human",
+              "agent",
+              "monitor",
+              "workflow"
+            ],
+            "description": "How this issue was created"
+          },
+          "resolved_by": {
+            "type": "string",
+            "description": "Commit message or reference if resolved"
+          },
+          "resolved_at": {
+            "type": "string",
+            "description": "ISO-8601 timestamp when the issue was resolved"
+          },
+          "oid": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$",
+            "description": "Content-independent substrate-stable item identity (content-addressed substrate identity, Cycle 3). Minted once at item birth via mintOid(substrate_id); immutable across content versions. Optional in the schema so pre-Cycle-3 items validate; stamped on next write."
+          },
+          "content_hash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "SHA-256 (hex) of the RFC-8785-canonical content projection of this item (metadata fields excluded). Recomputed on every stamping write; moves with content, stable across metadata-only churn."
+          },
+          "content_parent": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$",
+            "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
+          }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents triaging or resolving the issue: `title` and `body` are read verbatim as the problem statement (GitHub-issue pattern), scoped by code location, package, and priority.",
+          "register_notes": "`body` states the problem — the bug, missing capability, or design debt — concretely enough to reproduce or act on, terse and self-contained, grounded in the cited code location. State the issue's current standing; no narration of how it was found or of prior fix attempts (the resolution lifecycle and edges carry that).",
+          "prohibited_patterns": []
+        }
+      }
+    }
+  },
+  "x-lifecycle": {
+    "field": "status",
+    "states": [
+      "open",
+      "resolved",
+      "deferred"
+    ],
+    "transitions": [
+      {
+        "from": "open",
+        "to": "resolved",
+        "required_authority": "any"
+      },
+      {
+        "from": "open",
+        "to": "deferred",
+        "required_authority": "user"
+      }
+    ]
+  }
+}

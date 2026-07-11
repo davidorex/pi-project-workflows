@@ -1,0 +1,27 @@
+{
+  "description": "Implement FGAP-043's decided canonical resolution: add an x-rhetorical-criteria schema extension keyword to every block-item schema (18 kinds, catalog + active reconciled via /context update), plus a new write-time enforcement function wired into writeTypedFile's single write funnel in block-api.ts. Enforcement is diff-scoped to only the item(s) actually changed in a given write (never the whole file) to avoid bricking future writes on pre-existing violations. Two mechanically-checkable rhetorical-register rules are enforced: word-count caps via the existing-but-dormant x-prompt-budget.words, and no-provenance/git/prior-state-narration via a shared DEFAULT_PROHIBITED_PATTERNS regex set. The other four rhetorical-register rules remain human-review-enforced, matching current enforcement level. Includes backfilling session-notes.schema.json's active copy which is missing $id/version/title/description entirely (a pre-existing gap discovered during this task's own investigation, fixed inline as a one-line prerequisite, not separately filed). Plan: /Users/david/.claude/plans/modular-herding-widget.md.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "packages/pi-context/src/rhetorical-criteria.ts exists exporting RhetoricalValidationError, DEFAULT_PROHIBITED_PATTERNS, readRhetoricalCriteria, validateRhetoricalCriteriaForItems",
+    "writeTypedFile in block-api.ts accepts an optional changedItems parameter and all 11 existing call sites pass their actual changed item(s); whole-block overwrites opt out",
+    "all 18 block schemas (catalog + active, reconciled via /context update) carry x-rhetorical-criteria on their item subschema with schema-derived (not invented) downstream_consumer/register_notes content, framework-gaps and research fully worked as calibration anchors",
+    "session-notes.schema.json active copy has $id/version/title/description backfilled from catalog",
+    "new tests in rhetorical-criteria.test.ts and block-api.test.ts cover word-cap violation, forbidden-pattern violation, and the scoping-safety control case (unrelated item in a block with a pre-existing violator still writes successfully)",
+    "npm run build && npm run check && npm test exit 0",
+    "runtime demo via real pi-context CLI: a write containing a forbidden pattern is refused with a clear error, a compliant write succeeds, and a write to an unrelated item in a block with a known pre-existing long-form item still succeeds",
+    "docs-surface-sync: pi-context README, CHANGELOG [Unreleased] (enforcement mechanism + session-notes backfill as separate line items), skill-narrative/SKILL.md if the surface is skill-reachable",
+    "fresh adversarial re-audit specifically probes for any call site missing changedItems (silent whole-file re-enablement) and for thin/copy-pasted register_notes across the 18 schemas"
+  ],
+  "files": [
+    "packages/pi-context/src/rhetorical-criteria.ts",
+    "packages/pi-context/src/rhetorical-criteria.test.ts",
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/block-api.test.ts",
+    "packages/pi-context/samples/schemas/*.schema.json",
+    "packages/pi-context/samples/migrations.json",
+    ".context/schemas/*.schema.json",
+    ".context/migrations.json",
+    "packages/pi-context/README.md",
+    "packages/pi-context/CHANGELOG.md"
+  ]
+}

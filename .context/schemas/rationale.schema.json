@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/rationale",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Design Rationale",
   "description": "The deeper reasoning behind decisions — why this approach over others, what constraints drove the choice, what tradeoffs were accepted.",
   "type": "object",
@@ -51,6 +51,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents and reviewers who need the reasoning behind a decision — why this approach, which constraints forced it, which tradeoffs were accepted — read alongside the decision it grounds.",
+          "register_notes": "State the reasoning terse and signal-dense: the constraints that drove the choice and the tradeoffs accepted, argued in the present about the chosen approach. Not a restatement of the decision (the decisions block holds that) and not a narrative of the deliberation; no assert-then-refute.",
+          "prohibited_patterns": []
         }
       }
     }

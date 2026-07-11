@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/story",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Stories",
   "description": "Top-level user-story / story array-block. Stories are a work-altitude between feature and task: a feature decomposes into stories, a story decomposes into tasks. Cross-altitude relationships (feature→story, story→task, story→story dependency, story→gating-item, story→milestone/phase/project-goal) live in relations.json closure-table edges — NOT as inline arrays on the story. Sub-shape is structural (id/title/status/description/acceptance_criteria); the Agile user-story form (role/want/benefit) is a future optional enrichment, not imposed (no role/want/benefit present in current shape, none fabricated).",
   "type": "object",
@@ -89,6 +89,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents decomposing a story into tasks and verifying against it: `description` and acceptance_criteria are read verbatim as the story-altitude work statement between feature and task.",
+          "register_notes": "`description` states the story — the user-facing capability at the altitude between feature and task — terse and self-contained. Cross-altitude relationships (feature to story, story to task, dependencies, gating, milestone / phase) live in relations.json edges, not the body. State current scope; no prior-scope or status narration. Acceptance_criteria are diffed against the story's verbatim statement, not augmented.",
+          "prohibited_patterns": []
         }
       }
     }

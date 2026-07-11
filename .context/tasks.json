@@ -2429,7 +2429,7 @@
     },
     {
       "description": "Implement FGAP-043's decided canonical resolution: add an x-rhetorical-criteria schema extension keyword to every block-item schema (18 kinds, catalog + active reconciled via /context update), plus a new write-time enforcement function wired into writeTypedFile's single write funnel in block-api.ts. Enforcement is diff-scoped to only the item(s) actually changed in a given write (never the whole file) to avoid bricking future writes on pre-existing violations. Two mechanically-checkable rhetorical-register rules are enforced: word-count caps via the existing-but-dormant x-prompt-budget.words, and no-provenance/git/prior-state-narration via a shared DEFAULT_PROHIBITED_PATTERNS regex set. The other four rhetorical-register rules remain human-review-enforced, matching current enforcement level. Includes backfilling session-notes.schema.json's active copy which is missing $id/version/title/description entirely (a pre-existing gap discovered during this task's own investigation, fixed inline as a one-line prerequisite, not separately filed). Plan: /Users/david/.claude/plans/modular-herding-widget.md.",
-      "status": "in-progress",
+      "status": "completed",
       "acceptance_criteria": [
         "packages/pi-context/src/rhetorical-criteria.ts exists exporting RhetoricalValidationError, DEFAULT_PROHIBITED_PATTERNS, readRhetoricalCriteria, validateRhetoricalCriteriaForItems",
         "writeTypedFile in block-api.ts accepts an optional changedItems parameter and all 11 existing call sites pass their actual changed item(s); whole-block overwrites opt out",
@@ -2455,8 +2455,8 @@
       ],
       "id": "TASK-121",
       "oid": "5bafb43bb029b11786d5b5731ce0f280",
-      "content_hash": "91443bbdbd5ffda0f535dc1c36c80cf4e41933b63f28fba093ccfa3f24afe2da",
-      "content_parent": "ddf7f66c45956c3f4bdf3c554c96ba56f9b80f9ac2b2ec1d07a44c08139d9a10"
+      "content_hash": "6d5be2e06ac979810cb7c83a21b3c17803177e0735de7091631dd9388315ed35",
+      "content_parent": "91443bbdbd5ffda0f535dc1c36c80cf4e41933b63f28fba093ccfa3f24afe2da"
     }
   ],
   "schema_version": "1.1.0"

@@ -11111,5 +11111,18 @@
       "refname": "FGAP-043"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9d2172178d0fabbf1b61732e0328dcd7",
+      "refname": "VER-098"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5bafb43bb029b11786d5b5731ce0f280",
+      "refname": "TASK-121"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

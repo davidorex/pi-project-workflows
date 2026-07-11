@@ -39,6 +39,7 @@ import type { DispatchContext } from "./dispatch-context.js";
 import { stampItem } from "./dispatch-context.js";
 import { getProjectMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { hasObject, putObject } from "./object-store.js";
+import { validateRhetoricalCriteriaForItems } from "./rhetorical-criteria.js";
 import { validateBlockWithMigrationForDir, validateFromFile } from "./schema-validator.js";
 
 // Node16 module resolution + CJS interop: default import may be wrapped
@@ -265,7 +266,8 @@ function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, Read
 /**
  * Read the `x-identity.metadata_fields` override from an item subschema, if
  * present. `x-identity` follows the established `x-prompt-budget` /
- * `x-lifecycle` extension-keyword convention; `metadata_fields` is an array of
+ * `x-lifecycle` / `x-rhetorical-criteria` extension-keyword convention;
+ * `metadata_fields` is an array of
  * field names to treat as metadata (excluded from the content hash) for items
  * of this kind. Returns the array as a `Set` when validly declared, else
  * `null` (caller falls back to `DEFAULT_METADATA_FIELDS`). Non-string entries
@@ -988,6 +990,7 @@ export function writeTypedFile(
 	data: unknown,
 	ctx?: DispatchContext,
 	errorLabel?: string,
+	changedItems?: Array<{ arrayKey: string; item: Record<string, unknown> }>,
 ): void {
 	const label = errorLabel ?? filePath;
 
@@ -1039,6 +1042,25 @@ export function writeTypedFile(
 	// Validate before write (if a schema is supplied)
 	if (schemaPath) {
 		validateFromFile(schemaPath, toWrite, label);
+	}
+
+	// Diff-scoped rhetorical-criteria enforcement (FGAP-043). Runs ONLY when the
+	// caller threads the item(s) it actually created/merged as `changedItems` —
+	// never over the whole reconstructed file — so a pre-existing (grandfathered)
+	// violator on an untouched item never blocks an unrelated forward write. The
+	// resolve is guarded: a schema with no resolvable top-level array-of-items
+	// (flat-array typed files, config/registry/relations documents) carries no
+	// `x-rhetorical-criteria` and is skipped rather than throwing on resolution.
+	if (schemaPath && parsedSchema && changedItems && changedItems.length > 0) {
+		let itemSchema: Record<string, unknown> | null = null;
+		try {
+			itemSchema = resolveBlockItemSchema(parsedSchema).itemSchema;
+		} catch {
+			itemSchema = null;
+		}
+		if (itemSchema) {
+			validateRhetoricalCriteriaForItems(itemSchema, changedItems, label);
+		}
 	}
 
 	// Post-validation object persistence (Cycle 9.1 P6). Content objects are
@@ -1197,8 +1219,11 @@ export function appendToTypedFile(
 			// prepareItemIdentityForWrite). Flat-array shape never identity-stamps.
 			const itemToAppend = maybeIdentityStampTypedItem(filePath, schemaPath, null, authored, "create");
 			const next = [...data, itemToAppend];
-			// Validate the WHOLE array against schemaPath, then write.
-			writeTypedFile(filePath, schemaPath, next, undefined, label);
+			// Validate the WHOLE array against schemaPath, then write. Rhetorical
+			// enforcement (FGAP-043) is scoped to the single appended item.
+			writeTypedFile(filePath, schemaPath, next, undefined, label, [
+				{ arrayKey: "__top__", item: itemToAppend as Record<string, unknown> },
+			]);
 			return;
 		}
 
@@ -1221,7 +1246,9 @@ export function appendToTypedFile(
 				: item;
 		const itemToAppend = maybeIdentityStampTypedItem(filePath, schemaPath, arrayPath, authored, "create");
 		record[arrayPath] = [...(record[arrayPath] as unknown[]), itemToAppend];
-		writeTypedFile(filePath, schemaPath, record, undefined, label);
+		writeTypedFile(filePath, schemaPath, record, undefined, label, [
+			{ arrayKey: arrayPath, item: itemToAppend as Record<string, unknown> },
+		]);
 	});
 }
 
@@ -1275,6 +1302,7 @@ export function appendManyToTypedFileIfAbsent(
 			}
 			const arr = [...data];
 			const seen = new Set<string>(arr.map((existing) => matchKey(existing)));
+			const newItems: Array<{ arrayKey: string; item: Record<string, unknown> }> = [];
 			let appended = 0;
 			let skipped = 0;
 			for (const candidate of items) {
@@ -1285,10 +1313,11 @@ export function appendManyToTypedFileIfAbsent(
 				}
 				seen.add(key);
 				arr.push(candidate);
+				newItems.push({ arrayKey: "__top__", item: candidate as Record<string, unknown> });
 				appended++;
 			}
 			if (appended > 0) {
-				writeTypedFile(filePath, schemaPath, arr, ctx, label);
+				writeTypedFile(filePath, schemaPath, arr, ctx, label, newItems);
 			}
 			return { appended, skipped };
 		}
@@ -1306,6 +1335,7 @@ export function appendManyToTypedFileIfAbsent(
 		}
 		const arr = [...(record[arrayPath] as unknown[])];
 		const seen = new Set<string>(arr.map((existing) => matchKey(existing)));
+		const newItems: Array<{ arrayKey: string; item: Record<string, unknown> }> = [];
 		let appended = 0;
 		let skipped = 0;
 		for (const candidate of items) {
@@ -1318,12 +1348,14 @@ export function appendManyToTypedFileIfAbsent(
 			// Identity-stamp each newly-appended candidate (create mode; an
 			// append-if-absent candidate is always a fresh item). No-op unless
 			// the schema declares identity fields.
-			arr.push(maybeIdentityStampTypedItem(filePath, schemaPath, arrayPath, candidate, "create"));
+			const stamped = maybeIdentityStampTypedItem(filePath, schemaPath, arrayPath, candidate, "create");
+			arr.push(stamped);
+			newItems.push({ arrayKey: arrayPath, item: stamped as Record<string, unknown> });
 			appended++;
 		}
 		if (appended > 0) {
 			record[arrayPath] = arr;
-			writeTypedFile(filePath, schemaPath, record, ctx, label);
+			writeTypedFile(filePath, schemaPath, record, ctx, label, newItems);
 		}
 		return { appended, skipped };
 	});
@@ -1493,7 +1525,9 @@ export function updateItemInTypedFile(
 		>;
 		const patched = [...arr];
 		patched[idx] = updated;
-		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label, [
+			{ arrayKey: arrayPath ?? "__top__", item: updated },
+		]);
 	});
 }
 
@@ -1597,7 +1631,9 @@ export function upsertItemInTypedFile(
 			}
 			return { mode, dryRun: true };
 		}
-		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label, [
+			{ arrayKey: arrayPath ?? "__top__", item: stamped },
+		]);
 		return { mode };
 	});
 }
@@ -1700,7 +1736,9 @@ export function appendToNestedTypedFile(
 		};
 		const patched = [...arr];
 		patched[idx] = updatedParent;
-		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label);
+		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label, [
+			{ arrayKey: nestedArrayKey, item: itemToAppend as Record<string, unknown> },
+		]);
 	});
 }
 
@@ -1784,7 +1822,9 @@ export function updateNestedItemInTypedFile(
 		const updatedParent = { ...parent, [nestedArrayKey]: patchedNested };
 		const patchedParents = [...arr];
 		patchedParents[parentIdx] = updatedParent;
-		writeTypedFile(filePath, schemaPath, rewriteParent(patchedParents), undefined, label);
+		writeTypedFile(filePath, schemaPath, rewriteParent(patchedParents), undefined, label, [
+			{ arrayKey: nestedArrayKey, item: updatedNested },
+		]);
 	});
 }
 
@@ -1860,8 +1900,22 @@ export function removeFromNestedTypedFile(
  * `ctx` (the authorship-attestation DispatchContext parameter): whole-block writes are treated as create-mode envelope
  * stamping; callers wanting per-item attribution should prefer the
  * array-grained writers.
+ *
+ * `changedItems` (FGAP-043): when a caller that authors a specific item routes
+ * its write through this whole-block writer — notably `appendToBlockForDir`,
+ * which writes inline rather than through `appendToTypedFile` — it threads the
+ * item(s) it created so diff-scoped rhetorical-criteria enforcement fires on
+ * exactly that content. A genuine whole-block overwrite (bulk import, migration
+ * reconciliation, `writeBlock`) passes nothing and stays opted out, so a
+ * pre-existing grandfathered violator on an untouched item never blocks it.
  */
-export function writeBlockForDir(substrateDir: string, blockName: string, data: unknown, ctx?: DispatchContext): void {
+export function writeBlockForDir(
+	substrateDir: string,
+	blockName: string,
+	data: unknown,
+	ctx?: DispatchContext,
+	changedItems?: Array<{ arrayKey: string; item: Record<string, unknown> }>,
+): void {
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 
@@ -1917,7 +1971,7 @@ export function writeBlockForDir(substrateDir: string, blockName: string, data: 
 		toWrite = validateBlockWithMigrationForDir(substrateDir, blockName, identityStamped, registry);
 	}
 
-	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`);
+	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`, changedItems);
 }
 
 /**
@@ -2038,7 +2092,15 @@ export function appendToBlockForDir(
 				: item;
 
 		record[arrayKey] = [...(record[arrayKey] as unknown[]), itemToAppend];
-		writeBlockForDir(substrateDir, blockName, record);
+		// Thread the single appended item so diff-scoped rhetorical-criteria
+		// enforcement (FGAP-043) fires on this inline append path — which does NOT
+		// route through appendToTypedFile — exactly as it does on the update /
+		// upsert / nested primitives. Scalar items carry no checkable fields.
+		const changed =
+			itemToAppend && typeof itemToAppend === "object" && !Array.isArray(itemToAppend)
+				? [{ arrayKey, item: itemToAppend as Record<string, unknown> }]
+				: undefined;
+		writeBlockForDir(substrateDir, blockName, record, undefined, changed);
 	});
 }
 

@@ -28,6 +28,7 @@ import {
 import { writeBootstrapPointer } from "./context-dir.js";
 import type { DispatchContext } from "./dispatch-context.js";
 import { hasObject } from "./object-store.js";
+import { RhetoricalValidationError } from "./rhetorical-criteria.js";
 import { ValidationError } from "./schema-validator.js";
 
 /**
@@ -3216,5 +3217,133 @@ describe("Cycle 3 identity stamping via block-api write path", () => {
 		appendToBlock(tmp, "gaps", "gaps", { id: "g1", description: "d", status: "open" });
 		const g = (readBlock(tmp, "gaps") as any).gaps[0];
 		assert.ok(!("oid" in g) && !("content_hash" in g), "non-identity schema item is never stamped");
+	});
+});
+
+/**
+ * FGAP-043: write-time rhetorical-criteria enforcement, diff-scoped to the
+ * changed item(s). `notes` carries a 5-word `x-prompt-budget.words` cap and the
+ * block declares `x-rhetorical-criteria`; `id` is unconstrained metadata. The
+ * schema omits the Cycle-3 identity fields, so no substrate_id seed is needed.
+ */
+const rhetSchema = {
+	type: "object",
+	required: ["items"],
+	properties: {
+		items: {
+			type: "array",
+			items: {
+				type: "object",
+				additionalProperties: false,
+				required: ["id", "notes"],
+				properties: {
+					id: { type: "string" },
+					notes: { type: "string", "x-prompt-budget": { tokens: 20, words: 5 } },
+				},
+				"x-rhetorical-criteria": {
+					downstream_consumer: "downstream subagents consuming the item verbatim",
+					register_notes: "terse, current-state; no provenance narration",
+					prohibited_patterns: [],
+				},
+			},
+		},
+	},
+};
+
+describe("rhetorical-criteria enforcement (FGAP-043)", () => {
+	it("append: rejects a word-cap overrun on the changed item, file unchanged", (t) => {
+		const tmp = makeTmpDir("rhet-wordcap");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupWorkflowDir(tmp);
+		setupSchema(tmp, "notes", rhetSchema);
+		writeBlock(tmp, "notes", { items: [] });
+
+		assert.throws(
+			() => appendToBlock(tmp, "notes", "items", { id: "N-1", notes: "one two three four five six" }),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual((err as RhetoricalValidationError).field, "notes");
+				return true;
+			},
+		);
+		// The append never landed — the block still holds the empty array.
+		assert.deepStrictEqual((readBlock(tmp, "notes") as { items: unknown[] }).items, []);
+	});
+
+	it("append: rejects a prohibited-pattern match on the changed item, file unchanged", (t) => {
+		const tmp = makeTmpDir("rhet-pattern");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupWorkflowDir(tmp);
+		setupSchema(tmp, "notes", rhetSchema);
+		writeBlock(tmp, "notes", { items: [] });
+
+		assert.throws(
+			() => appendToBlock(tmp, "notes", "items", { id: "N-1", notes: "no longer used" }),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.ok((err as Error).message.toLowerCase().includes("no longer"));
+				return true;
+			},
+		);
+		assert.deepStrictEqual((readBlock(tmp, "notes") as { items: unknown[] }).items, []);
+	});
+
+	it("append: a compliant changed item writes successfully", (t) => {
+		const tmp = makeTmpDir("rhet-ok");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupWorkflowDir(tmp);
+		setupSchema(tmp, "notes", rhetSchema);
+		writeBlock(tmp, "notes", { items: [] });
+
+		appendToBlock(tmp, "notes", "items", { id: "N-1", notes: "terse current state" });
+		const items = (readBlock(tmp, "notes") as { items: Array<{ id: string }> }).items;
+		assert.strictEqual(items.length, 1);
+		assert.strictEqual(items[0].id, "N-1");
+	});
+
+	it("SCOPING SAFETY: updating an unrelated item succeeds despite a grandfathered violator on another item", (t) => {
+		const tmp = makeTmpDir("rhet-scoping");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupWorkflowDir(tmp);
+		setupSchema(tmp, "notes", rhetSchema);
+		// Seed via a whole-block write (opt out of rhetorical enforcement) so a
+		// pre-existing violator lands on disk exactly as grandfathered content would.
+		writeBlock(tmp, "notes", {
+			items: [
+				{ id: "OLD-1", notes: "one two three four five six seven eight nine ten" },
+				{ id: "OK-1", notes: "short clean note" },
+			],
+		});
+
+		// Update the UNRELATED compliant item; the write reconstructs the whole
+		// file (still containing OLD-1's overrun) but only OK-1 is diff-scoped in.
+		assert.doesNotThrow(() =>
+			updateItemInBlock(tmp, "notes", "items", (i) => i.id === "OK-1", { notes: "updated clean note" }),
+		);
+		const items = (readBlock(tmp, "notes") as { items: Array<{ id: string; notes: string }> }).items;
+		assert.strictEqual(items.find((i) => i.id === "OK-1")?.notes, "updated clean note");
+		// The grandfathered violator is untouched — proving the write was not blocked.
+		assert.strictEqual(items.find((i) => i.id === "OLD-1")?.notes, "one two three four five six seven eight nine ten");
+	});
+
+	it("update: still enforces on the changed item itself", (t) => {
+		const tmp = makeTmpDir("rhet-update-enforce");
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		setupWorkflowDir(tmp);
+		setupSchema(tmp, "notes", rhetSchema);
+		writeBlock(tmp, "notes", { items: [{ id: "N-1", notes: "short clean note" }] });
+
+		assert.throws(
+			() => updateItemInBlock(tmp, "notes", "items", (i) => i.id === "N-1", { notes: "originally this was different" }),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				return true;
+			},
+		);
+		// Rejected update leaves the prior compliant content in place.
+		assert.strictEqual(
+			(readBlock(tmp, "notes") as { items: Array<{ notes: string }> }).items[0].notes,
+			"short clean note",
+		);
 	});
 });

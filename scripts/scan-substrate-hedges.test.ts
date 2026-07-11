@@ -359,33 +359,35 @@ describe("scanSubstrate — live-substrate structural invariants", () => {
 		assert.equal(report.summary.totalMatches, recomputed);
 	});
 
-	it("conditionally pins FGAP-125: while its proposed_resolution still carries the known '— or amend the schema' fork, it must be flagged", () => {
+	it("conditionally pins FGAP-125: while its proposed_resolution still carries the known '— or amend the schema' fork, it must be flagged there specifically", () => {
 		// This is the known-true-positive sanity check from TASK-120's
 		// acceptance criteria, made conditional so the cell passes vacuously
 		// once the fork is audited and corrected downstream (the scanner's
-		// purpose) rather than breaking like a hard pin would.
+		// purpose) rather than breaking like a hard pin would. The branch is
+		// keyed on the raw proposed_resolution text itself — NOT on whether
+		// FGAP-125 is flagged at all — because the item can still be a
+		// candidate for an unrelated reason (its description separately
+		// mentions "documents its deferral", matching the deferral category)
+		// even after the specific known fork is corrected.
+		const data = readBlock(repoRoot, "framework-gaps") as { gaps?: { id?: string; proposed_resolution?: string }[] };
+		const item = data.gaps?.find((g) => g.id === "FGAP-125");
+		if (!item) return; // FGAP-125 no longer exists on this substrate
+		const stillForked = item.proposed_resolution?.includes("— or amend the schema") ?? false;
+
 		const report = scanSubstrate(repoRoot);
-		const fgapBlock = report.blocks.find((b) => b.arrayKey === "gaps");
-		if (!fgapBlock || fgapBlock.skipped !== undefined) return; // no gaps block on this substrate
 		const candidate = report.candidates.find((c) => c.id === "FGAP-125");
-		if (candidate === undefined) {
-			// Acceptable only if the fork text is gone; re-read its raw prose to prove it.
-			// (readBlock is read-only — the same canonical reader scanSubstrate uses.)
-			const data = readBlock(repoRoot, fgapBlock.block) as { gaps?: { id?: string; proposed_resolution?: string }[] };
-			const item = data.gaps?.find((g) => g.id === "FGAP-125");
-			const stillForked = item?.proposed_resolution?.includes("— or amend the schema") ?? false;
-			assert.equal(
-				stillForked,
-				false,
-				"FGAP-125 still carries its known fork but was not flagged — heuristic regression",
-			);
+		const resolutionFinding = candidate?.fields.find((f) => f.fieldPath === "proposed_resolution");
+		const resolutionForkMatch = resolutionFinding?.matches.some((m) => m.category === "fork");
+
+		if (!stillForked) {
+			// Vacuous pass once corrected — regardless of whether FGAP-125 is
+			// still a candidate for some unrelated field/reason.
 			return;
 		}
+		assert.ok(candidate, "FGAP-125 still carries its known fork but was not flagged at all — heuristic regression");
 		assert.ok(
-			candidate.categories.includes("fork"),
-			`FGAP-125 flagged but without fork category: ${candidate.categories.join(",")}`,
+			resolutionForkMatch,
+			"FGAP-125's proposed_resolution still carries its known fork but no fork match was recorded on that field",
 		);
-		const resolutionFinding = candidate.fields.find((f) => f.fieldPath === "proposed_resolution");
-		assert.ok(resolutionFinding, "FGAP-125's proposed_resolution must be among its flagged fields");
 	});
 });

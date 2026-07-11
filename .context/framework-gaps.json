@@ -4149,13 +4149,13 @@
         }
       ],
       "impact": "Filed work-orders carry dead contract fields authors reasonably rely on: inputs are never validated, context never injected, outputs never checked, and a narrower wo.scope.operations does not narrow the grant. Any substrate installing the catalog schema inherits contract text promising enforcement that does not exist.",
-      "proposed_resolution": "Under FEAT-014, the two remaining fields: inject wo.context_blocks into the dispatched pi subprocess (resolve the referenced blocks and pass them into the agent's context across the process boundary) and validate the agent's returned output against wo.output_contract post-return (the subprocess must emit structured output the loop can check) — or amend the schema to stop declaring semantics the engine will not implement, dual-surface, with per-field regression pins. The scope.operations clamp and input_contract validation are already implemented with unit pins (clampToScope, validateWorkOrderInput).",
+      "proposed_resolution": "Under FEAT-014, per DEC-0022 (enacted: acting agents dispatch as pi subprocesses; the remaining FGAP-125 legs cross the process boundary under this shape): inject wo.context_blocks into the dispatched pi subprocess (resolve the referenced blocks and pass them into the agent's context across the process boundary) and validate the agent's returned output against wo.output_contract post-return (the subprocess must emit structured output the loop can check), each with per-field regression pins. The scope.operations clamp and input_contract validation are already implemented with unit pins (clampToScope, validateWorkOrderInput).",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "e8eca3b0bf101fa5a0f2dd7a1c912fb63fa5f5b50c4967717c891da25dc2a727",
-      "content_parent": "9acd079c9d41778cbe059a8461cf7f0bf1b71043b6bf95a17141aa8e8e86d047"
+      "content_hash": "d94c8245caef2e26601f69e681b78d1d9ec26027782c009e4bc72774baad726b",
+      "content_parent": "e8eca3b0bf101fa5a0f2dd7a1c912fb63fa5f5b50c4967717c891da25dc2a727"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",

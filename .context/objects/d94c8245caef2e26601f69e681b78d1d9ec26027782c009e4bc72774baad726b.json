@@ -1,0 +1,24 @@
+{
+  "title": "Work-order schema is a v1 contract whose engine implements a demo subset — four required fields never consumed, and the catalog schema asserts a scope clamp that does not run",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "work-order contract-engine parity",
+  "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop originally consumed none of their semantics. Two are now honored (fixed): the dispatch input is validated against input_contract via the canonical pi-context AJV validator before compile/spawn (validateWorkOrderInput), and the capability grant is clamped to wo.scope.operations (clampToScope intersects the composed grant, so a caller grant of [write,bash] under scope.operations [write] dispatches with --tools write). Two remain unconsumed: context_blocks is never injected into the dispatched agent, and output_contract is never validated against the agent's returned output — both have zero references in pi-agent-dispatch. The catalog schema's scope description historically asserted a clamp that did not run; the clamp now runs, so that assertion is satisfied for scope, while the schema still declares context_blocks/output_contract semantics the engine does not implement. Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts — documents its deferral). Direction settled by git dates: the schema landed one day ahead of the loop's demo-subset engine.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": "dispatchTargetAgent: input validated against wo.input_contract (validateWorkOrderInput) before compile/spawn; the composed grant clamped to wo.scope.operations (clampToScope) becomes the subprocess --tools allowlist — both FIXED. context_blocks and output_contract still have zero consumption in this file."
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/work-orders.schema.json",
+      "reference": "required nine fields; still declares context_blocks + output_contract semantics the engine does not implement (scope clamp now satisfied)"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 3: per-field verification with quotes, git-date archaeology, the WO-001 scope demonstration"
+    }
+  ],
+  "impact": "Filed work-orders carry dead contract fields authors reasonably rely on: inputs are never validated, context never injected, outputs never checked, and a narrower wo.scope.operations does not narrow the grant. Any substrate installing the catalog schema inherits contract text promising enforcement that does not exist.",
+  "proposed_resolution": "Under FEAT-014, per DEC-0022 (enacted: acting agents dispatch as pi subprocesses; the remaining FGAP-125 legs cross the process boundary under this shape): inject wo.context_blocks into the dispatched pi subprocess (resolve the referenced blocks and pass them into the agent's context across the process boundary) and validate the agent's returned output against wo.output_contract post-return (the subprocess must emit structured output the loop can check), each with per-field regression pins. The scope.operations clamp and input_contract validation are already implemented with unit pins (clampToScope, validateWorkOrderInput)."
+}

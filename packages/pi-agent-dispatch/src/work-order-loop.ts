@@ -13,13 +13,22 @@
  *        so real tool execution requires a `pi` subprocess. pi-jit-agents is
  *        used directly as a library here, never wrapped by an intermediating
  *        extension, staying the classify / structured-output primitive.
- *     2. run the work-order's real_check_criteria via runRealChecks
- *        (deterministic verdict — never the
- *        executing agent's self-report).
- *     3. on pass: commit-attested with writer-identity footer; final_status
- *        = "completed".
+ *     2. validate the dispatched agent's return against the work-order's
+ *        declared output_contract (when declared), then run the
+ *        work-order's real_check_criteria via runRealChecks (deterministic
+ *        verdict — never the executing agent's self-report).
+ *     3. on pass: route the commit through the same pi.on('tool_call')
+ *        auth-gate every other commit-attested caller goes through
+ *        (ctx.ui.confirm in an interactive context; skipped with no gate
+ *        event constructed in a non-interactive one) — final_status =
+ *        "completed" on gate-allow, "aborted-by-human" on gate-decline,
+ *        "completed-pending-commit" when non-interactive.
  *     4. on fail: ask the human at the iteration boundary (ctx.ui.confirm)
  *        whether to retry. !confirm → final_status = "aborted-by-human".
+ *        In a non-interactive context the work-order's declared on_fail
+ *        ("retry" | "abort") decides: "retry" proceeds to the next
+ *        iteration without asking; anything else (including absent)
+ *        → final_status = "aborted-non-interactive".
  *
  * If the loop exhausts max_iterations without a pass → final_status =
  * "failed". The aim is one Pi tool invocation that closes the entire loop
@@ -38,9 +47,10 @@ import { validate } from "@davidorex/pi-context/schema-validator";
 import { createAgentLoader } from "@davidorex/pi-jit-agents/agent-spec";
 import { compileAgent } from "@davidorex/pi-jit-agents/compile";
 import { bundledTemplateDir, createTemplateEnv } from "@davidorex/pi-jit-agents/template";
-import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
-import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import type { ContextBlockRef, JitAgentResult } from "@davidorex/pi-jit-agents/types";
+import type { ExtensionContext, ToolCallEvent, ToolCallEventResult } from "@earendil-works/pi-coding-agent";
 import { type AttestedCommitResult, attestedCommit as canonicalAttestedCommit } from "./attested-commit.js";
+import { authGateHandler } from "./auth-gate.js";
 import { composeToolGrant } from "./capability-composer.js";
 import { dispatchLoadContext } from "./dispatch-loader.js";
 import { resolveDispatchModel } from "./dispatch-model.js";
@@ -69,7 +79,7 @@ export interface WorkOrderIteration {
 export interface WorkOrderLoopResult {
 	work_order_id: string;
 	iterations: WorkOrderIteration[];
-	final_status: "completed" | "failed" | "aborted-by-human" | "aborted-non-interactive";
+	final_status: "completed" | "completed-pending-commit" | "failed" | "aborted-by-human" | "aborted-non-interactive";
 	commit_sha?: string;
 	total_duration_ms: number;
 }
@@ -86,6 +96,9 @@ interface WorkOrderRecord {
 	real_check_criteria?: RealCheckCriteria;
 	scope?: { files?: string[]; directories?: string[]; operations?: string[] };
 	input_contract?: Record<string, unknown>;
+	context_blocks?: (string | ContextBlockRef)[];
+	output_contract?: Record<string, unknown>;
+	on_fail?: "retry" | "abort";
 }
 
 /**
@@ -125,6 +138,50 @@ export function validateWorkOrderInput(
 			}`,
 		);
 	}
+}
+
+/**
+ * Validate a dispatched agent's output against the work-order's declared
+ * `output_contract` (an inline JSON Schema). Mirrors validateWorkOrderInput's
+ * shape exactly, on the return-contract side of the dispatch boundary: reuses
+ * the canonical pi-context AJV validator, throws naming the work-order id and
+ * the AJV error detail on a contract violation (the loop surfaces thrown
+ * errors — no swallowing), and is a no-op pass-through when no contract is
+ * declared.
+ */
+export function validateWorkOrderOutput(
+	output: unknown,
+	contract: Record<string, unknown> | undefined,
+	workOrderId: string,
+): void {
+	if (!contract) return;
+	try {
+		validate(contract, output, `work-order '${workOrderId}' output_contract`);
+	} catch (err) {
+		throw new Error(
+			`work-order-loop: dispatch output for work-order '${workOrderId}' violates its output_contract: ${
+				err instanceof Error ? err.message : String(err)
+			}`,
+		);
+	}
+}
+
+/**
+ * Additively merge a work-order's declared `context_blocks` onto an agent
+ * spec's own `contextBlocks`, appending (never replacing) so the agent's own
+ * spec-declared context blocks are preserved alongside whatever the
+ * work-order hands off. Extracted as a pure, independently testable function
+ * (mirroring this file's existing clampToScope / validateWorkOrderInput
+ * pattern) because dispatchTargetAgent itself is not exported and its
+ * production path spawns a real `pi` subprocess, which is not something a
+ * unit test should drive to pin the merge's additivity.
+ */
+export function mergeContextBlocks(
+	specContextBlocks: (string | ContextBlockRef)[] | undefined,
+	workOrderContextBlocks: (string | ContextBlockRef)[] | undefined,
+): (string | ContextBlockRef)[] | undefined {
+	if (!workOrderContextBlocks || workOrderContextBlocks.length === 0) return specContextBlocks;
+	return [...(specContextBlocks ?? []), ...workOrderContextBlocks];
 }
 
 /**
@@ -174,6 +231,13 @@ async function dispatchTargetAgent(
 ): Promise<JitAgentResult> {
 	const loadAgent = createAgentLoader(dispatchLoadContext(cwd));
 	const spec = loadAgent(wo.target_agent);
+	// Additive merge: the work-order's declared context_blocks are appended to
+	// whatever the agent's own spec already declares, never overriding it —
+	// compileAgent resolves every contextBlocks entry (string whole-block or
+	// ContextBlockRef item-specific) into the rendered taskPrompt below, so no
+	// new subprocess plumbing is needed for the work-order's handoff to reach
+	// the dispatched agent.
+	spec.contextBlocks = mergeContextBlocks(spec.contextBlocks, wo.context_blocks);
 	// builtinDir = bundled pi-jit-agents templates/, so a bundled spec's task/system
 	// templates resolve without a local copy.
 	const env = createTemplateEnv({ cwd, builtinDir: bundledTemplateDir() });
@@ -244,6 +308,11 @@ export async function runWorkOrderLoop(
 
 	for (let i = 0; i < maxIterations; i++) {
 		const agentResult = await dispatch(cwd, wo, options.agent_grant ?? [], ctx);
+		// Guard the dispatched agent's return against the work-order's declared
+		// output_contract BEFORE the real-check runs; a contract violation
+		// throws and surfaces exactly like an input_contract violation (no
+		// swallowing), same as the input-side guard inside dispatchTargetAgent.
+		validateWorkOrderOutput(agentResult.output, wo.output_contract, wo.id);
 		const realCheck = await _internals.runRealChecks(cwd, wo.id, wo.real_check_criteria ?? { build_check_test: true });
 
 		if (realCheck.passed) {
@@ -251,12 +320,51 @@ export async function runWorkOrderLoop(
 			const commitMessage = `feat(work-order-${wo.id}): completion under FEAT-006 loop (iteration ${i + 1}/${maxIterations})`;
 			let commit: AttestedCommitResult | undefined;
 			if (files.length > 0) {
-				commit = await _internals.attestedCommit(cwd, {
-					files,
-					message: commitMessage,
-					agent_id: wo.target_agent,
-					work_order_id: wo.id,
-				});
+				// Route the commit through the same pi.on('tool_call') auth-gate
+				// every other commit-attested caller goes through, rather than
+				// calling the bare library function directly. In an interactive
+				// context the gate's ctx.ui.confirm decision (allow/decline) is
+				// authoritative; in a non-interactive context there is no operator
+				// to ask, so the commit is skipped without constructing the gate
+				// event at all (mirrors the human-OK gate's own hasUI branch below).
+				if (ctx.hasUI === false) {
+					iterations.push({
+						iteration: i,
+						agent_output: agentResult.output,
+						real_check_result: realCheck,
+						status: "passed",
+					});
+					finalStatus = "completed-pending-commit";
+					break;
+				}
+				const event = {
+					toolName: "commit-attested",
+					input: {
+						files,
+						message: commitMessage,
+						agent_id: wo.target_agent,
+						work_order_id: wo.id,
+					},
+				} as unknown as ToolCallEvent;
+				const gateResult: ToolCallEventResult | undefined = await authGateHandler(event, ctx);
+				if (gateResult?.block) {
+					iterations.push({
+						iteration: i,
+						agent_output: agentResult.output,
+						real_check_result: realCheck,
+						status: "passed",
+					});
+					finalStatus = "aborted-by-human";
+					break;
+				}
+				// event.input may have been mutated in place by authGateHandler
+				// (writer stamped to the verified operator identity on accept) —
+				// pass event.input itself through, not the original literal, so
+				// that mutation reaches the actual commit call.
+				commit = await _internals.attestedCommit(
+					cwd,
+					event.input as { files: string[]; message: string; agent_id: string; work_order_id?: string },
+				);
 				commitSha = commit.commit_sha;
 			}
 			iterations.push({
@@ -285,8 +393,15 @@ export async function runWorkOrderLoop(
 			// ctx.ui.confirm (which would return an environment default) and
 			// mislabel that default as a human decision. Mirror the auth-gate
 			// pattern (auth-gate.ts checks !ctx.hasUI first) and record the
-			// distinct "aborted-non-interactive" status.
+			// distinct "aborted-non-interactive" status — unless the work-order
+			// itself declares on_fail:"retry", in which case a non-interactive
+			// context proceeds to the next iteration as a bounded retry without
+			// asking (the interactive branch below is unchanged regardless of
+			// on_fail: a human is always asked when one is attached).
 			if (ctx.hasUI === false) {
+				if (wo.on_fail === "retry") {
+					continue;
+				}
 				finalStatus = "aborted-non-interactive";
 				break;
 			}

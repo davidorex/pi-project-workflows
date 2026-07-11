@@ -4,15 +4,17 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
-import type { JitAgentResult } from "@davidorex/pi-jit-agents/types";
+import type { ContextBlockRef, JitAgentResult } from "@davidorex/pi-jit-agents/types";
 import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 import type { AttestedCommitResult } from "./attested-commit.js";
 import type { RealCheckCriteria, RealCheckResult } from "./real-check-runner.js";
 import {
 	_internals,
 	clampToScope,
+	mergeContextBlocks,
 	runWorkOrderLoop,
 	validateWorkOrderInput,
+	validateWorkOrderOutput,
 	WorkOrderNotFoundError,
 } from "./work-order-loop.js";
 
@@ -50,6 +52,9 @@ function writeWorkOrders(
 		target_agent?: string;
 		real_check_criteria?: RealCheckCriteria;
 		scope?: { files?: string[] };
+		context_blocks?: (string | ContextBlockRef)[];
+		output_contract?: Record<string, unknown>;
+		on_fail?: "retry" | "abort";
 	}>,
 ): void {
 	fs.writeFileSync(path.join(cwd, "substrate", "work-orders.json"), JSON.stringify({ work_orders }));
@@ -137,7 +142,10 @@ describe("runWorkOrderLoop", () => {
 		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
 		_internals.runRealChecks = async () => ({ ...PASSING_REAL_CHECK, work_order_id: "WO-002" });
 		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
-		const { ctx, calls } = mockCtx(tmpDir);
+		// One ctx.ui.confirm call now fires for the commit-attested auth-gate
+		// (the commit routes through authGateHandler, which is gated for
+		// "commit-attested"); resolve it true to allow the commit.
+		const { ctx, calls } = mockCtx(tmpDir, [true]);
 
 		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-002", max_iterations: 3 }, ctx);
 
@@ -145,7 +153,7 @@ describe("runWorkOrderLoop", () => {
 		assert.equal(result.iterations.length, 1);
 		assert.equal(result.iterations[0].status, "passed");
 		assert.equal(result.commit_sha, "deadbeef");
-		assert.equal(calls.length, 0);
+		assert.equal(calls.length, 1);
 	});
 
 	it("fail-then-pass on retry — iter 1 fails, iter 2 passes → final_status=completed + iterations.length=2", async () => {
@@ -164,7 +172,10 @@ describe("runWorkOrderLoop", () => {
 			return calls === 1 ? FAILING_REAL_CHECK : { ...PASSING_REAL_CHECK, work_order_id: "WO-003" };
 		};
 		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
-		const { ctx, calls: confirmCalls } = mockCtx(tmpDir, [true]);
+		// Two ctx.ui.confirm calls now fire: the retry-confirm between iter 1
+		// and iter 2, then the commit-attested auth-gate confirm on iter 2's
+		// pass. Both resolve true.
+		const { ctx, calls: confirmCalls } = mockCtx(tmpDir, [true, true]);
 
 		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-003", max_iterations: 3 }, ctx);
 
@@ -173,7 +184,7 @@ describe("runWorkOrderLoop", () => {
 		assert.equal(result.iterations[0].status, "failed");
 		assert.equal(result.iterations[1].status, "passed");
 		assert.equal(result.commit_sha, "deadbeef");
-		assert.equal(confirmCalls.length, 1);
+		assert.equal(confirmCalls.length, 2);
 	});
 
 	it("human-aborts-at-boundary — fail iter 1; ctx.ui.confirm=false → final_status=aborted-by-human + iterations.length=1", async () => {
@@ -253,6 +264,129 @@ describe("runWorkOrderLoop", () => {
 		assert.equal(result.iterations[0].commit_attested_result?.committed, true);
 		assert.deepEqual(result.iterations[0].agent_output, { ok: true });
 	});
+
+	it("interactive commit-gate declined — real-check passes, operator declines the commit-attested auth-gate confirm → final_status=aborted-by-human + commit_sha=undefined", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-007",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: ["src/gate-declined.ts"] },
+			},
+		]);
+		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
+		_internals.runRealChecks = async () => ({ ...PASSING_REAL_CHECK, work_order_id: "WO-007" });
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx, calls } = mockCtx(tmpDir, [false]); // operator declines the commit-attested auth-gate
+
+		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-007", max_iterations: 3 }, ctx);
+
+		assert.equal(result.final_status, "aborted-by-human");
+		assert.equal(result.commit_sha, undefined);
+		assert.equal(calls.length, 1);
+		assert.equal(result.iterations[0].commit_attested_result, undefined);
+	});
+
+	it("non-interactive real-check pass — files present, ctx.hasUI=false → final_status=completed-pending-commit + commit_sha=undefined + confirm never called", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-008",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: ["src/pending-commit.ts"] },
+			},
+		]);
+		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
+		_internals.runRealChecks = async () => ({ ...PASSING_REAL_CHECK, work_order_id: "WO-008" });
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx, calls } = mockCtx(tmpDir, [], false); // non-interactive: no operator to gate the commit
+
+		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-008", max_iterations: 3 }, ctx);
+
+		assert.equal(result.final_status, "completed-pending-commit");
+		assert.equal(result.commit_sha, undefined);
+		assert.equal(calls.length, 0);
+	});
+
+	it("on_fail='retry' bounded retry — non-interactive, iter 1 fails, iter 2 passes → final_status=completed + iterations.length=2 + confirm never called", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-009",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: [] },
+				on_fail: "retry",
+			},
+		]);
+		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
+		let checkCalls = 0;
+		_internals.runRealChecks = async () => {
+			checkCalls++;
+			return checkCalls === 1 ? FAILING_REAL_CHECK : { ...PASSING_REAL_CHECK, work_order_id: "WO-009" };
+		};
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx, calls } = mockCtx(tmpDir, [], false); // non-interactive throughout
+
+		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-009", max_iterations: 3 }, ctx);
+
+		assert.equal(result.final_status, "completed");
+		assert.equal(result.iterations.length, 2);
+		assert.equal(calls.length, 0); // confirm never invoked across either iteration (no files → no commit gate either)
+	});
+
+	it("on_fail absent, non-interactive, fail iteration 1 → final_status=aborted-non-interactive (unaffected by the on_fail addition)", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-010",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: [] },
+			},
+		]);
+		_internals.dispatchTargetAgent = async () => FAKE_AGENT_RESULT;
+		_internals.runRealChecks = async () => FAILING_REAL_CHECK;
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx, calls } = mockCtx(tmpDir, [], false);
+
+		const result = await runWorkOrderLoop(tmpDir, { work_order_id: "WO-010", max_iterations: 2 }, ctx);
+
+		assert.equal(result.final_status, "aborted-non-interactive");
+		assert.equal(result.iterations.length, 1);
+		assert.equal(calls.length, 0);
+	});
+
+	it("output_contract violation — dispatched agent's output fails the declared output_contract → throws naming the work-order id", async () => {
+		writeWorkOrders(tmpDir, [
+			{
+				id: "WO-011",
+				target_agent: "stub",
+				real_check_criteria: { build_check_test: true },
+				scope: { files: [] },
+				output_contract: {
+					type: "object",
+					required: ["ok"],
+					properties: { ok: { type: "boolean" } },
+					additionalProperties: false,
+				},
+			},
+		]);
+		// FAKE_AGENT_RESULT.output = { ok: true } conforms; substitute a
+		// violating output to exercise the wired output_contract guard inside
+		// runWorkOrderLoop (called after dispatch, before runRealChecks).
+		_internals.dispatchTargetAgent = async () =>
+			({
+				output: { ok: "not-a-boolean" },
+				usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+			}) as unknown as JitAgentResult;
+		_internals.runRealChecks = async () => ({ ...PASSING_REAL_CHECK, work_order_id: "WO-011" });
+		_internals.attestedCommit = async () => ATTESTED_COMMIT_RESULT;
+		const { ctx } = mockCtx(tmpDir);
+
+		await assert.rejects(
+			runWorkOrderLoop(tmpDir, { work_order_id: "WO-011", max_iterations: 1 }, ctx),
+			(err: Error) => /WO-011/.test(err.message) && /output_contract/.test(err.message),
+		);
+	});
 });
 
 describe("clampToScope — the work-order scope clamp intersecting the composed capability grant with the work-order's declared scope.operations", () => {
@@ -307,5 +441,64 @@ describe("validateWorkOrderInput — the work-order's input_contract validation"
 
 	it("is a no-op pass-through when no contract is declared (undefined)", () => {
 		assert.doesNotThrow(() => validateWorkOrderInput({ work_order_id: "WO-104" }, undefined, "WO-104"));
+	});
+});
+
+describe("validateWorkOrderOutput — the work-order's output_contract validation", () => {
+	const CONTRACT = {
+		type: "object",
+		required: ["ok"],
+		properties: { ok: { type: "boolean" } },
+		additionalProperties: false,
+	} as Record<string, unknown>;
+
+	it("passes a conforming output against the declared contract", () => {
+		assert.doesNotThrow(() => validateWorkOrderOutput({ ok: true }, CONTRACT, "WO-201"));
+	});
+
+	it("throws naming the work-order id when the output violates the contract (wrong type)", () => {
+		assert.throws(
+			() => validateWorkOrderOutput({ ok: "not-a-boolean" }, CONTRACT, "WO-202"),
+			(err: Error) => /WO-202/.test(err.message) && /output_contract/.test(err.message),
+		);
+	});
+
+	it("throws when a required property is missing from the output", () => {
+		assert.throws(
+			() => validateWorkOrderOutput({}, CONTRACT, "WO-203"),
+			(err: Error) => /WO-203/.test(err.message),
+		);
+	});
+
+	it("is a no-op pass-through when no contract is declared (undefined)", () => {
+		assert.doesNotThrow(() => validateWorkOrderOutput({ ok: true }, undefined, "WO-204"));
+	});
+});
+
+describe("mergeContextBlocks — additive merge of a work-order's declared context_blocks onto the agent spec's own contextBlocks", () => {
+	it("appends the work-order's context_blocks after the spec's own, preserving both", () => {
+		const merged = mergeContextBlocks(["requirements"], ["work-orders"]);
+		assert.deepEqual(merged, ["requirements", "work-orders"]);
+	});
+
+	it("appends an object-form ContextBlockRef entry alongside a spec's bare-string entries", () => {
+		const merged = mergeContextBlocks(["requirements"], [{ name: "work-orders", item: "WO-001" }]);
+		assert.deepEqual(merged, ["requirements", { name: "work-orders", item: "WO-001" }]);
+	});
+
+	it("returns the spec's contextBlocks unchanged when the work-order declares none (undefined)", () => {
+		assert.deepEqual(mergeContextBlocks(["requirements"], undefined), ["requirements"]);
+	});
+
+	it("returns the spec's contextBlocks unchanged when the work-order declares an empty array", () => {
+		assert.deepEqual(mergeContextBlocks(["requirements"], []), ["requirements"]);
+	});
+
+	it("returns the work-order's context_blocks alone when the spec declares none (undefined)", () => {
+		assert.deepEqual(mergeContextBlocks(undefined, ["work-orders"]), ["work-orders"]);
+	});
+
+	it("returns undefined when neither the spec nor the work-order declares any context_blocks", () => {
+		assert.equal(mergeContextBlocks(undefined, undefined), undefined);
 	});
 });

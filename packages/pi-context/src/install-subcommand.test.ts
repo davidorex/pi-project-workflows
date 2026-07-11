@@ -547,7 +547,7 @@ describe("checkStatus (read-only drift detector)", () => {
 		assert.equal(tasks.behind, true, "a catalog-ahead asset is behind the catalog");
 		assert.ok(tasks.version_delta, "a behind asset carries a version_delta");
 		assert.equal(tasks.version_delta?.from, "1.0.0", "delta.from is the install baseline version");
-		assert.equal(tasks.version_delta?.to, "1.0.1", "delta.to is the catalog version");
+		assert.equal(tasks.version_delta?.to, "1.1.0", "delta.to is the catalog version");
 		assert.equal(tasks.version_delta?.basis, "version-bump", "distinct from/to versions → version-bump basis");
 	});
 
@@ -600,7 +600,7 @@ describe("checkStatus (read-only drift detector)", () => {
 		const bumpRender = renderCheckStatus(checkStatus(tmpRoot));
 		assert.ok(bumpRender.includes("catalog-ahead"), "the state grouping (catalog-ahead) is preserved");
 		assert.ok(
-			bumpRender.includes("tasks (1.0.0 -> 1.0.1)"),
+			bumpRender.includes("tasks (1.0.0 -> 1.1.0)"),
 			"a version-bump behind asset shows the from -> to version pair inline",
 		);
 		fs.rmSync(tmpRoot, { recursive: true, force: true });
@@ -1962,8 +1962,11 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 		assert.deepEqual(result.migrated, ["tasks"], "a version bump with no items migrates");
 		assert.deepEqual(
 			result.migrationsRegistered,
-			[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
-			"the registered catalog decl must be surfaced under migrationsRegistered",
+			[
+				{ schema: "tasks", from: "1.0.0", to: "1.0.1" },
+				{ schema: "tasks", from: "1.0.1", to: "1.1.0" },
+			],
+			"the registered catalog decls (the full 1.0.0 -> 1.1.0 chain) must be surfaced under migrationsRegistered",
 		);
 		// migrations.json now carries the decl on disk.
 		const onDisk = JSON.parse(fs.readFileSync(migrationsPathOf(tmpRoot), "utf-8")) as {
@@ -1997,8 +2000,11 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 		assert.deepEqual(result.resynced, [], "a version-bump no-items dryRun is NOT predicted as resynced");
 		assert.deepEqual(
 			result.migrationsRegistered,
-			[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
-			"dryRun must list the would-register decl",
+			[
+				{ schema: "tasks", from: "1.0.0", to: "1.0.1" },
+				{ schema: "tasks", from: "1.0.1", to: "1.1.0" },
+			],
+			"dryRun must list the would-register decls (the full 1.0.0 -> 1.1.0 chain)",
 		);
 		// migrations.json byte-unchanged (absent stays absent; present stays equal).
 		const after = fs.existsSync(mp) ? fs.readFileSync(mp) : null;
@@ -2162,7 +2168,7 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.equal(d.name, "tasks");
 		assert.equal(d.reason, "validation-failed");
 		assert.equal(d.from, "1.0.0");
-		assert.equal(d.to, "1.0.1");
+		assert.equal(d.to, "1.1.0");
 		assert.ok(Array.isArray(d.failures) && d.failures.length >= 1, "validation-failed carries per-item failures");
 		const enumFailure = d.failures?.find((f) => f.instancePath === "/tasks/0/status");
 		assert.ok(enumFailure, "the failing status field is reported by instancePath");
@@ -2175,7 +2181,10 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		// A valid item passes the identity migration and re-validates against the
 		// catalog 1.0.1 schema → migrated; the would-register decl is surfaced.
 		const goodItem = { id: "TASK-001", description: "x", status: "planned" };
-		const expectedDecls = [{ schema: "tasks", from: "1.0.0", to: "1.0.1" }];
+		const expectedDecls = [
+			{ schema: "tasks", from: "1.0.0", to: "1.0.1" },
+			{ schema: "tasks", from: "1.0.1", to: "1.1.0" },
+		];
 		const dryDir = makeCatalogAheadTasks("1.0.0", [goodItem]);
 		const dry = updateContext(dryDir, { dryRun: true });
 		assert.deepEqual(dry.migrated, ["tasks"], "dry: a clean-migrating populated block predicts migrated");
@@ -2259,7 +2268,7 @@ describe("updateContext dryRun outcome parity (TASK-046 / FGAP-066)", () => {
 		assert.deepEqual(dryDetail, liveDetail, "TASK-048: dry blockedDetail == live blockedDetail (no-chain)");
 		assert.deepEqual(
 			dryDetail,
-			[{ name: "tasks", reason: "no-migration-chain", from: "0.9.0", to: "1.0.1" }],
+			[{ name: "tasks", reason: "no-migration-chain", from: "0.9.0", to: "1.1.0" }],
 			"no-chain blockedDetail carries reason + version pair, no failures",
 		);
 	});
@@ -2313,7 +2322,7 @@ describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048
 		const r = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
 		assert.equal(r.valid, true, "a catalog-conformant item validates clean");
 		assert.deepEqual(r.failures, [], "a clean block reports no failures");
-		assert.equal(r.to, "1.0.1", "the catalog version is reported as `to`");
+		assert.equal(r.to, "1.1.0", "the catalog version is reported as `to`");
 	});
 
 	it("an unknown block throws a field-named error", () => {
@@ -2472,7 +2481,7 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		assert.ok(fs.readFileSync(schemaDest).equals(schemaBefore), "blocked schema byte-unchanged");
 		const markedText = fs.readFileSync(blockDest, "utf-8");
 		assert.ok(/^<{7} BLOCKED tasks /m.test(markedText), "an open sentinel was written into the block");
-		assert.ok(/^>{7} target: tasks@1\.0\.1/m.test(markedText), "a close sentinel was written into the block");
+		assert.ok(/^>{7} target: tasks@1\.1\.0/m.test(markedText), "a close sentinel was written into the block");
 		const markedLines = markedText.split("\n");
 		const openIdx = markedLines.findIndex((l) => /^<{7} BLOCKED tasks /.test(l));
 		assert.ok(openIdx >= 0, "open sentinel located");
@@ -2506,7 +2515,7 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		assert.equal(entry?.name, "tasks");
 		assert.equal(entry?.reason, "validation-failed");
 		assert.equal(entry?.from, "1.0.0");
-		assert.equal(entry?.to, "1.0.1");
+		assert.equal(entry?.to, "1.1.0");
 		assert.ok(Array.isArray(entry?.chain) && entry.chain.length >= 1, "the chain reaching the target is pinned");
 		assert.ok(Array.isArray(entry?.failures) && entry.failures.length >= 1, "the per-item failures are recorded");
 		const targetHash = entry?.target_hash as string;
@@ -2529,8 +2538,11 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		if (res.resolved === true) {
 			assert.deepEqual(
 				res.registeredMigrations,
-				[{ schema: "tasks", from: "1.0.0", to: "1.0.1" }],
-				"the chain decl was registered",
+				[
+					{ schema: "tasks", from: "1.0.0", to: "1.0.1" },
+					{ schema: "tasks", from: "1.0.1", to: "1.1.0" },
+				],
+				"the chain decls (1.0.0 -> 1.1.0) were registered",
 			);
 		}
 
@@ -2542,7 +2554,7 @@ describe("resolveBlocked + pending-blocked persistence (TASK-051 / FGAP-080)", (
 		);
 		// The block envelope advanced to the target version.
 		const blockAfter = JSON.parse(fs.readFileSync(blockDest, "utf-8")) as { schema_version?: string };
-		assert.equal(blockAfter.schema_version, "1.0.1", "the block envelope advanced to the target version");
+		assert.equal(blockAfter.schema_version, "1.1.0", "the block envelope advanced to the target version");
 		// The merge base advanced to the target hash.
 		const cfgAfter = loadConfig(tmpRoot);
 		assert.equal(

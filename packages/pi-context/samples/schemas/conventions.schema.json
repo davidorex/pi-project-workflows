@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/conventions",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Conventions",
   "description": "Code and process conventions the project follows. Rules with enforcement methods (lint, review, test) that agents must comply with when writing code. Injected into agent prompts as constraints.",
   "type": "object",
@@ -66,6 +66,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents writing code, into whose prompts the rule is injected verbatim as a binding constraint, paired with its enforcement method (lint / review / test).",
+          "register_notes": "`description` states the rule as a directly-compliable constraint — what an agent must or must not do — terse, unambiguous, and self-contained, since it is injected verbatim into agent prompts. State the rule in the present imperative; no narration of prior conventions or why it changed.",
+          "prohibited_patterns": []
         }
       }
     },

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/spec-reviews",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Spec Reviews",
   "description": "Design reviews of specification documents. Each review targets one spec, runs a pre-implementation review pass (ideally via independent fresh-context reviewer), and carries scope/method/status. A spec-review blocks implementation-spec drafting until 'clean'.",
   "type": "object",
@@ -94,6 +94,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "The spec author and the implementation gate: a review's findings and status determine whether implementation-spec drafting may proceed (blocked until 'clean'); read verbatim as the review verdict on one targeted spec.",
+          "register_notes": "`method` states how the review was conducted (e.g. an independent fresh-context pass), terse and specific; findings state what the review found about the targeted spec, self-contained and actionable. State the current review verdict; no narration of prior review rounds (the status field carries the lifecycle).",
+          "prohibited_patterns": []
         }
       }
     }

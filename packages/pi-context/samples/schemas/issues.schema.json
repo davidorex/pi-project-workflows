@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/issues",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Issues",
   "description": "Known bugs, missing capabilities, design debt, and open work items. Tracked with title/body (GitHub issue pattern), code location, package scope, priority, and resolution lifecycle.",
   "type": "object",
@@ -113,6 +113,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents triaging or resolving the issue: `title` and `body` are read verbatim as the problem statement (GitHub-issue pattern), scoped by code location, package, and priority.",
+          "register_notes": "`body` states the problem — the bug, missing capability, or design debt — concretely enough to reproduce or act on, terse and self-contained, grounded in the cited code location. State the issue's current standing; no narration of how it was found or of prior fix attempts (the resolution lifecycle and edges carry that).",
+          "prohibited_patterns": []
         }
       }
     }

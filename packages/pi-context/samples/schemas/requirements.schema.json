@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/requirements",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "title": "Requirements",
   "description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
   "type": "object",
@@ -98,6 +98,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents implementing and verifying against the requirement: `description` is read verbatim as the contract term between intent and implementation, scoped by MoSCoW priority and lifecycle state.",
+          "register_notes": "`description` states what the project must deliver — one functional or non-functional requirement — as a testable contract term, terse and self-contained, in the present imperative. State the current requirement; no narration of prior wording or status (the lifecycle field carries that). Diff against bound user stories at filing; do not augment.",
+          "prohibited_patterns": []
         }
       }
     }

@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "pi-context://schemas/research",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "title": "Research",
   "description": "Factual and analytical substrate under decisions — each entry captures what was investigated, how, what was found, what grounds the findings, and what stale conditions invalidate them.",
   "type": "object",
@@ -263,6 +263,11 @@
             "pattern": "^[0-9a-f]{64}$",
             "description": "content_hash of the immediately-prior version of this item; set on a content-changing update, absent on the first (v1) version. Forms the per-item content version chain."
           }
+        },
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Agents and decisions consuming the finding without reading the full document: `findings_summary` is injected verbatim as the standalone result, grounded by `grounding` / `citations` and invalidated by `stale_conditions`.",
+          "register_notes": "`findings_summary` must be self-contained and prompt-injectable — it stands alone without the `findings_document` (target ~300-800 words); `question` states what was investigated and `method` how, both terse. Every factual claim traces to a citation. State findings in the present as currently grounded; no provenance / git narration in the body (grounding.revisions and citations carry SHAs and sources).",
+          "prohibited_patterns": []
         }
       }
     }

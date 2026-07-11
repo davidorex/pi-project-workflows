@@ -266,6 +266,57 @@ describe("scanBlockItems — per-item aggregation", () => {
 		const flagged = scanBlockItems("framework-gaps", "gaps", ITEM_SCHEMA, items);
 		assert.equal(flagged.length, 0, "a closed item must never be flagged, regardless of its prose");
 	});
+
+	it("applies per-block-kind terminal statuses, not a single hardcoded value", () => {
+		const hedged = "do this or that, as a decision.";
+		// tasks: "completed" is terminal, "in-progress" is not.
+		const tasksItems = [
+			{ id: "TASK-901", status: "completed", proposed_resolution: hedged },
+			{ id: "TASK-902", status: "in-progress", proposed_resolution: hedged },
+		];
+		const tasksFlagged = scanBlockItems("tasks", "tasks", ITEM_SCHEMA, tasksItems);
+		assert.deepEqual(
+			tasksFlagged.map((c) => c.id),
+			["TASK-902"],
+			"only the in-progress task should be flagged; completed is terminal for tasks",
+		);
+
+		// decisions: "enacted" is terminal, "open" is not.
+		const decisionsItems = [
+			{ id: "DEC-0901", status: "enacted", proposed_resolution: hedged },
+			{ id: "DEC-0902", status: "open", proposed_resolution: hedged },
+		];
+		const decisionsFlagged = scanBlockItems("decisions", "decisions", ITEM_SCHEMA, decisionsItems);
+		assert.deepEqual(
+			decisionsFlagged.map((c) => c.id),
+			["DEC-0902"],
+			"only the open decision should be flagged; enacted is terminal for decisions",
+		);
+	});
+
+	it("does not skip on status values that are terminal for a DIFFERENT block kind", () => {
+		// "closed" is framework-gaps' terminal value; a hypothetical block using
+		// the same literal string but with no TERMINAL_STATUSES entry must not
+		// have it treated as terminal by accident.
+		const items = [{ id: "notes[0]", status: "closed", proposed_resolution: "do this or that, as a decision." }];
+		const flagged = scanBlockItems("session-notes", "sessions", ITEM_SCHEMA, items);
+		assert.equal(flagged.length, 1, "session-notes has no terminal-status entry; nothing should be skipped on status");
+	});
+
+	it("does not skip research's stale status — it is a live re-verification signal, not terminal", () => {
+		const items = [{ id: "R-0901", status: "stale", proposed_resolution: "do this or that, as a decision." }];
+		const flagged = scanBlockItems("research", "research", ITEM_SCHEMA, items);
+		assert.equal(flagged.length, 1, "stale must remain a live candidate for research");
+	});
+
+	it("does not apply any terminal-status skip to the verification block", () => {
+		// verification's status enum (passed/failed/partial/skipped) is a
+		// test-outcome field, not a lifecycle state — deliberately absent from
+		// TERMINAL_STATUSES, so nothing in this block is ever skipped on status.
+		const items = [{ id: "VER-0901", status: "passed", proposed_resolution: "do this or that, as a decision." }];
+		const flagged = scanBlockItems("verification", "verifications", ITEM_SCHEMA, items);
+		assert.equal(flagged.length, 1, "verification has no terminal-status entry; a passed record stays flaggable");
+	});
 });
 
 describe("scanSubstrate — live-substrate structural invariants", () => {

@@ -12,9 +12,12 @@
  * an orchestrator happening to read the right gap — the manual FGAP-124/125/
  * 126/127 fork-provenance audits (2026-07-10/11) are the process this feeds.
  *
- * Items with status "closed" are skipped entirely (not scanned, not
- * flagged) — a closed item's hedge, if any, was already resolved or
- * superseded at closure; it isn't a live audit candidate.
+ * Items in a per-block-kind terminal status (see `TERMINAL_STATUSES` below —
+ * e.g. framework-gaps "closed", tasks "completed"/"cancelled", decisions
+ * "enacted"/"superseded") are skipped entirely (not scanned, not flagged) —
+ * a terminal item's hedge, if any, was already resolved or superseded; it
+ * isn't a live audit candidate. Verified per-block against each schema's
+ * actual status enum, not a single hardcoded value.
  *
  * Discovery is registry-driven, never hardcoded:
  *   - Block kinds come from the active substrate's config (`loadConfig(cwd)`
@@ -333,6 +336,43 @@ export function collectProseValues(
 
 // ── Item + block scanning ────────────────────────────────────────────────────
 
+/**
+ * Per-block-kind terminal status values: an item in one of these states is
+ * done/resolved/no-longer-live — its residual hedge-shaped prose reflects
+ * history, not a live decision, so it is skipped entirely (never scanned,
+ * never flagged). Verified against each block's actual schema enum, not
+ * guessed; block names match `path.basename(kind.data_path, ".json")`.
+ *
+ * Deliberately excluded, on a real basis, not by omission:
+ *   - research's "stale" — its own schema description says "findings may
+ *     still be correct but grounding is no longer authoritative": a live
+ *     re-verification signal, the opposite of terminal.
+ *   - issues.deferred / requirements.deferred — postponed-but-not-abandoned,
+ *     genuinely ambiguous, left as a live candidate.
+ *   - work-orders.real-check-failed and real-check-passed — a work-order's
+ *     post-failure lifecycle isn't disambiguated by the enum alone.
+ *   - verification's whole status enum (passed/failed/partial/skipped) is a
+ *     test-outcome field, not an open/closed lifecycle; a failed
+ *     verification is exactly the kind of thing that should stay flaggable.
+ *   - rationale, context-contracts, conventions, session-notes: no status
+ *     field and no substitute terminality signal in their schemas.
+ */
+const TERMINAL_STATUSES: Readonly<Record<string, readonly string[]>> = {
+	"framework-gaps": ["closed", "superseded_by", "wontfix"],
+	tasks: ["completed", "cancelled"],
+	decisions: ["enacted", "superseded"],
+	features: ["complete", "cancelled"],
+	issues: ["resolved"],
+	research: ["complete", "superseded"],
+	"spec-reviews": ["complete", "abandoned"],
+	story: ["complete"],
+	phase: ["completed"],
+	milestone: ["reached"],
+	requirements: ["implemented", "verified"],
+	"layer-plans": ["complete", "abandoned"],
+	"work-orders": ["completed", "cancelled"],
+};
+
 function stringField(item: Record<string, unknown>, key: string): string | undefined {
 	const v = item[key];
 	return typeof v === "string" ? v : undefined;
@@ -345,9 +385,11 @@ export function scanBlockItems(
 	itemSchema: SchemaNode,
 	items: Record<string, unknown>[],
 ): CandidateItem[] {
+	const terminal = TERMINAL_STATUSES[block];
 	const flagged: CandidateItem[] = [];
 	items.forEach((item, index) => {
-		if (stringField(item, "status") === "closed") return;
+		const status = stringField(item, "status");
+		if (terminal && status !== undefined && terminal.includes(status)) return;
 		const proseValues = collectProseValues(itemSchema, item, "");
 		const fields: FieldFinding[] = [];
 		for (const pv of proseValues) {
@@ -362,7 +404,7 @@ export function scanBlockItems(
 			arrayKey,
 			id: stringField(item, "id") ?? stringField(item, "oid") ?? `${block}[${index}]`,
 			title: stringField(item, "title"),
-			status: stringField(item, "status"),
+			status,
 			categories,
 			fields,
 		});

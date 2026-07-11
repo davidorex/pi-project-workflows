@@ -1,0 +1,20 @@
+{
+  "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
+  "status": "closed",
+  "priority": "P1",
+  "package": "pi-agent-dispatch",
+  "canonical_vocabulary": "hasUI-aware confirm gating",
+  "description": "On real-check failure before the last iteration the loop's human-OK gate now checks ctx.hasUI FIRST: in a non-interactive (pi -p) context (ctx.hasUI === false) it does NOT call ctx.ui.confirm and records the distinct final_status 'aborted-non-interactive' instead of mislabeling the noOpUIContext confirm-false default as 'aborted-by-human' — the semantic-mislabel defect is FIXED (mirrors the auth-gate's hasUI-first pattern). The interactive path (a human answering confirm false) still reports 'aborted-by-human', unchanged. Two things remain: (1) there is still no way to opt into non-interactive bounded retry — every non-interactive run is single-shot abort-on-first-failure (fail-SAFE, but not a chosen/opt-in policy); (2) the broader ui.confirm call-site class is unswept — any other ctx.ui.confirm call site that does not pre-check hasUI would treat the no-UI default as an operator decline. Class: FGAP-068 interactivity-dependence in a non-interactively-drivable surface.",
+  "evidence": [
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
+      "reference": "the human-OK gate checks ctx.hasUI === false before ctx.ui.confirm and records aborted-non-interactive (mislabel FIXED); the retry path is still single-shot non-interactively (no opt-in bounded-retry policy)"
+    },
+    {
+      "file": "analysis/2026-07-07-work-order-dispatch-dogfood-breaks.md",
+      "reference": "Break 5: noOpUIContext confirm-false mechanics, the two-defects split, fail-safe-but-dishonest analysis, the ui.confirm call-site sub-class"
+    }
+  ],
+  "impact": "The loop's durable verdict lies about the actor (harness inputs must not), and bounded retry — the loop's FEAT-006 governance feature — cannot run in the non-interactive context the harness uses; every such run is single-shot.",
+  "proposed_resolution": "Under FEAT-014, the remainder: add an explicit work-order retry policy (on_fail: retry|abort — the sort of field the v1 contract implies, tying to FGAP-125) so non-interactive runs can opt into bounded retry; sweep ui.confirm consumers across the packages for the same no-pre-check pattern and apply the hasUI-first guard where needed. The semantic mislabel (hasUI pre-check + aborted-non-interactive status) is already implemented with a unit pin."
+}

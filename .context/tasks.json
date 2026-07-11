@@ -2384,10 +2384,11 @@
         "packages/pi-agent-dispatch/src/auth-gate.ts",
         "packages/pi-agent-dispatch/src/work-order-loop.ts"
       ],
-      "status": "planned",
+      "status": "completed",
       "id": "TASK-118",
       "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
-      "content_hash": "dce982a74dddc32bca8b5ba914c40cf0eae2a7ea846802b3cbdac67ace95cb1f"
+      "content_hash": "ff38a5100954d8bdbd8b278328a4093aa5d1eb4ea1dba81b65c02279d36cdb26",
+      "content_parent": "dce982a74dddc32bca8b5ba914c40cf0eae2a7ea846802b3cbdac67ace95cb1f"
     },
     {
       "description": "User directive (this session, verbatim): 'i want it to copy agents. not providing agents that can be edited and changed in the project wanting to use agents is nearly the definition of terrible ux.' This is FGAP-127's still-open disjunct (bundled-builtinDir shipped via TASK-103; ceremony-seeding was deliberately left unbuilt, recorded as an open FEAT-014 design option, and no task tracked it until now). Implement: the install ceremony (context-install / accept-all) materializes real agent spec files into <contextDir>/agents/ from a config-declared installed_agents[] list, mirroring the existing installed_schemas[]/installed_blocks[] materialization mechanism -- not merely pointing at the read-only bundled directory FGAP-127's shipped fix resolves from. Materialized files are ordinary project files: editable, deletable, and customizable by the project that installs them. The existing bundled-builtinDir tier (FGAP-127) is unaffected and remains the fallback when no local copy exists, per the loader's existing project > user > bundled precedence.",
@@ -2486,7 +2487,7 @@
     },
     {
       "description": "Implement FGAP-125's remaining two legs under FEAT-014, per enacted DEC-0022 (acting agents dispatch as pi subprocesses): (1) inject wo.context_blocks into the dispatched pi subprocess -- resolve the referenced blocks and pass them into the agent's context across the process boundary; (2) validate the agent's returned output against wo.output_contract post-return -- the subprocess must emit structured output the loop can check. Each leg gets a per-field regression pin, matching the existing pattern for clampToScope and validateWorkOrderInput (already implemented with unit pins).",
-      "status": "planned",
+      "status": "completed",
       "acceptance_criteria": [
         "wo.context_blocks is resolved and injected into the dispatched pi subprocess's context across the process boundary, with a unit pin demonstrating a work-order carrying context_blocks actually receives that context in the subprocess",
         "the agent's returned output is validated against wo.output_contract post-return, with a unit pin demonstrating a non-conforming output is caught and a conforming one passes",
@@ -2499,11 +2500,12 @@
       ],
       "id": "TASK-123",
       "oid": "a91ca51733301ebffe3c47f8976f7404",
-      "content_hash": "6d24979f16009667c46814d252c3b02b3d12d64586d14382bbd22a6bf68ef799"
+      "content_hash": "59b1f8a9326b5a68418e6fb9ae4fabf099154da5592b6024cb55cb0d5dbdb6a9",
+      "content_parent": "6d24979f16009667c46814d252c3b02b3d12d64586d14382bbd22a6bf68ef799"
     },
     {
       "description": "Implement FGAP-128's remainder under FEAT-014: (1) add an explicit work-order retry policy field (on_fail: retry|abort, tying to FGAP-125's v1 contract fields) so non-interactive runs can opt into bounded retry instead of the current single-shot abort-on-first-failure; (2) sweep ctx.ui.confirm call sites across pi-agent-dispatch (and any other package that dispatches through this loop) for the same no-pre-check pattern the human-OK gate already fixed, applying the hasUI-first guard (check ctx.hasUI before calling ctx.ui.confirm; record a distinct non-interactive status rather than mislabeling the no-UI default as an operator decline) wherever a call site lacks it. The semantic mislabel fix itself (hasUI pre-check + aborted-non-interactive status on the human-OK gate) is already implemented with a unit pin -- this task is the two remaining legs only.",
-      "status": "planned",
+      "status": "completed",
       "acceptance_criteria": [
         "an on_fail retry|abort field exists on the work-order contract (schema + engine), and a non-interactive run with on_fail:retry actually performs bounded retry on real-check failure before the last iteration, with a unit pin",
         "every ctx.ui.confirm call site in pi-agent-dispatch is enumerated and checked for the hasUI-first pattern; any site missing it is fixed to check ctx.hasUI before confirm and record a distinct non-interactive status, not aborted-by-human",
@@ -2516,7 +2518,8 @@
       ],
       "id": "TASK-124",
       "oid": "627f53d72f43e4c7becbef27aa855c28",
-      "content_hash": "708d33b24c98809446572c29921563ddaba43cb00c33179397326bff33eed897"
+      "content_hash": "a8de9ece032fb68c5a16eb3d9e9c7da272d401eaec8030c3f6972452af119380",
+      "content_parent": "708d33b24c98809446572c29921563ddaba43cb00c33179397326bff33eed897"
     },
     {
       "description": "Implement FGAP-142: export citation-rot-scanner.ts's CITATION_RE (or a small detection-core function) via a package subpath so scan-comment-citations.ts and any future consumer reuse it instead of hand-duplicating the regex. Extend the scanner to also detect tracker-ID citations inside JSDoc/line comments in source files, delta-scoped: only a citation introduced in the current diff/working-tree change is flagged (via a git-diff-aware check against the base branch or staged changes), never a pre-existing one -- so the gate can run today without retroactively blocking on the ~500+ instances FGAP-136's rollout already cleaned up. Wire the delta-scoped check into pre-commit alongside the existing check-changelog/parity-check/check-config-schema gates.",

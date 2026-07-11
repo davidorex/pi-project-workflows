@@ -4131,11 +4131,11 @@
     },
     {
       "title": "Work-order schema is a v1 contract whose engine implements a demo subset — four required fields never consumed, and the catalog schema asserts a scope clamp that does not run",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "work-order contract-engine parity",
-      "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop originally consumed none of their semantics. Two are now honored (fixed): the dispatch input is validated against input_contract via the canonical pi-context AJV validator before compile/spawn (validateWorkOrderInput), and the capability grant is clamped to wo.scope.operations (clampToScope intersects the composed grant, so a caller grant of [write,bash] under scope.operations [write] dispatches with --tools write). Two remain unconsumed: context_blocks is never injected into the dispatched agent, and output_contract is never validated against the agent's returned output — both have zero references in pi-agent-dispatch. The catalog schema's scope description historically asserted a clamp that did not run; the clamp now runs, so that assertion is satisfied for scope, while the schema still declares context_blocks/output_contract semantics the engine does not implement. Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts — documents its deferral). Direction settled by git dates: the schema landed one day ahead of the loop's demo-subset engine.",
+      "description": "The work-orders schema requires input_contract, context_blocks, output_contract, and scope; the loop consumed none of their semantics. Two are now honored (fixed): the dispatch input is validated against input_contract via the canonical pi-context AJV validator before compile/spawn (validateWorkOrderInput), and the capability grant is clamped to wo.scope.operations (clampToScope intersects the composed grant, so a caller grant of [write,bash] under scope.operations [write] dispatches with --tools write). Two remain unconsumed: context_blocks is never injected into the dispatched agent, and output_contract is never validated against the agent's returned output — both have zero references in pi-agent-dispatch. The catalog schema's scope description asserted a clamp that did not run; the clamp now runs, so that assertion is satisfied for scope, while the schema still declares context_blocks/output_contract semantics the engine does not implement. Class: schema-contract ahead of engine (sibling: ContextBlockRef, pi-jit-agents types.ts — documents its deferral). Direction settled by git dates: the schema landed one day ahead of the loop's demo-subset engine.",
       "evidence": [
         {
           "file": "packages/pi-agent-dispatch/src/work-order-loop.ts",
@@ -4156,12 +4156,14 @@
       "created_at": "2026-07-07",
       "id": "FGAP-125",
       "oid": "e2fb87608aa91216a5a5cbdcc05d3b79",
-      "content_hash": "d94c8245caef2e26601f69e681b78d1d9ec26027782c009e4bc72774baad726b",
-      "content_parent": "e8eca3b0bf101fa5a0f2dd7a1c912fb63fa5f5b50c4967717c891da25dc2a727"
+      "content_hash": "bb815ba45cf57e11024a4f9ea93b09f826e61799b39686948dc8d88714ee8c41",
+      "content_parent": "162a22cffa305fadc84d046b48ea32802c27efdfa12f7db3a843e8cc93c9542d",
+      "closed_by": "TASK-123 (VER-103): wo.context_blocks additively merges onto the dispatched agent spec's own contextBlocks (mergeContextBlocks); wo.output_contract is validated against the dispatched agent's returned output (validateWorkOrderOutput). Both legs move from zero-references to consumed. Merged to main.",
+      "closed_at": "2026-07-12"
     },
     {
       "title": "The eight pi-only auth-gated tools have no non-interactive invocation path, and the gate refuses the ceremony while passing the composite that embeds its effect",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "non-interactive completion path for gated ceremonies",
@@ -4186,8 +4188,10 @@
       "created_at": "2026-07-07",
       "id": "FGAP-126",
       "oid": "22ea947619580149dfacd0c2ef4fdefe",
-      "content_hash": "6148c019a7de3634a47c56fa13ae416880385fa2d5d4de5109b017839a229c27",
-      "content_parent": "a0e16b8838a3f3b7f90afb0ff1de0cabc2c6b96df881b162ed4350a59d6487d4"
+      "content_hash": "baadbdbe1d65f62c285959e4e0afbe04c371afdeff67b832835accd5bbd4b2f4",
+      "content_parent": "6148c019a7de3634a47c56fa13ae416880385fa2d5d4de5109b017839a229c27",
+      "closed_by": "TASK-118 (VER-102): the loop pass-branch commit now routes through authGateHandler before attestedCommit, matching every other commit-attested caller. Non-interactive dispatch skips the gated ceremony entirely (completed-pending-commit). Merged to main.",
+      "closed_at": "2026-07-12"
     },
     {
       "title": "No ceremony seeds the agents tier the jit loader resolves from — a fresh substrate cannot produce a resolvable target_agent from the loop's own operating context",
@@ -4223,7 +4227,7 @@
     },
     {
       "title": "The work-order loop records a no-UI ctx.ui.confirm default as 'aborted-by-human', and its retry path is structurally dead non-interactively",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-agent-dispatch",
       "canonical_vocabulary": "hasUI-aware confirm gating",
@@ -4244,8 +4248,10 @@
       "created_at": "2026-07-07",
       "id": "FGAP-128",
       "oid": "f1f8398cca0acd274d8a414bc4f2c76e",
-      "content_hash": "52156f6000cf37733695367229c707d7598cb24c256af07b7087e50e34e385e1",
-      "content_parent": "a824c8d9dc9f2c9b697af2c840da487aa81210f951ddb61e80dd9a1e62eb34a0"
+      "content_hash": "e0db52429afa49251eb55218db929889e43d570e92d3aedd096b9a0cf69a507a",
+      "content_parent": "52156f6000cf37733695367229c707d7598cb24c256af07b7087e50e34e385e1",
+      "closed_by": "TASK-124 (VER-104): on_fail retry|abort added to the work-order contract (schema + engine); a non-interactive run with on_fail:retry performs bounded retry on real-check failure, never exceeding max_iterations. ctx.ui.confirm sweep re-confirmed independently: no unguarded call site exists. Merged to main.",
+      "closed_at": "2026-07-12"
     },
     {
       "title": "Template-resolution divergence between the two spec pipelines — jit parse absolutizes template refs, so every bundled spec is uncompilable on the dispatch path",

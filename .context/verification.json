@@ -3222,6 +3222,88 @@
       "id": "VER-101",
       "oid": "c12b53b327d8b1648ebb67960ab37ffc",
       "content_hash": "ad7c1baf9834d2bc99266ccaa02dfa6affcae5e0bf65ee3be0d9c8ef7985a7a6"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test run clean on main post-merge under the project's pinned toolchain. Independent runtime demo (fresh scenarios, not the implementer's own test file) drove runWorkOrderLoop directly: interactive gate-decline yields aborted-by-human with no commit_sha; interactive gate-accept commits via _internals.attestedCommit using the gate-mutated event.input (confirmed the writer-identity mutation reaches the actual commit call, one ctx.ui.confirm invocation); non-interactive mode with a passing real-check yields completed-pending-commit, no commit attempted, zero confirm calls. A fresh Explore agent independently re-confirmed the ctx.ui.confirm sweep: exactly two call sites exist across pi-agent-dispatch/pi-workflows (work-order-loop.ts's human-OK gate, auth-gate.ts's own gate), both already hasUI-guarded -- no third site found, no fix needed beyond the routing change itself.",
+      "criteria_results": [
+        {
+          "criterion": "A non-interactive run-work-order-loop dispatch does not invoke, and is not refused on, any of the 8 pi-only gated tools",
+          "status": "passed"
+        },
+        {
+          "criterion": "run-work-order-loop's commit is produced via the gated commit-attested tool path, not the ungated library call",
+          "status": "passed"
+        },
+        {
+          "criterion": "Regression tests pin both behaviors",
+          "status": "passed"
+        },
+        {
+          "criterion": "npm run build, npm run check, npm test all pass clean; docs-surface-sync applied",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-102",
+      "oid": "220ed0cf2bb7143663ba188506e44313",
+      "content_hash": "45292f35c6a0c0ffad5dc4a4aae1d53aca2b9beee483db83c276fdcd5e9d8f23"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test run clean on main post-merge. Dedicated test coverage confirmed for the new mergeContextBlocks function (additive merge: appends work-order's context_blocks after spec's own, preserves both; handles spec-only, wo-only, neither, and empty-array cases) and validateWorkOrderOutput (conforming output passes, non-conforming throws naming the work-order id). Independent runtime demo directly exercised validateWorkOrderOutput's accept/reject paths against a real output_contract, confirming the throw and pass-through behavior match validateWorkOrderInput's established shape.",
+      "criteria_results": [
+        {
+          "criterion": "wo.context_blocks is resolved and injected into the dispatched pi subprocess's context, with a unit pin",
+          "status": "passed"
+        },
+        {
+          "criterion": "the agent's returned output is validated against wo.output_contract post-return, with a unit pin",
+          "status": "passed"
+        },
+        {
+          "criterion": "context_blocks and output_contract each move from zero-references to consumed",
+          "status": "passed"
+        },
+        {
+          "criterion": "existing clampToScope and validateWorkOrderInput behavior unchanged (regression)",
+          "status": "passed"
+        },
+        {
+          "criterion": "build, check, and full test suite exit 0",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-103",
+      "oid": "569fd07613f51589f8c4dc4e56296b24",
+      "content_hash": "6d54696c757053ffd40ca69643f90ecb78bac2bd814a00d9cd929a734f7a57f6"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test run clean on main post-merge. Independent runtime demo drove two fresh scenarios: on_fail:retry in non-interactive mode recovers across two failing iterations then passes on the third, with zero ctx.ui.confirm calls across all three iterations; on_fail:retry against a real-check that never passes correctly bounds at max_iterations (final_status=failed), never looping past it. A fresh Explore agent independently re-confirmed the ctx.ui.confirm sweep against this exact merged code: exactly two call sites exist across pi-agent-dispatch/pi-workflows, both already hasUI-guarded (work-order-loop.ts:409's human-OK gate, auth-gate.ts:188) -- the sweep's finding is confirmatory, no third or unguarded site exists.",
+      "criteria_results": [
+        {
+          "criterion": "an on_fail retry|abort field exists on the work-order contract (schema + engine), and a non-interactive run with on_fail:retry actually performs bounded retry on real-check failure before the last iteration, with a unit pin",
+          "status": "passed"
+        },
+        {
+          "criterion": "every ctx.ui.confirm call site in pi-agent-dispatch is enumerated and checked for the hasUI-first pattern; any site missing it is fixed",
+          "status": "passed"
+        },
+        {
+          "criterion": "the existing human-OK gate's hasUI-first fix and its aborted-non-interactive unit pin are unchanged (regression)",
+          "status": "passed"
+        },
+        {
+          "criterion": "build, check, and full test suite exit 0",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-104",
+      "oid": "08932c170c3124dbf11c08e57cd106b2",
+      "content_hash": "98e3f10acd4993f5e9e8e85d445e73dbcb01e0f6c35ec916c00b9994dedac632"
     }
   ],
   "schema_version": "1.1.0"

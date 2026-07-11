@@ -1,0 +1,14 @@
+{
+  "description": "Implement FGAP-128's remainder under FEAT-014: (1) add an explicit work-order retry policy field (on_fail: retry|abort, tying to FGAP-125's v1 contract fields) so non-interactive runs can opt into bounded retry instead of the current single-shot abort-on-first-failure; (2) sweep ctx.ui.confirm call sites across pi-agent-dispatch (and any other package that dispatches through this loop) for the same no-pre-check pattern the human-OK gate already fixed, applying the hasUI-first guard (check ctx.hasUI before calling ctx.ui.confirm; record a distinct non-interactive status rather than mislabeling the no-UI default as an operator decline) wherever a call site lacks it. The semantic mislabel fix itself (hasUI pre-check + aborted-non-interactive status on the human-OK gate) is already implemented with a unit pin -- this task is the two remaining legs only.",
+  "status": "completed",
+  "acceptance_criteria": [
+    "an on_fail retry|abort field exists on the work-order contract (schema + engine), and a non-interactive run with on_fail:retry actually performs bounded retry on real-check failure before the last iteration, with a unit pin",
+    "every ctx.ui.confirm call site in pi-agent-dispatch is enumerated and checked for the hasUI-first pattern; any site missing it is fixed to check ctx.hasUI before confirm and record a distinct non-interactive status, not aborted-by-human",
+    "the existing human-OK gate's hasUI-first fix and its aborted-non-interactive unit pin are unchanged (regression)",
+    "build, check, and full test suite exit 0"
+  ],
+  "files": [
+    "packages/pi-agent-dispatch/src/work-order-loop.ts",
+    "packages/pi-context/samples/schemas/work-orders.schema.json"
+  ]
+}

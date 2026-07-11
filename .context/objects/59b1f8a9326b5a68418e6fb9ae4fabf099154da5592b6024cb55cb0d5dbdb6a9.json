@@ -1,0 +1,14 @@
+{
+  "description": "Implement FGAP-125's remaining two legs under FEAT-014, per enacted DEC-0022 (acting agents dispatch as pi subprocesses): (1) inject wo.context_blocks into the dispatched pi subprocess -- resolve the referenced blocks and pass them into the agent's context across the process boundary; (2) validate the agent's returned output against wo.output_contract post-return -- the subprocess must emit structured output the loop can check. Each leg gets a per-field regression pin, matching the existing pattern for clampToScope and validateWorkOrderInput (already implemented with unit pins).",
+  "status": "completed",
+  "acceptance_criteria": [
+    "wo.context_blocks is resolved and injected into the dispatched pi subprocess's context across the process boundary, with a unit pin demonstrating a work-order carrying context_blocks actually receives that context in the subprocess",
+    "the agent's returned output is validated against wo.output_contract post-return, with a unit pin demonstrating a non-conforming output is caught and a conforming one passes",
+    "context_blocks and output_contract each move from zero-references to consumed, closing the schema-contract-ahead-of-engine gap FGAP-125 describes",
+    "existing clampToScope and validateWorkOrderInput behavior unchanged (regression)",
+    "build, check, and full test suite exit 0"
+  ],
+  "files": [
+    "packages/pi-agent-dispatch/src/work-order-loop.ts"
+  ]
+}

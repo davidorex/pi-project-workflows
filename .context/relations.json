@@ -11371,5 +11371,44 @@
       "refname": "TASK-125"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "220ed0cf2bb7143663ba188506e44313",
+      "refname": "VER-102"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
+      "refname": "TASK-118"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "569fd07613f51589f8c4dc4e56296b24",
+      "refname": "VER-103"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "a91ca51733301ebffe3c47f8976f7404",
+      "refname": "TASK-123"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "08932c170c3124dbf11c08e57cd106b2",
+      "refname": "VER-104"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "627f53d72f43e4c7becbef27aa855c28",
+      "refname": "TASK-124"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

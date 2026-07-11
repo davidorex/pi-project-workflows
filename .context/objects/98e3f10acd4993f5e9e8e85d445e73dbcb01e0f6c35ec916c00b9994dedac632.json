@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test run clean on main post-merge. Independent runtime demo drove two fresh scenarios: on_fail:retry in non-interactive mode recovers across two failing iterations then passes on the third, with zero ctx.ui.confirm calls across all three iterations; on_fail:retry against a real-check that never passes correctly bounds at max_iterations (final_status=failed), never looping past it. A fresh Explore agent independently re-confirmed the ctx.ui.confirm sweep against this exact merged code: exactly two call sites exist across pi-agent-dispatch/pi-workflows, both already hasUI-guarded (work-order-loop.ts:409's human-OK gate, auth-gate.ts:188) -- the sweep's finding is confirmatory, no third or unguarded site exists.",
+  "criteria_results": [
+    {
+      "criterion": "an on_fail retry|abort field exists on the work-order contract (schema + engine), and a non-interactive run with on_fail:retry actually performs bounded retry on real-check failure before the last iteration, with a unit pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "every ctx.ui.confirm call site in pi-agent-dispatch is enumerated and checked for the hasUI-first pattern; any site missing it is fixed",
+      "status": "passed"
+    },
+    {
+      "criterion": "the existing human-OK gate's hasUI-first fix and its aborted-non-interactive unit pin are unchanged (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test run clean on main post-merge. Dedicated test coverage confirmed for the new mergeContextBlocks function (additive merge: appends work-order's context_blocks after spec's own, preserves both; handles spec-only, wo-only, neither, and empty-array cases) and validateWorkOrderOutput (conforming output passes, non-conforming throws naming the work-order id). Independent runtime demo directly exercised validateWorkOrderOutput's accept/reject paths against a real output_contract, confirming the throw and pass-through behavior match validateWorkOrderInput's established shape.",
+  "criteria_results": [
+    {
+      "criterion": "wo.context_blocks is resolved and injected into the dispatched pi subprocess's context, with a unit pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "the agent's returned output is validated against wo.output_contract post-return, with a unit pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "context_blocks and output_contract each move from zero-references to consumed",
+      "status": "passed"
+    },
+    {
+      "criterion": "existing clampToScope and validateWorkOrderInput behavior unchanged (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "description": "Fix FGAP-141: add registerCatalogMigrationChainIfKnown(destRoot, samplesRoot, schemaName, fromVersion, toVersion) adjacent to resyncSchema in packages/pi-context/src/index.ts, reusing findCatalogMigrationChain verbatim -- registers each hop of a complete catalog chain via appendMigrationDeclForDir, copying its authored kind/transform verbatim; returns null with a reason and registers nothing when no chain resolves. Wire it into updateContext's merge branch (conflicts-empty arm, gated on not-dryRun), resolveConflict, and write-schema --operation replace's commit path, each immediately after the existing stampBaselineFromBody call. Thread each site's result into its existing report shape. Update schema-write.ts's doc comment for the resolved nuance. Repair this substrate's live breaks (research 1.3.0-to-1.4.0, session-notes 1.0.0-to-1.1.0) by running the new mechanism against them post-build, verified via direct reads of both blocks. Plan: /Users/david/.claude/plans/modular-herding-widget.md.",
+  "status": "in-progress",
+  "acceptance_criteria": [
+    "registerCatalogMigrationChainIfKnown exists adjacent to resyncSchema, reuses findCatalogMigrationChain, never fabricates an identity decl when no catalog chain resolves",
+    "updateContext merge branch, resolveConflict, and write-schema --operation replace each call the new helper after their existing stampBaselineFromBody call and thread the result into their report shape",
+    "schema-write.ts doc comment updated for the resolved nuance",
+    "new tests cover all three call sites registering a known chain and all three refusing to fabricate when no chain is known; existing tests for all three unchanged",
+    "research and session-notes blocks both read successfully via the real pi-context CLI read path after the fix and data repair",
+    "all 18 blocks re-read successfully via the real read path (repeat of this session's manual sweep)",
+    "build, check, and full test suite exit 0",
+    "CHANGELOG entry naming this does not close FGAP-140",
+    "fresh adversarial re-audit confirms all three call sites reachable, dry-run respected everywhere applicable, and the refuse-to-fabricate safety property holds against a constructed no-known-chain fixture"
+  ],
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/schema-write.ts",
+    "packages/pi-context/src/install-subcommand.test.ts",
+    "packages/pi-context/CHANGELOG.md"
+  ]
+}

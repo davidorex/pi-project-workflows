@@ -1,0 +1,5 @@
+{
+  "description": "pi-mono (/Users/david/Projects/pi-mono, this project's own upstream platform) is the gold-standard exemplar for how this monorepo designs, installs, and populates anything and everything. Binding on every design decision:\n1. Population is declarative, not imperative -- resources install from a checked-in manifest reconciled at install/startup time, never a one-shot imperative script.\n2. Installed/materialized resources are ordinary, locally editable files once installed -- never a read-only pointer to a shared/bundled location as the only option.\n3. Configuration is two-tier, project-overrides-global, deep-merged.\n4. Defaults are never hardcoded inline -- always a named, exported constant.",
+  "enforcement": "review",
+  "severity": "error"
+}

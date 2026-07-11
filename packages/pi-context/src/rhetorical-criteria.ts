@@ -160,6 +160,133 @@ function wordCount(value: string): number {
 }
 
 /**
+ * The injected nested-array subschema resolver — dereferences
+ * `parentSchema.properties[nestedArrayKey].items` against `rootSchema`
+ * (handling any `$ref`). Structurally identical to `block-api.ts`'s
+ * `resolveNestedItemSchema`, injected (not imported) to keep this module a leaf
+ * with no dependency on `block-api.ts`. Because it consumes only the FIRST
+ * argument's `properties` bag, it is schema-shape-generic: it can be re-applied
+ * with an already-resolved nested subschema as the new "parent" to descend a
+ * further level, which is what the recursive `walkNestedArrays` below relies on.
+ */
+type NestedSchemaResolver = (
+	parentSchema: Record<string, unknown>,
+	rootSchema: Record<string, unknown>,
+	nestedArrayKey: string,
+) => Record<string, unknown> | null;
+
+/**
+ * Run the three mechanically-checkable rhetorical-register checks against ONE
+ * item, governed by ONE resolved subschema (`effectiveSchema`):
+ *   (1) word-count caps on every budgeted string field;
+ *   (2) the universal `DEFAULT_PROHIBITED_PATTERNS` ban on every budgeted string
+ *       field;
+ *   (3) each schema-authored `x-rhetorical-criteria.prohibited_patterns` entry on
+ *       exactly the fields its `applies_to` names.
+ * The first violation throws `RhetoricalValidationError`. Non-string field values
+ * are skipped (register-of-authored-prose, not shape). Extracted verbatim from
+ * the former inline loop body so it can run both for a changed item against its
+ * own effective subschema AND for each inline nested-array element during the
+ * `walkNestedArrays` descent.
+ */
+function checkFieldsAgainstSchema(
+	effectiveSchema: Record<string, unknown>,
+	item: Record<string, unknown>,
+	label: string,
+): void {
+	const criteria = readRhetoricalCriteria(effectiveSchema);
+	const wordCaps = collectWordCaps(effectiveSchema);
+	const budgetedFields = [...wordCaps.keys()];
+	const schemaPatterns = criteria?.prohibited_patterns ?? [];
+
+	// (1) Word-count caps on budgeted string fields.
+	for (const [field, cap] of wordCaps) {
+		const value = item[field];
+		if (typeof value !== "string") continue;
+		const count = wordCount(value);
+		if (count > cap) {
+			throw new RhetoricalValidationError(
+				label,
+				field,
+				`field is ${count} words, exceeding the x-prompt-budget cap of ${cap} — tighten to the register's terseness demand`,
+			);
+		}
+	}
+
+	// (2) Universal provenance/git/prior-state ban on every budgeted string field.
+	for (const field of budgetedFields) {
+		const value = item[field];
+		if (typeof value !== "string") continue;
+		for (const { pattern, reason } of DEFAULT_PROHIBITED_PATTERNS) {
+			const m = pattern.exec(value);
+			if (m) {
+				throw new RhetoricalValidationError(label, field, `matched prohibited pattern "${m[0]}" — ${reason}`);
+			}
+		}
+	}
+
+	// (3) Schema-authored per-block prohibited patterns on their named fields.
+	for (const { pattern, applies_to, reason } of schemaPatterns) {
+		let re: RegExp;
+		try {
+			re = new RegExp(pattern, "i");
+		} catch {
+			// A malformed author-supplied pattern is a schema-authoring defect,
+			// not a write to reject; skip it rather than block a compliant write.
+			continue;
+		}
+		for (const field of applies_to) {
+			const value = item[field];
+			if (typeof value !== "string") continue;
+			const m = re.exec(value);
+			if (m) {
+				throw new RhetoricalValidationError(label, field, `matched prohibited pattern "${m[0]}" — ${reason}`);
+			}
+		}
+	}
+}
+
+/**
+ * Recursively descend into any nested-array properties `item` carries inline,
+ * enforcing each nested element against its OWN resolved subschema. For every
+ * property of `schema` that is an array-of-items (`spec.type === "array"` with a
+ * `spec.items`) AND is actually present as an array on the real `item`, the
+ * nested item subschema is resolved via `resolveNested(schema, rootSchema, key)`
+ * — re-using the same `resolveNestedItemSchema` resolver, applied with the
+ * current level's `schema` as the new "parent" so no per-level resolution logic
+ * is duplicated. Each element that is itself a plain object is checked
+ * (`checkFieldsAgainstSchema`) and then recursed into — so a budgeted field
+ * nested at ANY depth (2 levels today, 3+ in future schemas) is covered without
+ * new code. Elements that are not plain objects, and array properties whose
+ * subschema does not resolve, are skipped defensively rather than throwing.
+ */
+function walkNestedArrays(
+	schema: Record<string, unknown>,
+	item: Record<string, unknown>,
+	rootSchema: Record<string, unknown>,
+	resolveNested: NestedSchemaResolver,
+	label: string,
+): void {
+	const props = schema.properties;
+	if (!props || typeof props !== "object") return;
+	for (const [key, specRaw] of Object.entries(props as Record<string, unknown>)) {
+		if (!specRaw || typeof specRaw !== "object") continue;
+		const spec = specRaw as Record<string, unknown>;
+		if (spec.type !== "array" || !spec.items) continue;
+		const value = item[key];
+		if (!Array.isArray(value)) continue;
+		const nestedSchema = resolveNested(schema, rootSchema, key);
+		if (!nestedSchema) continue;
+		for (const element of value) {
+			if (!element || typeof element !== "object" || Array.isArray(element)) continue;
+			const el = element as Record<string, unknown>;
+			checkFieldsAgainstSchema(nestedSchema, el, label);
+			walkNestedArrays(nestedSchema, el, rootSchema, resolveNested, label);
+		}
+	}
+}
+
+/**
  * Enforce the two mechanically-checkable rhetorical-register rules against ONLY
  * the changed item(s) of a write — never the untouched remainder of the file.
  *
@@ -181,6 +308,16 @@ function wordCount(value: string): number {
  *     PATTERNS` (the universal provenance/git/prior-state ban);
  *   - every schema-authored `x-rhetorical-criteria.prohibited_patterns` entry is
  *     tested against exactly the fields it names in `applies_to`.
+ *
+ * Enforcement additionally DESCENDS: after checking the changed item's own
+ * fields, it recursively walks every nested-array property the item carries
+ * INLINE (e.g. a whole `layer-plans` item written with its required `layers[]`
+ * populated), checking each nested element against that nested array's OWN
+ * resolved subschema at every depth — so a budgeted field on an inline nested
+ * object is enforced even though the write went through the top-level writer,
+ * not the dedicated nested-array writer. The descent re-uses the injected
+ * resolver applied at each level, so any future 3rd-or-deeper nesting is covered
+ * with no new code.
  *
  * The first violation throws `RhetoricalValidationError`, naming the exact
  * matched substring / overrun and the reason. `changedItems` whose `item` is not
@@ -215,55 +352,10 @@ export function validateRhetoricalCriteriaForItems(
 			: topLevelItemSchema;
 		if (!effectiveSchema) continue;
 
-		const criteria = readRhetoricalCriteria(effectiveSchema);
-		const wordCaps = collectWordCaps(effectiveSchema);
-		const budgetedFields = [...wordCaps.keys()];
-		const schemaPatterns = criteria?.prohibited_patterns ?? [];
-
-		// (1) Word-count caps on budgeted string fields.
-		for (const [field, cap] of wordCaps) {
-			const value = item[field];
-			if (typeof value !== "string") continue;
-			const count = wordCount(value);
-			if (count > cap) {
-				throw new RhetoricalValidationError(
-					label,
-					field,
-					`field is ${count} words, exceeding the x-prompt-budget cap of ${cap} — tighten to the register's terseness demand`,
-				);
-			}
-		}
-
-		// (2) Universal provenance/git/prior-state ban on every budgeted string field.
-		for (const field of budgetedFields) {
-			const value = item[field];
-			if (typeof value !== "string") continue;
-			for (const { pattern, reason } of DEFAULT_PROHIBITED_PATTERNS) {
-				const m = pattern.exec(value);
-				if (m) {
-					throw new RhetoricalValidationError(label, field, `matched prohibited pattern "${m[0]}" — ${reason}`);
-				}
-			}
-		}
-
-		// (3) Schema-authored per-block prohibited patterns on their named fields.
-		for (const { pattern, applies_to, reason } of schemaPatterns) {
-			let re: RegExp;
-			try {
-				re = new RegExp(pattern, "i");
-			} catch {
-				// A malformed author-supplied pattern is a schema-authoring defect,
-				// not a write to reject; skip it rather than block a compliant write.
-				continue;
-			}
-			for (const field of applies_to) {
-				const value = item[field];
-				if (typeof value !== "string") continue;
-				const m = re.exec(value);
-				if (m) {
-					throw new RhetoricalValidationError(label, field, `matched prohibited pattern "${m[0]}" — ${reason}`);
-				}
-			}
-		}
+		// Check the changed item's own fields against its effective subschema, then
+		// recursively descend into any nested-array content it carries inline — each
+		// nested element checked against its OWN resolved subschema at every depth.
+		checkFieldsAgainstSchema(effectiveSchema, item, label);
+		walkNestedArrays(effectiveSchema, item, rootSchema, resolveNested, label);
 	}
 }

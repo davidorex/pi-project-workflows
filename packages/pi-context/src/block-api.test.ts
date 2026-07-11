@@ -3505,3 +3505,79 @@ describe("rhetorical-criteria enforcement — nested arrays (FGAP-043 iterate-to
 		assert.strictEqual(onDisk.reviews[0].findings[0].summary, withinOwnOverTopLevel);
 	});
 });
+
+/**
+ * FGAP-043 iterate-to-zero (fix #2): a whole TOP-LEVEL item written with its
+ * nested arrays populated INLINE (through the ordinary top-level writer, not the
+ * dedicated nested writer) must have those inline nested elements checked against
+ * their OWN nested subschema too. The prior fix only descended when a write
+ * carried a `nestedArrayKey`; a top-level `appendToTypedFile` of a `reviews[]`
+ * item whose `findings[]` are supplied inline never set that key, so an
+ * over-cap nested `detail` slipped through. This exercises the recursive
+ * `walkNestedArrays` descent that closes that residual coverage gap.
+ */
+describe("rhetorical-criteria enforcement — inline nested arrays via top-level writer (FGAP-043 iterate-to-zero #2)", () => {
+	// 9 words > nested `detail` cap 8; benign vocabulary (no prohibited-pattern hits).
+	const overOwnCap = "alpha beta gamma delta epsilon zeta eta theta iota";
+	// 8 words: exactly at the nested `detail` cap — compliant.
+	const withinOwnCap = "alpha beta gamma delta epsilon zeta eta theta";
+
+	it("append (top-level): rejects a whole review whose INLINE finding `detail` exceeds its own nested cap", (t) => {
+		const tmpDir = makeTmpDir("rhet-inline-nested-append-overcap");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "nested.schema.json", sideNestedSchema);
+		const filePath = path.join(tmpDir, "reviews.json");
+		fs.writeFileSync(filePath, JSON.stringify({ reviews: [] }));
+
+		assert.throws(
+			() =>
+				appendToTypedFile(
+					filePath,
+					schemaPath,
+					"reviews",
+					{
+						id: "REVIEW-001",
+						findings: [{ id: "F-001", description: "first", severity: "info", detail: overOwnCap }],
+					},
+					undefined,
+					"reviews",
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual((err as RhetoricalValidationError).field, "detail");
+				return true;
+			},
+		);
+		// The append never landed — no review was written.
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.reviews.length, 0);
+	});
+
+	it("append (top-level): a whole review with a compliant INLINE finding `detail` succeeds and round-trips", (t) => {
+		const tmpDir = makeTmpDir("rhet-inline-nested-append-ok");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+		const schemaPath = writeSchemaFile(path.join(tmpDir, "schemas"), "nested.schema.json", sideNestedSchema);
+		const filePath = path.join(tmpDir, "reviews.json");
+		fs.writeFileSync(filePath, JSON.stringify({ reviews: [] }));
+
+		assert.doesNotThrow(() =>
+			appendToTypedFile(
+				filePath,
+				schemaPath,
+				"reviews",
+				{
+					id: "REVIEW-001",
+					findings: [{ id: "F-001", description: "first", severity: "info", detail: withinOwnCap }],
+				},
+				undefined,
+				"reviews",
+			),
+		);
+		const onDisk = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+		assert.strictEqual(onDisk.reviews.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings.length, 1);
+		assert.strictEqual(onDisk.reviews[0].findings[0].detail, withinOwnCap);
+	});
+});

@@ -196,5 +196,6 @@
       "content_hash": "3b0ef3cac37bd3f7dec9f6b3dbab5dd1dc9bcb60f982e3dbb150ca63474ef757",
       "content_parent": "26715fcc1eb17cff23b81f748a675345acc5044f187b07492057e18ac4a4ba8b"
     }
-  ]
+  ],
+  "schema_version": "1.1.0"
 }

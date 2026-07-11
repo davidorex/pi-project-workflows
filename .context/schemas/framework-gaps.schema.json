@@ -162,7 +162,12 @@
           "status",
           "title"
         ],
-        "type": "object"
+        "type": "object",
+        "x-rhetorical-criteria": {
+          "downstream_consumer": "Explore / plan / implementation subagents triaging and resolving a framework capability gap: the filing is composed verbatim into their operating context as the gap's shape, evidence anchors, impact, and proposed_resolution — the source text they act on, not notes-to-self.",
+          "register_notes": "`description` states what the framework cannot yet express and why, grounded in the cited evidence (file + line), not a narrative of how it was found; `impact` states the concrete downstream cost; `proposed_resolution` names the mechanism at engineering-decision granularity a downstream implementer can act on verbatim. Every semantic element is user-VERBATIM, user-DIRECTED, or DERIVABLE from a cited fact / convention / decision; a qualifier that narrows scope is a cited decision or absent. State the current gap shape; no provenance / git / prior-state narration in the body.",
+          "prohibited_patterns": []
+        }
       },
       "type": "array"
     },
@@ -176,7 +181,7 @@
   ],
   "title": "Framework Gaps",
   "type": "object",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "x-lifecycle": {
     "field": "status",
     "states": [

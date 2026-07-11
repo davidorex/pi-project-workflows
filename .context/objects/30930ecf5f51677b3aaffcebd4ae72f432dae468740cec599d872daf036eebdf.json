@@ -1,82 +1,74 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/features",
+  "$id": "pi-context://schemas/spec-reviews",
   "version": "1.1.0",
-  "title": "Features",
-  "description": "L3 Work layer. Features with their own scope, acceptance criteria, and status lifecycle. A feature is atomically composable into prompt context as a self-contained unit of work.",
+  "title": "Spec Reviews",
+  "description": "Design reviews of specification documents. Each review targets one spec, runs a pre-implementation review pass (ideally via independent fresh-context reviewer), and carries scope/method/status. A spec-review blocks implementation-spec drafting until 'clean'.",
   "type": "object",
   "required": [
-    "features"
+    "reviews"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "features": {
+    "reviews": {
       "type": "array",
       "items": {
         "type": "object",
         "additionalProperties": false,
         "required": [
           "id",
-          "title",
+          "target",
           "status",
-          "layer",
-          "description",
-          "acceptance_criteria",
           "created_by",
           "created_at"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^FEAT-\\d{3}$"
+            "pattern": "^REVIEW-\\d{3}$"
           },
-          "title": {
-            "type": "string"
+          "target": {
+            "type": "string",
+            "description": "Path to the spec doc being reviewed"
+          },
+          "target_revision": {
+            "type": "string",
+            "description": "Git SHA or version at which the review was conducted"
+          },
+          "reviewer": {
+            "type": "string",
+            "description": "Agent name or role performing the review"
           },
           "status": {
             "type": "string",
             "enum": [
-              "proposed",
-              "approved",
+              "not-started",
               "in-progress",
-              "in-review",
               "complete",
-              "blocked",
-              "cancelled"
+              "abandoned"
             ]
           },
-          "layer": {
-            "type": "string",
-            "enum": [
-              "L1",
-              "L2",
-              "L3",
-              "L4",
-              "L5"
-            ]
-          },
-          "description": {
-            "type": "string",
-            "x-prompt-budget": {
-              "tokens": 1000,
-              "words": 800
-            }
-          },
-          "motivation": {
-            "type": "string",
-            "x-prompt-budget": {
-              "tokens": 1000,
-              "words": 800
-            }
-          },
-          "acceptance_criteria": {
+          "scope": {
             "type": "array",
             "items": {
               "type": "string"
+            },
+            "description": "Sections or concerns of the target in scope for this review"
+          },
+          "method": {
+            "type": "string",
+            "description": "How the review is conducted — e.g. 'fresh-context independent reviewer', 'adversarial pre-mortem', 'self-review'",
+            "x-prompt-budget": {
+              "tokens": 1000,
+              "words": 800
             }
+          },
+          "clean": {
+            "type": "boolean",
+            "description": "True when every finding has a terminal state (resolved/wontfix/duplicate)"
           },
           "created_by": {
             "type": "string"
@@ -84,16 +76,7 @@
           "created_at": {
             "type": "string"
           },
-          "modified_by": {
-            "type": "string"
-          },
-          "modified_at": {
-            "type": "string"
-          },
-          "approved_by": {
-            "type": "string"
-          },
-          "approved_at": {
+          "completed_at": {
             "type": "string"
           },
           "oid": {
@@ -113,61 +96,43 @@
           }
         },
         "x-rhetorical-criteria": {
-          "downstream_consumer": "Agents planning or implementing the feature, which by design is atomically composed into prompt context as a self-contained unit of work; `description`, `motivation`, and acceptance_criteria are read verbatim as that unit.",
-          "register_notes": "`description` states the feature's scope as a self-contained L3 work-layer unit; `motivation` states why it is worth doing — both terse and self-sufficient, since the feature must stand alone when composed into context without the surrounding roadmap. State current scope; no narration of prior scope or status (the status lifecycle and edges carry that). Criteria are diffed against their bound user stories, not augmented.",
+          "downstream_consumer": "The spec author and the implementation gate: a review's findings and status determine whether implementation-spec drafting may proceed (blocked until 'clean'); read verbatim as the review verdict on one targeted spec.",
+          "register_notes": "`method` states how the review was conducted (e.g. an independent fresh-context pass), terse and specific; findings state what the review found about the targeted spec, self-contained and actionable. State the current review verdict; no narration of prior review rounds (the status field carries the lifecycle).",
           "prohibited_patterns": []
         }
       }
     }
   },
   "x-lifecycle": {
-    "feature": {
+    "review": {
       "field": "status",
       "states": [
-        "proposed",
-        "approved",
+        "not-started",
         "in-progress",
-        "in-review",
         "complete",
-        "blocked",
-        "cancelled"
+        "abandoned"
       ],
       "transitions": [
         {
-          "from": "proposed",
-          "to": "approved",
-          "required_authority": "user",
-          "precondition": "all gates in terminal state"
-        },
-        {
-          "from": "approved",
+          "from": "not-started",
           "to": "in-progress",
           "required_authority": "any"
         },
         {
           "from": "in-progress",
-          "to": "in-review",
-          "required_authority": "any"
-        },
-        {
-          "from": "in-review",
           "to": "complete",
           "required_authority": "any"
         },
         {
           "from": "in-progress",
-          "to": "blocked",
-          "required_authority": "any"
-        },
-        {
-          "from": "blocked",
-          "to": "in-progress",
-          "required_authority": "any"
-        },
-        {
-          "from": "proposed",
-          "to": "cancelled",
+          "to": "abandoned",
           "required_authority": "user"
+        },
+        {
+          "from": "complete",
+          "to": "in-progress",
+          "required_authority": "user",
+          "note": "reopen for follow-up review"
         }
       ]
     },

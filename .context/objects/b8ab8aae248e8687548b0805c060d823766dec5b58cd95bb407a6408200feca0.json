@@ -1,31 +1,33 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "pi-context://schemas/tasks",
+  "$id": "pi-context://schemas/requirements",
   "version": "1.1.0",
-  "title": "Tasks",
-  "description": "Discrete units of work with status lifecycle (planned, in-progress, completed, blocked, cancelled). The operational layer between gaps/requirements and code changes.",
+  "title": "Requirements",
+  "description": "What the project must deliver. Functional and non-functional requirements with MoSCoW priority and lifecycle states (proposed, accepted, implemented, verified). The contract between intent and implementation.",
   "type": "object",
   "required": [
-    "tasks"
+    "requirements"
   ],
   "properties": {
     "schema_version": {
       "type": "string",
       "description": "Semver of the block schema this envelope was last written against. Stamped by the write path to the schema's current version; when it differs from the installed schema's version, the read/write gates walk the block through the registered migration chain (or fail loud when no chain reaches the current version). Absent on blocks not yet written by a stamping write path."
     },
-    "tasks": {
+    "requirements": {
       "type": "array",
       "items": {
         "type": "object",
         "required": [
           "id",
           "description",
-          "status"
+          "type",
+          "status",
+          "priority"
         ],
         "properties": {
           "id": {
             "type": "string",
-            "pattern": "^TASK-\\d{3,}$"
+            "pattern": "^REQ-\\d{3,}$"
           },
           "description": {
             "type": "string",
@@ -34,22 +36,33 @@
               "words": 800
             }
           },
+          "type": {
+            "type": "string",
+            "enum": [
+              "functional",
+              "non-functional",
+              "constraint",
+              "integration"
+            ]
+          },
           "status": {
             "type": "string",
             "enum": [
-              "planned",
-              "in-progress",
-              "completed",
-              "blocked",
-              "cancelled"
+              "proposed",
+              "accepted",
+              "deferred",
+              "implemented",
+              "verified"
             ]
           },
-          "files": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "Files this task creates or modifies"
+          "priority": {
+            "type": "string",
+            "enum": [
+              "must",
+              "should",
+              "could",
+              "wont"
+            ]
           },
           "acceptance_criteria": {
             "type": "array",
@@ -61,16 +74,14 @@
               }
             }
           },
-          "assigned_agent": {
+          "source": {
             "type": "string",
-            "description": "Agent name if assigned"
-          },
-          "notes": {
-            "type": "string",
-            "x-prompt-budget": {
-              "tokens": 1000,
-              "words": 800
-            }
+            "enum": [
+              "human",
+              "agent",
+              "analysis"
+            ],
+            "description": "How this requirement was created"
           },
           "oid": {
             "type": "string",
@@ -89,8 +100,8 @@
           }
         },
         "x-rhetorical-criteria": {
-          "downstream_consumer": "The implementing agent dispatched to execute the task: `description` and acceptance_criteria are composed verbatim as the work brief it acts on, so they must be self-sufficient and literally correct.",
-          "register_notes": "`description` states what to do and its scope at implementation-decision granularity — the operational bridge from a gap / requirement to a code change — self-contained and actionable without external context; `notes` carries terse working intel, not a running log. State the task's current shape and scope; no narration of prior task framing or status history (the status field and edges carry lifecycle).",
+          "downstream_consumer": "Agents implementing and verifying against the requirement: `description` is read verbatim as the contract term between intent and implementation, scoped by MoSCoW priority and lifecycle state.",
+          "register_notes": "`description` states what the project must deliver — one functional or non-functional requirement — as a testable contract term, terse and self-contained, in the present imperative. State the current requirement; no narration of prior wording or status (the lifecycle field carries that). Diff against bound user stories at filing; do not augment.",
           "prohibited_patterns": []
         }
       }

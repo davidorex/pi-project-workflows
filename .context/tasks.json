@@ -2483,6 +2483,40 @@
       "oid": "7f3e5214ead318af10c521514d1a57a8",
       "content_hash": "1fb76151e7a992aceb722e65577609651445e3fb4068541a3dbbc818b188342d",
       "content_parent": "c1c770fbad0826228700d9efe863ef5ac38e8ab92984b0ca66aff6f2175f4610"
+    },
+    {
+      "description": "Implement FGAP-125's remaining two legs under FEAT-014, per enacted DEC-0022 (acting agents dispatch as pi subprocesses): (1) inject wo.context_blocks into the dispatched pi subprocess -- resolve the referenced blocks and pass them into the agent's context across the process boundary; (2) validate the agent's returned output against wo.output_contract post-return -- the subprocess must emit structured output the loop can check. Each leg gets a per-field regression pin, matching the existing pattern for clampToScope and validateWorkOrderInput (already implemented with unit pins).",
+      "status": "planned",
+      "acceptance_criteria": [
+        "wo.context_blocks is resolved and injected into the dispatched pi subprocess's context across the process boundary, with a unit pin demonstrating a work-order carrying context_blocks actually receives that context in the subprocess",
+        "the agent's returned output is validated against wo.output_contract post-return, with a unit pin demonstrating a non-conforming output is caught and a conforming one passes",
+        "context_blocks and output_contract each move from zero-references to consumed, closing the schema-contract-ahead-of-engine gap FGAP-125 describes",
+        "existing clampToScope and validateWorkOrderInput behavior unchanged (regression)",
+        "build, check, and full test suite exit 0"
+      ],
+      "files": [
+        "packages/pi-agent-dispatch/src/work-order-loop.ts"
+      ],
+      "id": "TASK-123",
+      "oid": "a91ca51733301ebffe3c47f8976f7404",
+      "content_hash": "6d24979f16009667c46814d252c3b02b3d12d64586d14382bbd22a6bf68ef799"
+    },
+    {
+      "description": "Implement FGAP-128's remainder under FEAT-014: (1) add an explicit work-order retry policy field (on_fail: retry|abort, tying to FGAP-125's v1 contract fields) so non-interactive runs can opt into bounded retry instead of the current single-shot abort-on-first-failure; (2) sweep ctx.ui.confirm call sites across pi-agent-dispatch (and any other package that dispatches through this loop) for the same no-pre-check pattern the human-OK gate already fixed, applying the hasUI-first guard (check ctx.hasUI before calling ctx.ui.confirm; record a distinct non-interactive status rather than mislabeling the no-UI default as an operator decline) wherever a call site lacks it. The semantic mislabel fix itself (hasUI pre-check + aborted-non-interactive status on the human-OK gate) is already implemented with a unit pin -- this task is the two remaining legs only.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "an on_fail retry|abort field exists on the work-order contract (schema + engine), and a non-interactive run with on_fail:retry actually performs bounded retry on real-check failure before the last iteration, with a unit pin",
+        "every ctx.ui.confirm call site in pi-agent-dispatch is enumerated and checked for the hasUI-first pattern; any site missing it is fixed to check ctx.hasUI before confirm and record a distinct non-interactive status, not aborted-by-human",
+        "the existing human-OK gate's hasUI-first fix and its aborted-non-interactive unit pin are unchanged (regression)",
+        "build, check, and full test suite exit 0"
+      ],
+      "files": [
+        "packages/pi-agent-dispatch/src/work-order-loop.ts",
+        "packages/pi-context/samples/schemas/work-orders.schema.json"
+      ],
+      "id": "TASK-124",
+      "oid": "627f53d72f43e4c7becbef27aa855c28",
+      "content_hash": "708d33b24c98809446572c29921563ddaba43cb00c33179397326bff33eed897"
     }
   ],
   "schema_version": "1.1.0"

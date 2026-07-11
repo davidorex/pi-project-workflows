@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test run clean on main post-merge under the project's pinned toolchain (an ad-hoc npx-resolved newer biome version in the implementing worktree had surfaced 9 spurious pre-existing findings, isolated from 3 real formatting issues in this branch's own new files by copying the verified checkout's node_modules; the 3 real issues were fixed). Runtime demo: npx tsx scripts/check-comment-citations.ts against the clean merged tree exits 0; against a staged synthetic file with a fresh TASK-999 line-comment citation, in the default staged mode .husky/pre-commit actually invokes, exits 1 naming file+line+id. An adversarial probe against --base <ref> range mode initially appeared to find a bypass (a staged-only citation in a brand-new file silently passing); root-caused via direct comparison against scripts/check-changelog.ts's own documented --base semantics (commit-to-commit only, by design) -- confirmed this is the established convention TASK-125 was directed to replicate, not a regression it introduced.",
+  "criteria_results": [
+    {
+      "criterion": "CITATION_RE exported from citation-rot-scanner.ts via a package subpath; scan-comment-citations.ts imports and reuses it rather than hand-duplicating the regex",
+      "status": "passed"
+    },
+    {
+      "criterion": "detection surface extends to JSDoc/line comments in source files, gated delta-scoped: only citations introduced in the current change are flagged",
+      "status": "passed"
+    },
+    {
+      "criterion": "running the new gate against the current monorepo (no new comment citations introduced) passes cleanly -- pre-existing instances do not retroactively block anything",
+      "status": "passed"
+    },
+    {
+      "criterion": "introducing a NEW tracker-ID citation in a code comment causes the gate to fail with a clear message",
+      "status": "passed"
+    },
+    {
+      "criterion": "new gate wired into .husky/pre-commit alongside check-changelog/parity-check/check-config-schema",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0",
+      "status": "passed"
+    }
+  ]
+}

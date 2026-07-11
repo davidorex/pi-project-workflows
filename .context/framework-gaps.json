@@ -4712,7 +4712,7 @@
     },
     {
       "title": "Delta-scoped comment-citation gate remains unbuilt, recorded only inside closed FGAP-136",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "FGAP-136 (closed) proposed extending citation-rot-scanner.ts's detection surface to also cover code comments, delta-scoped so only a NEWLY-INTRODUCED comment citation in a diff is flagged (never forking a second parallel gate -- scan-comment-citations.ts already had to hand-duplicate part of the scanner's regex because CITATION_RE is unexported with no package subpath). FGAP-136's own closed_by states this gate remains unbuilt, filed as future work, not part of that closure. Closed items are not a work queue and are invisible to the hedge scanner and every other derive-state surface -- future work recorded only in a closed item's prose is effectively untracked.",
@@ -4736,7 +4736,10 @@
       "created_at": "2026-07-11T00:00:00.000Z",
       "id": "FGAP-142",
       "oid": "1c6c2100b5dc3c1cafdbbc6a1041a3eb",
-      "content_hash": "f674711a682ddacbebe64b9605f76252d1992b253738d02bf1cdbc64894b7435"
+      "content_hash": "5a519b3e38a0d7f99c172f4f28dc1fb58076f575de7a80bfec88c0991db29345",
+      "closed_by": "TASK-125 (VER-101): exported CITATION_RE via a package subpath, added a JSDoc/line-comment detection surface, reconciled the two diverged regex copies, wired a delta-scoped gate into .husky/pre-commit default staged mode. Merged to main.",
+      "closed_at": "2026-07-12",
+      "content_parent": "f674711a682ddacbebe64b9605f76252d1992b253738d02bf1cdbc64894b7435"
     }
   ]
 }

@@ -1,0 +1,23 @@
+{
+  "title": "Delta-scoped comment-citation gate remains unbuilt, recorded only inside closed FGAP-136",
+  "status": "closed",
+  "priority": "P3",
+  "package": "pi-context",
+  "description": "FGAP-136 (closed) proposed extending citation-rot-scanner.ts's detection surface to also cover code comments, delta-scoped so only a NEWLY-INTRODUCED comment citation in a diff is flagged (never forking a second parallel gate -- scan-comment-citations.ts already had to hand-duplicate part of the scanner's regex because CITATION_RE is unexported with no package subpath). FGAP-136's own closed_by states this gate remains unbuilt, filed as future work, not part of that closure. Closed items are not a work queue and are invisible to the hedge scanner and every other derive-state surface -- future work recorded only in a closed item's prose is effectively untracked.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/citation-rot-scanner.ts",
+      "reference": "CITATION_RE is unexported with no package subpath; scanTsFile scopes operator-visible surfaces only, deliberately excluding JSDoc/line comments per its own test suite"
+    },
+    {
+      "file": "scripts/scan-comment-citations.ts",
+      "reference": "TASK-107's enumeration tool exits 0 unconditionally -- informational only, not a gate"
+    },
+    {
+      "file": ".context/framework-gaps.json",
+      "reference": "FGAP-136 closed_by verbatim: the proposed delta-scoped extension of citation-rot-scanner.ts to gate future comment citations remains unbuilt -- filed here as future work, not part of this closure"
+    }
+  ],
+  "impact": "No gate catches a newly-introduced comment-embedded tracker-ID citation going forward; the ~500+ pre-existing instances FGAP-136's rollout cleaned up could silently reaccumulate one new citation at a time with nothing flagging it, and this project's own PM model (which derives state from open items only) has no visibility into the fact this future work exists at all.",
+  "proposed_resolution": "Export citation-rot-scanner.ts's CITATION_RE (or a small detection-core function) via a package subpath so scan-comment-citations.ts (and any future consumer) reuses it rather than hand-duplicating the regex. Extend the scanner's own detection surface to also scan JSDoc/line comments in source files, gated delta-scoped (only a citation introduced in the current diff/working-tree change is flagged, never a pre-existing one) via a git-diff-aware check, so the gate can go live today without retroactively blocking on the ~500+ already-cleaned instances."
+}

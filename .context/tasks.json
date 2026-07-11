@@ -2517,6 +2517,26 @@
       "id": "TASK-124",
       "oid": "627f53d72f43e4c7becbef27aa855c28",
       "content_hash": "708d33b24c98809446572c29921563ddaba43cb00c33179397326bff33eed897"
+    },
+    {
+      "description": "Implement FGAP-142: export citation-rot-scanner.ts's CITATION_RE (or a small detection-core function) via a package subpath so scan-comment-citations.ts and any future consumer reuse it instead of hand-duplicating the regex. Extend the scanner to also detect tracker-ID citations inside JSDoc/line comments in source files, delta-scoped: only a citation introduced in the current diff/working-tree change is flagged (via a git-diff-aware check against the base branch or staged changes), never a pre-existing one -- so the gate can run today without retroactively blocking on the ~500+ instances FGAP-136's rollout already cleaned up. Wire the delta-scoped check into pre-commit alongside the existing check-changelog/parity-check/check-config-schema gates.",
+      "status": "planned",
+      "acceptance_criteria": [
+        "CITATION_RE (or an equivalent detection-core function) is exported from citation-rot-scanner.ts via a package subpath; scan-comment-citations.ts is updated to import and reuse it rather than hand-duplicating the regex",
+        "the scanner's detection surface extends to JSDoc/line comments in source files, gated delta-scoped: only citations introduced in the current change are flagged",
+        "running the new gate against the current monorepo (no new comment citations introduced) passes cleanly -- the ~500+ already-cleaned pre-existing instances do not retroactively block anything",
+        "introducing a NEW tracker-ID citation in a code comment (test fixture) causes the gate to fail with a clear message",
+        "the new gate is wired into .husky/pre-commit alongside check-changelog/parity-check/check-config-schema",
+        "build, check, and full test suite exit 0"
+      ],
+      "files": [
+        "packages/pi-context/src/citation-rot-scanner.ts",
+        "scripts/scan-comment-citations.ts",
+        ".husky/pre-commit"
+      ],
+      "id": "TASK-125",
+      "oid": "5f29115c37882545f1d983ec3eb72315",
+      "content_hash": "c23fb9a80d331f379040d77f5420af1ad2b97119828fa60cef426429b122f95d"
     }
   ],
   "schema_version": "1.1.0"

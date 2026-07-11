@@ -1497,12 +1497,12 @@
       ],
       "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
       "canonical_vocabulary": "write-time authoring-contract validation",
-      "proposed_resolution": "Resolution not yet determined; to be filed as a separate decision.",
+      "proposed_resolution": "Add a new AJV-ignored extension keyword x-rhetorical-criteria on each block schemas item subschema (properties.<arrayKey>.items), carrying downstream_consumer, register_notes (free-text, block-type-specific elaboration of the rhetorical-register rules for this block kind), and prohibited_patterns (regex + applies_to fields + reason). Add validateRhetoricalCriteria(schema, data, label) in schema-validator.ts, called from writeTypedFile (block-api.ts:1041) immediately after validateFromFile succeeds. It enforces exactly two machine-checkable rules at write time: (1) word-count caps via the existing, currently-unenforced per-field x-prompt-budget.words, activated for the first time; (2) forbidden narration/hedging patterns via x-rhetorical-criteria.prohibited_patterns regex match against named fields. A failing check throws and refuses the write, the same as an AJV structural failure. Self-containment, exactness, and appropriateness-to-block-type-and-downstream-use are prose-judgment criteria with no mechanical test; they remain review-enforced via register_notes surfaced through read-schema, unchanged from the rhetorical-register conventions current enforcement. The mechanism is a pi-context library write-path change (block-api.ts / schema-validator.ts), not a Claude Code PreToolUse hook, because writeTypedFile is the single choke point every write path funnels through regardless of caller.",
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-06T00:00:00.000Z",
       "oid": "5b3fdce0700fb049da6593b9b2e71260",
-      "content_hash": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a",
-      "content_parent": "2f08f2750efda60b38d29123f488ca37dabedabc996dd2ddc7c2db6b98c9aa29"
+      "content_hash": "061588617bc6683d7d60cadde402b8ea8c0a3a0ca0209a975423abdb7324a966",
+      "content_parent": "b9d9eba969b2fa27662ed56e9904934b86387c3a96e232194d4983db44bc317a"
     },
     {
       "id": "FGAP-044",

@@ -1,0 +1,20 @@
+{
+  "title": "Schema descriptions carry no per-block rhetorical criteria; block writes are unvalidated against them",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "Each block schema's description states the block's purpose but omits the block's specific rhetorical demands/criteria for its entries (terseness, signal-density, self-containment, appropriateness to block type and downstream use, no narration or git/live-source restatement). The criteria must be embedded per-block and machine-checkable so a Claude Code hook can validate a block-item write against them at write time.",
+  "evidence": [
+    {
+      "file": "CLAUDE.md",
+      "reference": "the 'Rhetorical situation for every block write' rule lives only as operating-doc prose — not encoded per-schema, not enforced on write"
+    },
+    {
+      "file": "packages/pi-context/samples/schemas/issues.schema.json",
+      "reference": "item descriptions state field purpose but carry no per-block rhetorical criteria; nothing validates an entry against them on write"
+    }
+  ],
+  "impact": "Per-block authoring criteria are unenforced; off-contract entries (provenance narration, git restatement, non-terse prose) pass validation — degrading the verbatim context handed downstream to subagents (garbage in/out).",
+  "canonical_vocabulary": "write-time authoring-contract validation",
+  "proposed_resolution": "Add a new AJV-ignored extension keyword x-rhetorical-criteria on each block schemas item subschema (properties.<arrayKey>.items), carrying downstream_consumer, register_notes (free-text, block-type-specific elaboration of the rhetorical-register rules for this block kind), and prohibited_patterns (regex + applies_to fields + reason). Add validateRhetoricalCriteria(schema, data, label) in schema-validator.ts, called from writeTypedFile (block-api.ts:1041) immediately after validateFromFile succeeds. It enforces exactly two machine-checkable rules at write time: (1) word-count caps via the existing, currently-unenforced per-field x-prompt-budget.words, activated for the first time; (2) forbidden narration/hedging patterns via x-rhetorical-criteria.prohibited_patterns regex match against named fields. A failing check throws and refuses the write, the same as an AJV structural failure. Self-containment, exactness, and appropriateness-to-block-type-and-downstream-use are prose-judgment criteria with no mechanical test; they remain review-enforced via register_notes surfaced through read-schema, unchanged from the rhetorical-register conventions current enforcement. The mechanism is a pi-context library write-path change (block-api.ts / schema-validator.ts), not a Claude Code PreToolUse hook, because writeTypedFile is the single choke point every write path funnels through regardless of caller."
+}

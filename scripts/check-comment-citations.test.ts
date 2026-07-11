@@ -24,11 +24,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path, { dirname } from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import {
-	discoverPackageDirs,
-	findNewCommentCitations,
-	isWatchedSourceFile,
-} from "./check-comment-citations.ts";
+import { discoverPackageDirs, findNewCommentCitations, isWatchedSourceFile } from "./check-comment-citations.ts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(__dirname, "..");

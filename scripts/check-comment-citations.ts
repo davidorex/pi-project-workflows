@@ -168,7 +168,9 @@ function main(): number {
 
 	if (allFindings.length > 0) {
 		for (const f of allFindings) {
-			console.error(`check-comment-citations: new citation '${f.matched}' introduced in a comment at ${f.file}:${f.line}`);
+			console.error(
+				`check-comment-citations: new citation '${f.matched}' introduced in a comment at ${f.file}:${f.line}`,
+			);
 		}
 		console.error(
 			`check-comment-citations: ${allFindings.length} newly-introduced tracker-ID citation(s) in code comments — an internal substrate canonical_id leaking into a comment on a surface this gate exists to catch. Rephrase the comment in plain language without the tracker id (do not --no-verify).`,

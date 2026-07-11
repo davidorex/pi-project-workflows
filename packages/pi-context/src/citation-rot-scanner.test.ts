@@ -143,9 +143,7 @@ describe("citation-rot-scanner — comment-trivia surface (scanCommentsInFile, T
 	});
 
 	it("finds zero hits in a file with no citations, without crashing", () => {
-		const src = ["/**", " * A perfectly ordinary doc comment.", " */", "export function noop(): void {}"].join(
-			"\n",
-		);
+		const src = ["/**", " * A perfectly ordinary doc comment.", " */", "export function noop(): void {}"].join("\n");
 		assert.deepStrictEqual(scanCommentsInFile("src.ts", src), []);
 	});
 });

@@ -1,6 +1,6 @@
 /**
  * Tests for the substrate hedge/fork pre-identification scanner
- * (scripts/scan-substrate-hedges.ts, TASK-120).
+ * (scripts/scan-substrate-hedges.ts, TASK-120/TASK-121).
  *
  * Structure mirrors scan-comment-citations.test.ts: synthetic-fixture cells
  * exercise the pure functions (scanText / isProseStringNode /
@@ -15,6 +15,9 @@
  * TASK-108/109 hit with citation pins). The one live-item check (FGAP-125)
  * is conditional: it asserts flagging ONLY while the item still carries its
  * known fork text, and passes vacuously once that fork is audited away.
+ *
+ * No score/weight/threshold anywhere (TASK-121): the scanner is a plain
+ * candidate list, not a ranking.
  */
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -215,7 +218,7 @@ describe("collectProseValues — schema-lockstep prose extraction", () => {
 });
 
 describe("scanBlockItems — per-item aggregation", () => {
-	it("flags the hedged item with score/categories and omits the clean item", () => {
+	it("flags the hedged item with categories and omits the clean item", () => {
 		const items = [
 			{
 				id: "FGAP-901",
@@ -238,8 +241,6 @@ describe("scanBlockItems — per-item aggregation", () => {
 		assert.equal(c.block, "framework-gaps");
 		assert.ok(c.categories.includes("fork"));
 		assert.ok(c.categories.includes("deferral"));
-		assert.ok(c.score >= 7, `dash-or(3) + as-a-decision(4) at minimum, got ${c.score}`);
-		assert.equal(c.maxWeight, 4);
 		const fieldPaths = c.fields.map((f) => f.fieldPath);
 		assert.deepEqual(fieldPaths, ["proposed_resolution"]);
 	});
@@ -254,7 +255,7 @@ describe("scanBlockItems — per-item aggregation", () => {
 });
 
 describe("scanSubstrate — live-substrate structural invariants", () => {
-	it("scans every configured block kind read-only and produces a reconciled, rank-ordered report", () => {
+	it("scans every configured block kind read-only and produces a reconciled report with no score/weight anywhere", () => {
 		const report = scanSubstrate(repoRoot);
 		assert.equal(report.tool, "scan-substrate-hedges");
 		assert.ok(report.blocks.length > 0, "config.block_kinds must yield at least one block");
@@ -264,17 +265,29 @@ describe("scanSubstrate — live-substrate structural invariants", () => {
 			report.candidates.length,
 			"summary.itemsFlagged must equal candidates.length",
 		);
-		// Rank order: non-increasing score.
+		assert.ok(!("minScore" in report), "report must not carry a minScore field");
+		assert.ok(!("itemsBelowThreshold" in report.summary), "summary must not carry itemsBelowThreshold");
+		// Order is block-then-id — incidental, not a priority claim.
 		for (let i = 1; i < report.candidates.length; i++) {
-			assert.ok(report.candidates[i - 1].score >= report.candidates[i].score, `candidates unsorted at ${i}`);
+			const prev = report.candidates[i - 1];
+			const cur = report.candidates[i];
+			const ordered = prev.block < cur.block || (prev.block === cur.block && prev.id <= cur.id);
+			assert.ok(
+				ordered,
+				`candidates not block/id-ordered at ${i}: ${prev.block}/${prev.id} then ${cur.block}/${cur.id}`,
+			);
 		}
-		// Every candidate's block is a scanned (non-skipped) block, and every
-		// candidate meets the threshold.
 		const scannedBlocks = new Set(report.blocks.filter((b) => b.skipped === undefined).map((b) => b.block));
 		for (const c of report.candidates) {
 			assert.ok(scannedBlocks.has(c.block), `candidate block ${c.block} not among scanned blocks`);
-			assert.ok(c.score >= report.minScore);
 			assert.ok(c.fields.length > 0);
+			assert.ok(!("score" in c), `candidate ${c.block}/${c.id} must not carry a score field`);
+			assert.ok(!("maxWeight" in c), `candidate ${c.block}/${c.id} must not carry a maxWeight field`);
+			for (const f of c.fields) {
+				for (const m of f.matches) {
+					assert.ok(!("weight" in m), `match ${m.patternId} on ${c.block}/${c.id} must not carry a weight field`);
+				}
+			}
 		}
 		// totalMatches reconciles with the per-candidate match lists.
 		const recomputed = report.candidates.reduce((s, c) => s + c.fields.reduce((t, f) => t + f.matches.length, 0), 0);

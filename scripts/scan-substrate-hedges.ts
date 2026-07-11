@@ -2,14 +2,14 @@
 /**
  * scan-substrate-hedges — read-only heuristic pre-identifier of substrate
  * items whose prose fields carry hedge / fork / deferral language, producing
- * a ranked machine-readable candidate list for the full agent-treatment
- * provenance audit (the process templated at
+ * a machine-readable candidate list for the full agent-treatment provenance
+ * audit (the process templated at
  * analysis/2026-07-11-gap-fork-provenance-audit-brief-template.md).
  *
- * TASK-120. This script pre-identifies; it corrects nothing and writes
- * nothing into the substrate. It is a triage pass over potentially hundreds
- * of items so audit candidates are found systematically instead of by an
- * orchestrator happening to read the right gap — the manual FGAP-124/125/
+ * TASK-120/TASK-121. This script pre-identifies; it corrects nothing and
+ * writes nothing into the substrate. It is a triage pass over potentially
+ * hundreds of items so audit candidates are found systematically instead of
+ * an orchestrator happening to read the right gap — the manual FGAP-124/125/
  * 126/127 fork-provenance audits (2026-07-10/11) are the process this feeds.
  *
  * Discovery is registry-driven, never hardcoded:
@@ -27,8 +27,8 @@
  *     (loadConfig / readSchema / readBlock), never raw fs reads of
  *     .context/*.json, so substrate-dir resolution stays honored.
  *
- * The heuristic categories and their weights are grounded in the real hedges
- * the manual audits confirmed (not abstract guesses):
+ * The heuristic categories are grounded in the real hedges the manual audits
+ * confirmed (not abstract guesses):
  *   - fork: enumerated-alternative language. Confirmed real instances:
  *     FGAP-125 proposed_resolution "... — or amend the schema to stop
  *     declaring semantics ..." (dash-or); pre-correction FGAP-126 "...(the
@@ -41,23 +41,20 @@
  *     pre-correction FGAP-126's "..., as a decision" (the exact phrase the
  *     2026-07-10 provenance audit found to be filing-time augmentation);
  *     plus the standard TBD / open-question / user's-call vocabulary.
- *   - modal-hedge: low-weight uncertainty vocabulary (might/could/unclear/
- *     unknown/...). Individually weak signals, so they carry weight 1-2 and
- *     only surface an item when they accumulate or co-occur.
+ *   - modal-hedge: uncertainty vocabulary (might/could/unclear/unknown/...).
  *
- * Weights rank, they do not judge: a flagged fork may be GROUNDED (FGAP-124's
- * and FGAP-127's forks were audited and left standing) — grounded-vs-invented
- * is exactly what the downstream per-item agent audit determines. Recall is
- * deliberately favored over precision; the ranked score + per-match snippets
- * let the consumer work top-down.
+ * No weighting, scoring, or ranking of any kind: every item with at least one
+ * match is a candidate, listed plainly with what matched and where.
+ * Grounded-vs-invented is exactly what the downstream per-item agent audit
+ * determines, not this script — a flagged fork may turn out to be grounded
+ * (FGAP-124's and FGAP-127's forks were audited and left standing).
  *
  * Not a gate: informational tooling only, never wired into `npm run check`,
  * husky, or CI. Exit code is non-zero only on genuine I/O / substrate-read
  * failure, never for "candidates found".
  *
  * Usage:
- *   npx tsx scripts/scan-substrate-hedges.ts [--cwd <path>] [--output <path>]
- *       [--min-score <n>] [--stdout]
+ *   npx tsx scripts/scan-substrate-hedges.ts [--cwd <path>] [--output <path>] [--stdout]
  *
  * Default output: tmp/substrate-hedge-scans/scan-<timestamp>.json under the
  * scanned cwd (tmp/ is this repo's gitignored scratch dir). --stdout prints
@@ -77,11 +74,6 @@ export interface HedgePattern {
 	/** Stable identifier recorded on every match (report consumers key on it). */
 	id: string;
 	category: HedgeCategory;
-	/**
-	 * Ranking weight, 1 (weak, accumulates) to 4 (near-certain audit trigger).
-	 * Weights order the candidate list; they are not a verdict on any item.
-	 */
-	weight: number;
 	/** Matched via a fresh global-flagged copy per scan (source+flags reused). */
 	regex: RegExp;
 }
@@ -93,82 +85,78 @@ export interface HedgePattern {
  */
 export const HEDGE_PATTERNS: readonly HedgePattern[] = [
 	// ── fork: enumerated-alternative language ──
-	{ id: "and-or", category: "fork", weight: 3, regex: /\band\/or\b/i },
+	{ id: "and-or", category: "fork", regex: /\band\/or\b/i },
 	// Bounded gap (no sentence-enders between) so "either" and "or" must share a clause.
-	{ id: "either-or", category: "fork", weight: 3, regex: /\beither\b[^.;:\n]{0,160}?\bor\b/i },
+	{ id: "either-or", category: "fork", regex: /\beither\b[^.;:\n]{0,160}?\bor\b/i },
 	// FGAP-125's confirmed live fork shape: "... the loop can check) — or amend the schema ..."
-	{ id: "dash-or", category: "fork", weight: 3, regex: /[—–]\s*or\b|\s-\s+or\b/i },
-	{ id: "semicolon-or", category: "fork", weight: 3, regex: /;\s*or\b/i },
+	{ id: "dash-or", category: "fork", regex: /[—–]\s*or\b|\s-\s+or\b/i },
+	{ id: "semicolon-or", category: "fork", regex: /;\s*or\b/i },
 	// Pre-correction FGAP-126's confirmed shape: "...(...) or give the pi-only gated tools ..."
-	{ id: "paren-or", category: "fork", weight: 2, regex: /\)\s+or\b/ },
+	{ id: "paren-or", category: "fork", regex: /\)\s+or\b/ },
 	// "gating the composite ... or routing its commit ..." — an or joining gerund
 	// alternatives is an action fork. Excludes or-nothing/-something/... noise.
 	{
 		id: "or-gerund",
 		category: "fork",
-		weight: 2,
 		regex: /\bor\s+(?!nothing\b|something\b|anything\b|everything\b)[a-z]+ing\b/i,
 	},
 	// Lettered option lists "(a) ... (b)". Numbered "(1) ... (2)" is deliberately
 	// NOT matched: in this substrate's live prose it enumerates facts/facets
 	// (e.g. FGAP-126's description), not alternatives.
-	{ id: "lettered-options", category: "fork", weight: 3, regex: /\(a\)[\s\S]{1,400}?\(b\)/i },
+	{ id: "lettered-options", category: "fork", regex: /\(a\)[\s\S]{1,400}?\(b\)/i },
 	{
 		id: "option-enum",
 		category: "fork",
-		weight: 2,
 		regex:
 			/\b(?:two|three|both)\s+(?:options|alternatives|approaches)\b|\boptions?\s+(?:are|include)\b|\boption\s+(?:[AB]|[12])\b/i,
 	},
-	{ id: "alternatively", category: "fork", weight: 3, regex: /\balternatively\b/i },
+	{ id: "alternatively", category: "fork", regex: /\balternatively\b/i },
 
 	// ── deferral: explicit decision-postponement ──
 	// The exact phrase the FGAP-126 provenance audit confirmed as filing-time
 	// augmentation ("... equivalent to the CLI --yes, as a decision").
-	{ id: "as-a-decision", category: "deferral", weight: 4, regex: /\bas a decision\b/i },
+	{ id: "as-a-decision", category: "deferral", regex: /\bas a decision\b/i },
 	// Case-sensitive: lowercase "tbd" inside identifiers must not fire.
-	{ id: "tbd", category: "deferral", weight: 4, regex: /\bTBD\b/ },
+	{ id: "tbd", category: "deferral", regex: /\bTBD\b/ },
 	{
 		id: "to-be-decided",
 		category: "deferral",
-		weight: 4,
 		regex: /\bto be (?:determined|decided|designed|specified)\b/i,
 	},
 	{
 		id: "not-yet-decided",
 		category: "deferral",
-		weight: 4,
 		regex: /\bnot yet (?:decided|determined|designed|specified|chosen|settled)\b/i,
 	},
-	{ id: "open-question", category: "deferral", weight: 4, regex: /\bopen question\b/i },
+	{ id: "open-question", category: "deferral", regex: /\bopen question\b/i },
 	// "user's call" / "user scope call" — the deferral register the manual
 	// audits were dispatched to de-hedge.
-	{ id: "users-call", category: "deferral", weight: 4, regex: /\buser(?:'s|s)?\s+(?:scope\s+)?call\b/i },
-	{ id: "up-to-the-user", category: "deferral", weight: 4, regex: /\bup to the user\b/i },
-	{ id: "undecided", category: "deferral", weight: 3, regex: /\bun(?:decided|determined)\b/i },
-	{ id: "deferred", category: "deferral", weight: 2, regex: /\bdefer(?:red|ral|rals|s)?\b/i },
-	{ id: "left-open", category: "deferral", weight: 3, regex: /\b(?:left|leaves?|remains?|stays?)\s+open\b/i },
-	{ id: "pending-decision", category: "deferral", weight: 4, regex: /\bpending\s+(?:a\s+)?(?:decision|choice)\b/i },
-	{ id: "needs-decision", category: "deferral", weight: 4, regex: /\bneeds?\s+(?:a\s+)?decision\b/i },
-	{ id: "decide-later", category: "deferral", weight: 4, regex: /\bdecid\w*\s+later\b/i },
-	{ id: "punt", category: "deferral", weight: 3, regex: /\bpunt(?:ed|ing|s)?\b/i },
-	{ id: "not-yet", category: "deferral", weight: 1, regex: /\bnot yet\b/i },
+	{ id: "users-call", category: "deferral", regex: /\buser(?:'s|s)?\s+(?:scope\s+)?call\b/i },
+	{ id: "up-to-the-user", category: "deferral", regex: /\bup to the user\b/i },
+	{ id: "undecided", category: "deferral", regex: /\bun(?:decided|determined)\b/i },
+	{ id: "deferred", category: "deferral", regex: /\bdefer(?:red|ral|rals|s)?\b/i },
+	{ id: "left-open", category: "deferral", regex: /\b(?:left|leaves?|remains?|stays?)\s+open\b/i },
+	{ id: "pending-decision", category: "deferral", regex: /\bpending\s+(?:a\s+)?(?:decision|choice)\b/i },
+	{ id: "needs-decision", category: "deferral", regex: /\bneeds?\s+(?:a\s+)?decision\b/i },
+	{ id: "decide-later", category: "deferral", regex: /\bdecid\w*\s+later\b/i },
+	{ id: "punt", category: "deferral", regex: /\bpunt(?:ed|ing|s)?\b/i },
+	{ id: "not-yet", category: "deferral", regex: /\bnot yet\b/i },
 
-	// ── modal-hedge: uncertainty vocabulary (weak individually, ranked by accumulation) ──
-	{ id: "might", category: "modal-hedge", weight: 2, regex: /\bmight\b/i },
-	{ id: "could", category: "modal-hedge", weight: 1, regex: /\bcould\b/i },
-	{ id: "may-need", category: "modal-hedge", weight: 2, regex: /\bmay\s+(?:need|want|require|warrant)\b/i },
-	{ id: "possibly", category: "modal-hedge", weight: 2, regex: /\bpossibly\b|\bperhaps\b/i },
-	{ id: "probably", category: "modal-hedge", weight: 2, regex: /\bprobably\b|\bpresumably\b/i },
-	{ id: "eventually", category: "modal-hedge", weight: 2, regex: /\beventually\b/i },
-	{ id: "at-some-point", category: "modal-hedge", weight: 2, regex: /\bat some point\b|\bsomeday\b/i },
-	{ id: "unclear", category: "modal-hedge", weight: 2, regex: /\bunclear\b|\buncertain\b|\bnot clear\b/i },
+	// ── modal-hedge: uncertainty vocabulary ──
+	{ id: "might", category: "modal-hedge", regex: /\bmight\b/i },
+	{ id: "could", category: "modal-hedge", regex: /\bcould\b/i },
+	{ id: "may-need", category: "modal-hedge", regex: /\bmay\s+(?:need|want|require|warrant)\b/i },
+	{ id: "possibly", category: "modal-hedge", regex: /\bpossibly\b|\bperhaps\b/i },
+	{ id: "probably", category: "modal-hedge", regex: /\bprobably\b|\bpresumably\b/i },
+	{ id: "eventually", category: "modal-hedge", regex: /\beventually\b/i },
+	{ id: "at-some-point", category: "modal-hedge", regex: /\bat some point\b|\bsomeday\b/i },
+	{ id: "unclear", category: "modal-hedge", regex: /\bunclear\b|\buncertain\b|\bnot clear\b/i },
 	// "unknown" ties directly to the substrate goal this feeds: surfacing any
 	// TRULY unknown (not derivable from the claude-history record).
-	{ id: "unknown", category: "modal-hedge", weight: 2, regex: /\bunknown\b/i },
-	{ id: "later", category: "modal-hedge", weight: 1, regex: /\blater\b/i },
-	{ id: "seems", category: "modal-hedge", weight: 1, regex: /\bseems?\b|\bappears?\s+to\b/i },
-	{ id: "if-needed", category: "modal-hedge", weight: 1, regex: /\bif\s+(?:needed|necessary|desired)\b/i },
+	{ id: "unknown", category: "modal-hedge", regex: /\bunknown\b/i },
+	{ id: "later", category: "modal-hedge", regex: /\blater\b/i },
+	{ id: "seems", category: "modal-hedge", regex: /\bseems?\b|\bappears?\s+to\b/i },
+	{ id: "if-needed", category: "modal-hedge", regex: /\bif\s+(?:needed|necessary|desired)\b/i },
 ];
 
 // ── Report shapes ────────────────────────────────────────────────────────────
@@ -176,7 +164,6 @@ export const HEDGE_PATTERNS: readonly HedgePattern[] = [
 export interface HedgeMatch {
 	patternId: string;
 	category: HedgeCategory;
-	weight: number;
 	/** The exact matched text. */
 	matched: string;
 	/** Bounded context excerpt around the match. */
@@ -200,10 +187,6 @@ export interface CandidateItem {
 	id: string;
 	title?: string;
 	status?: string;
-	/** Sum of all match weights across all fields — the ranking key. */
-	score: number;
-	/** Highest single-match weight (a quick strongest-signal indicator). */
-	maxWeight: number;
 	categories: HedgeCategory[];
 	fields: FieldFinding[];
 }
@@ -222,20 +205,17 @@ export interface HedgeScanReport {
 	tool: "scan-substrate-hedges";
 	generated_at: string;
 	cwd: string;
-	minScore: number;
 	blocks: BlockScanSummary[];
 	summary: {
 		blocksScanned: number;
 		blocksSkipped: number;
 		itemsScanned: number;
 		itemsFlagged: number;
-		/** Items with matches whose score fell below minScore (present but not listed). */
-		itemsBelowThreshold: number;
 		totalMatches: number;
 		byCategory: Record<HedgeCategory, number>;
 		byBlock: Record<string, number>;
 	};
-	/** Sorted by score descending, then block, then id. */
+	/** Every item with at least one match. Order is block then id — incidental, not a priority claim. */
 	candidates: CandidateItem[];
 }
 
@@ -265,7 +245,6 @@ export function scanText(text: string): HedgeMatch[] {
 			out.push({
 				patternId: p.id,
 				category: p.category,
-				weight: p.weight,
 				matched: m[0],
 				snippet: excerpt(text, m.index, m[0].length),
 				index: m.index,
@@ -355,11 +334,7 @@ function stringField(item: Record<string, unknown>, key: string): string | undef
 	return typeof v === "string" ? v : undefined;
 }
 
-/**
- * Scan one block's items against its item schema. Returns every item with at
- * least one match (unthresholded — the caller applies minScore), ranked later
- * by the aggregate.
- */
+/** Scan one block's items against its item schema. Returns every item with at least one match. */
 export function scanBlockItems(
 	block: string,
 	arrayKey: string,
@@ -376,8 +351,6 @@ export function scanBlockItems(
 		}
 		if (fields.length === 0) return;
 		const allMatches = fields.flatMap((f) => f.matches);
-		const score = allMatches.reduce((s, m) => s + m.weight, 0);
-		const maxWeight = allMatches.reduce((s, m) => Math.max(s, m.weight), 0);
 		const categories = [...new Set(allMatches.map((m) => m.category))].sort();
 		flagged.push({
 			block,
@@ -385,8 +358,6 @@ export function scanBlockItems(
 			id: stringField(item, "id") ?? stringField(item, "oid") ?? `${block}[${index}]`,
 			title: stringField(item, "title"),
 			status: stringField(item, "status"),
-			score,
-			maxWeight,
 			categories,
 			fields,
 		});
@@ -396,19 +367,12 @@ export function scanBlockItems(
 
 // ── Substrate scanning (registry-driven) ─────────────────────────────────────
 
-export interface ScanOptions {
-	minScore?: number;
-}
-
-const DEFAULT_MIN_SCORE = 2;
-
 /**
  * Scan the active substrate of `cwd`: every block kind the config registry
  * declares, every item of each block's array_key, every schema-declared prose
  * field. Read-only throughout.
  */
-export function scanSubstrate(cwd: string, options: ScanOptions = {}): HedgeScanReport {
-	const minScore = options.minScore ?? DEFAULT_MIN_SCORE;
+export function scanSubstrate(cwd: string): HedgeScanReport {
 	const config = loadConfig(cwd);
 	if (!config) throw new Error(`scan-substrate-hedges: no substrate config resolvable from ${cwd}`);
 
@@ -455,20 +419,17 @@ export function scanSubstrate(cwd: string, options: ScanOptions = {}): HedgeScan
 
 		const flagged = scanBlockItems(blockName, kind.array_key, itemSchema, items);
 		summary.itemsScanned = items.length;
-		summary.itemsFlagged = flagged.filter((c) => c.score >= minScore).length;
+		summary.itemsFlagged = flagged.length;
 		itemsScanned += items.length;
 		allCandidates.push(...flagged);
 	}
 
-	const aboveThreshold = allCandidates
-		.filter((c) => c.score >= minScore)
-		.sort((a, b) => b.score - a.score || a.block.localeCompare(b.block) || a.id.localeCompare(b.id));
-	const belowThreshold = allCandidates.length - aboveThreshold.length;
+	allCandidates.sort((a, b) => a.block.localeCompare(b.block) || a.id.localeCompare(b.id));
 
 	const byCategory: Record<HedgeCategory, number> = { fork: 0, deferral: 0, "modal-hedge": 0 };
 	const byBlock: Record<string, number> = {};
 	let totalMatches = 0;
-	for (const c of aboveThreshold) {
+	for (const c of allCandidates) {
 		byBlock[c.block] = (byBlock[c.block] ?? 0) + 1;
 		for (const f of c.fields) {
 			for (const m of f.matches) {
@@ -482,19 +443,17 @@ export function scanSubstrate(cwd: string, options: ScanOptions = {}): HedgeScan
 		tool: "scan-substrate-hedges",
 		generated_at: new Date().toISOString(),
 		cwd,
-		minScore,
 		blocks,
 		summary: {
 			blocksScanned: blocks.filter((b) => b.skipped === undefined).length,
 			blocksSkipped: blocks.filter((b) => b.skipped !== undefined).length,
 			itemsScanned,
-			itemsFlagged: aboveThreshold.length,
-			itemsBelowThreshold: belowThreshold,
+			itemsFlagged: allCandidates.length,
 			totalMatches,
 			byCategory,
 			byBlock,
 		},
-		candidates: aboveThreshold,
+		candidates: allCandidates,
 	};
 }
 
@@ -503,7 +462,6 @@ export function scanSubstrate(cwd: string, options: ScanOptions = {}): HedgeScan
 interface Args {
 	cwd: string;
 	output: string | null;
-	minScore: number;
 	stdout: boolean;
 }
 
@@ -517,21 +475,14 @@ function parseArgs(argv: string[]): Args {
 		} else if (a === "--output" && argv[i + 1]) {
 			out.output = argv[i + 1];
 			i++;
-		} else if (a === "--min-score" && argv[i + 1]) {
-			out.minScore = Number(argv[i + 1]);
-			i++;
 		} else if (a === "--stdout") {
 			out.stdout = true;
 		} else if (a === "--help" || a === "-h") {
-			console.log(
-				"Usage: npx tsx scripts/scan-substrate-hedges.ts [--cwd <path>] [--output <path>] [--min-score <n>] [--stdout]",
-			);
+			console.log("Usage: npx tsx scripts/scan-substrate-hedges.ts [--cwd <path>] [--output <path>] [--stdout]");
 			process.exit(0);
 		}
 	}
-	const cwd = out.cwd ?? process.cwd();
-	const minScore = out.minScore !== undefined && Number.isFinite(out.minScore) ? out.minScore : DEFAULT_MIN_SCORE;
-	return { cwd, output: out.output ?? null, minScore, stdout: out.stdout ?? false };
+	return { cwd: out.cwd ?? process.cwd(), output: out.output ?? null, stdout: out.stdout ?? false };
 }
 
 function defaultOutputPath(cwd: string, generatedAt: string): string {
@@ -541,7 +492,7 @@ function defaultOutputPath(cwd: string, generatedAt: string): string {
 
 function main(): void {
 	const args = parseArgs(process.argv.slice(2));
-	const report = scanSubstrate(args.cwd, { minScore: args.minScore });
+	const report = scanSubstrate(args.cwd);
 
 	if (args.stdout) {
 		console.log(JSON.stringify(report, null, 2));
@@ -555,13 +506,10 @@ function main(): void {
 	const s = report.summary;
 	console.log(`report: ${outPath}`);
 	console.log(
-		`scanned ${s.itemsScanned} items across ${s.blocksScanned} blocks (${s.blocksSkipped} skipped); flagged ${s.itemsFlagged} candidates at min-score ${report.minScore} (${s.itemsBelowThreshold} below threshold); matches by category: fork=${s.byCategory.fork} deferral=${s.byCategory.deferral} modal-hedge=${s.byCategory["modal-hedge"]}`,
+		`scanned ${s.itemsScanned} items across ${s.blocksScanned} blocks (${s.blocksSkipped} skipped); flagged ${s.itemsFlagged} candidates; matches by category: fork=${s.byCategory.fork} deferral=${s.byCategory.deferral} modal-hedge=${s.byCategory["modal-hedge"]}`,
 	);
-	for (const c of report.candidates.slice(0, 15)) {
-		console.log(`  ${String(c.score).padStart(4)}  ${c.block}/${c.id}  [${c.categories.join(",")}]`);
-	}
-	if (report.candidates.length > 15) {
-		console.log(`  … ${report.candidates.length - 15} more in the report file`);
+	for (const c of report.candidates) {
+		console.log(`  ${c.block}/${c.id}  [${c.categories.join(",")}]`);
 	}
 }
 

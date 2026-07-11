@@ -252,6 +252,20 @@ describe("scanBlockItems — per-item aggregation", () => {
 		assert.equal(flagged.length, 1);
 		assert.equal(flagged[0].id, "notes[0]");
 	});
+
+	it("skips a closed item entirely even when its prose still carries hedge language", () => {
+		const items = [
+			{
+				id: "FGAP-903",
+				status: "closed",
+				title: "closed but still-hedged prose",
+				proposed_resolution:
+					"apply option A (the interactive orchestrator authors) or give the tools a pre-authorization channel, as a decision.",
+			},
+		];
+		const flagged = scanBlockItems("framework-gaps", "gaps", ITEM_SCHEMA, items);
+		assert.equal(flagged.length, 0, "a closed item must never be flagged, regardless of its prose");
+	});
 });
 
 describe("scanSubstrate — live-substrate structural invariants", () => {

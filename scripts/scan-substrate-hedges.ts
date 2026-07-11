@@ -12,6 +12,10 @@
  * an orchestrator happening to read the right gap — the manual FGAP-124/125/
  * 126/127 fork-provenance audits (2026-07-10/11) are the process this feeds.
  *
+ * Items with status "closed" are skipped entirely (not scanned, not
+ * flagged) — a closed item's hedge, if any, was already resolved or
+ * superseded at closure; it isn't a live audit candidate.
+ *
  * Discovery is registry-driven, never hardcoded:
  *   - Block kinds come from the active substrate's config (`loadConfig(cwd)`
  *     -> `block_kinds[]`), the same registry the CLI ops read. No block-name
@@ -343,6 +347,7 @@ export function scanBlockItems(
 ): CandidateItem[] {
 	const flagged: CandidateItem[] = [];
 	items.forEach((item, index) => {
+		if (stringField(item, "status") === "closed") return;
 		const proseValues = collectProseValues(itemSchema, item, "");
 		const fields: FieldFinding[] = [];
 		for (const pv of proseValues) {

@@ -2387,6 +2387,24 @@
       "id": "TASK-118",
       "oid": "fcec5d7bca4c8047e5a76515fdf211ba",
       "content_hash": "dce982a74dddc32bca8b5ba914c40cf0eae2a7ea846802b3cbdac67ace95cb1f"
+    },
+    {
+      "description": "User directive (this session, verbatim): 'i want it to copy agents. not providing agents that can be edited and changed in the project wanting to use agents is nearly the definition of terrible ux.' This is FGAP-127's still-open disjunct (bundled-builtinDir shipped via TASK-103; ceremony-seeding was deliberately left unbuilt, recorded as an open FEAT-014 design option, and no task tracked it until now). Implement: the install ceremony (context-install / accept-all) materializes real agent spec files into <contextDir>/agents/ from a config-declared installed_agents[] list, mirroring the existing installed_schemas[]/installed_blocks[] materialization mechanism -- not merely pointing at the read-only bundled directory FGAP-127's shipped fix resolves from. Materialized files are ordinary project files: editable, deletable, and customizable by the project that installs them. The existing bundled-builtinDir tier (FGAP-127) is unaffected and remains the fallback when no local copy exists, per the loader's existing project > user > bundled precedence.",
+      "acceptance_criteria": [
+        "context-install (and accept-all) materializes real agent spec files into <contextDir>/agents/ from a config-declared installed_agents[] list -- mirroring installed_schemas[]/installed_blocks[] -- verified by runtime demo on a fresh substrate.",
+        "Materialized agent files are ordinary editable project files, not resolved from a read-only bundled directory: editing a materialized file changes dispatch behavior, proving it is the live copy consulted (project tier), not shadowed by the bundled tier.",
+        "The existing bundled-builtinDir resolution (FGAP-127, dispatch-loader.ts) is unchanged and still serves as the fallback tier when no local agents/ copy exists.",
+        "Regression tests cover: fresh-install materialization, precedence (local copy beats bundled), and edit-then-redispatch behavior change.",
+        "Full build/check/test clean; docs-surface-sync applied (pi-context README, root README, install/accept-all op descriptions, skill-narrative.md, CHANGELOG [Unreleased])."
+      ],
+      "files": [
+        "packages/pi-context/src/context.ts",
+        "packages/pi-context/samples/conception.json"
+      ],
+      "status": "planned",
+      "id": "TASK-119",
+      "oid": "8cca213e56948de8990f57f260fd9be2",
+      "content_hash": "92a89da76c0c93cdba8ab717d2c0ba48dda5b951089ca848f40a736a9bd76acb"
     }
   ],
   "schema_version": "1.0.1"

@@ -81,7 +81,9 @@ import {
 	listSubstrates,
 	readCatalogSchemaText,
 	reconcileContext,
+	registerCatalogMigrationChainIfKnown,
 	resolveBlocked,
+	resolveCatalog,
 	resolveConflict,
 	switchAndCreate,
 	switchToExisting,
@@ -1574,10 +1576,13 @@ export const ops: OpDefinition[] = [
 		label: "Write Schema",
 		description:
 			"Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; " +
-			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. Schema " +
-			"version bumps require a companion migration declaration via write-schema-migration; without one, " +
-			"read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind " +
-			"that points at this schema is a separate step (amend-config block_kinds).",
+			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. When a " +
+			"replace advances the schema's declared version and the packaged catalog ships a migration chain reaching " +
+			"the new version, that chain is registered automatically so items declaring the prior schema_version keep " +
+			"reading; a version bump the catalog does not cover (a non-catalog schema, or an unknown transition) still " +
+			"requires a companion migration declaration via write-schema-migration, without which read/write of items " +
+			"declaring the older schema_version throws version-mismatch. Registering the block_kind that points at this " +
+			"schema is a separate step (amend-config block_kinds).",
 		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
 		examples: [
 			`pi-context write-schema --operation create --schemaName tasks --schema @/tmp/tasks.schema.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
@@ -1607,6 +1612,14 @@ export const ops: OpDefinition[] = [
 					/* keep raw string — meta-validation will reject a non-object */
 				}
 			}
+			// A replace can advance the schema's declared `version`; capture the
+			// pre-write installed version (the from-version existing block items
+			// assert) so a known catalog chain can be registered after the write.
+			let preReplaceVersion: string | undefined;
+			if (params.operation === "replace") {
+				const existing = readSchema(cwd, params.schemaName) as { version?: unknown } | null;
+				preReplaceVersion = typeof existing?.version === "string" ? existing.version : undefined;
+			}
 			const result = writeSchemaChecked(
 				cwd,
 				params.schemaName,
@@ -1616,7 +1629,36 @@ export const ops: OpDefinition[] = [
 				{ dryRun: params.dryRun },
 			);
 			const verb = result.written ? `${result.operation}d` : `would ${result.operation}`;
-			return `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}`;
+			// After a committed replace that advanced the version, register the
+			// catalog's forward migration chain so a block whose items still assert
+			// the prior schema_version reads. Registers nothing (and appends no
+			// fabricated identity decl) when the versions match or no catalog chain
+			// is known — the version-bump migration decl then remains the caller's
+			// responsibility via write-schema-migration.
+			let migrationNote = "";
+			if (result.written && params.operation === "replace") {
+				const destRoot = tryResolveContextDir(cwd);
+				const newVersion =
+					typeof (schema as { version?: unknown })?.version === "string"
+						? (schema as { version?: string }).version
+						: undefined;
+				if (destRoot !== null) {
+					const { samplesRoot } = resolveCatalog();
+					const reg = registerCatalogMigrationChainIfKnown(
+						destRoot,
+						samplesRoot,
+						params.schemaName,
+						preReplaceVersion,
+						newVersion,
+					);
+					if (reg.registered && reg.registered.length > 0) {
+						migrationNote = ` — registered migration decls: ${reg.registered
+							.map((m) => `${m.schema} ${m.from}->${m.to}`)
+							.join(", ")}`;
+					}
+				}
+			}
+			return `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}${migrationNote}`;
 		},
 	},
 	{

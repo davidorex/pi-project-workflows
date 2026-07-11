@@ -418,16 +418,22 @@ export function writeSchema(cwd: string, schemaName: string, schema: object): vo
  * draft-07 meta-schema and writes atomically (tmp + rename); this surface adds
  * no second validation or write path.
  *
- * Migration boundary (DECIDED): this op writes the schema JSON and
- * meta-validates the schema body. It does NOT migrate existing block items
- * forward when a `replace` changes the schema's `version`. A breaking
- * evolution is handled at READ time by `validateBlockWithMigration`, which
- * throws a version mismatch until a code-level `MigrationFn` is registered via
- * `createRegistry().register(...)` — and there is no Pi-tool surface for
- * registering a `MigrationFn`. This surface does not (and must not) emit an
- * "items exist at old version" warning: that would require reading block files
- * to assess data-layer impact from inside the schema-write layer, inverting
- * the read-time / write-time layering.
+ * Migration boundary (DECIDED): this function writes the schema JSON and
+ * meta-validates the schema body only. It does NOT itself register a migration
+ * declaration and does NOT migrate existing block items forward when a
+ * `replace` changes the schema's `version` — it stays a pure meta-validate +
+ * atomic write, shared by the update 3-way merge and resolve-conflict paths as
+ * well as the standalone write-schema op. Decl-registration for a version
+ * advance happens ONE layer up, at each of those callers: the standalone
+ * write-schema op registers the packaged catalog's forward chain (via
+ * `registerCatalogMigrationChainIfKnown`) after a committed replace WHEN the
+ * catalog knows a safe chain reaching the new version; an advance the catalog
+ * does not cover still requires a companion `write-schema-migration` decl,
+ * without which a READ of items at the prior `schema_version` throws version
+ * mismatch in `validateBlockWithMigration`. Migrating existing block-item DATA
+ * forward stays out of scope for this op: this surface does not read block
+ * files to assess data-layer impact, keeping the read-time / write-time
+ * layering intact.
  *
  * `ctx` is accepted and IGNORED: schema files carry no author-attestation
  * fields, so there is nothing to stamp. The parameter is present for call-site

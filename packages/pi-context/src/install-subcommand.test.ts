@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
-import { appendToBlock, readBlock, writeBlockForDir } from "./block-api.js";
+import { appendToBlock, readBlock, readBlockForDir, writeBlockForDir } from "./block-api.js";
 import { computeContentHash, computeFileBytesHash } from "./content-hash.js";
 import { loadConfig, loadRelations } from "./context.js";
 import { pendingBlockedPathForDir, writeBootstrapPointer } from "./context-dir.js";
@@ -19,6 +19,7 @@ import {
 	checkStatus,
 	installContext,
 	reconcileContext,
+	registerCatalogMigrationChainIfKnown,
 	renderBlocked,
 	renderCheckStatus,
 	resolveBlocked,
@@ -2063,6 +2064,221 @@ describe("updateContext migration-declaration reporting (FGAP-050)", () => {
 		assert.deepEqual(result.blocked, ["tasks"], "no shipped chain → blocked");
 		assert.deepEqual(result.migrated, []);
 		assert.deepEqual(result.migrationsRegistered, [], "a blocked (rolled-back) outcome registers nothing");
+	});
+});
+
+// The three schema-advancing surfaces that write an installed schema forward
+// WITHOUT going through resyncSchema's catalog-ahead migrate arm — updateContext's
+// 3-way merge, resolveConflict, and the standalone write-schema replace op — each
+// register the catalog's forward migration chain via registerCatalogMigrationChainIfKnown
+// so a block whose items still assert the prior schema_version keeps reading, and
+// each REFUSES to fabricate an identity decl when no catalog chain is known
+// (FGAP-141). Fixtures install tasks at an OLDER version (1.0.0, whose catalog chain
+// 1.0.0 -> 1.0.1 -> 1.1.0 ships) and drive each surface to the catalog version 1.1.0;
+// the no-chain fixtures install at 0.9.0, for which no chain ships.
+describe("schema-advancing surfaces register the catalog migration chain (FGAP-141)", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	const TASKS_ITEM_PROPS = ["properties", "tasks", "items", "properties"] as const;
+	function deepGet(obj: Record<string, unknown>, segs: readonly string[]): Record<string, unknown> {
+		let cur: Record<string, unknown> = obj;
+		for (const seg of segs) cur = cur[seg] as Record<string, unknown>;
+		return cur;
+	}
+
+	function op(name: string): OpDefinition {
+		const found = ops.find((o) => o.name === name);
+		if (found === undefined) throw new Error(`op not found: ${name}`);
+		return found;
+	}
+
+	// Pre-place the installed tasks schema = the catalog body with its `version`
+	// overridden to `version`, then install so the baseline is recorded FROM that
+	// on-disk older body (never-clobber install does not overwrite it).
+	function installOlderSchema(dir: string, name: string, version: string): void {
+		const catalog = JSON.parse(
+			fs.readFileSync(path.join(SAMPLES_DIR, "schemas", `${name}.schema.json`), "utf-8"),
+		) as Record<string, unknown>;
+		catalog.version = version;
+		fs.writeFileSync(path.join(dir, ".project", "schemas", `${name}.schema.json`), JSON.stringify(catalog, null, 2));
+	}
+
+	// Turn an installed-older catalog-ahead tasks schema into a both-diverged one:
+	// mutate the installed file (add a disjoint item-property) WITHOUT re-installing,
+	// so installed ≠ baseline ≠ catalog. Returns the installed schema dest path.
+	function makeBothDivergedOlderTasks(dir: string, version: string): string {
+		installOlderSchema(dir, "tasks", version);
+		installContext(dir); // baseline := the on-disk older body
+		const dest = path.join(dir, ".project", "schemas", "tasks.schema.json");
+		const obj = JSON.parse(fs.readFileSync(dest, "utf-8")) as Record<string, unknown>;
+		deepGet(obj, TASKS_ITEM_PROPS).__ours_field = { type: "string" };
+		fs.writeFileSync(dest, JSON.stringify(obj, null, 2));
+		return dest;
+	}
+
+	function migrationsOf(dir: string): Array<{ schemaName: string; fromVersion: string; toVersion: string }> {
+		return loadMigrationsFileForDir(path.join(dir, ".project"))?.migrations ?? [];
+	}
+
+	// An empty tasks block asserting `schemaVersion` — its envelope routes through
+	// validateBlockWithMigration on read, so the read throws version-mismatch when no
+	// forward chain to the installed schema version is registered, and succeeds once
+	// it is (the 1.0.0 -> 1.1.0 catalog hops are identity, so no items are needed).
+	function writeEmptyTasksBlock(dir: string, schemaVersion: string): void {
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: schemaVersion, tasks: [] }, null, 2),
+		);
+	}
+
+	const CHAIN_1_0_0_TO_1_1_0 = [
+		{ schema: "tasks", from: "1.0.0", to: "1.0.1" },
+		{ schema: "tasks", from: "1.0.1", to: "1.1.0" },
+	];
+
+	// ── merge branch ──────────────────────────────────────────────────────────
+	it("updateContext merge branch registers the known catalog chain and the block then reads", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeBothDivergedOlderTasks(tmpRoot, "1.0.0");
+		writeEmptyTasksBlock(tmpRoot, "1.0.0");
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"both-diverged",
+			"precondition: tasks must be both-diverged",
+		);
+		// Pre-merge the installed schema is still 1.0.0, matching the block, so it
+		// reads; the merge advances the installed schema to the catalog's 1.1.0, and
+		// the post-merge read succeeds ONLY because the forward chain was registered.
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, ["tasks"], "a disjoint both-diverged merge must land in merged");
+		assert.deepEqual(
+			result.migrationsRegistered,
+			CHAIN_1_0_0_TO_1_1_0,
+			"the merge must register the catalog's 1.0.0 -> 1.1.0 chain",
+		);
+		assert.ok(
+			migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "1.0.0"),
+			"the chain must be persisted into migrations.json",
+		);
+		assert.doesNotThrow(
+			() => readBlockForDir(path.join(tmpRoot, ".project"), "tasks"),
+			"after registration the tasks block at 1.0.0 must read",
+		);
+	});
+
+	it("updateContext merge branch refuses to fabricate a decl when no catalog chain is known", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeBothDivergedOlderTasks(tmpRoot, "0.9.0"); // no 0.9.0 -> 1.1.0 chain ships
+		assert.equal(
+			checkStatus(tmpRoot).perAsset.find((a) => a.name === "tasks")?.state,
+			"both-diverged",
+			"precondition: tasks must be both-diverged at 0.9.0",
+		);
+		const result = updateContext(tmpRoot);
+		assert.deepEqual(result.merged, ["tasks"], "the disjoint merge still lands");
+		assert.deepEqual(result.migrationsRegistered, [], "no known chain → nothing registered");
+		assert.ok(
+			!migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "0.9.0"),
+			"no fabricated 0.9.0 decl may be written",
+		);
+	});
+
+	// ── resolveConflict ─────────────────────────────────────────────────────────
+	it("resolveConflict registers the known catalog chain and threads it into the result", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeBothDivergedOlderTasks(tmpRoot, "1.0.0");
+		writeEmptyTasksBlock(tmpRoot, "1.0.0");
+		// Reconcile to the catalog body (R = catalog@1.1.0).
+		const R = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"));
+		const out = resolveConflict(tmpRoot, "tasks", R);
+		assert.deepEqual(
+			out.migrationsRegistered,
+			CHAIN_1_0_0_TO_1_1_0,
+			"resolveConflict must register the catalog's 1.0.0 -> 1.1.0 chain on its result",
+		);
+		assert.ok(
+			migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "1.0.0"),
+			"the chain must be persisted into migrations.json",
+		);
+		assert.doesNotThrow(
+			() => readBlockForDir(path.join(tmpRoot, ".project"), "tasks"),
+			"after resolveConflict the tasks block at 1.0.0 must read",
+		);
+	});
+
+	it("resolveConflict refuses to fabricate a decl when no catalog chain is known", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		makeBothDivergedOlderTasks(tmpRoot, "0.9.0");
+		const R = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"));
+		const out = resolveConflict(tmpRoot, "tasks", R);
+		assert.deepEqual(out.migrationsRegistered, [], "no known chain → nothing registered");
+		assert.ok(
+			!migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "0.9.0"),
+			"no fabricated 0.9.0 decl may be written",
+		);
+	});
+
+	// ── write-schema --operation replace op ──────────────────────────────────────
+	it("write-schema replace op registers the known catalog chain and the block then reads", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "1.0.0");
+		installContext(tmpRoot); // installed tasks schema declares 1.0.0
+		writeEmptyTasksBlock(tmpRoot, "1.0.0");
+		const catalogBody = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"));
+		const msg = op("write-schema").run(
+			tmpRoot,
+			{ operation: "replace", schemaName: "tasks", schema: catalogBody },
+			undefined,
+		);
+		assert.match(String(msg), /registered migration decls: tasks 1\.0\.0->1\.0\.1, tasks 1\.0\.1->1\.1\.0/);
+		assert.ok(
+			migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "1.0.0"),
+			"the chain must be persisted into migrations.json",
+		);
+		assert.doesNotThrow(
+			() => readBlockForDir(path.join(tmpRoot, ".project"), "tasks"),
+			"after the write-schema replace the tasks block at 1.0.0 must read",
+		);
+	});
+
+	it("write-schema replace op refuses to fabricate a decl when no catalog chain is known", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installOlderSchema(tmpRoot, "tasks", "0.9.0");
+		installContext(tmpRoot);
+		const catalogBody = JSON.parse(fs.readFileSync(path.join(SAMPLES_DIR, "schemas", "tasks.schema.json"), "utf-8"));
+		const msg = op("write-schema").run(
+			tmpRoot,
+			{ operation: "replace", schemaName: "tasks", schema: catalogBody },
+			undefined,
+		);
+		assert.ok(!String(msg).includes("registered migration decls"), "no chain → the op reports no registration");
+		assert.ok(
+			!migrationsOf(tmpRoot).some((m) => m.schemaName === "tasks" && m.fromVersion === "0.9.0"),
+			"no fabricated 0.9.0 decl may be written",
+		);
+	});
+
+	// ── the shared engine directly ────────────────────────────────────────────────
+	it("registerCatalogMigrationChainIfKnown returns null with a reason and writes nothing on an unknown chain", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const destRoot = path.join(tmpRoot, ".project");
+		const before = migrationsOf(tmpRoot).length;
+		const res = registerCatalogMigrationChainIfKnown(destRoot, SAMPLES_DIR, "tasks", "0.9.0", "1.1.0");
+		assert.deepEqual(res, { registered: null, reason: "no catalog migration chain for 'tasks' 0.9.0 to 1.1.0" });
+		assert.equal(migrationsOf(tmpRoot).length, before, "a refusal writes no decl");
+	});
+
+	it("registerCatalogMigrationChainIfKnown is idempotent — a re-run over a registered chain appends nothing", () => {
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		const destRoot = path.join(tmpRoot, ".project");
+		const first = registerCatalogMigrationChainIfKnown(destRoot, SAMPLES_DIR, "tasks", "1.0.0", "1.1.0");
+		assert.deepEqual(first, { registered: CHAIN_1_0_0_TO_1_1_0 }, "the first run registers the full chain");
+		const second = registerCatalogMigrationChainIfKnown(destRoot, SAMPLES_DIR, "tasks", "1.0.0", "1.1.0");
+		assert.deepEqual(second, { registered: [] }, "a second run appends nothing");
 	});
 });
 

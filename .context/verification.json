@@ -3159,6 +3159,35 @@
       "id": "VER-099",
       "oid": "4ed6c874e24a0d6bca13bb7e1442f3cf",
       "content_hash": "2a98243c5dde0a2652bd9f0d2fcedf0a032046985fa033b07cfa62018f50f9b3"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "AC1: substrate-derived-state convention exists in live conventions block; milestone schema citation resolves (verified via read-block-item, direct schema reads). AC2: independent fresh-agent re-run of the dangling-citation sweep (not the killed/raced agents unverified self-report) across all 18 catalog + 18 active schemas plus conception.json found zero dangling citations beyond the one already fixed -- report analysis/2026-07-11-task091-dangling-citation-sweep.md. AC3: dual-surface -- packages/pi-context/samples/blocks/conventions.json carries the complete, correct convention item, byte-identical to the live substrates copy; a fresh accept-all/install substrate carries it. AC4: FEAT-011s item_acknowledges_missing_convention edge replaced with item_governed_by_convention -> substrate-derived-state (verified via find-references, zero remaining acknowledges-missing edges to this convention); CHANGELOG entry recovered verbatim from the orphaned commit d06bf3d3 (destroyed with task-090-drift-surfacing during the TASK-090/091 shared-checkout incident) and re-committed at e1156d77.",
+      "criteria_results": [
+        {
+          "criterion": "The substrate-derived-state convention exists in the live conventions block with the derived-status rule stated as above; the milestone schemas canon citation names the filed convention id and resolves.",
+          "status": "passed"
+        },
+        {
+          "criterion": "A shipped-schema-text sweep finds zero other dangling convention citations (or each found instance is corrected in the same task).",
+          "status": "passed",
+          "evidence": "Independently re-run this session, not merely relayed from the original killed/raced agents self-report"
+        },
+        {
+          "criterion": "Vocabulary lands dual-surface (live + catalog); a fresh accept-all/install substrate carries the convention.",
+          "status": "passed",
+          "evidence": "Verified directly against samples/blocks/conventions.json content, not merely a conception.json grep"
+        },
+        {
+          "criterion": "FEAT-011s convention edge flipped from acknowledges-missing to governed-by; gates green; CHANGELOG entry.",
+          "status": "passed",
+          "evidence": "Edge flip verified live; CHANGELOG entry recovered from the orphaned commit and committed"
+        }
+      ],
+      "id": "VER-100",
+      "oid": "0ec3c159d24ecc3b372124b985add21b",
+      "content_hash": "471b79e6b3c622ccfce944385e18c5119b3c746d0d24631495481853cfda15a4"
     }
   ],
   "schema_version": "1.1.0"

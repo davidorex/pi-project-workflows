@@ -1879,7 +1879,7 @@
     },
     {
       "description": "Author the substrate-derived-state convention and resolve the engine's dangling canon citation (FEAT-011 criterion 8 / shape report §f bonus finding): the packaged milestone schema's status description cites 'canon (substrate-derived-state)' but no such convention exists in the conventions block. File the convention (conventions block, live substrate AND any catalog starter the conception ships): a block kind whose status is declared mechanically derivable is never authored — reads derive it, engine writes converge it, and repair flows through reconcile; authored writes to a derived field are refused. Audit the milestone schema text (samples + installed) so the citation resolves to the filed convention id; audit for any other dangling convention citations in shipped schema text (the class, not the instance). Dual-surface discipline: no live-only vocabulary (FGAP-102). On completion, flip FEAT-011's item_acknowledges_missing_convention edge to item_governed_by_convention against the new convention. Composed from FEAT-011 criterion 8 and shape report §f (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "completed",
       "files": [
         "packages/pi-context/samples/schemas/milestone.schema.json",
         "packages/pi-context/samples/conception.json",
@@ -1896,7 +1896,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-091",
       "oid": "c51fc9752674605e3c26966d88cd4001",
-      "content_hash": "c32ebfe0efe091e276514c10e6bcb61602f36cff0b8ec26468f75bc3bd80d30f"
+      "content_hash": "748775dba903291556989caa7e84f6eb37c6b5e5df365a286f6664603e031e35",
+      "content_parent": "c32ebfe0efe091e276514c10e6bcb61602f36cff0b8ec26468f75bc3bd80d30f"
     },
     {
       "title": "Birth-relations entries afford the role-typed orientation form — filing atoms usable for all 17 role-bearing relation_types, with preview parity",

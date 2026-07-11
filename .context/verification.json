@@ -3110,6 +3110,55 @@
       "id": "VER-098",
       "oid": "9d2172178d0fabbf1b61732e0328dcd7",
       "content_hash": "dd0117a3e33a4925795cc8c2a6bcc2d16f6dd007aa1bd098e742f129c747608b"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Live defect reproduced first via direct pi-context read-block-page calls on all 18 blocks: research and session-notes threw MigrationRegistry errors, all 16 others read clean. Root cause traced to code: updateContext merge branch, resolveConflict, and write-schema --operation replace never registered a migration declaration, unlike resyncSchema catalog-ahead migrate branch. Fix (registerCatalogMigrationChainIfKnown) wired into all three sites; 8 new tests cover registration + refuse-to-fabricate for each; full pi-context suite 1305 pass / 0 fail, full monorepo build/check/test exit 0. Data repair applied directly via the sanctioned npx tsx -e path (no dedicated CLI op exists for this internal helper); both research and session-notes confirmed reading clean via the real CLI, independently, before and after merge to main. Fresh adversarial re-audit (different agent) found zero defects across seven probes including the implementer own deviation (write-schema wiring moved from schema-write.ts to the ops-registry.ts op handler to avoid double-firing against writeSchemaCheckedForDir shared callers). docs-surface-sync audit found and corrected three stale op-description/README passages that scoped migration registration to the catalog-ahead resync arm only.",
+      "criteria_results": [
+        {
+          "criterion": "registerCatalogMigrationChainIfKnown exists adjacent to resyncSchema, reuses findCatalogMigrationChain, never fabricates an identity decl when no catalog chain resolves",
+          "status": "passed"
+        },
+        {
+          "criterion": "updateContext merge branch, resolveConflict, and write-schema --operation replace each call the new helper after their existing stampBaselineFromBody call and thread the result into their report shape",
+          "status": "passed",
+          "evidence": "write-schema site wired at the ops-registry.ts op handler rather than schema-write.ts per the plan, since writeSchemaCheckedForDir is shared by all three callers and in-place registration there would double-fire; verified by adversarial audit as the correct fix, not a coverage gap"
+        },
+        {
+          "criterion": "schema-write.ts doc comment updated for the resolved nuance",
+          "status": "passed"
+        },
+        {
+          "criterion": "new tests cover all three call sites registering a known chain and all three refusing to fabricate when no chain is known; existing tests for all three unchanged",
+          "status": "passed",
+          "evidence": "8 new tests, all passing, independently re-run by the adversarial auditor"
+        },
+        {
+          "criterion": "research and session-notes blocks both read successfully via the real pi-context CLI read path after the fix and data repair",
+          "status": "passed"
+        },
+        {
+          "criterion": "all 18 blocks re-read successfully via the real read path",
+          "status": "passed"
+        },
+        {
+          "criterion": "build, check, and full test suite exit 0",
+          "status": "passed"
+        },
+        {
+          "criterion": "CHANGELOG entry naming this does not close FGAP-140",
+          "status": "passed",
+          "evidence": "worded without a raw substrate-ID citation per the citation-rot AST-scanner gate"
+        },
+        {
+          "criterion": "fresh adversarial re-audit confirms all three call sites reachable, dry-run respected everywhere applicable, and the refuse-to-fabricate safety property holds against a constructed no-known-chain fixture",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-099",
+      "oid": "4ed6c874e24a0d6bca13bb7e1442f3cf",
+      "content_hash": "2a98243c5dde0a2652bd9f0d2fcedf0a032046985fa033b07cfa62018f50f9b3"
     }
   ],
   "schema_version": "1.1.0"

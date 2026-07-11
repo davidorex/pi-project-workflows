@@ -4677,7 +4677,7 @@
     },
     {
       "title": "Update-time schema-version-advancing write paths never register a migration declaration",
-      "status": "identified",
+      "status": "closed",
       "priority": "P1",
       "package": "pi-context",
       "description": "updateContext's merge branch (locally-modified/both-diverged resync), resolveConflict, and write-schema --operation replace can each advance an installed schema's declared version. None registers a migration declaration. Only resyncSchema's catalog-ahead migrate branch does this: it walks findCatalogMigrationChain and calls appendMigrationDeclForDir per hop. Distinct from FGAP-140 (install-time seeding gap) -- this is update-time, on an already-installed substrate.",
@@ -4705,7 +4705,10 @@
       "created_at": "2026-07-11T00:00:00.000Z",
       "id": "FGAP-141",
       "oid": "37db991b6cdefe42d40583e22753114e",
-      "content_hash": "189b24c208bbbb36f04aef07c67d0ce012743351e5b12b7016d437278513c147"
+      "content_hash": "dbf2dfe87f213a71bbc12dcbdefed5af3d64ed952736135f13307c7427151c37",
+      "closed_by": "TASK-122 (commits 3c8cc328 implementation, 38468618 data repair, ad5fd025 docs correction; verified VER-099)",
+      "closed_at": "2026-07-11T00:00:00.000Z",
+      "content_parent": "189b24c208bbbb36f04aef07c67d0ce012743351e5b12b7016d437278513c147"
     }
   ]
 }

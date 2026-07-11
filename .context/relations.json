@@ -11176,5 +11176,18 @@
       "refname": "feature-branch-workflow"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "4ed6c874e24a0d6bca13bb7e1442f3cf",
+      "refname": "VER-099"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7f3e5214ead318af10c521514d1a57a8",
+      "refname": "TASK-122"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

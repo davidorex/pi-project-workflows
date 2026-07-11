@@ -11059,5 +11059,44 @@
       "refname": "substrate-derived-state"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5bafb43bb029b11786d5b5731ce0f280",
+      "refname": "TASK-121"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5b3fdce0700fb049da6593b9b2e71260",
+      "refname": "FGAP-043"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5bafb43bb029b11786d5b5731ce0f280",
+      "refname": "TASK-121"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf5dd261bf6c7bd4b2c1bb2021c350ae",
+      "refname": "pi-mono-is-exemplar"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5bafb43bb029b11786d5b5731ce0f280",
+      "refname": "TASK-121"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

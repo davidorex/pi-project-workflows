@@ -8671,19 +8671,6 @@
   {
     "parent": {
       "kind": "item",
-      "oid": "dd370874702b2c722dfbc13c41dbaeb3",
-      "refname": "FEAT-011"
-    },
-    "child": {
-      "kind": "item",
-      "oid": "195bbb09301a60a50dbf0d6e1e0f5a07",
-      "refname": "FGAP-052"
-    },
-    "relation_type": "item_acknowledges_missing_convention"
-  },
-  {
-    "parent": {
-      "kind": "item",
       "oid": "6a6a6fac8e546f97514066dd2c096a3e",
       "refname": "PHASE-M6-CURRENCY-CONVERGENCE"
     },
@@ -11059,5 +11046,18 @@
       "refname": "TASK-120"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "dd370874702b2c722dfbc13c41dbaeb3",
+      "refname": "FEAT-011"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1429fb8a868665c61b574e8500aaf864",
+      "refname": "substrate-derived-state"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

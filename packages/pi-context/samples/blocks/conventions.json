@@ -1,3 +1,10 @@
 {
-	"rules": []
+	"rules": [
+		{
+			"id": "substrate-derived-state",
+			"description": "A block kind whose status is declared mechanically derivable (a config state_derivation.rollups kind, e.g. milestone) is never authored — reads derive it, engine writes converge it, and repair flows through reconcile; authored writes to a derived field are refused.\n1. Reads derive: every surface reporting a derived status computes it from the declared derivation (membership edges + member statuses) within the same read; the stored field is a converged mirror, never the source of truth.\n2. Engine writes converge: an engine write that changes a derivation input (member status, membership edge) recomputes and stamps the affected items' stored status through the standard write path — a converge-stamp is convergence, not authoring.\n3. Authored writes are refused: a write that sets a derived status field against its derivation is refused at the write gate; the derived-status invariant class reports stored-vs-derived divergence in both directions.\n4. Repair flows through reconcile: a substrate whose stored derived state has diverged is converged via the reconcile op (dry-run previews the live outcome exactly; the live run applies through the standard write path), never by hand-editing the stored field.\nSchema text citing canon (substrate-derived-state) resolves to this rule.",
+			"enforcement": "lint",
+			"severity": "error"
+		}
+	]
 }

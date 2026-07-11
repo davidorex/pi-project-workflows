@@ -2405,6 +2405,26 @@
       "id": "TASK-119",
       "oid": "8cca213e56948de8990f57f260fd9be2",
       "content_hash": "92a89da76c0c93cdba8ab717d2c0ba48dda5b951089ca848f40a736a9bd76acb"
+    },
+    {
+      "description": "User directive (verbatim, this session): 'first we need a script that will use nlp processing to pre-identify candidates needing full agent treatment for validating / de-hedging / correcting, for all substrate items, not just gaps.' Write a read-only script (scripts/, matching this repo's scan-comment-citations.ts precedent) that scans EVERY block kind declared in the active substrate's config (derived from config.block_kinds -- not a hardcoded block list, per this project's derive-from-registry convention) and every free-text prose field of each item (derived from each block's schema -- string/string[] fields such as description, proposed_resolution, acceptance_criteria entries, context, consequences, impact -- not hardcoded per block kind), applying heuristic pattern matching to flag hedge/fork/incompleteness markers in three categories: (1) enumerated-option forks (\"or\", \"and/or\", \"either...or\", lettered/numbered option lists like \"(a)...(b)...(c)\"); (2) explicit deferral language (\"as a decision\", \"TBD\", \"to be determined\", \"not yet decided\", \"open question\", \"user's call\", \"user scope call\", \"up to the user\", \"undetermined\"); (3) vague/modal hedging (\"might\", \"could\", \"possibly\", \"may need to\", \"later\", \"eventually\"). Output a single machine-readable JSON report (timestamped path) listing, per matched item: block, id, field, matched category, and the matching snippet with surrounding context -- this becomes the candidate list an orchestrator works through with the gap-fork-provenance-audit-brief-template (analysis/2026-07-11-gap-fork-provenance-audit-brief-template.md) or its generalization to other block kinds. The script itself does not correct anything -- pre-identification only.",
+      "acceptance_criteria": [
+        "Script discovers block kinds and their schemas dynamically from the active substrate's config (block_kinds, schema field definitions) -- no hardcoded list of block names or field names anywhere in the script.",
+        "Scans every string/string[]-typed prose field across every item in every discovered block.",
+        "Flags matches for all three marker categories (enumerated-option forks, explicit-deferral phrases, vague/modal hedging) with the matched snippet plus surrounding sentence context.",
+        "Output is a single machine-readable JSON file at a timestamped path; the script makes zero substrate writes (read-only).",
+        "Running it against the current substrate's framework-gaps block produces a report that includes FGAP-125's still-unaudited proposed_resolution or-clause as a known true-positive sanity check.",
+        "Unit tests cover each heuristic marker category against synthetic true-positive and true-negative fixtures (tsx --test, matching this project's testing convention).",
+        "Full build/check/test clean."
+      ],
+      "files": [
+        "scripts/scan-substrate-hedges.ts"
+      ],
+      "status": "in-progress",
+      "id": "TASK-120",
+      "oid": "eb7a517634317280784ddcd76ef03030",
+      "content_hash": "648e7ccd82126ef9b4f98bb9a12ca9335926cfe2076a30383dc66e2a8dff3e73",
+      "content_parent": "f52a226af581055decf6bb5faf1aaab4a6d57b680b5ffdfc16f8070a1c7d87dc"
     }
   ],
   "schema_version": "1.0.1"

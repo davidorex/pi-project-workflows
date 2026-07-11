@@ -162,6 +162,14 @@
               }
             }
           },
+          "on_fail": {
+            "type": "string",
+            "enum": [
+              "retry",
+              "abort"
+            ],
+            "description": "Non-interactive-context real-check-failure policy at the iteration boundary. 'retry' proceeds to the next iteration without asking (bounded by max_iterations); absent or 'abort' yields final_status='aborted-non-interactive'. An interactive context (a human attached) always asks regardless of this field."
+          },
           "description": {
             "type": "string"
           },

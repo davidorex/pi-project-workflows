@@ -11098,5 +11098,18 @@
       "refname": "feature-branch-workflow"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d60874eca4563066112c1e9aa823f91e",
+      "refname": "FGAP-139"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "5b3fdce0700fb049da6593b9b2e71260",
+      "refname": "FGAP-043"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

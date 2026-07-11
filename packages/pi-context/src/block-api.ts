@@ -990,7 +990,7 @@ export function writeTypedFile(
 	data: unknown,
 	ctx?: DispatchContext,
 	errorLabel?: string,
-	changedItems?: Array<{ arrayKey: string; item: Record<string, unknown> }>,
+	changedItems?: Array<{ arrayKey: string; nestedArrayKey?: string; item: Record<string, unknown> }>,
 ): void {
 	const label = errorLabel ?? filePath;
 
@@ -1059,7 +1059,11 @@ export function writeTypedFile(
 			itemSchema = null;
 		}
 		if (itemSchema) {
-			validateRhetoricalCriteriaForItems(itemSchema, changedItems, label);
+			// Both the resolved top-level item subschema AND the root schema are passed
+			// through: an entry carrying `nestedArrayKey` is re-resolved per-entry to its
+			// own nested item subschema (dereferencing any `$ref` against the root) rather
+			// than checked against the top-level subschema — see resolveNestedItemSchema.
+			validateRhetoricalCriteriaForItems(itemSchema, parsedSchema, changedItems, label, resolveNestedItemSchema);
 		}
 	}
 
@@ -1737,7 +1741,7 @@ export function appendToNestedTypedFile(
 		const patched = [...arr];
 		patched[idx] = updatedParent;
 		writeTypedFile(filePath, schemaPath, rewriteParent(patched), undefined, label, [
-			{ arrayKey: nestedArrayKey, item: itemToAppend as Record<string, unknown> },
+			{ arrayKey: parentArrayKey, nestedArrayKey, item: itemToAppend as Record<string, unknown> },
 		]);
 	});
 }
@@ -1823,7 +1827,7 @@ export function updateNestedItemInTypedFile(
 		const patchedParents = [...arr];
 		patchedParents[parentIdx] = updatedParent;
 		writeTypedFile(filePath, schemaPath, rewriteParent(patchedParents), undefined, label, [
-			{ arrayKey: nestedArrayKey, item: updatedNested },
+			{ arrayKey: parentArrayKey, nestedArrayKey, item: updatedNested },
 		]);
 	});
 }
@@ -1914,7 +1918,7 @@ export function writeBlockForDir(
 	blockName: string,
 	data: unknown,
 	ctx?: DispatchContext,
-	changedItems?: Array<{ arrayKey: string; item: Record<string, unknown> }>,
+	changedItems?: Array<{ arrayKey: string; nestedArrayKey?: string; item: Record<string, unknown> }>,
 ): void {
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
@@ -2499,21 +2503,63 @@ export function resolveBlockItemSchema(schema: Record<string, unknown>): {
 	if (!arrayKey) {
 		throw new Error("resolveBlockItemSchema: no array property with items found in schema");
 	}
-	let items = (props[arrayKey] as Record<string, unknown>).items as Record<string, unknown>;
+	const items = (props[arrayKey] as Record<string, unknown>).items as Record<string, unknown>;
+	return { arrayKey, itemSchema: dereferenceItemsSchema(schema, items) };
+}
+
+/**
+ * Dereference an array's `items` subschema against its root: a `$ref` of the form
+ * `#/definitions/<name>` or `#/$defs/<name>` is looked up in the root's matching
+ * bag; a non-`$ref` `items` is returned as-is. Throws on an unsupported `$ref`
+ * form or one that does not resolve in `rootSchema`. Shared by
+ * `resolveBlockItemSchema` (top-level array) and `resolveNestedItemSchema`
+ * (nested array) so the `$ref`/`$defs` lookup lives in exactly one place.
+ */
+function dereferenceItemsSchema(
+	rootSchema: Record<string, unknown>,
+	items: Record<string, unknown>,
+): Record<string, unknown> {
 	const ref = typeof items.$ref === "string" ? (items.$ref as string) : undefined;
-	if (ref) {
-		const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
-		if (!m) {
-			throw new Error(`resolveBlockItemSchema: unsupported $ref '${ref}' (only #/definitions/* or #/$defs/*)`);
-		}
-		const bag = (schema[m[1]] ?? {}) as Record<string, Record<string, unknown>>;
-		const target = bag[m[2]];
-		if (!target) {
-			throw new Error(`resolveBlockItemSchema: $ref '${ref}' does not resolve in schema`);
-		}
-		items = target;
+	if (!ref) return items;
+	const m = /^#\/(definitions|\$defs)\/(.+)$/.exec(ref);
+	if (!m) {
+		throw new Error(`dereferenceItemsSchema: unsupported $ref '${ref}' (only #/definitions/* or #/$defs/*)`);
 	}
-	return { arrayKey, itemSchema: items };
+	const bag = (rootSchema[m[1]] ?? {}) as Record<string, Record<string, unknown>>;
+	const target = bag[m[2]];
+	if (!target) {
+		throw new Error(`dereferenceItemsSchema: $ref '${ref}' does not resolve in schema`);
+	}
+	return target;
+}
+
+/**
+ * Resolve the item subschema of a NESTED array (e.g. `layer-plans`'
+ * `plans[].layers[]` / `plans[].migration_phases[]`) — the subschema a
+ * nested-array write is actually governed by, so its OWN `x-prompt-budget` /
+ * `x-rhetorical-criteria` are enforced against it rather than the block's
+ * top-level item subschema. Looks up `topLevelItemSchema.properties[nestedArrayKey].items`
+ * and dereferences any `$ref` against `rootSchema`. Returns `null` when the path
+ * does not resolve — defensive only: a nested writer sets `nestedArrayKey`
+ * exclusively for a path AJV has already validated the write against, so by
+ * construction this resolves whenever it is consulted.
+ */
+function resolveNestedItemSchema(
+	topLevelItemSchema: Record<string, unknown>,
+	rootSchema: Record<string, unknown>,
+	nestedArrayKey: string,
+): Record<string, unknown> | null {
+	const props = topLevelItemSchema.properties;
+	if (!props || typeof props !== "object") return null;
+	const nestedProp = (props as Record<string, unknown>)[nestedArrayKey];
+	if (!nestedProp || typeof nestedProp !== "object") return null;
+	const items = (nestedProp as Record<string, unknown>).items;
+	if (!items || typeof items !== "object" || Array.isArray(items)) return null;
+	try {
+		return dereferenceItemsSchema(rootSchema, items as Record<string, unknown>);
+	} catch {
+		return null;
+	}
 }
 
 /**

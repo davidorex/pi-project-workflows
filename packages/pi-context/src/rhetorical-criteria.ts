@@ -163,7 +163,18 @@ function wordCount(value: string): number {
  * Enforce the two mechanically-checkable rhetorical-register rules against ONLY
  * the changed item(s) of a write — never the untouched remainder of the file.
  *
- * For each changed item, against the block's (single, top-level) item subschema:
+ * Each changed entry names the array it lives in: a top-level append/update
+ * carries only `arrayKey` and is checked against `topLevelItemSchema`; a
+ * nested-array append/update additionally carries `nestedArrayKey`, and is
+ * checked against that nested array's OWN item subschema — resolved per-entry
+ * via the injected `resolveNested` (which dereferences any `$ref` against
+ * `rootSchema`) — NOT the top-level subschema. Checking a nested item against
+ * the top-level subschema would leave the nested field's own
+ * `x-prompt-budget` / `x-rhetorical-criteria` entirely unenforced, and would
+ * apply the wrong word cap to any nested field whose name collides with a
+ * differently-budgeted top-level field.
+ *
+ * For each changed item, against its EFFECTIVE (top-level or nested) subschema:
  *   - every string field carrying `x-prompt-budget.words` is word-counted and
  *     rejected when it exceeds its cap;
  *   - every such budgeted string field is tested against `DEFAULT_PROHIBITED_
@@ -177,22 +188,37 @@ function wordCount(value: string): number {
  * checkable fields). Fields whose value is not a string are skipped (the check
  * is register-of-authored-prose, not shape — shape is AJV's job upstream).
  *
- * `itemSchema` is the block's resolved top-level item subschema; a changed item
- * from a NESTED array simply finds no matching budgeted field names here and is
- * left unchecked, which is safe (no false positive, no brick).
+ * A nested entry whose subschema does not resolve (defensive — an actual nested
+ * writer only sets `nestedArrayKey` for a path AJV already validated) is skipped
+ * rather than throwing, matching the safe-fallback philosophy for unresolvable
+ * schemas. The resolver is injected (rather than imported) to keep this module a
+ * leaf with no dependency on `block-api.ts`, which imports from here.
  */
 export function validateRhetoricalCriteriaForItems(
-	itemSchema: Record<string, unknown>,
-	changedItems: Array<{ arrayKey: string; item: Record<string, unknown> }>,
+	topLevelItemSchema: Record<string, unknown>,
+	rootSchema: Record<string, unknown>,
+	changedItems: Array<{ arrayKey: string; nestedArrayKey?: string; item: Record<string, unknown> }>,
 	label: string,
+	resolveNested: (
+		topLevelItemSchema: Record<string, unknown>,
+		rootSchema: Record<string, unknown>,
+		nestedArrayKey: string,
+	) => Record<string, unknown> | null,
 ): void {
-	const criteria = readRhetoricalCriteria(itemSchema);
-	const wordCaps = collectWordCaps(itemSchema);
-	const budgetedFields = [...wordCaps.keys()];
-	const schemaPatterns = criteria?.prohibited_patterns ?? [];
-
-	for (const { item } of changedItems) {
+	for (const { item, nestedArrayKey } of changedItems) {
 		if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+
+		// Resolve the subschema the item is actually governed by: its own nested
+		// item subschema when it lives in a nested array, else the top-level one.
+		const effectiveSchema = nestedArrayKey
+			? resolveNested(topLevelItemSchema, rootSchema, nestedArrayKey)
+			: topLevelItemSchema;
+		if (!effectiveSchema) continue;
+
+		const criteria = readRhetoricalCriteria(effectiveSchema);
+		const wordCaps = collectWordCaps(effectiveSchema);
+		const budgetedFields = [...wordCaps.keys()];
+		const schemaPatterns = criteria?.prohibited_patterns ?? [];
 
 		// (1) Word-count caps on budgeted string fields.
 		for (const [field, cap] of wordCaps) {

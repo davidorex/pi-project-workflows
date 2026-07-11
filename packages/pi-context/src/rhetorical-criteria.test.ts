@@ -90,13 +90,24 @@ describe("DEFAULT_PROHIBITED_PATTERNS", () => {
 	});
 });
 
+/**
+ * A resolver stub for the top-level-only cases: these items carry no
+ * `nestedArrayKey`, so the injected resolver is never consulted. It throws if
+ * ever called, proving the top-level path does NOT resolve nested schemas.
+ */
+const unusedResolver = (): Record<string, unknown> | null => {
+	throw new Error("resolver must not be consulted for a top-level (nestedArrayKey-less) item");
+};
+
 describe("validateRhetoricalCriteriaForItems", () => {
 	it("passes a compliant item", () => {
 		assert.doesNotThrow(() =>
 			validateRhetoricalCriteriaForItems(
 				itemSchemaWithBudget,
+				{},
 				[{ arrayKey: "items", item: { id: "X-1", description: "short clear text", title: "ok" } }],
 				"label",
+				unusedResolver,
 			),
 		);
 	});
@@ -106,8 +117,10 @@ describe("validateRhetoricalCriteriaForItems", () => {
 			() =>
 				validateRhetoricalCriteriaForItems(
 					itemSchemaWithBudget,
+					{},
 					[{ arrayKey: "items", item: { id: "X-1", description: "one two three four five six seven" } }],
 					"label",
+					unusedResolver,
 				),
 			(err: unknown) => {
 				assert.ok(err instanceof RhetoricalValidationError);
@@ -124,8 +137,10 @@ describe("validateRhetoricalCriteriaForItems", () => {
 			() =>
 				validateRhetoricalCriteriaForItems(
 					itemSchemaWithBudget,
+					{},
 					[{ arrayKey: "items", item: { id: "X-1", description: "no longer used" } }],
 					"label",
+					unusedResolver,
 				),
 			(err: unknown) => {
 				assert.ok(err instanceof RhetoricalValidationError);
@@ -141,8 +156,10 @@ describe("validateRhetoricalCriteriaForItems", () => {
 		assert.doesNotThrow(() =>
 			validateRhetoricalCriteriaForItems(
 				itemSchemaWithBudget,
+				{},
 				[{ arrayKey: "items", item: { id: "X-1", description: "fine", title: "previously named foo" } }],
 				"label",
+				unusedResolver,
 			),
 		);
 	});
@@ -158,8 +175,10 @@ describe("validateRhetoricalCriteriaForItems", () => {
 			() =>
 				validateRhetoricalCriteriaForItems(
 					schema,
+					{},
 					[{ arrayKey: "items", item: { id: "X-1", note: "a todo here" } }],
 					"label",
+					unusedResolver,
 				),
 			(err: unknown) => {
 				assert.ok(err instanceof RhetoricalValidationError);
@@ -173,11 +192,53 @@ describe("validateRhetoricalCriteriaForItems", () => {
 		assert.doesNotThrow(() =>
 			validateRhetoricalCriteriaForItems(
 				itemSchemaWithBudget,
+				{},
 				[
 					{ arrayKey: "items", item: 42 as unknown as Record<string, unknown> },
 					{ arrayKey: "items", item: { id: "X-1", description: 999 as unknown as string } },
 				],
 				"label",
+				unusedResolver,
+			),
+		);
+	});
+
+	it("checks a nestedArrayKey entry against the resolver's returned subschema, not the top-level one", () => {
+		// Top-level `description` cap is 5 words; the nested resolver returns a
+		// subschema whose `blurb` cap is 2 words. A nested entry with a 3-word
+		// `blurb` must be judged by the nested (2-word) cap the resolver returns.
+		const nestedSubschema = {
+			properties: { blurb: { type: "string", "x-prompt-budget": { words: 2 } } },
+		};
+		const resolver = (_top: Record<string, unknown>, _root: Record<string, unknown>, key: string) =>
+			key === "subs" ? nestedSubschema : null;
+		assert.throws(
+			() =>
+				validateRhetoricalCriteriaForItems(
+					itemSchemaWithBudget,
+					{},
+					[{ arrayKey: "items", nestedArrayKey: "subs", item: { blurb: "one two three" } }],
+					"label",
+					resolver,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual(err.field, "blurb");
+				assert.ok(err.message.includes("cap of 2"));
+				return true;
+			},
+		);
+	});
+
+	it("skips a nestedArrayKey entry whose subschema does not resolve (defensive null)", () => {
+		const resolver = () => null;
+		assert.doesNotThrow(() =>
+			validateRhetoricalCriteriaForItems(
+				itemSchemaWithBudget,
+				{},
+				[{ arrayKey: "items", nestedArrayKey: "subs", item: { description: "one two three four five six seven" } }],
+				"label",
+				resolver,
 			),
 		);
 	});

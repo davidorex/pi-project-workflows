@@ -19,10 +19,13 @@
  * inspection. It never sets a non-zero exit code for "citations found" — only
  * an unhandled I/O error crashes it, which is not a designed failure mode.
  * Deliberately NOT wired into `npm run check`, husky, or CI (informational
- * tooling only, per this task's acceptance criteria).
+ * tooling only, per this task's acceptance criteria). The separate,
+ * gate-wired delta-scoped check lives at scripts/check-comment-citations.ts,
+ * which flags only a NEWLY-introduced comment citation.
  */
 import fs from "node:fs";
 import path from "node:path";
+import { CITATION_RE_G } from "@davidorex/pi-context/citation-rot-scanner";
 import ts from "typescript";
 
 /** Which lexical form of comment a citation was found inside. */
@@ -54,25 +57,17 @@ export interface ScanReport {
 }
 
 /**
- * This mirrors packages/pi-context/src/citation-rot-scanner.ts's CITATION_RE
- * (which is module-private and unexported — no reachable subpath export off
- * @davidorex/pi-context for it — so it cannot be imported; see that file for
- * the canonical family list this is derived from). It corrects two
- * confirmed-stale alternatives found during the 2026-07-10 investigation of
- * issue-012:
- *   - PHASE-\d{3,} -> PHASE-[A-Z0-9-]+ : live phase ids are alphanumeric slugs
- *     (e.g. PHASE-PORT-OPS, PHASE-M1-CEREMONY-RECOVERY), never purely
- *     numeric-suffixed, per phase.schema.json's declared ^PHASE-[A-Z0-9-]+$
- *     pattern — the numeric-only alternative would never match a live id.
- *   - MILE-\d{3,} added: absent from the original entirely, despite
- *     milestone.schema.json declaring ^MILE-\d{3,}$ and 9 live MILE-00N items
- *     existing in the active substrate.
- * This is therefore a maintained parallel definition, not a shared one — a
- * future correction to the citation-rot-scanner's family list does not
- * propagate here automatically, and vice versa.
+ * Reconciliation note: this file used to hand-duplicate a CITATION_RE_G copy
+ * that had diverged from packages/pi-context/src/citation-rot-scanner.ts's
+ * module-private CITATION_RE (that scanner's regex lacked MILE-\d{3,}
+ * entirely and used the narrower PHASE-\d{3,} instead of PHASE-[A-Z0-9-]+ —
+ * the 2026-07-10 investigation of issue-012 found live phase ids are
+ * alphanumeric slugs, e.g. PHASE-PORT-OPS, never purely digit-suffixed, per
+ * phase.schema.json's declared ^PHASE-[A-Z0-9-]+$ pattern). Both families are
+ * now unioned onto citation-rot-scanner.ts's exported CITATION_RE, imported
+ * here directly, so this file no longer carries a second,
+ * independently-driftable copy.
  */
-const CITATION_RE_G =
-	/\b(FGAP-\d{3}|DEC-\d{4}|FEAT-\d{3}|TASK-\d{3}|VER-\d{3}|REVIEW-\d+|RAT-\d+|CTX-\d+|WO-\d+|STORY-\d+|PLAN-\d+|REQ-\d+|R-\d{4}|ISSUE-\d+|issue-\d+|PHASE-[A-Z0-9-]+|MILE-\d{3,}|JI-\d{3})\b/g;
 
 /** Max snippet length before truncating to an excerpt around the match. */
 const MAX_SNIPPET_LEN = 300;

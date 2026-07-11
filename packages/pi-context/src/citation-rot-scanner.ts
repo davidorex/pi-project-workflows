@@ -43,16 +43,41 @@ import ts from "typescript";
  * samples-catalog.test.ts (commit 4fd28a6) extended with JI- (JIT-agents
  * intentions tracker prefix surfaced in pi-agent-dispatch substrate).
  *
+ * Reconciliation note: this constant was, until now, module-private and had
+ * diverged from a second hand-maintained copy in
+ * scripts/scan-comment-citations.ts (that copy's own doc comment names the
+ * divergence explicitly). The two families are unioned here rather than
+ * either narrowed: `MILE-\d{3,}` is added (declared by
+ * milestone.schema.json's `^MILE-\d{3,}$` pattern; live milestone items exist
+ * in the active substrate) and `PHASE-\d{3,}` is widened to
+ * `PHASE-[A-Z0-9]+(?:-[A-Z0-9]+)+` — NOT the fully-permissive
+ * `PHASE-[A-Z0-9-]+` the other copy used (verified empirically: that fully
+ * permissive form regresses the repo-wide zero-hits citation-rot assertion in
+ * samples-catalog.test.ts, because it also matches this codebase's own
+ * "PHASE-NNN" placeholder convention used in schema/doc description prose —
+ * "NNN" satisfies `[A-Z0-9-]+` same as a real id would). Every live phase id
+ * in `.context/phase.json` (phase.schema.json declares `^PHASE-[A-Z0-9-]+$`)
+ * is a multi-segment dash-separated slug — e.g. two-plus segments after
+ * `PHASE-` — so requiring at least one internal hyphen distinguishes a real
+ * id from the single-segment `NNN` placeholder while matching every id
+ * observed in the live substrate. Now exported (`export`) so
+ * scripts/scan-comment-citations.ts's own regex can import this one instead
+ * of hand-duplicating it, and so the new delta-scoped comment-citation
+ * pre-commit gate script can reuse it directly for the comment-trivia
+ * surface below.
+ *
  * The regex deliberately does NOT carve out "e.g." prose context — at the
  * surface boundary the scanner is enumerative; carve-outs happen one level up
  * (JSONPath-aware skip for structural seed-data id, AST-aware skip for JSDoc
- * + line-comment nodes).
+ * + line-comment nodes on the existing scanTsFile surface — scanCommentsInFile
+ * below is a separate, additive surface that does the opposite: it scans
+ * ONLY comment trivia).
  */
-const CITATION_RE =
-	/\b(FGAP-\d{3}|DEC-\d{4}|FEAT-\d{3}|TASK-\d{3}|VER-\d{3}|REVIEW-\d+|RAT-\d+|CTX-\d+|WO-\d+|STORY-\d+|PLAN-\d+|REQ-\d+|R-\d{4}|ISSUE-\d+|issue-\d+|PHASE-\d{3,}|JI-\d{3})\b/;
+export const CITATION_RE =
+	/\b(FGAP-\d{3}|DEC-\d{4}|FEAT-\d{3}|TASK-\d{3}|VER-\d{3}|REVIEW-\d+|RAT-\d+|CTX-\d+|WO-\d+|STORY-\d+|PLAN-\d+|REQ-\d+|R-\d{4}|ISSUE-\d+|issue-\d+|PHASE-[A-Z0-9]+(?:-[A-Z0-9]+)+|MILE-\d{3,}|JI-\d{3})\b/;
 
 /** Global variant used to enumerate every occurrence in a multi-line body. */
-const CITATION_RE_G = new RegExp(CITATION_RE.source, "g");
+export const CITATION_RE_G = new RegExp(CITATION_RE.source, "g");
 
 /**
  * One enumerated citation-rot hit. The `surface` discriminator names the
@@ -75,7 +100,13 @@ export interface ScanResult {
 	/** 1-based line number. */
 	line: number;
 	/** Discriminator naming the AST / JSON / textual surface. */
-	surface: "ast-string-literal" | "ast-error-message" | "json-string-value" | "markdown-body" | "yaml-value";
+	surface:
+		| "ast-string-literal"
+		| "ast-error-message"
+		| "json-string-value"
+		| "markdown-body"
+		| "yaml-value"
+		| "comment";
 	/** JSONPath for json-string-value surface; absent otherwise. */
 	path?: string;
 	/** The full string value containing the matched canonical_id. */
@@ -275,6 +306,106 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 			});
 		}
 	}
+	return hits;
+}
+
+// ─── Comment-trivia surface (additive) ─────────────────────────────────────
+
+/** Max excerpt length carried on a comment hit's `value` before truncating around the match. */
+const MAX_COMMENT_EXCERPT_LEN = 300;
+
+/**
+ * Truncate a long comment to a bounded excerpt centered on the match, so a
+ * huge doc-comment doesn't blow up a hit's `value`. Short comments pass
+ * through unchanged. Mirrors scripts/scan-comment-citations.ts's `excerpt`.
+ */
+function commentExcerpt(raw: string, matchIndex: number, matchLen: number): string {
+	if (raw.length <= MAX_COMMENT_EXCERPT_LEN) return raw;
+	const half = Math.floor(MAX_COMMENT_EXCERPT_LEN / 2);
+	const start = Math.max(0, matchIndex - half);
+	const end = Math.min(raw.length, matchIndex + matchLen + half);
+	const prefix = start > 0 ? "…" : "";
+	const suffix = end < raw.length ? "…" : "";
+	return prefix + raw.slice(start, end) + suffix;
+}
+
+/**
+ * Additive comment-trivia surface: scans JSDoc + block + line comment tokens
+ * in a .ts/.tsx file's source text for CITATION_RE matches. This is the
+ * inverse of scanTsFile above, which deliberately walks only string-literal
+ * AST nodes and never visits comment trivia (the "does NOT flag JSDoc
+ * comments" contract that surface pins). This function is NOT wired into
+ * scanForCitationRot's default surfaces — comments stay excluded from that
+ * walk. It exists so a delta-scoped caller (the new
+ * scripts/check-comment-citations.ts pre-commit gate) can compute a
+ * before/after comment-citation set itself and flag only a citation newly
+ * introduced by a change, never a pre-existing one.
+ *
+ * Uses ts.createScanner with skipTrivia=false to enumerate every comment
+ * token from the raw token stream, rather than a line-prefix regex — this
+ * module's own doc comment already names line-prefix regexing as a
+ * known-bad approach (false positives/negatives from indentation). A
+ * separate ts.createSourceFile is used purely for its
+ * getLineAndCharacterOfPosition offset->line lookup (no tree walking).
+ *
+ * `packageDir` is optional (defaults to "") since this function's callers
+ * (a delta-scoped gate diffing before/after comment text) generally care
+ * about file+line+matched, not package attribution; supply it when the
+ * caller wants a populated packageDir on the returned hits.
+ */
+export function scanCommentsInFile(filePath: string, sourceText: string, packageDir = ""): ScanResult[] {
+	const hits: ScanResult[] = [];
+	const sourceFile = ts.createSourceFile(filePath, sourceText, ts.ScriptTarget.Latest, /* setParentNodes */ false);
+
+	const scanner = ts.createScanner(ts.ScriptTarget.Latest, /* skipTrivia */ false);
+	scanner.setText(sourceText);
+
+	// A bare scan() loop mis-tokenizes template literals carrying `${...}`
+	// substitutions (see scripts/scan-comment-citations.ts's scanFile for the
+	// full rationale); templateBraceDepths tracks nested ordinary `{}` depth
+	// within each currently-open template substitution so the scanner
+	// correctly resumes inside the template literal after a substitution's
+	// closing `}`.
+	const templateBraceDepths: number[] = [];
+
+	let kind = scanner.scan();
+	while (kind !== ts.SyntaxKind.EndOfFileToken) {
+		if (kind === ts.SyntaxKind.SingleLineCommentTrivia || kind === ts.SyntaxKind.MultiLineCommentTrivia) {
+			const raw = scanner.getTokenText();
+			const tokenStart = scanner.getTokenStart();
+
+			CITATION_RE_G.lastIndex = 0;
+			let m: RegExpExecArray | null = CITATION_RE_G.exec(raw);
+			while (m !== null) {
+				const absOffset = tokenStart + m.index;
+				const line = sourceFile.getLineAndCharacterOfPosition(absOffset).line + 1;
+				hits.push({
+					packageDir,
+					file: filePath,
+					line,
+					surface: "comment",
+					value: commentExcerpt(raw, m.index, m[0].length),
+					matched: m[0],
+				});
+				m = CITATION_RE_G.exec(raw);
+			}
+		} else if (kind === ts.SyntaxKind.TemplateHead) {
+			templateBraceDepths.push(0);
+		} else if (kind === ts.SyntaxKind.OpenBraceToken && templateBraceDepths.length > 0) {
+			templateBraceDepths[templateBraceDepths.length - 1]++;
+		} else if (kind === ts.SyntaxKind.CloseBraceToken && templateBraceDepths.length > 0) {
+			const top = templateBraceDepths.length - 1;
+			if (templateBraceDepths[top] === 0) {
+				templateBraceDepths.pop();
+				kind = scanner.reScanTemplateToken(/* isTaggedTemplate */ false);
+				if (kind === ts.SyntaxKind.TemplateMiddle) templateBraceDepths.push(0);
+				continue; // kind already advanced; skip the trailing scan() below
+			}
+			templateBraceDepths[top]--;
+		}
+		kind = scanner.scan();
+	}
+
 	return hits;
 }
 

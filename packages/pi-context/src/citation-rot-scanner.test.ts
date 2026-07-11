@@ -20,7 +20,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
-import { scanForCitationRot } from "./citation-rot-scanner.js";
+import { scanCommentsInFile, scanForCitationRot } from "./citation-rot-scanner.js";
 
 function mkScratch(): string {
 	return fs.mkdtempSync(path.join(os.tmpdir(), "citation-rot-scanner-test-"));
@@ -109,6 +109,44 @@ describe("citation-rot-scanner — AST .ts surface", () => {
 			0,
 			`non-operator-surface string literals must not be flagged; got: ${JSON.stringify(hits)}`,
 		);
+	});
+});
+
+describe("citation-rot-scanner — comment-trivia surface (scanCommentsInFile, TASK-125, additive)", () => {
+	it("flags a JSDoc comment containing a tracker-ID citation, with correct line + surface", () => {
+		const src = [
+			"/**",
+			" * Placeholder function referencing TASK-999 in a JSDoc block.",
+			" */",
+			"export function foo() {}",
+		].join("\n");
+		const hits = scanCommentsInFile("src.ts", src);
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].matched, "TASK-999");
+		assert.strictEqual(hits[0].surface, "comment");
+		assert.strictEqual(hits[0].line, 2);
+	});
+
+	it("flags a line comment containing a tracker-ID citation, with correct line + surface", () => {
+		const src = ["const x = 1;", "const y = 2; // see TASK-999 for follow-up", "const z = 3;"].join("\n");
+		const hits = scanCommentsInFile("src.ts", src);
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].matched, "TASK-999");
+		assert.strictEqual(hits[0].surface, "comment");
+		assert.strictEqual(hits[0].line, 2);
+	});
+
+	it("does NOT flag description string-literals (this is a distinct, additive surface from scanTsFile)", () => {
+		const src = `pi.registerTool({\n  description: "Implements TASK-999 north-star",\n});`;
+		const hits = scanCommentsInFile("src.ts", src);
+		assert.strictEqual(hits.length, 0, `expected 0 hits (no comment trivia present); got: ${JSON.stringify(hits)}`);
+	});
+
+	it("finds zero hits in a file with no citations, without crashing", () => {
+		const src = ["/**", " * A perfectly ordinary doc comment.", " */", "export function noop(): void {}"].join(
+			"\n",
+		);
+		assert.deepStrictEqual(scanCommentsInFile("src.ts", src), []);
 	});
 });
 

@@ -97,6 +97,10 @@
 			"types": "./dist/read-element.d.ts",
 			"default": "./dist/read-element.js"
 		},
+		"./citation-rot-scanner": {
+			"types": "./dist/citation-rot-scanner.d.ts",
+			"default": "./dist/citation-rot-scanner.js"
+		},
 		"./ops": {
 			"types": "./dist/ops-registry.d.ts",
 			"default": "./dist/ops-registry.js"

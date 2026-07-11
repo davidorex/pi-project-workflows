@@ -364,13 +364,13 @@
         }
       ],
       "impact": "Releases are planned and tracked ad-hoc (overloaded phase/story or a loose DEC); there is no first-class binding of version -> completed dev-items -> changelog lines, so the project risks losing the thread between organized dev work done and what shipped in which release.",
-      "proposed_resolution": "A release/version vocabulary: a 'release' block kind (id, version, target/date, status planned|released, summary) + a relation binding closed dev-items to a release (e.g. release_contains_item / task_shipped_in_release / gap_closed_in_release) + optionally a milestone/roadmap instantiation; the release item carries or references the changelog lines for its items, so a release is the organized set of done dev-items with their changelog text — planned in advance and verifiable. Dual-surface (schema + conception registration + ops).",
+      "proposed_resolution": "A release/version vocabulary: a 'release' block kind (id, version, target/date, status planned|released, summary) + a relation binding closed dev-items to a release (e.g. release_contains_item / task_shipped_in_release / gap_closed_in_release); the release item carries or references the changelog lines for its items, so a release is the organized set of done dev-items with their changelog text — planned in advance and verifiable. Dual-surface (schema + conception registration + ops).",
       "id": "FGAP-011",
       "created_at": "2026-06-04T01:47:12.392Z",
       "created_by": "human/davidryan@gmail.com",
       "oid": "74c9d6c0eac5008c54cf3f1cdb6cfa47",
-      "content_hash": "38f8a067a1dfdcc224b905820eaa103e42a1cc4186f9bdc719bea80b0022194e",
-      "content_parent": "6e7d6e3202d09f0763e87040398cdfbfb96b20271ea1775e6d2a0400f96cc450"
+      "content_hash": "6ee3dd163d02e6b2acae54825a7db07fca15c5177fbca2cb94845e9c9020cc7c",
+      "content_parent": "38f8a067a1dfdcc224b905820eaa103e42a1cc4186f9bdc719bea80b0022194e"
     },
     {
       "id": "FGAP-012",

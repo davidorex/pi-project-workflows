@@ -2421,11 +2421,11 @@
         "scripts/scan-substrate-hedges.ts",
         "scripts/scan-substrate-hedges.test.ts"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-120",
       "oid": "eb7a517634317280784ddcd76ef03030",
-      "content_hash": "8c0d7c6704996790b1d4212f7a01902369f2a8d319ecbd088c37582c155ae5cf",
-      "content_parent": "4366796c940aaa195c11827be47f963e5ca0d1029f647dc34a26fc3c0556169f"
+      "content_hash": "1ba1fcce0176369580b882166789ba7ef6ec2092548cdb5a94a00ddbebe9f035",
+      "content_parent": "8c0d7c6704996790b1d4212f7a01902369f2a8d319ecbd088c37582c155ae5cf"
     }
   ],
   "schema_version": "1.0.1"

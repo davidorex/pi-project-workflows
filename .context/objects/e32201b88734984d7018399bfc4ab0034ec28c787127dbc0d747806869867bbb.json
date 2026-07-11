@@ -1,0 +1,43 @@
+{
+  "status": "passed",
+  "method": "command",
+  "timestamp": "2026-07-11",
+  "evidence": "Runtime demo (npx tsx scripts/scan-substrate-hedges.ts against the live .context substrate, 2026-07-11): scanned 496 items across all 18 configured block kinds, 0 blocks skipped, 142 candidates flagged at min-score 2, report written to tmp/substrate-hedge-scans/scan-2026-07-11T01-03-18-568Z.json; known true positive FGAP-125 flagged with fork+deferral categories including proposed_resolution via dash-or on its live '— or amend the schema' clause. Read-only confirmed empirically: git status over .context/ clean after live runs. Tests: 20/20 cells in scripts/scan-substrate-hedges.test.ts (real-prose fork/deferral/modal fixtures, true negatives, schema-driven prose classification/extraction, per-item aggregation, live-substrate structural invariants, conditional FGAP-125 pin); full npm test 189/189 migration-suite cells and all workspaces pass, exit 0 (unpiped). npm run build exit 0; npm run check (biome + tsc --noEmit) clean. No hardcoded block or field lists: block kinds from config.block_kinds via loadConfig, prose fields from each block schema (string properties without enum/pattern/format/const, recursive through arrays/objects); all substrate access via canonical loadConfig/readSchema/readBlock.",
+  "criteria_results": [
+    {
+      "criterion": "Dynamic discovery from config/schemas, no hardcoded block or field names",
+      "status": "passed",
+      "evidence": "loadConfig(cwd).block_kinds drives the block walk; per-block readSchema drives field classification; grep of the script shows no block-name or field-name literals in scan logic."
+    },
+    {
+      "criterion": "Every schema-declared prose field of every item in every discovered block scanned",
+      "status": "passed",
+      "evidence": "496 items / 18 blocks / 0 skipped in the live run; collectProseValues recurses arrays-of-strings and arrays-of-objects (unit-pinned)."
+    },
+    {
+      "criterion": "Three marker categories flagged with pattern id/category/weight/matched text/snippet; ranked by summed weight with configurable min-score",
+      "status": "passed",
+      "evidence": "Live report: fork=98 deferral=82 modal-hedge=80 matches among flagged candidates; candidates sorted score-descending (structural-invariant test cell)."
+    },
+    {
+      "criterion": "Single machine-readable JSON at a timestamped path; zero substrate writes",
+      "status": "passed",
+      "evidence": "tmp/substrate-hedge-scans/scan-<timestamp>.json written; git status over .context/ unchanged after runs."
+    },
+    {
+      "criterion": "FGAP-125 known-true-positive sanity check",
+      "status": "passed",
+      "evidence": "FGAP-125 in the live report's candidates: proposed_resolution matched by dash-or ('— or'), categories [deferral, fork]."
+    },
+    {
+      "criterion": "Unit tests per marker category with true-positive and true-negative fixtures (tsx --test)",
+      "status": "passed",
+      "evidence": "20/20 cells pass; fixtures quote the real FGAP-125 and pre-correction FGAP-126 prose verbatim."
+    },
+    {
+      "criterion": "Full build/check/test clean",
+      "status": "passed",
+      "evidence": "npm run build exit 0; npm run check clean; npm test exit 0 (verified unpiped)."
+    }
+  ]
+}

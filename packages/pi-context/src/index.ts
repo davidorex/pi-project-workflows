@@ -655,7 +655,10 @@ function composeMarkerText(
  * for the canonical_id→paths map so callers resolve sources by the same
  * block_kind declarations the accept-all onboarding mode ships.
  */
-function resolveCatalog(): { samplesRoot: string; byId: Map<string, { schema_path: string; data_path: string }> } {
+export function resolveCatalog(): {
+	samplesRoot: string;
+	byId: Map<string, { schema_path: string; data_path: string }>;
+} {
 	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
 		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
@@ -1098,6 +1101,72 @@ export function validateBlockItemsAgainstCatalog(
  * file, the block file, and migrations.json all identical to their pre-call
  * bytes (migrations.json absent if it was absent pre-call).
  */
+/**
+ * Register the packaged catalog's migration chain for `schemaName` from
+ * `fromVersion` to `toVersion` into the substrate's migrations.json, when the
+ * catalog ships a complete chain reaching `toVersion`. Shared registration
+ * engine for the three schema-advancing surfaces that write an installed schema
+ * forward WITHOUT going through `resyncSchema`'s catalog-ahead migrate arm (the
+ * `updateContext` 3-way merge, `resolveConflict`, and the standalone
+ * write-schema replace op). Each advances an installed schema's declared
+ * `version` while existing block items still assert the prior `schema_version`;
+ * absent a registered forward edge, the next read/write of such a block throws
+ * MigrationRegistry version-mismatch.
+ *
+ * Reuses `findCatalogMigrationChain` (same catalog `migrations.json` the schema
+ * bodies ship from, so decls and schema versions cannot drift) and copies each
+ * hop's authored decl VERBATIM (its `kind` plus any `transform`), deduped
+ * against the `(schemaName, fromVersion)` pairs already on disk. It NEVER
+ * fabricates an identity decl for an unknown transition: when no catalog chain
+ * reaches `toVersion` it registers nothing and returns `{ registered: null,
+ * reason }`. A blind identity would be unsafe: a real catalog hop can carry a
+ * content transform (e.g. research 1.0.1 to 1.1.0 strips a field), not an
+ * identity.
+ *
+ * Returns `{ registered: [...] }` with the decls THIS call appended (empty when
+ * every hop was already present, or when `fromVersion === toVersion`, i.e. no
+ * transition), or `{ registered: null, reason }` when it refused (unversioned
+ * input, or no known chain). Idempotent: a re-run over an already-registered
+ * chain appends nothing and returns an empty list.
+ */
+export function registerCatalogMigrationChainIfKnown(
+	destRoot: string,
+	samplesRoot: string,
+	schemaName: string,
+	fromVersion: string | undefined,
+	toVersion: string | undefined,
+): { registered: Array<{ schema: string; from: string; to: string }> } | { registered: null; reason: string } {
+	if (fromVersion === undefined || toVersion === undefined) {
+		return { registered: null, reason: `unversioned schema '${schemaName}' has no version transition to register` };
+	}
+	if (fromVersion === toVersion) {
+		// No version advance, so no migration edge is needed; not a refusal.
+		return { registered: [] };
+	}
+	const chain = findCatalogMigrationChain(samplesRoot, schemaName, fromVersion, toVersion);
+	if (chain === null) {
+		return {
+			registered: null,
+			reason: `no catalog migration chain for '${schemaName}' ${fromVersion} to ${toVersion}`,
+		};
+	}
+	const existing = loadMigrationsFileForDir(destRoot);
+	const present = new Set((existing?.migrations ?? []).map((m) => `${m.schemaName} ${m.fromVersion}`));
+	const registered: Array<{ schema: string; from: string; to: string }> = [];
+	for (const decl of chain) {
+		const key = `${decl.schemaName} ${decl.fromVersion}`;
+		if (present.has(key)) continue;
+		appendMigrationDeclForDir(destRoot, decl);
+		present.add(key);
+		registered.push({ schema: decl.schemaName, from: decl.fromVersion, to: decl.toVersion });
+	}
+	// Drop any cached MigrationRegistry for this dir so a subsequent same-process
+	// read of a block at the prior schema_version rebuilds with the new edges
+	// (mirrors resyncSchema's post-append invalidation).
+	if (registered.length > 0) invalidateMigrationRegistryForDir(destRoot);
+	return { registered };
+}
+
 function resyncSchema(
 	destRoot: string,
 	samplesRoot: string,
@@ -2275,7 +2344,23 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 						// the merged on-disk body, the next check would read `catalog-ahead` and
 						// RESYNC the schema to the catalog, clobbering R. Mirrors resolveConflict's
 						// base-advance. dryRun-guarded so a dry-run merge stamps nothing.
-						if (!dryRun) stampBaselineFromBody(cwd, name, theirs, readDeclaredVersion(sourceFile) ?? "");
+						if (!dryRun) {
+							stampBaselineFromBody(cwd, name, theirs, readDeclaredVersion(sourceFile) ?? "");
+							// A merge that adopts the catalog's newer `version` (theirs) advances
+							// the installed schema past the version existing block items assert;
+							// register the catalog's forward chain (old installed version -> catalog
+							// version) so those items still read. Refuses silently (registers
+							// nothing) when the versions match or no catalog chain is known.
+							const mergeFromVersion = typeof ours.version === "string" ? ours.version : undefined;
+							const reg = registerCatalogMigrationChainIfKnown(
+								destRoot,
+								samplesRoot,
+								name,
+								mergeFromVersion,
+								readDeclaredVersion(sourceFile),
+							);
+							if (reg.registered) for (const m of reg.registered) result.migrationsRegistered.push(m);
+						}
 					} else {
 						result.conflicts.push({ name, conflicts });
 					}
@@ -2589,7 +2674,7 @@ export function refreshBaselineForSchema(cwd: string, name: string): boolean {
  * completing the caller-as-reconciler model
  * end-to-end. After `update` surfaces a both-diverged schema CONFLICT, the
  * calling agent reconciles the conflicting paths into a resolved body R and runs
- * this op. It does two things atomically per call:
+ * this op. It does three things atomically per call:
  *
  *   1. WRITES R, when a `schema` is supplied: parse-if-string (mirroring the
  *      write-schema op's tolerant JSON-string handling) then
@@ -2605,21 +2690,34 @@ export function refreshBaselineForSchema(cwd: string, name: string): boolean {
  *      `base === theirs → ours` rule → auto-merge, zero conflicts, R preserved.
  *      Without this advance, the baseline stays at the original pre-conflict
  *      body and `update` re-derives the SAME both-diverged conflict forever.
+ *   3. REGISTERS the catalog's forward migration chain (pre-resolve installed
+ *      version to catalog version) via `registerCatalogMigrationChainIfKnown`
+ *      when the version advanced and the catalog ships a chain, so a block whose
+ *      items still assert the prior `schema_version` reads after the schema
+ *      moved forward. Registers nothing when the versions match or no chain is
+ *      known; it never fabricates an identity decl.
  *
  * Throws a clear error when the substrate dir is unresolvable, the config /
  * catalog kind for `name` is missing, or the catalog source schema is absent —
  * the base cannot be advanced without a catalog body to advance it to.
  *
- * Returns `{ schemaName, wroteSchema, baseAdvancedTo }`: `wroteSchema` is true
- * iff a `schema` was supplied and written; `baseAdvancedTo` is the content_hash
- * of the catalog body now stamped as the baseline.
+ * Returns `{ schemaName, wroteSchema, baseAdvancedTo, migrationsRegistered }`:
+ * `wroteSchema` is true iff a `schema` was supplied and written; `baseAdvancedTo`
+ * is the content_hash of the catalog body now stamped as the baseline;
+ * `migrationsRegistered` lists the migration decls this call appended (empty
+ * when the version was unchanged or no catalog chain was known).
  */
 export function resolveConflict(
 	cwd: string,
 	name: string,
 	schema?: unknown,
 	ctx?: DispatchContext,
-): { schemaName: string; wroteSchema: boolean; baseAdvancedTo: string } {
+): {
+	schemaName: string;
+	wroteSchema: boolean;
+	baseAdvancedTo: string;
+	migrationsRegistered: Array<{ schema: string; from: string; to: string }>;
+} {
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
 		throw new Error(`resolve-conflict: no active substrate resolved for '${cwd}'`);
@@ -2637,6 +2735,12 @@ export function resolveConflict(
 	if (!fs.existsSync(sourceFile)) {
 		throw new Error(`resolve-conflict: catalog schema source missing at ${sourceFile} for '${name}'`);
 	}
+
+	// Capture the installed schema's declared version BEFORE the reconciled body
+	// overwrites it — the from-version existing block items assert, needed to
+	// register the forward migration chain once the base advances to the catalog.
+	const installedFile = installedSchemaDestPath(destRoot, name);
+	const preResolveVersion = fs.existsSync(installedFile) ? readDeclaredVersion(installedFile) : undefined;
 
 	// 1. Write the reconciled body R when supplied. Type.Unknown() params may
 	// arrive as JSON strings (mirror the write-schema op handler): parse if
@@ -2665,7 +2769,21 @@ export function resolveConflict(
 		throw new Error(`resolve-conflict: could not advance the merge base for '${name}' (no install baseline in config)`);
 	}
 
-	return { schemaName: name, wroteSchema, baseAdvancedTo: catalogHash };
+	// 3. Register the catalog's forward migration chain (pre-resolve installed
+	// version -> catalog version) so a block whose items still assert the prior
+	// schema_version reads after the schema advanced. Refuses silently (registers
+	// nothing) when the versions match or no catalog chain reaches the catalog
+	// version.
+	const reg = registerCatalogMigrationChainIfKnown(
+		destRoot,
+		samplesRoot,
+		name,
+		preResolveVersion,
+		readDeclaredVersion(sourceFile),
+	);
+	const migrationsRegistered = reg.registered ?? [];
+
+	return { schemaName: name, wroteSchema, baseAdvancedTo: catalogHash, migrationsRegistered };
 }
 
 /**

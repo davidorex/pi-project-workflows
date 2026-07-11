@@ -81,7 +81,9 @@ import {
 	listSubstrates,
 	readCatalogSchemaText,
 	reconcileContext,
+	registerCatalogMigrationChainIfKnown,
 	resolveBlocked,
+	resolveCatalog,
 	resolveConflict,
 	switchAndCreate,
 	switchToExisting,
@@ -1574,10 +1576,13 @@ export const ops: OpDefinition[] = [
 		label: "Write Schema",
 		description:
 			"Create or replace a substrate block-kind JSON Schema. operation 'create' requires the schema absent; " +
-			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. Schema " +
-			"version bumps require a companion migration declaration via write-schema-migration; without one, " +
-			"read/write of items declaring an older schema_version throws version-mismatch. Registering the block_kind " +
-			"that points at this schema is a separate step (amend-config block_kinds).",
+			"'replace' requires it present. The body is AJV draft-07 meta-validated before an atomic write. When a " +
+			"replace advances the schema's declared version and the packaged catalog ships a migration chain reaching " +
+			"the new version, that chain is registered automatically so items declaring the prior schema_version keep " +
+			"reading; a version bump the catalog does not cover (a non-catalog schema, or an unknown transition) still " +
+			"requires a companion migration declaration via write-schema-migration, without which read/write of items " +
+			"declaring the older schema_version throws version-mismatch. Registering the block_kind that points at this " +
+			"schema is a separate step (amend-config block_kinds).",
 		promptSnippet: "Create or replace a block-kind JSON Schema (meta-validated, atomic)",
 		examples: [
 			`pi-context write-schema --operation create --schemaName tasks --schema @/tmp/tasks.schema.json --writer '{"kind":"human","user":"you@example.com"}' --json`,
@@ -1607,6 +1612,14 @@ export const ops: OpDefinition[] = [
 					/* keep raw string — meta-validation will reject a non-object */
 				}
 			}
+			// A replace can advance the schema's declared `version`; capture the
+			// pre-write installed version (the from-version existing block items
+			// assert) so a known catalog chain can be registered after the write.
+			let preReplaceVersion: string | undefined;
+			if (params.operation === "replace") {
+				const existing = readSchema(cwd, params.schemaName) as { version?: unknown } | null;
+				preReplaceVersion = typeof existing?.version === "string" ? existing.version : undefined;
+			}
 			const result = writeSchemaChecked(
 				cwd,
 				params.schemaName,
@@ -1616,14 +1629,43 @@ export const ops: OpDefinition[] = [
 				{ dryRun: params.dryRun },
 			);
 			const verb = result.written ? `${result.operation}d` : `would ${result.operation}`;
-			return `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}`;
+			// After a committed replace that advanced the version, register the
+			// catalog's forward migration chain so a block whose items still assert
+			// the prior schema_version reads. Registers nothing (and appends no
+			// fabricated identity decl) when the versions match or no catalog chain
+			// is known — the version-bump migration decl then remains the caller's
+			// responsibility via write-schema-migration.
+			let migrationNote = "";
+			if (result.written && params.operation === "replace") {
+				const destRoot = tryResolveContextDir(cwd);
+				const newVersion =
+					typeof (schema as { version?: unknown })?.version === "string"
+						? (schema as { version?: string }).version
+						: undefined;
+				if (destRoot !== null) {
+					const { samplesRoot } = resolveCatalog();
+					const reg = registerCatalogMigrationChainIfKnown(
+						destRoot,
+						samplesRoot,
+						params.schemaName,
+						preReplaceVersion,
+						newVersion,
+					);
+					if (reg.registered && reg.registered.length > 0) {
+						migrationNote = ` — registered migration decls: ${reg.registered
+							.map((m) => `${m.schema} ${m.from}->${m.to}`)
+							.join(", ")}`;
+					}
+				}
+			}
+			return `write-schema: ${verb} schema '${params.schemaName}' at ${result.schemaPath}${migrationNote}`;
 		},
 	},
 	{
 		name: "resolve-conflict",
 		label: "Resolve Schema Conflict",
 		description:
-			"Commit the reconciliation of a schema merge conflict surfaced by update. Run this AFTER reconciling a both-diverged conflict update reported: it writes the reconciled schema body (meta-validated, atomic, operation 'replace') AND advances the merge base for that schema to the packaged catalog body. Advancing the base is the step a bare write-schema lacks — without it, update's 3-way merge re-derives the SAME conflict on every subsequent run because the base never moves off the original pre-conflict body. With the base advanced to the catalog, the next update sees the schema as locally-modified (base === catalog ≠ your body) and the deterministic merge takes your reconciled body (base === theirs → ours) — auto-merging with zero conflicts and preserving your resolution. If schema is omitted, the current on-disk schema is treated as already reconciled and only the base is advanced. The calling agent runs this; no subordinate resolver is spawned.",
+			"Commit the reconciliation of a schema merge conflict surfaced by update. Run this AFTER reconciling a both-diverged conflict update reported: it writes the reconciled schema body (meta-validated, atomic, operation 'replace') AND advances the merge base for that schema to the packaged catalog body AND, when the resolution advances the schema's declared version and the packaged catalog ships a migration chain reaching it, registers that chain into migrations.json (reported under migrationsRegistered) — the same registration update's catalog-ahead resync performs, so the resolved schema's block data can still forward-migrate on read. Advancing the base is the step a bare write-schema lacks — without it, update's 3-way merge re-derives the SAME conflict on every subsequent run because the base never moves off the original pre-conflict body. With the base advanced to the catalog, the next update sees the schema as locally-modified (base === catalog ≠ your body) and the deterministic merge takes your reconciled body (base === theirs → ours) — auto-merging with zero conflicts and preserving your resolution. If schema is omitted, the current on-disk schema is treated as already reconciled and only the base is advanced. The calling agent runs this; no subordinate resolver is spawned.",
 		promptSnippet:
 			"Commit a reconciled schema conflict: write the resolved body + advance the merge base to the catalog so update stops re-reporting it (run after reconciling an update conflict)",
 		examples: [
@@ -1793,7 +1835,7 @@ export const ops: OpDefinition[] = [
 		name: "update",
 		label: "Update Installed Model",
 		description:
-			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body AND advances the merge base to the catalog so update stops re-reporting it (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync registers into migrations.json (each as schema / from / to). A blocked (refused) catalog-ahead schema additionally carries its diagnostic detail under blockedDetail (one entry per blocked schema): the refusal reason — no-migration-chain (no shipped chain reaches the catalog version) vs validation-failed (the forward-migrated items fail the catalog schema) vs write-failed (a non-validation throw at the write boundary, e.g. the block writer's duplicate-item-id guard; the failures entry carries the thrown message, the items were NOT flagged invalid, and no markers or pending-blocked record are produced) — the installed -> catalog version pair, and for a validation failure the per-item failures naming the failing item id, field, and constraint. A live blocked resync also persists a pending-blocked record (pinning the target catalog schema + the chain reaching it) consumable by resolve-blocked, which commits the resolution once the block's items are fixed. Pass dryRun to preview the per-schema action plan; dryRun predicts the precise per-schema catalog-ahead outcome (resync / migrate / block / merge / conflict) by running the forward-migration + re-validation in memory, the per-blocked-schema diagnostic detail, the config-registry entries that would be added, AND the migration declarations that would be registered, writing nothing beyond the idempotent ceremony seed of the catalog's config migration declarations into migrations.json (every substrate-lifecycle ceremony seeds at entry, before its first config read, so a version-lagging legacy substrate heals instead of throwing). When a catalog-ahead resync is blocked because the block's items fail the catalog schema (validation-failed), update inscribes git-style failure markers INTO the block file at the offending items (full-line `<<<<<<< BLOCKED …` / `>>>>>>> target: …` sentinels), pinning the pre-marker bytes so resolve-blocked can strip the markers and re-validate; the schema and migrations.json stay byte-unchanged. A dryRun preview writes no markers. Because update applies per-component (a blocked schema rolls back only itself; the additive registry propagation writes regardless), a run that refuses any schema while applying registry additions or other-schema resyncs/migrations/merges reports the partiality under partialApplication — applied and notApplied channel mirrors plus a one-line summary naming what was applied alongside what was refused and why — so a blocked run never reads as a no-op; dryRun reports the predicted partiality in the same shape. On a substrate whose config carries no substrate_id, a LIVE update establishes the identity at entry (mints, persists to config.json, registers in the project registry) before its first identity-stamping write — so a pre-identity substrate heals on the ceremony instead of refusing — and reports it under substrateIdEstablished; an established identity is never re-minted, and dryRun (no stamping writes) establishes nothing.",
+			"Bring the installed substrate model (schemas) current with the packaged catalog. Per installed schema, consults the read-only drift check and routes by state: an already-current (in-sync) schema is a no-op; a schema the package shipped a newer version of (catalog-ahead) is re-synced through the migration-aware path; a schema edited locally (locally-modified / both-diverged) is reconciled by a deterministic 3-way merge of base (the as-installed body in the object store, keyed by the recorded baseline content_hash) × ours (the installed schema) × theirs (the catalog schema) — disjoint edits auto-merge so both the user's and the catalog's changes survive (required / enum / array-valued type nodes merge as sets), and a schema with irreconcilable per-path conflicts is left unmodified — the conflict set is returned in the op output (under conflicts) alongside a readable report, and the calling agent reconciles it then commits via resolve-conflict — which writes the reconciled body, advances the merge base to the catalog so update stops re-reporting it, and registers a known catalog migration chain when the reconciliation advances the schema's version (no subordinate resolver is spawned); undecidable / absent schemas (no-baseline / missing-catalog / missing-installed) are reported, not touched. Update also additively propagates catalog-new config-registry entries (relation_types / invariants / block_kinds / lenses) that are absent from the substrate config, preserving every user-authored entry and any locally-diverged body of an existing entry (additive-only — present entries are never overwritten). Update reports, under migrationsRegistered, the migration declarations a version-bump resync or a version-advancing 3-way merge registers into migrations.json (each as schema / from / to). A blocked (refused) catalog-ahead schema additionally carries its diagnostic detail under blockedDetail (one entry per blocked schema): the refusal reason — no-migration-chain (no shipped chain reaches the catalog version) vs validation-failed (the forward-migrated items fail the catalog schema) vs write-failed (a non-validation throw at the write boundary, e.g. the block writer's duplicate-item-id guard; the failures entry carries the thrown message, the items were NOT flagged invalid, and no markers or pending-blocked record are produced) — the installed -> catalog version pair, and for a validation failure the per-item failures naming the failing item id, field, and constraint. A live blocked resync also persists a pending-blocked record (pinning the target catalog schema + the chain reaching it) consumable by resolve-blocked, which commits the resolution once the block's items are fixed. Pass dryRun to preview the per-schema action plan; dryRun predicts the precise per-schema catalog-ahead outcome (resync / migrate / block / merge / conflict) by running the forward-migration + re-validation in memory, the per-blocked-schema diagnostic detail, the config-registry entries that would be added, AND the migration declarations that would be registered, writing nothing beyond the idempotent ceremony seed of the catalog's config migration declarations into migrations.json (every substrate-lifecycle ceremony seeds at entry, before its first config read, so a version-lagging legacy substrate heals instead of throwing). When a catalog-ahead resync is blocked because the block's items fail the catalog schema (validation-failed), update inscribes git-style failure markers INTO the block file at the offending items (full-line `<<<<<<< BLOCKED …` / `>>>>>>> target: …` sentinels), pinning the pre-marker bytes so resolve-blocked can strip the markers and re-validate; the schema and migrations.json stay byte-unchanged. A dryRun preview writes no markers. Because update applies per-component (a blocked schema rolls back only itself; the additive registry propagation writes regardless), a run that refuses any schema while applying registry additions or other-schema resyncs/migrations/merges reports the partiality under partialApplication — applied and notApplied channel mirrors plus a one-line summary naming what was applied alongside what was refused and why — so a blocked run never reads as a no-op; dryRun reports the predicted partiality in the same shape. On a substrate whose config carries no substrate_id, a LIVE update establishes the identity at entry (mints, persists to config.json, registers in the project registry) before its first identity-stamping write — so a pre-identity substrate heals on the ceremony instead of refusing — and reports it under substrateIdEstablished; an established identity is never re-minted, and dryRun (no stamping writes) establishes nothing.",
 		promptSnippet:
 			"Update the installed schema model from the catalog (3-way merges locally-modified schemas, preserving non-conflicting edits; conflicts → returned in the op output + a report for the calling agent to reconcile and commit via resolve-conflict; a blocked resync carries blockedDetail — reason (no-migration-chain / validation-failed / write-failed for a non-validation write-boundary throw), version pair, per-item failures — and a validation-failed block persists a pending-blocked record (target catalog schema + the chain reaching it) resolved via resolve-blocked once the block's items are fixed; a validation-failed block is marked in place with git-style failure markers (recoverable; stripped + re-validated by resolve-blocked); --dry-run predicts the precise per-schema outcome — resync / migrate / block / merge / conflict — via in-memory forward-migration + re-validation, writing nothing; a run that refuses any schema while applying registry additions or other-schema updates surfaces the partiality under partialApplication with a one-line summary, so a blocked run never reads as a no-op)",
 		examples: [`pi-context update --dryRun true --json`],

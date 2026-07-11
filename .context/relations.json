@@ -11137,5 +11137,44 @@
       "refname": "FGAP-043"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "37db991b6cdefe42d40583e22753114e",
+      "refname": "FGAP-141"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2ec648d26ac5719e4868a8533ba8494e",
+      "refname": "FGAP-140"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7f3e5214ead318af10c521514d1a57a8",
+      "refname": "TASK-122"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "37db991b6cdefe42d40583e22753114e",
+      "refname": "FGAP-141"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7f3e5214ead318af10c521514d1a57a8",
+      "refname": "TASK-122"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "3fdbc79fb34fa2123cb0b5ee5a8e0e8d",
+      "refname": "feature-branch-workflow"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

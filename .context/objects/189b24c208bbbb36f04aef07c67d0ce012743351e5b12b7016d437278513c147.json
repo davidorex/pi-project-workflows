@@ -1,0 +1,27 @@
+{
+  "title": "Update-time schema-version-advancing write paths never register a migration declaration",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "description": "updateContext's merge branch (locally-modified/both-diverged resync), resolveConflict, and write-schema --operation replace can each advance an installed schema's declared version. None registers a migration declaration. Only resyncSchema's catalog-ahead migrate branch does this: it walks findCatalogMigrationChain and calls appendMigrationDeclForDir per hop. Distinct from FGAP-140 (install-time seeding gap) -- this is update-time, on an already-installed substrate.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "updateContext merge branch (conflicts-empty arm) calls writeSchemaCheckedForDir and stampBaselineFromBody, no appendMigrationDeclForDir call anywhere in the arm"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resolveConflict calls writeSchemaCheckedForDir and stampBaselineFromBody only, no migration registration call in the function body"
+    },
+    {
+      "file": "packages/pi-context/src/schema-write.ts",
+      "reference": "writeSchemaCheckedForDir's replace path meta-validates and writes the schema body only; no version-delta read, no migration registration; doc comment states migrating existing block items is explicitly out of scope for this op, but registering a decl that only enables a future read to resolve a chain is a distinct, unaddressed concern"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "resyncSchema's migrate branch is the sole correct precedent: findCatalogMigrationChain resolves the catalog's authored chain, appendMigrationDeclForDir registers each hop verbatim before any data validation runs"
+    }
+  ],
+  "impact": "A schema whose version advances through any of the three unaddressed paths becomes unreadable via the canonical read path once its block data's stamped schema_version predates the new version, with no self-heal path. Reproduced live on this project's own active substrate: research (schema at 1.4.0, block data stamped 1.2.0, chain registered only to 1.3.0) and session-notes (schema at 1.1.0, block data stamped 1.0.0, zero registered migrations) both throw MigrationRegistry errors on read.",
+  "proposed_resolution": "Add registerCatalogMigrationChainIfKnown(destRoot, samplesRoot, schemaName, fromVersion, toVersion) adjacent to resyncSchema: calls findCatalogMigrationChain; on a complete chain, registers each hop via appendMigrationDeclForDir copying its actual authored kind/transform verbatim; on no chain, returns null with a reason and registers nothing -- never fabricates an identity decl, since research's own 1.0.1-to-1.1.0 hop is a real content transform, not identity. Call it from updateContext's merge branch, resolveConflict, and write-schema --operation replace's commit path, each right after the existing stampBaselineFromBody call."
+}

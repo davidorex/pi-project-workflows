@@ -11202,5 +11202,44 @@
       "refname": "TASK-091"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fc5b5500b2b75fd61d773a545a95e855",
+      "refname": "DEC-0024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
+      "refname": "FGAP-093"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fc5b5500b2b75fd61d773a545a95e855",
+      "refname": "DEC-0024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "refname": "derive-decisions-from-facts"
+    },
+    "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "fc5b5500b2b75fd61d773a545a95e855",
+      "refname": "DEC-0024"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d2774b32a86cec88a02c70b767ce5329",
+      "refname": "TASK-062"
+    },
+    "relation_type": "decision_derived_from_item"
   }
 ]

@@ -1,0 +1,55 @@
+{
+  "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",
+  "status": "identified",
+  "package": "pi-context",
+  "canonical_vocabulary": "write-time / validate-time edge-guard parity",
+  "description": "The write-time edge gate validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1568-1601), invoked by appendRelationByRef (1666) and appendRelationsByRef via assertEdgeValidForWrite (1629-1636), checks only (a) relation_type registration (1577-1583) and (b) presence-gated source/target-kind membership (1586-1599) — the kind check is conditioned on the endpoint resolving to a loc. A non-existent endpoint resolves to no loc (resolver status dangling), so the kind check is skipped and the edge is accepted and persisted; the helper never checks endpoint existence. The same resolution-gating skips an <alias>:<id> endpoint whose alias is unregistered (status unregistered). Cycle is not checked at write at all (the appendRelationsByRef JSDoc, 1788-1790, names endpoint resolution / cycle checks deferred to validateContext). validateContext's endpoint loop catches these only post-hoc: edge_endpoint_dangling (2204/2221), edge_endpoint_unregistered (2196/2213), and edge_cycle_detected merged from validateRelations (2279). This is the endpoint-existence residual of FGAP-090/TASK-062, which achieved write-validate parity on the registration + kind axes but left endpoint-existence and cycle validate-only. General class: the write-time edge guard rejects a strict subset of what validateContext rejects; full parity requires it to additionally reject dangling endpoints, unregistered-alias endpoints, and cycles, so a write-accepted edge is always validate-clean.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1586-1599",
+      "reference": "validateEdgeAgainstRegistry gates source/target-kind membership on parentLoc/childLoc being truthy; an endpoint that resolves to no loc (dangling/unregistered) skips the check and the helper returns no error — no endpoint-existence check exists"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1555-1562",
+      "reference": "helper JSDoc: a lens_bin / dangling / unregistered endpoint carries no loc and is skipped for the kind check (endpoint-resolution failures are validateContext's own surface) — documents the gap as intended"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1788-1790",
+      "reference": "appendRelationsByRef JSDoc: relation_type registration / endpoint resolution / cycle checks deferred to validateContext — names endpoint-resolution + cycle as the write-deferred checks"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2204, 2221",
+      "reference": "validateContext emits edge_endpoint_dangling (error) for a parent/child that does not resolve to any item — the post-hoc catch for the write-accepted edge"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2196, 2213",
+      "reference": "validateContext emits edge_endpoint_unregistered (error) for an endpoint naming an unregistered substrate alias — the sibling resolution-failure also write-accepted"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2279",
+      "reference": "validateContext merges edge_cycle_detected from validateRelations — the cycle check absent at write"
+    },
+    {
+      "file": "packages/pi-context/src/structured-endpoints.test.ts",
+      "lines": "288-310",
+      "reference": "test appends FGAP-1 --gap_relates_to_gap--> FGAP-2 with both endpoints dangling and asserts appended === true — encodes the current write-accept of dangling endpoints; a fix changes this test"
+    },
+    {
+      "file": "analysis/2026-06-14-task-062-write-validator-adversarial-probe.md",
+      "reference": "the triggering instance: appendRelationByRef(NOPE-999 --decision_raises_gap--> FGAP-001) ACCEPTED and persisted; validateContext later flags edge_endpoint_dangling"
+    },
+    {
+      "file": "analysis/2026-06-14-write-time-dangling-endpoint-gap-investigation.md",
+      "reference": "empirical repro on a fresh /tmp adopt-only substrate: appended=true, ON_DISK_COUNT=1, validateContext two edge_endpoint_dangling errors; root cause + class + prior-art (FGAP-090 closed-adjacent, FGAP-007/TASK-027 sibling-direction, FGAP-091 inverse-absence) — untracked"
+    }
+  ],
+  "impact": "A relation can be written and committed naming an endpoint that does not exist (a typo'd or premature id) or an unregistered cross-substrate alias, or closing a cycle, with no write-time signal — the porcelain returns appended: true. The defect surfaces only at a later context-validate pass (if one runs), divorced in time from the write that introduced it, so a CLI/op caller filing an edge gets no immediate feedback that the edge is broken. This is the precise inverse of the TASK-062-enforced kind check: a present-but-wrong-kind endpoint is rejected at write, but an absent endpoint (strictly more broken) is accepted — write-time rejection coverage is non-monotonic in edge brokenness. Broken edges accumulate substrate-wide between validate runs, and --dryRun previews (which run the same gate, 1666-1675) also fail to predict the dangling-edge defect.",
+  "proposed_resolution": "Extend the write-time edge guard to full write-validate parity — reject at write everything validateContext rejects for an edge: the residual endpoint-existence (edge_endpoint_dangling), unregistered-alias (edge_endpoint_unregistered), and cycle (edge_cycle_detected) checks, in addition to the registration + present-endpoint-kind checks TASK-062 already hoisted. Mechanism: the write-time resolver already classifies each endpoint status (the same resolveRef validateContext uses, built by buildWriteTimeEdgeValidator, 1612-1621) — surface a dangling/unregistered status as a write-time rejection rather than a skip; add a prospective-cycle check against the existing edges (mirroring the validateRelations cycle pass). Rejection is UNCONDITIONAL — NO opt-out/force flag is added (resolved in DEC-0024 via derive-decisions-from-facts): dangling/unregistered/cycle are already unconditional validate-time ERRORs, no write op carries any validity opt-out, both precedents (FGAP-090/TASK-062, FGAP-007/TASK-027) rejected unconditionally, and the same-substrate forward-reference behavior is an incidental resolver shim documented nowhere as a workflow — not a decided feature to preserve. Reconcile structured-endpoints.test.ts:288-310 (currently asserts dangling-append succeeds) by filing FGAP-1/FGAP-2 as real endpoint items before the append, preserving what it verifies (bare-refname resolution + registration gate + dedup) without depending on dangling-accept. The registered-alias-but-unresolved FOREIGN endpoint is untouched (it validates clean as a Cycle-8 sentinel, not edge_endpoint_dangling/unregistered), so cross-substrate edge formation is unaffected. Pairs with FGAP-007/TASK-027 (sibling write-time edge-direction guard); the endpoint-existence residual of the closed FGAP-090.",
+  "priority": "P2"
+}

@@ -1,0 +1,44 @@
+{
+  "title": "FGAP-093 write-time edge guard rejects dangling / unregistered-alias / cycle endpoints UNCONDITIONALLY — no forward-reference opt-out flag",
+  "status": "open",
+  "context": "FGAP-093 extends the write-time edge guard (validateEdgeAgainstRegistry, packages/pi-context/src/context-sdk.ts:1698) to reject at write everything validateContext rejects for an edge — edge_endpoint_dangling, edge_endpoint_unregistered, edge_cycle_detected — closing the non-monotonic gap where a present-but-wrong-kind endpoint is rejected at write yet an absent endpoint (strictly more broken) is accepted. The closing task carried one open sub-choice (forensic audit analysis/2026-07-11-fgap-093-filing-provenance.md, VERDICT 'genuinely-underdetermined-open-choice'): reject unconditionally, OR reject-by-default with an explicit opt-out flag for a deliberately forward-referencing append (an edge filed before its endpoint item exists). The audit kept the fork open on the reading that resolveRelationSelector's same-substrate bare-refname fallback (context-sdk.ts:1636-1641, oid=refname when the item is not yet filed, doc-commented 'so an edge to a not-yet-filed item is still expressible') is a documented affordance worth preserving behind an opt-out. Applying derive-decisions-from-facts' stricter test to the four facts already on record collapses the fork: (a) validateContext already flags all three endpoint defects at ERROR severity UNCONDITIONALLY with no opt-out at validate-time and none requested — an opted-out dangling write would be write-accepted-but-not-validate-clean, contradicting FGAP-093's own goal 'so a write-accepted edge is always validate-clean'; (b) no write op in the entire surface carries any force/allow/skip validity opt-out (grep of ops-registry.ts: zero), so an opt-out has no precedent to derive from; (c) the two directly-precedent closed gaps in the same write-time-guard family — FGAP-090/TASK-062 (kind-mismatched endpoints) and FGAP-007/TASK-027 (ambiguous same-kind ordering) — both chose unconditional rejection, no escape hatch; (d) the competing interest the audit weighed — same-substrate forward-referencing — is NOT a decided feature: it originates as a normalize-to-string shim in which oid is inert at the consumer layer for that cycle (byte-identical behavior on existing string data; provenance in references), is documented nowhere as a workflow (SKILL.md, both READMEs, and every runtime-demo/migration script treat `dangling` only as a defect status to drive to zero), and is served by no fixture or script beyond the incidentally-dangling structured-endpoints.test.ts:288-310. With no real competing interest, the choice is determinable from the system's own facts — a decision to DERIVE, not a fork to surface.",
+  "decision": "Reject unconditionally — add NO opt-out flag. Extend the write-time edge guard so a dangling same-substrate endpoint (edge_endpoint_dangling), an unregistered-alias endpoint (edge_endpoint_unregistered), and a cycle-closing edge (edge_cycle_detected) each throw at write, matching validateContext's verdict byte-for-byte, with NO force/allow/skip parameter added to any write op. Reconcile structured-endpoints.test.ts:288-310 by filing FGAP-1/FGAP-2 as real endpoint items in the fixture before the append — preserving exactly what that test verifies (bare-refname resolution, registration gate, dedup no-op) without depending on the removed dangling-accept. The registered-alias-but-unresolved-refname FOREIGN endpoint is explicitly untouched: it validates clean as a Cycle-8 foreign sentinel (not edge_endpoint_dangling/unregistered), so deliberate cross-substrate edge formation is unaffected — the rejection targets only genuinely-broken same-substrate/unregistered/cycle endpoints.",
+  "consequences": [
+    "A write-accepted edge is always validate-clean (FGAP-093's stated goal), governed by a single verdict surface (validateEdgeAgainstRegistry) at both write and validate — no second opt-out surface to keep in sync at validate-time, which has no opt-out today and none requested.",
+    "The same-substrate forward-reference behavior (append an edge, file its endpoint later) is removed, not gated behind a flag. Nothing supported is lost: it was never a decided feature (normalize-to-string shim provenance; see references), is documented as a workflow nowhere, is served by no fixture/script, and is already an unconditional ERROR at validate-time.",
+    "Filing an edge now requires its endpoints to already exist, or to be filed atomically as birth edges via append-block-item --relations — matching the canonical filing patterns, which already file item-first / item+edges-as-one-atom and edges-between-existing-items via append-relation.",
+    "structured-endpoints.test.ts:288-310 must be rewritten to file real endpoint items; a green build then proves the fixture (not the removed affordance) is what the test asserts.",
+    "No force/allow/skip parameter enters the op surface — it stays free of validity-gate escape hatches, consistent with the zero such params today and with the two closed precedents (FGAP-090/TASK-062, FGAP-007/TASK-027), which added none.",
+    "Derivation basis (decision_derived_from_item -> TASK-062): TASK-062 already established unconditional write-time rejection with guaranteed write/validate parity and no opt-out in this exact guard; this decision applies the same rule to the endpoint-existence/unregistered/cycle residual TASK-062 left validate-only. The fork is resolved, not escalated: it does NOT get a decision_escalates_underdetermined edge."
+  ],
+  "references": [
+    {
+      "label": "Forensic audit that surfaced the fork, its grounding, and the counter-consideration",
+      "path": "analysis/2026-07-11-fgap-093-filing-provenance.md"
+    },
+    {
+      "label": "resolveRelationSelector same-substrate oid=refname fallback — the forward-reference behavior this decision removes",
+      "path": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1636-1641"
+    },
+    {
+      "label": "Provenance: the fallback is a normalize-to-string shim (oid inert at the consumer layer that cycle) — incidental, not a decided feature",
+      "commit": "fa91fda15"
+    },
+    {
+      "label": "validateContext emits edge_endpoint_dangling / edge_endpoint_unregistered / edge_cycle_detected at ERROR unconditionally — the already-decided validate-time verdict write-time now matches",
+      "path": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2196-2279"
+    },
+    {
+      "label": "Precedent: unconditional write-time rejection with write/validate parity, no opt-out, in the same guard",
+      "path": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1698"
+    },
+    {
+      "label": "Test to reconcile — currently asserts a dangling append succeeds",
+      "path": "packages/pi-context/src/structured-endpoints.test.ts",
+      "lines": "288-310"
+    }
+  ]
+}

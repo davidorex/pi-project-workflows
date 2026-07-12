@@ -1,7 +1,8 @@
 /**
  * Renderer registry — maps block kinds to per-item Nunjucks macro references.
  *
- * Wave 1 foundation work for the per-item-macros plan. Plans 4 and 6+ consume
+ * Foundation of the per-item-macros surface. The object-form contextBlocks
+ * injection and the per-item render macros consume
  * this registry to look up `{ templatePath, macroName }` for a given block
  * kind, then call `{% from <templatePath> import <macroName> %}` inside
  * Nunjucks. The registry itself does not perform rendering; it only resolves
@@ -12,12 +13,11 @@
  *   2. User:    `<userDir ?? ~/.pi/agent/templates>/items/<kind>.md`
  *   3. Builtin: `<builtinDir>/items/<kind>.md` (only when `builtinDir` is set)
  *
- * First match wins; absent macros return `null` (the per-item macros that
- * Plans 6, 7, 8 deliver do not yet exist on disk — the registry must be
- * tolerant of this state).
+ * First match wins; absent macros return `null` — the registry tolerates
+ * block kinds whose per-item macro does not exist on disk.
  *
  * Macro-name derivation:
- *   The canonical Plan-6/7/8 macro name for each shipped block kind is held
+ *   The canonical per-item render-macro name for each shipped block kind is held
  *   in CANONICAL_MACRO_NAMES below. These names are not algorithmically
  *   derivable from kind names — they encode the per-block semantic
  *   granularity (e.g. `architecture` → `render_architecture_item`,

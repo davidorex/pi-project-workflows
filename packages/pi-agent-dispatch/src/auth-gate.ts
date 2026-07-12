@@ -15,13 +15,14 @@
  * caller-supplied argument shapes. Returning `{ block: true, reason }`
  * prevents execution entirely.
  *
- * Surface: the canonical Bucket-2 tools declared in `AUTH_REQUIRED_TOOLS`,
+ * Surface: the operator-confirm-gated sensitive-write tool set declared in
+ * `AUTH_REQUIRED_TOOLS`,
  * which is the aggregation of four per-package gated-sets (see below).
  * The handler enforces:
  *   - non-interactive context (ctx.hasUI === false) → unconditional
  *     refusal with a structured reason naming the missing interactivity.
  *     This closes the JSON-mode / workflow-subprocess bypass: a step
- *     that auto-invokes a Bucket-2 tool without an attached operator
+ *     that auto-invokes a gated tool without an attached operator
  *     cannot proceed.
  *   - interactive context (ctx.hasUI === true) → ctx.ui.confirm(title,
  *     message) where message renders the tool name + sanitized arg
@@ -31,7 +32,7 @@
  *     bodies subsequently read the mutated input and persist the
  *     verified identity through DispatchContext stamping.
  *
- * Non-Bucket-2 tools (read-block, call-agent, run-real-checks, the SDK
+ * Tools outside the gated set (read-block, call-agent, run-real-checks, the SDK
  * built-ins bash/read/edit/write/grep/find/ls, dynamic composite tools,
  * etc.) pass through unconditionally — the gate is narrowly targeted at
  * the sensitive-substrate-write surface.
@@ -67,8 +68,9 @@ import { getVerifiedOperatorIdentity } from "./verified-identity.js";
 const dispatchGatedTools = ["author-agent-spec", "author-tool-grant", "commit-attested"] as const;
 
 /**
- * The canonical Bucket-2 tool names whose execution requires an affirmative
- * user-confirm, assembled as the aggregation of four per-package gated-sets —
+ * The canonical gated tool names — the tools whose execution requires an
+ * affirmative
+ * user-confirm — assembled as the aggregation of four per-package gated-sets —
  * each set OWNED BY (co-located with) the package whose tools it gates:
  *   - pi-agent-dispatch  → dispatchGatedTools (defined above)
  *   - pi-context         → @davidorex/pi-context/ops `gatedTools` (derived from
@@ -163,12 +165,12 @@ export async function authGateHandler(
 	const argSummary = summarizeArgs(event.input as Record<string, unknown> | undefined);
 	let message = `tool ${event.toolName} requested; args: ${argSummary}`;
 
-	// Informed-authorization (carried item 2): when the payload carries a schema
+	// Informed-authorization: when the payload carries a schema
 	// (write-schema; write-schema-migration carries none) whose item subschema
 	// declares an `x-identity.metadata_fields` override, append a human delta so
 	// the operator confirms an INFORMED change to the content/metadata partition.
 	// When no override is declared (or no schema payload), the message is
-	// byte-identical to the pre-Cycle-3 form.
+	// byte-identical to the plain confirm form with no delta appended.
 	const rawSchema = (event.input as Record<string, unknown> | undefined)?.schema;
 	if (rawSchema !== undefined) {
 		let parsed: unknown = rawSchema;

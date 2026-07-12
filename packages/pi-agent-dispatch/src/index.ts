@@ -85,9 +85,10 @@ const extension = (pi: ExtensionAPI) => {
 	// (registration order does not affect handler-invocation behavior —
 	// pi.on('tool_call') fires for every tool regardless of registration
 	// sequence — but placing the registration last preserves a readable
-	// 'tools first, gates last' factory shape). Bucket-2 vocabulary + handler
+	// 'tools first, gates last' factory shape). The operator-confirm-gated
+	// sensitive-write tool vocabulary + handler
 	// semantics live in auth-gate.ts; see that module's header for the
-	// governance rationale + Bucket-2 member list.
+	// governance rationale + the gated-set member list.
 	registerAuthGate(pi);
 
 	// This gate intercepts pi's built-in `read` tool's truncation signal and

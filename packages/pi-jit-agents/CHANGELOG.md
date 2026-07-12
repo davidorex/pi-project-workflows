@@ -5,6 +5,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 ## [Unreleased]
 
 - The `GrantViolationError` message now describes the parent-grant intersection clamp in plain language instead of citing an internal decision id (no behavior change).
+- Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does); no code or behavior change.
 
 ## [0.33.0] - 2026-07-08
 

@@ -101,8 +101,8 @@ function resolveSpecPath(value: string | undefined, specDir: string, siblingProb
  *   `focus` (record of string→string), and `depth` (non-negative number).
  *
  * Throws `AgentParseError` with a descriptive message naming the offending
- * entry's index and the failing constraint. Plan 4 (Wave 2) consumes the
- * resulting union shape; this helper does not assign any runtime semantics.
+ * entry's index and the failing constraint. The compile-time injector consumes
+ * the resulting union shape; this helper does not assign any runtime semantics.
  */
 function parseContextBlockEntry(
 	entry: unknown,

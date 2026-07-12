@@ -6,7 +6,7 @@
  * renders its templates with the supplied invocation context, and produces
  * a CompiledAgent ready for executeAgent.
  *
- * P1 framework-level anti-injection wrapping: all block content injected via
+ * Framework-level anti-injection wrapping: all block content injected via
  * contextBlocks is wrapped in delimiter markers so that template authors
  * cannot accidentally produce prompts where injected data is indistinguishable
  * from instructions.
@@ -245,7 +245,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 	const getIdIndex = (): Map<string, ItemLocation> => {
 		if (!cachedIdIndex) {
 			try {
-				// F1 (Cycle 7): buildIdIndex now returns a SubstrateIndex; the
+				// buildIdIndex returns a SubstrateIndex; the
 				// composition globals (`resolve`/`render_recursive`) read this as a
 				// refname-keyed Map, so extract `.byRefname` (the lookup surface).
 				// The supplied-cache path (`ctx.idIndex`) is already a refname-keyed
@@ -283,13 +283,14 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		const projectDirPath = tryResolveContextDir(ctx.cwd);
 		const projectDirExists = projectDirPath !== null && fs.existsSync(projectDirPath);
 
-		// Plan 4.1 contract — multi-entry-same-name disambiguation.
+		// Multi-entry-same-name disambiguation contract.
 		//
-		// Pre-Plan-4.1 (Plan 4) used a single-pass forEach loop that wrote
+		// The original object-form contextBlocks injection used a single-pass
+		// forEach loop that wrote
 		// singular keys (`_<name>_item`, `_<name>_depth`, `_<name>_focus`) on
 		// every object-with-item entry. Three entries sharing `name: decisions`
 		// all wrote to the same three slots and only the LAST entry's values
-		// survived — silent collision. Plan 4.1 patches the injection so
+		// survived — silent collision. The injection was subsequently fixed so
 		// multi-entry-same-name configurations populate an array slot instead
 		// (`_<name>_items`, parallel `contextValues[<name>_items]`) while
 		// holding the single-entry case byte-identical to today.
@@ -299,8 +300,8 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		//   String entry "foo"               → `_foo` (whole-block string),
 		//                                      `contextValues.foo` (raw block).
 		//
-		//   Single object entry  with item   → singular keys populated as the
-		//   (no string sibling for that name) historical Plan 4 contract:
+		//   Single object entry  with item   → singular keys populated per the
+		//   (no string sibling for that name) original object-form contract:
 		//                                       `_<name>_item` (wrapped string),
 		//                                       `_<name>_depth`, `_<name>_focus`,
 		//                                       `contextValues[<name>_item]`.
@@ -400,7 +401,7 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 			} else {
 				// Last whole-block-with-hints entry wins for the singular
 				// `_<name>` slot; keeping last is the simplest deterministic
-				// rule and matches the pre-Plan-4.1 forEach-overwrite behavior
+				// rule and matches the historical forEach-overwrite behavior
 				// for the (rare) case where someone declares two whole-block
 				// hints for the same name.
 				g.wholeBlockEntry = ref;
@@ -513,8 +514,8 @@ export function compileAgent(spec: AgentSpec, ctx: CompileContext): CompiledAgen
 		}
 	}
 
-	// Nunjucks globals for per-item macro composition (Plans 6/7/8 consumers,
-	// plus the v0.24.0 enforceBudget global). Registration is delegated to
+	// Nunjucks globals for per-item macro composition (the per-item render
+	// macros, plus the v0.24.0 enforceBudget global). Registration is delegated to
 	// `registerCompositionGlobals` so that both compileAgent and
 	// `renderItemById` (in pi-workflows) share the same composition-globals
 	// contract — adding or modifying a global means editing one helper, not

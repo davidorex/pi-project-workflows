@@ -12,9 +12,10 @@
  *
  * Per-investigation parameterization: --output-schema and --anti-patterns
  * point to markdown fragment files under scripts/orchestrator/templates/.
- * Default fragments preserve FGAP-026 fixture-cascade audit behavior; new
+ * Default fragments preserve the behavior of this composer's first use (the
+ * fixture-cascade audit of the config-driven-substrate-location closure); new
  * investigations supply their own fragments. Removes the hardcode that
- * over-fit the script to its first use case (FGAP-039).
+ * over-fit the script to its first use case.
  *
  * Goal: orchestrator-side composition is mechanical; the dispatching LLM
  * never composes agent prompts as prose.

@@ -9,7 +9,8 @@
  * Usage:
  *   tsx scripts/orchestrator/extract-decs.ts [--status enacted|open|superseded] [--ids DEC-0014,DEC-0015]
  *
- * POC of "rendering out of atomic context blocks" per DEC-0017 spirit. Pain
+ * POC of "rendering out of atomic context blocks" in the spirit of the
+ * work-unit context-composition model. Pain
  * points / gaps surface as hand-rolled rendering hits limits — file as FGAPs.
  */
 import { readBlock } from "@davidorex/pi-context/block-api";

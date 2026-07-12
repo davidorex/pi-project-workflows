@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 /**
  * composite-read-files — Claude-Code-side CLI wrapper for the read-files
- * composite KIND library function (FEAT-010 / TASK-092).
+ * composite KIND library function (part of the composite-tool infrastructure:
+ * framework-implemented KINDs, config-declared per-project instances).
  *
- * Per DEC-0019/0020: every composite KIND lands as a TRIPLE (library +
+ * Per the dual-surface discipline: every composite KIND lands as a TRIPLE (library +
  * Pi tool + CLI script). The Pi tool is registered dynamically by
  * composite-loader from config.tool_operations[]. This script is the
  * orchestrator-side parallel — same library underneath

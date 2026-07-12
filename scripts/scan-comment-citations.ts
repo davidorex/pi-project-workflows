@@ -65,7 +65,7 @@ export interface ScanReport {
  * that had diverged from packages/pi-context/src/citation-rot-scanner.ts's
  * module-private CITATION_RE (that scanner's regex lacked MILE-\d{3,}
  * entirely and used the narrower PHASE-\d{3,} instead of PHASE-[A-Z0-9-]+ —
- * the 2026-07-10 investigation of issue-012 found live phase ids are
+ * the 2026-07-10 stale-citation investigation found live phase ids are
  * alphanumeric slugs, e.g. PHASE-PORT-OPS, never purely digit-suffixed, per
  * phase.schema.json's declared ^PHASE-[A-Z0-9-]+$ pattern). Both families are
  * now unioned onto citation-rot-scanner.ts's exported CITATION_RE, imported

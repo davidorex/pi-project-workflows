@@ -8,7 +8,7 @@
  * - Reach classification: direct | transitive | none
  *
  * Output is a substrate fact-set the Explore agent VALIDATES rather than re-derives.
- * Per DEC-0019 (scripts surface gaps + serve as test surface).
+ * Per the dual-surface discipline (scripts surface gaps + serve as test surface).
  *
  * Usage:
  *   tsx scripts/orchestrator/extract-test-import-chains.ts --target packages/pi-workflows --output /tmp/import-chains-pi-workflows.md

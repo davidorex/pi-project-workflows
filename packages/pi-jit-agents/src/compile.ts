@@ -1,8 +1,8 @@
 /**
  * Agent compilation: template rendering + contextBlocks injection + prompt composition.
  *
- * Implements the compilation surface of the jit-agents boundary contract
- * (jit-agents-spec.md §2). Consumes a fully-resolved AgentSpec from loadAgent,
+ * Implements the compilation surface of the package's boundary contract
+ * (load, compile, execute, introspect). Consumes a fully-resolved AgentSpec from loadAgent,
  * renders its templates with the supplied invocation context, and produces
  * a CompiledAgent ready for executeAgent.
  *

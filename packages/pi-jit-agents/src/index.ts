@@ -2,7 +2,9 @@
  * @davidorex/pi-jit-agents — Agent spec compilation and in-process dispatch runtime.
  *
  * Owns everything between "I have a spec" and "I have a typed result."
- * See docs/planning/jit-agents-spec.md for the boundary contract and principles.
+ * The boundary contract is four public surfaces — load (loadAgent), compile
+ * (compileAgent), execute (executeAgent), introspect (agentContract) — and
+ * every spec leaves loading fully resolved (all path fields absolute).
  */
 
 export { createAgentLoader, parseAgentYaml } from "./agent-spec.js";

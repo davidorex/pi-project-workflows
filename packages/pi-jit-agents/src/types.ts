@@ -1,7 +1,7 @@
 /**
  * Type surface for pi-jit-agents.
  *
- * Implements the jit-agents-spec.md §2 boundary contract: four public surfaces
+ * Implements the package's boundary contract: four public surfaces
  * (load, compile, execute, introspect) with typed inputs and outputs.
  */
 import type { ItemLocation } from "@davidorex/pi-context";
@@ -13,10 +13,10 @@ import type { RendererRegistry } from "./renderer-registry.js";
 /**
  * A loaded agent specification.
  *
- * Per D1 (jit-agents-spec.md §4), every path field is fully resolved to an
- * absolute filesystem path by the time loadAgent returns. Consumers never see
- * relative paths and never need to know which directory the spec was loaded
- * from to interpret its references.
+ * Every path field is fully resolved to an absolute filesystem path by the
+ * time loadAgent returns — specs leave the loading boundary fully resolved.
+ * Consumers never see relative paths and never need to know which directory
+ * the spec was loaded from to interpret its references.
  */
 export interface AgentSpec {
 	name: string;
@@ -91,14 +91,15 @@ export interface ContextBlockRef {
 /**
  * Options for loadAgent / createAgentLoader.
  *
- * Per D7 (jit-agents-spec.md §4), the loader searches three tiers in order:
+ * The loader searches three tiers in order:
  *   1. {contextDir}/agents/ — the active substrate dir resolved from {cwd}'s
  *      .pi-context.json pointer via tryResolveContextDir(cwd); tier omitted
  *      when no pointer resolves
  *   2. {userDir ?? ~/.pi/agent/agents/}
  *   3. {builtinDir}   (only when supplied)
  *
- * Per D3, .pi/agents/ is NOT searched — that path is Pi platform territory.
+ * .pi/agents/ is NOT searched — that path is Pi platform territory, which
+ * this package never reads.
  */
 export interface LoadContext {
 	/** Project root. Used to resolve the substrate agents tier and as base for block reads. */

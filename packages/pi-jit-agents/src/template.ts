@@ -1,9 +1,10 @@
 /**
  * Nunjucks template environment and rendering.
  *
- * Implements D3 (no .pi/ reads) for the template discovery side. The template
+ * Template discovery never reads .pi/ (Pi platform territory). The template
  * search mirrors the agent-spec three-tier pattern:
- *   1. {cwd}/.project/templates/
+ *   1. {contextDir}/templates/ — the active substrate dir resolved from
+ *      {cwd}'s .pi-context.json pointer; tier omitted when no pointer resolves
  *   2. {userDir ?? ~/.pi/agent/templates/}
  *   3. {builtinDir}   (only when supplied)
  *
@@ -113,7 +114,7 @@ export function renderTemplate(
  *
  * Absolute paths bypass the loader and are read directly. This supports
  * fully-resolved AgentSpec fields where systemPromptTemplate / taskPromptTemplate
- * carry absolute paths after loadAgent (per D1).
+ * carry absolute paths after loadAgent (specs leave loading fully resolved).
  */
 export function renderTemplateFile(
 	env: nunjucks.Environment,

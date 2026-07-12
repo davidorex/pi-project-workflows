@@ -1,8 +1,10 @@
 /**
  * Agent spec loading and resolution.
  *
- * Implements D1 (fully-resolved specs leave the boundary) and D7 (three-tier
- * discovery with .project/agents/ as the project-level tier, never .pi/).
+ * Two design rules govern this module: specs leave the loading boundary
+ * fully resolved (every path field absolute), and discovery is a three-tier
+ * search — the active substrate's agents/ dir, then the user tier
+ * (~/.pi/agent/agents/), then the package builtin tier — never reading .pi/.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -272,8 +274,8 @@ export function parseAgentYaml(filePath: string, opts?: { siblingProbe?: boolean
  *
  * Throws AgentNotFoundError if no tier has the spec.
  *
- * IMPORTANT: Does NOT search .pi/agents/ — that path violates D3
- * (jit-agents-spec.md §4). Pi platform territory is respected.
+ * IMPORTANT: Does NOT search .pi/agents/ — .pi/ is Pi platform territory,
+ * which this package never reads.
  *
  * Tier note: the package-root sibling probe in `parseAgentYaml` is enabled ONLY
  * when the matched spec came from the builtin/bundled tier (ctx.builtinDir),

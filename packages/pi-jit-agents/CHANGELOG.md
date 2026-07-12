@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Source comments that cited an out-of-repo planning spec ("jit-agents-spec.md §N" and its D-numbered decision designators) now state each rule inline: the four-surface boundary contract (load / compile / execute / introspect), specs leaving loading fully resolved (absolute paths), the unified `executeAgent` dispatch primitive, the three-tier agent/template discovery order, and the rule that the package never reads `.pi/`. The template-module header's discovery listing is also corrected to the implemented tier (`{contextDir}/templates/` via the bootstrap pointer, not `{cwd}/.project/templates/`). Comment-only; no behavior change.
 - The `GrantViolationError` message now describes the parent-grant intersection clamp in plain language instead of citing an internal decision id (no behavior change).
 - Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does); no code or behavior change.
 

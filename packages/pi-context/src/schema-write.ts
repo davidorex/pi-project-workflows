@@ -42,7 +42,7 @@ import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.j
  * declares an `"id"` property. A NESTED id-bearing array is a
  * relationship-as-embedding — an id-bearing item that should be a top-level
  * entity joined by a closure-table membership edge, not embedded inside another
- * item's array (content-addressed substrate identity, Cycle 9.2). Depth-0
+ * item's array (content-addressed substrate identity). Depth-0
  * (top-level) id arrays are the normal block-item shape and are NOT flagged;
  * nested NON-id arrays (e.g. a list of strings, or objects with no `id`) are NOT
  * flagged.
@@ -52,8 +52,9 @@ import { ValidationError, validateSchemaAgainstMeta } from "./schema-validator.j
  * the IDENTITY_DECLARATION_FIELDS union; this guard keys on `id` alone, because
  * an embedded item carrying any local `id` is the relationship-as-embedding
  * smell regardless of whether it also declares oid/content_hash). An `id` is
- * detected however it is declared (Cycle 9.3 hardening over the 9.2 form, which
- * keyed only on `items.properties.id` + one-level local `$ref`):
+ * detected however it is declared (the predicate hardening over the initial
+ * nested-id-guard form, which keyed only on `items.properties.id` + one-level
+ * local `$ref`):
  *   - `items.properties.id`;
  *   - `id` in `items.required` (no `properties.id` needed);
  *   - any `anyOf`/`oneOf`/`allOf` branch of the item shape declaring an `id`
@@ -348,8 +349,9 @@ export function readSchema(cwd: string, schemaName: string): object | null {
  * Dir-targeted twin of `writeSchema`: atomically write `schema` to
  * `<substrateDir>/schemas/<schemaName>.schema.json` after meta-validation + the
  * nested-id guard. Carries the full validate-then-write body; `writeSchema`
- * delegates here via `resolveContextDir(cwd)`. Cross-substrate consumers (Cycle
- * H migration / land-identity-fields) target a non-active substrate directly.
+ * delegates here via `resolveContextDir(cwd)`. Cross-substrate consumers (the
+ * planned legacy-substrate registration + string-endpoint migration /
+ * land-identity-fields) target a non-active substrate directly.
  *
  * `ctx` is accepted and IGNORED: schema files carry no author-attestation
  * fields (mirrors `writeSchemaChecked`'s ctx parameter). Present for call-site
@@ -370,7 +372,7 @@ export function writeSchemaForDir(
 	// (1b) Substrate-shape guard: reject a schema that embeds an id-bearing item
 	// inside another item's array (nested id-bearing array) — a
 	// relationship-as-embedding that must be a top-level entity + membership edge
-	// (content-addressed substrate identity, Cycle 9.2). Runs after meta-validation
+	// (content-addressed substrate identity). Runs after meta-validation
 	// (so the body is structurally a schema) and before any disk activity.
 	assertNoNestedIdBearingArray(schema as Record<string, unknown>, `schema '${schemaName}'`);
 

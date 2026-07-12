@@ -9,11 +9,11 @@
  * `{ details: undefined, content: [{ type: "text", text: X }] }` reduced to
  * `return X` (registerAll re-applies the wrapper identically for every op).
  *
- * Phase 1 of the pi-context-cli arc (analysis/2026-06-03-pi-context-cli-design-ledger.md):
- * the registry is the single source the auto-tracking CLI will reflect. The
+ * Groundwork for the reflecting pi-context CLI (analysis/2026-06-03-pi-context-cli-design-ledger.md):
+ * the registry is the single source the auto-tracking CLI reflects. The
  * authGated / surface fields are carried for that downstream consumer; all
- * current pi-context ops are surface:"use" and authGated is left unset in this
- * phase (the auth-gate at the pi-agent-dispatch layer remains the enforcement
+ * current pi-context ops are surface:"use" and authGated is left unset here
+ * (the auth-gate at the pi-agent-dispatch layer remains the enforcement
  * point, unchanged by this relocation).
  */
 
@@ -578,7 +578,7 @@ export const ops: OpDefinition[] = [
 			},
 			ctx?: DispatchContext,
 		): OpResult {
-			// Cycle-5 porcelain: STRING selectors (bare refname / <alias>:<refname> /
+			// Friendly-selector porcelain: STRING selectors (bare refname / <alias>:<refname> /
 			// lens-bin) are resolved to structured EdgeEndpoints and written via the raw
 			// plumbing. The append accepts EITHER raw --parent/--child OR the role-typed
 			// --primary/--counter form (the explicit role-typed orientation, rather than
@@ -639,7 +639,7 @@ export const ops: OpDefinition[] = [
 			params: { parent: string; child: string; relation_type: string; dryRun?: boolean },
 			ctx?: DispatchContext,
 		): OpResult {
-			// Cycle-5 porcelain: STRING selectors are resolved to structured
+			// Friendly-selector porcelain: STRING selectors are resolved to structured
 			// EdgeEndpoints, then matched on the identityKey dedup identity. Messaging
 			// uses the raw selectors (params.*), not the resolved structured endpoints.
 			// Under dryRun the byRef fn validates the prospective post-removal

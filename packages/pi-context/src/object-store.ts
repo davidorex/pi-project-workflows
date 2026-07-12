@@ -1,9 +1,9 @@
 /**
- * Content-addressed object store (Cycle 2, Phase B). A durable, append-only
+ * Content-addressed object store. A durable, append-only
  * store keyed by a content hash: each distinct content projection is written
  * once to `<substrateDir>/objects/<contentHash>.json` holding its JSON. This is
  * the durable Merkle store that makes the OID/refname split actually
- * content-addressed and gives later cycles real pinning + integrity.
+ * content-addressed and gives the layers built on it real pinning + integrity.
  *
  * Dir-explicit (no pointer resolution), so it is independently testable and
  * usable across substrate dirs. It takes a `contentHash` parameter rather than
@@ -17,9 +17,9 @@
  * `objects/` is tracked in git (it is the integrity store; gitignoring it would
  * lose pinning). No `.gitignore` change accompanies this module.
  *
- * Dormant this cycle: nothing in any write path calls `putObject` yet (Cycle 3
- * wiring / Cycle 10 backfill). Infrastructure module — not re-exported from
- * `index.ts`.
+ * Dormant on its own: no write path calls `putObject` directly — the
+ * identity-stamping write path and the substrate canonicalizer migration's
+ * backfill do. Infrastructure module — not re-exported from `index.ts`.
  */
 import fs from "node:fs";
 import path from "node:path";

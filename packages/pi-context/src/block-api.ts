@@ -83,8 +83,8 @@ function blockSchemaPathForDir(substrateDir: string, blockName: string): string 
 const AUTHOR_FIELDS = ["created_by", "created_at", "modified_by", "modified_at"] as const;
 
 /**
- * The MANDATORY content/metadata floor (content-addressed substrate identity,
- * Cycle 3 / carried item 1; v3 spec §A2). The identity/addressing fields
+ * The MANDATORY content/metadata floor (content-addressed substrate identity —
+ * the identity/addressing field partition). The identity/addressing fields
  * `id`, `oid`, `content_hash`, `content_parent` are ALWAYS metadata —
  * EXCLUDED from the content hash — and a schema's `x-identity.metadata_fields`
  * override can NEVER pull them into the content. This is the floor that makes
@@ -103,7 +103,7 @@ export const MANDATORY_METADATA_FIELDS: ReadonlySet<string> = new Set<string>([
 ]);
 
 /**
- * The DISCRETIONARY metadata fields (v3 spec §A2): the four author/attestation
+ * The DISCRETIONARY metadata fields: the four author/attestation
  * fields (`AUTHOR_FIELDS`) plus the lifecycle-closure fields (`closed_by`,
  * `closed_at`). These are the fields a schema MAY redefine via an
  * `x-identity.metadata_fields` override — when an override is declared it
@@ -121,9 +121,9 @@ export const DISCRETIONARY_METADATA_FIELDS: ReadonlySet<string> = new Set<string
 /**
  * The default content/metadata partition when no `x-identity.metadata_fields`
  * override is declared: `MANDATORY ∪ DISCRETIONARY` — the same 10 fields the
- * Cycle-2 surface enumerated (`id`, `oid`, `content_hash`, `content_parent`,
- * the four author fields, `closed_by`, `closed_at`). Retained as the
- * no-override default so the membership is identical to the pre-Cycle-3 set;
+ * content-hash + object-store layer enumerated (`id`, `oid`, `content_hash`,
+ * `content_parent`, the four author fields, `closed_by`, `closed_at`). Retained
+ * as the no-override default so the membership is identical to the pre-stamping set;
  * `metadataFieldsForSchema` now composes it from the two named subsets rather
  * than a flat literal so the mandatory floor is provably a subset of every
  * resolved partition (see that function).
@@ -156,10 +156,11 @@ interface SchemaCacheEntry {
 	 * author fields declared on its items". */
 	perArrayKey: Map<string, ReadonlySet<string>>;
 	/** The content/metadata partition per array key — the set of fields to
-	 * EXCLUDE when projecting an item to its hashable content (Cycle 2 /
-	 * Phase A). Keyed by array property name; value is the RESOLVED partition
-	 * `MANDATORY ∪ (override ?? DISCRETIONARY)` for that item kind (carried
-	 * item 1). Populated once per cache load via `metadataFieldsForSchema` so
+	 * EXCLUDE when projecting an item to its hashable content (the content-hash
+	 * layer's projection). Keyed by array property name; value is the RESOLVED
+	 * partition `MANDATORY ∪ (override ?? DISCRETIONARY)` for that item kind (the
+	 * identity/addressing field partition). Populated once per cache load via
+	 * `metadataFieldsForSchema` so
 	 * there is a single resolution path and no parallel default. A lookup miss
 	 * falls back to the same resolution at the read site
 	 * (`metadataFieldsForSchema`), so an uncatalogued key still gets the safe
@@ -167,7 +168,8 @@ interface SchemaCacheEntry {
 	metadataFieldsByArrayKey: Map<string, ReadonlySet<string>>;
 	/** Per-array-key: does the array's item subschema declare ALL THREE
 	 * identity fields (`oid`, `content_hash`, `content_parent`) in its
-	 * `properties`? This is the Cycle-3 stamping gate (locked decision 1),
+	 * `properties`? This is the identity-stamping gate (only arrays whose
+	 * subschema declares the identity fields get stamped),
 	 * mirroring `perArrayKey`'s author-field gate: `prepareItemIdentityForWrite`
 	 * is a NO-OP for any array whose value here is `false` (or absent). Keyed
 	 * by array property name; nested arrays appear under their own key. A
@@ -329,11 +331,12 @@ function collectArrayItemMetadataOverrides(schema: unknown, into: Map<string, Re
 
 /**
  * The three item fields whose presence (ALL THREE) in an array item's
- * `properties` arms the Cycle-3 identity-stamping path for that array (locked
- * decision 1). Distinct from `MANDATORY_METADATA_FIELDS` (which additionally
+ * `properties` arms the identity-stamping path for that array (the stamping
+ * gate: only arrays whose subschema declares the identity fields get stamped).
+ * Distinct from `MANDATORY_METADATA_FIELDS` (which additionally
  * carries `id`, present on every block item regardless of identity): these are
- * the net-new fields a Cycle-3 schema edit adds, so their joint presence is the
- * signal that a schema opted into identity stamping.
+ * the net-new fields an identity-adopting schema edit adds, so their joint
+ * presence is the signal that a schema opted into identity stamping.
  */
 const IDENTITY_DECLARATION_FIELDS = ["oid", "content_hash", "content_parent"] as const;
 
@@ -342,7 +345,7 @@ const IDENTITY_DECLARATION_FIELDS = ["oid", "content_hash", "content_parent"] as
  * `collectArrayItemMetadataOverrides`) and record, per array property name,
  * whether the item subschema's `properties` declares ALL THREE
  * `IDENTITY_DECLARATION_FIELDS`. This is the schema-gate cataloguer for
- * `prepareItemIdentityForWrite` (locked decision 1) — mirrors
+ * `prepareItemIdentityForWrite` (the stamping gate) — mirrors
  * `collectArrayItemAuthorDecisions` for the author-stamp gate. A key absent
  * from `into` (or recorded `false`) means "this array does not stamp identity".
  * `true` is recorded once and never downgraded (first positive declaration
@@ -379,7 +382,7 @@ function collectArrayItemIdentityDecisions(schema: unknown, into: Map<string, bo
 /**
  * The content/metadata partition for items of array `arrayKey` under `schema`:
  * `MANDATORY_METADATA_FIELDS ∪ (override ?? DISCRETIONARY_METADATA_FIELDS)`
- * (carried item 1 / v3 spec §A2). The item subschema's
+ * (the identity/addressing field partition). The item subschema's
  * `x-identity.metadata_fields` override, when declared, REPLACES the
  * discretionary set; the mandatory floor (`id`/`oid`/`content_hash`/
  * `content_parent`) is then unioned back in so an override can never pull a
@@ -407,7 +410,7 @@ export function metadataFieldsForSchema(schema: unknown, arrayKey: string): Read
  * Human-readable description of how a schema's `x-identity.metadata_fields`
  * override changes the discretionary metadata partition relative to the
  * default — or `null` when NO array item subschema declares an override
- * (carried item 2 / informed-authorization confirm). Pure function: no
+ * (the informed-authorization confirm surface). Pure function: no
  * filesystem, no cache; takes a parsed schema object and inspects every
  * reachable array item subschema for an `x-identity.metadata_fields`
  * declaration.
@@ -450,7 +453,7 @@ export function describeIdentityOverride(schema: unknown): string | null {
 /**
  * Project an item to its hashable content: a SHALLOW COPY of `item` with the
  * metadata keys (`metadataFieldsForSchema(schema, arrayKey)`) deleted. Does
- * NOT mutate `item`. The result is what Cycle 3 will feed to
+ * NOT mutate `item`. The result is what the identity-stamping path feeds to
  * `computeContentHash`, so a metadata-only mutation (refreshed author stamp,
  * freshly-assigned `oid`, etc.) leaves the projection — and therefore the
  * content hash — unchanged.
@@ -516,7 +519,8 @@ function getSchemaCacheEntry(schemaPath: string | null): SchemaCacheEntry | null
 	}
 	const perArrayKey = new Map<string, ReadonlySet<string>>();
 	collectArrayItemAuthorDecisions(schema, perArrayKey);
-	// Resolved content/metadata partition per array key (carried item 1).
+	// Resolved content/metadata partition per array key (the identity/addressing
+	// field partition).
 	// Collect the declared override keys, then resolve each through
 	// `metadataFieldsForSchema` so the cached value already carries the
 	// mandatory-floor union; identical resolution path as the read site.
@@ -551,7 +555,7 @@ function getSchemaCacheEntry(schemaPath: string | null): SchemaCacheEntry | null
 /**
  * Does the item subschema for `arrayKey` under the schema at `schemaPath`
  * declare all three identity fields (`oid`/`content_hash`/`content_parent`)?
- * The Cycle-3 stamping gate (locked decision 1) — `false` (incl. for a missing
+ * The identity-stamping gate — `false` (incl. for a missing
  * schema or an uncatalogued key) means `prepareItemIdentityForWrite` is a
  * no-op for this array. Mirrors `declaredAuthorFieldsForArray`'s
  * cache-backed lookup shape.
@@ -609,7 +613,7 @@ function maybeStampItem(
 	return stampItem(item, ctx, mode, declared);
 }
 
-// ── Content-addressed identity stamping (Cycle 3 / Phase C) ──────────────────
+// ── Content-addressed identity stamping (oid minting + stamping) ─────────────
 
 /**
  * Mint a fresh OID for an item being born in `substrateId`. An OID is the
@@ -619,7 +623,7 @@ function maybeStampItem(
  * `sha256Hex(canonicalJson([substrateId, nonce ?? randomUUID()]))`:
  *   - salting with `substrateId` makes two substrates that mint with the same
  *     nonce produce distinct OIDs (cross-substrate uniqueness — the reason
- *     Cycle 3 needs the substrate_id core);
+ *     identity stamping needs the substrate_id core);
  *   - `nonce` is optional and exists for deterministic tests; production calls
  *     pass none and get a fresh `randomUUID()` so each birth is unique even
  *     within one substrate.
@@ -637,15 +641,15 @@ export function mintOid(substrateId: string, nonce?: string): string {
 
 /**
  * Compute the content/identity fields for an item about to be written, per the
- * content-addressed substrate identity model (Cycle 3 / Phase C). Returns the
+ * content-addressed substrate identity model. Returns the
  * item with `oid` / `content_hash` / `content_parent` set; the input is never
  * mutated (a shallow copy is returned). Also persists the content projection to
  * the object store as a side effect on every stamping write.
  *
- * NO-OP GATE (locked decision 1): when the item's array subschema does not
+ * NO-OP GATE (the stamping gate): when the item's array subschema does not
  * declare all three identity fields, the original `item` is returned unchanged
  * (no oid mint, no hash, no object write, no substrate_id read). This scopes
- * the behavior change to exactly the schemas Cycle 3 edits — bespoke test
+ * the behavior change to exactly the identity-declaring schemas — bespoke test
  * schemas without the fields are untouched — mirroring `maybeStampItem`'s
  * author-field gate. The gate is NOT ctx-gated: content hash / oid are
  * integrity, not attestation.
@@ -660,7 +664,7 @@ export function mintOid(substrateId: string, nonce?: string): string {
  *   - `"create"`: mint a fresh `oid` (via `substrateIdForDir(substrateDir)`),
  *     compute `content_hash`, set NO `content_parent` (a v1 item has no prior).
  *   - `"update"`: preserve `prior.oid` — and THROW if the incoming item carries
- *     a different `oid` (locked decision 3: oid is immutable). Recompute
+ *     a different `oid` (oid is immutable). Recompute
  *     `content_hash`. When the content changed (new hash !== prior.content_hash)
  *     set `content_parent = prior.content_hash`; when content is unchanged
  *     (no-op write) leave `content_parent` at the prior value (not advanced).
@@ -803,7 +807,7 @@ export function prepareItemIdentityForWrite(
 		const hash = computeContentHash(projection);
 		out.content_hash = hash;
 		// Object persistence is deferred to writeTypedFile's post-validation walk
-		// (Cycle 9.1 P6): stamping must not write to objects/ before the whole
+		// (post-validation object persistence): stamping must not write to objects/ before the whole
 		// block clears AJV, else an AJV-fail leaves an orphan content object.
 		return out;
 	}
@@ -835,7 +839,7 @@ export function prepareItemIdentityForWrite(
 	const hash = computeContentHash(projection);
 	out.content_hash = hash;
 	// Object persistence deferred to writeTypedFile's post-validation walk
-	// (Cycle 9.1 P6); see create-mode note above.
+	// (post-validation object persistence); see create-mode note above.
 	// content_parent advances to the prior content_hash ONLY when content
 	// actually changed. On an unchanged-content write (no-op / author-only
 	// re-stamp) it is NOT advanced — instead the prior version's own
@@ -925,7 +929,7 @@ export function readBlock(
 	// Assert the name BEFORE resolving the substrate dir so the
 	// path-traversal guard — closing the earlier schema-path read/write
 	// resolver divergence — fires ahead of BootstrapNotFoundError (preserves the
-	// pre-Phase-0 ordering: name-guard precedes pointer resolution).
+	// established ordering: name-guard precedes pointer resolution).
 	assertSubstrateName(blockName);
 	return readBlockForDir(resolveContextDir(cwd), blockName, filter);
 }
@@ -1067,7 +1071,7 @@ export function writeTypedFile(
 		}
 	}
 
-	// Post-validation object persistence (Cycle 9.1 P6). Content objects are
+	// Post-validation object persistence. Content objects are
 	// written to objects/ ONLY after the whole block clears AJV and BEFORE the
 	// tmp+rename — so an AJV-fail leaves no orphan object, and a committed block
 	// never references a missing object. Stamping (prepareItemIdentityForWrite)
@@ -1442,7 +1446,7 @@ function maybeStampTypedItem(
 }
 
 /**
- * Per-item identity stamping (Cycle 3) for the typed-file mutation primitives.
+ * Per-item identity stamping for the typed-file mutation primitives.
  * Thin wrapper over `prepareItemIdentityForWrite` that derives
  * `substrateDir` / `blockName` from `filePath` (block files live at
  * `<substrateDir>/<block>.json`) and skips non-object items (a scalar / array
@@ -1724,7 +1728,7 @@ export function appendToNestedTypedFile(
 				`Matched item in ${label} key '${parentArrayKey}' nested key '${nestedArrayKey}' is not an array`,
 			);
 		}
-		// Atomic id-uniqueness guard on the nested array (Cycle 9.1 P4): reads the
+		// Atomic id-uniqueness guard on the nested array (the nested id-uniqueness guard): reads the
 		// in-hand nested array under the lock. Label names the full parent.nested path.
 		assertAppendIdUnique(parent[nestedArrayKey] as unknown[], item, `${label}.${parentArrayKey}.${nestedArrayKey}`);
 		const authored =
@@ -1923,7 +1927,7 @@ export function writeBlockForDir(
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
 
-	// Whole-block identity stamping (Cycle 3): for every top-level array whose
+	// Whole-block identity stamping: for every top-level array whose
 	// item subschema declares the identity fields, stamp each item — mint-or-
 	// preserve oid, recompute content_hash, advance content_parent on change.
 	// Prior item state is read from the on-disk block and matched by oid (then
@@ -1934,7 +1938,7 @@ export function writeBlockForDir(
 	// re-write that merely refreshes attestation leaves content hashes stable.
 	// Whole-file id-uniqueness guard: a whole-block write carrying two items
 	// sharing an `id` within one array is rejected before stamping/validation.
-	// Recurses through nested id-bearing arrays (Cycle 9.1 P4) so a duplicate id
+	// Recurses through nested id-bearing arrays (the nested id-uniqueness guard) so a duplicate id
 	// inside e.g. a `layer-plans` item's `layers` is rejected too.
 	if (data && typeof data === "object" && !Array.isArray(data)) {
 		forEachBlockArray(data, (arrayKey, arr) => assertNoDuplicateIdsInArray(arr, `${blockName}.${arrayKey}`));
@@ -1980,7 +1984,7 @@ export function writeBlockForDir(
 
 /**
  * Identity-stamp every item of every top-level array in a whole-block write
- * (Cycle 3 / locked decision: writeBlockForDir stamps each array item). Reads
+ * (locked at design time: writeBlockForDir stamps each array item). Reads
  * the on-disk block (if present) to build a prior-item index keyed by `oid`
  * (primary) then `id` (fallback), so each re-written item:
  *   - reuses its prior `oid` (immutable; `prepareItemIdentityForWrite` throws

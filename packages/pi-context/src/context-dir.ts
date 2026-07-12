@@ -18,14 +18,14 @@
  *
  * Path-builders (schemasDir / schemaPath / agentsDir / contextTemplatesDir)
  * all cascade through `resolveContextDir(cwd)` so the literal substrate-dir
- * name lives exactly nowhere in pi-context source after Phase 1.2 of the
- * closure removing the `.project/` literal that persisted at the bootstrap
- * entry edge (despite `config.root` already existing) lands.
+ * name lives exactly nowhere in pi-context source once the removal of the
+ * `.project/` literal that persisted at the bootstrap entry edge (despite
+ * `config.root` already existing) lands.
  *
  * The `SCHEMAS_DIR` export is retained as `@deprecated` for transitional
  * cross-package compat (pi-workflows: workflow-sdk.ts, step-block.ts,
- * workflow-executor.ts still import it as a bare segment); Phase 7 of
- * that same closure cascades those sites and removes the export.
+ * workflow-executor.ts still import it as a bare segment); a planned
+ * follow-up cascades those sites and removes the export.
  */
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
@@ -33,7 +33,7 @@ import path from "node:path";
 import { canonicalJson, sha256Hex } from "./content-hash.js";
 import { validate } from "./schema-validator.js";
 
-/** @deprecated Same status as the removed PROJECT_DIR — Phase 7 cascade target. */
+/** @deprecated Same status as the removed PROJECT_DIR — removed once the remaining pi-workflows import sites are cascaded. */
 export const SCHEMAS_DIR = "schemas";
 
 /**
@@ -388,7 +388,8 @@ export function schemasDir(cwd: string): string {
  * Dir-targeted form of `schemaPath`: build the schema path against an
  * explicit substrate directory rather than resolving one from `cwd`.
  * `assertSubstrateName` still guards the block name (path-injection guard
- * preserved). Cross-substrate consumers (Cycle F resolver / Cycle H
+ * preserved). Cross-substrate consumers (the cross-substrate reference
+ * resolver / the planned legacy-substrate registration + string-endpoint
  * migration) target a non-active substrate by passing its directory here.
  */
 export function schemaPathForDir(substrateDir: string, blockName: string): string {
@@ -452,7 +453,7 @@ export function pendingBlockedPathForDir(substrateDir: string): string {
 	return path.join(substrateDir, "pending-blocked.json");
 }
 
-// ── Substrate identity (content-addressed substrate identity, Cycle 3) ────────
+// ── Substrate identity (content-addressed substrate identity) ─────────────────
 
 /**
  * `^sub-[0-9a-f]{16}$` — the substrate_id shape. A substrate_id is the per-
@@ -471,9 +472,9 @@ export const SUBSTRATE_ID_PATTERN = /^sub-[0-9a-f]{16}$/;
  * a readability/ordering aid in the pre-image only, never surfaced). The
  * 16-hex-char slice keeps the id compact while leaving 64 bits of entropy —
  * far beyond the substrate-count regime. Minted ONCE per substrate (at
- * /context init in Cycle 4; established by hand for the active substrate +
- * packaged samples this cycle) and then immutable on disk; never re-minted on
- * an item write.
+ * /context init; established by hand for the pre-existing active substrate +
+ * packaged samples) and then immutable on disk; never re-minted on an item
+ * write.
  */
 export function mintSubstrateId(): string {
 	return `sub-${sha256Hex(canonicalJson([Date.now(), randomUUID()])).slice(0, 16)}`;
@@ -482,7 +483,7 @@ export function mintSubstrateId(): string {
 /**
  * Read the `substrate_id` from `<substrateDir>/config.json`. Throws loudly when
  * the config is absent / unreadable / lacks a `substrate_id` — there is NO
- * degraded fallback and NO lazy mint-on-read (locked decision 2): a substrate
+ * degraded fallback and NO lazy mint-on-read (locked at design time): a substrate
  * that participates in identity stamping must carry an explicit substrate_id,
  * established when its identity-declaring schemas were established. The
  * schema-gate on `prepareItemIdentityForWrite` (block-api.ts) and this throw

@@ -42,16 +42,16 @@ import { seedCatalogConfigMigrationDecls } from "./migrations-store.js";
 import { runMigrations } from "./schema-migrations.js";
 import { ValidationError, validateFromFile } from "./schema-validator.js";
 
-// ── Type definitions (from plan §"Files to create") ──────────────────────────
+// ── Type definitions ──────────────────────────────────────────────────────────
 
 export interface ConfigBlock {
 	schema_version: string;
 	root: string;
 	/**
-	 * Per-substrate root identity (content-addressed substrate identity, Cycle 3).
+	 * Per-substrate root identity (content-addressed substrate identity).
 	 * `^sub-[0-9a-f]{16}$`; minted once via `mintSubstrateId` and immutable on
 	 * disk. Read by `substrateIdForDir` (throws when absent). Optional on the
-	 * type so pre-Cycle-3 configs (and the packaged conception template, which
+	 * type so pre-identity configs (and the packaged conception template, which
 	 * intentionally omits it) remain valid; substrates that stamp identity carry
 	 * it by construction.
 	 */
@@ -368,19 +368,20 @@ export interface CompositionMember {
 }
 
 /**
- * Structured edge endpoint (content-addressed-substrate-identity arc, Cycle 5).
+ * Structured edge endpoint (content-addressed-substrate-identity arc).
  *
  * Two kinds:
- *  - `item`: an item endpoint. `oid` is the content-addressed object id (Cycle 3)
+ *  - `item`: an item endpoint. `oid` is the content-addressed object id
  *    and is the dedup identity (see `endpointIdentity`); `refname` is the legacy
  *    canonical id (FGAP-NNN, DEC-NNNN, …) and is the CONSUMER-LAYER node identity
  *    (see `normalizeEndpoint` / the load-bearing pivot). `substrate_id` present →
  *    a FOREIGN endpoint (points into another substrate); resolution of foreign
- *    endpoints is Cycle 8 (F2) — this cycle treats them as unresolved sentinels.
- *    `content_hash` is carried for Cycle-8 drift detection, inert here.
+ *    endpoints is the cross-substrate reference resolver's job — this layer
+ *    treats them as unresolved sentinels. `content_hash` is carried for the
+ *    resolver's drift detection, inert here.
  *  - `lens_bin`: a virtual lens-bin parent node (`bin` is the bin label). A
  *    lens_bin endpoint NEVER resolves to an item — it is matched against
- *    `lens.bins` only (the corruption-risk surface, Constraint 4).
+ *    `lens.bins` only (the corruption-risk surface).
  */
 export type EdgeEndpoint =
 	| { kind: "item"; substrate_id?: string; oid: string; refname?: string; content_hash?: string }
@@ -388,7 +389,8 @@ export type EdgeEndpoint =
 
 /**
  * The persisted / accepted endpoint form on `Edge.parent` / `Edge.child`. The
- * relations.json data stays string-form until Phase H (Cycle 10) migrates it;
+ * relations.json data stays string-form until the planned string-endpoint
+ * migration converts it;
  * the porcelain writes structured `EdgeEndpoint` objects. Every consumer accepts
  * BOTH via the `normalizeEndpoint` / `endpointKey` / `endpointBin` helpers below.
  */
@@ -446,9 +448,11 @@ export function endpointKey(e: RawEndpoint): string {
 /**
  * The bin label for a `{kind:"lens_bin"}` endpoint; `null` for any item endpoint
  * (string or structured). Lens sites test this so a lens_bin endpoint can never
- * reach an `idIndex.get` path (Constraint 4). A legacy STRING parent is `null`
- * here too — it stays bin-or-item ambiguous and is resolved by
- * `lens.bins.includes(endpointKey(e))` exactly as before this cycle.
+ * reach an `idIndex.get` path (the corruption-risk rule: lens_bin endpoints are
+ * matched against `lens.bins` only, never item-resolved). A legacy STRING parent
+ * is `null` here too — it stays bin-or-item ambiguous and is resolved by
+ * `lens.bins.includes(endpointKey(e))` exactly as it was before structured
+ * endpoints existed.
  */
 export function endpointBin(e: RawEndpoint): string | null {
 	const n = normalizeEndpoint(e);
@@ -558,8 +562,8 @@ function configPath(cwd: string): string {
 
 /** `<substrateDir>/config.json` — the dir-targeted twin of `configPath`. Takes
  * the ALREADY-RESOLVED substrate dir directly (no pointer resolution), mirroring
- * the Cycle-1 `*ForDir` pattern (cf. `relationsPathForDir`). The Cycle-10
- * canonicalizer targets a non-active work-dupe substrate via this path. */
+ * the dir-targeted `*ForDir` pattern (cf. `relationsPathForDir`). The substrate
+ * canonicalizer migration targets a non-active work-dupe substrate via this path. */
 function configPathForDir(substrateDir: string): string {
 	return path.join(substrateDir, "config.json");
 }
@@ -573,7 +577,7 @@ function relationsPath(cwd: string): string {
 
 /** `<substrateDir>/relations.json` — the dir-targeted twin of `relationsPath`.
  * Takes the ALREADY-RESOLVED substrate dir directly (no pointer resolution),
- * mirroring the Cycle-1 `*ForDir` pattern. */
+ * mirroring the dir-targeted `*ForDir` pattern. */
 function relationsPathForDir(substrateDir: string): string {
 	return path.join(substrateDir, "relations.json");
 }
@@ -619,12 +623,12 @@ export function loadConfig(cwd: string): ConfigBlock | null {
 }
 
 /**
- * Dir-targeted twin of {@link loadConfig} (Cycle-1 `*ForDir` pattern). Reads +
+ * Dir-targeted twin of {@link loadConfig} (the dir-targeted `*ForDir` pattern). Reads +
  * AJV-validates `<substrateDir>/config.json` against the bundled config schema
  * for the ALREADY-RESOLVED substrate dir — no `.pi-context.json` pointer
  * resolution. Returns `null` when the file is absent (a normal pre-write state).
  * `loadConfig` is a thin wrapper resolving the active pointer dir; behaviour is
- * byte-identical when called via cwd. Used by the Cycle-10 canonicalizer to read
+ * byte-identical when called via cwd. Used by the substrate canonicalizer migration to read
  * a NON-active (work-dupe) substrate's config in place.
  *
  * Migration-aware (mirror of `validateBlockWithMigrationForDir`): when the
@@ -717,13 +721,14 @@ export function loadRelations(cwd: string): Edge[] {
 }
 
 /**
- * Dir-targeted twin of {@link loadRelations} (Cycle-1 `*ForDir` pattern). Reads
+ * Dir-targeted twin of {@link loadRelations} (the dir-targeted `*ForDir` pattern). Reads
  * `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir —
  * no `.pi-context.json` pointer resolution. Returns `[]` when the file is absent;
  * AJV-validates the top-level `Edge[]` array against the bundled relations schema
  * exactly as the cwd form does. `loadRelations` is a thin wrapper resolving the
  * active pointer dir; behaviour is byte-identical when called via cwd. Used by
- * the Phase-H migration to read a NON-active substrate's edges in place.
+ * the planned legacy-substrate registration + string-endpoint migration to read
+ * a NON-active substrate's edges in place.
  */
 export function loadRelationsForDir(substrateDir: string): Edge[] {
 	const p = relationsPathForDir(substrateDir);
@@ -764,7 +769,7 @@ export function writeRelations(cwd: string, edges: Edge[], ctx?: DispatchContext
 }
 
 /**
- * Dir-targeted twin of `writeRelations` (Cycle-1 `*ForDir` pattern). Operates
+ * Dir-targeted twin of `writeRelations` (the dir-targeted `*ForDir` pattern). Operates
  * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir
  * — no `.pi-context.json` pointer resolution. `writeRelations` is a thin
  * wrapper resolving the active dir; behaviour is byte-identical when called via
@@ -819,7 +824,7 @@ export function appendRelations(
 }
 
 /**
- * Dir-targeted twin of `appendRelations` (Cycle-1 `*ForDir` pattern). Operates
+ * Dir-targeted twin of `appendRelations` (the dir-targeted `*ForDir` pattern). Operates
  * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir
  * — no pointer resolution. `appendRelations` is a thin wrapper resolving the
  * active dir; behaviour is byte-identical when called via cwd. Same deferred-
@@ -854,7 +859,7 @@ export function appendRelation(cwd: string, edge: Edge, ctx?: DispatchContext): 
 }
 
 /**
- * Dir-targeted twin of `appendRelation` (Cycle-1 `*ForDir` pattern). Operates
+ * Dir-targeted twin of `appendRelation` (the dir-targeted `*ForDir` pattern). Operates
  * on `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir.
  * `appendRelation` is a thin wrapper resolving the active dir; behaviour is
  * byte-identical when called via cwd. Same `{ appended }` semantics + deferred
@@ -893,7 +898,7 @@ export function removeRelation(
 }
 
 /**
- * Dir-targeted twin of `removeRelation` (Cycle-1 `*ForDir` pattern). Operates on
+ * Dir-targeted twin of `removeRelation` (the dir-targeted `*ForDir` pattern). Operates on
  * `<substrateDir>/relations.json` against the ALREADY-RESOLVED substrate dir —
  * no `.pi-context.json` pointer resolution. `removeRelation` is a thin wrapper
  * resolving the active dir; behaviour is byte-identical when called via cwd.
@@ -925,7 +930,7 @@ export function writeConfig(cwd: string, config: ConfigBlock, ctx?: DispatchCont
 }
 
 /**
- * Dir-targeted twin of `writeConfig` (Cycle-1 `*ForDir` pattern). Atomic,
+ * Dir-targeted twin of `writeConfig` (the dir-targeted `*ForDir` pattern). Atomic,
  * AJV-validated write of `<substrateDir>/config.json` against the bundled config
  * schema for the ALREADY-RESOLVED substrate dir — no pointer resolution.
  * `writeConfig` is a thin wrapper resolving the active dir; behaviour is
@@ -1326,12 +1331,12 @@ export function amendConfigEntry(
 }
 
 /**
- * Dir-targeted twin of `amendConfigEntry` (Cycle-1 `*ForDir` pattern). Carries
+ * Dir-targeted twin of `amendConfigEntry` (the dir-targeted `*ForDir` pattern). Carries
  * the FULL scoped add / replace / remove body; `amendConfigEntry` delegates here
  * via `resolveContextDir(cwd)`, so a cwd call is byte-identical to a ForDir call
  * on the resolved active dir. Targets `<substrateDir>/config.json` directly via
  * `loadConfigForDir` / `writeConfigForDir` (NO pointer resolution) so the
- * Cycle-10 canonicalizer can register block_kinds / relation_types into a
+ * substrate canonicalizer migration can register block_kinds / relation_types into a
  * non-active work-dupe substrate in place. Both guard tiers
  * (OP-CORRECTNESS + SHAPE-via-AJV) and the deep-clone-then-write-once discipline
  * are identical to the documented `amendConfigEntry` contract above.
@@ -1817,7 +1822,7 @@ export function listUncategorized(
  * module does not read blocks itself, keeping it independent of block-api.
  */
 /**
- * Minimal structural view of an F2 resolver result consumed by
+ * Minimal structural view of a cross-substrate resolver result consumed by
  * {@link validateRelations}. Mirrors `context-sdk`'s `ResolvedRef` for the two
  * fields this module reads (`status` + `loc.block`) WITHOUT importing
  * context-sdk (the layering constraint: context.ts may not import context-sdk).
@@ -1865,12 +1870,12 @@ export function validateRelations(
 		const childKey = endpointKey(edge.child);
 
 		// Block-resolution for the parent/child item endpoints. When a `resolve`
-		// hook is supplied (validateContext's F2 resolver), a resolved active OR
+		// hook is supplied (validateContext's cross-substrate resolver), a resolved active OR
 		// foreign item contributes its `loc.block` — so a cross-substrate child
 		// under a lens/hierarchy relation_type resolves to its foreign block rather
 		// than missing the active-only `idIndex`. When OMITTED (test callers /
 		// standalone use), this falls back to the inline `idIndex.get(key)` —
-		// byte-identical to the pre-F2 behavior. (`undefined` from either path means
+		// byte-identical to the pre-resolver behavior. (`undefined` from either path means
 		// "not found in any loaded block", exactly as before.)
 		const resolveBlock = (endpoint: RawEndpoint, key: string): string | undefined => {
 			if (!resolve) return idIndex.get(key);

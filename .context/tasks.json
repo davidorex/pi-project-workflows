@@ -2636,11 +2636,11 @@
         "scripts/orchestrator",
         "scripts/migration"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-129",
       "oid": "5e391ee8442b21a3988382f12e278d31",
-      "content_hash": "331e7db9e0419df7be9e20656d32d16f6a4f0474387b2f1a345d57b048cce64a",
-      "content_parent": "9c60ed8e1c5c0b8e96769912cf0398f945e9e4efa1d6b44b3478ba1b649443dd"
+      "content_hash": "c15ac979daa1209f5d5fb5ca283f87858f2fcc4d92687f2bd7a7e6a53f898531",
+      "content_parent": "331e7db9e0419df7be9e20656d32d16f6a4f0474387b2f1a345d57b048cce64a"
     }
   ],
   "schema_version": "1.1.0"

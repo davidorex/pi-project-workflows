@@ -1,0 +1,31 @@
+{
+  "title": "Source comments carry opaque planning-cycle vocabulary (Cycle-N / Phase-X / Plan-N / F-G-P designators / Constraint-N / Bucket-N / carried-item-N / locked-decision-N), and scripts/ still carries the tracker-ID citation class the completed de-jargon program never reached",
+  "status": "closed",
+  "priority": "P2",
+  "package": "monorepo-wide (pi-context, pi-jit-agents, pi-workflows, pi-agent-dispatch, pi-context-cli, scripts/)",
+  "canonical_vocabulary": "self-sufficient code comments",
+  "description": "The de-jargon goal -- all opaque jargon removed from code comments, comment semantics in code-valid plain English -- has a remaining surface the completed tracker-ID program (FGAP-136, TASK-108-115, TASK-128) did not cover, in two facets. Facet 1: ~150 comment/JSDoc sites across 23 non-test source files in 5 packages cite internal planning-cycle vocabulary a maintainer cannot resolve from the code -- nine families enumerated with verified referents in analysis/2026-07-12-planning-vocabulary-jargon-enumeration.md: Cycle N (the content-addressed-identity arc's increments, ~70 sites), Phase A-H + numbered dev-phases (~30), Plan N / Wave N (the per-item-macros decomposition, ~15), F/G/P within-cycle designators (~20), Constraint N and locked decision N (ordinals glossed inline -- meaning recoverable, label dead weight), Bucket-N (Bucket-2 taxonomy never defined where used), carried item N (spec-doc bullet references), and misc numbered artifacts (Divergence 3, v3 spec section references). Facet 2: scripts/ non-test files (orchestrator/*, migration/*) still carry the TRACKER-ID citation class heavily -- dozens of gap/decision/task-id citations -- because the completed ID program's file lists never included scripts/. Every family's referent is recovered in the enumeration, so rewrites can carry the semantics; no referent was unrecoverable.",
+  "evidence": [
+    {
+      "file": "analysis/2026-07-12-planning-vocabulary-jargon-enumeration.md",
+      "reference": "the enumeration of record: nine families, per-family verified glosses, per-file site lists with line numbers, false-positive exclusions, and the scripts/ tracker-ID residue finding"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "2099-2250",
+      "reference": "the resolveRef JSDoc cluster: Phase H, the locked Cycle-8 design, F2, Constraint 4 -- the densest opaque-vocabulary site"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/compile.ts",
+      "lines": "286-303",
+      "reference": "Plan 4 / Plan 4.1 citations naming a decomposition document not present in the repo"
+    },
+    {
+      "file": "scripts/orchestrator/runtime-demo-resolve-ref.ts",
+      "lines": "2",
+      "reference": "scripts/ carries both facets: Cycle 8 / Phase F2 planning vocabulary plus per-DEC/FGAP tracker-ID citations across orchestrator/* and migration/*"
+    }
+  ],
+  "impact": "A maintainer reading only the code cannot resolve what Cycle 8, Phase H, Plan 4.1, F2, Bucket-2, or carried item 2 mean -- the comments defer to planning artifacts that live in substrate history or nowhere in the repo, defeating the comments' purpose exactly as tracker-ID citations did. The completed de-jargon program's success claim (zero citations) holds only for packages/*/src; scripts/ silently retains the full ID class plus the same planning vocabulary.",
+  "proposed_resolution": "Rewrite every OPAQUE-class site to plain English carrying the verified referent from the enumeration (e.g. Cycle 8 -> the cross-substrate reference resolver; Phase H -> the planned legacy-substrate registration + string-endpoint migration; Plan 4.1 -> the multi-entry-same-name array-slot injection fix), dropping bare ordinals where an inline gloss already carries the meaning (Constraint N, locked decision N) and defining taxonomy terms where used (Bucket-2). Same treatment for scripts/ non-test files, covering both facets there (planning vocabulary and tracker-ID citations) in the same pass. LOCALLY-DEFINED and FALSE-POSITIVE classes per the enumeration are excluded. The delta-scoped comment-citation gate already prevents tracker-ID reintroduction; planning-vocabulary reintroduction has no gate -- acceptable, the vocabulary's generating process (substrate planning cycles) names work in substrate items now, not in code comments."
+}

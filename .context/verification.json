@@ -3330,6 +3330,32 @@
       "id": "VER-105",
       "oid": "7f3883272215281aad19fb77e2c837b2",
       "content_hash": "42c0410731892e67054ea588d6fa45bfb8f18c980e22e69fa728c71bdab289ca"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test clean on merged main under the pinned toolchain after each of three shard merges and two fix-round merges (all six package suites zero-fail every round). scan-comment-citations reports totalInstances 0 repo-wide. The iterate-to-zero loop ran three adversarial audit rounds: round 1 over the merged shards confirmed semantic preservation across all nine vocabulary families and both directed truth-checks, and surfaced one laundered false claim (ops-registry header), one shard miss, two sibling ordinal families the enumeration had not covered (step-N, lowercase phase), gitignored-spec citations in pi-jit-agents, and emitted-string keeps inconsistent with the program's emitted-output standard -- all fixed; round 2 verified those fixes and found two false-claim comments the citation-inlining had introduced (a package-wide never-reads-.pi claim contradicted by the renderer registry's project tier; a one-dispatch-path claim contradicted by the pi-subprocess dispatch of acting agents) -- both restated to per-surface verified truth; round 3 verified every restated claim against the code (tier lists, phantom-tool binding, the two real executeAgent consumers, both subprocess dispatch sites) and passed with zero findings. Residual grep triage: every remaining pattern hit is a deliberate keep (scanner subject matter, fixture/payload data, self-defined in-file sequences, domain vocabulary).",
+      "criteria_results": [
+        {
+          "criterion": "Every OPAQUE-class site from the enumeration's nine families rewritten to plain English carrying the family's verified referent; no planning ordinals remain in packages/*/src non-test comments beyond the enumerated exclusions",
+          "status": "passed"
+        },
+        {
+          "criterion": "scripts/ non-test comments carry no tracker-ID citations and no OPAQUE-class planning vocabulary; both facets covered; self-defined sequences excluded as locally-defined",
+          "status": "passed"
+        },
+        {
+          "criterion": "Rewrites preserve each site's semantic content, stated as what the code does -- including truth-corrections where the old text or its inlined replacement contradicted current code",
+          "status": "passed"
+        },
+        {
+          "criterion": "Comment-citation scanner reports zero instances repo-wide; build, check, and full test suite exit 0",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-106",
+      "oid": "96ef75c9ba03a24dde1baede13554315",
+      "content_hash": "df7a6a0cffd21de5a0659449f2ccabb42468be264cd7e523cefca6b1761c4b8d"
     }
   ],
   "schema_version": "1.1.0"

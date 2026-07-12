@@ -4858,7 +4858,7 @@
     },
     {
       "title": "Source comments carry opaque planning-cycle vocabulary (Cycle-N / Phase-X / Plan-N / F-G-P designators / Constraint-N / Bucket-N / carried-item-N / locked-decision-N), and scripts/ still carries the tracker-ID citation class the completed de-jargon program never reached",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "monorepo-wide (pi-context, pi-jit-agents, pi-workflows, pi-agent-dispatch, pi-context-cli, scripts/)",
       "canonical_vocabulary": "self-sufficient code comments",
@@ -4890,7 +4890,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-12T11:24:58.674Z",
       "oid": "9664c5ff5a9271e4bab03e9266166fb5",
-      "content_hash": "947787fd3dcc2ebd06ab55ed7cc6f7f14b3abb17fed2e74c19c069c0d515a75f"
+      "content_hash": "4bd092a9b24d0011dddb809c07e114841a84e2df8cb7c81f751fb19aa2d840b6",
+      "closed_by": "TASK-129 (VER-106): all nine planning-vocabulary families rewritten to plain English across packages/*/src and scripts/ (three parallel shards), scripts/ tracker-ID citations resolved to their meanings in the same pass, sibling ordinal families and false-claim comments surfaced by three adversarial audit rounds fixed within the same loop. Comment-citation scanner at zero repo-wide; residual pattern hits are all deliberate keeps (scanner subject matter, fixture/payload data, self-defined sequences, domain vocabulary). Merged to main.",
+      "closed_at": "2026-07-12",
+      "content_parent": "947787fd3dcc2ebd06ab55ed7cc6f7f14b3abb17fed2e74c19c069c0d515a75f"
     }
   ]
 }

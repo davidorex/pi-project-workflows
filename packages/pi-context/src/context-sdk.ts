@@ -2177,7 +2177,7 @@ function foreignIndexFor(
  * (mirroring `resolveRelationSelector`): the `<x>` in `<x>:<y>` is treated as an
  * alias candidate, so such a string is an aliased-item locator (step 2), NOT a
  * bare refname (step 3). If `<x>` is NOT a registered alias → `unregistered`. So
- * today's `project:FGAP-153` (the `project` alias is not registered until Phase H)
+ * today's `project:<some-refname>` (the `project` alias is not registered until Phase H)
  * → `unregistered`. The real 30 are therefore `unregistered` pre-H and flip to
  * `foreign` once Phase H registers the `project` alias (the count/total stay
  * unchanged at reclassification — see the note in `validateContext`).

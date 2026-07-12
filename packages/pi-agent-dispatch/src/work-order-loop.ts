@@ -317,7 +317,7 @@ export async function runWorkOrderLoop(
 
 		if (realCheck.passed) {
 			const files = wo.scope?.files ?? [];
-			const commitMessage = `feat(work-order-${wo.id}): completion under FEAT-006 loop (iteration ${i + 1}/${maxIterations})`;
+			const commitMessage = `feat(work-order-${wo.id}): real-checks passed under the work-order loop (iteration ${i + 1}/${maxIterations})`;
 			let commit: AttestedCommitResult | undefined;
 			if (files.length > 0) {
 				// Route the commit through the same pi.on('tool_call') auth-gate

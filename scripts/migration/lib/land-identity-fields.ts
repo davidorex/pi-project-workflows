@@ -1,8 +1,9 @@
 /**
- * land-identity-fields — C2-completion (Cycle 10, H1-precursor): land the three
+ * land-identity-fields — precursor step to the substrate content-addressing
+ * migration: land the three
  * content-addressed-identity field DECLARATIONS (`oid` / `content_hash` /
  * `content_parent`) as OPTIONAL item properties on every registered block_kind
- * schema of a substrate that lacks them. This is the precondition the H1 migration
+ * schema of a substrate that lacks them. This is the precondition the migration
  * (`migrateToContentAddressed`) gates on at its step-0 readiness check
  * (`schemaDeclaresIdentityFields`): a schema whose item shape does not declare all
  * three fields makes the migration refuse to backfill.
@@ -11,7 +12,7 @@
  * constraint (its `required`, its other properties, `additionalProperties`, etc.)
  * byte-for-byte; only the three field entries are added under
  * `properties.<array_key>.items.properties`. The fields are NEVER added to
- * `required` — they are optional so pre-Cycle-3 items (which carry none of them)
+ * `required` — they are optional so items predating identity stamping (which carry none of them)
  * still validate. The migration's own backfill stamps the values later.
  *
  * Data-safety: the three fields are additive + optional, so existing block items

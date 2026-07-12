@@ -1,5 +1,5 @@
 /**
- * §H content-addressing migration (Cycle 10 / Phase H1).
+ * The substrate content-addressing migration.
  *
  * One repo-wide migration that brings every substrate under the project root
  * into the content-addressed identity model:
@@ -208,7 +208,7 @@ function substrateHasItem(s: DiscoveredSubstrate, refname: string): boolean {
 }
 
 /**
- * Run the §H content-addressing migration against `cwd`. See the module header
+ * Run the content-addressing migration against `cwd`. See the module header
  * for the ordered steps and the dry-run determinism caveat. Never throws on an
  * unresolvable endpoint (those accumulate into `report.unresolved` and the edge
  * is left unwritten); throws on the fail-fast schema gate and on any I/O failure.

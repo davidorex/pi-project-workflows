@@ -1,5 +1,5 @@
 /**
- * canonicalize-substrate — Cycle-10 one-shot substrate CANONICALIZER engine.
+ * canonicalize-substrate — one-shot substrate CANONICALIZER engine.
  *
  * Transforms ONE substrate IN PLACE (on whatever dir it is given — the
  * orchestrator points this at a work-dupe, never the live substrate) into

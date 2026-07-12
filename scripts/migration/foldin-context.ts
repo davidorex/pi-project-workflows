@@ -4,7 +4,7 @@
  * into the content-addressed canon via the same triple-buffer (dupe / verify /
  * swap) that `canonicalize-substrate.ts` uses to de-risk a one-shot transform.
  *
- * Where `canonicalize-substrate.ts` runs the Cycle-10 canonicalizer (nested-array
+ * Where `canonicalize-substrate.ts` runs the substrate canonicalizer (nested-array
  * promotion + orphan-block registration), this script runs the FOLD-IN sequence
  * for an already-flat substrate that predates the identity model:
  *

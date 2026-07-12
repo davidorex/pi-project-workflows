@@ -103,8 +103,9 @@ const DERIVABLE = new Set<string>(["arrayKey"]);
  * Library functions whose return value EMBEDS substrate item / block content
  * (not a count, a status, or a derived projection). An op that directly returns
  * one of these results through the `{json}` channel BYPASSES the 50KB read cap
- * (enforced only on the `{read}` channel via structureForRead) — the FGAP-015
- * root cause. The gate below FAILS such a return so the op is forced onto
+ * (enforced only on the `{read}` channel via structureForRead) — the root cause
+ * of the read-cap-leak defect (unbounded substrate content could ship on the
+ * CLI --json and in-pi surfaces). The gate below FAILS such a return so the op is forced onto
  * `{read}`. The set is deliberately the concrete content-readers (NOT
  * derivations like contextState / validateContext / listSubstrates, whose
  * `{json}` returns are projections that legitimately stay on the json channel).
@@ -851,7 +852,7 @@ export function checkRequiredButDerivable(
 	return out;
 }
 
-// ─── Step D — {json}-content-cap gate (FGAP-015) ──────────────────────────────
+// ─── Step D — {json}-content-cap gate (read-cap-leak guard) ───────────────────
 
 /** A `{json}`-returns-content-read violation. */
 export interface JsonContentCapViolation {
@@ -864,7 +865,7 @@ export interface JsonContentCapViolation {
 }
 
 /**
- * FGAP-015 drift-guard: FLAG any op whose run() returns `{ json: <value> }` where
+ * Read-cap drift-guard: FLAG any op whose run() returns `{ json: <value> }` where
  * `<value>` is — DIRECTLY — the result of a content-reading library call
  * (CONTENT_READING_FNS). Such a return bypasses the 50KB read cap, which is
  * enforced only on the `{read}` channel (structureForRead). The fix is to emit

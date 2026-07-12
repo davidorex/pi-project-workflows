@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * wire-active-substrate — Claude-Code-side orchestrator for the Cycle-10
- * active-substrate wiring (content-addressed substrate identity arc).
+ * wire-active-substrate — Claude-Code-side orchestrator for the active-substrate
+ * wiring step of the content-addressed substrate identity arc.
  *
  * Wires the active substrate so its cross-substrate `project:<refname>` edges
  * resolve into the FROZEN archive `.project` (read-only) via the

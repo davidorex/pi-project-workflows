@@ -11475,5 +11475,18 @@
       "refname": "pi-mono-is-exemplar"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "d3f65fffe36b17c281d59f343b1b3899",
+      "refname": "TASK-128"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf5dd261bf6c7bd4b2c1bb2021c350ae",
+      "refname": "pi-mono-is-exemplar"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

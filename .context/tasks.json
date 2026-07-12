@@ -2578,6 +2578,24 @@
       "id": "TASK-127",
       "oid": "69af7c5c7fb70faed52abf7d17685648",
       "content_hash": "620f2b027b57c29088e0d3c42e61330add81052586d27e9b8de89c28c9c96630"
+    },
+    {
+      "description": "Remove the enumerated tracker-ID/archived-vocabulary residuals that postdate or escaped the FGAP-136 de-jargon rollout and sit outside the delta-scoped comment-citation gate's reach: (1) comment citations of a framework-gap id introduced by the TASK-121 rollout commit into packages/pi-context/src/block-api.ts (4 sites) and packages/pi-context/src/rhetorical-criteria.ts (1 site) -- already-committed, so the staged-delta gate will never flag them; (2) the generated work-order commit message in packages/pi-agent-dispatch/src/work-order-loop.ts, which emits the archived predecessor substrate's feature id in runtime output -- a generated-output surface neither FGAP-136's comment scope nor the citation-rot scanner's tool-description/error surfaces cover. Rewrite all sites to plain English carrying the same semantics per the FGAP-136 standard; enumerate the full class fresh (all non-test packages/*/src comments plus generated-output template strings) rather than fixing only the audit-enumerated instances.",
+      "acceptance_criteria": [
+        "A fresh enumeration of non-test packages/*/src comments finds no internal tracker-ID citations outside the deliberately-excluded illustrative examples the FGAP-136 closure names",
+        "Generated work-order commit messages carry no internal tracker IDs -- the message template names the work-order id and plain-English purpose only",
+        "The rewritten comments preserve each site's semantic content in code-valid plain English",
+        "build, check, and full test suite exit 0"
+      ],
+      "files": [
+        "packages/pi-context/src/block-api.ts",
+        "packages/pi-context/src/rhetorical-criteria.ts",
+        "packages/pi-agent-dispatch/src/work-order-loop.ts"
+      ],
+      "status": "planned",
+      "id": "TASK-128",
+      "oid": "d3f65fffe36b17c281d59f343b1b3899",
+      "content_hash": "bd23dbeefbfa4fe162ae70b2637815b5345b67a2223ba83d1ebc22fb3b5d7d2d"
     }
   ],
   "schema_version": "1.1.0"

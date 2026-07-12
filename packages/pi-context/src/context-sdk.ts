@@ -1113,7 +1113,7 @@ export interface FilterPredicate {
  *   - `op: "matches"` constructs `new RegExp(String(value))`; a malformed
  *     regex pattern throws synchronously from the RegExp constructor.
  *
- * Closes part of the phase-2 query-surface work in the multi-phase closure of
+ * Closes part of the query-surface work in the closure of
  * the earlier substrate-bootstrap-hardcoding gap.
  */
 export function filterBlockItems(cwd: string, blockName: string, predicate: FilterPredicate): unknown[] {
@@ -1537,7 +1537,7 @@ export function resolveItemById(cwd: string, id: string): ItemLocation | null {
  *   - Prefix-vs-block invariant violations inside the index build propagate
  *     out as-is — same surface contract as `resolveItemById`.
  *
- * Closes part of the phase-2 query-surface work in the multi-phase closure of
+ * Closes part of the query-surface work in the closure of
  * the earlier substrate-bootstrap-hardcoding gap — shipping resolveItemsByIds,
  * the bulk-lookup variant.
  */

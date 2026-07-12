@@ -87,8 +87,9 @@ const BOOTSTRAP_REF_SCHEMA: Record<string, unknown> = {
 /**
  * Resolve the substrate dir for a given cwd. Reads the
  * `<cwd>/.pi-context.json` bootstrap pointer, AJV-validates the parsed
- * pointer object against the URN-registered bootstrap schema (the
- * bootstrap-hardcoding closure's phase 1.1 schema), caches the resolution by
+ * pointer object against the URN-registered bootstrap schema (the schema
+ * describing the `.pi-context.json` pointer shape, registered under
+ * `pi-context://schemas/bootstrap`), caches the resolution by
  * absolute cwd keyed on
  * pointer mtime, and returns `path.join(cwd, contextDir)` as an absolute
  * path (subject to whatever cwd the caller passed).

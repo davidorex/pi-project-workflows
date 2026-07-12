@@ -1149,8 +1149,7 @@ export function adoptConception(cwd: string): AdoptResult {
 }
 
 // ── Scoped config amend — closing the earlier gap where no config-write Pi
-// tool existed (in-pi agents couldn't author/amend config.json); part of the
-// dual-surface ceremony-ops decomposition, sub-step A2 ─────────────────────────
+// tool existed (in-pi agents couldn't author/amend config.json) ──────────────
 
 /**
  * Storage shape of a config registry, dictating how `amendConfigEntry` locates,

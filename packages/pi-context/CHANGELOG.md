@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Source comments in `context-sdk.ts`, `context-dir.ts`, and `context.ts` that carried lowercase phase/sub-step ordinals now name the referent instead (the query-surface work, the bootstrap-pointer schema registered under `pi-context://schemas/bootstrap`, the scoped config-amend gap closure). Comment-only; no behavior change.
 - Source comments in `dispatch-context.ts`, `schema-write.ts`, `block-api.ts`, `context.ts`, and `citation-rot-scanner.ts` that referred to numbered implementation steps now describe the referents directly (which module owns schema versioning/migration, where the attestation carry-forward originally lived, why the author-fields schema walk cannot cycle, and what the pointer-flip relocation path is). Comment-only; no behavior change.
 - The `ops-registry.ts` header comment now describes the `authGated` / `surface` fields as the code sets them: `authGated: true` marks the operator-confirmation-gated op subset (exported as `gatedTools`), and `surface` is `"use"` on every op except the process-surface `list-tools`. Comment-only; no behavior change.
 - Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does), and the nested-id-bearing-array validation message's planning-phase parenthetical now reads '(planned migration)'; no other behavior change.

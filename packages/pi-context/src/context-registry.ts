@@ -6,9 +6,10 @@
  * NOT substrate-relative: it enumerates EVERY known substrate by its immutable
  * content-addressed `substrate_id` (`^sub-[0-9a-f]{16}$`), mapping each to its
  * on-disk directory + alias list. This is the substrate-locator layer the
- * Cycle-8 F2 resolver consumes to resolve a foreign `<substrate_id>:<oid>` /
- * `<alias>:<refname>` locator to a directory, and the surface the Phase-H
- * migration registers each legacy substrate into.
+ * cross-substrate reference resolver consumes to resolve a foreign
+ * `<substrate_id>:<oid>` / `<alias>:<refname>` locator to a directory, and the
+ * surface the planned legacy-substrate registration migration registers each
+ * legacy substrate into.
  *
  * Distinct from the `.pi-context.json` bootstrap pointer: the pointer names the
  * single ACTIVE substrate dir; this registry enumerates all of them. The
@@ -183,8 +184,9 @@ function clone<T>(value: T): T {
  * re-registering the same substrate_id with the same dir + aliases produces a
  * byte-identical file; a changed dir (e.g. a renamed substrate directory) or a
  * changed alias list overwrites the prior entry in place. `aliases` defaults to
- * `[]` when omitted (Cycle 4 registers with empty aliases; the Phase-H
- * migration populates the legacy `project:` alias).
+ * `[]` when omitted (the substrate registry + drift invariant registers with
+ * empty aliases; the planned legacy-substrate registration migration populates
+ * the legacy `project:` alias).
  *
  * Does NOT validate that `substrate_id` matches `^sub-[0-9a-f]{16}$` here — the
  * schema's `propertyNames` pattern enforces that at the write boundary (an
@@ -208,8 +210,8 @@ export function registerSubstrate(
  * Resolve a substrate_id to its registered directory string (as stored — i.e.
  * project-root-relative, the caller resolves against cwd when an absolute path
  * is needed). Returns null on miss (substrate_id not registered, or no registry
- * file at all) — never throws on a clean miss, mirroring the F2 resolver's
- * expectation of a null-or-hit lookup.
+ * file at all) — never throws on a clean miss, mirroring the cross-substrate
+ * reference resolver's expectation of a null-or-hit lookup.
  */
 export function resolveSubstrateDir(cwd: string, substrate_id: string): string | null {
 	const reg = loadRegistry(cwd);

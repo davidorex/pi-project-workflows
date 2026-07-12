@@ -1,6 +1,6 @@
 /**
- * Content-hash primitives for content-addressed substrate identity (Cycle 2,
- * Phase A). Pure functions with no schema or filesystem knowledge: they map an
+ * Content-hash primitives for content-addressed substrate identity.
+ * Pure functions with no schema or filesystem knowledge: they map an
  * arbitrary JSON value to a stable, canonical string and then to a SHA-256 hex
  * digest.
  *
@@ -12,8 +12,8 @@
  * identically. That property is what makes the content hash a faithful
  * identity for a value's content rather than its byte layout.
  *
- * Dormant this cycle: nothing in any write path calls these yet (Cycle 3 wires
- * `computeContentHash(contentProjection(...))`). This module is infrastructure
+ * Dormant on its own: no write path calls these directly — the identity-stamping
+ * layer wires `computeContentHash(contentProjection(...))`. This module is infrastructure
  * (like block-api) and is intentionally not re-exported from `index.ts`.
  */
 import { createHash } from "node:crypto";

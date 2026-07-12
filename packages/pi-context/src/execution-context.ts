@@ -9,13 +9,13 @@
  * composed reading a work unit + its context-contract + walking declared
  * relations into one bundle (the orchestrator previously had to do N+1 reads
  * by hand) by composing existing pieces:
- *   - filterBlockItems (context-sdk.ts; Phase 2.1) — locates the
+ *   - filterBlockItems (context-sdk.ts) — locates the
  *     context-contract entry by unit_kind without scanning the whole block.
- *   - resolveItemsByIds (context-sdk.ts; Phase 2.2) — the bulk-lookup variant:
+ *   - resolveItemsByIds (context-sdk.ts) — the bulk-lookup variant:
  *     cross-block lookup over a single buildIdIndex traversal; used twice (once
  *     to read the unit by id, once to resolve reached ids per relation_type).
- *   - walkAncestors / walkDescendants / findReferences (context.ts;
- *     Phase 2.3/2.4) — closure-table traversal primitives.
+ *   - walkAncestors / walkDescendants / findReferences (context.ts) —
+ *     closure-table traversal primitives.
  *   - loadRelations (context.ts existing) — single substrate read of
  *     relations.json reused across every declared relation_type's walk; the
  *     traversal primitives operate on the loaded Edge[] in-memory rather
@@ -51,8 +51,7 @@
  * executable specification: this library function pairs with the
  * gather-execution-context pi tool (index.ts) and the orchestrator script
  * scripts/orchestrator/gather-execution-context.ts; all three ship as one
- * atomic unit, closing the earlier "no composition-of-views primitive" gap
- * (Phase 3 sub-phase 3.2).
+ * atomic unit, closing the earlier "no composition-of-views primitive" gap.
  */
 
 import { loadRelations, walkAncestors, walkDescendants } from "./context.js";

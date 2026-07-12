@@ -1310,8 +1310,8 @@ export interface ItemLocation {
 }
 
 /**
- * Split-surface index over a single substrate's id-bearing items (Cycle 7 /
- * Phase F1). Replaces the prior `Map<refname, ItemLocation>` return of
+ * Split-surface index over a single substrate's id-bearing items (the
+ * SubstrateIndex split). Replaces the prior `Map<refname, ItemLocation>` return of
  * {@link buildIdIndex}/{@link buildIdIndexForDir} by separating the two roles
  * that the single Map previously served:
  *
@@ -1320,12 +1320,13 @@ export interface ItemLocation {
  *     exactly as the prior Map. This is the lookup surface every `.get`/`.has`
  *     consumer reads.
  *   - `items` — the iteration surface: ONE entry per id-bearing item, in scan
- *     order. Whole-index `for…of` consumers iterate this so a future dual-keyed
- *     lookup map (F2's oid keys) cannot inflate iteration (anti-double-count).
+ *     order. Whole-index `for…of` consumers iterate this so a dual-keyed
+ *     lookup map (the resolver's oid keys) cannot inflate iteration (anti-double-count).
  *   - `byOid` — point-lookup map keyed by an item's string `oid`, ONE entry per
- *     item that HAS a string `oid`. Populated here but DORMANT this cycle —
- *     no F1 consumer reads it; it is the seam Cycle-8/F2 fills with cross-
- *     substrate (oid-keyed) resolution. Near-empty on current real data (most
+ *     item that HAS a string `oid`. Populated here but DORMANT within this index —
+ *     no index consumer reads it directly; it is the seam the cross-substrate
+ *     reference resolver fills with cross-substrate (oid-keyed) resolution.
+ *     Near-empty on current real data (most
  *     items are unstamped). First-writer-wins on oid collision, mirroring
  *     `byRefname`'s collision discipline.
  *
@@ -1429,11 +1430,12 @@ export function buildIdIndex(cwd: string): SubstrateIndex {
  * semantics + prefix-invariant throw as `buildIdIndex`.
  */
 export function buildIdIndexForDir(substrateDir: string, _cwd: string, cfg: ConfigBlock | null): SubstrateIndex {
-	// `_cwd` is part of the locked F1 signature (the active-dir caller threads its
-	// cwd; the foreign-substrate caller threads the foreign dir) so F2 can resolve
-	// registry-relative concerns from it. F1's body reads config explicitly via
-	// `cfg`, so `_cwd` is currently unused — retained for the forward-compatible
-	// surface rather than dropped and re-added next cycle.
+	// `_cwd` is part of the locked index-builder signature (the active-dir caller
+	// threads its cwd; the foreign-substrate caller threads the foreign dir) so the
+	// cross-substrate reference resolver can resolve registry-relative concerns
+	// from it. The body reads config explicitly via `cfg`, so `_cwd` is currently
+	// unused — retained for the forward-compatible surface rather than dropped
+	// and re-added later.
 	const byRefname = new Map<string, ItemLocation>();
 	const byOid = new Map<string, ItemLocation>();
 	const items: ItemLocation[] = [];
@@ -1483,9 +1485,9 @@ export function buildIdIndexForDir(substrateDir: string, _cwd: string, cfg: Conf
 				if (!byRefname.has(idVal)) {
 					byRefname.set(idVal, loc);
 				}
-				// `byOid` — populated for items carrying a string `oid` (DORMANT this
-				// cycle: no F1 consumer reads it). First-writer-wins on oid collision,
-				// mirroring `byRefname`.
+				// `byOid` — populated for items carrying a string `oid` (DORMANT within
+				// this index: no index consumer reads it directly; the cross-substrate
+				// resolver does). First-writer-wins on oid collision, mirroring `byRefname`.
 				const oidVal = item.oid;
 				if (typeof oidVal === "string" && oidVal.length > 0 && !byOid.has(oidVal)) {
 					byOid.set(oidVal, loc);
@@ -1597,7 +1599,8 @@ function selectorIsLensBin(cwd: string, selector: string): boolean {
  *  - `<alias>:<refname>` (alias is a registered substrate alias) → FOREIGN item
  *    `{kind:"item", substrate_id, oid, refname}` (oid from the foreign index;
  *    when the foreign refname does not resolve, oid is left as the refname so the
- *    endpoint round-trips — Cycle 8 resolves foreign endpoints, this cycle only
+ *    endpoint round-trips — the cross-substrate reference resolver resolves
+ *    foreign endpoints, this path only
  *    forms them; an unresolved foreign endpoint validates as a sentinel).
  *  - a selector matching a declared lens bin → `{kind:"lens_bin", bin}`.
  *  - a bare `refname` → SAME-substrate item `{kind:"item", oid, refname}` (oid
@@ -1860,7 +1863,7 @@ export function orientAppendInput(
 }
 
 /**
- * Friendly-selector relation append (Cycle 5 porcelain). Accepts EITHER raw
+ * Friendly-selector relation append (the structured-endpoint porcelain). Accepts EITHER raw
  * `{parent, child}` selectors OR the role-typed `{primary, counter}` form
  * (the explicit orientation form), resolves the (possibly role-mapped) STRING selectors to structured
  * `EdgeEndpoint`s via `resolveRelationSelector`, then delegates to the raw
@@ -2081,7 +2084,7 @@ export function appendRelationsByRef(
 	return { appended, skipped, edges: resolved };
 }
 
-// ── Endpoint resolution (Cycle 8 / Phase F2) ────────────────────────────────
+// ── Endpoint resolution (the cross-substrate reference resolver) ────────────
 
 /**
  * Classification of an endpoint by {@link resolveRef}:
@@ -2096,7 +2099,8 @@ export function appendRelationsByRef(
  *                     dangling rather than crashing validation).
  *  - `unregistered` — a locator naming a substrate_id / alias that the project-root
  *                     registry does NOT carry (the foreign substrate is not yet
- *                     registered — the pre-Phase-H state of the 30 `project:` strings).
+ *                     registered — the state of the 30 `project:` strings until
+ *                     the planned legacy-substrate registration migration runs).
  */
 export type ResolveStatus = "active" | "foreign" | "dangling" | "unregistered";
 
@@ -2155,13 +2159,14 @@ function foreignIndexFor(
 
 /**
  * Classify a single edge endpoint (legacy string OR structured) into one of the
- * four {@link ResolveStatus} values — the load-bearing F2 resolver wired into
+ * four {@link ResolveStatus} values — the load-bearing cross-substrate reference
+ * resolver wired into
  * `validateContext`'s edge loop + the `validateRelations` `resolve?` hook.
  *
- * Algorithm (the locked Cycle-8 design):
+ * Algorithm (the locked resolver design):
  *  1. A structured `{kind:"lens_bin"}` endpoint → `{status:"active",
  *     endpointKind:"lens_bin"}` with NO item lookup (a lens_bin never routes
- *     through item resolution — the corruption-risk surface, Constraint 4).
+ *     through item resolution — the corruption-risk surface).
  *  2. An item endpoint WITH A LOCATOR — a structured `substrate_id`, OR a STRING
  *     of the form `<alias>:<refname>` whose `<alias>` prefix is a REGISTERED
  *     alias — resolves against the named FOREIGN substrate: substrate_id/alias
@@ -2177,9 +2182,11 @@ function foreignIndexFor(
  * (mirroring `resolveRelationSelector`): the `<x>` in `<x>:<y>` is treated as an
  * alias candidate, so such a string is an aliased-item locator (step 2), NOT a
  * bare refname (step 3). If `<x>` is NOT a registered alias → `unregistered`. So
- * today's `project:FGAP-153` (the `project` alias is not registered until Phase H)
- * → `unregistered`. The real 30 are therefore `unregistered` pre-H and flip to
- * `foreign` once Phase H registers the `project` alias (the count/total stay
+ * today's `project:FGAP-153` (the `project` alias is not registered until the
+ * planned legacy-substrate registration migration runs)
+ * → `unregistered`. The real 30 are therefore `unregistered` until that
+ * migration runs and flip to
+ * `foreign` once it registers the `project` alias (the count/total stay
  * unchanged at reclassification — see the note in `validateContext`).
  *
  * `opts.activeIndex` lets the caller pass a pre-built active index (built once per
@@ -2211,8 +2218,9 @@ export function resolveRef(
 	// A string carrying a `:` is treated as a `<alias>:<refname>` LOCATOR
 	// candidate (the alias parse is ATTEMPTED): the prefix is an alias that
 	// either resolves (→ foreign locator) or does NOT (→ `unregistered` — the
-	// pre-Phase-H state of the 30 `project:` strings, whose `project` alias is
-	// not yet registered). A registered alias yields a foreign `substrate_id`
+	// state of the 30 `project:` strings, whose `project` alias is not registered
+	// until the planned legacy-substrate registration migration runs). A
+	// registered alias yields a foreign `substrate_id`
 	// locator + the post-colon refname; an UNregistered alias is flagged with the
 	// `aliasUnregistered` sentinel so step (2)/(3) below routes it to
 	// `unregistered` rather than the active index. A string with NO `:` is a bare
@@ -2246,8 +2254,8 @@ export function resolveRef(
 	}
 
 	// A `<alias>:<refname>` string whose alias is NOT registered → unregistered
-	// (locked decision 1: the alias parse is attempted; a missing alias is the
-	// pre-Phase-H state of the 30, NOT an active-substrate dangling lookup).
+	// (locked at design time: the alias parse is attempted; a missing alias is the
+	// not-yet-registered state of the 30, NOT an active-substrate dangling lookup).
 	if (aliasUnregistered) {
 		return { status: "unregistered", endpointKind: "item", refname };
 	}
@@ -2611,13 +2619,13 @@ export function validateContext(cwd: string): ContextValidationResult {
 	const config = loadConfig(cwd);
 	const relations: Edge[] = config ? loadRelations(cwd) : [];
 
-	// ── SoT-drift invariant (content-addressed substrate identity, Cycle 4) ───
+	// ── SoT-drift invariant (content-addressed substrate identity) ────────────
 	// When the active config declares a `substrate_id`, the project-root
 	// registry (.pi-context-registry.json) MUST carry an entry for that id whose
 	// `dir` resolves to the active substrate dir. A missing entry or a dir
 	// mismatch means the registry has drifted from the active substrate's sole
 	// SoT (config.substrate_id) and is an ERROR. When `config.substrate_id` is
-	// ABSENT (a pre-identity / pre-Phase-H substrate), the check SKIPS — read
+	// ABSENT (a pre-identity substrate not yet registered/migrated), the check SKIPS — read
 	// the field directly off the config rather than via substrateIdFor (which
 	// THROWS on absence) so an un-migrated substrate still validates cleanly.
 	if (config) {
@@ -2660,19 +2668,20 @@ export function validateContext(cwd: string): ContextValidationResult {
 	// false-pass a zero-edge substrate. The edge-integrity loop below is a
 	// no-op on empty relations, so it needs no separate guard.
 	if (config) {
-		// Per-pass foreign-index cache (Constraint 3): N foreign edges into the same
+		// Per-pass foreign-index cache: N foreign edges into the same
 		// registered substrate build that substrate's index ONCE within this pass.
 		const foreignCache = new Map<string, SubstrateIndex>();
 		// Resolver bound to this pass's cwd + active index + foreign cache; supplied
 		// to validateRelations so its lens/hierarchy resolution can see foreign items.
 		const resolve = (ref: RawEndpoint): ResolvedRef => resolveRef(cwd, ref, { activeIndex: index, foreignCache });
 		for (const edge of relations) {
-			// F2 severity split (DEC §F2): every endpoint is classified by resolveRef
+			// Resolver severity split: every endpoint is classified by resolveRef
 			// into active | foreign | dangling | unregistered. active/foreign/lens_bin
 			// → no issue; unregistered → ERROR (`edge_endpoint_unregistered`); dangling
-			// → ERROR (`edge_endpoint_dangling`). The two new codes REPLACE the prior
+			// → ERROR (`edge_endpoint_dangling`). The two codes REPLACE the prior
 			// inline "does not resolve" message — the intended reclassification of the
-			// cross-substrate (`<alias>:`) strings (their alias is unregistered pre-H).
+			// cross-substrate (`<alias>:`) strings (their alias stays unregistered
+			// until the planned legacy-substrate registration migration runs).
 			const parentKey = endpointKey(edge.parent);
 			const childKey = endpointKey(edge.child);
 			const parentRes = resolve(edge.parent);
@@ -2831,12 +2840,14 @@ export function validateContext(cwd: string): ContextValidationResult {
 		});
 	}
 
-	// ── Nested id-bearing array warning (content-addressed substrate identity,
-	// Cycle 9.2) ─────────────────────────────────────────────────────────────
+	// ── Nested id-bearing array warning (content-addressed substrate identity —
+	// the nested-id guard) ───────────────────────────────────────────────────
 	// Schema-level, independent of block DATA + config: enumerate the active
 	// substrate's installed schemas and flag every array property at nesting
 	// depth ≥ 1 whose item shape carries an `id` — a relationship-as-embedding
-	// that should be promoted to a top-level entity + membership edge (Phase H).
+	// that should be promoted to a top-level entity + membership edge (a
+	// promotion planned alongside the legacy-substrate registration +
+	// string-endpoint migration, not yet run).
 	// Non-fatal (warning), so it raises the warning count only and never flips
 	// status to "invalid" by itself. Runs whether or not config is present;
 	// skips cleanly when the schemas dir is absent (pre-bootstrap substrate) and
@@ -2861,7 +2872,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 				for (const fieldPath of findNestedIdBearingArrays(parsed)) {
 					issues.push({
 						severity: "warning",
-						message: `nested id-bearing array '${fieldPath}' — promote to a top-level entity + membership edge (Phase H)`,
+						message: `nested id-bearing array '${fieldPath}' — promote to a top-level entity + membership edge (planned migration)`,
 						block: schemaName,
 						field: fieldPath,
 						code: "nested_id_bearing_array",
@@ -2871,7 +2882,7 @@ export function validateContext(cwd: string): ContextValidationResult {
 		}
 	}
 
-	// Lens-validator dispatch (Step 7 / pi-context Divergence 3): iterate every
+	// Lens-validator dispatch: iterate every
 	// validator registered via registerLensValidator and merge its issues into
 	// the project-validation result. Validators are guarded individually so a
 	// throwing validator surfaces as a warning issue rather than a hard fail —

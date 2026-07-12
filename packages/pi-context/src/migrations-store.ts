@@ -143,7 +143,7 @@ export function writeMigrationsFile(cwd: string, file: MigrationsFile, ctx?: Dis
 }
 
 /**
- * Dir-targeted twin of {@link writeMigrationsFile} (Cycle-1 `*ForDir` pattern).
+ * Dir-targeted twin of {@link writeMigrationsFile} (the dir-targeted `*ForDir` pattern).
  * Atomic, AJV-validated whole-file write of `<substrateDir>/migrations.json`
  * against the bundled migrations schema — takes the ALREADY-RESOLVED substrate
  * dir directly (no `.pi-context.json` pointer resolution). The cwd form is a
@@ -199,7 +199,7 @@ export function appendMigrationDecl(cwd: string, decl: MigrationDecl, ctx?: Disp
 }
 
 /**
- * Dir-targeted twin of {@link appendMigrationDecl} (Cycle-1 `*ForDir` pattern).
+ * Dir-targeted twin of {@link appendMigrationDecl} (the dir-targeted `*ForDir` pattern).
  * Append a new MigrationDecl to the substrate at `substrateDir`. Op-correctness:
  * the (schemaName, fromVersion) pair must be ABSENT on-disk; collision throws.
  * The write flows through the `writeMigrationsFileForDir` funnel, which

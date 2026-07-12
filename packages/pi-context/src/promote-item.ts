@@ -1,5 +1,5 @@
 /**
- * Cycle 9 / G2 — `promoteItem`: copy an item from one substrate into another as
+ * `promoteItem`: copy an item from one substrate into another as
  * a NEW content-addressed item and record the lineage edge.
  *
  * "Promotion" is the cross-substrate analogue of supersession: the source item's

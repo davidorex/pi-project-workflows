@@ -11540,5 +11540,18 @@
       "refname": "FGAP-114"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "7f3883272215281aad19fb77e2c837b2",
+      "refname": "VER-105"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "d3f65fffe36b17c281d59f343b1b3899",
+      "refname": "TASK-128"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

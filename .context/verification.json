@@ -3304,6 +3304,32 @@
       "id": "VER-104",
       "oid": "08932c170c3124dbf11c08e57cd106b2",
       "content_hash": "98e3f10acd4993f5e9e8e85d445e73dbcb01e0f6c35ec916c00b9994dedac632"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test clean on the merged main under the pinned toolchain (all six package suites zero-fail). scan-comment-citations.ts reports totalInstances 0 across all 7 packages; parity-check exits 0 with all 83 writers classified. The iterate-to-zero loop ran three adversarial audit rounds: round 1 confirmed all 9 rewritten sites preserve their semantic content (including the 'real 30' antecedent surviving the generic-placeholder rewrite) and surfaced one missed sibling -- a decision-id citation in a gate-emitted unexposed-writer reason string, invisible to the comment scanner; round 2 confirmed that fix but found its residual phrase swapped the citation for an unanchored internal planning term; round 3 passed with zero findings (the reason string is self-sufficient, accurate against the codebase -- no shipped clone surface contradicts 'planned' -- and the CHANGELOG pair is coherent and id-free). Regression sweep confirmed nothing consumed the old strings programmatically (tests assert error names and commit_sha only, never the message texts).",
+      "criteria_results": [
+        {
+          "criterion": "A fresh enumeration of non-test packages/*/src comments finds no internal tracker-ID citations outside the deliberately-excluded illustrative examples the FGAP-136 closure names",
+          "status": "passed"
+        },
+        {
+          "criterion": "Generated work-order commit messages carry no internal tracker IDs -- the message template names the work-order id and plain-English purpose only",
+          "status": "passed"
+        },
+        {
+          "criterion": "The rewritten comments preserve each site's semantic content in code-valid plain English",
+          "status": "passed"
+        },
+        {
+          "criterion": "build, check, and full test suite exit 0",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-105",
+      "oid": "7f3883272215281aad19fb77e2c837b2",
+      "content_hash": "42c0410731892e67054ea588d6fa45bfb8f18c980e22e69fa728c71bdab289ca"
     }
   ],
   "schema_version": "1.1.0"

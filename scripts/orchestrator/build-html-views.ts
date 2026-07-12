@@ -780,7 +780,7 @@ footer.bottom code { font-family: var(--mono); }
   <div class="title-row">
     <div>
       <h1>pi-context substrate overview</h1>
-      <p class="subtitle">Auto-generated projection of <code class="inline">.project/</code> substrate via canonical pi-context SDK (availableBlocks + readBlock + schemaInfo). Schema-title-as-display-name per DEC-0023. Repo HEAD <code class="inline">${escapedShort}</code>. Generated <code class="inline" id="genStamp">${htmlEscape(data.generated_at)}</code>. cwd <code class="inline">${escapedCwd}</code>. ${totalBlocks} block kinds &middot; ${totalItems} items total.</p>
+      <p class="subtitle">Auto-generated projection of <code class="inline">.project/</code> substrate via canonical pi-context SDK (availableBlocks + readBlock + schemaInfo). Block display names are the schemas' declared titles. Repo HEAD <code class="inline">${escapedShort}</code>. Generated <code class="inline" id="genStamp">${htmlEscape(data.generated_at)}</code>. cwd <code class="inline">${escapedCwd}</code>. ${totalBlocks} block kinds &middot; ${totalItems} items total.</p>
     </div>
     <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">Toggle dark mode</button>
   </div>

@@ -3,7 +3,8 @@
  *
  * This module owns the substrate primitives ported from
  * `analysis/poc-degree-zero-lens/render.ts` and extended with the
- * config-as-canonical-registry shape per the step-2 plan.
+ * config-as-canonical-registry shape (config.json is the canonical
+ * vocabulary registry).
  *
  * Design constraint: imports only from `./context-dir` (path constants),
  * `./schema-validator` (AJV bridge), and node builtins. This module resolves
@@ -597,9 +598,9 @@ function relationsPathForDir(substrateDir: string): string {
  * cannot itself relocate), so honoring `config.root` for blocks/schemas would
  * split the substrate across two dirs (config/relations at the pointer; blocks/
  * schemas at config.root) — incoherent. Substrate relocation is properly done
- * by flipping the pointer (future `/context migrate`, part of the
- * substrate-re-derives-cleanly-rather-than-migrates-in-place decision's
- * step-5), which moves the whole substrate coherently.
+ * by flipping the pointer (a planned `/context migrate`, part of the
+ * substrate-re-derives-cleanly-rather-than-migrates-in-place decision),
+ * which moves the whole substrate coherently.
  *
  * `config.root` is retained as optional config DATA — an optional,
  * display-only override, not the source of truth for substrate location —
@@ -1148,8 +1149,7 @@ export function adoptConception(cwd: string): AdoptResult {
 }
 
 // ── Scoped config amend — closing the earlier gap where no config-write Pi
-// tool existed (in-pi agents couldn't author/amend config.json); part of the
-// dual-surface ceremony-ops decomposition, sub-step A2 ─────────────────────────
+// tool existed (in-pi agents couldn't author/amend config.json) ──────────────
 
 /**
  * Storage shape of a config registry, dictating how `amendConfigEntry` locates,

@@ -14,13 +14,12 @@
  * `.project/decisions.json`. `writerToString` reproduces that exact format
  * across the four `WriterIdentity` discriminants.
  *
- * Out-of-scope for step 3:
+ * Out of scope for this attestation surface:
  *   - Adding author fields to schemas that lack them (schema versioning +
- *     identity + migration territory; step 4)
+ *     identity + migration territory)
  *   - Migrating existing block-api callers to pass `ctx` (incremental;
  *     opt-in by design — never required)
- *   - Deprecating non-ctx writes (no — `ctx` remains optional for the
- *     full rebuild arc)
+ *   - Deprecating non-ctx writes (no — `ctx` remains optional)
  *
  * This module has no external dependencies — pure types + helpers — so it
  * can be imported from block-api.ts, schema-write.ts, or any consumer
@@ -42,7 +41,7 @@ export type WriterIdentity =
 
 /**
  * Optional final argument passed to block-api write functions. The shape
- * stays minimal in step 3 — `writer` is the single field — so future
+ * stays minimal — `writer` is the single field — so future
  * additions (trace ids, run ids, intent labels) extend the interface
  * without breaking existing callers.
  */

@@ -11,10 +11,13 @@
  *
  * Groundwork for the reflecting pi-context CLI (analysis/2026-06-03-pi-context-cli-design-ledger.md):
  * the registry is the single source the auto-tracking CLI reflects. The
- * authGated / surface fields are carried for that downstream consumer; all
- * current pi-context ops are surface:"use" and authGated is left unset here
- * (the auth-gate at the pi-agent-dispatch layer remains the enforcement
- * point, unchanged by this relocation).
+ * authGated / surface fields are carried for that downstream consumer:
+ * `authGated: true` marks the subset of ops that require operator
+ * confirmation (collected into the exported `gatedTools` list below); the
+ * auth-gate at the pi-agent-dispatch layer remains the enforcement point.
+ * `surface` is "use" for every op except list-tools, which is
+ * surface:"process" (it introspects the pi runtime rather than reading or
+ * writing the substrate).
  */
 
 import fs from "node:fs";
@@ -115,7 +118,8 @@ import { writeSchemaMigrationExecute } from "./write-schema-migration-tool.js";
  * the typebox Type.Object schema published as the tool's parameter schema.
  *
  * `surface` partitions ops for the downstream CLI ("use" = read/write substrate
- * ops; "process" reserved for lifecycle/dispatch ops). `authGated` flags ops
+ * ops the CLI reflects; "process" = ops bound to the in-pi runtime that the CLI
+ * must not surface — currently only list-tools). `authGated` flags ops
  * the CLI should treat as requiring credentialed confirmation; it is carried
  * for that consumer and is not the enforcement point (the pi-agent-dispatch
  * auth-gate remains canonical).

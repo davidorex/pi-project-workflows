@@ -115,7 +115,8 @@ const subId = "sub-0000000000000b07";
 }
 
 // Register the `project` alias + the foreign substrate carrying FGAP-7 (the
-// Phase-H mechanism — register + populate; no data migration performed here).
+// planned legacy-substrate registration mechanism — register + populate; no
+// data migration performed here).
 writeSubstrate(cwd, ".foreign", { substrate_id: subId, tasks: [{ id: "FGAP-7" }, { id: "FGAP-8" }] });
 registerSubstrate(cwd, subId, ".foreign", ["project"]);
 

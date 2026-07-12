@@ -9,7 +9,8 @@
  * schema declares any of {created_by, created_at, modified_by, modified_at},
  * items are stamped via `stampItem` from `./dispatch-context` before AJV
  * validation. When `ctx` is undefined, behavior is byte-identical to the
- * pre-step-3 surface — the parameter is purely additive. The has-author-fields
+ * surface as it stood before attestation stamping existed — the parameter is
+ * purely additive. The has-author-fields
  * decision is mtime-cached per (cwd, blockName) to avoid re-reading the
  * schema on every write; mirrors the `loadContext` cache pattern from
  * `context.ts`.
@@ -217,9 +218,10 @@ function schemaTopLevelDeclaredAuthorFields(schema: unknown): ReadonlySet<string
  * '<arrayKey>' declare author fields?" — gets the right answer regardless of
  * nesting depth. Mutates `into` in place.
  *
- * Recursion is bounded by the schema's structural depth — there is no risk
- * of cycles unless the schema uses `$ref` cycles (which AJV would reject as
- * malformed during data validation, and step-3 schemas use no $ref).
+ * Recursion is bounded by the schema's structural depth — this walk descends
+ * only through literal `properties`/`items` objects and never follows `$ref`,
+ * so a `$ref` cycle cannot make it loop (an array item shape reachable only
+ * via `$ref` is simply not visited by this walk).
  */
 function collectArrayItemAuthorDecisions(schema: unknown, into: Map<string, ReadonlySet<string>>): void {
 	if (!schema || typeof schema !== "object") return;
@@ -1544,7 +1546,9 @@ export function updateItemInTypedFile(
  * arbitrary `(filePath, schemaPath, arrayPath)` triples, including
  * top-level array files via `arrayPath === null`.
  *
- * The attestation-carry-forward fix lives here (was in `upsertItemInBlock` prior to Step 6.3):
+ * The attestation-carry-forward fix lives here (it originally lived in
+ * `upsertItemInBlock` and moved here when this generalised primitive was
+ * extracted):
  * on the update branch, declared create-time attestation fields are
  * pre-merged from the existing on-disk item onto the supplied item if
  * absent, so attestation integrity (per the authorship-attestation DispatchContext contract) holds across replacement.

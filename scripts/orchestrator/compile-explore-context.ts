@@ -190,7 +190,7 @@ Structure (use these section headers verbatim; NO additional sections):
 - \`# <Title matching the investigation>\`
 - \`## Site inventory\` — the full per-site table per output_schema_per_site. EVERY row populated. This is the data; aggregates are computed downstream.
 - \`## Audit-grep results\` — one subsection per grep with exact hit count + per-hit classification (table format; no prose interpretation)
-- \`## Cross-references\` — bullet list, ONE LINE per existing-arc match (e.g. \`- pi-workflows source PROJECT_DIR imports → Phase 7 cascade target\`). NO narrative.
+- \`## Cross-references\` — bullet list, ONE LINE per existing-arc match (e.g. \`- pi-workflows source PROJECT_DIR imports → already covered by a planned cascade\`). NO narrative.
 
 Return only: file path + 1-line "anti-pattern check passed" or named violation. NO summary, NO counts (orchestrator computes from table), NO interpretation.
 </output_format>

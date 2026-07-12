@@ -1,7 +1,7 @@
 /**
  * In-process LLM dispatch with phantom-tool structured output enforcement.
  *
- * Implements D4 (jit-agents-spec.md §4): the unified `executeAgent` primitive
+ * The unified `executeAgent` primitive
  * that both workflow agent steps and monitor classify calls consume. There is
  * one dispatch path across the framework — not one for workflows and another
  * for monitors.

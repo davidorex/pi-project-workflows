@@ -1,9 +1,9 @@
 /**
  * Agent contract introspection — projection of an AgentSpec for SDK queries.
  *
- * Implements the introspection surface of the jit-agents boundary contract
- * (jit-agents-spec.md §2). Consumers ask "what does this agent accept and
- * produce" without dispatching it.
+ * Implements the introspection surface of the package's boundary contract
+ * (load, compile, execute, introspect). Consumers ask "what does this agent
+ * accept and produce" without dispatching it.
  */
 import type { AgentContract, AgentSpec } from "./types.js";
 

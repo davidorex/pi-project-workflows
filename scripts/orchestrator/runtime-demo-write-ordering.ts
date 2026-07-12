@@ -182,6 +182,6 @@ function makeScratch(prefix: string): string {
 	pass("(5) id-less nested items are NOT rejected (both appends land)");
 }
 
-console.log(`\n[runtime-demo] ✔ P6: content objects persist ONLY post-validation (no orphan on AJV-fail)`);
-console.log(`[runtime-demo] ✔ P6: successful top-level + nested writes persist their content objects`);
-console.log(`[runtime-demo] ✔ P4: nested id-uniqueness guard rejects dup ids; id-less items pass`);
+console.log(`\n[runtime-demo] ✔ content objects persist ONLY post-validation (no orphan on AJV-fail)`);
+console.log(`[runtime-demo] ✔ successful top-level + nested writes persist their content objects`);
+console.log(`[runtime-demo] ✔ nested id-uniqueness guard rejects dup ids; id-less items pass`);

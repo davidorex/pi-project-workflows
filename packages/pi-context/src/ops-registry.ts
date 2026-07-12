@@ -2496,7 +2496,7 @@ export const INTENTIONALLY_UNEXPOSED_WRITERS: UnexposedWriter[] = [
 	{ libraryFn: "writeRegistry", reason: "internal; registry writes flow through registerSubstrate callers" },
 	{
 		libraryFn: "registerSubstrate",
-		reason: "manual/foreign registration is the clone arc; normal paths auto-register",
+		reason: "manual/foreign registration belongs to the planned substrate-clone feature; current paths auto-register",
 	},
 	{
 		libraryFn: "rollbackBlockFiles",

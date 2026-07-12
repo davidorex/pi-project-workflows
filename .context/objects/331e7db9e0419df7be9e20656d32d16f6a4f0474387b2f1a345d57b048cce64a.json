@@ -1,0 +1,37 @@
+{
+  "description": "Implement FGAP-146: rewrite every OPAQUE-class planning-vocabulary comment site in packages/*/src and scripts/ non-test files to plain English carrying the verified referent from analysis/2026-07-12-planning-vocabulary-jargon-enumeration.md (the enumeration of record: nine families, per-family glosses, per-file site lists), and in the same pass rewrite scripts/'s remaining tracker-ID comment citations (the class the completed ID program never reached there). Drop bare ordinals where an inline gloss already carries the meaning (Constraint N, locked decision N); define taxonomy terms where used (Bucket-2). LOCALLY-DEFINED and FALSE-POSITIVE classes per the enumeration are excluded and stay.",
+  "acceptance_criteria": [
+    "Every OPAQUE-class site from the enumeration's nine families is rewritten to plain English carrying the family's verified referent -- no Cycle-N / Phase-X / Plan-N / Wave-N / F1/F2/G2/P4/P6 / carried-item-N / Divergence-N / spec-section ordinal remains in packages/*/src non-test comments except the enumeration's LOCALLY-DEFINED and FALSE-POSITIVE exclusions",
+    "scripts/ non-test comments carry no tracker-ID citations and no OPAQUE-class planning vocabulary -- both facets covered in the same pass, self-defined inline sequences (STEP 0..6 migration headers) excluded as locally-defined",
+    "Rewrites preserve each site's semantic content: a fresh reader learns what the comment taught, stated in terms of what the code does rather than which planning increment produced it",
+    "The comment-citation scanner reports zero instances repo-wide including scripts/ if its walk covers them; build, check, and full test suite exit 0"
+  ],
+  "files": [
+    "packages/pi-context/src/block-api.ts",
+    "packages/pi-context/src/context.ts",
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/context-registry.ts",
+    "packages/pi-context/src/context-dir.ts",
+    "packages/pi-context/src/content-hash.ts",
+    "packages/pi-context/src/object-store.ts",
+    "packages/pi-context/src/migrations-store.ts",
+    "packages/pi-context/src/promote-item.ts",
+    "packages/pi-context/src/schema-write.ts",
+    "packages/pi-context/src/execution-context.ts",
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-jit-agents/src/compile.ts",
+    "packages/pi-jit-agents/src/types.ts",
+    "packages/pi-jit-agents/src/budget-enforcer.ts",
+    "packages/pi-jit-agents/src/renderer-registry.ts",
+    "packages/pi-jit-agents/src/agent-spec.ts",
+    "packages/pi-workflows/src/types.ts",
+    "packages/pi-workflows/src/test-helpers.ts",
+    "packages/pi-workflows/src/render-by-id.ts",
+    "packages/pi-agent-dispatch/src/auth-gate.ts",
+    "packages/pi-agent-dispatch/src/index.ts",
+    "packages/pi-context-cli/src/pi-bound.ts",
+    "scripts/orchestrator",
+    "scripts/migration"
+  ],
+  "status": "in-progress"
+}

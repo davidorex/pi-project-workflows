@@ -1,5 +1,5 @@
 /**
- * Runtime demo — Cycle 4 / Phase D substrate registry + drift invariant.
+ * Runtime demo — the substrate registry + drift invariant.
  *
  * Exercises the project-root substrate registry end-to-end against a scratch
  * project directory. No npm, no LLM call — pure library invocation against the

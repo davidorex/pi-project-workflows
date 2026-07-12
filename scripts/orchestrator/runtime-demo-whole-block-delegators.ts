@@ -1,5 +1,6 @@
 /**
- * Runtime demo (Step 11 of FEAT-001 template-relocation plan):
+ * Runtime demo (final step of the template-relocation work that moved the
+ * canonical templates into pi-jit-agents):
  *
  * Exercises the canonical Nunjucks render path against the 6 newly-added
  * whole-block delegators via createTemplateEnv (3-tier template search) rooted

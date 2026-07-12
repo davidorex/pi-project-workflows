@@ -1,5 +1,6 @@
 /**
- * Runtime demo (Cycle 9 / G2 — promoteItem + the append id-uniqueness guard):
+ * Runtime demo (cross-substrate item promotion — promoteItem + the append
+ * id-uniqueness guard):
  *
  * Exercises `promoteItem` end-to-end against a scratch project carrying an
  * ACTIVE substrate (subA, the source) + a registered FOREIGN substrate (subB,

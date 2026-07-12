@@ -1,5 +1,5 @@
 /**
- * Runtime demo (Cycle 1 / Phase 0 — dir-targeted block-api primitives):
+ * Runtime demo (the dir-targeted `*ForDir` block-api primitives):
  *
  * Exercises the `*ForDir` write path end-to-end against a scratch project with
  * two substrates (`.subA` active, `.subB` non-active). Proves the new capability:

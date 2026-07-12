@@ -1,9 +1,9 @@
 /**
- * Runtime demo (Cycle 9.2 — nested id-bearing array guard):
+ * Runtime demo (the nested id-bearing array guard):
  *
  * A nested id-bearing array is an id-bearing item embedded inside another item's
  * array — a relationship-as-embedding that should be a top-level entity joined
- * by a closure-table membership edge. This cycle (a) REJECTS a new schema
+ * by a closure-table membership edge. The guard (a) REJECTS a new schema
  * declaring one at the canonical writeSchema / writeSchemaChecked surface, and
  * (b) REPORTS any already-installed carrier as a non-fatal validateContext
  * warning. This demo exercises both ends against scratch substrates.
@@ -13,10 +13,10 @@
  *   (2) writeSchema with a nested NON-id array PASSES;
  *   (3) writeSchema with a depth-0 (top-level) id array PASSES;
  *   (4) writeSchemaChecked({dryRun:true}) with a nested id-bearing schema THROWS;
- *   (4a) writeSchema with a oneOf-branch nested id-bearing schema THROWS (9.3);
- *   (4b) writeSchema with a tuple-items nested id-bearing schema THROWS (9.3);
- *   (4c) a $ref-cycle schema is handled without hanging + rejected (9.3 cycle-guard);
- *   (4d) a $ref-self-cycle whose $def carries the id is rejected (9.3 fresh-seed id-peek);
+ *   (4a) writeSchema with a oneOf-branch nested id-bearing schema THROWS (predicate hardening);
+ *   (4b) writeSchema with a tuple-items nested id-bearing schema THROWS (predicate hardening);
+ *   (4c) a $ref-cycle schema is handled without hanging + rejected (the hardened predicate's cycle-guard);
+ *   (4d) a $ref-self-cycle whose $def carries the id is rejected (the hardened predicate's fresh-seed id-peek);
  *   (5) a scratch substrate carrying a layer-plans-shaped schema → validateContext
  *       emits a `nested_id_bearing_array` WARNING (not error) and status is not
  *       flipped to "invalid" by it alone;
@@ -165,9 +165,10 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 	pass("(4) writeSchemaChecked({dryRun:true}) THROWS on a nested id-bearing schema; nothing written");
 }
 
-// ── (4a) writeSchema rejects a oneOf-branch nested id-bearing schema (9.3) ───
-// id buried in a oneOf branch of the nested array's items — 9.2 keyed only on
-// items.properties.id and would have MISSED this; 9.3 must reject it.
+// ── (4a) writeSchema rejects a oneOf-branch nested id-bearing schema ───
+// id buried in a oneOf branch of the nested array's items — the initial guard
+// keyed only on items.properties.id and would have MISSED this; the hardened
+// predicate must reject it.
 {
 	const cwd = makeCwd("oneof");
 	const oneOfNestedId: Record<string, unknown> = {
@@ -209,7 +210,7 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 	pass("(4a) writeSchema THROWS on a oneOf-branch nested id-bearing schema, naming plans.layers; file unwritten");
 }
 
-// ── (4b) writeSchema rejects a tuple-items nested id-bearing schema (9.3) ─────
+// ── (4b) writeSchema rejects a tuple-items nested id-bearing schema ─────
 {
 	const cwd = makeCwd("tuple");
 	const tupleNestedId: Record<string, unknown> = {
@@ -249,7 +250,7 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 	pass("(4b) writeSchema THROWS on a tuple-items nested id-bearing schema, naming plans.layers; file unwritten");
 }
 
-// ── (4c) a $ref-cycle schema is handled without hanging (9.3 cycle-guard) ─────
+// ── (4c) a $ref-cycle schema is handled without hanging (cycle-guard) ─────
 // A self-referential + mutually-recursive $defs graph must terminate. If the
 // cycle-guard regresses this loops forever and the demo never reaches PASS.
 {
@@ -296,7 +297,7 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 	pass(`(4c) writeSchema handles a $ref-cycle schema WITHOUT hanging (${elapsedMs}ms) and rejects it`);
 }
 
-// ── (4d) a $ref-self-cycle whose $def carries the id is rejected (9.3 fresh seed) ─
+// ── (4d) a $ref-self-cycle whose $def carries the id is rejected (fresh seed) ─
 // `root` items resolve to $def A; A.kids ($ref back to A, depth ≥ 1) and A declares
 // `properties.id`. The structural descent records #/$defs/A before the id-peek runs;
 // if the id-peek shared that visited set it would short-circuit the kids→A $ref and
@@ -338,7 +339,7 @@ const topLevelIdArraySchema: Record<string, unknown> = {
 	pass(`(4d) writeSchema REJECTS a $ref-self-cycle whose $def carries the id (root.kids), ${elapsedMs}ms`);
 }
 
-// ── (4e) a composition-routed $ref cycle terminates without overflow (9.3) ────
+// ── (4e) a composition-routed $ref cycle terminates without overflow ────
 // The form that surfaced the CRITICAL: a `$ref` cycle routed THROUGH a oneOf/
 // anyOf/allOf branch back to an ancestor `$def`. Pre-fix the structural
 // composition-branch descent reseeded the pointer-visited set to a throwaway clone

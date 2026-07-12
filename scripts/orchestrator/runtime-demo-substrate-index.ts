@@ -1,20 +1,21 @@
 /**
- * Runtime demo (Cycle 7 / Phase F1 — SubstrateIndex split):
+ * Runtime demo (the SubstrateIndex split):
  *
  * Exercises `buildIdIndex` end-to-end against a scratch substrate carrying a
  * MIX of stamped (oid-bearing) and unstamped items, plus a refname collision,
- * and proves the F1 inertness properties:
+ * and proves the split's inertness properties:
  *
  *   (a) byRefname.size === items.length  (when there is NO refname collision)
  *   (b) byOid holds ONLY the stamped items (the unstamped item is absent)
  *   (c) iterating `byRefname.values()` (the walker surface) visits each refname
  *       exactly once — and a stamped item appears ONCE in items / byRefname /
- *       byOid (the anti-double-count property F2 relies on)
+ *       byOid (the anti-double-count property the cross-substrate reference
+ *       resolver relies on)
  *   (d) first-writer-wins collision: a duplicate refname collapses to one
  *       byRefname entry (first writer) while `items` keeps both — and the
  *       walker surface still visits it once (behavior-preserving)
  *   (e) validateContext over a fixture run TWICE → byte-identical issue lists
- *       (the whole point of F1: zero behavior change / inertness)
+ *       (the whole point of the split: zero behavior change / inertness)
  *
  * Pure library invocation (no npm, no LLM call, no pi subprocess) against the
  * canonical context-sdk surface. Console PASS markers; process.exit(1) on the

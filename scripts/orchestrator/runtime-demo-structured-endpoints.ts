@@ -1,5 +1,5 @@
 /**
- * Runtime demo — Cycle 5 / Phase E structured EdgeEndpoint model + dual-form
+ * Runtime demo — the structured EdgeEndpoint model + dual-form
  * consumers/validators + relation porcelain.
  *
  * Exercises the end-to-end feature path against a scratch substrate via the
@@ -15,7 +15,7 @@
  *      edges → the lens-bin edge validates as a bin, the same-substrate item
  *      resolves, a foreign endpoint is treated as unresolved.
  *   4. No-regression: validateContext over a string-only fixture is byte-identical
- *      to the pre-Cycle-5 string semantics (endpointKey on a string is identity).
+ *      to the legacy string-endpoint semantics (endpointKey on a string is identity).
  *
  * PASS markers on stdout; process.exit(1) on any failed assertion.
  */
@@ -90,7 +90,7 @@ try {
 
 	// ── Step 3: mixed-form + foreign substrate ─────────────────────────────────
 	// Append a foreign edge whose substrate IS registered + populated; validation
-	// must STILL treat it as unresolved (no Cycle-8 resolution).
+	// must STILL treat it as unresolved (no cross-substrate resolution here).
 	const foreignDir = ".context-foreign";
 	const foreignId = "sub-bbbbbbbbbbbbbbbb";
 	fs.mkdirSync(path.join(tmpDir, foreignDir, "schemas"), { recursive: true });

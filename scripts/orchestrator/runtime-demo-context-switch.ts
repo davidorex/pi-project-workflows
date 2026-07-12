@@ -1,5 +1,6 @@
 /**
- * Runtime demo (Step 10 of TASK-094 plan):
+ * Runtime demo (final verification step of the /context switch command-family
+ * implementation):
  *
  * Exercises flipBootstrapPointer end-to-end via a tmp working directory.
  * Verifies the pointer-history flow: initial state → flip to dir-A →

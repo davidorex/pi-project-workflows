@@ -1,5 +1,5 @@
 /**
- * Runtime demo (Cycle 3 / Phase C — OID minting + identity stamping):
+ * Runtime demo (OID minting + identity stamping):
  *
  * Exercises the live write path end-to-end against a scratch substrate that
  * carries a real identity-declaring block schema + a minted substrate_id. Pure
@@ -7,7 +7,7 @@
  * block-api primitives — the SAME `appendToBlock` / `updateItemInBlock` surface
  * in-pi agents reach via registered tools.
  *
- * Demonstrates the locked Cycle-3 properties:
+ * Demonstrates the locked identity-stamping design properties:
  *   (a) append a real item → oid (^[0-9a-f]{32}$) + content_hash present, NO
  *       content_parent (v1), object persisted at objects/<content_hash>.json
  *   (b) update CONTENT → content_hash moves, content_parent = the prior hash,

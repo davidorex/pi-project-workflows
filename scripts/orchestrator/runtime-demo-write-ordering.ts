@@ -1,19 +1,19 @@
 /**
- * Runtime demo (Cycle 9.1 — write-path ordering: P6 post-validation object
- * persistence + P4 nested id-uniqueness guard):
+ * Runtime demo (write-path ordering: post-validation object
+ * persistence + the nested id-uniqueness guard):
  *
  * Exercises the block-api write path end-to-end against a scratch substrate
  * (config carrying substrate_id + an identity-declaring schema with a nested
  * id-bearing array) and proves:
  *
  *   (1) an AJV-failing whole-block write leaves `objects/` EMPTY (no orphan
- *       content object) — object persistence is post-validation (P6);
+ *       content object) — object persistence is post-validation;
  *   (2) a successful whole-block write persists the stamped item's content
  *       object under its content_hash;
  *   (3) a successful NESTED-array append persists the nested item's content
  *       object (the load-bearing no-regression — nested items still get their
  *       objects written);
- *   (4) a nested-array duplicate id throws (P4 nested guard, label names
+ *   (4) a nested-array duplicate id throws (the nested guard, label names
  *       parent.nested);
  *   (5) a nested id-less item does NOT throw.
  *

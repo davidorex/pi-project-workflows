@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-144: give the diagnostic/validator json-aggregate ops (context-validate, context-validate-relations, validate-roadmap) a size-narrowing axis paralleling the item-read family -- optional severity / block / code filters and/or offset+limit pagination so issues[] reads in bounded slices -- and make the json over-cap boundary refusal name the concrete narrowing parameter (mirroring the read channel's overCapDirective) instead of the mechanism-less 'Narrow your read.'",
+  "acceptance_criteria": [
+    "context-validate, context-validate-relations, and validate-roadmap each accept a narrowing parameter set (severity/block/code filter and/or offset+limit) that bounds the returned issues[], with a unit pin per op",
+    "A synthetic over-cap validation result is retrievable in full through bounded slices -- the previously-unreachable case, pinned by a fixture that exceeds the 50KB cap",
+    "The json-channel over-cap refusal names the concrete narrowing parameter for ops that declare one, mirroring the read channel's directive shape",
+    "Unfiltered/unpaginated calls return the exact prior shape (regression -- additive parameters only)",
+    "build, check, and full test suite exit 0; docs-surface-sync applied (op descriptions, README statements about the validators, skill narrative if op strings change, CHANGELOG)"
+  ],
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/context-sdk.ts"
+  ],
+  "status": "planned"
+}

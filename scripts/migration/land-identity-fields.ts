@@ -1,12 +1,13 @@
 #!/usr/bin/env tsx
 /**
  * land-identity-fields — ergonomics wrapper around
- * land-identity-fields.landIdentityFieldsForDir (Cycle 10 H1-precursor).
+ * land-identity-fields.landIdentityFieldsForDir (precursor step to the
+ * substrate content-addressing migration).
  *
  * Lands the three content-addressed-identity field DECLARATIONS
  * (oid / content_hash / content_parent) as OPTIONAL item properties onto every
  * registered block_kind schema of the TARGET substrate that lacks them — the
- * precondition the H1 migration's step-0 readiness gate
+ * precondition the content-addressing migration's step-0 readiness gate
  * (schemaDeclaresIdentityFields) checks. Surgical inject (each schema's existing
  * constraints preserved); the fields are never added to `required`.
  *
@@ -14,7 +15,7 @@
  * NOT the active-pointer substrate — so the orchestrator can land a specific
  * `.project` / `.context` / `.context-jit-spec-v2` without flipping the pointer.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library through
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library through
  * the corresponding Pi tool; this script is the Claude-Code-side parallel — same
  * library underneath, different consumer wrapper. Both thin; logic in the library.
  *

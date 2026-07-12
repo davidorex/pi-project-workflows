@@ -1,5 +1,5 @@
 /**
- * Runtime demo (Cycle 10 / Phase H1 — the §H content-addressing migration).
+ * Runtime demo (the substrate content-addressing migration).
  *
  * The orchestrator's rehearsal before the real-repo dry-run + apply. Builds a
  * two-substrate scratch project end-to-end and exercises

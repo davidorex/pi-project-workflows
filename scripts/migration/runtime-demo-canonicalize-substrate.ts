@@ -1,5 +1,5 @@
 /**
- * Runtime demo (Cycle 10 — the substrate CANONICALIZER + triple-buffer CLI).
+ * Runtime demo (the substrate CANONICALIZER + triple-buffer CLI).
  *
  * The orchestrator's rehearsal before the real `.project-migrate` dupe-run-swap.
  * Builds a scratch substrate (depth-3 nested tree promoted THROUGH A SYNTHESIZED

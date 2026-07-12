@@ -8,7 +8,7 @@
  * written with its optional ordinal. An absent old edge degrades to an append of
  * the new edge. Semantic integrity is NOT touched — run context-validate after.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context-sdk.replaceRelationByRef) through the Pi tool `replace-relation`
  * registered via the op-registry. This script is the Claude-Code-side parallel.
  *
@@ -127,7 +127,7 @@ function main(): void {
 	const ctx: DispatchContext = { writer };
 
 	// The dry-run path delegates to the SHARED library preview (replaceRelationByRef
-	// with { dryRun: true }, TASK-010): it validates the prospective post-replace
+	// with { dryRun: true }): it validates the prospective post-replace
 	// relations (write-path parity) and computes the same removed/replaced
 	// would-decisions, writing nothing. `wouldRemove` ← removed; `wouldWriteNew` ←
 	// replaced (= !collides). Messaging uses the original string selectors.

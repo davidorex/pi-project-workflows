@@ -4,7 +4,7 @@
  *
  * Wraps the canonical `deriveBootstrapState` library function from
  * @davidorex/pi-context/context-sdk. State is DERIVED purely from the
- * filesystem (DEC-0040 — nothing stored): the five-state progression
+ * filesystem (state is always derived fresh, never hand-stored): the five-state progression
  *   no-pointer    — no .pi-context.json
  *   no-config     — pointer present, no config.json
  *   skeleton      — config present but empty of vocabulary (the init / switch -c
@@ -13,7 +13,7 @@
  *   ready         — config present + populated, all declared assets materialized (or none)
  * plus the resolved contextDir and the declared-but-unmaterialized assets.
  *
- * Per DEC-0019/0020 dual-surface pattern: this CLI script + the matching pi
+ * Per the dual-surface pattern: this CLI script + the matching pi
  * tool (context-bootstrap-state) + the underlying deriveBootstrapState library
  * function ship as one unit. The CLI doubles as executable specification of the
  * bootstrap-state derivation contract for Claude Code-side ergonomics, mirroring

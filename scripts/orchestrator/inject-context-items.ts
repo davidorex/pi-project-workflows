@@ -8,7 +8,7 @@
  *   - json   — array of items (single-source-of-truth raw projection)
  *   - xml    — each item wrapped in <item block="X" id="Y">...</item>
  *   - markdown — per-block-kind macro projection (fallback rendering until
- *                FGAP-037 ships render macros for newer block kinds)
+ *                per-block-kind render macros exist for the newer block kinds)
  *
  * Per the dogfood rationale, this script doubles as schema-shape discovery test
  * surface: friction points encountered while running it get filed as follow-up
@@ -19,7 +19,7 @@
  *   - id field name is assumed `id` for all blocks (no per-block id-field
  *     declaration in the registry); violations get surfaced as FGAPs
  *
- * Closes FGAP-038 (Claude-Code-side item-level context injection).
+ * Closes the missing Claude-Code-side item-level context-injection surface.
  *
  * Usage:
  *   tsx scripts/orchestrator/inject-context-items.ts \
@@ -181,7 +181,7 @@ function main(): void {
 	} else if (args.format === "xml") {
 		console.log(projected.map((p) => renderXml(p.selector, p.item)).join("\n\n"));
 	} else {
-		// markdown fallback (FGAP-037 will replace with per-block-kind macros)
+		// markdown fallback (to be replaced by per-block-kind render macros)
 		console.log(projected.map((p) => renderMarkdownFallback(p.selector, p.item)).join("\n---\n\n"));
 	}
 }

@@ -4,12 +4,13 @@
  * substrate (every installed block kind + every top-level field + every item)
  * at html-views/substrate-overview.html.
  *
- * Per CLAUDE.md "Orchestrator scripts dual-surface" (DEC-0019/0020): this is
+ * Per CLAUDE.md "Orchestrator scripts dual-surface": this is
  * the Claude-Code-side ergonomics wrapper over the same pi-context library
  * surface (context-sdk's availableBlocks + schemaInfo + block-api's readBlock)
  * that in-pi harness-confined agents reach via Pi-registered tools. No direct
  * fs.readFileSync on .project/*.json — all substrate access flows through the
- * canonical SDK surface so substrate-dir resolution (DEC-0015) and
+ * canonical SDK surface so pointer-based substrate-dir resolution (the dir
+ * name is never hardcoded) and
  * DispatchContext attestation paths stay honored.
  *
  * Lossless contract (BINDING):

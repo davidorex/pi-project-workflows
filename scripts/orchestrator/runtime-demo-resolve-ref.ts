@@ -1,6 +1,6 @@
 /**
- * Runtime demo (Cycle 8 / Phase F2 — resolveRef + the validator severity split +
- * cross-substrate resolution):
+ * Runtime demo (the cross-substrate reference resolver — resolveRef + the
+ * validator severity split):
  *
  * Exercises `resolveRef` + `validateContext` end-to-end against a scratch project
  * carrying an ACTIVE substrate + a registered FOREIGN substrate, and proves:
@@ -9,8 +9,10 @@
  *       active, absent → dangling; structured foreign registered+present →
  *       foreign; substrate_id unregistered → unregistered.
  *   (b) a legacy `project:`-string edge is `unregistered` BEFORE the `project`
- *       alias is registered and `foreign` CLEAN AFTER — the exact mechanism that
- *       will clear the real 30 at Phase H (without doing the migration here).
+ *       alias is registered and `foreign` CLEAN AFTER — the exact mechanism by
+ *       which the planned legacy-substrate registration + string-endpoint
+ *       migration will clear the real 30 such edges (without doing the
+ *       migration here).
  *   (c) the per-pass foreign-index cache builds the foreign index ONCE for N
  *       edges into the same substrate (cache size === 1 after N resolutions).
  *

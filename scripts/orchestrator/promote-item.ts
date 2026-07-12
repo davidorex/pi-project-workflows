@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * promote-item — cross-substrate item promotion (Cycle 9 / G2)
+ * promote-item — cross-substrate item promotion
  *
  * Wraps the canonical `promoteItem` library function from
  * @davidorex/pi-context/promote-item. Copies a source item into a registered
@@ -10,7 +10,7 @@
  * (parent = the new derived item, child = the source), and — when the source
  * block's status enum supports it — marks the source superseded.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * (promote-item) + the underlying promoteItem library function ship as one
  * unit. The script doubles as executable specification of the promotion
  * contract; it is the Claude-Code-side ergonomics twin of the in-pi tool.

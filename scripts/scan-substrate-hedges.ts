@@ -6,11 +6,13 @@
  * audit (the process templated at
  * analysis/2026-07-11-gap-fork-provenance-audit-brief-template.md).
  *
- * TASK-120/TASK-121. This script pre-identifies; it corrects nothing and
+ * Companion to the write-time rhetorical-register enforcement in block-api.
+ * This script pre-identifies; it corrects nothing and
  * writes nothing into the substrate. It is a triage pass over potentially
  * hundreds of items so audit candidates are found systematically instead of
- * an orchestrator happening to read the right gap — the manual FGAP-124/125/
- * 126/127 fork-provenance audits (2026-07-10/11) are the process this feeds.
+ * an orchestrator happening to read the right gap — the manual fork-provenance
+ * audits of the four work-order-dispatch dogfood gaps (2026-07-10/11) are the
+ * process this feeds.
  *
  * Items in a per-block-kind terminal status (see `TERMINAL_STATUSES` below —
  * e.g. framework-gaps "closed", tasks "completed"/"cancelled", decisions
@@ -36,16 +38,18 @@
  *
  * The heuristic categories are grounded in the real hedges the manual audits
  * confirmed (not abstract guesses):
- *   - fork: enumerated-alternative language. Confirmed real instances:
- *     FGAP-125 proposed_resolution "... — or amend the schema to stop
- *     declaring semantics ..." (dash-or); pre-correction FGAP-126 "...(the
+ *   - fork: enumerated-alternative language. Confirmed real instances from
+ *     those audited gap filings: the work-order contract-parity gap's
+ *     proposed_resolution "... — or amend the schema to stop
+ *     declaring semantics ..." (dash-or); the non-interactive gated-ceremony
+ *     gap's pre-correction "...(the
  *     interactive orchestrator authors; ...) or give the pi-only gated tools
  *     an explicit pre-authorization channel ..." (paren-or) and "gating the
  *     composite (run-work-order-loop) or routing its commit through the
  *     gated tool path" (or + gerund); the source report's lettered
  *     "(a) ... (b) ... (c)" option list.
  *   - deferral: explicit decision-postponement. Confirmed real instance:
- *     pre-correction FGAP-126's "..., as a decision" (the exact phrase the
+ *     the same gap's pre-correction "..., as a decision" (the exact phrase the
  *     2026-07-10 provenance audit found to be filing-time augmentation);
  *     plus the standard TBD / open-question / user's-call vocabulary.
  *   - modal-hedge: uncertainty vocabulary (might/could/unclear/unknown/...).
@@ -54,7 +58,7 @@
  * match is a candidate, listed plainly with what matched and where.
  * Grounded-vs-invented is exactly what the downstream per-item agent audit
  * determines, not this script — a flagged fork may turn out to be grounded
- * (FGAP-124's and FGAP-127's forks were audited and left standing).
+ * (two of the four dogfood-gap forks were audited and left standing).
  *
  * Not a gate: informational tooling only, never wired into `npm run check`,
  * husky, or CI. Exit code is non-zero only on genuine I/O / substrate-read
@@ -95,10 +99,10 @@ export const HEDGE_PATTERNS: readonly HedgePattern[] = [
 	{ id: "and-or", category: "fork", regex: /\band\/or\b/i },
 	// Bounded gap (no sentence-enders between) so "either" and "or" must share a clause.
 	{ id: "either-or", category: "fork", regex: /\beither\b[^.;:\n]{0,160}?\bor\b/i },
-	// FGAP-125's confirmed live fork shape: "... the loop can check) — or amend the schema ..."
+	// A confirmed live fork shape from the manual audits: "... the loop can check) — or amend the schema ..."
 	{ id: "dash-or", category: "fork", regex: /[—–]\s*or\b|\s-\s+or\b/i },
 	{ id: "semicolon-or", category: "fork", regex: /;\s*or\b/i },
-	// Pre-correction FGAP-126's confirmed shape: "...(...) or give the pi-only gated tools ..."
+	// Another confirmed pre-correction shape: "...(...) or give the pi-only gated tools ..."
 	{ id: "paren-or", category: "fork", regex: /\)\s+or\b/ },
 	// "gating the composite ... or routing its commit ..." — an or joining gerund
 	// alternatives is an action fork. Excludes or-nothing/-something/... noise.
@@ -109,7 +113,7 @@ export const HEDGE_PATTERNS: readonly HedgePattern[] = [
 	},
 	// Lettered option lists "(a) ... (b)". Numbered "(1) ... (2)" is deliberately
 	// NOT matched: in this substrate's live prose it enumerates facts/facets
-	// (e.g. FGAP-126's description), not alternatives.
+	// (e.g. a gap description enumerating its facets), not alternatives.
 	{ id: "lettered-options", category: "fork", regex: /\(a\)[\s\S]{1,400}?\(b\)/i },
 	{
 		id: "option-enum",
@@ -120,7 +124,7 @@ export const HEDGE_PATTERNS: readonly HedgePattern[] = [
 	{ id: "alternatively", category: "fork", regex: /\balternatively\b/i },
 
 	// ── deferral: explicit decision-postponement ──
-	// The exact phrase the FGAP-126 provenance audit confirmed as filing-time
+	// The exact phrase one manual provenance audit confirmed as filing-time
 	// augmentation ("... equivalent to the CLI --yes, as a decision").
 	{ id: "as-a-decision", category: "deferral", regex: /\bas a decision\b/i },
 	// Case-sensitive: lowercase "tbd" inside identifiers must not fire.

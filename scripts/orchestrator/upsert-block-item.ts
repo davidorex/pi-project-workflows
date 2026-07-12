@@ -9,7 +9,7 @@
  * ergonomics as file-block-item: schema-aware pre-validation, error translation,
  * DispatchContext from --writer, --show-schema, --dry-run.
  *
- * Per DEC-0014/0016: in-pi harness-confined agents use the Pi tool surface
+ * Per the dual-surface discipline: in-pi harness-confined agents use the Pi tool surface
  * (upsert-block-item registered via the op-registry). This script is the
  * Claude-Code-side parallel — same library underneath (block-api), different
  * consumer wrapper. Both layers thin; business logic in the library.
@@ -216,7 +216,7 @@ function main(): void {
 	}
 
 	if (args.dryRun) {
-		// Delegate to the shared library preview path (TASK-011): upsertItemInBlock
+		// Delegate to the shared library preview path: upsertItemInBlock
 		// under { dryRun: true } computes mode, builds + validates the STAMPED
 		// prospective whole block with the same validation the write path applies,
 		// and writes nothing. The ctx is threaded so the prospective is stamped

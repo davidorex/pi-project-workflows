@@ -1,5 +1,6 @@
 /**
- * Runtime demo (Cycle 2 / Phases A+B — content-addressed substrate identity):
+ * Runtime demo (content-addressed substrate identity — the content-hash +
+ * object-store foundation):
  *
  * Exercises the content-hash primitives + content projection + object store
  * end-to-end against a scratch tmp directory. Pure library invocation (no npm,

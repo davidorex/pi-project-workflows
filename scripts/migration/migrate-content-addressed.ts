@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 /**
  * migrate-content-addressed — Claude-Code-side ergonomics wrapper around the
- * §H content-addressing migration (`migrateToContentAddressed`).
+ * substrate content-addressing migration (`migrateToContentAddressed`).
  *
- * Per DEC-0019/0020 dual-surface discipline: in-pi harness-confined agents reach
+ * Per the dual-surface discipline (library + Pi tool + Claude-Code-side
+ * script): in-pi harness-confined agents reach
  * the same library through the Pi tool `migrate-content-addressed` registered in
  * pi-context/index.ts; this script is the Claude-Code-side parallel. Both layers
  * thin; business logic in the library.

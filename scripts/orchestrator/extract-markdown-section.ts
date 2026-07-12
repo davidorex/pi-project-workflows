@@ -4,7 +4,7 @@
  *
  * Reads a markdown file + emits content of a specific top-level section by header.
  * Used to pluck a Site Inventory table from an explore report, a phase row from
- * the canonical sub-phase analysis, etc.
+ * a plan's sub-phase analysis document, etc.
  *
  * Usage:
  *   tsx scripts/orchestrator/extract-markdown-section.ts --file <path> --section "## Site inventory"

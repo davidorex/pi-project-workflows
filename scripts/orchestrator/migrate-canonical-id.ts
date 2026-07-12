@@ -1,16 +1,17 @@
 #!/usr/bin/env tsx
 /**
- * migrate-canonical-id — Claude-Code-side dual surface for the FGAP-060 /
- * DEC-0035 canonical_id rename engine.
+ * migrate-canonical-id — Claude-Code-side dual surface for the
+ * canonical_id rename engine (there was no automatic cross-file value-rename
+ * path; renames are rare, deliberate, migration-grade operations).
  *
  * Wraps the canonical renameCanonicalId library function from
  * @davidorex/pi-context/rename-canonical-id. canonical_ids are
  * primary-key-permanent; this is the rare deliberate-rename path. The engine
- * operates on the EDGE model (DEC-0013) — item references live ONLY as
- * relations.json edges, so there is NO inline-FK sweep. Out-of-substrate
+ * operates on the EDGE model (all inter-item references live ONLY as
+ * relations.json edges, never inline FK fields), so there is NO inline-FK sweep. Out-of-substrate
  * occurrences (analysis MDs, git history) are REPORTED, never rewritten.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * (rename-canonical-id) + the underlying renameCanonicalId library function
  * ship as one unit. The script doubles as executable specification of the
  * rename contract.

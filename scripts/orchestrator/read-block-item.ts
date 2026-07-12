@@ -6,9 +6,9 @@
  * @davidorex/pi-context/context-sdk. Reads ONE item from a named block by
  * its id (block-scoped — unlike resolve-item-by-id, which searches all
  * blocks by kind-prefixed id). Avoids fetching a whole large block to get
- * one item (FGAP-045: read-block is all-or-nothing + caps at 50KB).
+ * one item (read-block is all-or-nothing + caps at 50KB).
  *
- * Per DEC-0019/0020 dual-surface pattern: this CLI script + the matching
+ * Per the dual-surface pattern: this CLI script + the matching
  * pi tool (read-block-item) + the underlying library function ship as one
  * unit. The script doubles as executable specification of the contract.
  *

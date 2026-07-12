@@ -1,10 +1,11 @@
 #!/usr/bin/env tsx
 /**
- * canonicalize-substrate — Claude-Code-side orchestrator for the Cycle-10
+ * canonicalize-substrate — Claude-Code-side orchestrator for the one-shot
  * substrate canonicalizer (`canonicalizeSubstrate`) PLUS the triple-buffer
  * (dupe / verify / swap) that de-risks the one-shot transform.
  *
- * Per DEC-0019/0020 dual-surface discipline: in-pi harness-confined agents reach
+ * Per the dual-surface discipline (every capability ships as a library function
+ * plus a Pi tool plus a Claude-Code-side script): in-pi harness-confined agents reach
  * the canonicalizer through the Pi tool `canonicalize-substrate` (registered in
  * pi-context/index.ts), which canonicalizes the ACTIVE substrate in place; this
  * script is the Claude-Code-side parallel and additionally owns the triple-buffer

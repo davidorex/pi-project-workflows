@@ -10,7 +10,7 @@
  * - --show-schema upfront contract display
  * - --dry-run validate without writing
  *
- * Per DEC-0014/0016: in-pi harness-confined agents use the Pi tool surface
+ * Per the dual-surface discipline: in-pi harness-confined agents use the Pi tool surface
  * (append-block-item registered in pi-context/index.ts). This script is the
  * Claude-Code-side parallel — same library underneath (block-api), different
  * consumer wrapper. Both layers thin; business logic in the library.
@@ -96,7 +96,8 @@ function loadBlockSchema(cwd: string, block: string): BlockSchemaInfo {
 	const schema = JSON.parse(fs.readFileSync(schemaPath, "utf-8"));
 	// resolveBlockItemSchema dereferences a `$ref` items subschema (e.g.
 	// features -> #/definitions/feature) so properties/required/id.pattern read
-	// correctly for $ref blocks (FGAP-083), not just inline-items blocks.
+	// correctly for $ref blocks, not just inline-items blocks (auto-id used to
+	// throw on any $ref-item block because the fragment has no top-level properties).
 	let resolved: { arrayKey: string; itemSchema: any };
 	try {
 		resolved = resolveBlockItemSchema(schema);
@@ -240,7 +241,8 @@ function main(): void {
 	if (args.dryRun) {
 		console.error("[dry-run] validating prospective whole file against schema; no write");
 		try {
-			// Whole-file validation (FGAP-082): build the prospective file
+			// Whole-file validation (item-only validation misses file-level
+			// constraints): build the prospective file
 			// {...existing, [arrayKey]: [...existing items, item]} and validate it
 			// against the WHOLE schema — resolves $ref/definitions and matches
 			// exactly what appendToBlock validates on write (dry-run PASS == write PASS).

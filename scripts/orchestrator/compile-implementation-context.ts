@@ -12,12 +12,13 @@
  *
  * Per-investigation parameterization: --verification-gates / --demo-spec /
  * --stop-triggers / --report-back-format point to markdown fragments under
- * scripts/orchestrator/templates/. Default fragments preserve FGAP-026
- * fixture-cascade audit behavior; new investigations supply their own.
+ * scripts/orchestrator/templates/. Default fragments preserve the behavior of
+ * this composer's first use (the fixture-cascade audit of the
+ * config-driven-substrate-location closure); new investigations supply their own.
  * Removes the hardcode that over-fit the script to its first use case
- * (extends FGAP-039 root-pattern fix to the implementation composer).
+ * (extends the same de-hardcoding fix to the implementation composer).
  *
- * Per DEC-0019 (scripts as canonical Claude Code-side composition surface).
+ * Per the dual-surface discipline (scripts as canonical Claude Code-side composition surface).
  * Per the TABLES-ONLY rule (no prose summary; aggregation is orchestrator's job).
  *
  * Usage:

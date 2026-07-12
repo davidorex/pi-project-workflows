@@ -5,10 +5,10 @@
  * Wraps the canonical readBlockPage library function from
  * @davidorex/pi-context/context-sdk. Returns a page of a block's items as
  * { items, total, hasMore } so callers can walk blocks too large to fetch
- * whole (FGAP-045: read-block is all-or-nothing + caps at 50KB; e.g.
+ * whole (read-block is all-or-nothing + caps at 50KB; e.g.
  * framework-gaps at 88 items / 346KB blows the cap).
  *
- * Per DEC-0019/0020 dual-surface pattern: this CLI script + the matching
+ * Per the dual-surface pattern: this CLI script + the matching
  * pi tool (read-block-page) + the underlying library function ship as one
  * unit. The script doubles as executable specification of the contract.
  *

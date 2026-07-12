@@ -4,10 +4,11 @@
  *
  * Reads the active substrate's config.json via the canonical loadContext
  * library function and projects out the canonical_id of each declared
- * tool-operation entry (FEAT-010 bounded composites). The launch script
+ * tool-operation entry (the bounded composite-tool instances: framework-
+ * implemented composite KINDs, config-declared per-project instances). The launch script
  * (scripts/launch-constrained-pi.sh) consumes the JSON form to compose the
  * per-target --tools surface; a future Pi tool may consume the same library
- * surface per the DEC-0019/0020 dual-surface canon.
+ * surface per the dual-surface canon.
  *
  * Degrades quietly on config-absent (no .pi-context.json pointer OR no
  * config.json) by exiting with code 4 and an explanatory stderr line. The

@@ -7,15 +7,15 @@
  * to map N input ids → N {block, arrayKey, item}|null entries against a
  * single buildIdIndex traversal, replacing the N×singular-call pattern.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * (resolve-items-by-id) + the underlying library function ship as one unit.
  * The script doubles as executable specification of the bulk-resolve
  * contract. Coexists with scripts/orchestrator usage of the singular
  * resolve-item-by-id pi tool / resolveItemById library function — bulk
  * variant adds the multi-id surface, never supersedes the singular form.
  *
- * SURFACED-GAPS (per DEC-0019 dual-role): closes part of the FGAP-026
- * phase 2 high-impact query-surface gap (TASK-035). No new gaps surfaced
+ * SURFACED-GAPS (per the scripts' dual role as executable specifications):
+ * closes the bulk-lookup part of the missing query-surface primitives. No new gaps surfaced
  * during the writing of this script — the buildIdIndex prefix-vs-block
  * invariant already lives behind resolveItemsByIds; orchestrator surfacing
  * is a pure ergonomics layer.

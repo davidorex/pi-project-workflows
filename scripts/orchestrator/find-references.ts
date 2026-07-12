@@ -6,10 +6,10 @@
  * @davidorex/pi-context/lens-view. Returns Edge[] (NOT string[]) —
  * distinguishing semantic vs the id-chain walk-ancestors / walk-descendants
  * orchestrator scripts. Surfaces edge-level inspection with relation_type +
- * ordinal preserved per record. TASK-037 / Phase 2 sub-phase 2.4 — final
- * Phase 2 atomic unit of the FGAP-026 closure arc.
+ * ordinal preserved per record. The final atomic unit of the query-surface
+ * build-out that gave the orchestrator its missing substrate query primitives.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * (find-references) + the underlying findReferences / findReferencesInRepo
  * library functions ship as one unit. The script doubles as executable
  * specification of the edge-inspection contract. Coexists with walk-ancestors
@@ -19,8 +19,8 @@
  *   walk-ancestors    — reverse id traversal
  *   find-references   — both-directions edge inspection
  *
- * SURFACED-GAPS (per DEC-0019 dual-role): closes the edge-level half of the
- * Phase 2 query-surface gap (FGAP-026 closure). No new gaps surfaced during
+ * SURFACED-GAPS (per the scripts' dual role as executable specifications):
+ * closes the edge-level half of that query-surface gap. No new gaps surfaced during
  * the writing of this script; the closure-table invariant already lives
  * behind findReferences / findReferencesInRepo.
  *
@@ -99,7 +99,7 @@ function main(): void {
 	console.log("| parent | child | relation_type | ordinal |");
 	console.log("| --- | --- | --- | --- |");
 	for (const e of result) {
-		// Endpoints are dual-form (Cycle 5): render the consumer node key (refname
+		// Endpoints are dual-form since the structured-endpoint model: render the consumer node key (refname
 		// for items, bin label for lens_bin) so a structured endpoint prints its
 		// string identity rather than [object Object].
 		console.log(`| ${endpointKey(e.parent)} | ${endpointKey(e.child)} | ${e.relation_type} | ${e.ordinal ?? ""} |`);

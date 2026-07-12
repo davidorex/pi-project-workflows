@@ -5,15 +5,19 @@
  * TypeScript COMMENTS (JSDoc blocks, block comments, line comments) across the
  * monorepo's package src/ trees.
  *
- * TASK-107. Distinct in aim from packages/pi-context/src/citation-rot-scanner.ts:
+ * Built as the enumeration step of the tracker-ID de-jargoning program: it
+ * establishes exactly how many comment citations exist and where, before any
+ * of them are resolved or rewritten. Distinct in aim from
+ * packages/pi-context/src/citation-rot-scanner.ts:
  * that scanner enumerates citation-shaped strings on SHIPPED/operator-facing
  * surfaces (tool-registration description literals, error messages, JSON/MD/YAML
  * bodies) and deliberately does NOT walk comment trivia as a citation surface.
  * This script inverts that: it walks ONLY comment trivia (via the TS scanner,
  * skipTrivia=false) to answer a different question — which comments reference
  * which canonical_ids, and where — for cross-checking a substrate item's cited
- * code locations (the issue-012 investigation that motivated this task) against
- * what the comments in the tree actually say.
+ * code locations against what the comments in the tree actually say (the
+ * motivating investigation: frozen-era ID citations in pi-agent-dispatch that
+ * resolve to unrelated items in the live substrate).
  *
  * Not a gate: this script produces a JSON report on stdout for human/agent
  * inspection. It never sets a non-zero exit code for "citations found" — only
@@ -61,7 +65,7 @@ export interface ScanReport {
  * that had diverged from packages/pi-context/src/citation-rot-scanner.ts's
  * module-private CITATION_RE (that scanner's regex lacked MILE-\d{3,}
  * entirely and used the narrower PHASE-\d{3,} instead of PHASE-[A-Z0-9-]+ —
- * the 2026-07-10 investigation of issue-012 found live phase ids are
+ * the 2026-07-10 stale-citation investigation found live phase ids are
  * alphanumeric slugs, e.g. PHASE-PORT-OPS, never purely digit-suffixed, per
  * phase.schema.json's declared ^PHASE-[A-Z0-9-]+$ pattern). Both families are
  * now unioned onto citation-rot-scanner.ts's exported CITATION_RE, imported

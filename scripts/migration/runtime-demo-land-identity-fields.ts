@@ -1,12 +1,13 @@
 #!/usr/bin/env tsx
 /**
- * Runtime demo (Cycle 10 / H1-precursor — land-identity-fields):
+ * Runtime demo (land-identity-fields — precursor step to the substrate
+ * content-addressing migration):
  *
  * Exercises `landIdentityFieldsForDir` end-to-end against a scratch substrate
- * carrying all four block_kind dispositions, and proves the C2-completion goal:
+ * carrying all four block_kind dispositions, and proves the landing goal:
  *
- *   BEFORE — zero of the data-bearing block_kinds' schemas pass the H1 step-0
- *            readiness gate (schemaDeclaresIdentityFields).
+ *   BEFORE — zero of the data-bearing block_kinds' schemas pass the migration's
+ *            step-0 readiness gate (schemaDeclaresIdentityFields).
  *   AFTER  — every registered block_kind's schema declares all three identity
  *            fields (gate passes), existing data still validates, and the three
  *            injected fields are byte-identical to the canonical declaration +

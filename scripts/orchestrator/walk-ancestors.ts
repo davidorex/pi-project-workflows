@@ -6,10 +6,10 @@
  * @davidorex/pi-context/lens-view. Reverse-direction counterpart to the
  * existing walk-descendants surface — used by Claude-Code-side
  * orchestration to materialize the ancestor id chain for a child item
- * under a config-declared relation_type. FGAP-029 partial closure
- * (TASK-036 / Phase 2 sub-phase 2.3).
+ * under a config-declared relation_type. Partially closes the gap where the
+ * closure-table traversal surface was forward-direction only.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi
+ * Per the dual-surface pattern: this CLI script + the matching pi
  * tool (walk-ancestors) + the underlying walkAncestors / walkAncestorsByLens
  * library functions ship as one unit. The script doubles as executable
  * specification of the ancestor-traversal contract. Coexists with the
@@ -17,9 +17,10 @@
  * walkLensDescendants library function) — adds the reverse-direction
  * surface, never supersedes the forward variant.
  *
- * SURFACED-GAPS (per DEC-0019 dual-role): closes FGAP-029 partial — the
- * parent-direction half of the bidirectional closure-table traversal that
- * DEC-0017 work-unit context composition requires. No new gaps surfaced
+ * SURFACED-GAPS (per the scripts' dual role as executable specifications):
+ * closes the parent-direction half of the bidirectional closure-table
+ * traversal that work-unit context composition (the context-contract
+ * bundling model) requires. No new gaps surfaced
  * during the writing of this script; the closure-table invariant already
  * lives behind walkAncestors / walkAncestorsByLens.
  *

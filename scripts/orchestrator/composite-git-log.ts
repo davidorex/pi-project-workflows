@@ -1,9 +1,10 @@
 #!/usr/bin/env tsx
 /**
  * composite-git-log — Claude-Code-side CLI wrapper for the git-log
- * composite KIND library function (FEAT-010 / TASK-092).
+ * composite KIND library function (part of the composite-tool infrastructure:
+ * framework-implemented KINDs, config-declared per-project instances).
  *
- * Per DEC-0019/0020: every composite KIND lands as a TRIPLE (library +
+ * Per the dual-surface discipline: every composite KIND lands as a TRIPLE (library +
  * Pi tool + CLI script). Same library underneath as the registered
  * Pi tool; different consumer wrapper.
  *

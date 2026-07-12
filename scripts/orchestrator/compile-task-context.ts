@@ -12,7 +12,8 @@
  * Output: XML-structured task-block to stdout in the exact shape
  * compile-implementation-context.ts expects via `--task-template @<file>`.
  *
- * Closes FGAP-036 (hand-authored task-templates bypass DEC-0019 dual-surface).
+ * Closes the gap where hand-authored task-templates bypassed the dual-surface
+ * composition discipline.
  *
  * Usage:
  *   tsx scripts/orchestrator/compile-task-context.ts \

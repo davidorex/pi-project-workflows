@@ -3,12 +3,14 @@
  * accept-all — ergonomics wrapper around context adoptConception
  *
  * Adopts the package's canonical packaged conception (samples/conception.json)
- * as this substrate's config.json (DEC-0037 / DEC-0038 accept-all mode). Writes
+ * as this substrate's config.json (the accept-all onboarding mode; the packaged
+ * catalog IS the dogfooded conception). Writes
  * config ONLY — run install afterwards to materialize the declared assets.
- * Idempotent: never clobbers an existing config (DEC-0011/0038 offer-don't-impose).
+ * Idempotent: never clobbers an existing config (offer-don't-impose: the
+ * package auto-seeds nothing; users opt in).
  * The conception's hardcoded root is overridden to the actual substrate dir name.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context.adoptConception) through the Pi tool `context-accept-all`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers
@@ -56,7 +58,8 @@ function main(): void {
 		// Name-based check rather than `instanceof BootstrapNotFoundError` — the
 		// CLI loads the package via its built dist module-instance, which can be a
 		// different class identity than a re-imported error constructor (the
-		// write-schema.ts module-instance hazard precedent, FGAP-078/079/080).
+		// write-schema.ts module-instance hazard precedent: instanceof checks on
+		// transitively-thrown errors are module-instance-fragile).
 		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 			console.error("accept-all: substrate not initialized — run context-init first");
 			process.exit(4);

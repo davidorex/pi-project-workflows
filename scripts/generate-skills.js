@@ -967,7 +967,8 @@ function generateMetaSkill(subPackageResults) {
 	// dependencies — without this copy, sub-package skills are invisible.
 	for (const result of subPackageResults) {
 		if (!result) continue;
-		// pi-context self-surfaces its skill via its resources_discover hook (FGAP-090);
+		// pi-context self-surfaces its skill via its resources_discover hook (wired so
+		// the in-pi agent receives framework orientation instead of bare tool descriptions);
 		// copying it here too would collide by name in pi's skill loader.
 		if (result.shortName === "pi-context") continue;
 		const srcSkillDir = join(dirname(dirname(result.skillPath)), result.shortName);

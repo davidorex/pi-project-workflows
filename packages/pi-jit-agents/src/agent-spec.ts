@@ -4,7 +4,11 @@
  * Two design rules govern this module: specs leave the loading boundary
  * fully resolved (every path field absolute), and discovery is a three-tier
  * search — the active substrate's agents/ dir, then the user tier
- * (~/.pi/agent/agents/), then the package builtin tier — never reading .pi/.
+ * (~/.pi/agent/agents/), then the package builtin tier. Agent-spec discovery
+ * never reads the project-level .pi/ dir (<cwd>/.pi/agents/ is not a tier).
+ * That scope is per-surface, not package-wide: template/renderer discovery
+ * DOES probe <cwd>/.pi/templates/ as its project tier (renderer-registry.ts),
+ * and the user tiers on both surfaces live under ~/.pi/agent/.
  */
 import fs from "node:fs";
 import os from "node:os";
@@ -274,8 +278,11 @@ export function parseAgentYaml(filePath: string, opts?: { siblingProbe?: boolean
  *
  * Throws AgentNotFoundError if no tier has the spec.
  *
- * IMPORTANT: Does NOT search .pi/agents/ — .pi/ is Pi platform territory,
- * which this package never reads.
+ * IMPORTANT: Does NOT search <cwd>/.pi/agents/ — for agent specs, the
+ * project-level .pi/ dir is Pi platform territory. This rule is scoped to
+ * agent-spec discovery only: the package's template/renderer discovery uses
+ * <cwd>/.pi/templates/ as its project tier (see renderer-registry.ts), and
+ * the user tier here defaults to ~/.pi/agent/agents/.
  *
  * Tier note: the package-root sibling probe in `parseAgentYaml` is enabled ONLY
  * when the matched spec came from the builtin/bundled tier (ctx.builtinDir),

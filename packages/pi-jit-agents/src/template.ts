@@ -1,8 +1,12 @@
 /**
  * Nunjucks template environment and rendering.
  *
- * Template discovery never reads .pi/ (Pi platform territory). The template
- * search mirrors the agent-spec three-tier pattern:
+ * Template discovery DOES touch .pi/ paths — unlike agent-spec discovery
+ * (agent-spec.ts), which never reads <cwd>/.pi/agents/. This environment's
+ * project tier is the active substrate's templates/ dir (not <cwd>/.pi/), but
+ * its user tier defaults to ~/.pi/agent/templates/, and the per-item macro
+ * registry (renderer-registry.ts) probes <cwd>/.pi/templates/ as its project
+ * tier. The template search mirrors the agent-spec three-tier pattern:
  *   1. {contextDir}/templates/ — the active substrate dir resolved from
  *      {cwd}'s .pi-context.json pointer; tier omitted when no pointer resolves
  *   2. {userDir ?? ~/.pi/agent/templates/}

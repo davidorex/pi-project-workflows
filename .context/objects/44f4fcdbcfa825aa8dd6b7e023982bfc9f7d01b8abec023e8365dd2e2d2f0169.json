@@ -1,0 +1,30 @@
+{
+  "title": "block-pathspec-commit.sh classifies redirection operators and heredoc markers as pathspecs -- git commit with 2>&1, > file, or an -F - heredoc is blocked as a pathspec commit",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "shell-grammar-aware hook tokenization",
+  "description": ".claude/hooks/block-pathspec-commit.sh word-splits each command segment with shlex.split (line 89) -- a POSIX word splitter with no redirection grammar -- and its segment split (line 53) divides only on && / || / ; / | and newlines, so every redirection token survives as an ordinary word and the classifier's positional rule (lines 83-84: a bare non-option positional token after commit is a pathspec) blocks it. Confirmed false-positive matrix (scratchpad hook copy, PreToolUse JSON stdin): a commit with a trailing 2>&1 blocks (it tokenizes as one word); a commit with stdout redirected to a file blocks (the standalone operator and its target word are both positionals); an -F - stdin commit fed by a heredoc blocks (the heredoc marker token -- the bare -F - form passes: -F consumes the dash, so the reported dash-blocked symptom is the heredoc marker, not the dash); stdin/stderr/append redirect forms all block. True positives intact: the bare-path and double-dash pathspec forms still exit 2; -m/-am commits pass. The shipped test harness (block-pathspec-commit.test.sh, 23 cells) contains zero redirection/heredoc rows -- the class was never tested. A further live symptom surfaced while filing this very item: the hook segment-splits on newlines with no heredoc-body awareness, so a heredoc BODY line that merely mentions a pathspec-shaped commit as prose is classified as a real invocation and blocks the enclosing unrelated command. Class: shell-command classification by token inspection without shell-grammar awareness -- the redirect-blindness dimension of the class whose quote-blindness dimension was FGAP-120 (closed; block-pi-context-glue.sh is quote-aware AND redirect-tolerant, so the solved pattern exists in a sibling hook and did not propagate). Distinct from FGAP-089 (same hook family, orthogonal target-substrate scope-blindness). Among live hooks the instance is confined to block-pathspec-commit.sh (block-control-chars.sh / block-substrate-write.sh parse no shell command); TASK-095's planned Bash chokepoint specifies the same segment-split approach, so the fix should yield a reusable tokenization pattern, not a third hand-rolled parser.",
+  "evidence": [
+    {
+      "file": ".claude/hooks/block-pathspec-commit.sh",
+      "lines": "51-53",
+      "reference": "segment split on shell control operators and newlines only; redirections never delimited, heredoc bodies not excluded"
+    },
+    {
+      "file": ".claude/hooks/block-pathspec-commit.sh",
+      "lines": "83-89",
+      "reference": "shlex.split word-splitting feeds redirect tokens to the positional-to-pathspec rule"
+    },
+    {
+      "file": ".claude/hooks/block-pathspec-commit.test.sh",
+      "reference": "23 cells, zero redirection/heredoc rows -- the false-positive class shipped untested"
+    },
+    {
+      "file": "analysis/2026-07-12-pathspec-hook-false-positive-gap.md",
+      "reference": "the investigation: verbatim repro transcripts (5 false-positive forms exit 2, bare stdin form exit 0, both true-positive forms exit 2), token-level demonstration, class + prior-art verdicts, fix shape"
+    }
+  ],
+  "impact": "Any commit whose Bash invocation carries a redirect or a heredoc commit message is refused with a misleading pathspec-commit message -- two implementation agents in one session independently hit it and silently worked around it (message files instead of stdin heredocs; dropping stderr redirection), degrading commit ergonomics and suppressing the friction signal. The heredoc-body symptom extends the blast radius beyond git commands entirely: any heredoc-built payload whose prose mentions a pathspec-shaped commit is blocked.",
+  "proposed_resolution": "Strip redirection grammar from the token stream before classification, closing the dimension for all redirect forms at once: post-shlex, drop self-contained redirect tokens (numeric-prefixed or bare > >> < << <<< forms including fd-duplication) and drop bare-operator tokens together with their following target/delimiter token; alternatively lex with shlex punctuation_chars=True and filter operator+operand pairs. On a heredoc marker, stop classifying the enclosing segment AND exclude the heredoc body lines from segment classification (track the delimiter). No stdin-dash allowlist -- the bare form already passes. Residual under-block (a file literally named like a redirect) is acceptable fail-open per the hook's stated workflow-guard posture. Acceptance = the extended test harness: the existing 23 cells plus the investigation's redirect/heredoc false-positive rows plus a heredoc-body-prose row all green. Develop against a COPY, never the live guard. Relates to FGAP-120 (same class, adjacent dimension, closed) and FGAP-089 (sibling class, same artifact family, open); coordinate the tokenization pattern with TASK-095's planned chokepoint."
+}

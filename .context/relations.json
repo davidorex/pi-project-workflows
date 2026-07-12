@@ -11605,5 +11605,31 @@
       "refname": "TASK-129"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "49c3bc668d3b72f2364bf69c6681afb0",
+      "refname": "FGAP-147"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e664356314c6ef76901640c61a2d88e1",
+      "refname": "FGAP-120"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "49c3bc668d3b72f2364bf69c6681afb0",
+      "refname": "FGAP-147"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
+      "refname": "FGAP-089"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

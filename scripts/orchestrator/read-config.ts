@@ -2,34 +2,36 @@
 /**
  * read-config — terse vocabulary projection of <substrate-dir>/config.json
  *
- * Per DEC-0015 (config drives substrate location): cwd is resolved through
+ * Per the config-drives-substrate-location rule (the substrate dir name is
+ * never hardcoded): cwd is resolved through
  * `resolveContextDir(cwd)` so the substrate-dir name comes from the bootstrap
  * pointer rather than hardcoded ".project". `BootstrapNotFoundError` from
  * the resolver surfaces as an actionable error (substrate not initialized)
  * rather than a stack trace.
  *
- * Per DEC-0019 (scripts as dual surface): this script is the Claude Code-side
+ * Per the dual-surface discipline (scripts as dual surface): this script is the Claude Code-side
  * ergonomics wrapper over `loadConfig` from @davidorex/pi-context/context;
  * the in-pi-runtime equivalent is the `read-config` pi tool registered in
- * packages/pi-context/src/index.ts (landed in 1.3.A — commit bac1893). Both
+ * packages/pi-context/src/index.ts (commit bac1893). Both
  * surfaces wrap the same shared library; this script is intentionally thin.
  *
  * Usage:
  *   tsx scripts/orchestrator/read-config.ts                          # terse projection
  *   tsx scripts/orchestrator/read-config.ts --raw                    # full JSON dump
- *   tsx scripts/orchestrator/read-config.ts --registry relation_types   # ONE registry (FGAP-103)
+ *   tsx scripts/orchestrator/read-config.ts --registry relation_types   # ONE registry (element addressing)
  *   tsx scripts/orchestrator/read-config.ts --registry relation_types --id phase_depends_on  # ONE entry
  *   tsx scripts/orchestrator/read-config.ts --cwd <path>             # alternate cwd
  *
  * --registry / --id route through the shared `addressInto` primitive (the same
  * one the `read-config` pi tool uses) so the CLI + tool address config the same
- * way (DEC-0019/0020 dual surface). When --registry is absent, behavior is
+ * way (dual surface). When --registry is absent, behavior is
  * unchanged (terse projection or --raw whole-config dump).
  *
  * Exit codes: 0 ok / 2 arg-error / 3 fn-error (mirrors read-block-page.ts).
- * `BootstrapNotFoundError` (FGAP-080) → exit 1 (substrate not initialized).
+ * `BootstrapNotFoundError` → exit 1 (substrate not initialized).
  *
- * Runtime demonstration (DEC-0018) is performed by the orchestrator, not
+ * Runtime demonstration (required for every implementation step, beyond
+ * tests-pass) is performed by the orchestrator, not
  * inline — script invocation against the live `.pi-context.json` pointer +
  * substrate is the demo path.
  */
@@ -146,7 +148,7 @@ function main(): void {
 	try {
 		substrateDir = resolveContextDir(args.cwd);
 	} catch (err) {
-		// name-based, not instanceof (FGAP-080): the error may be thrown through a
+		// name-based, not instanceof: the error may be thrown through a
 		// different pi-context module instance under tsx, breaking class identity.
 		if (err instanceof Error && err.name === "BootstrapNotFoundError") {
 			console.error(`read-config: substrate not initialized — ${err.message}`);
@@ -167,7 +169,7 @@ function main(): void {
 		return;
 	}
 
-	// Element addressing (FGAP-103): one registry, optionally one entry within it.
+	// Element addressing: one registry, optionally one entry within it.
 	if (args.registry !== null) {
 		const reg = addressInto(config, { key: args.registry });
 		if (!reg.found) {

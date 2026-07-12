@@ -1,16 +1,17 @@
 #!/usr/bin/env tsx
 /**
- * read-samples-catalog — enumerate the packaged sample block kinds (DEC-0037)
+ * read-samples-catalog — enumerate the packaged sample block kinds (the
+ * shipped samples catalog IS this project's dogfooded conception)
  *
  * Wraps the canonical `samplesCatalog` library function from
  * @davidorex/pi-context/samples-catalog. Projects the extension's bundled
  * samples conception + schemas into per-kind metadata (title, item shape,
  * applicable relation_types as source/target, invariants, lenses) plus the
  * top-level relation_type / lens / invariant / layer / status_bucket
- * registries. Closes FGAP-068 (samples catalog not queryable) on the
- * Claude-Code side.
+ * registries. Closes the samples-catalog-not-queryable gap on the
+ * Claude-Code side (discovery used to be filename-guess only).
  *
- * Per DEC-0019/0020 dual-surface pattern: this CLI script + the matching pi
+ * Per the dual-surface pattern: this CLI script + the matching pi
  * tool (read-samples-catalog) + the underlying library function ship as one
  * unit. The Pi-tool twin is the in-pi LLM discovery surface; this script is
  * the Claude-Code-side ergonomics surface and doubles as an executable

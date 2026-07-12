@@ -7,7 +7,8 @@
  * PRESENT. The body is AJV draft-07 meta-validated before an atomic
  * (tmp + rename) write; a malformed body throws and nothing reaches disk.
  *
- * Migration caveat (FGAP-077, DECIDED): this op writes + meta-validates the
+ * Migration caveat (a known, deliberately accepted limitation of the
+ * schema-write surface): this op writes + meta-validates the
  * schema JSON only. A 'replace' that changes the schema's `version` does NOT
  * migrate existing block items forward — read-time validateBlockWithMigration
  * throws a version mismatch until a code-level MigrationFn is registered via
@@ -15,7 +16,7 @@
  * registering a MigrationFn. Registering the block_kind that points at this
  * schema is a separate step (amend-config --registry block_kinds).
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (schema-write.writeSchemaChecked) through the Pi tool `write-schema`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers

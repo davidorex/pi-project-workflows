@@ -11,7 +11,7 @@
  * relation_type / lens / layer / block_kind) is DEFERRED to context-validate —
  * run it after a remove.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context.amendConfigEntry) through the Pi tool `amend-config`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers

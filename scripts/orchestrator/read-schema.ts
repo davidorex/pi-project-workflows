@@ -2,19 +2,20 @@
 /**
  * read-schema — terse projection of a substrate schema by name
  *
- * Per DEC-0015 (config drives substrate location): cwd resolved through
+ * Per the config-drives-substrate-location rule (the substrate dir name is
+ * never hardcoded): cwd resolved through
  * `schemaPath(cwd, name)` which cascades through `resolveContextDir`; the
  * `BootstrapNotFoundError` from the resolver surfaces as an actionable
  * error (substrate not initialized) rather than a stack trace. No
  * hardcoded `.project` literal lives in this script.
  *
- * Per DEC-0019 (scripts as dual surface): this script is the Claude
+ * Per the dual-surface discipline (scripts as dual surface): this script is the Claude
  * Code-side ergonomics wrapper over `readSchema` from
  * @davidorex/pi-context/schema-write; the in-pi-runtime equivalent is
  * the `read-schema` pi tool registered in packages/pi-context/src/index.ts
- * (landed in 1.3.B — commit bac1893). Both surfaces wrap the same shared
+ * (commit bac1893). Both surfaces wrap the same shared
  * library; this script is intentionally thin. Sibling read-config.ts
- * (1.3.A — commit 4a24866) carries the same structural shape.
+ * (commit 4a24866) carries the same structural shape.
  *
  * Usage:
  *   tsx scripts/orchestrator/read-schema.ts --name tasks                                    # terse projection
@@ -24,15 +25,16 @@
  *   tsx scripts/orchestrator/read-schema.ts --name tasks --cwd <path>                       # alternate cwd
  *
  * --path (and its back-compat alias --field) route through the shared
- * `addressInto` primitive (FGAP-103) — the SAME one the `read-schema` pi tool's
+ * `addressInto` element-addressing primitive — the SAME one the `read-schema` pi tool's
  * `path` param uses; dotted/bracket addressing (a.b.c / a[0].b). One
  * implementation, two flag names — no parallel path-walk.
  *
  * Precedence: --path (or --field) wins over --raw (projection mode). --name is
  * REQUIRED; absence exits 2. Exit codes: 0 ok / 2 arg-error / 3 fn-error;
- * `BootstrapNotFoundError` (FGAP-080) → exit 1 (substrate not initialized).
+ * `BootstrapNotFoundError` → exit 1 (substrate not initialized).
  *
- * Runtime demonstration (DEC-0018) is performed by the orchestrator, not
+ * Runtime demonstration (required for every implementation step, beyond
+ * tests-pass) is performed by the orchestrator, not
  * inline — script invocation against the live `.pi-context.json` pointer
  * + substrate is the demo path.
  */

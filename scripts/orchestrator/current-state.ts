@@ -4,14 +4,16 @@
  *
  * Wraps the canonical currentState library function from
  * @davidorex/pi-context/context-sdk. State is DERIVED from `.project`
- * substrate (DEC-0040 / FGAP-072 / FGAP-059) — nothing hand-stored:
+ * substrate — nothing hand-stored (the substrate is the single source of
+ * truth; hand-maintained state files drift, and "what next" is derived,
+ * not curated):
  *   focus       — one-line active arc (in-flight tasks > in-progress phase)
  *   inFlight    — tasks with status "in-progress"
  *   nextActions — atomic-next, ranked: open framework-gaps (by priority)
  *                 then unblocked planned tasks (topo order)
  *   blocked     — planned tasks whose task_depends_on_task deps aren't all done
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * (context-current-state) + the underlying currentState library function ship
  * as one unit. The script doubles as executable specification of the
  * current-state derivation contract for Claude Code-side ergonomics, mirroring

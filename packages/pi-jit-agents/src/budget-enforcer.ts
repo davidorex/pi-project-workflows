@@ -6,9 +6,9 @@
  * plus a structured warning. Annotation absence is pass-through; malformed
  * annotations throw with the field path named in the error.
  *
- * Plan 5 of the per-item-macros work ships this primitive plus the schema
- * annotations themselves (`.project/schemas/*.schema.json`). Per-item macros
- * (Plans 6 and 7) consume the primitive to gate field rendering.
+ * This module ships the enforcement primitive; the schema annotations
+ * themselves live in `.project/schemas/*.schema.json`. The per-item render
+ * macros consume the primitive to gate field rendering.
  *
  * Token measurement is intentionally a coarse approximation: whitespace +
  * Unicode-punctuation split, not a tokenizer-accurate count tied to any

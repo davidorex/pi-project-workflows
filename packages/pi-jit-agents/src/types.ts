@@ -55,7 +55,7 @@ export interface AgentSpec {
 	 *
 	 * - **Object** ({@link ContextBlockRef}): per-item or scoped injection —
 	 *   declares a specific item id and/or kind-specific focus hints to be
-	 *   resolved by the compile-time injector. Plan 4 (Wave 2) owns the
+	 *   resolved by the compile-time injector, which owns the
 	 *   resolution semantics; the parser only typechecks the shape here.
 	 */
 	contextBlocks?: (string | ContextBlockRef)[];
@@ -71,19 +71,18 @@ export interface AgentSpec {
  *
  * Bare-string entries in `contextBlocks` denote whole-block injection
  * (existing behaviour); object entries denote per-item or scoped injection
- * — the surface Plan 4 (Wave 2) consumes to inject specific block items
- * (e.g. one decision, one feature) rather than entire blocks.
+ * — the surface the compile-time injector consumes to inject specific block
+ * items (e.g. one decision, one feature) rather than entire blocks.
  *
- * `compileAgent` does not yet honour these fields; this interface defines
- * the parsing-time contract only. Plan 4 wires resolution through the
- * cross-block resolver and per-item macros.
+ * This interface defines the parsing-time contract; `compileAgent` wires
+ * resolution through the cross-block resolver and per-item macros.
  */
 export interface ContextBlockRef {
 	/** Block name, e.g. "decisions", "features". Required. */
 	name: string;
-	/** Optional ID of a specific item to inject. Plan 4 resolves via cross-block resolver. */
+	/** Optional ID of a specific item to inject. Resolved via the cross-block resolver. */
 	item?: string;
-	/** Optional kind-specific scope hints (e.g., { story: "<some-story-id>" }). Plan 4 passes through to macros. */
+	/** Optional kind-specific scope hints (e.g., { story: "<some-story-id>" }). Passed through to macros. */
 	focus?: Record<string, string>;
 	/** Optional traversal depth. 0 = bare-ID refs (default), 1 = inline direct, 2+ recurse. */
 	depth?: number;
@@ -113,8 +112,8 @@ export interface LoadContext {
 /**
  * Options for compileAgent.
  *
- * Plan 4 (Wave 2) extends this with two optional fields supporting object-form
- * `contextBlocks` resolution. Both default to internal lazy construction when
+ * Two optional fields support object-form `contextBlocks` resolution. Both
+ * default to internal lazy construction when
  * absent so existing callers (string-only `contextBlocks`) require no changes.
  */
 export interface CompileContext {

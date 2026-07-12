@@ -119,7 +119,7 @@ export function makeSpec(overrides: Partial<WorkflowSpec> & { steps: Record<stri
 
 /**
  * Absolute path to this package's bundled `templates/` directory — the same
- * Plan 6/7/8 per-item macros that the renderer registry's builtin tier
+ * per-item render macros that the renderer registry's builtin tier
  * resolves to. Re-exported as a constant so tests can drop the
  * `path.resolve(import.meta.dirname, "..", "templates")` literal.
  */
@@ -127,8 +127,8 @@ export const TEMPLATES_DIR = bundledTemplateDir();
 
 /**
  * In-memory mirror of the `ItemLocation` shape `buildIdIndex` produces in
- * pi-project. Repeated verbatim across every render-*.test.ts before the
- * Item-4 harness landed; now imported.
+ * pi-project. Repeated verbatim across every render-*.test.ts before this
+ * harness landed; now imported.
  */
 export interface FixtureItemLocation {
 	block: string;

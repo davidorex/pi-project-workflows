@@ -30,7 +30,7 @@
  *                    sees the same shape.
  *
  * The `builtinDir` for the renderer registry resolves to this package's
- * bundled `templates/` directory (the Plan 6/7/8 per-item macros), the third
+ * bundled `templates/` directory (the per-item render macros), the third
  * tier in the registry's project / user / builtin search.
  */
 
@@ -70,7 +70,7 @@ import {
  * the rendered string for parity with `render_recursive`.
  */
 export function renderItemById(cwd: string, id: string, depth: number = 0): string {
-	// F1 (Cycle 7): buildIdIndex now returns a SubstrateIndex; take its
+	// buildIdIndex returns a SubstrateIndex; take its
 	// refname-keyed lookup map (`.byRefname`) — the surface both the point lookup
 	// below and the `getIdIndex` composition-global closure (which contracts a
 	// refname-keyed Map) consume.

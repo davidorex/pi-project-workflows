@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does); no code or behavior change.
 - Comments across `src/` no longer cite internal tracker IDs (FEAT-/TASK-/DEC-/FGAP-/STORY-NNN forms) — the citations previously present in this package's comments are now plain-English prose describing the same rationale in place. Scoped to this package only; sibling packages are unaffected.
 
 ## [0.33.0] - 2026-07-08

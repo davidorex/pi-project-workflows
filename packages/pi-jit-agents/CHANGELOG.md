@@ -4,6 +4,8 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does); no code or behavior change.
+
 ## [0.33.0] - 2026-07-08
 
 - The package-root sibling probe (the spec directory's PARENT) is now scoped to the bundled/builtin tier only — it runs when a spec is matched from `builtinDir`, and is off for local-substrate (`<contextDir>/agents/`) and user (`~/.pi/agent/agents/`) specs. `parseAgentYaml` accepts an optional `{ siblingProbe }` (default off) that `createAgentLoader` sets true only for a builtin-tier match. A local or user spec's relative `output.schema`/`template` reference therefore stays adjacent-only and can no longer silently absolutize onto a same-basename file in the sibling directory (e.g. a pi-context block schema under a substrate's `schemas/`, or a user-config sibling); the adjacent probe and the loader-resolvable-name fallthrough are unchanged across all tiers.

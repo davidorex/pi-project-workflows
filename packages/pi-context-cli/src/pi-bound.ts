@@ -28,7 +28,7 @@ import { loadContext } from "@davidorex/pi-context/context";
 
 const require = createRequire(import.meta.url);
 
-/** Built-in read-only file-system tools always granted (Bucket-1 default-grant). */
+/** Built-in read-only file-system tools, always granted by default. */
 const BUILTIN_READONLY_TOOLS = ["read", "ls", "grep", "find"];
 
 /** The meta-package whose extensions are registered into the target dir's .pi/. */

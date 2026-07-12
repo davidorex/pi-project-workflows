@@ -2595,11 +2595,11 @@
         "packages/pi-jit-agents/src/jit-runtime.ts",
         "packages/pi-agent-dispatch/src/work-order-loop.ts"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-128",
       "oid": "d3f65fffe36b17c281d59f343b1b3899",
-      "content_hash": "c394de4835ed7f69e70b642aaffe94cfff0215e5df9412d4aee8ce9714e3f43d",
-      "content_parent": "bd23dbeefbfa4fe162ae70b2637815b5345b67a2223ba83d1ebc22fb3b5d7d2d"
+      "content_hash": "8c8ad143fba5798fd83bc107e6f1130810ad848cb613c07fa1fffb52a52fd827",
+      "content_parent": "c394de4835ed7f69e70b642aaffe94cfff0215e5df9412d4aee8ce9714e3f43d"
     }
   ],
   "schema_version": "1.1.0"

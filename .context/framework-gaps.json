@@ -4778,6 +4778,83 @@
       "created_at": "2026-07-12T10:08:34.703Z",
       "oid": "9d7094b74528728a2bef7a329e3a3810",
       "content_hash": "c7bc5b3df5a521a22a86624cc441230286df081bff2216ed4a5bbc24a5bf1bc4"
+    },
+    {
+      "title": "Diagnostic/validator json-aggregate ops have no size-narrowing axis -- over-cap output is refused whole with a directive naming no mechanism",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "canonical_vocabulary": "output-size adaptation for aggregate diagnostics",
+      "description": "The 50KB output cap (DEFAULT_MAX_BYTES, truncate.ts:13; truncateHead measures the pretty form) fires at the emission boundary for every op channel via renderOpResultText / boundedJsonOutput (ops-registry.ts:194-225), including the json channel carrying the validators. Item-returning reads route through the read channel and carry an overCapDirective naming a narrowing tool (filter-block-items -> read-block-page / refine-predicate, ops-registry.ts:2042); the json boundary refusal (overCapRefusalText, ops-registry.ts:178-183) names no tool -- 'Narrow your read.' -- because the aggregate ops expose no narrowing parameter. context-validate (ops-registry.ts:1231-1234), context-validate-relations (2238-2241), and validate-roadmap (2433) return a monolithic SubstrateValidationResult whose issues[] scales with substrate size, with empty-object parameters -- no severity/block/code/offset/limit axis. When issues[] crosses 50KB the whole result is refused and no op-driven path reaches any part of it, unlike the item-read family (pagination; field projection tracked separately). The cap is enforced at the op-registry layer for BOTH the in-pi tool surface (registerAll -> renderOpResultText, ops-registry.ts:2863) and the CLI (boundedJsonOutput / renderOpResultText, pi-context-cli/src/cli.ts:1137,1147), so the wall is identical on both. Distinct from FGAP-117 (item-read field projection -- a SubstrateValidationResult is not a block-item list) and FGAP-016 (cap measurement basis, not narrowing-axis absence).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/truncate.ts",
+          "lines": "13",
+          "reference": "DEFAULT_MAX_BYTES = 50 * 1024; truncateHead measures pretty-serialized bytes + DEFAULT_MAX_LINES"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "178-225",
+          "reference": "overCapRefusalText ('Narrow your read', no tool) + renderOpResultText / boundedJsonOutput apply the cap to the json and prose channels at the emission boundary"
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "1231-1234, 2238-2241, 2433",
+          "reference": "context-validate, context-validate-relations, validate-roadmap return a monolithic json result with empty-object parameters -- no narrowing axis"
+        },
+        {
+          "file": "packages/pi-context/src/read-element.ts",
+          "lines": "363-383",
+          "reference": "the read channel's over-cap path carries an overCapDirective naming a narrowing tool; the json boundary has no equivalent"
+        },
+        {
+          "file": "analysis/2026-07-12-read-cap-refusal-gap.md",
+          "reference": "live repro 2026-07-12: filter-block-items framework-gaps status neq __none__ -> data:null, total:142, totalBytes:149125, READ REFUSED; context-validate returns its ~42-issue result in full today (validator leg structural, not currently triggering); full root-cause + class analysis"
+        }
+      ],
+      "impact": "A substrate whose validate issue list crosses 50KB has no op-driven path to read the validation result -- the operator cannot see which cross-block references are broken or which derivation/closure invariants are violated, and the refusal names no mechanism because none exists on the op. context-validate / context-validate-relations are the sanctioned integrity gates; over-cap they fail closed with no fallback. Currently latent (issue list under cap today); the wall arrives with substrate growth.",
+      "proposed_resolution": "Give the validator/diagnostic aggregate ops a narrowing axis paralleling the item-read family -- an optional severity / block / code filter and/or offset+limit pagination on context-validate / context-validate-relations / validate-roadmap so issues[] reads in bounded slices -- and make the json over-cap boundary refusal name the concrete narrowing parameter (mirroring the read channel's overCapDirective) instead of the mechanism-less 'Narrow your read.' Sibling of FGAP-117 (field projection for item reads) under the shared output-size-adaptation class, covering the disjoint diagnostic-aggregate surface; FGAP-016 is the adjacent measurement-precision gap.",
+      "id": "FGAP-144",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-12T10:10:54.037Z",
+      "oid": "117cae2b00ecb1c62b485277bb2e13bb",
+      "content_hash": "57da79c99dc6374da99d8db18bd6b45af559e273118627e0aa576084b04e63bb"
+    },
+    {
+      "title": "validate-block-items reports valid:true on a block the canonical read path throws on -- it resolves against the catalog schema + a self-seeded catalog-chain registry, not the installed schema + project registry",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "canonical_vocabulary": "op-surface resolution disclosure / read-path faithfulness",
+      "description": "validateBlockItemsAgainstCatalog (index.ts:1003-1065) validates a block against the CATALOG schema body (resolveCatalog(), samplesRoot/<kind>.schema.json) after migrating its items through a fresh registry self-seeded from the catalog migration chain (findCatalogMigrationChain + buildFreshRegistryWithChain). The canonical read path -- readBlockForDir (block-api.ts:901-906) -> validateBlockWithMigrationForDir (schema-validator.ts:207-244), shared by read-block / read-block-item / read-block-page / filter-block-items -- validates against the INSTALLED schema using the PROJECT registry loaded from the substrate's on-disk migrations.json, and throws MigrationRegistry when the block's envelope schema_version lags the installed schema and the project registry lacks the hop. When the catalog ships the chain but the project migrations.json does not (the fresh-install condition FGAP-140 names), validate-block-items returns valid:true while every real read of the same file throws. The op's documented purpose is a deliberate catalog-forward update-preview, but its name and promptSnippet read as a generic item-validity check, so valid:true is over-consumed as 'this block reads.' Class: a validity/read op whose surfaced name does not disclose which schema+registry resolution it uses, so its verdict is mis-consumed as a canonical-read verdict; FGAP-114 is the prior instance (it aligned context-validate to the read path, leaving validate-block-items the single standing catalog-resolution outlier -- every other read/validation op delegates to readBlockForDir and agrees).",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "1013-1057",
+          "reference": "resolves catalog schema + catalog chain via resolveCatalog/findCatalogMigrationChain/buildFreshRegistryWithChain; on no chain validates as-is (no throw)"
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "901-906",
+          "reference": "read gate calls getProjectMigrationRegistryForDir + validateBlockWithMigrationForDir -- installed schema, project registry"
+        },
+        {
+          "file": "packages/pi-context/src/schema-validator.ts",
+          "lines": "234-241",
+          "reference": "throws on version mismatch when the supplied project registry lacks the hop"
+        },
+        {
+          "file": "analysis/2026-07-12-validate-vs-read-divergence-gap.md",
+          "reference": "empirical false-green on a fresh /context install scratch substrate: validate-block-items session-notes -> valid:true; read-block session-notes -> MigrationRegistry throw (need 1.0.0 -> 1.1.0); same for a tasks block set lagging; context-validate flags both block_schema_invalid, agreeing with the read path; full surface-by-surface class sweep"
+        }
+      ],
+      "impact": "An operator running validate-block-items to check a block's health is told valid:true for a block that is unreadable through every read op and flagged block_schema_invalid by context-validate. The false-green is reachable out of the box: session-notes ships lagging from a fresh install. Any closure/verification surface that cites a validate-block-items pass as block readability over-reads the verdict.",
+      "proposed_resolution": "Requires determination between (a) re-surfacing the op so its verdict is not mis-consumed -- rename/relabel to disclose the catalog-forward-preview semantics and/or return the resolution basis (catalog vs installed) in the result envelope; and (b) providing a read-path-faithful per-block diagnostic -- a non-throwing op that validates a block against the installed schema + project registry (the validateBlockWithMigrationForDir resolution context-validate's sweep already uses substrate-wide), so an operator gets a clean valid/invalid for 'does this block read?'. Relates to FGAP-140 (shared fresh-install root condition; this consumer-side gap persists even after 140's write-side seeding fix when installed and catalog schemas diverge) and FGAP-114 (prior instance of the same disclosure/faithfulness class). Class-correct fix addresses disclosure/faithfulness of the op surface, not only this one lag symptom.",
+      "id": "FGAP-145",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-12T10:11:22.599Z",
+      "oid": "47f83fd4e6b55224b127af30f846b8ea",
+      "content_hash": "b7b6d9128f90868da2cf55835aada34b89846678d12b51b0ba0b5f6ecb8c3baa"
     }
   ]
 }

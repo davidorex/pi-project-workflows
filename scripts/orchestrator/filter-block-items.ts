@@ -7,12 +7,12 @@
  * to slice a block's items by a one-field predicate (eq / neq / in / matches)
  * without hand-rolling readBlock + Array.filter at each call site.
  *
- * Per DEC-0019 dual-surface pattern: this CLI script + the matching pi tool
+ * Per the dual-surface pattern: this CLI script + the matching pi tool
  * + the underlying library function ship as one unit. The script doubles
  * as executable specification of the predicate-filter contract.
  *
- * SURFACED-GAPS (per DEC-0019 dual-role): closes part of the FGAP-026
- * phase 2 high-impact query-surface gap (TASK-034). No new gaps surfaced
+ * SURFACED-GAPS (per the scripts' dual role as executable specifications):
+ * closes the predicate-filter part of the missing query-surface primitives. No new gaps surfaced
  * during the writing of this script — the discoverArrayKey single-array
  * heuristic was already filed via inject-context-items.ts.
  *

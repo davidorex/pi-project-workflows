@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * join-blocks — one-call HYBRID cross-block join (FGAP-043)
+ * join-blocks — one-call HYBRID cross-block join
  *
  * Wraps the canonical joinBlocks library function from
  * @davidorex/pi-context/context-sdk. Pairs left-block items with right-block
@@ -11,7 +11,7 @@
  *   FIELD mode : --left-field <lf> --right-field <rf>  — pairs where
  *                left[lf] === right[rf] (shared field value)
  *
- * Per DEC-0019/0020 dual-surface pattern: this CLI script + the matching pi
+ * Per the dual-surface pattern: this CLI script + the matching pi
  * tool (join-blocks) + the underlying library function ship as one unit. The
  * script doubles as executable specification of the join contract.
  *

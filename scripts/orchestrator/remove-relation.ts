@@ -9,7 +9,7 @@
  * removal only filters the edge set and rewrites; run context-validate after if
  * the removal changes resolvability.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context-sdk.removeRelationByRef) through the Pi tool `remove-relation`
  * registered via the op-registry. This script is the Claude-Code-side parallel —
  * same library underneath, different consumer wrapper. Both layers thin;
@@ -107,10 +107,10 @@ function main(): void {
 	const writer = parseWriter(args.writer);
 	const ctx: DispatchContext = { writer };
 
-	// Cycle-5 porcelain: STRING --parent / --child selectors are RESOLVED to
+	// Structured-endpoint porcelain: STRING --parent / --child selectors are RESOLVED to
 	// structured EdgeEndpoints and matched on the identityKey dedup identity. The
 	// dry-run path delegates to the SHARED library preview (removeRelationByRef
-	// with { dryRun: true }, TASK-010): it validates the prospective post-removal
+	// with { dryRun: true }): it validates the prospective post-removal
 	// relations (write-path parity) and reports whether a matching edge would be
 	// removed, writing nothing. Messaging uses the original string selectors.
 	if (args.dryRun) {

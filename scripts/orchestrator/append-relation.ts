@@ -9,7 +9,7 @@
  * DEFERRED to context-validate — this surface does AJV-shape + duplicate-no-op
  * only, matching the appendRelation library guarantee.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context.appendRelation) through the Pi tool `append-relation`
  * registered in pi-context/index.ts. This script is the Claude-Code-side
  * parallel — same library underneath, different consumer wrapper. Both layers
@@ -116,10 +116,10 @@ function main(): void {
 	const writer = parseWriter(args.writer);
 	const ctx: DispatchContext = { writer };
 
-	// Cycle-5 porcelain: STRING --parent / --child selectors (bare refname /
+	// Structured-endpoint porcelain: STRING --parent / --child selectors (bare refname /
 	// <alias>:<refname> / lens-bin) are RESOLVED to structured EdgeEndpoints. The
 	// CLI param surface is unchanged. The dry-run path delegates to the SHARED
-	// library preview (appendRelationByRef with { dryRun: true }, TASK-010): it
+	// library preview (appendRelationByRef with { dryRun: true }): it
 	// validates the prospective relations against the schema (write-path parity)
 	// and dedup-checks the resolved edge, writing nothing. The byRef fn throws
 	// (ValidationError) on a schema-invalid prospective; this script preserves the

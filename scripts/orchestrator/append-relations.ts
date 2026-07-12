@@ -9,7 +9,7 @@
  * is DEFERRED to context-validate — this surface does AJV-shape + duplicate-no-op
  * only, matching the appendRelations library guarantee.
  *
- * Per DEC-0019/0020: in-pi harness-confined agents reach the same library
+ * Per the dual-surface discipline: in-pi harness-confined agents reach the same library
  * (context-sdk.appendRelationsByRef) through the Pi tool `append-relations`
  * registered via the op-registry. This script is the Claude-Code-side parallel.
  *
@@ -126,7 +126,7 @@ function main(): void {
 	const ctx: DispatchContext = { writer };
 
 	// The dry-run path delegates to the SHARED library preview (appendRelationsByRef
-	// with { dryRun: true }, TASK-010): it replays the on-disk AND in-batch dedup,
+	// with { dryRun: true }): it replays the on-disk AND in-batch dedup,
 	// validates the prospective relations (write-path parity), and reports the
 	// would-append / would-skip counts, writing nothing.
 	if (args.dryRun) {

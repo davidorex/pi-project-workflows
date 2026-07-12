@@ -1,6 +1,8 @@
 #!/usr/bin/env tsx
 /**
- * gather-execution-context — work-unit-driven context bundling per DEC-0017
+ * gather-execution-context — work-unit-driven context bundling per the
+ * context-contract model (a work unit's kind declares which relation types
+ * compose its context)
  *
  * Wraps the canonical gatherExecutionContext library function from
  * @davidorex/pi-context/execution-context. Reads the unit by id + locates
@@ -10,15 +12,17 @@
  * ContextBundle as one structured payload — removes the N+1 read pattern
  * Claude-Code-side orchestrators had to hand-roll before this primitive.
  *
- * Closes FGAP-031. Per DEC-0019 dual-surface pattern: this CLI script +
+ * Closes the missing-composition-primitive gap (no single call composed a
+ * work unit + its context-contract + its declared relations into one
+ * bundle). Per the dual-surface pattern: this CLI script +
  * the matching pi tool (gather-execution-context in packages/pi-context/
  * src/index.ts) + the underlying gatherExecutionContext library function
- * ship as one atomic unit. TASK-039 / Phase 3 sub-phase 3.2.
+ * ship as one atomic unit.
  *
- * SURFACED-GAPS (per DEC-0019 dual-role): closes FGAP-031 (composition
- * primitive — gather-execution-context). Composes existing Phase 2
- * primitives without surfacing a new gap: filterBlockItems (TASK-034) +
- * resolveItemsByIds (TASK-035) + walkAncestors/walkDescendants (TASK-036)
+ * SURFACED-GAPS (per the scripts' dual role as executable specifications):
+ * closes the composition-primitive gap. Composes the existing query-surface
+ * primitives without surfacing a new gap: filterBlockItems +
+ * resolveItemsByIds + walkAncestors/walkDescendants
  * + loadRelations (existing). No new gaps observed during script writing.
  *
  * Usage:

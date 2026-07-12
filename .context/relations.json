@@ -11553,5 +11553,44 @@
       "refname": "TASK-128"
     },
     "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9664c5ff5a9271e4bab03e9266166fb5",
+      "refname": "FGAP-146"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fd846f8be7f6520977bd45b6de15b0ce",
+      "refname": "FGAP-136"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5e391ee8442b21a3988382f12e278d31",
+      "refname": "TASK-129"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "9664c5ff5a9271e4bab03e9266166fb5",
+      "refname": "FGAP-146"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5e391ee8442b21a3988382f12e278d31",
+      "refname": "TASK-129"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf5dd261bf6c7bd4b2c1bb2021c350ae",
+      "refname": "pi-mono-is-exemplar"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

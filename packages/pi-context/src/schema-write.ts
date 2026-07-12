@@ -24,8 +24,9 @@
  *     resolver. Previously based on a config.root-honoring
  *     path-builder, which diverged from the pointer-canonical read side.
  *
- * Out-of-scope for step 3:
- *   - Schema $id + version + $ref + migration registry (step 4)
+ * Out of scope for this module:
+ *   - Schema $id + version + $ref + migration registry (lives in
+ *     schema-migrations.ts / migrations-store.ts / migration-registry-loader.ts)
  *   - Schema diff / change-log tooling
  *   - Cross-package opinionated mutators (e.g. add-author-fields shorthand)
  */

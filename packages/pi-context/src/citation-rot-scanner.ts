@@ -427,7 +427,7 @@ function isSchemaFile(file: string): boolean {
  *   - .project/ — live substrate
  *   - registry/blocks/ + defaults/blocks/ — legacy on-disk fixtures
  *     (structurally identical to samples/blocks/; the scanner gates them
- *     defensively per the monorepo-wide audit-scope-extension plan's step 3)
+ *     defensively even though they are unshipped)
  *   - test-fixtures/blocks/ — per-package test-fixture block-data, the same
  *     item-data category as samples/blocks/ (array-of-items files whose
  *     top-level `id` values are canonical_ids, not citations)

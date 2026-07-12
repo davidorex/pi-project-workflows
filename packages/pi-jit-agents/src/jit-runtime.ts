@@ -1,10 +1,13 @@
 /**
  * In-process LLM dispatch with phantom-tool structured output enforcement.
  *
- * The unified `executeAgent` primitive
- * that both workflow agent steps and monitor classify calls consume. There is
- * one dispatch path across the framework — not one for workflows and another
- * for monitors.
+ * `executeAgent` is the single-turn completion primitive: it binds no real
+ * tools (only the phantom output tool described below). Its consumers are
+ * monitor classification (pi-behavior-monitors) and pi-agent-dispatch's
+ * call-agent tool. It is NOT the dispatch path for acting agents — workflow
+ * agent steps (pi-workflows step-agent.ts / dispatch.ts) and
+ * pi-agent-dispatch's work-order loop spawn `pi --mode json` subprocesses, a
+ * deliberately separate path whose agents can execute real tools.
  *
  * Phantom tool pattern: when a compiled agent declares an outputSchema, the
  * dispatch call passes a synthetic Tool constructed from the schema to pi-ai

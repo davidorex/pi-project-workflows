@@ -833,7 +833,7 @@ export function checkRequiredButDerivable(
 	for (const d of derivable) {
 		if (!cliExemptions.has(d)) {
 			out.push(
-				`parity: config-derivable param '${d}' is in DERIVABLE but the CLI required-filter does not exempt it (every op requiring '${d}' would be wrongly rejected; required-but-derivable, FGAP-019 class)`,
+				`parity: config-derivable param '${d}' is in DERIVABLE but the CLI required-filter does not exempt it (every op requiring '${d}' would be wrongly rejected as missing a required flag the CLI can derive itself)`,
 			);
 		}
 	}
@@ -844,7 +844,7 @@ export function checkRequiredButDerivable(
 		for (const p of required) {
 			if (derivable.has(p) && !cliExemptions.has(p)) {
 				out.push(
-					`parity: op '${op.name}' requires config-derivable param '${p}' but the CLI does not exempt it (required-but-derivable, FGAP-019 class)`,
+					`parity: op '${op.name}' requires config-derivable param '${p}' but the CLI does not exempt it (the CLI would reject the call for missing a flag it can derive itself)`,
 				);
 			}
 		}
@@ -936,17 +936,17 @@ export function diffReadPayload(opRead: ReadPayloadLike, cliOutput: ReadPayloadL
 		deepEqual(opRead.data, cliOutput.data);
 	} catch {
 		out.push(
-			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .data differs between the in-pi op read and the CLI envelope output`,
+			`parity: read-schema --path op-vs-CLI output divergence (the CLI envelope must reproduce the op's read payload exactly): .data differs between the in-pi op read and the CLI envelope output`,
 		);
 	}
 	if (opRead.complete !== cliOutput.complete) {
 		out.push(
-			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .complete differs (op=${String(opRead.complete)} cli=${String(cliOutput.complete)})`,
+			`parity: read-schema --path op-vs-CLI output divergence (the CLI envelope must reproduce the op's read payload exactly): .complete differs (op=${String(opRead.complete)} cli=${String(cliOutput.complete)})`,
 		);
 	}
 	if (opRead.total !== cliOutput.total) {
 		out.push(
-			`parity: read-schema --path op-vs-CLI output divergence (FGAP-020/027 class): .total differs (op=${String(opRead.total)} cli=${String(cliOutput.total)})`,
+			`parity: read-schema --path op-vs-CLI output divergence (the CLI envelope must reproduce the op's read payload exactly): .total differs (op=${String(opRead.total)} cli=${String(cliOutput.total)})`,
 		);
 	}
 	return out;

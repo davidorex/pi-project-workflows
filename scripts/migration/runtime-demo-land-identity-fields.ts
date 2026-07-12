@@ -7,7 +7,7 @@
  * carrying all four block_kind dispositions, and proves the landing goal:
  *
  *   BEFORE — zero of the data-bearing block_kinds' schemas pass the migration's
- *            step-0 readiness gate (schemaDeclaresIdentityFields).
+ *            readiness gate (schemaDeclaresIdentityFields).
  *   AFTER  — every registered block_kind's schema declares all three identity
  *            fields (gate passes), existing data still validates, and the three
  *            injected fields are byte-identical to the canonical declaration +
@@ -275,5 +275,7 @@ function buildScratch(): { cwd: string; sub: string } {
 console.log(
 	"\n[runtime-demo] ✔ landIdentityFieldsForDir lands optional identity-field declarations (updated/inlined/created)",
 );
-console.log("[runtime-demo] ✔ the H1 step-0 readiness gate passes after landing; existing data stays valid");
+console.log(
+	"[runtime-demo] ✔ the migration readiness gate (schemaDeclaresIdentityFields) passes after landing; existing data stays valid",
+);
 console.log("[runtime-demo] ✔ dry-run is a pure preview; landing is idempotent; the CLI wrapper surfaces the report");

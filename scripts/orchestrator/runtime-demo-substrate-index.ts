@@ -140,7 +140,7 @@ for (const d of [scratchA, scratchB, scratchC]) fs.rmSync(d, { recursive: true, 
 console.log(
 	`\n[runtime-demo] ✔ SubstrateIndex separates lookup maps (byRefname/byOid) from the iteration surface (items)`,
 );
-console.log(`[runtime-demo] ✔ byOid is populated for stamped items only (dormant this cycle — no F1 reader)`);
+console.log(`[runtime-demo] ✔ byOid is populated for stamped items only (no reader consumes it yet)`);
 console.log(
 	`[runtime-demo] ✔ first-writer-wins collision + scan order preserved; walker de-dups (behavior-preserving)`,
 );

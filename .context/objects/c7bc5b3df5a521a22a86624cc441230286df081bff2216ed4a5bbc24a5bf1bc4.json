@@ -1,0 +1,27 @@
+{
+  "title": "citation-rot-scanner's error-message surface misses super(...) calls in Error subclasses -- an escaped construction form of a covered surface",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "canonical_vocabulary": "AST-matcher construction-form coverage",
+  "description": "scanTsFile's error-message surface matches only NewExpression nodes (isErrorConstructorCall, citation-rot-scanner.ts:183 -- new XError(...) with an Error-suffixed identifier callee). An Error subclass that builds its message via super(...) inside its own constructor is a CallExpression whose callee is the super keyword, not a NewExpression -- the matcher never visits it, so a tracker-ID citation hardcoded in such a message is invisible to the scanner. Two live instances escaped the repo-wide scanner-driven de-jargon sweep exactly this way: BootstrapNotFoundError (context-dir.ts) citing a decision id in its operator-facing message, and GrantViolationError (pi-jit-agents jit-runtime.ts) citing another. Class: an AST matcher covers a surface (operator-facing error text) by one construction form while the language admits others producing the same surface; each unmatched form is a silent detection hole.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/citation-rot-scanner.ts",
+      "lines": "183",
+      "reference": "isErrorConstructorCall matches ts.isNewExpression with an /Error$/ identifier callee only; super(...) message construction in an Error subclass constructor is a CallExpression with a super-keyword callee and is never matched"
+    },
+    {
+      "file": "packages/pi-context/src/context-dir.ts",
+      "lines": "52",
+      "reference": "BootstrapNotFoundError builds its message via super(...) with a hardcoded decision-id citation -- unseen by the scanner through the entire de-jargon rollout"
+    },
+    {
+      "file": "packages/pi-jit-agents/src/jit-runtime.ts",
+      "lines": "79",
+      "reference": "GrantViolationError likewise cites a decision id in a super(...)-built message -- the second escaped instance"
+    }
+  ],
+  "impact": "The scanner's error-message surface under-reports: any Error subclass using the standard super(message) idiom can carry tracker-ID citations indefinitely with the repo-wide scan reporting clean, and the two escaped instances demonstrate the idiom is in real use. Future citations added via this idiom are equally invisible to both the scanner and the sweep workflows built on it.",
+  "proposed_resolution": "Extend the error-message matcher to also match a CallExpression whose callee is the super keyword when the enclosing class extends an Error-suffixed base (or any base, conservatively), scanning its first string-literal argument exactly as the NewExpression arm does; add a scanner test fixture pinning the super(...) form. Audit the matcher for other unmatched construction forms of the same surface (e.g. message assignment via this.message = ...) in the same pass."
+}

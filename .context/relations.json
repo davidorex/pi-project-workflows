@@ -11488,5 +11488,18 @@
       "refname": "pi-mono-is-exemplar"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9d7094b74528728a2bef7a329e3a3810",
+      "refname": "FGAP-143"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "1c6c2100b5dc3c1cafdbbc6a1041a3eb",
+      "refname": "FGAP-142"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

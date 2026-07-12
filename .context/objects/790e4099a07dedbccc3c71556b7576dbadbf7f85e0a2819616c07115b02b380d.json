@@ -1,0 +1,16 @@
+{
+  "description": "Implement DEC-0024 (resolved via derive-decisions-from-facts): extend the write-time edge guard validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1698) to full write-validate parity, rejecting at write everything validateContext rejects for an edge -- a dangling same-substrate endpoint (edge_endpoint_dangling), an unregistered-alias endpoint (edge_endpoint_unregistered), and a cycle-closing edge (edge_cycle_detected) -- in addition to the registration + present-endpoint-kind checks already hoisted. Rejection is UNCONDITIONAL: no force/allow/skip parameter enters any write op. Mechanism per FGAP-093's proposed_resolution: surface the resolver's dangling/unregistered endpoint status as a write-time rejection rather than a skip; add a prospective-cycle check against existing edges mirroring the validateRelations cycle pass. The registered-alias-but-unresolved FOREIGN endpoint is untouched (validates clean as a Cycle-8 foreign sentinel) -- cross-substrate edge formation is unaffected. Reconcile structured-endpoints.test.ts:288-310 by filing FGAP-1/FGAP-2 as real endpoint items in the fixture before the append, preserving what it verifies (bare-refname resolution, registration gate, dedup no-op) without depending on the removed dangling-accept.",
+  "acceptance_criteria": [
+    "appendRelationByRef / appendRelationsByRef reject at write an edge with a dangling same-substrate endpoint, an unregistered-alias endpoint, or one closing a cycle -- each matching validateContext's verdict, with a unit pin per rejection class",
+    "No force/allow/skip validity opt-out parameter is added to any write op (DEC-0024: reject unconditionally)",
+    "A registered-alias foreign endpoint (Cycle-8 sentinel) still appends and validates clean -- cross-substrate edge formation unaffected, with a regression pin",
+    "--dryRun previews report the same rejection the live write would produce for each of the three classes",
+    "structured-endpoints.test.ts:288-310 rewritten to file real endpoint items before the append; the suite passes without the dangling-accept assertion",
+    "build, check, and full test suite exit 0; docs-surface-sync applied to any changed op description or README statement about edge-write behavior"
+  ],
+  "files": [
+    "packages/pi-context/src/context-sdk.ts",
+    "packages/pi-context/src/structured-endpoints.test.ts"
+  ],
+  "status": "planned"
+}

@@ -2541,6 +2541,43 @@
       "oid": "5f29115c37882545f1d983ec3eb72315",
       "content_hash": "4a9bc9e7828b97570e4b12d5b18e904c03c61de1198ab2b7d4c4141d90126e9d",
       "content_parent": "c23fb9a80d331f379040d77f5420af1ad2b97119828fa60cef426429b122f95d"
+    },
+    {
+      "description": "Implement DEC-0024 (resolved via derive-decisions-from-facts): extend the write-time edge guard validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1698) to full write-validate parity, rejecting at write everything validateContext rejects for an edge -- a dangling same-substrate endpoint (edge_endpoint_dangling), an unregistered-alias endpoint (edge_endpoint_unregistered), and a cycle-closing edge (edge_cycle_detected) -- in addition to the registration + present-endpoint-kind checks already hoisted. Rejection is UNCONDITIONAL: no force/allow/skip parameter enters any write op. Mechanism per FGAP-093's proposed_resolution: surface the resolver's dangling/unregistered endpoint status as a write-time rejection rather than a skip; add a prospective-cycle check against existing edges mirroring the validateRelations cycle pass. The registered-alias-but-unresolved FOREIGN endpoint is untouched (validates clean as a Cycle-8 foreign sentinel) -- cross-substrate edge formation is unaffected. Reconcile structured-endpoints.test.ts:288-310 by filing FGAP-1/FGAP-2 as real endpoint items in the fixture before the append, preserving what it verifies (bare-refname resolution, registration gate, dedup no-op) without depending on the removed dangling-accept.",
+      "acceptance_criteria": [
+        "appendRelationByRef / appendRelationsByRef reject at write an edge with a dangling same-substrate endpoint, an unregistered-alias endpoint, or one closing a cycle -- each matching validateContext's verdict, with a unit pin per rejection class",
+        "No force/allow/skip validity opt-out parameter is added to any write op (DEC-0024: reject unconditionally)",
+        "A registered-alias foreign endpoint (Cycle-8 sentinel) still appends and validates clean -- cross-substrate edge formation unaffected, with a regression pin",
+        "--dryRun previews report the same rejection the live write would produce for each of the three classes",
+        "structured-endpoints.test.ts:288-310 rewritten to file real endpoint items before the append; the suite passes without the dangling-accept assertion",
+        "build, check, and full test suite exit 0; docs-surface-sync applied to any changed op description or README statement about edge-write behavior"
+      ],
+      "files": [
+        "packages/pi-context/src/context-sdk.ts",
+        "packages/pi-context/src/structured-endpoints.test.ts"
+      ],
+      "status": "planned",
+      "id": "TASK-126",
+      "oid": "79919941d47096388454ef7df4bd26f5",
+      "content_hash": "790e4099a07dedbccc3c71556b7576dbadbf7f85e0a2819616c07115b02b380d"
+    },
+    {
+      "description": "Implement FGAP-140: no install/update/status path seeds a fresh substrate's migrations.json with the block-schema migration declarations the catalog already carries (samples/migrations.json has ready-made chains for all 18 schemas; seedCatalogConfigMigrationDecls seeds config only). First step, per the gap's own proposed_resolution: determine the class-correct mechanism -- installContext fresh-install seeding versus generalizing check-status's config-only seeding to all schema kinds -- via derive-decisions-from-facts against the existing seeding precedents (seedCatalogConfigMigrationDecls, registerCatalogMigrationChainIfKnown) and file the decision; then implement the decided mechanism so a substrate's migration history is complete from birth.",
+      "acceptance_criteria": [
+        "The install-time-vs-status-time mechanism choice is filed as a decision (derived per derive-decisions-from-facts, or escalated if genuinely underdetermined) before implementation; the implementation matches it",
+        "A fresh /context install against the current catalog yields context-validate clean for session-notes with no manual write-schema-migration step -- the schema=1.1.0 / starter schema_version=1.0.0 bridge exists from birth, verified by a real fresh-install runtime demo",
+        "The seeding covers every freshly-installed schema with a catalog migration chain, not session-notes alone -- the general class, with a unit pin",
+        "Existing seedCatalogConfigMigrationDecls (config) and registerCatalogMigrationChainIfKnown (update-time) behavior unchanged (regression)",
+        "build, check, and full test suite exit 0; docs-surface-sync applied to any changed op description or README statement about install/status behavior"
+      ],
+      "files": [
+        "packages/pi-context/src/index.ts",
+        "packages/pi-context/src/migrations-store.ts"
+      ],
+      "status": "planned",
+      "id": "TASK-127",
+      "oid": "69af7c5c7fb70faed52abf7d17685648",
+      "content_hash": "620f2b027b57c29088e0d3c42e61330add81052586d27e9b8de89c28c9c96630"
     }
   ],
   "schema_version": "1.1.0"

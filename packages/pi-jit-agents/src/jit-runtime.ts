@@ -76,7 +76,7 @@ export class GrantViolationError extends Error {
 		public readonly violating: string[],
 	) {
 		super(
-			`Agent '${agentName}' grant violation: tools [${violating.join(", ")}] not in parent grant (DEC-0047 clamp at executeAgent boundary)`,
+			`Agent '${agentName}' grant violation: tools [${violating.join(", ")}] not in parent grant (parent-grant intersection clamp at the executeAgent boundary)`,
 		);
 		this.name = "GrantViolationError";
 	}

@@ -1044,7 +1044,7 @@ export function writeTypedFile(
 		validateFromFile(schemaPath, toWrite, label);
 	}
 
-	// Diff-scoped rhetorical-criteria enforcement (FGAP-043). Runs ONLY when the
+	// Diff-scoped rhetorical-criteria enforcement (write-time register rules: word caps + prohibited narration patterns). Runs ONLY when the
 	// caller threads the item(s) it actually created/merged as `changedItems` —
 	// never over the whole reconstructed file — so a pre-existing (grandfathered)
 	// violator on an untouched item never blocks an unrelated forward write. The
@@ -1223,8 +1223,8 @@ export function appendToTypedFile(
 			// prepareItemIdentityForWrite). Flat-array shape never identity-stamps.
 			const itemToAppend = maybeIdentityStampTypedItem(filePath, schemaPath, null, authored, "create");
 			const next = [...data, itemToAppend];
-			// Validate the WHOLE array against schemaPath, then write. Rhetorical
-			// enforcement (FGAP-043) is scoped to the single appended item.
+			// Validate the WHOLE array against schemaPath, then write. Rhetorical-criteria
+			// enforcement is scoped to the single appended item.
 			writeTypedFile(filePath, schemaPath, next, undefined, label, [
 				{ arrayKey: "__top__", item: itemToAppend as Record<string, unknown> },
 			]);
@@ -1905,7 +1905,7 @@ export function removeFromNestedTypedFile(
  * stamping; callers wanting per-item attribution should prefer the
  * array-grained writers.
  *
- * `changedItems` (FGAP-043): when a caller that authors a specific item routes
+ * `changedItems` (diff-scoped rhetorical-criteria enforcement): when a caller that authors a specific item routes
  * its write through this whole-block writer — notably `appendToBlockForDir`,
  * which writes inline rather than through `appendToTypedFile` — it threads the
  * item(s) it created so diff-scoped rhetorical-criteria enforcement fires on
@@ -2097,7 +2097,7 @@ export function appendToBlockForDir(
 
 		record[arrayKey] = [...(record[arrayKey] as unknown[]), itemToAppend];
 		// Thread the single appended item so diff-scoped rhetorical-criteria
-		// enforcement (FGAP-043) fires on this inline append path — which does NOT
+		// enforcement fires on this inline append path — which does NOT
 		// route through appendToTypedFile — exactly as it does on the update /
 		// upsert / nested primitives. Scalar items carry no checkable fields.
 		const changed =

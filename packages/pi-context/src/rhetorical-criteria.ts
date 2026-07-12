@@ -1,6 +1,6 @@
 /**
  * Write-time enforcement of the two mechanically-checkable rhetorical-register
- * rules FGAP-043's decided resolution names:
+ * rules this module's decided scope covers:
  *
  *   1. Terseness — per-field word-count caps, read from the existing (until now
  *      dormant) `x-prompt-budget.words` field annotation.

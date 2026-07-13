@@ -28,6 +28,16 @@ function op(name: string): OpDefinition {
 	return found;
 }
 
+/** Run `fn`, asserting it throws, and return the thrown message. */
+function captureThrow(fn: () => unknown): string {
+	try {
+		fn();
+	} catch (err) {
+		return err instanceof Error ? err.message : String(err);
+	}
+	assert.fail("expected a throw");
+}
+
 /** Pull the `{read}` ReadStructured off an OpResult, asserting it is one. */
 function readOf(result: unknown): ReadStructured {
 	const r = result as { read?: ReadStructured };
@@ -182,6 +192,66 @@ describe("append-block-item", () => {
 				return true;
 			},
 		);
+	});
+
+	// ── append-block-item --dryRun (exact dry-run outcome preview): the preview
+	// rides the LIVE append path (id-uniqueness, stamping, whole-file schema
+	// validation) with the persistence legs withheld — so it accepts/rejects
+	// identically to the live run and writes nothing either way. ──
+
+	it("dryRun previews a valid append as would-append and writes nothing", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema);
+		const blockPath = path.join(tmpDir, ".project", "decisions.json");
+		const before = fs.readFileSync(blockPath);
+
+		const result = op("append-block-item").run(tmpDir, {
+			block: "decisions",
+			arrayKey: "decisions",
+			item: { id: "d1", decision: "Use TypeScript", status: "decided" },
+			dryRun: true,
+		});
+		assert.match(String(result), /would append item 'd1' to decisions\.decisions/);
+		assert.ok(fs.readFileSync(blockPath).equals(before), "dryRun must not write the block file");
+	});
+
+	it("dryRun rejects a schema-invalid item with the live validation error, writing nothing", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "gaps", "gaps", gapsSchema);
+		const blockPath = path.join(tmpDir, ".project", "gaps.json");
+		const before = fs.readFileSync(blockPath);
+		const badEntry = { id: "bad-gap", description: "Bad category", status: "open", category: "nope", priority: "high" };
+
+		const previewMessage = captureThrow(() =>
+			op("append-block-item").run(tmpDir, { block: "gaps", arrayKey: "gaps", item: badEntry, dryRun: true }),
+		);
+		const liveMessage = captureThrow(() =>
+			op("append-block-item").run(tmpDir, { block: "gaps", arrayKey: "gaps", item: badEntry }),
+		);
+		assert.equal(previewMessage, liveMessage, "preview and live must reject with the identical message");
+		assert.ok(fs.readFileSync(blockPath).equals(before), "neither run may write the block file");
+	});
+
+	it("dryRun rejects a duplicate id with the live id-uniqueness error, writing nothing", (t) => {
+		const tmpDir = makeTmpDir();
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupBlock(tmpDir, "decisions", "decisions", decisionsSchema, [
+			{ id: "d1", decision: "Already here", status: "decided" },
+		]);
+		const blockPath = path.join(tmpDir, ".project", "decisions.json");
+		const before = fs.readFileSync(blockPath);
+		const dup = { id: "d1", decision: "Duplicate", status: "decided" };
+
+		const previewMessage = captureThrow(() =>
+			op("append-block-item").run(tmpDir, { block: "decisions", arrayKey: "decisions", item: dup, dryRun: true }),
+		);
+		const liveMessage = captureThrow(() =>
+			op("append-block-item").run(tmpDir, { block: "decisions", arrayKey: "decisions", item: dup }),
+		);
+		assert.equal(previewMessage, liveMessage, "preview and live must reject the duplicate id identically");
+		assert.ok(fs.readFileSync(blockPath).equals(before), "neither run may write the block file");
 	});
 
 	it("throws when block file does not exist", (t) => {

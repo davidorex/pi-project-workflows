@@ -29,9 +29,8 @@ import path from "node:path";
 import { createInterface } from "node:readline";
 import { fileURLToPath } from "node:url";
 import { renderBlocked, renderConflicts } from "@davidorex/pi-context";
-import { nextId, readBlock, resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
+import { resolveBlockItemSchema } from "@davidorex/pi-context/block-api";
 import { loadConfig } from "@davidorex/pi-context/context";
-import { schemaPath } from "@davidorex/pi-context/context-dir";
 import type { DispatchContext, WriterIdentity } from "@davidorex/pi-context/dispatch-context";
 import {
 	boundedJsonOutput,
@@ -40,7 +39,6 @@ import {
 	ops,
 	renderOpResultText,
 } from "@davidorex/pi-context/ops";
-import { validateFromFile } from "@davidorex/pi-context/schema-validator";
 import { readSchema } from "@davidorex/pi-context/schema-write";
 import { runPiBound } from "./pi-bound.js";
 import { formatAjvError, isValidationError, renderTable } from "./render.js";
@@ -191,13 +189,6 @@ export interface ParsedArgs {
 	help: boolean;
 	/** --show-schema: print the block contract and exit before any write. */
 	showSchema?: boolean;
-	/**
-	 * --dryRun / --dry-run: for append-block-item, validate the prospective
-	 * whole file and write nothing. Parsed as a global flag — never injected into
-	 * `params` — because the frozen append op declares no `dryRun` param and would
-	 * reject it as an unknown flag.
-	 */
-	dryRun?: boolean;
 	/** Selected output render. Unset → resolved from `json` at emit time. */
 	format?: "text" | "json" | "table";
 	explicitWriter?: unknown;
@@ -232,24 +223,6 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 		if (tok === "--show-schema") {
 			// Global flag (not an op param): print the block contract and exit.
 			out.showSchema = true;
-			continue;
-		}
-		if (op.name === "append-block-item" && (tok === "--dryRun" || tok === "--dry-run") && props.dryRun === undefined) {
-			// `--dry-run` is a GLOBAL flag scoped to append-block-item, the
-			// sole op the main() honor branch handles: it declares no `dryRun` param yet
-			// supports a client-side prospective-whole-file dry run. The token is captured
-			// here and NEVER routed into params, because the frozen op would reject
-			// `dryRun` as an unknown flag. Both the camel and kebab tokens are matched
-			// explicitly since, not being a schema key on this op, neither would resolve
-			// through the kebab→camel normalization below.
-			//
-			// For ops that DO declare a `dryRun` param (relation ops, upsert, update, …)
-			// `props.dryRun === undefined` is false, so this branch was already skipped and
-			// the token flows to the boolean-param handling, preserving the op's own dryRun
-			// semantics. For every OTHER no-`dryRun` op (the non-append block-mutation ops)
-			// the token is NOT swallowed here; it falls through to the unknown-flag throw
-			// below (UsageError → exit 2), a clean rejection rather than a silent write.
-			out.dryRun = true;
 			continue;
 		}
 		if (tok === "--json") {
@@ -434,8 +407,9 @@ export function parseOpArgs(op: OpDefinition, argv: string[], cwdBase = process.
 	// injectArrayKey-style): the map single-sources the exemption/help CONTRACT, not the
 	// value-supply wiring.
 	// `--help` and `--show-schema` exit before any op invocation and need no item, so
-	// the required-field check is skipped for them. `--dryRun` still requires
-	// the op's declared inputs (it validates a prospective item) and so is NOT exempt.
+	// the required-field check is skipped for them. An op-declared `--dryRun` still
+	// requires the op's declared inputs (it previews a prospective run) and so is NOT
+	// exempt.
 	if (!out.help && !out.showSchema) {
 		const required = (schema.required ?? []).filter((r) => !(r in AUTO_SUPPLIED));
 		const missing = required.filter((r) => !(r in out.params));
@@ -724,7 +698,7 @@ export function deriveHelp(op: OpDefinition): string {
 	lines.push(
 		"",
 		`Run 'pi-context --help' for all commands; '${op.name} --help --format json' for machine-readable help.`,
-		"Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --show-schema  --dry-run  --help",
+		"Global flags: --cwd <dir>  --json  --format text|json|table  --yes  --writer <json>  --show-schema  --help",
 	);
 	return lines.join("\n");
 }
@@ -900,7 +874,6 @@ export function deriveTopHelp(): string {
 		"  --yes, --force   pre-authorize gated ops in non-interactive contexts",
 		"  --writer <json>  override the auto-resolved writer identity",
 		"  --show-schema    preview a block op's contract (array_key/required/types/id) and exit",
-		"  --dry-run        append-block-item: validate the prospective file, write nothing",
 		"  --version, -v    print the pi-context version and exit",
 		"  --help, -h       this help, or per-op help after an op name",
 	);
@@ -1049,53 +1022,11 @@ export async function main(argv: string[]): Promise<number> {
 	injectWriter(op, parsed.params, identity);
 	injectArrayKey(op, parsed.params, parsed.cwd);
 
-	// append-block-item `--dry-run`: client-side prospective-whole-file
-	// validation. Replicates the op's autoId allocation, builds the prospective file
-	// {...existing, [arrayKey]: [...items, item]}, and validates it against the WHOLE
-	// block schema (matching exactly what appendToBlock validates on write) — then
-	// RETURNS before the auth/op-run block, so the frozen op is never invoked and
-	// nothing is written. The `--dryRun` flag itself never enters parsed.params, so
-	// the op would never see it even if reached.
-	if (op.name === "append-block-item" && parsed.dryRun) {
-		const block = parsed.params.block as string;
-		const arrayKey = parsed.params.arrayKey as string | undefined;
-		if (typeof arrayKey !== "string") {
-			process.stderr.write(`error: cannot resolve array key for block ${block}\n`);
-			return 2;
-		}
-		let item = (parsed.params.item ?? {}) as Record<string, unknown>;
-		if (parsed.params.autoId && (item == null || item.id === undefined)) {
-			try {
-				item = { ...item, id: nextId(parsed.cwd, block) };
-			} catch (e) {
-				process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
-				return 4;
-			}
-		}
-		let existing: Record<string, unknown> = {};
-		try {
-			existing = readBlock(parsed.cwd, block) as Record<string, unknown>;
-		} catch {
-			existing = {};
-		}
-		const items = Array.isArray(existing[arrayKey]) ? (existing[arrayKey] as unknown[]) : [];
-		const prospective = { ...existing, [arrayKey]: [...items, item] };
-		try {
-			validateFromFile(schemaPath(parsed.cwd, block), prospective, `${block}.${arrayKey}[item]`);
-		} catch (e) {
-			if (isValidationError(e)) {
-				process.stderr.write(`error: ${formatAjvError(e)}\n`);
-				return 5;
-			}
-			if (/schema (file )?not found/i.test(String((e as Error).message))) {
-				process.stderr.write(`error: ${(e as Error).message}\n`);
-				return 3;
-			}
-			throw e;
-		}
-		process.stdout.write(`[dry-run] PASS${item.id ? ` — would append ${item.id}` : ""}\n`);
-		return 0;
-	}
+	// append-block-item `--dry-run` is no longer handled client-side: the op
+	// declares its own `dryRun` param (an exact-outcome preview riding the live
+	// path — stamped prospective-file validation + the full birth-relations
+	// gate — with the persistence legs withheld), so the flag parses into
+	// params like every other declared dryRun and the op run previews it.
 
 	const dctx = buildCliDispatchContext(parsed.explicitWriter, identity);
 

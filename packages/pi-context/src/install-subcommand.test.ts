@@ -4464,6 +4464,185 @@ describe("write-time invariant gate (delta-scoped)", () => {
 			"dryRun wrote nothing either way",
 		);
 	});
+
+	// ── birth-relations --dryRun preview parity with the live filing gate (the
+	// exact-dry-run-outcome-preview class): beyond the orientation guard, the
+	// preview resolves each entry's counter-endpoint with the SAME resolver the
+	// live gate uses and runs the prospective-cycle check read-only, treating
+	// the NEW item's endpoint as resolving-by-construction — so a preview
+	// refusal is byte-identical to the live run's refusal on the same inputs,
+	// and a preview would-file is a filing the live run accepts. ──
+
+	/** Run `fn`, asserting it throws, and return the thrown message. */
+	function previewCaptureThrow(fn: () => unknown): string {
+		try {
+			fn();
+		} catch (err) {
+			return err instanceof Error ? err.message : String(err);
+		}
+		assert.fail("expected a throw");
+	}
+
+	/** Byte-snapshot every top-level substrate *.json. */
+	function snapshotSubstrateJson(substrateDir: string): Map<string, Buffer> {
+		const files = new Map<string, Buffer>();
+		for (const name of fs.readdirSync(substrateDir)) {
+			if (name.endsWith(".json")) files.set(name, fs.readFileSync(path.join(substrateDir, name)));
+		}
+		return files;
+	}
+
+	function assertSubstrateUnchanged(substrateDir: string, before: Map<string, Buffer>, label: string): void {
+		for (const [name, bytes] of before) {
+			assert.ok(fs.readFileSync(path.join(substrateDir, name)).equals(bytes), `${label}: ${name} must be unchanged`);
+		}
+	}
+
+	/** Two tasks + an existing A→B dependency edge — the cycle-preview fixture. */
+	function makeCycleSubstrate(): string {
+		const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-birth-preview-"));
+		writeBootstrapPointer(dir, ".project");
+		fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(dir, ".project", "config.json"),
+			JSON.stringify({
+				schema_version: "1.8.0",
+				substrate_id: "sub-00000000000000ae",
+				root: ".project",
+				block_kinds: [],
+				lenses: [],
+				installed_schemas: [],
+				installed_blocks: [],
+				relation_types: [
+					// role-less, cycle_allowed undeclared → a cycle candidate; endpoint
+					// kinds undeclared → the raw direction form appends bare.
+					{ canonical_id: "task_depends_on_task", display_name: "depends on", category: "ordering" },
+				],
+				invariants: [
+					// Vacuously-satisfied error invariant: its presence makes the write
+					// pipeline snapshot the substrate, so a mid-composite live refusal
+					// byte-restores (the all-or-nothing restore is snapshot-gated) —
+					// matching real substrates, which declare invariants.
+					{
+						id: "completed-task-has-dependency",
+						class: "requires-edge",
+						block: "tasks",
+						where: { status: "completed" },
+						relation_types: ["task_depends_on_task"],
+						direction: "as_parent",
+						severity: "error",
+						message: "Completed task '{id}' has no dependency edge",
+					},
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({
+				tasks: [
+					{ id: "TASK-A", description: "a", status: "planned" },
+					{ id: "TASK-B", description: "b", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(dir, ".project", "relations.json"),
+			JSON.stringify([{ parent: "TASK-A", child: "TASK-B", relation_type: "task_depends_on_task" }]),
+		);
+		return dir;
+	}
+
+	it("dangling counter-endpoint: the preview reports the live rejection byte-identically (append + upsert), nothing written", () => {
+		tmpRoot = makeCycleSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = snapshotSubstrateJson(substrateDir);
+		const filing = {
+			block: "tasks",
+			arrayKey: "tasks",
+			item: { id: "TASK-C", description: "new", status: "planned" },
+			relations: [{ relation_type: "task_depends_on_task", direction: "as_parent", other: "GHOST-1" }],
+		};
+		const previewMessage = previewCaptureThrow(() => op("append-block-item").run(tmpRoot, { ...filing, dryRun: true }));
+		assert.match(previewMessage, /does not resolve to any item/, "the preview names the dangling counter-endpoint");
+		assertSubstrateUnchanged(substrateDir, before, "append preview");
+		const liveMessage = previewCaptureThrow(() => op("append-block-item").run(tmpRoot, filing));
+		assert.equal(previewMessage, liveMessage, "preview and live must reject with the identical message");
+		assertSubstrateUnchanged(substrateDir, before, "live refusal (byte-restored)");
+		// upsert (append mode) previews the same rejection.
+		const upsertPreview = previewCaptureThrow(() =>
+			op("upsert-block-item").run(tmpRoot, { ...filing, item: { ...filing.item, id: "TASK-D" }, dryRun: true }),
+		);
+		assert.match(upsertPreview, /does not resolve to any item/, "the upsert preview reports the same would-reject");
+		assertSubstrateUnchanged(substrateDir, before, "upsert preview");
+	});
+
+	it("cycle-closing birth edge: the preview reports the live cycle rejection byte-identically (the new item's edges count in the prospective set)", () => {
+		tmpRoot = makeCycleSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = snapshotSubstrateJson(substrateDir);
+		// Existing A→B; birth edges B→C (as_child) then C→A (as_parent) close the
+		// cycle A→B→C→A THROUGH the unwritten item — detectable only because the
+		// preview keeps the new item's edges in the prospective cycle set.
+		const filing = {
+			block: "tasks",
+			arrayKey: "tasks",
+			item: { id: "TASK-C", description: "cycle closer", status: "planned" },
+			relations: [
+				{ relation_type: "task_depends_on_task", direction: "as_child", other: "TASK-B" },
+				{ relation_type: "task_depends_on_task", direction: "as_parent", other: "TASK-A" },
+			],
+		};
+		const previewMessage = previewCaptureThrow(() => op("append-block-item").run(tmpRoot, { ...filing, dryRun: true }));
+		assert.match(previewMessage, /relation cycle/, "the preview names the prospective cycle");
+		assertSubstrateUnchanged(substrateDir, before, "append preview");
+		const liveMessage = previewCaptureThrow(() => op("append-block-item").run(tmpRoot, filing));
+		assert.equal(previewMessage, liveMessage, "preview and live must reject the cycle with the identical message");
+		assertSubstrateUnchanged(substrateDir, before, "live refusal (byte-restored)");
+	});
+
+	it("new-item-endpoint exemption: a birth relation whose only unresolvable endpoint is the new item previews clean, and the live run agrees (would-file ↔ filed)", () => {
+		tmpRoot = makeCycleSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = snapshotSubstrateJson(substrateDir);
+		// TASK-C is unwritten (dangling by definition at preview time); TASK-B
+		// resolves. The exemption keeps the preview clean instead of false-
+		// rejecting the filing on its own item.
+		const filing = {
+			block: "tasks",
+			arrayKey: "tasks",
+			item: { id: "TASK-C", description: "valid filing", status: "planned" },
+			relations: [{ relation_type: "task_depends_on_task", direction: "as_parent", other: "TASK-B" }],
+		};
+		const preview = op("append-block-item").run(tmpRoot, { ...filing, dryRun: true });
+		assert.match(
+			String(preview),
+			/would append item 'TASK-C' to tasks\.tasks; would file 1 birth relation\(s\)/,
+			"the exempt new-item endpoint must not fail the preview",
+		);
+		assertSubstrateUnchanged(substrateDir, before, "clean preview writes nothing");
+		// The live run agrees with the would-file verdict.
+		const live = op("append-block-item").run(tmpRoot, filing);
+		assert.ok(String(live).includes("with 1 birth relation"), "the live run files what the preview would-filed");
+		const rels = JSON.parse(fs.readFileSync(path.join(substrateDir, "relations.json"), "utf-8")) as unknown[];
+		assert.equal(rels.length, 2, "the birth edge landed on the live run");
+	});
+
+	it("upsert (append mode) valid birth relations: preview would-files and the live run agrees", () => {
+		tmpRoot = makeCycleSubstrate();
+		const substrateDir = path.join(tmpRoot, ".project");
+		const before = snapshotSubstrateJson(substrateDir);
+		const filing = {
+			block: "tasks",
+			arrayKey: "tasks",
+			item: { id: "TASK-E", description: "upserted", status: "planned" },
+			relations: [{ relation_type: "task_depends_on_task", direction: "as_child", other: "TASK-B" }],
+		};
+		const preview = op("upsert-block-item").run(tmpRoot, { ...filing, dryRun: true });
+		assert.ok(String(preview).includes("would file 1 birth relation"), "the upsert preview would-files");
+		assertSubstrateUnchanged(substrateDir, before, "clean upsert preview writes nothing");
+		const live = op("upsert-block-item").run(tmpRoot, filing);
+		assert.ok(String(live).includes("with 1 birth relation"), "the live upsert files what the preview would-filed");
+	});
 });
 
 // ── declared-baseline staleness: typed stale_conditions (the machine-evaluable

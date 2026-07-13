@@ -1859,23 +1859,51 @@ function buildWriteTimeEdgeValidator(
  * helper too and already emits the endpoint-status issues in its own loop, so
  * pushing status errors into the shared helper would double-emit at validate
  * time.
+ *
+ * `exemptRefname` (preview-only; never passed by the live write gate): a
+ * SAME-substrate item endpoint whose refname equals it is treated as
+ * resolving-by-construction — its `dangling` verdict is suppressed. This is
+ * the birth-relations `--dryRun` new-item exemption: the item being previewed
+ * is unwritten by definition, and the live run appends birth edges AFTER the
+ * item write, so that endpoint resolves `active` there. Only the `dangling`
+ * status is exempted (a same-substrate endpoint is never `unregistered` —
+ * that status requires a foreign substrate_id, which the new item's endpoint
+ * cannot carry).
  */
-function endpointStatusErrorsForWrite(edge: Edge, resolve: (ref: RawEndpoint) => ResolvedRef): string[] {
+function endpointStatusErrorsForWrite(
+	edge: Edge,
+	resolve: (ref: RawEndpoint) => ResolvedRef,
+	exemptRefname?: string,
+): string[] {
 	const errors: string[] = [];
 	const sides = [
-		{ role: "parent", key: endpointKey(edge.parent), res: resolve(edge.parent) },
-		{ role: "child", key: endpointKey(edge.child), res: resolve(edge.child) },
+		{ role: "parent", key: endpointKey(edge.parent), ref: edge.parent, res: resolve(edge.parent) },
+		{ role: "child", key: endpointKey(edge.child), ref: edge.child, res: resolve(edge.child) },
 	] as const;
-	for (const { role, key, res } of sides) {
+	for (const { role, key, ref, res } of sides) {
 		if (res.status === "unregistered") {
 			errors.push(
 				`Edge ${role} '${key}' (relation_type '${edge.relation_type}') names an unregistered substrate alias/id`,
 			);
 		} else if (res.status === "dangling") {
+			if (exemptRefname !== undefined && isSameSubstrateItemEndpointNamed(ref, exemptRefname)) continue;
 			errors.push(`Edge ${role} '${key}' (relation_type '${edge.relation_type}') does not resolve to any item`);
 		}
 	}
 	return errors;
+}
+
+/**
+ * Is `ref` a SAME-substrate item endpoint naming `refname`? The birth-preview
+ * exemption predicate: matches the endpoint form `resolveRelationSelector`
+ * builds for a not-yet-filed bare refname (structured item, no substrate_id,
+ * oid fallen back to the refname) and the legacy bare-string form. A FOREIGN
+ * endpoint (substrate_id present) never matches even when its refname
+ * coincides — a dangling foreign item is a genuine would-reject.
+ */
+function isSameSubstrateItemEndpointNamed(ref: RawEndpoint, refname: string): boolean {
+	if (typeof ref === "string") return ref === refname;
+	return ref.kind === "item" && ref.substrate_id === undefined && (ref.refname ?? ref.oid) === refname;
 }
 
 /**
@@ -1939,6 +1967,52 @@ function assertEdgesValidForWrite(cwd: string, edges: Edge[]): void {
 		}
 	}
 	assertProspectiveAcyclicForWrite(cwd, validator, edges);
+}
+
+/**
+ * READ-ONLY preview twin of the write-time edge gate, for a filing op's birth
+ * relations under `--dryRun` — the exact-dry-run-outcome-preview pattern
+ * (compute the precise outcome read-only, write nothing). The live filing
+ * appends the item, then routes each birth edge one-at-a-time through the
+ * gated `appendRelationByRef` (earlier birth edges already on disk when a
+ * later one is judged). This preview replays that sequence WITHOUT any write:
+ * per edge, in the live gate's order —
+ *  1. `validateEdgeAgainstRegistry` (relation_type registration +
+ *     presence-gated source/target endpoint kinds; the new item's endpoint
+ *     resolves to no `loc`, so its kind check self-skips — strictly more
+ *     lenient than live, never stricter);
+ *  2. the endpoint-status check with the NEW-ITEM EXEMPTION: the new item's
+ *     same-substrate endpoint is treated as resolving-by-construction (it is
+ *     unwritten by definition; the live run appends birth edges after the
+ *     item write, so it resolves `active` there) — every OTHER endpoint (the
+ *     counter-endpoint) is resolved through the SAME resolver the live gate
+ *     uses, and a `dangling` / `unregistered` verdict throws the live
+ *     rejection text;
+ *  3. the prospective-cycle check over (on-disk relations ∪ the birth edges
+ *     accepted so far ∪ this edge) — the new item's edges ARE in the cycle
+ *     set (cycle detection is graph-keyed on endpoint refnames and needs no
+ *     resolution), so a birth edge that would close a cycle throws the live
+ *     rejection text.
+ * Thrown messages reuse the live gate's exact templates, so a preview refusal
+ * is byte-identical to the live run's refusal on the same inputs. A no-op
+ * when no config is present (pre-bootstrap substrate), matching the live gate.
+ */
+export function assertBirthEdgesValidForPreview(cwd: string, edges: Edge[], newItemRefname: string): void {
+	const validator = buildWriteTimeEdgeValidator(cwd);
+	if (!validator) return;
+	const accepted: Edge[] = [];
+	for (const edge of edges) {
+		const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
+		if (edgeErrors.length > 0) {
+			throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
+		}
+		const statusErrors = endpointStatusErrorsForWrite(edge, validator.resolve, newItemRefname);
+		if (statusErrors.length > 0) {
+			throw new Error(`Edge rejected at write time (unresolved endpoint): ${statusErrors.join("; ")}`);
+		}
+		accepted.push(edge);
+		assertProspectiveAcyclicForWrite(cwd, validator, accepted);
+	}
 }
 
 /**

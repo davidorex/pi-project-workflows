@@ -46,6 +46,7 @@ import {
 	type AdoptResult,
 	adoptConception,
 	amendConfigEntry,
+	type Edge,
 	loadConfig,
 	loadRelations,
 	relationIssueSeverity,
@@ -54,6 +55,7 @@ import { BootstrapNotFoundError, schemaPath, tryResolveContextDir } from "./cont
 import {
 	appendRelationByRef,
 	appendRelationsByRef,
+	assertBirthEdgesValidForPreview,
 	buildIdIndex,
 	completeTask,
 	contextState,
@@ -73,6 +75,7 @@ import {
 	replaceRelationByRef,
 	resolveItemById,
 	resolveItemsByIds,
+	resolveRelationSelector,
 	type ValidationIssueNarrowing,
 	validateContext,
 } from "./context-sdk.js";
@@ -431,17 +434,40 @@ function appendBirthRelations(cwd: string, itemId: string, relations: BirthRelat
 }
 
 /**
- * Preview-parity orientation check for dryRun filings: run the SAME
- * role-mapping + ambiguity guard the live edge write applies
- * (orientAppendInput), against the registry only — endpoint resolution stays
- * out because the item is unwritten under a preview. A preview thereby
- * refuses exactly the entries the live run would orientation-refuse.
+ * Preview-parity check for dryRun filings — a preview refuses exactly the
+ * entries the live run would refuse, with the live rejection text. Per entry,
+ * in the live run's order:
+ *  1. the SAME role-mapping + orientation-ambiguity guard the live edge write
+ *     applies (orientAppendInput), against the registry;
+ *  2. endpoint resolution through the SAME selector resolver the live write
+ *     uses (resolveRelationSelector), then the read-only write-gate twin
+ *     (assertBirthEdgesValidForPreview): relation_type registration +
+ *     endpoint kinds, counter-endpoint existence (a dangling/unregistered
+ *     counter-endpoint is a would-reject), and the prospective-cycle check
+ *     over on-disk relations ∪ the birth edges. The NEW item's endpoint is
+ *     treated as resolving-by-construction — it is unwritten by definition,
+ *     and the live run appends birth edges after the item write, so it
+ *     resolves active there — but its edges ARE in the prospective cycle set.
+ * Everything is computed read-only; nothing is written under a preview.
  */
-function assertBirthRelationsOrientable(cwd: string, itemId: string, relations: BirthRelation[]): void {
+function assertBirthRelationsValidForPreview(cwd: string, itemId: string, relations: BirthRelation[]): void {
 	if (relations.length === 0) return;
 	const config = loadConfig(cwd);
+	// Entry-by-entry, orientation before gate, mirroring the live sequence
+	// (appendBirthRelations routes each entry through appendRelationByRef in
+	// turn), so a multi-entry preview reports the SAME first refusal the live
+	// run hits. Earlier entries re-enter each gate call as the prospective
+	// prior edges (they already passed — the re-check is idempotent).
+	const edges: Edge[] = [];
 	for (const rel of relations) {
-		orientAppendInput(config, birthRelationToAppendInput(itemId, rel));
+		const oriented = orientAppendInput(config, birthRelationToAppendInput(itemId, rel));
+		edges.push({
+			parent: resolveRelationSelector(cwd, oriented.parent),
+			child: resolveRelationSelector(cwd, oriented.child),
+			relation_type: oriented.relation_type,
+			...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
+		});
+		assertBirthEdgesValidForPreview(cwd, edges, itemId);
 	}
 }
 
@@ -549,7 +575,12 @@ export const ops: OpDefinition[] = [
 			"required for role-bearing orientation-ambiguous relation_types such as the gated-by / derived-from / supersedes " +
 			"/ depends families, where the raw form is rejected). Filing item + edges as one atom lets a new item satisfy " +
 			"error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that would refuse the bare " +
-			"item under the write-time gate.",
+			"item under the write-time gate. dryRun previews the append without writing: the exact prospective file " +
+			"(stamped, whole-schema-validated) plus the full birth-relations gate — orientation, counter-endpoint " +
+			"resolution (a dangling/unregistered counter-endpoint is refused with the live rejection text), and the " +
+			"prospective-cycle check; the new item's own endpoint is exempt from existence checking (unwritten by " +
+			"definition — it resolves once the live run appends the edges after the item write) while its edges still " +
+			"count in the cycle set.",
 		promptSnippet:
 			"Append items to project blocks (issues, decisions, or any user-defined block), with optional atomic birth edges",
 		examples: [
@@ -563,6 +594,12 @@ export const ops: OpDefinition[] = [
 			autoId: Type.Optional(
 				Type.Boolean({
 					description: "When true and the item has no id, allocate the next id from the block's id pattern",
+				}),
+			),
+			dryRun: Type.Optional(
+				Type.Boolean({
+					description:
+						"Preview the append without writing — validates the exact prospective file and runs the full birth-relations gate (orientation + counter-endpoint resolution + prospective cycles; the new item's endpoint is exempt from existence checking)",
 				}),
 			),
 			relations: Type.Optional(
@@ -580,6 +617,7 @@ export const ops: OpDefinition[] = [
 				arrayKey: string;
 				item: Record<string, unknown>;
 				autoId?: boolean;
+				dryRun?: boolean;
 				relations?: unknown;
 			},
 			ctx?: DispatchContext,
@@ -606,6 +644,20 @@ export const ops: OpDefinition[] = [
 			// withBlockLock critical section (block-api assertAppendIdUnique) —
 			// the single enforcement point. The prior racy readBlock-then-append
 			// tool-layer check was removed in favour of that library guard.
+			if (params.dryRun) {
+				// Exact dry-run outcome preview: the append rides the LIVE path with
+				// the persistence legs withheld (writeTypedFile's dry-run boundary) —
+				// id-uniqueness, stamping, and whole-file validation judge the exact
+				// prospective — then the birth entries run the full read-only gate
+				// twin (orientation + counter-endpoint resolution + prospective
+				// cycles, new-item endpoint exempt). A refusal here is the SAME
+				// refusal the live run produces; nothing is written either way.
+				appendToBlock(cwd, params.block, params.arrayKey, params.item, ctx, { dryRun: true });
+				assertBirthRelationsValidForPreview(cwd, String(params.item.id ?? ""), relations);
+				const wouldId = params.item?.id ? ` '${params.item.id}'` : "";
+				const wouldEdges = relations.length > 0 ? `; would file ${relations.length} birth relation(s)` : "";
+				return `would append item${wouldId} to ${params.block}.${params.arrayKey}${wouldEdges}`;
+			}
 			appendToBlock(cwd, params.block, params.arrayKey, params.item, ctx);
 			// Birth edges AFTER the item lands (its id must resolve as an endpoint),
 			// inside the same op run so the write-time gate judges item + edges as
@@ -954,8 +1006,11 @@ export const ops: OpDefinition[] = [
 			"selector, and EXACTLY ONE orientation: direction (as_parent | as_child, raw) or role (primary | counter, mapped " +
 			"via the relation's declared role_direction; required for role-bearing orientation-ambiguous relation_types) — " +
 			"one atom under the write-time gate, so a new filing can satisfy error-severity birth-edge invariants. dryRun " +
-			"previews the upsert AND runs the same orientation guard over the entries (a preview refuses what the live run " +
-			"would orientation-refuse; endpoint resolution stays out — the item is unwritten). When the upsert resolves to a " +
+			"previews the upsert AND runs the full birth-relations gate over the entries — orientation, counter-endpoint " +
+			"resolution (a dangling/unregistered counter-endpoint is refused with the live rejection text), and the " +
+			"prospective-cycle check — with the new item's own endpoint exempt from existence checking (unwritten by " +
+			"definition; it resolves once the live run appends the edges after the item write) while its edges still count " +
+			"in the cycle set. When the upsert resolves to a " +
 			"REPLACE, supplying relations refuses the write (birth edges are for new items; file edges on an existing item " +
 			"via append-relation).",
 		promptSnippet:
@@ -1021,11 +1076,13 @@ export const ops: OpDefinition[] = [
 			}
 			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
 			if (params.dryRun) {
-				// Preview parity: run the SAME role-mapping + orientation-ambiguity
-				// guard the live edge write applies, against the registry only — the
-				// item is unwritten, so endpoint resolution stays out. A preview
-				// refuses exactly the entries the live run would orientation-refuse.
-				assertBirthRelationsOrientable(cwd, String(idVal), relations);
+				// Preview parity: run the FULL birth-relations gate read-only —
+				// orientation, counter-endpoint resolution, and the prospective-cycle
+				// check, with the new item's endpoint exempt from existence checking
+				// (resolving-by-construction; its edges still count in the cycle
+				// set). A preview refuses exactly the entries the live run would
+				// refuse, with the live rejection text.
+				assertBirthRelationsValidForPreview(cwd, String(idVal), relations);
 				const edgePreview = relations.length > 0 ? `; would file ${relations.length} birth relation(s)` : "";
 				return `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}${edgePreview}`;
 			}

@@ -70,7 +70,7 @@ pi-context filter-block-items --block tasks --field tag --op in --value a,b,c
 For the block-mutation ops the CLI offers two pre-write affordances:
 
 - **`--show-schema`** previews a block op's contract and exits before any write — the array key, the required-field set, every field with its type (and enum values when declared), and the id pattern. Pass it with the op and `--block <name>`; no `--item` is needed.
-- **`append-block-item --dry-run`** (or `--dryRun`) validates the prospective whole file — `{...existing, <arrayKey>: [...items, newItem]}` against the block schema, exactly what a real append validates — and writes nothing. With `--autoId` it reports the id that would be allocated. The output is `[dry-run] PASS` (or `[dry-run] PASS — would append <id>`); a schema-invalid item surfaces the field-named validation error.
+- **`append-block-item --dry-run`** (or `--dryRun`) previews the exact append outcome and writes nothing: the op runs its live path — id-uniqueness, stamping, whole-file schema validation — on the exact prospective file, plus the full birth-relations gate over any `--relations` entries (orientation, counter-endpoint resolution, prospective cycles; the new item's own endpoint is exempt from existence checking). With `--autoId` it reports the id that would be allocated. The output is `would append item '<id>' to <block>.<arrayKey>` (plus `; would file N birth relation(s)` when relations are supplied); a refusal surfaces the same error the live run produces. `upsert-block-item --dryRun` previews identically for the append-mode upsert.
 
 ```bash
 pi-context append-block-item --block framework-gaps --show-schema     # contract preview, no write
@@ -162,7 +162,6 @@ pi-context update                            # apply: resync + auto-merge; confl
 - `--yes`, `--force` — pre-authorize an auth-gated op in a non-interactive context
 - `--writer <json>` — override the auto-resolved writer identity
 - `--show-schema` — preview a block op's contract (array key / required fields / field types / id pattern) and exit; see [Contract preview + dry-run](#contract-preview--dry-run)
-- `--dry-run`, `--dryRun` — for `append-block-item`, validate the prospective file and write nothing; see [Contract preview + dry-run](#contract-preview--dry-run)
 - `--version`, `-v` — print the package version and exit
 - `--help`, `-h` — grouped top-level help (ops by command class + a Process modes section), or per-op help after an op name
 

@@ -997,6 +997,7 @@ export function writeTypedFile(
 	ctx?: DispatchContext,
 	errorLabel?: string,
 	changedItems?: Array<{ arrayKey: string; nestedArrayKey?: string; item: Record<string, unknown> }>,
+	opts?: { dryRun?: boolean },
 ): void {
 	const label = errorLabel ?? filePath;
 
@@ -1072,6 +1073,14 @@ export function writeTypedFile(
 			validateRhetoricalCriteriaForItems(itemSchema, parsedSchema, changedItems, label, resolveNestedItemSchema);
 		}
 	}
+
+	// Dry-run boundary: everything ABOVE this line (author/version stamping,
+	// whole-file AJV validation, diff-scoped rhetorical-criteria enforcement)
+	// ran on the exact prospective the live write would persist, so a dryRun
+	// rejects/accepts identically to the write — and everything BELOW writes
+	// (content objects to objects/, then the tmp+rename of the file itself),
+	// so a dryRun returns here having touched nothing on disk.
+	if (opts?.dryRun) return;
 
 	// Post-validation object persistence. Content objects are
 	// written to objects/ ONLY after the whole block clears AJV and BEFORE the
@@ -1927,6 +1936,7 @@ export function writeBlockForDir(
 	data: unknown,
 	ctx?: DispatchContext,
 	changedItems?: Array<{ arrayKey: string; nestedArrayKey?: string; item: Record<string, unknown> }>,
+	opts?: { dryRun?: boolean },
 ): void {
 	const filePath = blockFilePathForDir(substrateDir, blockName);
 	const schemaPath = existingBlockSchemaPathForDir(substrateDir, blockName);
@@ -1983,7 +1993,7 @@ export function writeBlockForDir(
 		toWrite = validateBlockWithMigrationForDir(substrateDir, blockName, identityStamped, registry);
 	}
 
-	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`, changedItems);
+	writeTypedFile(filePath, schemaPath, toWrite, ctx, `block file '${blockName}.json'`, changedItems, opts);
 }
 
 /**
@@ -2073,6 +2083,7 @@ export function appendToBlockForDir(
 	arrayKey: string,
 	item: unknown,
 	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
 ): void {
 	withBlockLock(blockFilePathForDir(substrateDir, blockName), () => {
 		const data = readBlockForDir(substrateDir, blockName);
@@ -2112,7 +2123,12 @@ export function appendToBlockForDir(
 			itemToAppend && typeof itemToAppend === "object" && !Array.isArray(itemToAppend)
 				? [{ arrayKey, item: itemToAppend as Record<string, unknown> }]
 				: undefined;
-		writeBlockForDir(substrateDir, blockName, record, undefined, changed);
+		// `opts.dryRun` rides through to writeTypedFile's dry-run boundary: the
+		// whole live pipeline (id-uniqueness above, author/identity/version
+		// stamping, whole-file AJV, rhetorical enforcement) judges the exact
+		// prospective, and only the persistence legs are skipped — the append
+		// preview IS the live path with the write withheld, not a replica.
+		writeBlockForDir(substrateDir, blockName, record, undefined, changed, opts);
 	});
 }
 
@@ -2122,11 +2138,12 @@ export function appendToBlock(
 	arrayKey: string,
 	item: unknown,
 	ctx?: DispatchContext,
+	opts?: { dryRun?: boolean },
 ): void {
 	// Name-guard before pointer resolution — closing the earlier schema-path
 	// read/write resolver divergence — same ordering as readBlock.
 	assertSubstrateName(blockName);
-	appendToBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, ctx);
+	appendToBlockForDir(resolveContextDir(cwd), blockName, arrayKey, item, ctx, opts);
 }
 
 /**

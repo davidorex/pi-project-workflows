@@ -3558,6 +3558,66 @@
       "id": "VER-113",
       "oid": "f6cf591f5e846d5c6a09413d3fbc7486",
       "content_hash": "629e022f1ea6180bf133f3dabc60f40e7468de41dce173b72d27e136d8a4eec7"
+    },
+    {
+      "id": "VER-114",
+      "description": "TASK-131 (FGAP-144) verified: the three validator ops accept the narrowing set with per-op pins (context-validate severity/block/code+offset/limit; the relations/roadmap ops severity/code+offset/limit, block schema-rejected AND run()-refused there since relation/roadmap issues carry no block field); a synthetic >50KB issue set is retrieved in full through bounded slices (fixture pin, the previously-unreachable case); the json over-cap refusal names each op's concrete axes via the new overCapDirective threading, mirroring the read channel's directive shape; unparameterized calls pinned byte-shape-identical to the prior result (additive only). Orchestrator gates on the branch and on merged main: build/check exit 0, six suites zero-fail. Runtime demo drove the built CLI against the real substrate (narrowed and unnarrowed reads, over-cap refusal text). Fresh adversarial audit (scratchpad wave3/audit-131.md) iterated to zero across two rounds: a block-axis truth-state MAJOR (silent empty match on ops whose issues carry no block) fixed by dual-layer rejection and re-audited clean; SKILL regen landed at merge. Merged to main 0bd19b6b arc (wave 3a); currency surfaces further aligned by the TASK-137 merge 2c01b25e.",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "9cefbbaca5da69dcf33aa279156d7206",
+      "content_hash": "59285b4ee5f27e1ab572a1323cb2fd1b79ab648045d0f986be5feb4323dd83a9"
+    },
+    {
+      "id": "VER-115",
+      "description": "TASK-132 (FGAP-145) verified: DEC-0026 filed before implementation (both halves — always-on resolution disclosure + basis parameter, default catalog, installed basis reusing validateBlockWithMigrationForDir) and the implementation matches every clause. The false-green reproduction resolves: on a fresh install, validate-block-items --basis installed reports valid:false for session-notes consistent with read-block's MigrationRegistry throw, while the default basis stays valid:true and now discloses resolution:catalog-forward-preview so it cannot present as a generic block-validity verdict. Default byte-shape pinned (prior fields, prior order, resolution appended); catalog logic untouched. Fresh adversarial audit (scratchpad wave3/audit-132.md) PASS with zero defects: gate-mirroring verified by code identity (all three path resolvers identical; installed basis invokes the read gate's own validation function with the read gate's registry) and by a five-corner empirical sweep (no schema_version, no installed schema, invalid item, lagging envelope with and without project chain) with zero verdict-direction disagreement. Orchestrator gates: build/check exit 0, six suites zero-fail on branch and merged main. SKILL regen landed at merge.",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "95cedef7fafaec11101cbc8b82716cfa",
+      "content_hash": "398a430dde7d80611bd12369a17015745660e72eeb01e0d4653389e2a31cc8fc"
+    },
+    {
+      "id": "VER-116",
+      "description": "TASK-135 (FGAP-148) verified: under --dryRun the filing ops resolve each birth-relation counter-endpoint read-only with the live gate's resolver (dangling/unregistered refused with the live rejection text, unit-pinned), run the prospective-cycle check over on-disk relations plus the accepted birth edges with the new item resolving-by-construction (cycle would-reject pinned incl. self-loop), report would-file on clean previews with live/preview agreement across the pinned cases, and never existence-check the new-item endpoint (exemption refname-scoped to same-substrate endpoints). Implementation moved the append preview op-side (dryRun declared on append-block-item; the CLI item-only replica removed), threading dryRun through the append write path so the preview rides the live path with persistence withheld; backed by exported assertBirthEdgesValidForPreview reusing the live gate machinery through one shared per-edge helper. Orchestrator runtime demo on a scratch substrate: dangling preview/live byte-identical refusals, valid preview would-file with substrate unwritten, orientation guard firing identically. Six adversarial audit rounds (scratchpad wave3/audit-135*.md) iterated to zero: the recurring class was text asserting preview/live outcome equivalence beyond the code (docs, op strings, comments, test comments, CHANGELOG entries), retired across every carrier to the per-check covered-checks register; the final re-audit reported zero findings. Known preview-optimism residuals (new-item kind self-skip; write-pipeline invariant gate live-only; upsert item-arm narrower coverage) are disclosed on the doc surfaces and filed as their own gap. Gates: build/check exit 0, six suites zero-fail on branch and merged main (cb505c31). FGAP-148's filed premise correction (the append arm base behavior was a CLI-side item-only replica, not an orientation-only op preview) recorded at gap closure.",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "0f260680ea9e0246b1a1e9fe13b174e0",
+      "content_hash": "0955ebb4d3196d902216bbeb2591b1af6dea55d969617eb4ad571b3857ec0658"
+    },
+    {
+      "id": "VER-117",
+      "description": "TASK-136 (FEAT-014 criteria 2+6) verified: the RUN_INTEGRATION-gated integration test (work-order-loop.integration.test.ts) runs runWorkOrderLoop with ZERO _internals substitution — real pi subprocess dispatch through the production dispatchTargetAgent, real real-check-runner runtime_demo parsing the agent-written artifact, non-interactive ctx asserting completed-pending-commit, commit_sha undefined, realCheck.passed, and zero confirm calls. Skips cleanly when the env var is absent or pi missing. Adversarial audit (scratchpad wave3/audit-136.md) PASS: vacuity probes confirmed the assertions falsifiable three independent ways on an agent no-op; two independent green runs on a real pi subprocess (19.0s/4.1s) plus package suite 144-to-145 exactly plus-one; the model-pin failure mode probed empirically (an unavailable pinned model fails hard and legibly in about 1s via the empty-output guard, not a hang or false pass). Non-gated suite unchanged. The openrouter/z-ai/glm-5.2 pin carries an in-file breadcrumb comment recording the operator-environment rationale (the documented cost pin 403s on this machine) and the swap point, added for the audit's LOW finding and re-verified. Gates: build/check exit 0, six suites zero-fail with and without RUN_INTEGRATION, on branch and merged main.",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "c4be29f08376e64bc6c8f67003b99ab2",
+      "content_hash": "299330810a6ca3b6d1d601ea339ec7d09f92c11f2201034eeed6dc356d473f20"
+    },
+    {
+      "id": "VER-118",
+      "description": "TASK-137 (FEAT-011 criterion 9) verified: all four residue classes — prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes — are stated on the context-reconcile AND context-validate op descriptions, the pi-context README currency passage, and the skill narrative's status + validate passages, in the user-amended register (at best flagged for human review, never prevented, off-repo facts beyond engine observation; amendment commit 6f5e98fb), with no surface claiming total foreclosure. SKILL regenerated on-branch (AC-2) and again at merge. Four adversarial audit rounds (scratchpad wave3/audit-137*.md) iterated to zero: round 1 caught the original insertion asserting detection the engine lacks; round 2 caught the fix over-correcting into exclusive under-claims denying detection paths the engine has (counterexamples independently reproduced by the orchestrator in code); round 3 verified the enumeration code-exhaustive against a full read of validateContext and caught one missed vocabulary carrier; round 4 reported zero findings. The context-validate description now enumerates the full check set validateContext runs; the drift-surfacing vocabulary is stored-vs-derived rollup divergence on every carrier including source comments. Gates: build/check exit 0, six suites zero-fail on branch and merged main (2c01b25e).",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "abb35f7fd50a16fd2a311c212f9c66d6",
+      "content_hash": "740362121dc7a937a1134b002d80b869ffc995fef9ee408dad0151b600f252f3"
+    },
+    {
+      "id": "VER-119",
+      "description": "TASK-138 (FGAP-151) verified: the glue guard's quote-strip runs perl -0777 slurp so multi-line quoted spans collapse correctly — the live-bite repro (multi-line double-quoted commit message mentioning pi-context) exits 0, single-line mentions stay 0, genuine multi-line pipe true-positives exit 2, unbalanced quoting stays fail-closed (harness row-pinned); harness extended 28-to-32 rows, green on the copy then the live guard. FGAP-149 sibling composition REJECTED on empirical grounds: the same slurp collapse inserted into a commit-guard copy turns the P3 heredoc case fail-open (exit 2-to-0, quoted delimiter rewritten so the terminator never matches — reproduced independently by the adversarial audit), so FGAP-149 stays open on its own filed resolution shape. Adversarial audit (scratchpad wave3/audit-138.md) PASS: both harnesses 32/32 green live, six fresh adversarial inputs behaved as designed, the REJECT mechanism reproduced, commit hygiene clean (dev-copies retired, sandbox-rm incident recorded forensically). Two pre-existing fail-open under-block residuals surfaced (R1 backslash-newline continuation splitting the grep line-orientation; R2 command-substitution/backtick non-recognition) — filed as their own gap. Gates: hooks are shell-only, outside the TS surface; build/check/test exit 0 at every branch commit via husky and re-run by the orchestrator at HEAD and on merged main.",
+      "status": "passed",
+      "method": "test",
+      "verified_by": "orchestrator+fresh-adversarial-audit",
+      "date": "2026-07-13",
+      "oid": "5fadfc161e1fc6384de14d4553c84a40",
+      "content_hash": "d6ba86ddf9eda7919bd16ef25ce7eb9dcbabf65afebded4c73996f90bfb6d811"
     }
   ],
   "schema_version": "1.1.0"

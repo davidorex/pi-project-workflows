@@ -1,0 +1,7 @@
+{
+  "description": "TASK-131 (FGAP-144) verified: the three validator ops accept the narrowing set with per-op pins (context-validate severity/block/code+offset/limit; the relations/roadmap ops severity/code+offset/limit, block schema-rejected AND run()-refused there since relation/roadmap issues carry no block field); a synthetic >50KB issue set is retrieved in full through bounded slices (fixture pin, the previously-unreachable case); the json over-cap refusal names each op's concrete axes via the new overCapDirective threading, mirroring the read channel's directive shape; unparameterized calls pinned byte-shape-identical to the prior result (additive only). Orchestrator gates on the branch and on merged main: build/check exit 0, six suites zero-fail. Runtime demo drove the built CLI against the real substrate (narrowed and unnarrowed reads, over-cap refusal text). Fresh adversarial audit (scratchpad wave3/audit-131.md) iterated to zero across two rounds: a block-axis truth-state MAJOR (silent empty match on ops whose issues carry no block) fixed by dual-layer rejection and re-audited clean; SKILL regen landed at merge. Merged to main 0bd19b6b arc (wave 3a); currency surfaces further aligned by the TASK-137 merge 2c01b25e.",
+  "status": "passed",
+  "method": "test",
+  "verified_by": "orchestrator+fresh-adversarial-audit",
+  "date": "2026-07-13"
+}

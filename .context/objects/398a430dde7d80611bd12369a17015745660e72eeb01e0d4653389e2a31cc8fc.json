@@ -1,0 +1,7 @@
+{
+  "description": "TASK-132 (FGAP-145) verified: DEC-0026 filed before implementation (both halves — always-on resolution disclosure + basis parameter, default catalog, installed basis reusing validateBlockWithMigrationForDir) and the implementation matches every clause. The false-green reproduction resolves: on a fresh install, validate-block-items --basis installed reports valid:false for session-notes consistent with read-block's MigrationRegistry throw, while the default basis stays valid:true and now discloses resolution:catalog-forward-preview so it cannot present as a generic block-validity verdict. Default byte-shape pinned (prior fields, prior order, resolution appended); catalog logic untouched. Fresh adversarial audit (scratchpad wave3/audit-132.md) PASS with zero defects: gate-mirroring verified by code identity (all three path resolvers identical; installed basis invokes the read gate's own validation function with the read gate's registry) and by a five-corner empirical sweep (no schema_version, no installed schema, invalid item, lagging envelope with and without project chain) with zero verdict-direction disagreement. Orchestrator gates: build/check exit 0, six suites zero-fail on branch and merged main. SKILL regen landed at merge.",
+  "status": "passed",
+  "method": "test",
+  "verified_by": "orchestrator+fresh-adversarial-audit",
+  "date": "2026-07-13"
+}

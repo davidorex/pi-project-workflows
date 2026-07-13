@@ -1,0 +1,31 @@
+{
+  "title": "validate-block-items reports valid:true on a block the canonical read path throws on -- it resolves against the catalog schema + a self-seeded catalog-chain registry, not the installed schema + project registry",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "op-surface resolution disclosure / read-path faithfulness",
+  "description": "validateBlockItemsAgainstCatalog (index.ts:1003-1065) validates a block against the CATALOG schema body (resolveCatalog(), samplesRoot/<kind>.schema.json) after migrating its items through a fresh registry self-seeded from the catalog migration chain (findCatalogMigrationChain + buildFreshRegistryWithChain). The canonical read path -- readBlockForDir (block-api.ts:901-906) -> validateBlockWithMigrationForDir (schema-validator.ts:207-244), shared by read-block / read-block-item / read-block-page / filter-block-items -- validates against the INSTALLED schema using the PROJECT registry loaded from the substrate's on-disk migrations.json, and throws MigrationRegistry when the block's envelope schema_version lags the installed schema and the project registry lacks the hop. When the catalog ships the chain but the project migrations.json does not (the fresh-install condition FGAP-140 names), validate-block-items returns valid:true while every real read of the same file throws. The op's documented purpose is a deliberate catalog-forward update-preview, but its name and promptSnippet read as a generic item-validity check, so valid:true is over-consumed as 'this block reads.' Class: a validity/read op whose surfaced name does not disclose which schema+registry resolution it uses, so its verdict is mis-consumed as a canonical-read verdict; FGAP-114 is the prior instance (it aligned context-validate to the read path, leaving validate-block-items the single standing catalog-resolution outlier -- every other read/validation op delegates to readBlockForDir and agrees).",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "1013-1057",
+      "reference": "resolves catalog schema + catalog chain via resolveCatalog/findCatalogMigrationChain/buildFreshRegistryWithChain; on no chain validates as-is (no throw)"
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "901-906",
+      "reference": "read gate calls getProjectMigrationRegistryForDir + validateBlockWithMigrationForDir -- installed schema, project registry"
+    },
+    {
+      "file": "packages/pi-context/src/schema-validator.ts",
+      "lines": "234-241",
+      "reference": "throws on version mismatch when the supplied project registry lacks the hop"
+    },
+    {
+      "file": "analysis/2026-07-12-validate-vs-read-divergence-gap.md",
+      "reference": "empirical false-green on a fresh /context install scratch substrate: validate-block-items session-notes -> valid:true; read-block session-notes -> MigrationRegistry throw (need 1.0.0 -> 1.1.0); same for a tasks block set lagging; context-validate flags both block_schema_invalid, agreeing with the read path; full surface-by-surface class sweep"
+    }
+  ],
+  "impact": "An operator running validate-block-items to check a block's health is told valid:true for a block that is unreadable through every read op and flagged block_schema_invalid by context-validate. The false-green is reachable out of the box: session-notes ships lagging from a fresh install. Any closure/verification surface that cites a validate-block-items pass as block readability over-reads the verdict.",
+  "proposed_resolution": "Requires determination between (a) re-surfacing the op so its verdict is not mis-consumed -- rename/relabel to disclose the catalog-forward-preview semantics and/or return the resolution basis (catalog vs installed) in the result envelope; and (b) providing a read-path-faithful per-block diagnostic -- a non-throwing op that validates a block against the installed schema + project registry (the validateBlockWithMigrationForDir resolution context-validate's sweep already uses substrate-wide), so an operator gets a clean valid/invalid for 'does this block read?'. Relates to FGAP-140 (shared fresh-install root condition; this consumer-side gap persists even after 140's write-side seeding fix when installed and catalog schemas diverge) and FGAP-114 (prior instance of the same disclosure/faithfulness class). Class-correct fix addresses disclosure/faithfulness of the op surface, not only this one lag symptom."
+}

@@ -1,0 +1,7 @@
+{
+  "description": "TASK-138 (FGAP-151) verified: the glue guard's quote-strip runs perl -0777 slurp so multi-line quoted spans collapse correctly — the live-bite repro (multi-line double-quoted commit message mentioning pi-context) exits 0, single-line mentions stay 0, genuine multi-line pipe true-positives exit 2, unbalanced quoting stays fail-closed (harness row-pinned); harness extended 28-to-32 rows, green on the copy then the live guard. FGAP-149 sibling composition REJECTED on empirical grounds: the same slurp collapse inserted into a commit-guard copy turns the P3 heredoc case fail-open (exit 2-to-0, quoted delimiter rewritten so the terminator never matches — reproduced independently by the adversarial audit), so FGAP-149 stays open on its own filed resolution shape. Adversarial audit (scratchpad wave3/audit-138.md) PASS: both harnesses 32/32 green live, six fresh adversarial inputs behaved as designed, the REJECT mechanism reproduced, commit hygiene clean (dev-copies retired, sandbox-rm incident recorded forensically). Two pre-existing fail-open under-block residuals surfaced (R1 backslash-newline continuation splitting the grep line-orientation; R2 command-substitution/backtick non-recognition) — filed as their own gap. Gates: hooks are shell-only, outside the TS surface; build/check/test exit 0 at every branch commit via husky and re-run by the orchestrator at HEAD and on merged main.",
+  "status": "passed",
+  "method": "test",
+  "verified_by": "orchestrator+fresh-adversarial-audit",
+  "date": "2026-07-13"
+}

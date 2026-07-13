@@ -4792,7 +4792,7 @@
     },
     {
       "title": "Diagnostic/validator json-aggregate ops have no size-narrowing axis -- over-cap output is refused whole with a directive naming no mechanism",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "canonical_vocabulary": "output-size adaptation for aggregate diagnostics",
@@ -4829,11 +4829,14 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-12T10:10:54.037Z",
       "oid": "117cae2b00ecb1c62b485277bb2e13bb",
-      "content_hash": "57da79c99dc6374da99d8db18bd6b45af559e273118627e0aa576084b04e63bb"
+      "content_hash": "2bb8bf8721d98ea37ddaabac825212922298e15725270a35076b4f4822e5947f",
+      "closed_by": "TASK-131",
+      "closed_at": "2026-07-13",
+      "content_parent": "57da79c99dc6374da99d8db18bd6b45af559e273118627e0aa576084b04e63bb"
     },
     {
       "title": "validate-block-items reports valid:true on a block the canonical read path throws on -- it resolves against the catalog schema + a self-seeded catalog-chain registry, not the installed schema + project registry",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "canonical_vocabulary": "op-surface resolution disclosure / read-path faithfulness",
@@ -4865,7 +4868,10 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-07-12T10:11:22.599Z",
       "oid": "47f83fd4e6b55224b127af30f846b8ea",
-      "content_hash": "b7b6d9128f90868da2cf55835aada34b89846678d12b51b0ba0b5f6ecb8c3baa"
+      "content_hash": "5631aba01498ec1ffa5f6c4c99674ee3ca35152fa34909c1ef9098ae8a1884cb",
+      "closed_by": "TASK-132",
+      "closed_at": "2026-07-13",
+      "content_parent": "b7b6d9128f90868da2cf55835aada34b89846678d12b51b0ba0b5f6ecb8c3baa"
     },
     {
       "title": "Source comments carry opaque planning-cycle vocabulary (Cycle-N / Phase-X / Plan-N / F-G-P designators / Constraint-N / Bucket-N / carried-item-N / locked-decision-N), and scripts/ still carries the tracker-ID citation class the completed de-jargon program never reached",
@@ -4946,11 +4952,11 @@
     },
     {
       "title": "Birth-relations --dryRun preview is orientation-only while the live run endpoint-gates the counter-endpoint -- a preview accepts an edge the live filing rejects",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "canonical_vocabulary": "exact dry-run outcome preview",
-      "description": "append-block-item / upsert-block-item --dryRun previews a filing's birth relations through the orientation/registration checks only (documented at the preview: endpoint resolution stays out because the new item is unwritten). The live run routes each birth edge through the gated appendRelationByRef, which now enforces full write-time reference integrity: the counter-endpoint (the OTHER, already-existing item the edge names) must resolve, and the prospective edge set must stay acyclic. A --dryRun preview therefore reports would-file for a filing whose birth edge names a dangling counter-endpoint or closes a cycle -- outcomes the live run rejects. The new-item endpoint itself is legitimately un-checkable at preview (unwritten by definition, and the live run appends birth edges after the item write so it resolves active); the divergence is confined to the counter-endpoint's existence and the cycle check, both computable read-only at preview time against the existing substrate. Class: exact dry-run outcome preview -- the same preview-vs-live divergence class FGAP-066 (closed) fixed for update's catalog-ahead arm by computing the precise outcome read-only under --dryRun.",
+      "description": "At filing this gap's premise held that append-block-item / upsert-block-item --dryRun previews a filing's birth relations through the orientation/registration checks only; the implementation investigation corrected the append arm's actual base state — append --dryRun was a CLI-side item-only replica that previewed --relations not at all (and refused schema-absent blocks the live append accepts), while the orientation-only preview existed on upsert's dryRun arm alone. Both arms shared the operative divergence: the live run routes each birth edge through the gated appendRelationByRef, which enforces full write-time reference integrity — the counter-endpoint (the OTHER, already-existing item the edge names) must resolve, and the prospective edge set must stay acyclic — so a --dryRun preview reported would-file for a filing whose birth edge names a dangling counter-endpoint or closes a cycle, outcomes the live run rejects. The new-item endpoint itself is legitimately un-checkable at preview (unwritten by definition, and the live run appends birth edges after the item write so it resolves active); the divergence is confined to the counter-endpoint's existence and the cycle check, both computable read-only at preview time against the existing substrate. Class: exact dry-run outcome preview — the same preview-vs-live divergence class FGAP-066 (closed) fixed for update's catalog-ahead arm by computing the outcome read-only. Known residual instances of the class (new-item endpoint-kind self-skip; the write-pipeline delta-scoped invariant gate running live-only; the upsert item-arm's narrower item-level coverage) are tracked as their own filing, not by this gap.",
       "evidence": [
         {
           "file": "packages/pi-context/src/ops-registry.ts",
@@ -4972,7 +4978,10 @@
       "created_at": "2026-07-13",
       "id": "FGAP-148",
       "oid": "c10a9635e4dda77b7f08ca3f268c3e40",
-      "content_hash": "0c7e0cc10c95b33bd5810ceea6fde564cf25eea2c9f565606680be96cde577e3"
+      "content_hash": "8ecc675fdcbfd6ada3e193c74705947fe1c65a7df8b2a3de5835627b81552dd2",
+      "closed_by": "TASK-135",
+      "closed_at": "2026-07-13",
+      "content_parent": "0c7e0cc10c95b33bd5810ceea6fde564cf25eea2c9f565606680be96cde577e3"
     },
     {
       "title": "Commit guard over-blocks commit-shaped prose inside multi-line quoted strings -- the per-line walk splits quoted words across lines before tokenization",
@@ -5030,7 +5039,7 @@
     },
     {
       "title": "block-pi-context-glue.sh quote-strip is line-scoped -- a quoted span crossing a newline is not neutralized, so a multi-line quoted CLI mention false-positives the recognizer and glue heuristics",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "canonical_vocabulary": "multi-line quote-aware hook pattern matching",
@@ -5062,7 +5071,10 @@
       "created_at": "2026-07-13",
       "id": "FGAP-151",
       "oid": "4fd4313ceb5d0b2a23b203aeb8efd2fa",
-      "content_hash": "a31242ffdea253609c63a8260d6d38b27452bc66b68930840c62b3b5bf23e5cf"
+      "content_hash": "71a256dd747a9796c859ff1795cec27d84f4f3482ee6e1a41b6174b686e6f239",
+      "closed_by": "TASK-138",
+      "closed_at": "2026-07-13",
+      "content_parent": "a31242ffdea253609c63a8260d6d38b27452bc66b68930840c62b3b5bf23e5cf"
     }
   ]
 }

@@ -12112,5 +12112,83 @@
       "refname": "derive-decisions-from-facts"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "9cefbbaca5da69dcf33aa279156d7206",
+      "refname": "VER-114"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "23530c59989fa24daf5db9a6209fa2ca",
+      "refname": "TASK-131"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "95cedef7fafaec11101cbc8b82716cfa",
+      "refname": "VER-115"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "294b4716aa4e99dca19310df369067a0",
+      "refname": "TASK-132"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "0f260680ea9e0246b1a1e9fe13b174e0",
+      "refname": "VER-116"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "86728d3470c080044b30198a2c10c79c",
+      "refname": "TASK-135"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c4be29f08376e64bc6c8f67003b99ab2",
+      "refname": "VER-117"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4cb84fab2dc04cde433d3b1141c9a90e",
+      "refname": "TASK-136"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "abb35f7fd50a16fd2a311c212f9c66d6",
+      "refname": "VER-118"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "2541ff091f7484a366fc7faaf1d32d94",
+      "refname": "TASK-137"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "5fadfc161e1fc6384de14d4553c84a40",
+      "refname": "VER-119"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "8a08002013c2b3f1001c4339a04f2d60",
+      "refname": "TASK-138"
+    },
+    "relation_type": "verification_verifies_item"
   }
 ]

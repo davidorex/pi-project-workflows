@@ -1,0 +1,7 @@
+{
+  "description": "TASK-136 (FEAT-014 criteria 2+6) verified: the RUN_INTEGRATION-gated integration test (work-order-loop.integration.test.ts) runs runWorkOrderLoop with ZERO _internals substitution — real pi subprocess dispatch through the production dispatchTargetAgent, real real-check-runner runtime_demo parsing the agent-written artifact, non-interactive ctx asserting completed-pending-commit, commit_sha undefined, realCheck.passed, and zero confirm calls. Skips cleanly when the env var is absent or pi missing. Adversarial audit (scratchpad wave3/audit-136.md) PASS: vacuity probes confirmed the assertions falsifiable three independent ways on an agent no-op; two independent green runs on a real pi subprocess (19.0s/4.1s) plus package suite 144-to-145 exactly plus-one; the model-pin failure mode probed empirically (an unavailable pinned model fails hard and legibly in about 1s via the empty-output guard, not a hang or false pass). Non-gated suite unchanged. The openrouter/z-ai/glm-5.2 pin carries an in-file breadcrumb comment recording the operator-environment rationale (the documented cost pin 403s on this machine) and the swap point, added for the audit's LOW finding and re-verified. Gates: build/check exit 0, six suites zero-fail with and without RUN_INTEGRATION, on branch and merged main.",
+  "status": "passed",
+  "method": "test",
+  "verified_by": "orchestrator+fresh-adversarial-audit",
+  "date": "2026-07-13"
+}

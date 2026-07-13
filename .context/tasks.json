@@ -2669,7 +2669,7 @@
       "description": "Implement FGAP-144: give the diagnostic/validator json-aggregate ops (context-validate, context-validate-relations, validate-roadmap) a size-narrowing axis paralleling the item-read family -- optional severity / block / code filters and/or offset+limit pagination so issues[] reads in bounded slices -- and make the json over-cap boundary refusal name the concrete narrowing parameter (mirroring the read channel's overCapDirective) instead of the mechanism-less 'Narrow your read.'",
       "acceptance_criteria": [
         "context-validate, context-validate-relations, and validate-roadmap each accept a narrowing parameter set (severity/block/code filter and/or offset+limit) that bounds the returned issues[], with a unit pin per op",
-        "A synthetic over-cap validation result is retrievable in full through bounded slices -- the previously-unreachable case, pinned by a fixture that exceeds the 50KB cap",
+        "A synthetic over-cap validation result is retrievable in full through bounded slices -- the case no unnarrowed call can reach, pinned by a fixture that exceeds the 50KB cap",
         "The json-channel over-cap refusal names the concrete narrowing parameter for ops that declare one, mirroring the read channel's directive shape",
         "Unfiltered/unpaginated calls return the exact prior shape (regression -- additive parameters only)",
         "build, check, and full test suite exit 0; docs-surface-sync applied (op descriptions, README statements about the validators, skill narrative if op strings change, CHANGELOG)"
@@ -2678,11 +2678,11 @@
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/context-sdk.ts"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-131",
       "oid": "23530c59989fa24daf5db9a6209fa2ca",
-      "content_hash": "74b6092a121dd155b868b478ef1eb591e900a9e6b47af2b60b59c8a22905ecfa",
-      "content_parent": "c7c41c9da50e0c4ada65cbcc5478ca28e8f0a0e9c8b9c8b64c4e902f48293c61"
+      "content_hash": "874046573d38701e5351e378ab2b6f3d820d7f07d0b2b2dc7c884157aec85941",
+      "content_parent": "2d1386a5a97f49ea7fa7929fff022d376bc36c9c4e5293d2155201c1b76912ab"
     },
     {
       "description": "Implement FGAP-145: first step, per the gap's own proposed_resolution, determine via derive-decisions-from-facts whether the class-correct fix is (a) re-surfacing validate-block-items to disclose its catalog-forward-preview semantics (rename/relabel and/or a resolution-basis field in the result envelope), (b) a read-path-faithful per-block diagnostic op validating against the installed schema + project registry (the resolution the canonical read path and context-validate's sweep already use), or both as complementary halves -- file the decision, then implement it so an operator asking 'does this block read?' gets a truthful verdict and validate-block-items' verdict is un-mistakable for one.",
@@ -2697,11 +2697,11 @@
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/ops-registry.ts"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-132",
       "oid": "294b4716aa4e99dca19310df369067a0",
-      "content_hash": "e61590fec7459bc2e71ca4acc22fec22ca829bfa0e4ed1c2598186f3c9da349c",
-      "content_parent": "0c2807c500fafe2d80ba57116acbfb14dcf90c1c57af745b029f3ef7e074b004"
+      "content_hash": "86fe245ace5f6a3f5ece6677e40a563e84e82b77b6618a94c182692498bf20a3",
+      "content_parent": "e61590fec7459bc2e71ca4acc22fec22ca829bfa0e4ed1c2598186f3c9da349c"
     },
     {
       "description": "Implement FGAP-147: strip redirection grammar from the commit-guard hook's token stream before pathspec classification -- post-shlex, drop self-contained redirect tokens (numeric-prefixed or bare > >> < << <<< forms including fd-duplication) and drop bare-operator tokens together with their following target/delimiter token, or lex with shlex punctuation_chars=True and filter operator+operand pairs; on a heredoc marker, stop classifying the enclosing segment AND exclude heredoc body lines from segment classification (track the delimiter). Extend the shipped test harness with the investigation's full false-positive matrix plus a heredoc-body-prose row. Develop and validate against a scratchpad COPY of the live guard; the live file changes only as the final verified step.",
@@ -2753,11 +2753,11 @@
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/context-sdk.ts"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-135",
       "oid": "86728d3470c080044b30198a2c10c79c",
-      "content_hash": "635ce3b979512eabc17d580c81d6aa32ec70976163d6c15c529bc79e5089f777",
-      "content_parent": "38cededeb31d5877f929831479df97567cc1901a76fb099822278ed5442b80f5"
+      "content_hash": "f29ae9c1152428abcee83fbf60d8f746c42b32b2927e6d8d5d92daa213c58538",
+      "content_parent": "635ce3b979512eabc17d580c81d6aa32ec70976163d6c15c529bc79e5089f777"
     },
     {
       "description": "Close FEAT-014's remaining engineering legs (criteria 2 and 6, evaluated NOT MET on current main by the letter): (1) a PINNED end-to-end probe test on the work-order path that dispatches a REAL pi subprocess -- a work-order whose agent must write a file, verified by a runtime-demo real-check parsing exit codes/artifacts, driven non-interactively through runWorkOrderLoop with ZERO _internals substitution -- gated behind the existing RUN_INTEGRATION environment convention pi-workflows' integration tests already use (pi binary required); (2) a recorded fresh end-to-end non-interactive pass of that probe recipe on the CURRENT engine (post commit-gate, output-contract, and agents-materialization changes), since the only such run on record predates all three.",
@@ -2771,11 +2771,11 @@
         "packages/pi-agent-dispatch/src/work-order-loop.test.ts",
         "packages/pi-agent-dispatch/src/subprocess-dispatch.ts"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-136",
       "oid": "4cb84fab2dc04cde433d3b1141c9a90e",
-      "content_hash": "7afb38dad332ba241ae77abe9bc16a8d98ec7dcdf5b4926eb230c6f71fb40a7f",
-      "content_parent": "71a659c29b00a11ca2fcc8e47dd00608716013b8d454020d3bf80d52c4a8c408"
+      "content_hash": "5a5ff50cae1764ff1e2a4214fb4a9334e0c2144dd5d7511700d8ea82a962c280",
+      "content_parent": "7afb38dad332ba241ae77abe9bc16a8d98ec7dcdf5b4926eb230c6f71fb40a7f"
     },
     {
       "description": "Close FEAT-011's criterion 9 residue gap (evaluated PARTIAL on current main): the off-repo-conditions and engine-bypassing-writes residue classes are stated nowhere on the feature's surfaces, though the prose-truth and authored-judgment classes are. State all four flagged-for-review residue classes -- prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes -- on the surfaces the criterion names: the context-reconcile and context-validate op descriptions where staleness/divergence semantics are described, the pi-context README's currency section, and the skill narrative's validate/status passages. Docs-only; no engine change.",
@@ -2789,11 +2789,11 @@
         "packages/pi-context/README.md",
         "packages/pi-context/skill-narrative.md"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-137",
       "oid": "2541ff091f7484a366fc7faaf1d32d94",
-      "content_hash": "6b28800f992ac58e66c7f3fd6218bdc621a584d182ad9252b1c4fa3ca5419cf4",
-      "content_parent": "b6483e4139d4c67e2953c5ebe3663e541136318bbdcff04ff0a5e7ca90ead97e"
+      "content_hash": "23f63aa408d527d0f6397870dc3459f1b5c8732afb587969bfd4d507ae512d7d",
+      "content_parent": "6b28800f992ac58e66c7f3fd6218bdc621a584d182ad9252b1c4fa3ca5419cf4"
     },
     {
       "description": "Implement FGAP-151: make the glue guard's quote-strip whole-command -- perl slurp mode (-0777 -pe) at .claude/hooks/block-pi-context-glue.sh line 32 so quoted spans collapse across newlines exactly as single-line spans do (the fix shape verified on a copy by the gap's investigation: both live-bite cases pass, true positives still block, existing harness 28/28, unbalanced quoting degrades fail-closed). Extend the harness with multi-line rows: a multi-line double-quoted commit-message CLI mention passes; a multi-line single-quoted payload carrying data metacharacters (pipe, redirect, exit-capture text) passes; a genuine multi-line pipe true-positive blocks. Copy-first guard development; the live file changes only after the extended harness is green on the copy, then re-run against the live path. In the same pass, evaluate whether FGAP-149's sibling fix (the commit guard's multi-line quote-span exclusion) shares this mechanism -- if the commit guard's line loop can consume the same whole-command quote-collapse before its line walk, implement both from the one mechanism and close both gaps; if not, implement FGAP-151 alone and record why the mechanisms diverge.",
@@ -2810,11 +2810,11 @@
         ".claude/hooks/block-pathspec-commit.sh",
         ".claude/hooks/block-pathspec-commit.test.sh"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-138",
       "oid": "8a08002013c2b3f1001c4339a04f2d60",
-      "content_hash": "5eab9bec2476487b760de61c780637336c13674e80e1fa55129d286ff0f6787d",
-      "content_parent": "4d8b286a13bbe3274b183a9b956dff0871998c0c1d8daba2bf4fa2e26a8236c9"
+      "content_hash": "960e0363d7c69665be7c93b1cad1c0573cbacbd99535ea970fa753eb8dd3be30",
+      "content_parent": "5eab9bec2476487b760de61c780637336c13674e80e1fa55129d286ff0f6787d"
     }
   ],
   "schema_version": "1.1.0"

@@ -1,0 +1,14 @@
+{
+  "description": "Close FEAT-014's remaining engineering legs (criteria 2 and 6, evaluated NOT MET on current main by the letter): (1) a PINNED end-to-end probe test on the work-order path that dispatches a REAL pi subprocess -- a work-order whose agent must write a file, verified by a runtime-demo real-check parsing exit codes/artifacts, driven non-interactively through runWorkOrderLoop with ZERO _internals substitution -- gated behind the existing RUN_INTEGRATION environment convention pi-workflows' integration tests already use (pi binary required); (2) a recorded fresh end-to-end non-interactive pass of that probe recipe on the CURRENT engine (post commit-gate, output-contract, and agents-materialization changes), since the only such run on record predates all three.",
+  "acceptance_criteria": [
+    "A work-order-path integration test exists that spawns a real pi subprocess (no _internals stubs on dispatch, real-check, or commit legs), whose target agent writes a file verified by a runtime_demo real-check, running non-interactively to a completed-pending-commit or completed final status -- gated behind the RUN_INTEGRATION convention",
+    "The test run is recorded green on the current engine (a real invocation transcript in the closure verification, not an inference)",
+    "The non-gated unit suite is unchanged (regression) -- the integration pin adds coverage, it does not replace the orchestration pins",
+    "build, check, and full test suite exit 0 (with and without RUN_INTEGRATION where the pi binary is present)"
+  ],
+  "files": [
+    "packages/pi-agent-dispatch/src/work-order-loop.test.ts",
+    "packages/pi-agent-dispatch/src/subprocess-dispatch.ts"
+  ],
+  "status": "completed"
+}

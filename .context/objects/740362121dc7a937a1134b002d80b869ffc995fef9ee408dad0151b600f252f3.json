@@ -1,0 +1,7 @@
+{
+  "description": "TASK-137 (FEAT-011 criterion 9) verified: all four residue classes — prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes — are stated on the context-reconcile AND context-validate op descriptions, the pi-context README currency passage, and the skill narrative's status + validate passages, in the user-amended register (at best flagged for human review, never prevented, off-repo facts beyond engine observation; amendment commit 6f5e98fb), with no surface claiming total foreclosure. SKILL regenerated on-branch (AC-2) and again at merge. Four adversarial audit rounds (scratchpad wave3/audit-137*.md) iterated to zero: round 1 caught the original insertion asserting detection the engine lacks; round 2 caught the fix over-correcting into exclusive under-claims denying detection paths the engine has (counterexamples independently reproduced by the orchestrator in code); round 3 verified the enumeration code-exhaustive against a full read of validateContext and caught one missed vocabulary carrier; round 4 reported zero findings. The context-validate description now enumerates the full check set validateContext runs; the drift-surfacing vocabulary is stored-vs-derived rollup divergence on every carrier including source comments. Gates: build/check exit 0, six suites zero-fail on branch and merged main (2c01b25e).",
+  "status": "passed",
+  "method": "test",
+  "verified_by": "orchestrator+fresh-adversarial-audit",
+  "date": "2026-07-13"
+}

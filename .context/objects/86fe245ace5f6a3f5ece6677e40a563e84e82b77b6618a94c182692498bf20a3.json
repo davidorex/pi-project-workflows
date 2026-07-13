@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-145: first step, per the gap's own proposed_resolution, determine via derive-decisions-from-facts whether the class-correct fix is (a) re-surfacing validate-block-items to disclose its catalog-forward-preview semantics (rename/relabel and/or a resolution-basis field in the result envelope), (b) a read-path-faithful per-block diagnostic op validating against the installed schema + project registry (the resolution the canonical read path and context-validate's sweep already use), or both as complementary halves -- file the decision, then implement it so an operator asking 'does this block read?' gets a truthful verdict and validate-block-items' verdict is un-mistakable for one.",
+  "acceptance_criteria": [
+    "The disclosure-vs-faithful-diagnostic mechanism choice is filed as a decision (derived per derive-decisions-from-facts, or escalated if genuinely underdetermined) before implementation; the implementation matches it",
+    "The false-green reproduction from the gap's investigation (fresh install; validate-block-items passes session-notes while read-block throws) resolves under the decided mechanism: the operator-facing surface yields a verdict consistent with the read path, verified by re-running that reproduction",
+    "validate-block-items' catalog-forward-preview purpose remains available, surfaced so it cannot present as a generic block-validity check (per the decided surface shape)",
+    "Regression: existing validate-block-items behavior for its update-preview purpose unchanged except as the decision directs",
+    "build, check, and full test suite exit 0; docs-surface-sync applied (op description/promptSnippet, READMEs, skill narrative, CHANGELOG)"
+  ],
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/ops-registry.ts"
+  ],
+  "status": "completed"
+}

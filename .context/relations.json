@@ -12008,5 +12008,70 @@
       "refname": "FGAP-120"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "4fd4313ceb5d0b2a23b203aeb8efd2fa",
+      "refname": "FGAP-151"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e664356314c6ef76901640c61a2d88e1",
+      "refname": "FGAP-120"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "4fd4313ceb5d0b2a23b203aeb8efd2fa",
+      "refname": "FGAP-151"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "e9d63d0a1af3866f0d19921cbcca8d4e",
+      "refname": "FGAP-089"
+    },
+    "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a08002013c2b3f1001c4339a04f2d60",
+      "refname": "TASK-138"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "4fd4313ceb5d0b2a23b203aeb8efd2fa",
+      "refname": "FGAP-151"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a08002013c2b3f1001c4339a04f2d60",
+      "refname": "TASK-138"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "897ed72af06e3f300daa829efb8104dc",
+      "refname": "FGAP-149"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "8a08002013c2b3f1001c4339a04f2d60",
+      "refname": "TASK-138"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf5dd261bf6c7bd4b2c1bb2021c350ae",
+      "refname": "pi-mono-is-exemplar"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

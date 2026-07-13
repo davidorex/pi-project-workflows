@@ -1,0 +1,31 @@
+{
+  "title": "block-pi-context-glue.sh quote-strip is line-scoped -- a quoted span crossing a newline is not neutralized, so a multi-line quoted CLI mention false-positives the recognizer and glue heuristics",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "multi-line quote-aware hook pattern matching",
+  "description": "The quote-strip at .claude/hooks/block-pi-context-glue.sh line 32 uses perl -pe, which substitutes line by line, so a single- or double-quoted span that opens on one physical line and closes on a later line is never collapsed to its placeholder -- its interior leaks into the skeleton the recognizer (line 35) and the four glue heuristics (lines 43/48/59/64) consume. Confirmed live twice this session: a git commit whose multi-line -m message mentioned the CLI was blocked with the exit-capture message though it contains no pi-context op -- the message body's literal CLI-name mention matches the recognizer and the build pipeline's exit-capture echo matches the glue branch. Reduced repro: a 2-line double-quoted commit message mentioning the CLI blocks; the identical text on ONE line passes -- the sole delta is the newline. Class: the quote-strip neutralizes only single-line quoted spans; any quoted span crossing a newline leaks its interior metacharacters and CLI-name mentions. This is the residual multi-line facet of the closed quote-blindness gap on the same artifact and line -- that fix's harness tested only single-line quoted mentions. Distinct from the target-substrate scope-blindness gap on the hook family.",
+  "evidence": [
+    {
+      "file": ".claude/hooks/block-pi-context-glue.sh",
+      "lines": "32",
+      "reference": "perl -pe strips per line; multi-line quoted spans never collapse"
+    },
+    {
+      "file": ".claude/hooks/block-pi-context-glue.sh",
+      "lines": "35",
+      "reference": "recognizer matches the surviving CLI-name mention in an un-stripped multi-line quoted body"
+    },
+    {
+      "file": ".claude/hooks/block-pi-context-glue.test.sh",
+      "lines": "145-146",
+      "reference": "the prior fix's recognizer false-positive row is single-line only -- no multi-line row exercises the line-scoping"
+    },
+    {
+      "file": "analysis/2026-07-13-glue-hook-scope-false-positive-gap.md",
+      "reference": "investigation of record: skeleton dump, control boundary matrix, slurp-mode fix verified 28/28 plus controls plus true positives on a copy, fail-closed degradation argument"
+    }
+  ],
+  "impact": "Any Bash command that both mentions pi-context inside a multi-line quoted argument (a forensic commit message describing pi-context work; a heredoc or JSON payload discussing the CLI) and contains a shell metacharacter elsewhere is blocked though it invokes no op -- observed blocking legitimate mid-merge build+commit work twice this session. The multi-line dimension is where forensic commit messages about this very tooling live, so the guard most often misfires on commits describing pi-context changes.",
+  "proposed_resolution": "Make the strip whole-command: perl -0777 -pe (slurp) so the substitution runs once over the full multi-line command and quoted spans collapse across newlines exactly as single-line spans do -- verified on a copy: both live-bite cases pass, a multi-line single-quoted payload with interior metacharacters passes, both true positives still block, the existing harness is 28/28, and unbalanced quoting degrades fail-closed. Segment-scoping the glue checks is rejected: the branches are already recognizer-gated, and segment-scoping would let a real op with ancillary glue in another segment through. Extend the harness with multi-line rows (quoted commit-message mention passes; multi-line quoted payload with data metacharacters passes; a genuine multi-line pipe true-positive blocks). Copy-first guard development. Completes the multi-line facet of the closed quote-blindness gap."
+}

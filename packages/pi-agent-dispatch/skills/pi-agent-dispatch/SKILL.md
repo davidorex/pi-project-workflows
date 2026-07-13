@@ -81,7 +81,7 @@ Execute the bounded work-order loop: dispatch target_agent (via direct pi-jit-ag
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `work_order_id` | string | yes | ID of the work-order to execute (loads from .project/work-orders.json schema). |
+| `work_order_id` | string | yes | ID of the work-order to execute (loads from the substrate's work-orders block). |
 | `max_iterations` | number | no | Max iteration count before fail-final. Default 3. |
 | `agent_grant` | array | no | Tool grant for the dispatched privileged agent (capability composition). Default empty. |
 </tool>

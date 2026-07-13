@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-147: strip redirection grammar from the commit-guard hook's token stream before pathspec classification -- post-shlex, drop self-contained redirect tokens (numeric-prefixed or bare > >> < << <<< forms including fd-duplication) and drop bare-operator tokens together with their following target/delimiter token, or lex with shlex punctuation_chars=True and filter operator+operand pairs; on a heredoc marker, stop classifying the enclosing segment AND exclude heredoc body lines from segment classification (track the delimiter). Extend the shipped test harness with the investigation's full false-positive matrix plus a heredoc-body-prose row. Develop and validate against a scratchpad COPY of the live guard; the live file changes only as the final verified step.",
+  "acceptance_criteria": [
+    "Every false-positive form in the investigation's matrix passes (exit 0): a commit with trailing stderr-merge redirection, stdout/stderr/append/stdin redirects to files, and an -F - stdin commit fed by a heredoc",
+    "A heredoc BODY line that mentions a pathspec-shaped commit as prose does not block the enclosing command (the live symptom reproduced during the gap's own filing)",
+    "Both true-positive pathspec forms still block (exit 2), and plain -m/-am commits still pass (regression)",
+    "The extended test harness carries the full matrix and runs green; the fix was developed against a copy, with the live guard replaced only after the harness passed",
+    "The tokenization approach is written as a reusable pattern (shared prelude or documented recipe) the planned Bash-chokepoint task can consume rather than hand-rolling a third parser"
+  ],
+  "files": [
+    ".claude/hooks/block-pathspec-commit.sh",
+    ".claude/hooks/block-pathspec-commit.test.sh"
+  ],
+  "status": "completed"
+}

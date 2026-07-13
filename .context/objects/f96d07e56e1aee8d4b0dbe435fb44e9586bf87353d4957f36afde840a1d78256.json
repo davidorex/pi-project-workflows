@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "The extended 32-row harness is green against the live guard on merged main, proven non-vacuous three ways (7 new rows red against the old guard; block rows red against an exit-0 stub; every row asserts a concrete exit code). Orchestrator's independent reproduction: the exact heredoc-body-prose command shape that live-blocked this session's own gap filing now exits 0, and true positives still exit 2 via the same stdin harness. Two audit rounds: the first passed all acceptance criteria across an adversarial edge set (nested/stacked heredocs with FIFO resume, quoted delimiters, redirect-shaped text inside quoted arguments, true-positive-with-redirect, fd-duplication, command chains, subshells) with two LOW findings -- an indented-terminator over-block on malformed heredocs and a header decoupling over-claim; both fixed (bash-faithful column-0/tab-stripped terminator matching with a red-proven harness row; the line loop genuinely extracted as a callback-taking function with zero git coupling); the fresh re-audit passed 9/9 adversarial terminator probes at zero findings. Developed against a copy throughout; the live file changed only in final steps after copy-green.",
+  "criteria_results": [
+    {
+      "criterion": "Every false-positive form in the investigation's matrix passes (exit 0)",
+      "status": "passed"
+    },
+    {
+      "criterion": "A heredoc BODY line that mentions a pathspec-shaped commit as prose does not block the enclosing command",
+      "status": "passed"
+    },
+    {
+      "criterion": "Both true-positive pathspec forms still block (exit 2), and plain -m/-am commits still pass (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "The extended test harness carries the full matrix and runs green; the fix was developed against a copy, with the live guard replaced only after the harness passed",
+      "status": "passed"
+    },
+    {
+      "criterion": "The tokenization approach is written as a reusable pattern the planned Bash-chokepoint task can consume",
+      "status": "passed"
+    }
+  ]
+}

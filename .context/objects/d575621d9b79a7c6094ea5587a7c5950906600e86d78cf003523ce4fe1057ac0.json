@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main. The adversarial audit ran cross-surface probes against built dist: the classification test genuinely deepStrictEquals currentState's head against validateContext's filtered issues for the same on-disk fixture; custom message templates, error severity, and non-rollup-block invariant declarations all classify identically on both surfaces; stored_status attaches in both divergence directions and never on converged reads (key-census pinned); no second validate pass (diff-verified). Its LOW ordering finding -- items-outer vs invariants-outer emission divergence under multi-invariant configs -- was fixed to validateContext's exact nesting, with the order-sensitive multi-invariant test proven red against the pre-fix source; the fix's fresh re-audit passed with zero findings and independently confirmed ORDERED-EQUAL on the original probe shape. The audit's MEDIUM finding (generated SKILL lag) closed in the post-merge regen commit, deterministically re-checked byte-clean.",
+  "criteria_results": [
+    {
+      "criterion": "On a substrate with a stored/derived divergence, one context-current-state read carries both values on the affected milestones[] entry and a non-empty driftWarnings head; a fully-converged substrate carries no stored_status fields and an absent/empty head (additive -- prior shape otherwise byte-identical)",
+      "status": "passed"
+    },
+    {
+      "criterion": "driftWarnings is computed from the derivation's working set (no second full validate pass); its entries classify per invariant code, matching validateContext's classification for the same state",
+      "status": "passed"
+    },
+    {
+      "criterion": "Op description/promptSnippet + skill narrative state the fields and the review-not-assertion residue; SKILL regen; full suite 0 failures; CHANGELOG entry",
+      "status": "passed"
+    }
+  ]
+}

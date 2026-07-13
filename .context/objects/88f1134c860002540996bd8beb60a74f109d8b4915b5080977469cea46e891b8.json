@@ -1,0 +1,24 @@
+{
+  "title": "Duplicate-kind state_derivation.rollups entries are schema-expressible and make currentState diverge set-level from the invariant evaluation",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "canonical_vocabulary": "config vocabulary uniqueness constraints",
+  "description": "config.schema.json's state_derivation.rollups array carries no uniqueItems or per-kind uniqueness constraint, and resolveStateDerivation returns the raw config, so a config declaring the same kind in two rollup entries loads without complaint. The two consumers then disagree structurally: currentState's milestones walk visits items once PER ROLLUP ENTRY (duplicating milestones[] entries and drift-head divergence collection), while evaluateConfigInvariants builds rollupByKind as a last-wins Map and visits items ONCE. Empirically constructed during the drift-surfacing re-audit: two entries for the milestone kind yielded an 8-entry drift head against the invariant evaluation's 4 issues -- set-level divergence, not mere ordering -- and milestones[] itself duplicates under that shape. The stock catalog never ships duplicate kinds, so no shipped configuration manifests it; the divergence is reachable by any hand-authored or amended config. The ordering guarantee the drift head documents is void under this degenerate shape.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/schemas/config.schema.json",
+      "reference": "the rollups array schema declares items but no uniqueItems and no kind-uniqueness constraint"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "the milestones walk iterates sd.rollups outer (per-entry item visitation); evaluateConfigInvariants' derived-status branch builds a last-wins Map keyed by kind (single visitation) -- two different duplicate-kind semantics on the same data"
+    },
+    {
+      "file": "analysis/2026-07-13-ground-090.md",
+      "reference": "the drift-surfacing grounding; the re-audit of its ordering fix constructed the duplicate-kind case empirically (8-vs-4 entries) and verified the divergence predates the fix"
+    }
+  ],
+  "impact": "A config that declares the same rollup kind twice -- an easy hand-authoring or amend mistake with no write-time or validate-time signal -- silently produces duplicated milestones entries and a drift head that disagrees set-level with the validate surface, corroding exactly the single-verdict property the derived-status machinery exists to guarantee.",
+  "proposed_resolution": "Constrain the vocabulary at its gates rather than reconciling the walks: reject a duplicate rollup kind where config is validated (a validateContext config-shape issue naming the duplicated kind, plus the amend/write path refusing the introduction), making the divergent-walk shapes unreachable through sanctioned writes. The two consumers' duplicate-kind semantics then need no alignment; a config-schema uniqueness expression (or engine-side check where JSON Schema cannot express per-field uniqueness) carries the constraint dual-surface."
+}

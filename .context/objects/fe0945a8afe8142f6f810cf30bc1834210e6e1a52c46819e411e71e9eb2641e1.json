@@ -1,0 +1,20 @@
+{
+  "title": "Commit guard over-blocks commit-shaped prose inside multi-line quoted strings -- the per-line walk splits quoted words across lines before tokenization",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "canonical_vocabulary": "shell-grammar-aware hook tokenization",
+  "description": "The pathspec commit guard's line loop feeds each physical line of the command to shlex independently, so a multi-line single-quoted shell word (a quoted string containing newlines) is broken into per-line fragments -- a fragment line that reads like a pathspec commit (data, not an invocation) classifies as one and blocks the enclosing unrelated command. Reproduced during the redirect-fix re-audit: a probe wrapper carrying commit-shaped lines inside a multi-line quoted string was blocked. This is the quote dimension of the shell-grammar-unaware-hook class expressed at the LINE level: the closed quote-blindness gap fixed intra-line quoting in the glue hook, and the closed redirect gap fixed redirect grammar and heredoc bodies in this hook, but a quoted span crossing newlines still leaks fragments into classification. The heredoc-body exclusion machinery the redirect fix added (track an opener, exclude following lines until the closer) is the shape a quote-span exclusion would reuse.",
+  "evidence": [
+    {
+      "file": ".claude/hooks/block-pathspec-commit.sh",
+      "reference": "the line loop tokenizes each physical line independently; a newline inside a quoted word ends the fragment shlex sees, so quoted continuation lines classify as commands"
+    },
+    {
+      "file": "analysis/2026-07-12-pathspec-hook-false-positive-gap.md",
+      "reference": "the class investigation for the redirect dimension; this instance is the multi-line quote dimension of the same shell-grammar class, observed live by the redirect fix's re-audit when its own probe wrapper was blocked"
+    }
+  ],
+  "impact": "Any command embedding commit-shaped prose in a multi-line quoted string -- a script argument, an inline program, a message payload -- is refused with a misleading pathspec-commit message, the same silent-workaround ergonomics cost the redirect dimension carried before its fix.",
+  "proposed_resolution": "Extend the guard's line loop with quote-span tracking mirroring the heredoc-body exclusion it already has: lex quote state across lines (a line ending inside an unclosed single/double quote marks the following lines as continuation data until the quote closes) and exclude continuation lines from segment classification. Extend the harness with a multi-line-quoted-prose row (expect pass) and a true-positive row following a closed quote (expect block). Same copy-first guard-development rule; the reusable line-loop function the redirect fix extracted is the insertion point."
+}

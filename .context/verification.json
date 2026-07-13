@@ -3450,6 +3450,114 @@
       "id": "VER-109",
       "oid": "796eff0d597c0318c8e151c39fb3a34c",
       "content_hash": "d7e3d641c982ebbd0bbfe24bde831d2ad4ac89432bbf546f72485eb31b045774"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main. The adversarial audit ran cross-surface probes against built dist: the classification test genuinely deepStrictEquals currentState's head against validateContext's filtered issues for the same on-disk fixture; custom message templates, error severity, and non-rollup-block invariant declarations all classify identically on both surfaces; stored_status attaches in both divergence directions and never on converged reads (key-census pinned); no second validate pass (diff-verified). Its LOW ordering finding -- items-outer vs invariants-outer emission divergence under multi-invariant configs -- was fixed to validateContext's exact nesting, with the order-sensitive multi-invariant test proven red against the pre-fix source; the fix's fresh re-audit passed with zero findings and independently confirmed ORDERED-EQUAL on the original probe shape. The audit's MEDIUM finding (generated SKILL lag) closed in the post-merge regen commit, deterministically re-checked byte-clean.",
+      "criteria_results": [
+        {
+          "criterion": "On a substrate with a stored/derived divergence, one context-current-state read carries both values on the affected milestones[] entry and a non-empty driftWarnings head; a fully-converged substrate carries no stored_status fields and an absent/empty head (additive -- prior shape otherwise byte-identical)",
+          "status": "passed"
+        },
+        {
+          "criterion": "driftWarnings is computed from the derivation's working set (no second full validate pass); its entries classify per invariant code, matching validateContext's classification for the same state",
+          "status": "passed"
+        },
+        {
+          "criterion": "Op description/promptSnippet + skill narrative state the fields and the review-not-assertion residue; SKILL regen; full suite 0 failures; CHANGELOG entry",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-110",
+      "oid": "35c454cc96db5e99d2bcaeceef0149c4",
+      "content_hash": "d575621d9b79a7c6094ea5587a7c5950906600e86d78cf003523ce4fe1057ac0"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test zero-fail on the branch; the merge's first gate run on main failed on a stale build artifact (the re-pointed bundled dir resolves through dist predating the merged source) and passed after the mid-merge rebuild -- all six suites zero-fail on merged main. Orchestrator's independent ceremony demo against built dist: fresh init + accept-all + install materializes all 26 agent specs into the substrate's agents dir; editing the materialized investigator spec puts the edit marker into the compiled dispatch output (project tier wins); deleting the local copy restores the bundled fallback (marker gone). The adversarial audit verified the relocation's blast radius (no stale old-path references), bundled-dir resolution from built dist with published-layout reasoning, never-clobber under update and notFound for uncataloged names by direct ceremony runs, the all-26 tier-1 load-and-compile test, dispatch-loader source unchanged (FGAP-127 tier intact), monitor specs untouched, and docs accuracy; its single actionable -- the generated SKILL regen -- closed in the post-merge regen commit.",
+      "criteria_results": [
+        {
+          "criterion": "context-install (and accept-all) materializes real agent spec files into <contextDir>/agents/ from a config-declared installed_agents[] list -- mirroring installed_schemas[]/installed_blocks[] -- verified by runtime demo on a fresh substrate",
+          "status": "passed"
+        },
+        {
+          "criterion": "Materialized agent files are ordinary editable project files: editing a materialized file changes dispatch behavior, proving it is the live copy consulted (project tier), not shadowed by the bundled tier",
+          "status": "passed"
+        },
+        {
+          "criterion": "The existing bundled-builtinDir resolution (dispatch-loader.ts) is unchanged and still serves as the fallback tier when no local agents/ copy exists",
+          "status": "passed"
+        },
+        {
+          "criterion": "Regression tests cover: fresh-install materialization, precedence (local copy beats bundled), and edit-then-redispatch behavior change",
+          "status": "passed"
+        },
+        {
+          "criterion": "Full build/check/test clean; docs-surface-sync applied (pi-context README, root README, install/accept-all op descriptions, skill-narrative.md, CHANGELOG [Unreleased])",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-111",
+      "oid": "83e81458eec33a3aad871b34515fdf83",
+      "content_hash": "63eb3b27f95136dcec0dd75a2ba47b1d5b521919ce42762594b4d801c90ae18f"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "The extended 32-row harness is green against the live guard on merged main, proven non-vacuous three ways (7 new rows red against the old guard; block rows red against an exit-0 stub; every row asserts a concrete exit code). Orchestrator's independent reproduction: the exact heredoc-body-prose command shape that live-blocked this session's own gap filing now exits 0, and true positives still exit 2 via the same stdin harness. Two audit rounds: the first passed all acceptance criteria across an adversarial edge set (nested/stacked heredocs with FIFO resume, quoted delimiters, redirect-shaped text inside quoted arguments, true-positive-with-redirect, fd-duplication, command chains, subshells) with two LOW findings -- an indented-terminator over-block on malformed heredocs and a header decoupling over-claim; both fixed (bash-faithful column-0/tab-stripped terminator matching with a red-proven harness row; the line loop genuinely extracted as a callback-taking function with zero git coupling); the fresh re-audit passed 9/9 adversarial terminator probes at zero findings. Developed against a copy throughout; the live file changed only in final steps after copy-green.",
+      "criteria_results": [
+        {
+          "criterion": "Every false-positive form in the investigation's matrix passes (exit 0)",
+          "status": "passed"
+        },
+        {
+          "criterion": "A heredoc BODY line that mentions a pathspec-shaped commit as prose does not block the enclosing command",
+          "status": "passed"
+        },
+        {
+          "criterion": "Both true-positive pathspec forms still block (exit 2), and plain -m/-am commits still pass (regression)",
+          "status": "passed"
+        },
+        {
+          "criterion": "The extended test harness carries the full matrix and runs green; the fix was developed against a copy, with the live guard replaced only after the harness passed",
+          "status": "passed"
+        },
+        {
+          "criterion": "The tokenization approach is written as a reusable pattern the planned Bash-chokepoint task can consume",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-112",
+      "oid": "28172dfea85797a55b8762eba082a96c",
+      "content_hash": "f96d07e56e1aee8d4b0dbe435fb44e9586bf87353d4957f36afde840a1d78256"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main (48/48 scanner tests). The adversarial audit probed the widened extraction for false positives (substitution expressions unscanned, boundary-straddling tokens unmatched, non-string concat operands safe, heritage-free super unmatched, nested-class gating correct), verified the this.message arm and the genuine Object.assign exclusion pin, independently ran the repo-wide scan at zero hits under the substantially widened surface, and reproduced the historically-escaped shape (a decision id re-inserted into the original site's substitution template is flagged at the exact line). Its LOW note -- the compound-append form absent from the header's exclusion inventory -- was fixed (the form named with rationale; zero-instance grep-verified by the audit itself), the claim deterministically re-checked at merge.",
+      "criteria_results": [
+        {
+          "criterion": "A test fixture with a tracker-ID citation inside an Error subclass's super(...) message is flagged by the scanner with the error-message surface kind",
+          "status": "passed"
+        },
+        {
+          "criterion": "The existing NewExpression error-message detection unchanged (regression)",
+          "status": "passed"
+        },
+        {
+          "criterion": "The construction-form audit's findings are covered by matcher arms or documented as deliberate exclusions in the module header -- no silent holes",
+          "status": "passed"
+        },
+        {
+          "criterion": "build, check, and full test suite exit 0",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-113",
+      "oid": "f6cf591f5e846d5c6a09413d3fbc7486",
+      "content_hash": "629e022f1ea6180bf133f3dabc60f40e7468de41dce173b72d27e136d8a4eec7"
     }
   ],
   "schema_version": "1.1.0"

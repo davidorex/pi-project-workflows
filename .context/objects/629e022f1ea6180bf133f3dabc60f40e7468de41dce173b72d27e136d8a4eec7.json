@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main (48/48 scanner tests). The adversarial audit probed the widened extraction for false positives (substitution expressions unscanned, boundary-straddling tokens unmatched, non-string concat operands safe, heritage-free super unmatched, nested-class gating correct), verified the this.message arm and the genuine Object.assign exclusion pin, independently ran the repo-wide scan at zero hits under the substantially widened surface, and reproduced the historically-escaped shape (a decision id re-inserted into the original site's substitution template is flagged at the exact line). Its LOW note -- the compound-append form absent from the header's exclusion inventory -- was fixed (the form named with rationale; zero-instance grep-verified by the audit itself), the claim deterministically re-checked at merge.",
+  "criteria_results": [
+    {
+      "criterion": "A test fixture with a tracker-ID citation inside an Error subclass's super(...) message is flagged by the scanner with the error-message surface kind",
+      "status": "passed"
+    },
+    {
+      "criterion": "The existing NewExpression error-message detection unchanged (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "The construction-form audit's findings are covered by matcher arms or documented as deliberate exclusions in the module header -- no silent holes",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0",
+      "status": "passed"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch; the merge's first gate run on main failed on a stale build artifact (the re-pointed bundled dir resolves through dist predating the merged source) and passed after the mid-merge rebuild -- all six suites zero-fail on merged main. Orchestrator's independent ceremony demo against built dist: fresh init + accept-all + install materializes all 26 agent specs into the substrate's agents dir; editing the materialized investigator spec puts the edit marker into the compiled dispatch output (project tier wins); deleting the local copy restores the bundled fallback (marker gone). The adversarial audit verified the relocation's blast radius (no stale old-path references), bundled-dir resolution from built dist with published-layout reasoning, never-clobber under update and notFound for uncataloged names by direct ceremony runs, the all-26 tier-1 load-and-compile test, dispatch-loader source unchanged (FGAP-127 tier intact), monitor specs untouched, and docs accuracy; its single actionable -- the generated SKILL regen -- closed in the post-merge regen commit.",
+  "criteria_results": [
+    {
+      "criterion": "context-install (and accept-all) materializes real agent spec files into <contextDir>/agents/ from a config-declared installed_agents[] list -- mirroring installed_schemas[]/installed_blocks[] -- verified by runtime demo on a fresh substrate",
+      "status": "passed"
+    },
+    {
+      "criterion": "Materialized agent files are ordinary editable project files: editing a materialized file changes dispatch behavior, proving it is the live copy consulted (project tier), not shadowed by the bundled tier",
+      "status": "passed"
+    },
+    {
+      "criterion": "The existing bundled-builtinDir resolution (dispatch-loader.ts) is unchanged and still serves as the fallback tier when no local agents/ copy exists",
+      "status": "passed"
+    },
+    {
+      "criterion": "Regression tests cover: fresh-install materialization, precedence (local copy beats bundled), and edit-then-redispatch behavior change",
+      "status": "passed"
+    },
+    {
+      "criterion": "Full build/check/test clean; docs-surface-sync applied (pi-context README, root README, install/accept-all op descriptions, skill-narrative.md, CHANGELOG [Unreleased])",
+      "status": "passed"
+    }
+  ]
+}

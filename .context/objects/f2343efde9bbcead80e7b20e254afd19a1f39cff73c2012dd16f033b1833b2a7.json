@@ -1,0 +1,14 @@
+{
+  "description": "Implement FGAP-143: extend the citation-rot scanner's error-message matcher to also match a CallExpression whose callee is the super keyword when the enclosing class extends an Error-suffixed base (conservatively: any base), scanning its first string-literal argument exactly as the NewExpression arm does; add a scanner test fixture pinning the super(...) construction form. In the same pass, audit the matcher for other unmatched construction forms of the same operator-facing-error-text surface (e.g. message assignment via this.message = ...) and cover or explicitly document each.",
+  "acceptance_criteria": [
+    "A test fixture with a tracker-ID citation inside an Error subclass's super(...) message is flagged by the scanner with the error-message surface kind",
+    "The existing NewExpression error-message detection unchanged (regression)",
+    "The construction-form audit's findings are covered by matcher arms or documented as deliberate exclusions in the module header -- no silent holes",
+    "build, check, and full test suite exit 0"
+  ],
+  "files": [
+    "packages/pi-context/src/citation-rot-scanner.ts",
+    "packages/pi-context/src/citation-rot-scanner.test.ts"
+  ],
+  "status": "completed"
+}

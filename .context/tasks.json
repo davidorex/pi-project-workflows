@@ -1857,7 +1857,7 @@
     },
     {
       "description": "Always-on drift surfacing in currentState (FEAT-011 criteria 7 and 9 / shape S7): a rollup-kind item whose stored status differs from its derivation carries BOTH values in the currentState payload (derived status primary, stored_status alongside when they differ), and a driftWarnings head rides the result — the invariant subset computable from the derivation's own already-loaded working set (index + edges) — so divergence and bucket-lag are visible in every /context status read, not only in an on-demand validate run. Additive result-shape extension: consumers of the JSON shape (HTML view builder, orchestrator scripts) tolerate additions; the context-current-state/context-status op surfaces state the new fields and the residue (drift surfacing flags authored-judgment lag for review, it never asserts the authored bucket is wrong). Composed from FEAT-011 criteria 7 and 9 and shape report S7 (LLM-composed under that basis).",
-      "status": "planned",
+      "status": "completed",
       "files": [
         "packages/pi-context/src/context-sdk.ts",
         "packages/pi-context/src/context-sdk.test.ts",
@@ -1875,7 +1875,8 @@
       "created_at": "2026-07-05",
       "id": "TASK-090",
       "oid": "52c3314b9405df388c8905d78199ec07",
-      "content_hash": "77f5561534b01b7a1919b08e84242302aaeb06d3f3c502ba2cd68a7bb96076dd"
+      "content_hash": "1dd48d23ece4c316571e7793122ed81a1b403ee80395c3d7a6ec2470c2ad9981",
+      "content_parent": "77f5561534b01b7a1919b08e84242302aaeb06d3f3c502ba2cd68a7bb96076dd"
     },
     {
       "description": "Author the substrate-derived-state convention and resolve the engine's dangling canon citation (FEAT-011 criterion 8 / shape report §f bonus finding): the packaged milestone schema's status description cites 'canon (substrate-derived-state)' but no such convention exists in the conventions block. File the convention (conventions block, live substrate AND any catalog starter the conception ships): a block kind whose status is declared mechanically derivable is never authored — reads derive it, engine writes converge it, and repair flows through reconcile; authored writes to a derived field are refused. Audit the milestone schema text (samples + installed) so the citation resolves to the filed convention id; audit for any other dangling convention citations in shipped schema text (the class, not the instance). Dual-surface discipline: no live-only vocabulary (FGAP-102). On completion, flip FEAT-011's item_acknowledges_missing_convention edge to item_governed_by_convention against the new convention. Composed from FEAT-011 criterion 8 and shape report §f (LLM-composed under that basis).",
@@ -2403,11 +2404,11 @@
         "packages/pi-context/src/context.ts",
         "packages/pi-context/samples/conception.json"
       ],
-      "status": "in-progress",
+      "status": "completed",
       "id": "TASK-119",
       "oid": "8cca213e56948de8990f57f260fd9be2",
-      "content_hash": "ff5f279c5deed567b1583369a83aa486608119548bcaeecc8b972b7d0d7374d5",
-      "content_parent": "92a89da76c0c93cdba8ab717d2c0ba48dda5b951089ca848f40a736a9bd76acb"
+      "content_hash": "7ecf2839e49ca95cd6a10c7ea0972b482e8665ea7f6e62c061cf30236f57eb31",
+      "content_parent": "ff5f279c5deed567b1583369a83aa486608119548bcaeecc8b972b7d0d7374d5"
     },
     {
       "description": "User directive (verbatim, this session): 'first we need a script that will use nlp processing to pre-identify candidates needing full agent treatment for validating / de-hedging / correcting, for all substrate items, not just gaps.' Implemented as scripts/scan-substrate-hedges.ts (read-only, informational, non-gate; matching this repo's scan-comment-citations.ts precedent): scans EVERY block kind declared in the active substrate's config (config.block_kinds via loadConfig -- no hardcoded block list, per this project's derive-from-registry convention) and every schema-declared prose field of every item (a string property counts as prose iff its schema declares no enum/pattern/format/const -- ids, statuses, dates, hashes all declare one; the walk recurses through arrays-of-strings and arrays-of-objects; x-prompt-budget presence is recorded on findings but not required -- no hardcoded field list). All substrate access flows through the canonical pi-context surface (loadConfig / readSchema / readBlock), never raw fs reads of the substrate's *.json. Heuristic pattern matching in three weighted categories, grounded in the hedges the manual FGAP-124/125/126/127 provenance audits actually confirmed: (1) fork -- enumerated-alternative language (and/or; either...or; dash-or as in FGAP-125's live '-- or amend the schema'; semicolon-or; paren-or and or+gerund as in pre-correction FGAP-126; lettered '(a)...(b)' option lists -- numbered '(1)...(2)' deliberately unmatched because live substrate prose uses it to enumerate facts, not alternatives; 'alternatively'; option-enumeration cues); (2) deferral -- explicit decision-postponement ('as a decision' -- the exact FGAP-126 augmentation phrase -- TBD, to be determined/decided, not yet decided, open question, user's / user scope call, up to the user, undecided/undetermined, deferred, left/remains open, pending/needs a decision, decide later, punt, weak 'not yet'); (3) modal-hedge -- low-weight uncertainty vocabulary (might, could, may need/want/require, possibly/perhaps, probably/presumably, eventually, at some point, unclear/uncertain, unknown, later, seems/appears to, if needed). Every match carries pattern id + category + weight (1-4); an item's score is the summed weight across its fields, candidates rank by score with a min-score threshold (default 2, --min-score). Output: a single machine-readable JSON report (tool / generated_at / minScore / per-block summaries / reconciled totals / candidates sorted by score; per match: field path, matched text, surrounding-context snippet) written to a timestamped path under gitignored tmp/substrate-hedge-scans/ by default; --output overrides the path, --stdout prints the full report instead. The ranked candidate list is what an orchestrator works through with the gap-fork-provenance-audit-brief-template (analysis/2026-07-11-gap-fork-provenance-audit-brief-template.md) or its generalization to other block kinds. Weights rank, they do not judge: grounded forks (FGAP-124's and FGAP-127's were audited and left standing) are still flagged by design -- grounded-vs-invented is exactly what the downstream per-item agent audit determines; recall is deliberately favored over precision. The script itself corrects nothing and makes zero substrate writes -- pre-identification only.",
@@ -2713,10 +2714,11 @@
         ".claude/hooks/block-pathspec-commit.sh",
         ".claude/hooks/block-pathspec-commit.test.sh"
       ],
-      "status": "planned",
+      "status": "completed",
       "id": "TASK-133",
       "oid": "7c6d2381a15196160cd592181a177381",
-      "content_hash": "ab7c7e1bbe9cd57a19f127aa07fb77ee9e92b2d5930805df5d662238aff3cad6"
+      "content_hash": "e30ce14ad99eefa042e8e2312c106a1a5cd40e50ace707b9273032d9c9b9375b",
+      "content_parent": "ab7c7e1bbe9cd57a19f127aa07fb77ee9e92b2d5930805df5d662238aff3cad6"
     },
     {
       "description": "Implement FGAP-143: extend the citation-rot scanner's error-message matcher to also match a CallExpression whose callee is the super keyword when the enclosing class extends an Error-suffixed base (conservatively: any base), scanning its first string-literal argument exactly as the NewExpression arm does; add a scanner test fixture pinning the super(...) construction form. In the same pass, audit the matcher for other unmatched construction forms of the same operator-facing-error-text surface (e.g. message assignment via this.message = ...) and cover or explicitly document each.",
@@ -2730,10 +2732,11 @@
         "packages/pi-context/src/citation-rot-scanner.ts",
         "packages/pi-context/src/citation-rot-scanner.test.ts"
       ],
-      "status": "planned",
+      "status": "completed",
       "id": "TASK-134",
       "oid": "0b5fd88cf27afcb98c635e6f1213451d",
-      "content_hash": "45caff8609406b809815c68812a521be3c2c747ecc8adf583628d63e11f1bdb6"
+      "content_hash": "f2343efde9bbcead80e7b20e254afd19a1f39cff73c2012dd16f033b1833b2a7",
+      "content_parent": "45caff8609406b809815c68812a521be3c2c747ecc8adf583628d63e11f1bdb6"
     },
     {
       "description": "Implement FGAP-148: make the filing ops' birth-relations --dryRun preview report the same rejections the live filing produces. Under --dryRun, additionally check each birth-relation entry's counter-endpoint read-only against the existing substrate (resolve it with the same resolver the live gate uses; report a would-reject for dangling/unregistered) and run the prospective-cycle check treating the new item's endpoint as resolving-by-construction. The new-item endpoint itself stays exempt from existence checking at preview (unwritten by definition; the live run appends birth edges after the item write so it resolves). Mirrors the fixed preview pattern the update op's catalog-ahead arm established: compute the precise outcome read-only, write nothing.",
@@ -2752,6 +2755,40 @@
       "id": "TASK-135",
       "oid": "86728d3470c080044b30198a2c10c79c",
       "content_hash": "38cededeb31d5877f929831479df97567cc1901a76fb099822278ed5442b80f5"
+    },
+    {
+      "description": "Close FEAT-014's remaining engineering legs (criteria 2 and 6, evaluated NOT MET on current main by the letter): (1) a PINNED end-to-end probe test on the work-order path that dispatches a REAL pi subprocess -- a work-order whose agent must write a file, verified by a runtime-demo real-check parsing exit codes/artifacts, driven non-interactively through runWorkOrderLoop with ZERO _internals substitution -- gated behind the existing RUN_INTEGRATION environment convention pi-workflows' integration tests already use (pi binary required); (2) a recorded fresh end-to-end non-interactive pass of that probe recipe on the CURRENT engine (post commit-gate, output-contract, and agents-materialization changes), since the only such run on record predates all three.",
+      "acceptance_criteria": [
+        "A work-order-path integration test exists that spawns a real pi subprocess (no _internals stubs on dispatch, real-check, or commit legs), whose target agent writes a file verified by a runtime_demo real-check, running non-interactively to a completed-pending-commit or completed final status -- gated behind the RUN_INTEGRATION convention",
+        "The test run is recorded green on the current engine (a real invocation transcript in the closure verification, not an inference)",
+        "The non-gated unit suite is unchanged (regression) -- the integration pin adds coverage, it does not replace the orchestration pins",
+        "build, check, and full test suite exit 0 (with and without RUN_INTEGRATION where the pi binary is present)"
+      ],
+      "files": [
+        "packages/pi-agent-dispatch/src/work-order-loop.test.ts",
+        "packages/pi-agent-dispatch/src/subprocess-dispatch.ts"
+      ],
+      "status": "planned",
+      "id": "TASK-136",
+      "oid": "4cb84fab2dc04cde433d3b1141c9a90e",
+      "content_hash": "71a659c29b00a11ca2fcc8e47dd00608716013b8d454020d3bf80d52c4a8c408"
+    },
+    {
+      "description": "Close FEAT-011's criterion 9 residue gap (evaluated PARTIAL on current main): the off-repo-conditions and engine-bypassing-writes residue classes are stated nowhere on the feature's surfaces, though the prose-truth and authored-judgment classes are. State all four flagged-for-review residue classes -- prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes -- on the surfaces the criterion names: the context-reconcile and context-validate op descriptions where staleness/divergence semantics are described, the pi-context README's currency section, and the skill narrative's validate/status passages. Docs-only; no engine change.",
+      "acceptance_criteria": [
+        "Each of the four residue classes is stated on at least one op-string surface and the README currency text, phrased as flagged-for-review (detectable, never preventable), with no surface claiming total foreclosure of semantic currency",
+        "SKILL regenerated after the narrative/op-string edits",
+        "build, check, and full test suite exit 0"
+      ],
+      "files": [
+        "packages/pi-context/src/ops-registry.ts",
+        "packages/pi-context/README.md",
+        "packages/pi-context/skill-narrative.md"
+      ],
+      "status": "planned",
+      "id": "TASK-137",
+      "oid": "2541ff091f7484a366fc7faaf1d32d94",
+      "content_hash": "7f929326180e8c7efeb6caca66ac553b19601d2af83d74ca13473d83e34d86b9"
     }
   ],
   "schema_version": "1.1.0"

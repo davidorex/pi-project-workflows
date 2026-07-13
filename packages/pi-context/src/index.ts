@@ -14,6 +14,7 @@ import {
 	type AdoptResult,
 	adoptConception,
 	type ConfigBlock,
+	installedAgentDestPath,
 	installedBlockDestPath,
 	installedSchemaDestPath,
 	loadConfig,
@@ -1601,10 +1602,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
-	// Catalog resolution (samplesRoot + canonical_id→paths map) is shared with
+	// Catalog resolution (samplesRoot + canonical_id→paths maps) is shared with
 	// the read-only checkStatus drift detector via resolveCatalog so installer
 	// and detector cannot drift in how they resolve sources.
-	const { samplesRoot, byId } = resolveCatalog();
+	const { samplesRoot, byId, agentsById } = resolveCatalog();
 
 	for (const name of (config as ConfigBlock).installed_schemas ?? []) {
 		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
@@ -1714,6 +1715,63 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		}
 		fs.copyFileSync(sourceFile, destFile);
 		result.installed.push(relDest);
+	}
+
+	// ── AGENTS: materialize declared agent specs as editable project files ──
+	// Mirrors the BLOCKS loop's preservation stance, not the schemas resync:
+	// a materialized spec is the project's own editable copy (the loader's
+	// project tier, which wins over the bundled tier), so an existing file is
+	// NEVER overwritten — not even under --update — and agents are never
+	// baselined into installed_from. Deleting the file falls back to the
+	// bundled tier; re-running install re-materializes the catalog copy.
+	const installedAgents = (config as ConfigBlock).installed_agents ?? [];
+	if (installedAgents.length > 0) {
+		const agentsRoot = path.join(destRoot, "agents");
+		if (!fs.existsSync(agentsRoot)) fs.mkdirSync(agentsRoot, { recursive: true });
+		for (const name of installedAgents) {
+			const relDest = `agents/${name}.agent.yaml`;
+			const agent = agentsById.get(name);
+			if (!agent) {
+				result.notFound.push(relDest);
+				continue;
+			}
+			const sourceFile = path.join(samplesRoot, agent.spec_path);
+			// Single source of the dest derivation, shared with findUnmaterializedAssets.
+			const destFile = installedAgentDestPath(destRoot, name);
+			if (!fs.existsSync(sourceFile)) {
+				result.notFound.push(relDest);
+				continue;
+			}
+			if (fs.existsSync(destFile)) {
+				result.skipped.push(relDest);
+				continue;
+			}
+			fs.copyFileSync(sourceFile, destFile);
+			result.installed.push(relDest);
+		}
+		// Support assets: the catalog ships the specs' output schemas
+		// spec-ADJACENT (samples/agents/schemas/), and the loader resolves a
+		// materialized spec's relative `schemas/<x>.schema.json` ref against the
+		// spec's own directory only (the sibling probe is bundled-tier-only). So
+		// the adjacent schemas subdir is materialized alongside the specs —
+		// per-file skip-if-exists (same never-clobber stance), reported under the
+		// same result buckets with `agents/schemas/<file>` rel-dest strings.
+		const supportSrc = path.join(samplesRoot, "agents", "schemas");
+		if (fs.existsSync(supportSrc)) {
+			const supportDest = path.join(agentsRoot, "schemas");
+			if (!fs.existsSync(supportDest)) fs.mkdirSync(supportDest, { recursive: true });
+			for (const file of fs.readdirSync(supportSrc)) {
+				if (!file.endsWith(".schema.json")) continue;
+				const relDest = `agents/schemas/${file}`;
+				const destFile = path.join(supportDest, file);
+				if (fs.existsSync(destFile)) {
+					result.skipped.push(relDest);
+					continue;
+				}
+				fs.copyFileSync(path.join(supportSrc, file), destFile);
+				result.installed.push(relDest);
+			}
+		}
 	}
 
 	// ── Install baseline of the installed SCHEMAS (safe re-sync) ──────

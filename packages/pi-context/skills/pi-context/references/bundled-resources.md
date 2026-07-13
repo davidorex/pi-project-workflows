@@ -15,8 +15,49 @@
 - `schemas/status.schema.json`
 - `schemas/verification-method.schema.json`
 
-## samples/ (38 files)
+## samples/ (79 files)
 
+- `samples/agents/architecture-designer.agent.yaml`
+- `samples/agents/architecture-inferrer.agent.yaml`
+- `samples/agents/audit-finding-verifier.agent.yaml`
+- `samples/agents/audit-fixer.agent.yaml`
+- `samples/agents/audit-results-router.agent.yaml`
+- `samples/agents/code-explorer.agent.yaml`
+- `samples/agents/decomposer.agent.yaml`
+- `samples/agents/gap-identifier.agent.yaml`
+- `samples/agents/gap-resolution-assessor.agent.yaml`
+- `samples/agents/handoff-writer.agent.yaml`
+- `samples/agents/investigator.agent.yaml`
+- `samples/agents/pattern-analyzer.agent.yaml`
+- `samples/agents/phase-author.agent.yaml`
+- `samples/agents/plan-creator.agent.yaml`
+- `samples/agents/plan-decomposer.agent.yaml`
+- `samples/agents/project-definer.agent.yaml`
+- `samples/agents/project-inferrer.agent.yaml`
+- `samples/agents/quality-analyzer.agent.yaml`
+- `samples/agents/requirements-gatherer.agent.yaml`
+- `samples/agents/researcher.agent.yaml`
+- `samples/agents/schemas/audit-routing-manifest.schema.json`
+- `samples/agents/schemas/decomposition-specs.schema.json`
+- `samples/agents/schemas/execution-results.schema.json`
+- `samples/agents/schemas/finding-verification.schema.json`
+- `samples/agents/schemas/investigation-findings.schema.json`
+- `samples/agents/schemas/pattern-analysis.schema.json`
+- `samples/agents/schemas/phase.schema.json`
+- `samples/agents/schemas/plan-breakdown.schema.json`
+- `samples/agents/schemas/quality-analysis.schema.json`
+- `samples/agents/schemas/research-findings.schema.json`
+- `samples/agents/schemas/resolution-assessment.schema.json`
+- `samples/agents/schemas/structure-analysis.schema.json`
+- `samples/agents/schemas/synthesis.schema.json`
+- `samples/agents/schemas/task-verification.schema.json`
+- `samples/agents/schemas/verifier-output.schema.json`
+- `samples/agents/spec-implementer.agent.yaml`
+- `samples/agents/structure-analyzer.agent.yaml`
+- `samples/agents/synthesizer.agent.yaml`
+- `samples/agents/task-verifier.agent.yaml`
+- `samples/agents/task-worker.agent.yaml`
+- `samples/agents/verifier.agent.yaml`
 - `samples/blocks/context-contracts.json`
 - `samples/blocks/conventions.json`
 - `samples/blocks/decisions.json`

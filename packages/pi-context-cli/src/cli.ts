@@ -1023,10 +1023,10 @@ export async function main(argv: string[]): Promise<number> {
 	injectArrayKey(op, parsed.params, parsed.cwd);
 
 	// append-block-item `--dry-run` is no longer handled client-side: the op
-	// declares its own `dryRun` param (an exact-outcome preview riding the live
-	// path — stamped prospective-file validation + the full birth-relations
-	// gate — with the persistence legs withheld), so the flag parses into
-	// params like every other declared dryRun and the op run previews it.
+	// declares its own `dryRun` param (a preview riding the live path —
+	// stamped prospective-file validation + the birth-relations gate — with
+	// the persistence legs withheld), so the flag parses into params like
+	// every other declared dryRun and the op run previews it.
 
 	const dctx = buildCliDispatchContext(parsed.explicitWriter, identity);
 

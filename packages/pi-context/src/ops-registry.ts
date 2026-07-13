@@ -434,16 +434,19 @@ function appendBirthRelations(cwd: string, itemId: string, relations: BirthRelat
 }
 
 /**
- * Preview-parity check for dryRun filings — a preview refuses exactly the
- * entries the live run would refuse, with the live rejection text. Per entry,
- * in the live run's order:
+ * Covered-checks preview gate for dryRun filings. A preview refusal from the
+ * covered checks below carries the live run's rejection text; checks that
+ * need the written item or the post-write delta (the write-time invariant
+ * gate among them) do not run under preview. Per entry, in the live run's
+ * order:
  *  1. the SAME role-mapping + orientation-ambiguity guard the live edge write
  *     applies (orientAppendInput), against the registry;
  *  2. endpoint resolution through the SAME selector resolver the live write
  *     uses (resolveRelationSelector), then the read-only write-gate twin
  *     (assertBirthEdgesValidForPreview): relation_type registration +
- *     endpoint kinds, counter-endpoint existence (a dangling/unregistered
- *     counter-endpoint is a would-reject), and the prospective-cycle check
+ *     endpoint-kind checks for resolvable endpoints, counter-endpoint
+ *     existence (a dangling/unregistered counter-endpoint is a
+ *     would-reject), and the prospective-cycle check
  *     over on-disk relations ∪ the birth edges. The NEW item's endpoint is
  *     treated as resolving-by-construction — it is unwritten by definition,
  *     and the live run appends birth edges after the item write, so it
@@ -576,7 +579,7 @@ export const ops: OpDefinition[] = [
 			"/ depends families, where the raw form is rejected). Filing item + edges as one atom lets a new item satisfy " +
 			"error-severity birth-edge invariants (e.g. a decision must cite a forcing artifact) that would refuse the bare " +
 			"item under the write-time gate. dryRun previews the append without writing: the exact prospective file " +
-			"(stamped, whole-schema-validated) plus the full birth-relations gate — orientation, counter-endpoint " +
+			"(stamped, whole-schema-validated) plus the birth-relations gate — orientation, counter-endpoint " +
 			"resolution (a dangling/unregistered counter-endpoint is refused with the live rejection text), and the " +
 			"prospective-cycle check; the new item's own endpoint is exempt from existence checking (unwritten by " +
 			"definition — it resolves once the live run appends the edges after the item write) while its edges still " +
@@ -599,7 +602,7 @@ export const ops: OpDefinition[] = [
 			dryRun: Type.Optional(
 				Type.Boolean({
 					description:
-						"Preview the append without writing — validates the exact prospective file and runs the full birth-relations gate (orientation + counter-endpoint resolution + prospective cycles; the new item's endpoint is exempt from existence checking)",
+						"Preview the append without writing — validates the exact prospective file and runs the birth-relations gate (orientation + counter-endpoint resolution + prospective cycles; the new item's endpoint is exempt from existence checking)",
 				}),
 			),
 			relations: Type.Optional(
@@ -1006,7 +1009,7 @@ export const ops: OpDefinition[] = [
 			"selector, and EXACTLY ONE orientation: direction (as_parent | as_child, raw) or role (primary | counter, mapped " +
 			"via the relation's declared role_direction; required for role-bearing orientation-ambiguous relation_types) — " +
 			"one atom under the write-time gate, so a new filing can satisfy error-severity birth-edge invariants. dryRun " +
-			"previews the upsert AND runs the full birth-relations gate over the entries — orientation, counter-endpoint " +
+			"previews the upsert AND runs the birth-relations gate over the entries — orientation, counter-endpoint " +
 			"resolution (a dangling/unregistered counter-endpoint is refused with the live rejection text), and the " +
 			"prospective-cycle check — with the new item's own endpoint exempt from existence checking (unwritten by " +
 			"definition; it resolves once the live run appends the edges after the item write) while its edges still count " +
@@ -1076,12 +1079,15 @@ export const ops: OpDefinition[] = [
 			}
 			const idDesc = idVal !== undefined ? ` '${idVal}'` : "";
 			if (params.dryRun) {
-				// Preview parity: run the FULL birth-relations gate read-only —
-				// orientation, counter-endpoint resolution, and the prospective-cycle
+				// Preview: run the birth-relations gate read-only — orientation,
+				// relation_type registration + endpoint-kind checks for resolvable
+				// endpoints, counter-endpoint resolution, and the prospective-cycle
 				// check, with the new item's endpoint exempt from existence checking
 				// (resolving-by-construction; its edges still count in the cycle
-				// set). A preview refuses exactly the entries the live run would
-				// refuse, with the live rejection text.
+				// set). A preview refusal from these covered checks carries the live
+				// run's rejection text; checks that need the written item or the
+				// post-write delta (the write-time invariant gate among them) do not
+				// run under preview.
 				assertBirthRelationsValidForPreview(cwd, String(idVal), relations);
 				const edgePreview = relations.length > 0 ? `; would file ${relations.length} birth relation(s)` : "";
 				return `would upsert item${idDesc} (${mode}) in ${params.block}.${params.arrayKey}${edgePreview}`;

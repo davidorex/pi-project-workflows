@@ -1642,11 +1642,14 @@ export function upsertItemInTypedFile(
 			patched[idx] = stamped;
 		}
 		if (opts?.dryRun) {
-			// Same validation writeTypedFile applies before writing (validateFromFile
-			// on the prospective whole file, gated on a non-null schemaPath), run on
-			// the STAMPED prospective so dryRun rejects/accepts identically to the
-			// write — but write nothing. The lock above guarantees the prospective
-			// matched a consistent on-disk snapshot.
+			// dryRun coverage: stamping (above) plus the whole-file validation
+			// writeTypedFile applies before writing (validateFromFile on the
+			// prospective whole file, gated on a non-null schemaPath), run on the
+			// STAMPED prospective — but write nothing. Returning here, before
+			// writeTypedFile, means the diff-scoped rhetorical-criteria enforcement
+			// and the envelope schema_version stamp do not run under dryRun. The
+			// lock above guarantees the prospective matched a consistent on-disk
+			// snapshot.
 			if (schemaPath) {
 				validateFromFile(schemaPath, rewriteParent(patched), label);
 			}

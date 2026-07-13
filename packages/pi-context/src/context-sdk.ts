@@ -3166,6 +3166,98 @@ function blockItemIdForInstancePath(cwd: string, blockName: string, instancePath
 	}
 }
 
+// ── Validation-result narrowing (bounded issues[] slices) ───────────────────
+
+/**
+ * Optional narrowing over a validator's issues[]. Applied AFTER the full
+ * evaluation: the verdict (`status`) is always computed over the complete
+ * issue set — narrowing bounds only the returned slice, so a filtered read
+ * can never hide the substrate's true verdict.
+ */
+export interface ValidationIssueNarrowing {
+	/** Return only issues of this severity. */
+	severity?: "error" | "warning";
+	/** Return only issues whose `block` field equals this block name. */
+	block?: string;
+	/** Return only issues carrying this diagnostic code. */
+	code?: string;
+	/** Slice start within the filtered issue list (default 0). */
+	offset?: number;
+	/** Slice size within the filtered issue list. */
+	limit?: number;
+}
+
+/** True when any narrowing parameter is present. */
+export function hasValidationNarrowing(params: ValidationIssueNarrowing): boolean {
+	return (
+		params.severity !== undefined ||
+		params.block !== undefined ||
+		params.code !== undefined ||
+		params.offset !== undefined ||
+		params.limit !== undefined
+	);
+}
+
+/**
+ * Slice metadata riding a narrowed validation result — mirrors the read
+ * family's paging envelope (pageArray's total/hasMore) so a bounded issues[]
+ * read reports the counts it was cut from.
+ */
+export interface ValidationSliceMeta {
+	/** Full-evaluation issue count (before any filter). */
+	totalIssues: number;
+	/** Issues matching the severity/block/code filter (before offset/limit). */
+	matching: number;
+	/** Issues returned in this slice. */
+	returned: number;
+	/** Slice start within the filtered list. */
+	offset: number;
+	/** True when the filtered list extends past this slice. */
+	hasMore: boolean;
+}
+
+/**
+ * Apply optional narrowing to a computed validation result. The caller
+ * evaluates the FULL result exactly as before; this bounds ONLY the returned
+ * issues[] slice — `status` passes through from the full evaluation. With no
+ * narrowing parameter the result is returned unchanged (exact prior shape,
+ * additive-only surface). `severityOf` classifies issue families that carry no
+ * `severity` field (code-classified relation/roadmap issues) with the SAME
+ * code→severity mapping their status computation uses; an issue classifying as
+ * neither (info-class) matches no severity filter. offset/limit slice via
+ * pageArray (the one pagination implementation) only when either is present —
+ * a filter-only call returns every matching issue.
+ */
+export function narrowValidationResult<S extends string, I extends object>(
+	result: { status: S; issues: I[] },
+	params: ValidationIssueNarrowing,
+	severityOf: (issue: I) => "error" | "warning" | undefined,
+): { status: S; issues: I[]; slice?: ValidationSliceMeta } {
+	if (!hasValidationNarrowing(params)) return result;
+	const matching = result.issues.filter((issue) => {
+		if (params.severity !== undefined && severityOf(issue) !== params.severity) return false;
+		const rec = issue as Record<string, unknown>;
+		if (params.block !== undefined && rec.block !== params.block) return false;
+		if (params.code !== undefined && rec.code !== params.code) return false;
+		return true;
+	});
+	const paginate = params.offset !== undefined || params.limit !== undefined;
+	const page = paginate
+		? pageArray(matching, { offset: params.offset, limit: params.limit })
+		: { items: matching, total: matching.length, hasMore: false };
+	return {
+		status: result.status,
+		issues: page.items,
+		slice: {
+			totalIssues: result.issues.length,
+			matching: page.total,
+			returned: page.items.length,
+			offset: params.offset ?? 0,
+			hasMore: page.hasMore,
+		},
+	};
+}
+
 // ── Verification-Gated Task Completion ─────────────────────────────────────
 
 export interface CompleteTaskResult {

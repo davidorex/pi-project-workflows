@@ -4,6 +4,7 @@ All notable changes to this package are documented here. Format follows [Keep a 
 
 ## [Unreleased]
 
+- Every CLI output surface (default text, the table fallback, and `--json`) threads the invoked op's declared over-cap narrowing directive into the shared boundary helpers (`renderOpResultText` / `boundedJsonOutput`), so an over-cap result from an op exposing narrowing parameters — the validators `context-validate`, `context-validate-relations`, `context-roadmap-validate` — is refused with text naming the concrete mechanism (`narrow with severity/block/code or offset+limit`), and the `--json` fail-closed envelope carries the same sentence under a `directive` field. The reflected validator commands accept the new `--severity` / `--block` / `--code` / `--offset` / `--limit` flags automatically (registry reflection); ops declaring no directive keep the prior refusal text and envelope unchanged.
 - Internal source comments and JSDoc reworded to plain English for self-sufficiency (planning-cycle vocabulary replaced with descriptions of what the code does); no code or behavior change.
 - Comments across `src/` no longer cite internal tracker IDs (FEAT-/TASK-/DEC-/FGAP-/STORY-NNN forms) — the citations previously present in this package's comments are now plain-English prose describing the same rationale in place. Scoped to this package only; sibling packages are unaffected.
 

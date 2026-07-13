@@ -427,13 +427,14 @@ Converge stored substrate state with its derivation (the repair half of the deri
 </tool>
 
 <tool name="validate-block-items">
-Validate a block's items against the catalog schema version — returns the per-item failures (item id, field, constraint) without writing. Resolves the block's catalog block_kind, loads the installed block, forward-migrates its items in memory through the shipped chain when the block lags the catalog version (a fresh registry; never warms the project's cache), and validates against the catalog schema body. Returns block / from (the block's declared version) / to (the catalog version) / valid / failures[] (each: itemId — the failing item's id when the instancePath resolves to one — instancePath, keyword, message). Read-only: never overwrites the schema, the block, or migrations.json. An unknown block or a missing installed block file throws.
+Validate a block's items against a named basis, read-only, returning the per-item failures (item id, field, constraint). Every result carries a resolution field disclosing the basis the verdict was computed against. Default basis 'catalog' (resolution: 'catalog-forward-preview') is a catalog-forward UPDATE-PREVIEW, not a readability check: it validates against the CATALOG schema body after forward-migrating the items in memory through the shipped catalog chain via a fresh self-seeded registry (never the project's migrations.json), so its valid:true means 'would pass the catalog schema after a catalog update' and can differ from whether the block currently reads. Basis 'installed' (resolution: 'installed-read-path') answers 'does this block read?': it validates against the INSTALLED schema plus the PROJECT migration registry via the same validateBlockWithMigrationForDir resolution the canonical read gate uses, non-throwing — where a read would throw (e.g. a version-lagging block with no project migration chain) it returns valid:false with the failure detail. Returns block / from (the block's declared version) / to (the catalog version for basis=catalog, the installed schema version for basis=installed) / valid / failures[] (each: itemId — the failing item's id when the instancePath resolves to one — instancePath, keyword, message) / resolution. Read-only: never overwrites the schema, the block, or migrations.json. An unknown block or a missing installed block file throws.
 
-*Validate a block's items against the catalog schema version — returns the per-item failures (item id, field, constraint) without writing*
+*Validate a block's items read-only against a disclosed basis — default 'catalog' previews the catalog-forward update (catalog schema + self-seeded catalog-chain registry); basis 'installed' answers 'does this block read?' via the read path's installed schema + project registry, returning valid:false where a read would throw; every result names its resolution*
 
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
 | `block` | string | yes | Block name (e.g. 'tasks') |
+| `basis` | unknown | no | Validation basis: 'catalog' (default) previews the catalog-forward update against the catalog schema + shipped chain; 'installed' validates against the installed schema + project migration registry (the canonical read path's resolution), non-throwing. |
 </tool>
 
 <tool name="context-switch">

@@ -280,16 +280,24 @@ describe("structured-endpoints: porcelain resolution", () => {
 	it("bare refname → same-substrate item; round-trips through raw append", () => {
 		const cwd = tmpProject("porcelain-bare");
 		adoptConception(cwd);
+		// The write-time gate rejects a dangling endpoint, so the endpoints must be
+		// REAL items: file FGAP-1/FGAP-2 into framework-gaps.json (the conception
+		// maps prefix FGAP- → block framework-gaps; buildIdIndex enforces that
+		// prefix-vs-block mapping on every scanned file).
+		fs.writeFileSync(
+			path.join(cwd, ".context", "framework-gaps.json"),
+			JSON.stringify({ "framework-gaps": [{ id: "FGAP-1" }, { id: "FGAP-2" }] }, null, 2),
+		);
 		const ep = resolveRelationSelector(cwd, "FGAP-1") as EdgeEndpoint;
 		assert.equal(ep.kind, "item");
 		assert.equal((ep as { refname?: string }).refname, "FGAP-1");
 		assert.equal((ep as { substrate_id?: string }).substrate_id, undefined);
 
 		// relation_type must be registered in the adopted conception catalog (the
-		// write-time edge-registry gate now rejects unregistered types):
+		// write-time edge-registry gate rejects unregistered types):
 		// gap_relates_to_gap carries framework-gaps as both source and target kinds,
-		// matching the FGAP-1/FGAP-2 endpoints (which dangle here — no items written —
-		// so the presence-gated kind check is skipped; registration is what passes).
+		// matching the filed FGAP-1/FGAP-2 endpoints — both resolve active, so the
+		// presence-gated kind check runs and passes alongside registration.
 		const { appended, edge } = appendRelationByRef(cwd, {
 			parent: "FGAP-1",
 			child: "FGAP-2",

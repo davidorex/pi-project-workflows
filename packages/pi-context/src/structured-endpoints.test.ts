@@ -318,6 +318,44 @@ describe("structured-endpoints: porcelain resolution", () => {
 		assert.equal(second.appended, false);
 	});
 
+	it("a registered+populated FOREIGN endpoint appends fine through the porcelain (foreign-sentinel accept)", () => {
+		const cwd = tmpProject("porcelain-foreign-ok");
+		adoptConception(cwd);
+
+		// Active-side endpoint must be a real item (the write gate rejects dangling).
+		fs.writeFileSync(
+			path.join(cwd, ".context", "framework-gaps.json"),
+			JSON.stringify({ "framework-gaps": [{ id: "FGAP-1" }] }, null, 2),
+		);
+		// Registered + POPULATED foreign substrate: its FGAP-77 resolves `foreign`,
+		// which the write-time endpoint-status check must pass untouched (only
+		// dangling/unregistered reject). No foreign config → the foreign index's
+		// prefix-vs-block invariant is unchecked, so framework-gaps.json suffices.
+		const foreignDir = ".context-foreign-ok";
+		const foreignId = "sub-cccccccccccccccc";
+		fs.mkdirSync(path.join(cwd, foreignDir, "schemas"), { recursive: true });
+		fs.writeFileSync(
+			path.join(cwd, foreignDir, "framework-gaps.json"),
+			JSON.stringify({ "framework-gaps": [{ id: "FGAP-77" }] }, null, 2),
+		);
+		registry.registerSubstrate(cwd, foreignId, foreignDir, ["other"]);
+
+		assert.equal(
+			resolveRef(cwd, { kind: "item", substrate_id: foreignId, oid: "FGAP-77", refname: "FGAP-77" }).status,
+			"foreign",
+		);
+
+		const { appended, edge } = appendRelationByRef(cwd, {
+			parent: "other:FGAP-77",
+			child: "FGAP-1",
+			relation_type: "gap_relates_to_gap",
+		});
+		assert.equal(appended, true);
+		assert.equal((edge.parent as { substrate_id?: string }).substrate_id, foreignId);
+		const onDisk = JSON.parse(fs.readFileSync(path.join(cwd, ".context", "relations.json"), "utf-8")) as Edge[];
+		assert.equal(onDisk.length, 1);
+	});
+
 	it("<alias>:<refname> → foreign item carrying substrate_id", () => {
 		const cwd = tmpProject("porcelain-alias");
 		adoptConception(cwd);

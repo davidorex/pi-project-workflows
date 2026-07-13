@@ -262,6 +262,36 @@ describe("context-validate op narrowing", () => {
 		assert.deepEqual(out.issues, []);
 		assert.equal(out.status, "invalid", "empty filtered slice must still carry the full verdict");
 	});
+
+	it("a warnings-only substrate keeps status 'warnings' when the error-filtered slice is empty", (t) => {
+		// Same warning-severity invariant as the mixed fixture, but NO dangling
+		// edges — the full evaluation is warnings-only.
+		const cwd = makeTmpDir("warn-only");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(
+			cwd,
+			[ADDR_REL],
+			[
+				{
+					id: "decision-cites-forcing-artifact-warn",
+					class: "requires-edge",
+					block: "decisions",
+					relation_types: ["decision_addresses_gap"],
+					direction: "as_parent",
+					severity: "warning",
+					message: "Decision '{id}' cites no forcing artifact",
+				},
+			],
+		);
+		writeBlock(cwd, "decisions", { decisions: [{ id: "d1", decision: "use X", status: "decided" }] });
+		writeRelations(cwd, []);
+		const op = opByName("context-validate");
+		const full = validateContext(cwd);
+		assert.equal(full.status, "warnings");
+		const out = runJson<ContextValidationIssue>(op, cwd, { severity: "error" });
+		assert.deepEqual(out.issues, []);
+		assert.equal(out.status, "warnings", "empty error-filtered slice must still carry the warnings verdict");
+	});
 });
 
 // ── context-validate-relations op ────────────────────────────────────────────

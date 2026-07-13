@@ -389,8 +389,9 @@ export interface CurrentState {
 	 * milestones entry but contributes no head entry (no code to classify
 	 * under). ABSENT when there is nothing to report — a converged substrate's
 	 * result shape is byte-identical to the pre-drift-surfacing shape. Drift
-	 * surfacing flags authored-judgment lag for review; it never asserts the
-	 * authored bucket is wrong.
+	 * surfacing flags stored-vs-derived rollup divergence — the
+	 * mechanically-derivable class context-reconcile repairs — for review; it
+	 * never asserts the stored value is wrong.
 	 */
 	driftWarnings?: ContextValidationIssue[];
 }
@@ -1079,8 +1080,9 @@ export function currentState(cwd: string): CurrentState {
 			// a head entry is emitted only under a declared derived-status
 			// invariant, classified byte-identically to evaluateConfigInvariants'
 			// derived-status branch for the same state. Drift surfacing flags
-			// authored-judgment lag for review; it never asserts the authored
-			// bucket is wrong.
+			// stored-vs-derived rollup divergence — the mechanically-derivable
+			// class context-reconcile repairs — for review; it never asserts the
+			// stored value is wrong.
 			const stored = String(loc.item.status);
 			if (stored !== derived) {
 				milestone.stored_status = stored;

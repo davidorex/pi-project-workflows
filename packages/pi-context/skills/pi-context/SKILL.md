@@ -223,10 +223,17 @@ Read-only installed-vs-catalog schema drift report — per installed schema the 
 </tool>
 
 <tool name="context-validate">
-Validate cross-block referential integrity — check that IDs referenced across blocks exist.
+Validate cross-block referential integrity — check that IDs referenced across blocks exist. Optional narrowing (severity / block / code filter, offset+limit pagination) bounds ONLY the returned issues[] slice and adds a `slice` head (totalIssues / matching / returned / offset / hasMore); the result's `status` ALWAYS reflects the FULL evaluation — a filtered or paginated read never hides the substrate's true verdict. Unparameterized calls return the exact prior shape.
 
-*Validate cross-block referential integrity*
+*Validate cross-block referential integrity — optionally narrow the returned issues by severity/block/code or offset+limit (status always reflects the full evaluation)*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `severity` | unknown | no | Return only issues of this severity (issue families without a severity field classify by the same code→severity mapping their status computation uses) |
+| `block` | string | no | Return only issues whose block field equals this block name |
+| `code` | string | no | Return only issues carrying this diagnostic code |
+| `offset` | integer | no | Slice start within the filtered issue list (default 0) |
+| `limit` | integer | no | Slice size within the filtered issue list |
 </tool>
 
 <tool name="read-config">
@@ -545,10 +552,16 @@ Complete a task with verification gate — the closure ATOM. Requires a passing 
 </tool>
 
 <tool name="context-validate-relations">
-Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics.
+Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics. Optional narrowing (severity / code filter, offset+limit pagination) bounds ONLY the returned issues[] slice and adds a `slice` head (totalIssues / matching / returned / offset / hasMore); the result's `status` ALWAYS reflects the FULL evaluation — a filtered or paginated read never hides the substrate's true verdict. Unparameterized calls return the exact prior shape.
 
-*Validate substrate relations against config + items*
+*Validate substrate relations against config + items — optionally narrow the returned issues by severity/code or offset+limit (status always reflects the full evaluation)*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `severity` | unknown | no | Return only issues of this severity (issue families without a severity field classify by the same code→severity mapping their status computation uses) |
+| `code` | string | no | Return only issues carrying this diagnostic code |
+| `offset` | integer | no | Slice start within the filtered issue list (default 0) |
+| `limit` | integer | no | Slice size within the filtered issue list |
 </tool>
 
 <tool name="context-edges-for-lens">
@@ -634,10 +647,16 @@ Render the derived roadmap as pure-textual markdown — milestone order list (to
 </tool>
 
 <tool name="context-roadmap-validate">
-Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task-progress rollup buckets unknown with tasks present — a task-progress / data-quality warning, NOT a completeness check). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status: invalid iff any error-code issue, warnings iff any warning-code issue, else clean. Display strings flow through config.display_strings (pi-context divergence).
+Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task-progress rollup buckets unknown with tasks present — a task-progress / data-quality warning, NOT a completeness check). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status (invalid iff any error-code issue, warnings iff any warning-code issue, else clean) and matches no severity filter. Display strings flow through config.display_strings (pi-context divergence). Optional narrowing (severity / code filter, offset+limit pagination) bounds ONLY the returned issues[] slice and adds a `slice` head (totalIssues / matching / returned / offset / hasMore); the result's `status` ALWAYS reflects the FULL evaluation — a filtered or paginated read never hides the substrate's true verdict. Unparameterized calls return the exact prior shape.
 
-*Validate the derived milestone roadmap*
+*Validate the derived milestone roadmap — optionally narrow the returned issues by severity/code or offset+limit (status always reflects the full evaluation)*
 
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `severity` | unknown | no | Return only issues of this severity (issue families without a severity field classify by the same code→severity mapping their status computation uses) |
+| `code` | string | no | Return only issues carrying this diagnostic code |
+| `offset` | integer | no | Slice start within the filtered issue list (default 0) |
+| `limit` | integer | no | Slice size within the filtered issue list |
 </tool>
 
 </tools_reference>
@@ -855,6 +874,8 @@ The lens-view algorithm: `edgesForLens(lens, items, authoredEdges)` returns synt
 `validateRelations(cwd)` (exposed as the `context-validate-relations` tool) checks the closure-table edges in `relations.json` against the config + per-block item snapshots, with the `resolveRef` hook classifying foreign endpoints. Diagnostics codes: `edge_unknown_relation_type`, `edge_parent_not_in_bins`, `edge_unresolved_parent`, `edge_unresolved_child`, `edge_parent_wrong_block`, `edge_child_wrong_block`, `edge_cycle_detected`. Returns `{ status: "clean" | "warnings" | "invalid", issues[] }` where each issue carries the offending edge or cycle path.
 
 `validateContext(cwd)` (the `context-validate` tool) layers the registry/identity invariants over cross-block referential integrity: `substrate_id_unregistered` and `substrate_id_registry_mismatch` (the source-of-truth-drift guard on the active substrate), `edge_endpoint_dangling` and `edge_endpoint_unregistered` (a structured endpoint naming a registered-but-absent or unregistered substrate), and `nested_id_bearing_array` (a schema embedding an id-bearing array instead of using a membership edge). Config-declared `invariants[]` and registered lens-validators are checked in the same pass.
+
+All three validator tools (`context-validate`, `context-validate-relations`, `context-roadmap-validate`) accept an optional narrowing parameter set over the returned `issues[]`: `severity` (`error`/`warning`) and `code` filters on all three, a `block` filter on `context-validate` only (its issues carry a `block` field; the relation/roadmap validators declare no `block` parameter and reject it), plus `offset`/`limit` pagination of the filtered list. Narrowing is applied AFTER the full evaluation — the result's `status` always reflects the FULL evaluation, so a filtered or paginated read never hides the substrate's true verdict — and any narrowed call carries a `slice` head (`totalIssues` / `matching` / `returned` / `offset` / `hasMore`). Issue families without a `severity` field classify under the same code→severity mapping their status computation uses (roadmap info-class issues match no severity filter). Unparameterized calls return the exact prior shape. When a whole validation result exceeds the 50KB output cap, the boundary refusal names the op's own mechanism (`narrow with severity/block/code or offset+limit` on `context-validate`; `narrow with severity/code or offset+limit` on the other two), so any issue set is reachable through bounded slices.
 
 Three derived substrate tools complement validation: `context-edges-for-lens` returns the materialized `Edge[]` for a named lens (synthetic from `derived_from_field` or filtered authored edges); `context-lens-view` projects a config-declared lens as a binned item-view — a bin→count summary, or one bin's items paged by `offset`/`limit`; `context-walk-descendants` returns the transitive descendant id list from a parent under a given relation_type.
 </substrate_validation>

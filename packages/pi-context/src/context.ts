@@ -549,6 +549,32 @@ export interface SubstrateValidationResult {
 	issues: SubstrateValidationIssue[];
 }
 
+/**
+ * Error-severity relation-issue codes — the single classification consulted by
+ * BOTH validateRelations' status computation (any error-code issue → invalid)
+ * and severity narrowing over its issues (relationIssueSeverity), so the two
+ * consumers can never disagree. Every current code is error-severity; a future
+ * non-error code classifies as warning by exclusion, matching the status
+ * fallback (any non-error issue → "warnings").
+ */
+export const RELATION_ERROR_CODES: ReadonlySet<SubstrateValidationIssue["code"]> = new Set([
+	"edge_parent_not_in_bins",
+	"edge_unresolved_parent",
+	"edge_unresolved_child",
+	"edge_unknown_relation_type",
+	"edge_parent_wrong_block",
+	"edge_child_wrong_block",
+	"edge_cycle_detected",
+]);
+
+/**
+ * Severity of a relation-validation issue, derived from RELATION_ERROR_CODES —
+ * the same code classification the status computation uses.
+ */
+export function relationIssueSeverity(issue: SubstrateValidationIssue): "error" | "warning" {
+	return RELATION_ERROR_CODES.has(issue.code) ? "error" : "warning";
+}
+
 export interface ContextData {
 	config: ConfigBlock | null;
 	relations: Edge[];
@@ -2057,16 +2083,7 @@ export function validateRelations(
 		}
 	}
 
-	const errorCodes = new Set<SubstrateValidationIssue["code"]>([
-		"edge_parent_not_in_bins",
-		"edge_unresolved_parent",
-		"edge_unresolved_child",
-		"edge_unknown_relation_type",
-		"edge_parent_wrong_block",
-		"edge_child_wrong_block",
-		"edge_cycle_detected",
-	]);
-	const hasErrors = issues.some((i) => errorCodes.has(i.code));
+	const hasErrors = issues.some((i) => relationIssueSeverity(i) === "error");
 	const status: SubstrateValidationResult["status"] = hasErrors ? "invalid" : issues.length > 0 ? "warnings" : "clean";
 	return { status, issues };
 }

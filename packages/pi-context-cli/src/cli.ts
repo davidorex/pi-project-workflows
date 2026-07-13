@@ -1134,7 +1134,10 @@ export async function main(argv: string[]): Promise<number> {
 			// pass through unchanged; an over-cap `{json}` (or prose) result fails closed
 			// (`{ data: null, truncated: true, … }` / REFUSAL string) so a `{json}` op
 			// can no longer leak substrate content past the cap on the `--json` surface.
-			const output = boundedJsonOutput(r);
+			// The op's declared overCapDirective (ops exposing narrowing parameters,
+			// e.g. the validators) rides the fail-closed envelope naming the concrete
+			// narrowing mechanism; ops without one keep the prior envelope unchanged.
+			const output = boundedJsonOutput(r, op.overCapDirective);
 			process.stdout.write(`${JSON.stringify({ ok: true, op: op.name, output })}\n`);
 		} else if (format === "table") {
 			// Extract the renderable array, falling back to text whenever the
@@ -1144,7 +1147,7 @@ export async function main(argv: string[]): Promise<number> {
 			if (arr !== null) {
 				process.stdout.write(`${renderTable(arr)}\n`);
 			} else {
-				process.stdout.write(`${renderOpResultText(r)}\n`);
+				process.stdout.write(`${renderOpResultText(r, op.overCapDirective)}\n`);
 			}
 		} else {
 			// Default text surface stays byte-identical to before: the shared renderer
@@ -1156,9 +1159,9 @@ export async function main(argv: string[]): Promise<number> {
 			// verbatim (the catalog schema file carries its own trailing `\n`; appending
 			// another would double it to `}\n\n` and show a phantom trailing-empty-line).
 			if (op.verbatimText) {
-				process.stdout.write(renderOpResultText(r));
+				process.stdout.write(renderOpResultText(r, op.overCapDirective));
 			} else {
-				process.stdout.write(`${renderOpResultText(r)}\n`);
+				process.stdout.write(`${renderOpResultText(r, op.overCapDirective)}\n`);
 			}
 		}
 

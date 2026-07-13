@@ -274,6 +274,18 @@ const ROADMAP_ERROR_CODES: ReadonlySet<RoadmapValidationIssue["code"]> = new Set
 const ROADMAP_WARNING_CODES: ReadonlySet<RoadmapValidationIssue["code"]> = new Set(["roadmap_status_unknown_value"]);
 
 /**
+ * Severity of a roadmap-validation issue, derived from the SAME code
+ * classification the status computation uses (error → invalid, warning →
+ * warnings). Info codes (roadmap_milestone_isolated) classify as neither —
+ * they never affect status and match no severity filter.
+ */
+export function roadmapIssueSeverity(issue: RoadmapValidationIssue): "error" | "warning" | undefined {
+	if (ROADMAP_ERROR_CODES.has(issue.code)) return "error";
+	if (ROADMAP_WARNING_CODES.has(issue.code)) return "warning";
+	return undefined;
+}
+
+/**
  * Load the derived roadmap. Returns the materialized MilestoneRoadmapView or
  * a structured { error } when no config exists. Zero milestone-block items is
  * a VALID empty view (not an error) — the roadmap is opt-in by authoring

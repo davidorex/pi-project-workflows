@@ -124,6 +124,27 @@ test("parseOpArgs rejects a non-numeric value for a number field", () => {
 	assert.throws(() => parseOpArgs(op, ["--block", "tasks", "--offset", "notanum"]), UsageError);
 });
 
+test("--block is an unknown flag on the validators whose issues carry no block field", () => {
+	// context-validate-relations / context-roadmap-validate declare the blockless
+	// narrowing set (severity/code + offset/limit); relation/roadmap issues never
+	// carry a `block` field, so `--block` there is a parse-time parameter error,
+	// never a silently-empty filter. context-validate keeps the axis.
+	for (const name of ["context-validate-relations", "context-roadmap-validate"]) {
+		const op = resolveOp(name);
+		assert.ok(op, `op '${name}' must be surfaced via the CLI`);
+		assert.throws(
+			() => parseOpArgs(op, ["--block", "tasks"]),
+			(err: unknown) => err instanceof UsageError && /unknown flag: --block/.test((err as Error).message),
+			`'${name} --block' must be rejected as an unknown flag`,
+		);
+		const narrowed = parseOpArgs(op, ["--severity", "error", "--offset", "0", "--limit", "5"]);
+		assert.deepEqual(narrowed.params, { severity: "error", offset: 0, limit: 5 });
+	}
+	const validate = resolveOp("context-validate");
+	assert.ok(validate);
+	assert.equal(parseOpArgs(validate, ["--block", "tasks"]).params.block, "tasks");
+});
+
 test("parseOpArgs accepts a valid string-enum value verbatim (no JSON quoting)", () => {
 	// filter-block-items: op is Type.Union of "eq"|"neq"|"in"|"matches"
 	const op = resolveOp("filter-block-items");

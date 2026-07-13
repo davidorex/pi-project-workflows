@@ -93,7 +93,7 @@ describe("installed-asset materialization helpers", () => {
 		const schemas = path.join(tmp, ".project", "schemas");
 		fs.mkdirSync(schemas, { recursive: true });
 		fs.writeFileSync(path.join(schemas, "foo.schema.json"), "{}"); // foo present; bar + baz absent
-		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: ["bar"], blocks: ["baz"] });
+		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: ["bar"], blocks: ["baz"], agents: [] });
 	});
 
 	it("findUnmaterializedAssets is empty when nothing is declared", (t) => {
@@ -101,7 +101,7 @@ describe("installed-asset materialization helpers", () => {
 		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
 		const cfg = minimalConfig();
 		writeConfig(tmp, cfg);
-		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: [], blocks: [] });
+		assert.deepStrictEqual(findUnmaterializedAssets(tmp, cfg), { schemas: [], blocks: [], agents: [] });
 	});
 });
 

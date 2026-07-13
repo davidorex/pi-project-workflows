@@ -1249,7 +1249,7 @@ export const ops: OpDefinition[] = [
 		name: "read-config",
 		label: "Read Config",
 		description:
-			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
+			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks, installed_agents. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
 		promptSnippet: "Read project config — vocabulary, lenses, relation_types, status_buckets",
 		examples: [`pi-context read-config --registry block_kinds --id tasks --json`],
 		parameters: Type.Object({
@@ -1484,7 +1484,7 @@ export const ops: OpDefinition[] = [
 		label: "Amend Config",
 		description:
 			"Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, " +
-			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). " +
+			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, installed_agents, hierarchy). " +
 			"The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, " +
 			"replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced " +
 			"relation_type / lens / layer / block_kind) is NOT checked here — run context-validate after. dryRun previews " +
@@ -1497,14 +1497,14 @@ export const ops: OpDefinition[] = [
 		parameters: Type.Object({
 			registry: Type.String({
 				description:
-					"One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | hierarchy",
+					"One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | installed_agents | hierarchy",
 			}),
 			operation: Type.String({ description: "add | replace | remove" }),
 			key: Type.String({
 				description:
 					"Entry key: id for keyed-array (block_kinds/relation_types/lenses/layers/invariants), map key for " +
 					"map (status_buckets/display_strings/naming), the string value for string-array " +
-					"(installed_schemas/installed_blocks), or a JSON {parent_block, child_block, relation_type} for hierarchy",
+					"(installed_schemas/installed_blocks/installed_agents), or a JSON {parent_block, child_block, relation_type} for hierarchy",
 			}),
 			entry: Type.Optional(
 				Type.Unknown({

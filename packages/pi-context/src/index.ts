@@ -646,28 +646,37 @@ function composeMarkerText(
 /**
  * Resolve the package samples catalog once: the absolute `samplesRoot` plus a
  * `byId` map from each block_kind's `canonical_id` to its declared
- * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
- * extracted from `installContext` so the installer and the read-only
- * `checkStatus` drift detector resolve the catalog identically (no divergence).
+ * `schema_path` / `data_path`, and an `agentsById` map from each catalog
+ * agent's `canonical_id` to its declared `spec_path` (all paths relative to
+ * `samplesRoot`). Shared read helper extracted from `installContext` so the
+ * installer and the read-only `checkStatus` drift detector resolve the catalog
+ * identically (no divergence). An older conception with no top-level `agents`
+ * array yields an empty `agentsById` (tolerated — nothing to resolve).
  *
  * lazy fileURLToPath idiom: import.meta.dirname is undefined under
  * tsx's CJS-interop dist-load; import.meta.url is not. Reads the conception once
- * for the canonical_id→paths map so callers resolve sources by the same
- * block_kind declarations the accept-all onboarding mode ships.
+ * for the canonical_id→paths maps so callers resolve sources by the same
+ * declarations the accept-all onboarding mode ships.
  */
 export function resolveCatalog(): {
 	samplesRoot: string;
 	byId: Map<string, { schema_path: string; data_path: string }>;
+	agentsById: Map<string, { spec_path: string }>;
 } {
 	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
 		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
+		agents?: Array<{ canonical_id: string; spec_path: string }>;
 	};
 	const byId = new Map<string, { schema_path: string; data_path: string }>();
 	for (const bk of conception.block_kinds ?? []) {
 		byId.set(bk.canonical_id, { schema_path: bk.schema_path, data_path: bk.data_path });
 	}
-	return { samplesRoot, byId };
+	const agentsById = new Map<string, { spec_path: string }>();
+	for (const agent of conception.agents ?? []) {
+		agentsById.set(agent.canonical_id, { spec_path: agent.spec_path });
+	}
+	return { samplesRoot, byId, agentsById };
 }
 
 /**

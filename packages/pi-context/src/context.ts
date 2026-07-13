@@ -83,6 +83,26 @@ export interface ConfigBlock {
 	installed_schemas?: string[];
 	installed_blocks?: string[];
 	/**
+	 * Catalog registry of the bundled agent specs shipped in the samples catalog
+	 * (`samples/agents/`): canonical agent name → spec file relative to the
+	 * samples root. Adopted verbatim from the packaged conception by accept-all.
+	 * The installer resolves `installed_agents` names through the PACKAGED
+	 * catalog (`resolveCatalog().agentsById`), so this adopted copy is
+	 * informational — it documents the available names in the substrate's own
+	 * config rather than driving resolution.
+	 */
+	agents?: Array<{ canonical_id: string; spec_path: string }>;
+	/**
+	 * Agent specs the project has opted into via /context install — materialized
+	 * as ordinary editable files under `<contextDir>/agents/` (the loader's
+	 * project tier, which wins over the bundled tier on name collision). Existing
+	 * files are never overwritten, even under --update: the whole point of the
+	 * materialized copy is that the project edits it (block-preservation
+	 * semantics, not schema-resync semantics), so agents are also never baselined
+	 * into `installed_from`.
+	 */
+	installed_agents?: string[];
+	/**
 	 * Install baseline of the installed SCHEMAS — part of the safe-re-sync fix for
 	 * the earlier footgun where `/context install --update` blindly overwrote
 	 * installed schemas AND block data with empty catalog starters, with no safe
@@ -225,7 +245,7 @@ export interface ToolOperationDecl {
 }
 
 /**
- * The eleven config registries `amendConfigEntry` can target. Each name maps to
+ * The config registries `amendConfigEntry` can target. Each name maps to
  * a top-level `ConfigBlock` property; the scalars `schema_version` / `root` are
  * intentionally NOT addressable (they are not registries — mutate them via a
  * whole-config write). The set is kept in sync with `ConfigBlock` by hand.
@@ -242,6 +262,7 @@ export type AmendRegistry =
 	| "naming"
 	| "installed_schemas"
 	| "installed_blocks"
+	| "installed_agents"
 	| "hierarchy"
 	| "tool_operations"
 	| "tool_operations_forbidden";
@@ -693,21 +714,37 @@ export function installedBlockDestPath(root: string, name: string): string {
 }
 
 /**
- * The declared-but-not-materialized installed assets for `config`: the subset of
- * `config.installed_schemas` / `installed_blocks` whose destination file is
- * absent on disk. Empty arrays when everything declared is present (or nothing
- * is declared — vacuously materialized). Pure read, no copy — answers "is the
- * substrate fully installed?" via the SAME path derivation `installContext`
- * writes to, so the question and the act cannot diverge.
+ * Destination path of an installed AGENT spec — `<root>/agents/<name>.agent.yaml`
+ * (the agent loader's project tier, checked before the user and bundled tiers).
+ * `root` is the resolved substrate root. Single source of the agent-dest
+ * derivation, shared by `installContext` and `findUnmaterializedAssets` like its
+ * schema/block siblings above.
  */
-export function findUnmaterializedAssets(cwd: string, config: ConfigBlock): { schemas: string[]; blocks: string[] } {
+export function installedAgentDestPath(root: string, name: string): string {
+	assertSubstrateName(name);
+	return path.join(root, "agents", `${name}.agent.yaml`);
+}
+
+/**
+ * The declared-but-not-materialized installed assets for `config`: the subset of
+ * `config.installed_schemas` / `installed_blocks` / `installed_agents` whose
+ * destination file is absent on disk. Empty arrays when everything declared is
+ * present (or nothing is declared — vacuously materialized). Pure read, no copy
+ * — answers "is the substrate fully installed?" via the SAME path derivation
+ * `installContext` writes to, so the question and the act cannot diverge.
+ */
+export function findUnmaterializedAssets(
+	cwd: string,
+	config: ConfigBlock,
+): { schemas: string[]; blocks: string[]; agents: string[] } {
 	const root = tryResolveContextDir(cwd);
-	if (root === null) return { schemas: [], blocks: [] };
+	if (root === null) return { schemas: [], blocks: [], agents: [] };
 	const schemas = (config.installed_schemas ?? []).filter(
 		(name) => !fs.existsSync(installedSchemaDestPath(root, name)),
 	);
 	const blocks = (config.installed_blocks ?? []).filter((name) => !fs.existsSync(installedBlockDestPath(root, name)));
-	return { schemas, blocks };
+	const agents = (config.installed_agents ?? []).filter((name) => !fs.existsSync(installedAgentDestPath(root, name)));
+	return { schemas, blocks, agents };
 }
 
 /**
@@ -1075,6 +1112,7 @@ export interface AdoptResult {
 	root: string;
 	schemaCount: number;
 	blockCount: number;
+	agentCount: number;
 }
 
 /**
@@ -1118,6 +1156,7 @@ export function adoptConception(cwd: string): AdoptResult {
 			root,
 			schemaCount: (existing.installed_schemas ?? []).length,
 			blockCount: (existing.installed_blocks ?? []).length,
+			agentCount: (existing.installed_agents ?? []).length,
 		};
 	}
 	const here = path.dirname(fileURLToPath(import.meta.url));
@@ -1145,6 +1184,7 @@ export function adoptConception(cwd: string): AdoptResult {
 		root,
 		schemaCount: (conception.installed_schemas ?? []).length,
 		blockCount: (conception.installed_blocks ?? []).length,
+		agentCount: (conception.installed_agents ?? []).length,
 	};
 }
 
@@ -1184,6 +1224,7 @@ const REGISTRY_DESCRIPTORS: Record<AmendRegistry, RegistryDescriptor> = {
 	naming: { kind: "map" },
 	installed_schemas: { kind: "string-array" },
 	installed_blocks: { kind: "string-array" },
+	installed_agents: { kind: "string-array" },
 	hierarchy: { kind: "value-array" },
 	tool_operations: { kind: "keyed-array", idField: "canonical_id" },
 	tool_operations_forbidden: { kind: "string-array" },

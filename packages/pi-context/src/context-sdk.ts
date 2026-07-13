@@ -390,7 +390,7 @@ export interface BootstrapStatus {
 	/** absolute substrate dir once the `.pi-context.json` pointer exists, else null */
 	contextDir: string | null;
 	/** declared-but-unmaterialized installed assets — populated only for "not-installed", else empty */
-	missing: { schemas: string[]; blocks: string[] };
+	missing: { schemas: string[]; blocks: string[]; agents: string[] };
 }
 
 /**
@@ -411,7 +411,7 @@ export interface BootstrapStatus {
  * corruption is a separate error condition, not a bootstrap stop.
  */
 export function deriveBootstrapState(cwd: string): BootstrapStatus {
-	const empty = { schemas: [] as string[], blocks: [] as string[] };
+	const empty = { schemas: [] as string[], blocks: [] as string[], agents: [] as string[] };
 	if (!fs.existsSync(path.join(cwd, ".pi-context.json"))) {
 		return { state: "no-pointer", contextDir: null, missing: empty };
 	}
@@ -424,7 +424,7 @@ export function deriveBootstrapState(cwd: string): BootstrapStatus {
 		return { state: "skeleton", contextDir, missing: empty };
 	}
 	const missing = findUnmaterializedAssets(cwd, config);
-	const installed = missing.schemas.length === 0 && missing.blocks.length === 0;
+	const installed = missing.schemas.length === 0 && missing.blocks.length === 0 && missing.agents.length === 0;
 	return { state: installed ? "ready" : "not-installed", contextDir, missing };
 }
 

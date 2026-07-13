@@ -72,7 +72,7 @@ describe("deriveBootstrapState", () => {
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "no-pointer");
 		assert.strictEqual(s.contextDir, null);
-		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [], agents: [] });
 	});
 
 	it("no-config when the pointer is present but config.json is absent", (t) => {
@@ -93,7 +93,7 @@ describe("deriveBootstrapState", () => {
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "skeleton");
 		assert.strictEqual(s.contextDir, path.join(tmp, ctxDir));
-		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [], agents: [] });
 	});
 
 	it("not-installed when declared assets are absent, reporting the missing lists", (t) => {
@@ -103,7 +103,7 @@ describe("deriveBootstrapState", () => {
 		writeCfg(tmp, declaring);
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "not-installed");
-		assert.deepStrictEqual(s.missing, { schemas: ["foo"], blocks: ["bar"] });
+		assert.deepStrictEqual(s.missing, { schemas: ["foo"], blocks: ["bar"], agents: [] });
 	});
 
 	it("ready once every declared asset is materialized at its projectRoot dest", (t) => {
@@ -116,7 +116,7 @@ describe("deriveBootstrapState", () => {
 		fs.writeFileSync(path.join(tmp, ctxDir, "bar.json"), "{}");
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "ready");
-		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [] });
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: [], agents: [] });
 	});
 
 	it("partial materialization stays not-installed, listing only the absent asset", (t) => {
@@ -128,7 +128,7 @@ describe("deriveBootstrapState", () => {
 		fs.writeFileSync(path.join(schemas, "foo.schema.json"), "{}"); // schema present, block absent
 		const s = deriveBootstrapState(tmp);
 		assert.strictEqual(s.state, "not-installed");
-		assert.deepStrictEqual(s.missing, { schemas: [], blocks: ["bar"] });
+		assert.deepStrictEqual(s.missing, { schemas: [], blocks: ["bar"], agents: [] });
 	});
 
 	it("propagates (throws) on a corrupt config.json — corruption is not a bootstrap state", (t) => {

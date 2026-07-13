@@ -280,6 +280,24 @@
 			"description": "Blocks the project has opted into via /context install.",
 			"items": { "type": "string" }
 		},
+		"agents": {
+			"type": "array",
+			"description": "Catalog registry of the bundled agent specs shipped in the samples catalog (samples/agents/). Each entry maps a canonical agent name to its spec file relative to the samples root. Adopted verbatim from the packaged conception by accept-all; the installer resolves installed_agents[] names through the PACKAGED catalog, so this copy is informational.",
+			"items": {
+				"type": "object",
+				"required": ["canonical_id", "spec_path"],
+				"additionalProperties": false,
+				"properties": {
+					"canonical_id": { "type": "string", "description": "Agent name (spec basename without .agent.yaml)" },
+					"spec_path": { "type": "string", "description": "Spec file path relative to the samples root (e.g. 'agents/investigator.agent.yaml')" }
+				}
+			}
+		},
+		"installed_agents": {
+			"type": "array",
+			"description": "Agent specs the project has opted into via /context install — materialized as editable files under <contextDir>/agents/. Existing files are never overwritten (block-preservation semantics, even under --update).",
+			"items": { "type": "string" }
+		},
 		"installed_from": {
 			"type": "object",
 			"description": "Install baseline of the installed schemas: catalog source + per-schema content fingerprint recorded at install time so installed-vs-catalog drift can be detected. Blocks are user data and are not baselined. Written by /context install; preserved verbatim (including `at`) on an idempotent re-install whose catalog + assets are unchanged.",

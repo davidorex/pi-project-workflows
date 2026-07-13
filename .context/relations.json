@@ -11852,5 +11852,31 @@
       "refname": "FGAP-066"
     },
     "relation_type": "gap_relates_to_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "86728d3470c080044b30198a2c10c79c",
+      "refname": "TASK-135"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "c10a9635e4dda77b7f08ca3f268c3e40",
+      "refname": "FGAP-148"
+    },
+    "relation_type": "task_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "86728d3470c080044b30198a2c10c79c",
+      "refname": "TASK-135"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "cf5dd261bf6c7bd4b2c1bb2021c350ae",
+      "refname": "pi-mono-is-exemplar"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

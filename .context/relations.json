@@ -12073,5 +12073,44 @@
       "refname": "pi-mono-is-exemplar"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40dbac217e0f2113ed0f775cca446aa1",
+      "refname": "DEC-0026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "be37aff0e312f5ddddb526365564da4e",
+      "refname": "FGAP-114"
+    },
+    "relation_type": "decision_derived_from_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40dbac217e0f2113ed0f775cca446aa1",
+      "refname": "DEC-0026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "47f83fd4e6b55224b127af30f846b8ea",
+      "refname": "FGAP-145"
+    },
+    "relation_type": "decision_addresses_gap"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "40dbac217e0f2113ed0f775cca446aa1",
+      "refname": "DEC-0026"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "45b494a39bd09cddaebff5816be095f9",
+      "refname": "derive-decisions-from-facts"
+    },
+    "relation_type": "item_governed_by_convention"
   }
 ]

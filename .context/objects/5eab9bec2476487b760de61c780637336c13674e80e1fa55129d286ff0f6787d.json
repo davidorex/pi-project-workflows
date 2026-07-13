@@ -1,0 +1,17 @@
+{
+  "description": "Implement FGAP-151: make the glue guard's quote-strip whole-command -- perl slurp mode (-0777 -pe) at .claude/hooks/block-pi-context-glue.sh line 32 so quoted spans collapse across newlines exactly as single-line spans do (the fix shape verified on a copy by the gap's investigation: both live-bite cases pass, true positives still block, existing harness 28/28, unbalanced quoting degrades fail-closed). Extend the harness with multi-line rows: a multi-line double-quoted commit-message CLI mention passes; a multi-line single-quoted payload carrying data metacharacters (pipe, redirect, exit-capture text) passes; a genuine multi-line pipe true-positive blocks. Copy-first guard development; the live file changes only after the extended harness is green on the copy, then re-run against the live path. In the same pass, evaluate whether FGAP-149's sibling fix (the commit guard's multi-line quote-span exclusion) shares this mechanism -- if the commit guard's line loop can consume the same whole-command quote-collapse before its line walk, implement both from the one mechanism and close both gaps; if not, implement FGAP-151 alone and record why the mechanisms diverge.",
+  "acceptance_criteria": [
+    "The reduced reproduction (a 2-line quoted CLI mention with ancillary exit-capture glue, no pi-context op) exits 0; the identical single-line case still exits 0; both true positives (real op with ancillary glue; real op piped) still exit 2",
+    "The extended harness (existing rows plus the multi-line matrix) is green on the copy and then on the replaced live file",
+    "Unbalanced quoting degrades fail-closed (an unterminated quote over-blocks, never under-blocks), pinned by a harness row",
+    "The FGAP-149 sibling evaluation is recorded: either both guards fixed from the shared mechanism (both gaps close) or the divergence reason documented in the implementing commit",
+    "build, check, and full test suite exit 0"
+  ],
+  "files": [
+    ".claude/hooks/block-pi-context-glue.sh",
+    ".claude/hooks/block-pi-context-glue.test.sh",
+    ".claude/hooks/block-pathspec-commit.sh",
+    ".claude/hooks/block-pathspec-commit.test.sh"
+  ],
+  "status": "in-progress"
+}

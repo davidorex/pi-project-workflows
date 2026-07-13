@@ -821,6 +821,37 @@
       "created_at": "2026-07-13T00:06:29.186Z",
       "oid": "43e622acc32bcea6086db48ea6bc0fb7",
       "content_hash": "5acbd670db3ef2fd01a2de5bd8761c6be3c999be84680e952a49d30c74736857"
+    },
+    {
+      "title": "validate-block-items gains disclosure AND an installed-basis variant -- both halves of the surface fix, default unchanged",
+      "status": "open",
+      "context": "FGAP-145: validate-block-items resolves against the catalog schema plus a self-seeded catalog-chain registry, returning valid:true on blocks every canonical read throws on (false-green reproduced out-of-the-box on a fresh install). Its filed proposed_resolution assigns the mechanism determination -- (a) re-surface the op to disclose its catalog-forward-preview semantics versus (b) provide a read-path-faithful diagnostic -- to the implementing pass. The choice is determinable from the system's own facts: (i) the two halves are complementary, not exclusive -- disclosure fixes the mis-consumption of the existing purpose, faithfulness supplies the missing question's answer; the gap's own class statement (a validity op whose surfaced name does not disclose its resolution) requires disclosure regardless of which validation basis exists; (ii) the precedent instance of this class was closed by aligning the divergent surface to the read path's resolution (context-validate's sweep uses validateBlockWithMigrationForDir), so the faithful basis reuses that exact resolution; (iii) the op surface's established convention prefers a parameter on the same op over a sibling op when the question is identical with a different axis (the projection and pagination parameters follow this shape), so the faithful variant is a basis parameter, not a new op; (iv) callers exist for the current preview semantics (the update-preview purpose is documented and real), so the DEFAULT must remain the catalog-forward preview -- a default flip would silently change every existing caller's question.",
+      "decision": "validate-block-items (1) always returns a resolution field in its result envelope naming the basis it validated against (catalog-forward-preview by default), with its description and promptSnippet stating the catalog + self-seeded-registry semantics explicitly; and (2) gains an optional basis parameter -- catalog (default, current behavior byte-unchanged) or installed -- where installed validates against the installed schema plus the project migration registry via the same validateBlockWithMigrationForDir resolution the canonical read path uses, non-throwing: it returns valid:false with the failure detail for a block the read path would throw on. The default stays catalog.",
+      "consequences": [
+        "An operator asking 'does this block read?' gets a truthful answer from basis=installed -- the fresh-install false-green reproduction flips (validate-block-items reports the unreadable block invalid where read-block throws), while the catalog-forward update-preview purpose remains available and byte-unchanged under the default.",
+        "The verdict is un-mistakable for a canonical-read verdict either way: the envelope's resolution field discloses the basis on every call, and the op strings state both semantics.",
+        "The faithful basis reuses the read path's exact resolution helper, so the diagnostic and the read gate cannot disagree -- the identical-verdict property the class precedent established.",
+        "Derivation basis (decision_derived_from_item -> FGAP-114): the prior instance of this disclosure/faithfulness class was closed by aligning the divergent surface to the read-path resolution; this decision applies the same alignment as an opt-in basis while disclosure closes the mis-consumption the class names. The fork is resolved, not escalated."
+      ],
+      "references": [
+        {
+          "label": "The gap's investigation: the false-green reproduction, the surface-by-surface class sweep, the both-halves framing",
+          "path": "analysis/2026-07-12-validate-vs-read-divergence-gap.md"
+        },
+        {
+          "label": "The read-path resolution the installed basis reuses",
+          "path": "packages/pi-context/src/schema-validator.ts"
+        },
+        {
+          "label": "The op under decision",
+          "path": "packages/pi-context/src/index.ts"
+        }
+      ],
+      "id": "DEC-0026",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-13T03:51:30.085Z",
+      "oid": "40dbac217e0f2113ed0f775cca446aa1",
+      "content_hash": "56cbb283d78835c1b385c4c854fac32cb0e6513e9ab8c70bbddf4f6cb4e107bc"
     }
   ],
   "schema_version": "1.1.0"

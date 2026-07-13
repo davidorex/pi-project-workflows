@@ -2556,10 +2556,11 @@
         "packages/pi-context/src/context-sdk.ts",
         "packages/pi-context/src/structured-endpoints.test.ts"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-126",
       "oid": "79919941d47096388454ef7df4bd26f5",
-      "content_hash": "790e4099a07dedbccc3c71556b7576dbadbf7f85e0a2819616c07115b02b380d"
+      "content_hash": "1b1bfada515036075b8280615fb14dc97ff7d4967b9ed95f915a471779231bcc",
+      "content_parent": "790e4099a07dedbccc3c71556b7576dbadbf7f85e0a2819616c07115b02b380d"
     },
     {
       "description": "Implement FGAP-140: no install/update/status path seeds a fresh substrate's migrations.json with the block-schema migration declarations the catalog already carries (samples/migrations.json has ready-made chains for all 18 schemas; seedCatalogConfigMigrationDecls seeds config only). First step, per the gap's own proposed_resolution: determine the class-correct mechanism -- installContext fresh-install seeding versus generalizing check-status's config-only seeding to all schema kinds -- via derive-decisions-from-facts against the existing seeding precedents (seedCatalogConfigMigrationDecls, registerCatalogMigrationChainIfKnown) and file the decision; then implement the decided mechanism so a substrate's migration history is complete from birth.",
@@ -2574,10 +2575,11 @@
         "packages/pi-context/src/index.ts",
         "packages/pi-context/src/migrations-store.ts"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-127",
       "oid": "69af7c5c7fb70faed52abf7d17685648",
-      "content_hash": "620f2b027b57c29088e0d3c42e61330add81052586d27e9b8de89c28c9c96630"
+      "content_hash": "ef03e315431dd70d4df6ab2d3819d205caeb5d539274d91d580e7a2c55102974",
+      "content_parent": "620f2b027b57c29088e0d3c42e61330add81052586d27e9b8de89c28c9c96630"
     },
     {
       "description": "Remove the enumerated tracker-ID/archived-vocabulary residuals that postdate or escaped the FGAP-136 de-jargon rollout and sit outside the delta-scoped comment-citation gate's reach: (1) comment citations of a framework-gap id introduced by the TASK-121 rollout commit into packages/pi-context/src/block-api.ts (4 sites) and packages/pi-context/src/rhetorical-criteria.ts (1 site) -- already-committed, so the staged-delta gate will never flag them; (2) the generated work-order commit message in packages/pi-agent-dispatch/src/work-order-loop.ts, which emits the archived predecessor substrate's feature id in runtime output -- a generated-output surface neither FGAP-136's comment scope nor the citation-rot scanner's tool-description/error surfaces cover. Rewrite all sites to plain English carrying the same semantics per the FGAP-136 standard; enumerate the full class fresh (all non-test packages/*/src comments plus generated-output template strings) rather than fixing only the audit-enumerated instances.",
@@ -2655,10 +2657,11 @@
         "packages/pi-context/src/rhetorical-criteria.ts",
         "packages/pi-context/src/rhetorical-criteria.test.ts"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-130",
       "oid": "7cd935f5802e674dd8ca5e756267a27c",
-      "content_hash": "e5a0a0571b42d2d11b6912584572ed1c2c6e3aef9a783eeb55f194e28ee62391"
+      "content_hash": "2b5fcec69557e731273bb7920bee328313d8c31b779a94d27ef2b6eefa9002c4",
+      "content_parent": "e5a0a0571b42d2d11b6912584572ed1c2c6e3aef9a783eeb55f194e28ee62391"
     },
     {
       "description": "Implement FGAP-144: give the diagnostic/validator json-aggregate ops (context-validate, context-validate-relations, validate-roadmap) a size-narrowing axis paralleling the item-read family -- optional severity / block / code filters and/or offset+limit pagination so issues[] reads in bounded slices -- and make the json over-cap boundary refusal name the concrete narrowing parameter (mirroring the read channel's overCapDirective) instead of the mechanism-less 'Narrow your read.'",

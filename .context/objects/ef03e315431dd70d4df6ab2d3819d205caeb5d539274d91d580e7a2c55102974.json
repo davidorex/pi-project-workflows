@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-140: no install/update/status path seeds a fresh substrate's migrations.json with the block-schema migration declarations the catalog already carries (samples/migrations.json has ready-made chains for all 18 schemas; seedCatalogConfigMigrationDecls seeds config only). First step, per the gap's own proposed_resolution: determine the class-correct mechanism -- installContext fresh-install seeding versus generalizing check-status's config-only seeding to all schema kinds -- via derive-decisions-from-facts against the existing seeding precedents (seedCatalogConfigMigrationDecls, registerCatalogMigrationChainIfKnown) and file the decision; then implement the decided mechanism so a substrate's migration history is complete from birth.",
+  "acceptance_criteria": [
+    "The install-time-vs-status-time mechanism choice is filed as a decision (derived per derive-decisions-from-facts, or escalated if genuinely underdetermined) before implementation; the implementation matches it",
+    "A fresh /context install against the current catalog yields context-validate clean for session-notes with no manual write-schema-migration step -- the schema=1.1.0 / starter schema_version=1.0.0 bridge exists from birth, verified by a real fresh-install runtime demo",
+    "The seeding covers every freshly-installed schema with a catalog migration chain, not session-notes alone -- the general class, with a unit pin",
+    "Existing seedCatalogConfigMigrationDecls (config) and registerCatalogMigrationChainIfKnown (update-time) behavior unchanged (regression)",
+    "build, check, and full test suite exit 0; docs-surface-sync applied to any changed op description or README statement about install/status behavior"
+  ],
+  "files": [
+    "packages/pi-context/src/index.ts",
+    "packages/pi-context/src/migrations-store.ts"
+  ],
+  "status": "in-progress"
+}

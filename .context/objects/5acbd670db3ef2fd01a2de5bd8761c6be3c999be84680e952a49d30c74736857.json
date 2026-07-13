@@ -1,0 +1,26 @@
+{
+  "title": "Block-schema migration-chain seeding runs at every ceremony entry (ceremony-family), engine = per-installed-schema catalog chain registration",
+  "status": "open",
+  "context": "FGAP-140: no install/update/status path seeds a fresh substrate's migrations.json with the block-schema migration declarations the catalog carries, so a fresh install yields context-validate errors for session-notes (starter schema_version 1.0.0, schema 1.1.0, no bridging chain) with no self-heal path. TASK-127's first acceptance criterion requires the mechanism choice -- install-time seeding versus generalizing the status-time config-only seed -- filed as a decision before implementation. The choice is determinable from the system's own facts: (a) the ceremony-seeding class rule established by the config-migration seed (documented in install-subcommand.test.ts: every sanctioned ceremony entry point seeds the catalog's config migration chain before its first config read, so a legacy substrate heals on the ceremony instead of throwing) -- the config seed is called at 8 ceremony entry seams (installContext, checkStatus, updateContext, resolveConflict, reconcileContext, resolveBlocked, switchToExisting, switchToPrevious); (b) DEC-0018 places pre-identity substrate healing at the same ceremony-entry seam, and establishSubstrateIdentityAtEntry's own placement note names that seam; (c) install-only seeding reaches only NEW installs, leaving the already-installed substrates FGAP-140 names broken with no self-heal; (d) the catalog carries real content transforms (framework-gaps 1.1.1-to-1.2.0, research 1.0.1-to-1.1.0), so seeding must copy authored decls via a from/to-scoped chain walk -- an unconditional filter-drop generalization of seedCatalogConfigMigrationDecls would append all 39 catalog decls regardless of what a substrate ever held; (e) registerCatalogMigrationChainIfKnown already implements the from/to-scoped, verbatim-copying, deduped, refusal-on-unknown-chain engine and is regression-pinned by its update-time callers.",
+  "decision": "Seed block-schema migration chains at EVERY ceremony entry point, at the same seams the config-migration seed occupies, via a new seed function that, for each name in config.installed_schemas, resolves fromVersion = the catalog starter's schema_version (absent = nothing to bridge, skip) and toVersion = the catalog schema's version, and delegates to registerCatalogMigrationChainIfKnown -- the existing from/to-scoped chain-registration engine -- unchanged. seedCatalogConfigMigrationDecls stays config-only and unchanged.",
+  "consequences": [
+    "A fresh install carries the session-notes 1.0.0-to-1.1.0 chain from birth; every already-installed substrate self-heals on its next ceremony (status, update, switch) -- the ceremony-family placement is what closes FGAP-140's no-self-heal impact, which install-only seeding cannot reach.",
+    "Seeding is exactly as wide as the version relationship each installed schema's starter+schema pair implies: the 17 unstamped starters register nothing, and future starters that bake a version stamp are covered with no further change -- the general class, not the session-notes symptom.",
+    "The engine's (schemaName, fromVersion) dedup makes every ceremony re-run idempotent; authored transform decls are copied verbatim, and an advance the catalog does not cover is still refused (never fabricated) per the engine's existing contract.",
+    "Derivation basis (decision_derived_from_item -> TASK-070): the ceremony-seeding class rule that decision's config seed established is applied to the block-schema kind; the fork is resolved, not escalated."
+  ],
+  "references": [
+    {
+      "label": "The grounding investigation: lifecycle seams, engine reuse verdict, starter version-stamp census, decision facts",
+      "path": "analysis/2026-07-13-ground-127.md"
+    },
+    {
+      "label": "The ceremony-seeding class rule, documented at its test",
+      "path": "packages/pi-context/src/install-subcommand.test.ts"
+    },
+    {
+      "label": "The from/to-scoped chain-registration engine this decision reuses",
+      "path": "packages/pi-context/src/index.ts"
+    }
+  ]
+}

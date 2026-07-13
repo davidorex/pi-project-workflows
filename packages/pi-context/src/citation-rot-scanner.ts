@@ -32,6 +32,56 @@
  * renders results as hard refusal with full per-hit detail; the scanner itself
  * never warns, never suggests rewrites, and exposes no exclusion list at the
  * call site (carve-outs are coded internally per the aim above).
+ *
+ * Error-message construction-form audit (operator-facing error text). The
+ * error-message surface is produced by more language forms than the original
+ * `new XError("...")` NewExpression; each form found by a repo-wide audit is
+ * either matched by an arm below or named here as a deliberate exclusion — no
+ * silent holes:
+ *
+ * Matched arms:
+ *   - NewExpression whose constructor identifier suffix-matches `Error`
+ *     (`isErrorConstructorCall`) — first argument.
+ *   - CallExpression whose callee is the `super` keyword inside a class-like
+ *     declaration carrying an `extends` heritage clause
+ *     (`isSuperConstructionCall`) — first argument. Conservative on purpose:
+ *     ANY extends clause qualifies, not only an Error-suffixed base name,
+ *     because an import rename or intermediate base class hides the suffix
+ *     while the message still propagates to the operator through the Error
+ *     prototype chain.
+ *   - Assignment `this.message = <expr>` inside a class-like declaration with
+ *     an `extends` heritage clause (`isThisMessageAssignment`) — right side.
+ *     The repo audit found zero live instances; the arm exists so the idiom
+ *     cannot become a hole later.
+ *   - Within any of the above argument positions: plain string literals,
+ *     no-substitution template literals, the STATIC text spans of
+ *     substitution-carrying template literals (each span scanned as its own
+ *     fragment), and both operands of `+`-concatenation chains, recursively
+ *     (`collectErrorMessageExpression`). Live error constructors in this repo
+ *     build messages via substitution templates and concatenated template
+ *     chains, so literal-only extraction would leave the dominant real-world
+ *     form unscanned.
+ *
+ * Deliberate exclusions (audited, not matched):
+ *   - `Object.assign(this, { message: ... })` — repo audit found zero
+ *     instances of message assignment through Object.assign; matching every
+ *     Object.assign call would require receiver analysis with no current
+ *     governance benefit. Pinned as excluded by a scanner test.
+ *   - Message reassignment on a non-`this` receiver (`err.message = ...`) —
+ *     zero shipped instances; a bare `.message` property write on an
+ *     arbitrary receiver is not reliably an operator-facing error surface
+ *     (data objects carry `message` fields too — e.g. a workflow completion
+ *     record).
+ *   - Error-factory helpers — every factory-shaped helper found constructs
+ *     its error via a matched form internally (`new XError(...)`), so the
+ *     construction site is already scanned; a factory call-site passing a
+ *     message literal to a helper that constructs elsewhere has no live
+ *     instance.
+ *   - The substitution EXPRESSIONS inside a template literal (`${...}`) —
+ *     dynamic values, not static citation text; and a citation token split
+ *     across a substitution or concatenation boundary, which cannot match a
+ *     whole-token regex per fragment. Static-text fragments on either side
+ *     are scanned.
  */
 
 import fs from "node:fs";
@@ -90,7 +140,10 @@ export const CITATION_RE_G = new RegExp(CITATION_RE.source, "g");
  * capture runtime error-message string-literals constructed at NewExpression sites where
  * the constructor identifier ends in `Error`. These flow to the operator
  * via exception propagation and constitute a separate shipped artifact
- * surface distinct from tool-description literals.
+ * surface distinct from tool-description literals. The same surface kind is
+ * emitted by the later construction-form arms (super-call in an extends-
+ * bearing class; `this.message = ...` in such a class) — see the module
+ * header's construction-form audit for the full arm/exclusion inventory.
  */
 export interface ScanResult {
 	/** Package-relative directory (e.g. "packages/pi-agent-dispatch"). */
@@ -192,12 +245,66 @@ function isErrorConstructorCall(node: ts.NewExpression): boolean {
 }
 
 /**
+ * Walk up from `node` to the NEAREST enclosing class-like declaration
+ * (ClassDeclaration or ClassExpression) and report whether that class carries
+ * an `extends` heritage clause. Stops at the first class-like ancestor — a
+ * heritage-free inner class nested inside an extends-bearing outer class does
+ * NOT qualify (its own `super`/`this.message` semantics are the inner
+ * class's). Requires the source file to be parsed with setParentNodes.
+ */
+function enclosingClassHasExtendsClause(node: ts.Node): boolean {
+	let cur: ts.Node | undefined = node.parent;
+	while (cur) {
+		if (ts.isClassDeclaration(cur) || ts.isClassExpression(cur)) {
+			return (cur.heritageClauses ?? []).some((h) => h.token === ts.SyntaxKind.ExtendsKeyword);
+		}
+		cur = cur.parent;
+	}
+	return false;
+}
+
+/**
+ * AST predicate — the super-construction arm of the error-message surface: a
+ * CallExpression whose callee is the `super` keyword inside a class that
+ * extends ANY base. The standard Error-subclass idiom builds its
+ * operator-facing message via `super(...)` in its own constructor — a
+ * CallExpression, not a NewExpression, so the NewExpression arm never visits
+ * it. Conservative on the base: any extends clause qualifies (see the module
+ * header's construction-form audit for the rationale). A `super(...)` written
+ * in a heritage-free class is a grammar error the parser still represents;
+ * the heritage walk skips it rather than treating unreachable code as an
+ * operator surface.
+ */
+function isSuperConstructionCall(node: ts.CallExpression): boolean {
+	if (node.expression.kind !== ts.SyntaxKind.SuperKeyword) return false;
+	return enclosingClassHasExtendsClause(node);
+}
+
+/**
+ * AST predicate — the message-assignment arm of the error-message surface:
+ * `this.message = <expr>` inside a class that extends ANY base. Zero live
+ * instances at audit time; the arm exists so the idiom cannot become a
+ * silent hole later. The heritage requirement keeps plain data classes with
+ * a `message` field (not an operator-facing error surface) out of scope.
+ */
+function isThisMessageAssignment(node: ts.BinaryExpression): boolean {
+	if (node.operatorToken.kind !== ts.SyntaxKind.EqualsToken) return false;
+	const left = node.left;
+	if (!ts.isPropertyAccessExpression(left)) return false;
+	if (left.expression.kind !== ts.SyntaxKind.ThisKeyword) return false;
+	if (!ts.isIdentifier(left.name) || left.name.text !== "message") return false;
+	return enclosingClassHasExtendsClause(node);
+}
+
+/**
  * Walk a .ts source file and enumerate every CallExpression whose callee is
  * a tool-registration entry-point or a typebox descriptor; pull description
  * string-literal values out of those subtrees. Additionally — closing the same
- * thrown-error-message scanning gap — enumerate NewExpression argument string-literals where the constructor
- * identifier ends in `Error` — error messages are an operator-visible
- * surface via exception propagation.
+ * thrown-error-message scanning gap — enumerate the error-message
+ * construction forms (NewExpression on an /Error$/ constructor; `super(...)`
+ * inside an extends-bearing class; `this.message = ...` inside such a class
+ * — see the module header's construction-form audit) — error messages are an
+ * operator-visible surface via exception propagation.
  */
 function scanTsFile(file: string, packageDir: string): ScanResult[] {
 	const text = fs.readFileSync(file, "utf-8");
@@ -246,6 +353,45 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 		}
 	};
 
+	// Static-text extraction shared by every error-message construction arm.
+	// Recurses through the shapes live error constructors actually use (see
+	// the module header's construction-form audit): plain string literals,
+	// no-substitution templates, the STATIC spans of substitution-carrying
+	// templates (each span its own fragment, at its own line), and both
+	// operands of `+`-concatenation chains. Substitution expressions
+	// themselves are dynamic values, not static citation text — skipped.
+	const collectErrorMessageExpression = (expr: ts.Expression | undefined): void => {
+		if (!expr) return;
+		if (ts.isStringLiteral(expr) || ts.isNoSubstitutionTemplateLiteral(expr)) {
+			errorMessageStrings.push({
+				line: sourceFile.getLineAndCharacterOfPosition(expr.getStart()).line + 1,
+				value: expr.text,
+			});
+			return;
+		}
+		if (ts.isTemplateExpression(expr)) {
+			if (expr.head.text.length > 0) {
+				errorMessageStrings.push({
+					line: sourceFile.getLineAndCharacterOfPosition(expr.head.getStart()).line + 1,
+					value: expr.head.text,
+				});
+			}
+			for (const span of expr.templateSpans) {
+				if (span.literal.text.length > 0) {
+					errorMessageStrings.push({
+						line: sourceFile.getLineAndCharacterOfPosition(span.literal.getStart()).line + 1,
+						value: span.literal.text,
+					});
+				}
+			}
+			return;
+		}
+		if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+			collectErrorMessageExpression(expr.left);
+			collectErrorMessageExpression(expr.right);
+		}
+	};
+
 	const visit = (node: ts.Node): void => {
 		if (ts.isCallExpression(node)) {
 			if (isToolRegistrationCall(node)) {
@@ -255,25 +401,25 @@ function scanTsFile(file: string, packageDir: string): ScanResult[] {
 				// operator surface when they appear in module-level exported
 				// parameter schemas — scan their description args too.
 				for (const arg of node.arguments) collect(arg);
+			} else if (isSuperConstructionCall(node)) {
+				// super-construction arm: the Error-subclass constructor idiom
+				// builds its message via super(...) — a CallExpression the
+				// NewExpression arm never visits. Only the first arg is
+				// examined, exactly as the NewExpression arm — the message
+				// position by Error convention.
+				if (node.arguments.length > 0) collectErrorMessageExpression(node.arguments[0]);
 			}
 		} else if (ts.isNewExpression(node) && isErrorConstructorCall(node)) {
-			// Extract first string-literal argument from Error
+			// Extract the first argument's static text from Error
 			// constructors, closing the gap where thrown-error messages went
 			// unscanned. Only the first arg is examined — Error subclasses
-			// conventionally place the human-readable reason there. Template
-			// literals with substitutions are not extracted (their static
-			// text fragments would need separate handling; the empirical
-			// audit found zero such hits, so the simpler form suffices).
+			// conventionally place the human-readable reason there.
 			const args = node.arguments;
-			if (args && args.length > 0) {
-				const first = args[0];
-				if (ts.isStringLiteral(first) || ts.isNoSubstitutionTemplateLiteral(first)) {
-					errorMessageStrings.push({
-						line: sourceFile.getLineAndCharacterOfPosition(first.getStart()).line + 1,
-						value: first.text,
-					});
-				}
-			}
+			if (args && args.length > 0) collectErrorMessageExpression(args[0]);
+		} else if (ts.isBinaryExpression(node) && isThisMessageAssignment(node)) {
+			// message-assignment arm: `this.message = ...` inside an
+			// extends-bearing class writes the same operator-facing surface.
+			collectErrorMessageExpression(node.right);
 		}
 		ts.forEachChild(node, visit);
 	};

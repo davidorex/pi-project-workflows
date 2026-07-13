@@ -90,6 +90,20 @@ describe("adoptConception (accept-all)", () => {
 		assert.equal(configDecl!.toVersion, "1.8.0");
 	});
 
+	it("accept-all adopts the conception's installed_agents (26) and reports agentCount", () => {
+		tmpRoot = mkTmp(".context");
+		const result = adoptConception(tmpRoot);
+		assert.equal(result.adopted, true);
+		assert.equal(result.agentCount, 26, "AdoptResult must carry the adopted installed_agents count");
+		const config = loadConfig(tmpRoot);
+		assert.ok(config, "expected a config.json to be written");
+		assert.equal(
+			(config!.installed_agents ?? []).length,
+			26,
+			"the adopted config must carry the conception's 26 installed_agents",
+		);
+	});
+
 	it("skeleton-aware idempotence: first adopt overwrites the init skeleton (adopted), second is a no-op (populated)", () => {
 		tmpRoot = mkTmp(".context");
 		// init writes a SKELETON config — empty of vocabulary.

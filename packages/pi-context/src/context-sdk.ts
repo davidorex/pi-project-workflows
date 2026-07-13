@@ -20,7 +20,6 @@ import {
 	endpointIdentity,
 	endpointKey,
 	findUnmaterializedAssets,
-	type InvariantDecl,
 	type ItemRecord,
 	isSkeletonConfig,
 	loadConfig,
@@ -381,7 +380,11 @@ export interface CurrentState {
 	 * derived-status branch classifies the same state (same severity default,
 	 * message template + {id}/{block}/{stored}/{derived} substitution, block,
 	 * `${id}.${inv.id}` field, code=inv.id) — computed from this derivation's
-	 * own working set, no second validate pass. A divergent item whose kind has
+	 * own working set, no second validate pass. Entry ORDER also matches that
+	 * branch exactly (declared derived-status invariants outer in
+	 * config.invariants order, divergent items inner), so the head is
+	 * order-identical — not merely set-equal — to validateContext's
+	 * derived-status issues. A divergent item whose kind has
 	 * NO declared derived-status invariant surfaces `stored_status` on its
 	 * milestones entry but contributes no head entry (no code to classify
 	 * under). ABSENT when there is nothing to report — a converged substrate's
@@ -1044,19 +1047,16 @@ export function currentState(cwd: string): CurrentState {
 	// `incomplete_status` (covering no-members + any-incomplete). Every comparison
 	// routes through bucket() — no raw status literal.
 	// Always-on drift surfacing (currency-by-construction, always-on facet):
-	// the declared derived-status invariants (config.invariants) keyed by their
-	// target block, read off the ALREADY-LOADED config — no second file load and
-	// no validateContext re-run. An invariant naming a block with no rollups
-	// entry never fires here (this loop only visits rollup kinds), matching the
-	// invariant engine's inert-declaration behavior.
-	const driftInvariantsByBlock = new Map<string, InvariantDecl[]>();
-	for (const inv of config?.invariants ?? []) {
-		if (inv.class !== "derived-status") continue;
-		const list = driftInvariantsByBlock.get(inv.block);
-		if (list === undefined) driftInvariantsByBlock.set(inv.block, [inv]);
-		else list.push(inv);
-	}
-	const driftWarnings: ContextValidationIssue[] = [];
+	// classified under the declared derived-status invariants read off the
+	// ALREADY-LOADED config — no second file load and no validateContext re-run.
+	// Divergences are COLLECTED (not classified) during the single rollups walk
+	// below, keyed by block kind in item-encounter order, then classified into
+	// head entries AFTERWARD in evaluateConfigInvariants' exact nesting —
+	// declared derived-status invariants OUTER (config.invariants order),
+	// divergent items INNER — so the head array is order-identical to
+	// validateContext's derived-status issues, not merely set-equal, while
+	// still requiring no second derivation pass.
+	const driftDivergences = new Map<string, { id: string; stored: string; derived: string }[]>();
 
 	const milestones: CurrentState["milestones"] = [];
 	for (const entry of sd.rollups) {
@@ -1084,27 +1084,43 @@ export function currentState(cwd: string): CurrentState {
 			const stored = String(loc.item.status);
 			if (stored !== derived) {
 				milestone.stored_status = stored;
-				for (const inv of driftInvariantsByBlock.get(entry.kind) ?? []) {
-					driftWarnings.push({
-						severity: inv.severity ?? "warning",
-						message: (
-							inv.message ??
-							`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
-						)
-							.replaceAll("{id}", loc.id)
-							.replaceAll("{block}", inv.block)
-							.replaceAll("{stored}", stored)
-							.replaceAll("{derived}", derived),
-						block: inv.block,
-						field: `${loc.id}.${inv.id}`,
-						code: inv.id,
-					});
-				}
+				const record = { id: loc.id, stored, derived };
+				const list = driftDivergences.get(entry.kind);
+				if (list === undefined) driftDivergences.set(entry.kind, [record]);
+				else list.push(record);
 			}
 			milestones.push(milestone);
 		}
 	}
 	milestones.sort((a, b) => a.id.localeCompare(b.id));
+
+	// Head emission — nesting mirrors evaluateConfigInvariants' derived-status
+	// branch exactly (invariants outer / items inner), and each entry is
+	// classified byte-identically (same severity default, message template +
+	// {id}/{block}/{stored}/{derived} substitution, block, `${id}.${inv.id}`
+	// field, code=inv.id) for the same state. An invariant naming a block with
+	// no rollups entry never fires here (only rollup kinds were collected),
+	// matching the invariant engine's inert-declaration behavior.
+	const driftWarnings: ContextValidationIssue[] = [];
+	for (const inv of config?.invariants ?? []) {
+		if (inv.class !== "derived-status") continue;
+		for (const d of driftDivergences.get(inv.block) ?? []) {
+			driftWarnings.push({
+				severity: inv.severity ?? "warning",
+				message: (
+					inv.message ??
+					`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
+				)
+					.replaceAll("{id}", d.id)
+					.replaceAll("{block}", inv.block)
+					.replaceAll("{stored}", d.stored)
+					.replaceAll("{derived}", d.derived),
+				block: inv.block,
+				field: `${d.id}.${inv.id}`,
+				code: inv.id,
+			});
+		}
+	}
 
 	// ── focus: single derived string ───────────────────────────────────────────
 	let focus: string;

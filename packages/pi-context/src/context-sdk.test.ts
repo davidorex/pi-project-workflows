@@ -3117,6 +3117,80 @@ describe("currentState", () => {
 		assert.deepStrictEqual(state.driftWarnings, validateDriftIssues);
 	});
 
+	it("drift head with TWO derived-status invariants x TWO divergent milestones matches validateContext's exact ORDER (invariants outer, items inner)", (t) => {
+		// Order-hardening for the classification pin above: with a single
+		// invariant x single item, ANY nesting produces the same one-element
+		// array. Two invariants on the same block x two divergent items is the
+		// case where an items-OUTER nesting yields a set-equal but
+		// order-divergent head (M1/A, M1/B, M2/A, M2/B) — only
+		// evaluateConfigInvariants' invariants-OUTER / items-INNER nesting
+		// (A/M1, A/M2, B/M1, B/M2) survives the full-array deepStrictEqual.
+		const tmpDir = makeTmpDir("cs-drift-classify-multi");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const SECOND_CONVERGES = {
+			id: "milestone-status-converges-audit",
+			class: "derived-status" as const,
+			block: "milestone",
+			severity: "warning" as const,
+			message: "Audit trail: '{id}' stored '{stored}' vs derived '{derived}' on block '{block}'",
+		};
+		const projectDir = setupDriftFixture(tmpDir, [
+			...CANONICAL_INVARIANTS,
+			MILESTONE_STATUS_CONVERGES,
+			SECOND_CONVERGES,
+		]);
+		// Second divergent milestone alongside the fixture's first: its own
+		// completed member phase derives 'reached' while stored lags at 'planned'.
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({
+				phases: [
+					{ id: "PHASE-1", name: "done", intent: "i", status: "completed" },
+					{ id: "PHASE-2", name: "also done", intent: "i", status: "completed" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "m", status: "planned" },
+					{ id: "MILE-002", name: "n", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-2", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		const validation = validateContext(tmpDir);
+		const validateDriftIssues = validation.issues.filter(
+			(i) => i.code === MILESTONE_STATUS_CONVERGES.id || i.code === SECOND_CONVERGES.id,
+		);
+		assert.strictEqual(validateDriftIssues.length, 4, "2 invariants x 2 divergent milestones = 4 classified issues");
+		// Pin validateContext's own nesting first, so the head comparison below
+		// cannot pass against an accidentally reordered validate baseline.
+		assert.deepStrictEqual(
+			validateDriftIssues.map((i) => i.field),
+			[
+				"MILE-001.milestone-status-converges",
+				"MILE-002.milestone-status-converges",
+				"MILE-001.milestone-status-converges-audit",
+				"MILE-002.milestone-status-converges-audit",
+			],
+			"validateContext emits invariants-outer / items-inner",
+		);
+		// The order-sensitive proof: element-for-element equality IN ORDER — the
+		// case the prior items-outer head nesting produced set-equal but
+		// order-divergent output for.
+		assert.deepStrictEqual(state.driftWarnings, validateDriftIssues);
+	});
+
 	it("drift with NO declared derived-status invariant: stored_status still rides the entry, head stays absent", (t) => {
 		const tmpDir = makeTmpDir("cs-drift-undeclared");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));

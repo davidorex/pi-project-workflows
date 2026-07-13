@@ -531,8 +531,12 @@ export const ops: OpDefinition[] = [
 			"declared role_direction); the two pairs are mutually exclusive. A bare --parent/--child append of a relation that " +
 			"is BOTH role-bearing and orientation-ambiguous (its source/target kinds overlap) is rejected — re-issue with " +
 			"--primary/--counter. Shape is AJV-validated; an exact-duplicate edge (same parent+child+relation_type) is a no-op. " +
-			"Reference integrity (endpoints resolve, relation_type registered, no cycle) is NOT checked here — run " +
-			"context-validate after. Creates relations.json if absent.",
+			"Reference integrity is enforced at write time (when config.json is present), mirroring context-validate's edge " +
+			"surface: the relation_type must be registered, endpoint kinds must match its declared source/target kinds, BOTH " +
+			"endpoints must already resolve — an edge to a not-yet-filed item is rejected (file the item first, or file the " +
+			"edge atomically as birth relations on append-block-item); registered foreign endpoints and lens bins pass — and " +
+			"an edge that would land a relation cycle is rejected (cycle_allowed relation_types exempt). --dryRun previews " +
+			"reject identically. Creates relations.json if absent.",
 		promptSnippet:
 			"Create a relation/edge between two items (raw --parent/--child, or role-typed --primary/--counter mapped via role_direction)",
 		examples: [
@@ -760,8 +764,12 @@ export const ops: OpDefinition[] = [
 			"(mapped to parent/child via the relation's declared role_direction); the two pairs are mutually exclusive per edge, " +
 			"and a bare { parent, child } for an orientation-ambiguous role-bearing relation rejects the whole batch before any " +
 			"write. Per-(parent, child, relation_type) duplicates are skipped (against on-disk edges AND earlier edges in the " +
-			"same batch). Returns appended/skipped counts. Reference integrity is NOT checked here — run context-validate " +
-			"after. Creates relations.json if absent.",
+			"same batch). Returns appended/skipped counts. Reference integrity is enforced at write time over the WHOLE batch " +
+			"(when config.json is present), mirroring context-validate's edge surface: every relation_type must be registered, " +
+			"endpoint kinds must match, every endpoint must already resolve — an edge to a not-yet-filed item rejects the " +
+			"batch (file the item first, or file the edge atomically as birth relations on append-block-item) — and a relation " +
+			"cycle rejects the batch, intra-batch cycles included (cycle_allowed relation_types exempt); all-or-nothing, " +
+			"--dryRun rejects identically. Creates relations.json if absent.",
 		promptSnippet: "Create many relations/edges between items in one write (raw or role-typed per edge)",
 		examples: [
 			`pi-context append-relations --edges '[{"parent":"FEAT-008","child":"TASK-042","relation_type":"feature_decomposed_into_task"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,

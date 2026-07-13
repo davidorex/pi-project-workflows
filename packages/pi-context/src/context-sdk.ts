@@ -1600,12 +1600,14 @@ function selectorIsLensBin(cwd: string, selector: string): boolean {
  *    `{kind:"item", substrate_id, oid, refname}` (oid from the foreign index;
  *    when the foreign refname does not resolve, oid is left as the refname so the
  *    endpoint round-trips — the cross-substrate reference resolver resolves
- *    foreign endpoints, this path only
- *    forms them; an unresolved foreign endpoint validates as a sentinel).
+ *    foreign endpoints, this path only forms them).
  *  - a selector matching a declared lens bin → `{kind:"lens_bin", bin}`.
  *  - a bare `refname` → SAME-substrate item `{kind:"item", oid, refname}` (oid
- *    from the active index; falls back to refname when unresolved so an
- *    edge to a not-yet-filed item is still expressible).
+ *    from the active index; falls back to refname when unresolved, so the
+ *    endpoint STRING remains formable — but the write-time gate
+ *    (`assertEdgesValidForWrite`) rejects an edge whose endpoint resolves
+ *    dangling, so an edge to a not-yet-filed item cannot be persisted through
+ *    the porcelain; file the item first, or file it with birth `--relations`).
  *
  * NOTE: the `<alias>:` branch is tried first so an alias-prefixed selector is
  * never misread as a bare refname containing a colon.
@@ -1637,7 +1639,8 @@ export function resolveRelationSelector(cwd: string, selector: string): EdgeEndp
 	}
 
 	// Bare refname → same-substrate item. oid from the active index; falls back
-	// to the refname itself when the item is not yet filed.
+	// to the refname itself when the item is not yet filed — the endpoint stays
+	// formable here, and the write gate rejects a dangling target at append time.
 	const index = buildIdIndex(cwd);
 	const loc = index.byRefname.get(selector);
 	const oid = loc && typeof loc.item.oid === "string" ? loc.item.oid : selector;
@@ -1691,8 +1694,10 @@ function edgeIdentityKey(edge: Edge): string {
  *        is present, the resolved endpoint block (via `resolve(...).loc.block`)
  *        MUST be in it, honoring the `"*"` wildcard. A lens_bin / dangling /
  *        unregistered endpoint carries no `loc` and is skipped for the kind
- *        check (endpoint-resolution failures are validateContext's own surface,
- *        not this helper's).
+ *        check (endpoint-resolution failures are emitted by validateContext's
+ *        own endpoint loop and rejected at write time by the sibling
+ *        endpoint-status check in `assertEdgesValidForWrite` — pushing them
+ *        into THIS shared helper would double-emit at validate time).
  *
  * `resolve` is the caller-supplied endpoint resolver (the same pass-bound
  * `resolveRef` closure validateContext builds; the write path builds a fresh one
@@ -1744,29 +1749,107 @@ export function validateEdgeAgainstRegistry(
  */
 function buildWriteTimeEdgeValidator(
 	cwd: string,
-): { config: ConfigBlock; resolve: (ref: RawEndpoint) => ResolvedRef } | null {
+): { config: ConfigBlock; resolve: (ref: RawEndpoint) => ResolvedRef; activeIndex: SubstrateIndex } | null {
 	const config = loadConfig(cwd);
 	if (!config) return null;
 	const activeIndex = buildIdIndex(cwd);
 	const foreignCache = new Map<string, SubstrateIndex>();
 	const resolve = (ref: RawEndpoint): ResolvedRef => resolveRef(cwd, ref, { activeIndex, foreignCache });
-	return { config, resolve };
+	return { config, resolve, activeIndex };
 }
 
 /**
- * Single-edge write-time gate (the same write/validate-parity edge-registry
- * check): build the validator for `cwd` and
- * THROW if `edge` fails the shared registry check. A no-op when no config is
- * present (pre-bootstrap substrate). The thrown message names the offending
- * endpoint kind / relation_type / expected kinds (the helper's wording).
+ * WRITE-ONLY endpoint-resolution check: classify each endpoint of `edge`
+ * through the SAME resolver validateContext's endpoint loop uses and return
+ * rejection messages for a `dangling` or `unregistered` endpoint. `active`,
+ * `foreign` (the registered+populated cross-substrate case), and lens_bin
+ * endpoints pass untouched. Message bodies mirror validateContext's
+ * `edge_endpoint_unregistered` / `edge_endpoint_dangling` wording so the two
+ * surfaces name the defect identically. This check deliberately lives OUTSIDE
+ * the shared `validateEdgeAgainstRegistry` helper: validateContext calls that
+ * helper too and already emits the endpoint-status issues in its own loop, so
+ * pushing status errors into the shared helper would double-emit at validate
+ * time.
  */
-function assertEdgeValidForWrite(cwd: string, edge: Edge): void {
+function endpointStatusErrorsForWrite(edge: Edge, resolve: (ref: RawEndpoint) => ResolvedRef): string[] {
+	const errors: string[] = [];
+	const sides = [
+		{ role: "parent", key: endpointKey(edge.parent), res: resolve(edge.parent) },
+		{ role: "child", key: endpointKey(edge.child), res: resolve(edge.child) },
+	] as const;
+	for (const { role, key, res } of sides) {
+		if (res.status === "unregistered") {
+			errors.push(
+				`Edge ${role} '${key}' (relation_type '${edge.relation_type}') names an unregistered substrate alias/id`,
+			);
+		} else if (res.status === "dangling") {
+			errors.push(`Edge ${role} '${key}' (relation_type '${edge.relation_type}') does not resolve to any item`);
+		}
+	}
+	return errors;
+}
+
+/**
+ * WRITE-ONLY prospective-cycle check: run the SAME `validateRelations` pass
+ * validateContext delegates cycle detection to, over (existing on-disk
+ * relations ∪ the new edge(s)), and THROW when any `edge_cycle_detected`
+ * diagnostic fires. Reusing `validateRelations` inherits its cycle-candidate
+ * gating exactly — only hierarchy-declared / non-lens relation_types with
+ * `cycle_allowed !== true` are checked, so a `cycle_allowed: true`
+ * relation_type is never rejected here. The whole batch is considered at once,
+ * so an intra-batch cycle, or a batch edge closing a cycle with disk edges, is
+ * caught before any write.
+ */
+function assertProspectiveAcyclicForWrite(
+	cwd: string,
+	validator: { config: ConfigBlock; resolve: (ref: RawEndpoint) => ResolvedRef; activeIndex: SubstrateIndex },
+	newEdges: Edge[],
+): void {
+	const prospective = [...loadRelations(cwd), ...newEdges];
+	const itemsByBlock: Record<string, ItemRecord[]> = {};
+	for (const loc of validator.activeIndex.byRefname.values()) {
+		(itemsByBlock[loc.block] ??= []).push({ id: loc.id, ...loc.item });
+	}
+	const relResult = validateRelations(validator.config, prospective, itemsByBlock, validator.resolve);
+	const cycles = relResult.issues.filter((i) => i.code === "edge_cycle_detected");
+	if (cycles.length > 0) {
+		throw new Error(`Edge rejected at write time (relation cycle): ${cycles.map((i) => i.message).join("; ")}`);
+	}
+}
+
+/**
+ * The write-time edge gate — full parity with validateContext's edge surface,
+ * shared by BOTH porcelain callers (`appendRelationByRef` routes a one-edge
+ * batch through it; `appendRelationsByRef` routes the whole resolved batch), so
+ * the two callers and their dryRun previews reject identically. A no-op when no
+ * config is present (pre-bootstrap substrate — no registry to validate
+ * against, matching validateContext's `if (config)` gate). Per edge, in order:
+ *  1. the shared `validateEdgeAgainstRegistry` check (relation_type
+ *     registration + presence-gated source/target endpoint kinds);
+ *  2. the endpoint-status check — a `dangling` or `unregistered` endpoint is
+ *     rejected (endpoints must already exist, or be filed atomically as birth
+ *     `--relations` on the item append, which runs after the item write);
+ * then, over the whole batch at once:
+ *  3. the prospective-cycle check (existing relations ∪ the batch), inheriting
+ *     `validateRelations`' cycle-candidate gating (`cycle_allowed` respected).
+ * All-or-nothing: the first failing edge throws before any write. There is NO
+ * force/allow/skip parameter — an invalid edge is not writable through the
+ * porcelain.
+ */
+function assertEdgesValidForWrite(cwd: string, edges: Edge[]): void {
 	const validator = buildWriteTimeEdgeValidator(cwd);
 	if (!validator) return;
-	const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
-	if (edgeErrors.length > 0) {
-		throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
+	for (const edge of edges) {
+		const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
+		if (edgeErrors.length > 0) {
+			throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
+		}
+		const statusErrors = endpointStatusErrorsForWrite(edge, validator.resolve);
+		if (statusErrors.length > 0) {
+			throw new Error(`Edge rejected at write time (unresolved endpoint): ${statusErrors.join("; ")}`);
+		}
 	}
+	assertProspectiveAcyclicForWrite(cwd, validator, edges);
 }
 
 /**
@@ -1866,10 +1949,15 @@ export function orientAppendInput(
  * Friendly-selector relation append (the structured-endpoint porcelain). Accepts EITHER raw
  * `{parent, child}` selectors OR the role-typed `{primary, counter}` form
  * (the explicit orientation form), resolves the (possibly role-mapped) STRING selectors to structured
- * `EdgeEndpoint`s via `resolveRelationSelector`, then delegates to the raw
- * `appendRelation` plumbing (atomic, AJV-validated, exact-duplicate no-op — same
- * deferred-integrity semantics). Keeps the string param surface its callers (the
- * append-relation Pi tool + the orchestrator CLI) already expose.
+ * `EdgeEndpoint`s via `resolveRelationSelector`, runs the write-time edge gate
+ * (`assertEdgesValidForWrite` — registration + endpoint kinds + endpoint
+ * resolution + prospective cycle, config-gated), then delegates to the raw
+ * `appendRelation` plumbing (atomic, AJV-validated, exact-duplicate no-op).
+ * Both endpoints must already resolve (active, foreign, or lens_bin) — an edge
+ * to a not-yet-filed item is rejected; file the item first or file the edge
+ * atomically as a birth relation on the item append. Keeps the string param
+ * surface its callers (the append-relation Pi tool + the orchestrator CLI)
+ * already expose.
  *
  * Returns `{ appended, edge }` where `edge` is the RESOLVED structured edge
  * actually written (so callers can report / dry-run-validate the structured
@@ -1888,12 +1976,12 @@ export function appendRelationByRef(
 		relation_type: oriented.relation_type,
 		...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 	};
-	// Write-time edge-registry gate (the write/validate-parity edge-kind check):
-	// reject an unregistered
-	// relation_type or a source/target-kind-violating endpoint BEFORE any write
-	// (dryRun included — preview must surface the same rejection). The shared
-	// helper guarantees this verdict is identical to validateContext's.
-	assertEdgeValidForWrite(cwd, edge);
+	// Write-time edge gate (full write/validate parity): reject an unregistered
+	// relation_type, a source/target-kind-violating endpoint, a dangling or
+	// unregistered-substrate endpoint, or an edge that would land a relation
+	// cycle, BEFORE any write (dryRun included — preview must surface the same
+	// rejection). The gate mirrors validateContext's edge surface.
+	assertEdgesValidForWrite(cwd, [edge]);
 	if (opts?.dryRun) {
 		// Preview parity: run the SAME validation the write path applies (the
 		// prospective Edge[] against the whole relations schema — what
@@ -2011,13 +2099,16 @@ export function replaceRelationByRef(
  * (whole-file additive write with per-(parent, child, relation_type) dedup,
  * skipping edges already on disk OR earlier in the same batch). Resolves each
  * `edges[]` selector triple via the SAME `resolveRelationSelector` the
- * single-edge porcelain uses, then hands the resolved `Edge[]` to
- * `appendRelations`. Returns `{ appended, skipped, edges }` — `edges` being the
- * resolved structured edges handed to the raw layer (so callers can report /
- * dry-run-validate the structured form). Same deferred-integrity semantics as
- * `appendRelations` (AJV-shape + duplicate-no-op only; relation_type
- * registration / endpoint resolution / cycle checks deferred to
- * `validateContext`).
+ * single-edge porcelain uses, runs the write-time edge gate over the WHOLE
+ * batch (`assertEdgesValidForWrite` — registration + endpoint kinds + endpoint
+ * resolution + prospective cycle including intra-batch cycles, config-gated,
+ * all-or-nothing), then hands the resolved `Edge[]` to `appendRelations`.
+ * Returns `{ appended, skipped, edges }` — `edges` being the resolved
+ * structured edges handed to the raw layer (so callers can report /
+ * dry-run-validate the structured form). Every endpoint must already resolve
+ * (active, foreign, or lens_bin) — an edge to a not-yet-filed item is
+ * rejected; file the item first or file the edge atomically as a birth
+ * relation on the item append.
  */
 export function appendRelationsByRef(
 	cwd: string,
@@ -2040,22 +2131,15 @@ export function appendRelationsByRef(
 			...(oriented.ordinal !== undefined ? { ordinal: oriented.ordinal } : {}),
 		};
 	});
-	// Write-time edge-registry gate (the write/validate-parity edge-kind check):
-	// every resolved edge in the batch
-	// is checked BEFORE any write (dryRun included). Build the validator once for
-	// the batch (config + active index built once) and reject if any edge fails —
-	// an all-or-nothing batch (no partial write past a bad edge).
-	const validator = buildWriteTimeEdgeValidator(cwd);
-	if (validator) {
-		for (const edge of resolved) {
-			const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
-			if (edgeErrors.length > 0) {
-				throw new Error(
-					`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`,
-				);
-			}
-		}
-	}
+	// Write-time edge gate (full write/validate parity): every resolved edge in
+	// the batch is checked BEFORE any write (dryRun included) — registration +
+	// endpoint kinds, endpoint resolution (dangling/unregistered reject), and a
+	// prospective-cycle check over the WHOLE batch (so an intra-batch cycle, or
+	// a batch edge closing a cycle with disk edges, rejects). The validator is
+	// built once for the batch (config + active index built once); any failing
+	// edge rejects the whole batch — all-or-nothing, no partial write past a
+	// bad edge.
+	assertEdgesValidForWrite(cwd, resolved);
 	if (opts?.dryRun) {
 		// Preview parity: replay the bulk dedup the raw appendRelations applies —
 		// skip an edge whose identity is already on disk OR earlier in THIS batch

@@ -592,6 +592,141 @@ describe("role-typed authoring + ambiguous-bare-append reject (FGAP-113)", () =>
 	});
 });
 
+// ── Write-time endpoint-resolution + prospective-cycle rejection ──────────────
+//
+// The write gate reaches full parity with validateContext's edge surface: a
+// dangling / unregistered endpoint or a would-be relation cycle is rejected at
+// write time by the ByRef porcelain (the RAW appendRelation surface stays
+// deferred — the deferred-guard proofs above are unchanged). Fixtures follow
+// the writeConfig/writeItems pattern of this file; the gate is config-gated,
+// and every fixture here writes a config.
+
+/** A relation_type declaring cycle_allowed — validateRelations' cycle-candidate
+ * gating must exempt it, so the write gate must too. */
+const CYCLE_OK_REL = [
+	{ canonical_id: "loop_ok", display_name: "loop ok", category: "data_flow" as const, cycle_allowed: true },
+];
+
+describe("write-time endpoint-resolution rejection (ByRef porcelain)", () => {
+	it("a DANGLING endpoint (item not filed) is rejected; nothing persists", (t) => {
+		const cwd = makeTmpDir("dangling-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL);
+		writeItems(cwd, ["p1"]); // c-missing is NOT filed
+
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "p1", child: "c-missing", relation_type: "rel" }),
+			/unresolved endpoint.*'c-missing'.*does not resolve to any item/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("a dangling endpoint is rejected under dryRun identically (preview parity)", (t) => {
+		const cwd = makeTmpDir("dangling-dryrun");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL);
+		writeItems(cwd, ["p1"]);
+
+		assert.throws(
+			() =>
+				appendRelationByRef(cwd, { parent: "p1", child: "c-missing", relation_type: "rel" }, undefined, {
+					dryRun: true,
+				}),
+			/unresolved endpoint.*does not resolve to any item/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("an unknown-alias colon selector is rejected as unresolved (nothing persists)", (t) => {
+		const cwd = makeTmpDir("unknown-alias-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL);
+		writeItems(cwd, ["p1"]);
+
+		// The selector's alias branch only attaches a substrate_id for a REGISTERED
+		// alias; an unknown alias collapses to a bare refname carrying the colon,
+		// which resolves nowhere in the active index → dangling → rejected. (A true
+		// `unregistered` resolver status is not formable through the porcelain in a
+		// single call; the gate's unregistered branch mirrors validateContext's
+		// wording for parity and guards any caller handing it a legacy string edge.)
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "ghost:X-1", child: "p1", relation_type: "rel" }),
+			/unresolved endpoint.*'ghost:X-1'.*does not resolve to any item/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+});
+
+describe("write-time prospective-cycle rejection (ByRef porcelain)", () => {
+	it("an edge closing a cycle with a disk edge is rejected; the disk edge survives alone", (t) => {
+		const cwd = makeTmpDir("cycle-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL); // "rel": cycle_allowed unset → cycle candidate
+		writeItems(cwd, ["a", "b"]);
+
+		assert.equal(appendRelationByRef(cwd, { parent: "a", child: "b", relation_type: "rel" }).appended, true);
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "b", child: "a", relation_type: "rel" }),
+			/relation cycle.*cycle detected under relation_type 'rel'/,
+		);
+		assert.equal(loadRelations(cwd).length, 1, "only the first (acyclic) edge persists");
+	});
+
+	it("a cycle-closing edge is rejected under dryRun identically (preview parity)", (t) => {
+		const cwd = makeTmpDir("cycle-dryrun");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL);
+		writeItems(cwd, ["a", "b"]);
+
+		assert.equal(appendRelationByRef(cwd, { parent: "a", child: "b", relation_type: "rel" }).appended, true);
+		assert.throws(
+			() => appendRelationByRef(cwd, { parent: "b", child: "a", relation_type: "rel" }, undefined, { dryRun: true }),
+			/relation cycle/,
+		);
+		assert.equal(loadRelations(cwd).length, 1);
+	});
+
+	it("an INTRA-BATCH cycle rejects the whole appendRelationsByRef batch before any write", (t) => {
+		const cwd = makeTmpDir("batch-cycle-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, UNKINDED_REL);
+		writeItems(cwd, ["b", "c"]);
+
+		// Neither edge is on disk; the cycle exists only across the two batch
+		// members — the gate must consider the batch as a whole.
+		assert.throws(
+			() =>
+				appendRelationsByRef(cwd, [
+					{ parent: "b", child: "c", relation_type: "rel" },
+					{ parent: "c", child: "b", relation_type: "rel" },
+				]),
+			/relation cycle.*cycle detected under relation_type 'rel'/,
+		);
+		assert.equal(fs.existsSync(relationsFile(cwd)), false);
+	});
+
+	it("a cycle under a cycle_allowed relation_type is ACCEPTED (candidate gating inherited)", (t) => {
+		const cwd = makeTmpDir("cycle-allowed-ok");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+
+		writeConfig(cwd, CYCLE_OK_REL);
+		writeItems(cwd, ["a", "b"]);
+
+		const r = appendRelationsByRef(cwd, [
+			{ parent: "a", child: "b", relation_type: "loop_ok" },
+			{ parent: "b", child: "a", relation_type: "loop_ok" },
+		]);
+		assert.equal(r.appended, 2);
+		assert.equal(loadRelations(cwd).length, 2, "both cycle edges persist under cycle_allowed");
+	});
+});
+
 /** Minimal ConfigBlock-shaped object carrying the kinded relation_type. */
 function KINDED_REL_CONFIG(): never {
 	return {

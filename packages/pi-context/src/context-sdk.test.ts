@@ -1449,7 +1449,9 @@ describe("completeTask", () => {
 
 		writeTasks(tmpDir, [{ id: "t1", description: "build it", status: "planned" }]);
 		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
-		fileVerifiesEdge(tmpDir, "v1", "t-missing");
+		// No seeded v1→t-missing edge: the write-time gate rejects a dangling
+		// endpoint, and the seed was vestigial anyway — completeTask's own
+		// not-found guard (under test here) fires before any edge filing.
 
 		assert.throws(
 			() => completeTask(tmpDir, "t-missing", "v1"),
@@ -1490,7 +1492,9 @@ describe("completeTask", () => {
 
 		// No tasks.json
 		writeVerifications(tmpDir, [{ id: "v1", status: "passed", method: "test" }]);
-		fileVerifiesEdge(tmpDir, "v1", "t1");
+		// No seeded v1→t1 edge: with no tasks block t1 cannot resolve, so the
+		// write-time gate would reject the seed — which was vestigial anyway;
+		// completeTask's own missing-tasks-block guard (under test) fires first.
 
 		assert.throws(
 			() => completeTask(tmpDir, "t1", "v1"),

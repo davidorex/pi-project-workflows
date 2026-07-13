@@ -29,7 +29,14 @@ cmd=$(printf '%s' "$input" | jq -r '.tool_input.command // empty')
 # command (e.g. `git commit -m "… pi-context … |"`) becomes `Q` and is NOT pulled into the guard.
 # Degradation on exotic/unbalanced quoting is FAIL-CLOSED (over-block, never under-block): stripping
 # only ever removes text a pattern could match. Requires perl (already the hook depends on jq).
-cmd=$(printf '%s' "$cmd" | perl -pe "s/'[^']*'|\"(?:\\\\.|[^\"\\\\])*\"/Q/g")
+# SLURP MODE (-0777) is load-bearing: plain -pe substitutes line by line, so a quoted span that
+# opens on one physical line and closes on a later one is never collapsed — its interior (a literal
+# CLI-name mention in a multi-line commit message; data `|`/`>`/`$?` in a multi-line --item payload)
+# leaks into the skeleton and false-positives the recognizer and glue branches. -0777 reads the whole
+# command as ONE record so the negated classes ([^'], [^"\\] — both match newline) collapse a
+# multi-line span exactly as a single-line one. An unterminated quote finds no close in the whole
+# record either, stays visible, and over-blocks — same fail-closed contract.
+cmd=$(printf '%s' "$cmd" | perl -0777 -pe "s/'[^']*'|\"(?:\\\\.|[^\"\\\\])*\"/Q/g")
 
 # Is this a reflecting pi-context CLI invocation? (bin.js path or the `pi-context <op>` form)
 if printf '%s' "$cmd" | grep -Eq 'pi-context-cli/dist/bin\.js|(^|[;&|]| )pi-context '; then

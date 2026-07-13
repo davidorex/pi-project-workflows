@@ -2780,7 +2780,7 @@
     {
       "description": "Close FEAT-011's criterion 9 residue gap (evaluated PARTIAL on current main): the off-repo-conditions and engine-bypassing-writes residue classes are stated nowhere on the feature's surfaces, though the prose-truth and authored-judgment classes are. State all four flagged-for-review residue classes -- prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes -- on the surfaces the criterion names: the context-reconcile and context-validate op descriptions where staleness/divergence semantics are described, the pi-context README's currency section, and the skill narrative's validate/status passages. Docs-only; no engine change.",
       "acceptance_criteria": [
-        "Each of the four residue classes is stated on at least one op-string surface and the README currency text, phrased as flagged-for-review (detectable, never preventable), with no surface claiming total foreclosure of semantic currency",
+        "Each of the four residue classes is stated on at least one op-string surface and the README currency text, phrased as flagged-for-review (at best flagged for human review, never prevented; off-repo facts beyond engine observation), with no surface claiming total foreclosure of semantic currency",
         "SKILL regenerated after the narrative/op-string edits",
         "build, check, and full test suite exit 0"
       ],
@@ -2792,8 +2792,8 @@
       "status": "in-progress",
       "id": "TASK-137",
       "oid": "2541ff091f7484a366fc7faaf1d32d94",
-      "content_hash": "b6483e4139d4c67e2953c5ebe3663e541136318bbdcff04ff0a5e7ca90ead97e",
-      "content_parent": "7f929326180e8c7efeb6caca66ac553b19601d2af83d74ca13473d83e34d86b9"
+      "content_hash": "6b28800f992ac58e66c7f3fd6218bdc621a584d182ad9252b1c4fa3ca5419cf4",
+      "content_parent": "b6483e4139d4c67e2953c5ebe3663e541136318bbdcff04ff0a5e7ca90ead97e"
     },
     {
       "description": "Implement FGAP-151: make the glue guard's quote-strip whole-command -- perl slurp mode (-0777 -pe) at .claude/hooks/block-pi-context-glue.sh line 32 so quoted spans collapse across newlines exactly as single-line spans do (the fix shape verified on a copy by the gap's investigation: both live-bite cases pass, true positives still block, existing harness 28/28, unbalanced quoting degrades fail-closed). Extend the harness with multi-line rows: a multi-line double-quoted commit-message CLI mention passes; a multi-line single-quoted payload carrying data metacharacters (pipe, redirect, exit-capture text) passes; a genuine multi-line pipe true-positive blocks. Copy-first guard development; the live file changes only after the extended harness is green on the copy, then re-run against the live path. In the same pass, evaluate whether FGAP-149's sibling fix (the commit guard's multi-line quote-span exclusion) shares this mechanism -- if the commit guard's line loop can consume the same whole-command quote-collapse before its line walk, implement both from the one mechanism and close both gaps; if not, implement FGAP-151 alone and record why the mechanisms diverge.",

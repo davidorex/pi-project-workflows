@@ -2,10 +2,13 @@
  * Write-time enforcement of the two mechanically-checkable rhetorical-register
  * rules this module's decided scope covers:
  *
- *   1. Terseness — per-field word-count caps, read from the existing (until now
- *      dormant) `x-prompt-budget.words` field annotation.
+ *   1. Terseness — word-count caps read from the `x-prompt-budget.words`
+ *      annotation, declared either on a named string property or on a
+ *      bare-string array's own `items` subschema (each string element is
+ *      word-counted against the items cap individually).
  *   2. No provenance / git / prior-state narration in block bodies — a shared
- *      `DEFAULT_PROHIBITED_PATTERNS` regex set, applied to every budgeted field.
+ *      `DEFAULT_PROHIBITED_PATTERNS` regex set, applied to every budgeted
+ *      string field and to every element of a budgeted bare-string array.
  *
  * The remaining four rhetorical-register rules (self-containment, exactness,
  * appropriateness-to-block-type, appropriateness-to-downstream-use) are prose
@@ -153,6 +156,42 @@ function collectWordCaps(itemSchema: Record<string, unknown>): Map<string, numbe
 	return caps;
 }
 
+/**
+ * Collect, from an item subschema's top-level `properties`, the per-ELEMENT word
+ * cap declared on a budgeted bare-string array — a property of `type: "array"`
+ * whose `items` subschema is itself `type: "string"` and carries a finite
+ * numeric `x-prompt-budget.words`. The returned map's keys are exactly the
+ * budgeted bare-string-array fields — the set whose string ELEMENTS the word
+ * cap and the universal `DEFAULT_PROHIBITED_PATTERNS` apply to (mirroring how
+ * `collectWordCaps`' key set doubles as the prohibited-checked set for scalar
+ * fields). Kept a SIBLING of `collectWordCaps` rather than widening it: the two
+ * maps feed different loops — scalar caps feed the per-field checks in
+ * `checkFieldsAgainstSchema`, element caps feed the per-element loop in
+ * `walkNestedArrays`. A bare-string `items` subschema carries no `$ref`, so the
+ * budget is read directly off `properties.<key>.items` with no resolver.
+ */
+function collectArrayElementCaps(itemSchema: Record<string, unknown>): Map<string, number> {
+	const caps = new Map<string, number>();
+	const props = itemSchema.properties;
+	if (!props || typeof props !== "object") return caps;
+	for (const [field, specRaw] of Object.entries(props as Record<string, unknown>)) {
+		if (!specRaw || typeof specRaw !== "object") continue;
+		const spec = specRaw as Record<string, unknown>;
+		if (spec.type !== "array") continue;
+		const items = spec.items;
+		if (!items || typeof items !== "object" || Array.isArray(items)) continue;
+		const itemsSpec = items as Record<string, unknown>;
+		if (itemsSpec.type !== "string") continue;
+		const budget = itemsSpec["x-prompt-budget"];
+		if (!budget || typeof budget !== "object") continue;
+		const words = (budget as Record<string, unknown>).words;
+		if (typeof words === "number" && Number.isFinite(words)) {
+			caps.set(field, words);
+		}
+	}
+	return caps;
+}
+
 /** Whitespace-split word count; empty / whitespace-only string counts as 0. */
 function wordCount(value: string): number {
 	const trimmed = value.trim();
@@ -257,8 +296,23 @@ function checkFieldsAgainstSchema(
  * is duplicated. Each element that is itself a plain object is checked
  * (`checkFieldsAgainstSchema`) and then recursed into — so a budgeted field
  * nested at ANY depth (2 levels today, 3+ in future schemas) is covered without
- * new code. Elements that are not plain objects, and array properties whose
- * subschema does not resolve, are skipped defensively rather than throwing.
+ * new code.
+ *
+ * A BUDGETED BARE-STRING array — one whose `items` subschema is `type: "string"`
+ * carrying a finite `x-prompt-budget.words` (collected per level by
+ * `collectArrayElementCaps`) — takes its own branch instead: each STRING element
+ * is word-counted against the items cap and tested against the universal
+ * `DEFAULT_PROHIBITED_PATTERNS`, throwing `RhetoricalValidationError` naming the
+ * array field. The budget is read straight off `properties.<key>.items` (a bare
+ * string items subschema carries no `$ref`, so no resolver pass is needed).
+ * Non-string elements inside such an array are skipped — element TYPE is AJV's
+ * job upstream, this check is register-of-authored-prose only. Because this
+ * function runs both for the changed item itself and recursively for every
+ * inline nested object, a budgeted bare-string array is enforced at any depth.
+ *
+ * Elements that are not plain objects (in the object-element branch), un-budgeted
+ * bare-string arrays, and array properties whose subschema does not resolve, are
+ * skipped defensively rather than throwing.
  */
 function walkNestedArrays(
 	schema: Record<string, unknown>,
@@ -269,12 +323,40 @@ function walkNestedArrays(
 ): void {
 	const props = schema.properties;
 	if (!props || typeof props !== "object") return;
+	const elementCaps = collectArrayElementCaps(schema);
 	for (const [key, specRaw] of Object.entries(props as Record<string, unknown>)) {
 		if (!specRaw || typeof specRaw !== "object") continue;
 		const spec = specRaw as Record<string, unknown>;
 		if (spec.type !== "array" || !spec.items) continue;
 		const value = item[key];
 		if (!Array.isArray(value)) continue;
+		const elementCap = elementCaps.get(key);
+		if (elementCap !== undefined) {
+			// Budgeted bare-string array: the elements themselves are the budgeted
+			// values — word-cap and prohibited-pattern check each string directly.
+			for (const element of value) {
+				if (typeof element !== "string") continue;
+				const count = wordCount(element);
+				if (count > elementCap) {
+					throw new RhetoricalValidationError(
+						label,
+						key,
+						`array element is ${count} words, exceeding the x-prompt-budget cap of ${elementCap} — tighten to the register's terseness demand`,
+					);
+				}
+				for (const { pattern, reason } of DEFAULT_PROHIBITED_PATTERNS) {
+					const m = pattern.exec(element);
+					if (m) {
+						throw new RhetoricalValidationError(
+							label,
+							key,
+							`array element matched prohibited pattern "${m[0]}" — ${reason}`,
+						);
+					}
+				}
+			}
+			continue;
+		}
 		const nestedSchema = resolveNested(schema, rootSchema, key);
 		if (!nestedSchema) continue;
 		for (const element of value) {
@@ -307,7 +389,12 @@ function walkNestedArrays(
  *   - every such budgeted string field is tested against `DEFAULT_PROHIBITED_
  *     PATTERNS` (the universal provenance/git/prior-state ban);
  *   - every schema-authored `x-rhetorical-criteria.prohibited_patterns` entry is
- *     tested against exactly the fields it names in `applies_to`.
+ *     tested against exactly the fields it names in `applies_to`;
+ *   - every element of a budgeted BARE-STRING array — an array property whose
+ *     `items` subschema is `type: "string"` with `x-prompt-budget.words` (e.g.
+ *     a tasks item's `acceptance_criteria`, a decisions item's `consequences`)
+ *     — is word-counted against the items cap and tested against
+ *     `DEFAULT_PROHIBITED_PATTERNS` directly, at any nesting depth.
  *
  * Enforcement additionally DESCENDS: after checking the changed item's own
  * fields, it recursively walks every nested-array property the item carries

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import {
 	appendToBlock,
 	appendToNestedArray,
@@ -3341,6 +3342,81 @@ describe("rhetorical-criteria enforcement (FGAP-043)", () => {
 		assert.strictEqual(items.find((i) => i.id === "OK-1")?.notes, "updated clean note");
 		// The grandfathered violator is untouched — proving the write was not blocked.
 		assert.strictEqual(items.find((i) => i.id === "OLD-1")?.notes, "one two three four five six seven eight nine ten");
+	});
+
+	it("SCOPING SAFETY (bare-string arrays, shipped tasks schema): appending a clean task succeeds despite an on-disk violator acceptance_criteria element on another task", (t) => {
+		// Diff-scoping for budgeted bare-string-array elements is only falsifiable
+		// through a real write — the pure check receives only the changedItems the
+		// write threads in, so an untouched item cannot reach it by construction.
+		// Seed a grandfathered violator directly on disk, then drive appendToTypedFile
+		// against the shipped samples tasks schema, whose acceptance_criteria is a
+		// budgeted bare-string array.
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "block-api-rhet-writepath-"));
+		t.after(() => fs.rmSync(tmp, { recursive: true, force: true }));
+		// The samples tasks schema declares the Cycle-3 identity fields, so the
+		// append's identity stamp reads config.substrate_id from the file's own dir.
+		fs.writeFileSync(
+			path.join(tmp, "config.json"),
+			JSON.stringify({ schema_version: "1.8.0", substrate_id: SCRATCH_SUBSTRATE_ID, block_kinds: [] }, null, 2),
+		);
+		const tasksPath = path.join(tmp, "tasks.json");
+		fs.writeFileSync(
+			tasksPath,
+			JSON.stringify(
+				{
+					tasks: [
+						{
+							id: "TASK-100",
+							description: "grandfathered task seeded directly on disk",
+							status: "completed",
+							acceptance_criteria: ["previously the gate ran at review time"],
+						},
+					],
+				},
+				null,
+				2,
+			),
+		);
+		const samplesTasksSchema = path.resolve(
+			path.dirname(fileURLToPath(import.meta.url)),
+			"..",
+			"samples",
+			"schemas",
+			"tasks.schema.json",
+		);
+
+		// Control leg — the append path DOES register-check this schema's
+		// acceptance_criteria elements (otherwise the pass below proves nothing).
+		assert.throws(
+			() =>
+				appendToTypedFile(tasksPath, samplesTasksSchema, "tasks", {
+					id: "TASK-102",
+					description: "task whose own criteria violate",
+					status: "planned",
+					acceptance_criteria: ["previously this was enforced elsewhere"],
+				}),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual((err as RhetoricalValidationError).field, "acceptance_criteria");
+				return true;
+			},
+		);
+
+		// The pin — only the appended clean item is diff-scoped in; the on-disk
+		// violator (rewritten as part of the whole file) never blocks the write.
+		assert.doesNotThrow(() =>
+			appendToTypedFile(tasksPath, samplesTasksSchema, "tasks", {
+				id: "TASK-101",
+				description: "clean unrelated task",
+				status: "planned",
+				acceptance_criteria: ["clean terse criterion"],
+			}),
+		);
+		const written = JSON.parse(fs.readFileSync(tasksPath, "utf-8")) as { tasks: Array<{ id: string }> };
+		assert.deepStrictEqual(
+			written.tasks.map((i) => i.id),
+			["TASK-100", "TASK-101"],
+		);
 	});
 
 	it("update: still enforces on the changed item itself", (t) => {

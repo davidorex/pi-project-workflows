@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-148: make the filing ops' birth-relations --dryRun preview report the same rejections the live filing produces. Under --dryRun, additionally check each birth-relation entry's counter-endpoint read-only against the existing substrate (resolve it with the same resolver the live gate uses; report a would-reject for dangling/unregistered) and run the prospective-cycle check treating the new item's endpoint as resolving-by-construction. The new-item endpoint itself stays exempt from existence checking at preview (unwritten by definition; the live run appends birth edges after the item write so it resolves). Mirrors the fixed preview pattern the update op's catalog-ahead arm established: compute the precise outcome read-only, write nothing.",
+  "acceptance_criteria": [
+    "A --dryRun filing whose birth relation names a dangling counter-endpoint reports the would-reject the live run produces, with a unit pin",
+    "A --dryRun filing whose birth relation would close a cycle (treating the new item's endpoint as resolving) reports the would-reject, with a unit pin",
+    "A --dryRun filing with valid birth relations still reports would-file; live and preview verdicts agree on the same inputs across the pinned cases",
+    "The new-item endpoint is never existence-checked at preview (regression: a birth relation whose only unresolvable endpoint is the new item itself previews clean)",
+    "build, check, and full test suite exit 0; docs-surface-sync applied to the filing ops' --dryRun description text"
+  ],
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/src/context-sdk.ts"
+  ],
+  "status": "in-progress"
+}

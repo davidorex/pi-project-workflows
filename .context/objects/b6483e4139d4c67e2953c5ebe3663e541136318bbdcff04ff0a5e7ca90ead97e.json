@@ -1,0 +1,14 @@
+{
+  "description": "Close FEAT-011's criterion 9 residue gap (evaluated PARTIAL on current main): the off-repo-conditions and engine-bypassing-writes residue classes are stated nowhere on the feature's surfaces, though the prose-truth and authored-judgment classes are. State all four flagged-for-review residue classes -- prose truth, acceptance-criteria judgment, off-repo conditions, engine-bypassing writes -- on the surfaces the criterion names: the context-reconcile and context-validate op descriptions where staleness/divergence semantics are described, the pi-context README's currency section, and the skill narrative's validate/status passages. Docs-only; no engine change.",
+  "acceptance_criteria": [
+    "Each of the four residue classes is stated on at least one op-string surface and the README currency text, phrased as flagged-for-review (detectable, never preventable), with no surface claiming total foreclosure of semantic currency",
+    "SKILL regenerated after the narrative/op-string edits",
+    "build, check, and full test suite exit 0"
+  ],
+  "files": [
+    "packages/pi-context/src/ops-registry.ts",
+    "packages/pi-context/README.md",
+    "packages/pi-context/skill-narrative.md"
+  ],
+  "status": "in-progress"
+}

@@ -2753,10 +2753,11 @@
         "packages/pi-context/src/ops-registry.ts",
         "packages/pi-context/src/context-sdk.ts"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-135",
       "oid": "86728d3470c080044b30198a2c10c79c",
-      "content_hash": "38cededeb31d5877f929831479df97567cc1901a76fb099822278ed5442b80f5"
+      "content_hash": "635ce3b979512eabc17d580c81d6aa32ec70976163d6c15c529bc79e5089f777",
+      "content_parent": "38cededeb31d5877f929831479df97567cc1901a76fb099822278ed5442b80f5"
     },
     {
       "description": "Close FEAT-014's remaining engineering legs (criteria 2 and 6, evaluated NOT MET on current main by the letter): (1) a PINNED end-to-end probe test on the work-order path that dispatches a REAL pi subprocess -- a work-order whose agent must write a file, verified by a runtime-demo real-check parsing exit codes/artifacts, driven non-interactively through runWorkOrderLoop with ZERO _internals substitution -- gated behind the existing RUN_INTEGRATION environment convention pi-workflows' integration tests already use (pi binary required); (2) a recorded fresh end-to-end non-interactive pass of that probe recipe on the CURRENT engine (post commit-gate, output-contract, and agents-materialization changes), since the only such run on record predates all three.",
@@ -2788,10 +2789,11 @@
         "packages/pi-context/README.md",
         "packages/pi-context/skill-narrative.md"
       ],
-      "status": "planned",
+      "status": "in-progress",
       "id": "TASK-137",
       "oid": "2541ff091f7484a366fc7faaf1d32d94",
-      "content_hash": "7f929326180e8c7efeb6caca66ac553b19601d2af83d74ca13473d83e34d86b9"
+      "content_hash": "b6483e4139d4c67e2953c5ebe3663e541136318bbdcff04ff0a5e7ca90ead97e",
+      "content_parent": "7f929326180e8c7efeb6caca66ac553b19601d2af83d74ca13473d83e34d86b9"
     },
     {
       "description": "Implement FGAP-151: make the glue guard's quote-strip whole-command -- perl slurp mode (-0777 -pe) at .claude/hooks/block-pi-context-glue.sh line 32 so quoted spans collapse across newlines exactly as single-line spans do (the fix shape verified on a copy by the gap's investigation: both live-bite cases pass, true positives still block, existing harness 28/28, unbalanced quoting degrades fail-closed). Extend the harness with multi-line rows: a multi-line double-quoted commit-message CLI mention passes; a multi-line single-quoted payload carrying data metacharacters (pipe, redirect, exit-capture text) passes; a genuine multi-line pipe true-positive blocks. Copy-first guard development; the live file changes only after the extended harness is green on the copy, then re-run against the live path. In the same pass, evaluate whether FGAP-149's sibling fix (the commit guard's multi-line quote-span exclusion) shares this mechanism -- if the commit guard's line loop can consume the same whole-command quote-collapse before its line walk, implement both from the one mechanism and close both gaps; if not, implement FGAP-151 alone and record why the mechanisms diverge.",

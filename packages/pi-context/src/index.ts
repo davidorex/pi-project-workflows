@@ -14,6 +14,7 @@ import {
 	type AdoptResult,
 	adoptConception,
 	type ConfigBlock,
+	installedAgentDestPath,
 	installedBlockDestPath,
 	installedSchemaDestPath,
 	loadConfig,
@@ -646,28 +647,37 @@ function composeMarkerText(
 /**
  * Resolve the package samples catalog once: the absolute `samplesRoot` plus a
  * `byId` map from each block_kind's `canonical_id` to its declared
- * `schema_path` / `data_path` (relative to `samplesRoot`). Shared read helper
- * extracted from `installContext` so the installer and the read-only
- * `checkStatus` drift detector resolve the catalog identically (no divergence).
+ * `schema_path` / `data_path`, and an `agentsById` map from each catalog
+ * agent's `canonical_id` to its declared `spec_path` (all paths relative to
+ * `samplesRoot`). Shared read helper extracted from `installContext` so the
+ * installer and the read-only `checkStatus` drift detector resolve the catalog
+ * identically (no divergence). An older conception with no top-level `agents`
+ * array yields an empty `agentsById` (tolerated — nothing to resolve).
  *
  * lazy fileURLToPath idiom: import.meta.dirname is undefined under
  * tsx's CJS-interop dist-load; import.meta.url is not. Reads the conception once
- * for the canonical_id→paths map so callers resolve sources by the same
- * block_kind declarations the accept-all onboarding mode ships.
+ * for the canonical_id→paths maps so callers resolve sources by the same
+ * declarations the accept-all onboarding mode ships.
  */
 export function resolveCatalog(): {
 	samplesRoot: string;
 	byId: Map<string, { schema_path: string; data_path: string }>;
+	agentsById: Map<string, { spec_path: string }>;
 } {
 	const samplesRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "samples");
 	const conception = JSON.parse(fs.readFileSync(path.join(samplesRoot, "conception.json"), "utf-8")) as {
 		block_kinds?: Array<{ canonical_id: string; schema_path: string; data_path: string }>;
+		agents?: Array<{ canonical_id: string; spec_path: string }>;
 	};
 	const byId = new Map<string, { schema_path: string; data_path: string }>();
 	for (const bk of conception.block_kinds ?? []) {
 		byId.set(bk.canonical_id, { schema_path: bk.schema_path, data_path: bk.data_path });
 	}
-	return { samplesRoot, byId };
+	const agentsById = new Map<string, { spec_path: string }>();
+	for (const agent of conception.agents ?? []) {
+		agentsById.set(agent.canonical_id, { spec_path: agent.spec_path });
+	}
+	return { samplesRoot, byId, agentsById };
 }
 
 /**
@@ -1592,10 +1602,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	const schemasRoot = path.join(destRoot, SCHEMAS_DIR);
 	if (!fs.existsSync(schemasRoot)) fs.mkdirSync(schemasRoot, { recursive: true });
 
-	// Catalog resolution (samplesRoot + canonical_id→paths map) is shared with
+	// Catalog resolution (samplesRoot + canonical_id→paths maps) is shared with
 	// the read-only checkStatus drift detector via resolveCatalog so installer
 	// and detector cannot drift in how they resolve sources.
-	const { samplesRoot, byId } = resolveCatalog();
+	const { samplesRoot, byId, agentsById } = resolveCatalog();
 
 	for (const name of (config as ConfigBlock).installed_schemas ?? []) {
 		const relDest = `${SCHEMAS_DIR}/${name}.schema.json`;
@@ -1705,6 +1715,63 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 		}
 		fs.copyFileSync(sourceFile, destFile);
 		result.installed.push(relDest);
+	}
+
+	// ── AGENTS: materialize declared agent specs as editable project files ──
+	// Mirrors the BLOCKS loop's preservation stance, not the schemas resync:
+	// a materialized spec is the project's own editable copy (the loader's
+	// project tier, which wins over the bundled tier), so an existing file is
+	// NEVER overwritten — not even under --update — and agents are never
+	// baselined into installed_from. Deleting the file falls back to the
+	// bundled tier; re-running install re-materializes the catalog copy.
+	const installedAgents = (config as ConfigBlock).installed_agents ?? [];
+	if (installedAgents.length > 0) {
+		const agentsRoot = path.join(destRoot, "agents");
+		if (!fs.existsSync(agentsRoot)) fs.mkdirSync(agentsRoot, { recursive: true });
+		for (const name of installedAgents) {
+			const relDest = `agents/${name}.agent.yaml`;
+			const agent = agentsById.get(name);
+			if (!agent) {
+				result.notFound.push(relDest);
+				continue;
+			}
+			const sourceFile = path.join(samplesRoot, agent.spec_path);
+			// Single source of the dest derivation, shared with findUnmaterializedAssets.
+			const destFile = installedAgentDestPath(destRoot, name);
+			if (!fs.existsSync(sourceFile)) {
+				result.notFound.push(relDest);
+				continue;
+			}
+			if (fs.existsSync(destFile)) {
+				result.skipped.push(relDest);
+				continue;
+			}
+			fs.copyFileSync(sourceFile, destFile);
+			result.installed.push(relDest);
+		}
+		// Support assets: the catalog ships the specs' output schemas
+		// spec-ADJACENT (samples/agents/schemas/), and the loader resolves a
+		// materialized spec's relative `schemas/<x>.schema.json` ref against the
+		// spec's own directory only (the sibling probe is bundled-tier-only). So
+		// the adjacent schemas subdir is materialized alongside the specs —
+		// per-file skip-if-exists (same never-clobber stance), reported under the
+		// same result buckets with `agents/schemas/<file>` rel-dest strings.
+		const supportSrc = path.join(samplesRoot, "agents", "schemas");
+		if (fs.existsSync(supportSrc)) {
+			const supportDest = path.join(agentsRoot, "schemas");
+			if (!fs.existsSync(supportDest)) fs.mkdirSync(supportDest, { recursive: true });
+			for (const file of fs.readdirSync(supportSrc)) {
+				if (!file.endsWith(".schema.json")) continue;
+				const relDest = `agents/schemas/${file}`;
+				const destFile = path.join(supportDest, file);
+				if (fs.existsSync(destFile)) {
+					result.skipped.push(relDest);
+					continue;
+				}
+				fs.copyFileSync(path.join(supportSrc, file), destFile);
+				result.installed.push(relDest);
+			}
+		}
 	}
 
 	// ── Install baseline of the installed SCHEMAS (safe re-sync) ──────

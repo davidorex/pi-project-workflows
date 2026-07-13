@@ -58,11 +58,14 @@ function resolvePromptField(value: unknown): { template?: string; inline?: strin
  * bypass the loader), defeating the bundled-template tier. Adjacent-file specs
  * (the local/project case, and the test fixtures) still absolutize as before.
  *
- * The package-root sibling probe extends the gate to the bundled-agent layout
+ * The package-root sibling probe extends the gate to a bundled-agent layout
  * where an `agents/*.agent.yaml` spec references a schema that lives in a
- * SIBLING `schemas/` dir at the package root (e.g. investigator's
- * `schemas/investigation-findings.schema.json`, whose file is at
- * pi-workflows/schemas/, the parent of agents/). Unlike templates, an
+ * SIBLING `schemas/` dir at the package root. The canonical bundled catalog
+ * (pi-context `samples/agents/`) now ships its output schemas spec-ADJACENT
+ * (`samples/agents/schemas/`), so those refs resolve at the first probe and
+ * the sibling probe is a compatibility path for any older or third-party
+ * bundled layout that still uses the package-root sibling convention. Unlike
+ * templates, an
  * outputSchema gets no downstream loader-tier resolution — resolveOutputSchema-
  * ForCompile passes non-block values through unchanged and buildPhantomTool
  * reads them directly against process.cwd() — so a relative schema ref left as

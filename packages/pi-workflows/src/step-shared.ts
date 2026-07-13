@@ -7,6 +7,7 @@ import path from "node:path";
 import { readBlock } from "@davidorex/pi-context/block-api";
 import { schemaPath, tryResolveContextDir } from "@davidorex/pi-context/context-dir";
 import type nunjucks from "nunjucks";
+import { bundledDir } from "./bundled-dirs.js";
 import { writeState } from "./state.js";
 import { renderTemplate, renderTemplateFile } from "./template.js";
 import type { ProgressWidgetState } from "./tui.js";
@@ -44,13 +45,21 @@ export function addUsage(total: StepUsage, step: StepUsage): void {
 /**
  * Resolve a schema path to an absolute filesystem path.
  *
- * Three resolution modes:
+ * Resolution modes:
  * - Absolute paths: returned as-is
  * - `block:<name>` prefix: resolves to `.project/schemas/<name>.schema.json` from cwd.
  *   This is the portable way to reference project block schemas from any workflow or
  *   agent spec regardless of package install location. Uses the user's actual schemas
  *   (which may be customized).
- * - Relative paths: resolved against the directory containing the spec file
+ * - Relative paths: resolved against the directory containing the spec file when a
+ *   file exists there; otherwise (existence-gated, mirroring the agent-spec loader's
+ *   probe contract) probed against the bundled agents root — `bundledDir("agents")` —
+ *   where the canonical agent-output schemas sit in the spec-adjacent `schemas/`
+ *   subdir. This is how the bundled demo workflows' `schemas/<x>.schema.json` step
+ *   refs resolve to the pi-context samples catalog from any install layout without a
+ *   cross-package relative path baked into the YAML. A ref that resolves at neither
+ *   probe returns the spec-file-relative path unchanged, preserving the honest
+ *   downstream ENOENT.
  */
 export function resolveSchemaPath(schemaPathSpec: string, specFilePath: string, cwd?: string): string {
 	if (path.isAbsolute(schemaPathSpec)) return schemaPathSpec;
@@ -59,7 +68,11 @@ export function resolveSchemaPath(schemaPathSpec: string, specFilePath: string, 
 		const resolvedCwd = cwd || process.cwd();
 		return schemaPath(resolvedCwd, blockMatch[1]!);
 	}
-	return path.resolve(path.dirname(specFilePath), schemaPathSpec);
+	const fileRelative = path.resolve(path.dirname(specFilePath), schemaPathSpec);
+	if (fs.existsSync(fileRelative)) return fileRelative;
+	const bundled = path.resolve(bundledDir("agents"), schemaPathSpec);
+	if (fs.existsSync(bundled)) return bundled;
+	return fileRelative;
 }
 
 /**

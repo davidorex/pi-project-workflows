@@ -153,6 +153,10 @@ describe("isSkeletonConfig", () => {
 			patch: { installed_blocks: ["task"] },
 		},
 		{
+			name: "installed_agents",
+			patch: { installed_agents: ["investigator"] },
+		},
+		{
 			name: "tool_operations",
 			patch: { tool_operations: [{ canonical_id: "read-files" }] },
 		},

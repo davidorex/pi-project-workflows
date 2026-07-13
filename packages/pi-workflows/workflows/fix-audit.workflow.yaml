@@ -78,7 +78,7 @@ steps:
       conformance_reference: "${{ steps.select-audit.output.conformance_reference }}"
     output:
       format: json
-      schema: ../schemas/execution-results.schema.json
+      schema: schemas/execution-results.schema.json
       path: .project/fix-audit-results.json
 
   verify-findings:
@@ -90,7 +90,7 @@ steps:
     context: [implement]
     output:
       format: json
-      schema: ../schemas/finding-verification.schema.json
+      schema: schemas/finding-verification.schema.json
       path: .project/fix-audit-verify.json
 
   prepare-routing:
@@ -101,7 +101,7 @@ steps:
     context: [implement, verify-findings]
     output:
       format: json
-      schema: ../schemas/audit-routing-manifest.schema.json
+      schema: schemas/audit-routing-manifest.schema.json
 
   route-decisions:
     when: "${{ steps.prepare-routing.output.decisions | length }}"

@@ -60,8 +60,6 @@
 	"files": [
 		"dist/",
 		"skills/",
-		"agents/",
-		"schemas/",
 		"workflows/",
 		"*.md"
 	],

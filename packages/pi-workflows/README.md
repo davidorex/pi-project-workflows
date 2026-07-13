@@ -132,11 +132,9 @@ Available filters: `length`, `keys`, `filter`, `json`, `upper`, `lower`, `trim`,
 
 | Directory | Contents |
 |-----------|----------|
-| `agents/` | agent specs (`.agent.yaml`): investigator, decomposer, verifier, synthesizer, … — `ls agents/` or `availableAgents(cwd)` for the current set |
-| `schemas/` | output schemas (`.schema.json`): investigation-findings, execution-results, … — `ls schemas/` for the current set |
 | `workflows/` | workflow specs (`.workflow.yaml`): do-gap, create-phase, parallel-analysis, … — `ls workflows/` or `availableWorkflows(cwd)` for the current set |
 
-The Nunjucks prompt templates no longer ship from this package. They were relocated into `@davidorex/pi-jit-agents`; consumers resolve the bundled template root via its `bundledTemplateDir()` export, and project (`.pi/templates/`) / user overrides still take precedence in the three-tier search.
+The bundled agent specs (`.agent.yaml`: investigator, decomposer, verifier, synthesizer, …) and their output schemas (`.schema.json`: investigation-findings, execution-results, …) no longer ship from this package. They were relocated into the `@davidorex/pi-context` samples catalog (`samples/agents/` + `samples/agents/schemas/`), the single home of the bundled agent tier and where `/context install` materializes them into a substrate's `agents/`; consumers resolve the bundled agents root via `bundledDir("agents")` (which now resolves into pi-context) and `availableAgents(cwd)` still surfaces the current set. The Nunjucks prompt templates were likewise relocated, into `@davidorex/pi-jit-agents` (resolved via its `bundledTemplateDir()` export). Project (`.pi/`) / user overrides still take precedence in the three-tier search.
 
 ## SDK (`src/workflow-sdk.ts`)
 
@@ -179,7 +177,7 @@ When working with this extension:
 - **Read `src/expression.ts`** for `FILTER_NAMES` and expression evaluation rules
 - **Read `src/types.ts`** for `WorkflowSpec`, `StepSpec`, `AgentSpec`, and `ExecutionState` type definitions
 - **Read `src/dag.ts`** to understand how execution order is inferred from expressions
-- **Read agent `.agent.yaml` files** in `agents/` to understand available agent capabilities
+- **Read agent `.agent.yaml` files** (via `availableAgents(cwd)`; the bundled specs live in the `@davidorex/pi-context` samples catalog) to understand available agent capabilities
 - **Read workflow `.workflow.yaml` files** in `workflows/` for examples of workflow structure
 - Use the `workflow-execute` tool to execute workflows — it handles discovery, input validation, checkpoint detection (auto-resume), and result formatting. Use `workflow-resume` for explicit-only resume by runId (rejects on no-match).
 - The `/workflow list` command provides an interactive picker; `/workflow run <name>` runs directly

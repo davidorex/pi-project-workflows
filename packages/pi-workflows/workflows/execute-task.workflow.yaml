@@ -84,7 +84,7 @@ steps:
       onExhausted: fail
     output:
       format: json
-      schema: ../schemas/execution-results.schema.json
+      schema: schemas/execution-results.schema.json
 
   verify:
     agent: task-verifier
@@ -95,7 +95,7 @@ steps:
     context: [implement]
     output:
       format: json
-      schema: ../schemas/task-verification.schema.json
+      schema: schemas/task-verification.schema.json
 
   persist-verification:
     block:

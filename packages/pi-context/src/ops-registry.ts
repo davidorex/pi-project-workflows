@@ -1249,7 +1249,7 @@ export const ops: OpDefinition[] = [
 		name: "read-config",
 		label: "Read Config",
 		description:
-			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
+			"Read the substrate config.json as structured JSON — vocabulary, lenses, relation_types, status_buckets, display_strings, layers, block_kinds, installed_schemas, installed_blocks, installed_agents. Address ONE registry/map via `registry` (e.g. relation_types) and ONE entry within it via `id` (canonical_id) instead of reading the whole config.",
 		promptSnippet: "Read project config — vocabulary, lenses, relation_types, status_buckets",
 		examples: [`pi-context read-config --registry block_kinds --id tasks --json`],
 		parameters: Type.Object({
@@ -1484,7 +1484,7 @@ export const ops: OpDefinition[] = [
 		label: "Amend Config",
 		description:
 			"Scoped add / replace / remove of ONE entry in ONE config.json registry (block_kinds, relation_types, lenses, " +
-			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, hierarchy). " +
+			"layers, invariants, status_buckets, display_strings, naming, installed_schemas, installed_blocks, installed_agents, hierarchy). " +
 			"The whole resulting config is AJV-validated (SHAPE) and op-correctness is enforced (add ⇒ key absent, " +
 			"replace/remove ⇒ key present). Cross-registry referential integrity (removing a still-referenced " +
 			"relation_type / lens / layer / block_kind) is NOT checked here — run context-validate after. dryRun previews " +
@@ -1497,14 +1497,14 @@ export const ops: OpDefinition[] = [
 		parameters: Type.Object({
 			registry: Type.String({
 				description:
-					"One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | hierarchy",
+					"One of: block_kinds | relation_types | lenses | layers | invariants | status_buckets | display_strings | naming | installed_schemas | installed_blocks | installed_agents | hierarchy",
 			}),
 			operation: Type.String({ description: "add | replace | remove" }),
 			key: Type.String({
 				description:
 					"Entry key: id for keyed-array (block_kinds/relation_types/lenses/layers/invariants), map key for " +
 					"map (status_buckets/display_strings/naming), the string value for string-array " +
-					"(installed_schemas/installed_blocks), or a JSON {parent_block, child_block, relation_type} for hierarchy",
+					"(installed_schemas/installed_blocks/installed_agents), or a JSON {parent_block, child_block, relation_type} for hierarchy",
 			}),
 			entry: Type.Optional(
 				Type.Unknown({
@@ -1823,9 +1823,9 @@ export const ops: OpDefinition[] = [
 		name: "context-install",
 		label: "Context Install",
 		description:
-			"Install (materialize) the schemas and starter blocks declared in config.json's installed_schemas / installed_blocks from the package samples catalog. Default skip-if-exists (installed files never overwritten without --update); populated block data is always preserved (even with --update); empty or absent blocks get the catalog starter. Records the install baseline (config.installed_from: catalog source + per-schema fingerprint) for installed-vs-catalog drift detection (schemas only). A re-install on an unchanged substrate is idempotent. On a substrate whose config carries no substrate_id, install establishes the identity at entry (mints, persists to config.json, registers in the project registry) and reports it under substrateIdEstablished; an established identity is never re-minted.",
+			"Install (materialize) the schemas, starter blocks, and agent specs declared in config.json's installed_schemas / installed_blocks / installed_agents from the package samples catalog. Default skip-if-exists (installed files never overwritten without --update); populated block data is always preserved (even with --update); empty or absent blocks get the catalog starter. Agent specs materialize as editable project files under agents/ (with their output schemas under agents/schemas/) and are NEVER overwritten — not even with --update (an existing spec is reported skipped) — and are not recorded in the install baseline; deleting a materialized spec falls back to the bundled tier and re-running install re-materializes it. Records the install baseline (config.installed_from: catalog source + per-schema fingerprint) for installed-vs-catalog drift detection (schemas only). A re-install on an unchanged substrate is idempotent. On a substrate whose config carries no substrate_id, install establishes the identity at entry (mints, persists to config.json, registers in the project registry) and reports it under substrateIdEstablished; an established identity is never re-minted.",
 		promptSnippet:
-			"Install declared schemas + starter blocks from the samples catalog (skip-if-exists; --update re-syncs schemas + replaces empty blocks; records the config.installed_from baseline)",
+			"Install declared schemas + starter blocks + agent specs from the samples catalog (skip-if-exists; --update re-syncs schemas + replaces empty blocks; agent specs are never overwritten; records the config.installed_from baseline)",
 		examples: ["pi-context context-install --json", "pi-context context-install --update true --json"],
 		parameters: Type.Object({
 			update: Type.Optional(

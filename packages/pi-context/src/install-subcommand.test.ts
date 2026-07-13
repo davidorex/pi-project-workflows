@@ -37,7 +37,11 @@ const SAMPLES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 
 let tmpRoot: string;
 
-function makeProject(installedSchemas: string[] = [], installedBlocks: string[] = []): string {
+function makeProject(
+	installedSchemas: string[] = [],
+	installedBlocks: string[] = [],
+	installedAgents: string[] = [],
+): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-install-"));
 	writeBootstrapPointer(dir, ".project");
 	fs.mkdirSync(path.join(dir, ".project", "schemas"), { recursive: true });
@@ -48,6 +52,7 @@ function makeProject(installedSchemas: string[] = [], installedBlocks: string[] 
 		lenses: [],
 		installed_schemas: installedSchemas,
 		installed_blocks: installedBlocks,
+		installed_agents: installedAgents,
 	};
 	fs.writeFileSync(path.join(dir, ".project", "config.json"), JSON.stringify(config, null, 2));
 	return dir;
@@ -341,6 +346,117 @@ describe("installContext", () => {
 			"installContext must seed the (config, 1.0.0) decl",
 		);
 		assert.ok(loadConfig(tmpRoot), "the lagging config loads through the seeded chain");
+	});
+});
+
+// AGENTS materialization: installContext copies the config's declared
+// installed_agents specs into <contextDir>/agents/ (the loader's editable
+// project tier) plus the specs' adjacent output schemas into
+// <contextDir>/agents/schemas/, mirroring the BLOCKS loop's preservation stance
+// (never-clobber, even under --update; agents are NOT baselined into
+// installed_from). A declared name absent from the catalog is reported notFound.
+describe("installContext AGENTS materialization", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("materializes a declared agent spec + its adjacent output schemas into <contextDir>/agents/", () => {
+		tmpRoot = makeProject([], [], ["investigator"]);
+		const result = installContext(tmpRoot);
+		assert.equal(result.error, undefined, "install must complete");
+		// The spec file lands under agents/ and is reported installed.
+		const specDest = path.join(tmpRoot, ".project", "agents", "investigator.agent.yaml");
+		assert.ok(fs.existsSync(specDest), "the declared spec must be materialized under agents/");
+		assert.ok(
+			result.installed.includes("agents/investigator.agent.yaml"),
+			"the materialized spec must be reported installed",
+		);
+		// Byte-equal to the catalog source.
+		assert.equal(
+			fs.readFileSync(specDest, "utf-8"),
+			fs.readFileSync(path.join(SAMPLES_DIR, "agents", "investigator.agent.yaml"), "utf-8"),
+			"the materialized spec must be byte-equal to the samples-catalog source",
+		);
+		// The adjacent output schemas are materialized under agents/schemas/ so a
+		// tier-1 spec's relative schemas/<x>.schema.json ref resolves. investigator's
+		// own output schema (investigation-findings) must be present + reported.
+		const supportDest = path.join(tmpRoot, ".project", "agents", "schemas", "investigation-findings.schema.json");
+		assert.ok(
+			fs.existsSync(supportDest),
+			"the spec's adjacent output schema must be materialized under agents/schemas/",
+		);
+		assert.ok(
+			result.installed.includes("agents/schemas/investigation-findings.schema.json"),
+			"the materialized support schema must be reported installed",
+		);
+	});
+
+	it("never-clobbers a pre-existing materialized spec — reported skipped, byte-untouched, even under --update", () => {
+		tmpRoot = makeProject([], [], ["investigator"]);
+		const agentsDir = path.join(tmpRoot, ".project", "agents");
+		fs.mkdirSync(agentsDir, { recursive: true });
+		const specDest = path.join(agentsDir, "investigator.agent.yaml");
+		const sentinel = "name: investigator\ndescription: LOCAL EDIT — must survive\n";
+		fs.writeFileSync(specDest, sentinel);
+		// overwrite:true is the --update stance; the AGENTS loop must still preserve.
+		const result = installContext(tmpRoot, { overwrite: true });
+		assert.ok(
+			result.skipped.includes("agents/investigator.agent.yaml"),
+			"an existing materialized spec must be reported skipped",
+		);
+		assert.ok(
+			!result.installed.includes("agents/investigator.agent.yaml"),
+			"an existing materialized spec must NOT be reported installed",
+		);
+		assert.equal(
+			fs.readFileSync(specDest, "utf-8"),
+			sentinel,
+			"the pre-existing materialized spec must be byte-untouched (never overwritten, even under --update)",
+		);
+	});
+
+	it("never-clobbers a pre-existing support schema — reported skipped, byte-untouched", () => {
+		tmpRoot = makeProject([], [], ["investigator"]);
+		const supportDir = path.join(tmpRoot, ".project", "agents", "schemas");
+		fs.mkdirSync(supportDir, { recursive: true });
+		const supportDest = path.join(supportDir, "investigation-findings.schema.json");
+		const sentinel = '{ "__local_support_edit": true }';
+		fs.writeFileSync(supportDest, sentinel);
+		const result = installContext(tmpRoot);
+		assert.ok(
+			result.skipped.includes("agents/schemas/investigation-findings.schema.json"),
+			"an existing support schema must be reported skipped",
+		);
+		assert.equal(
+			fs.readFileSync(supportDest, "utf-8"),
+			sentinel,
+			"the pre-existing support schema must be byte-untouched",
+		);
+	});
+
+	it("records notFound for a declared agent name absent from the samples catalog", () => {
+		tmpRoot = makeProject([], [], ["definitely-not-a-real-agent-name"]);
+		const result = installContext(tmpRoot);
+		assert.ok(
+			result.notFound.includes("agents/definitely-not-a-real-agent-name.agent.yaml"),
+			"an unknown declared agent must be reported notFound",
+		);
+		assert.ok(
+			!fs.existsSync(path.join(tmpRoot, ".project", "agents", "definitely-not-a-real-agent-name.agent.yaml")),
+			"no file may be materialized for an unknown agent",
+		);
+	});
+
+	it("agents are NOT baselined into installed_from (only schemas are)", () => {
+		tmpRoot = makeProject(["tasks"], [], ["investigator"]);
+		installContext(tmpRoot);
+		const from = loadConfig(tmpRoot)?.installed_from;
+		assert.ok(from, "config.installed_from must be recorded");
+		assert.deepEqual(
+			Object.keys(from.assets).sort(),
+			["tasks"],
+			"only the installed SCHEMA is baselined — no agent name appears in installed_from.assets",
+		);
 	});
 });
 

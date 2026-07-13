@@ -41,7 +41,7 @@ describe("dispatchLoadContext", () => {
 		fs.rmSync(tmpDir, { recursive: true, force: true });
 	});
 
-	it("builtinDir points at the bundled pi-workflows agents/ dir on disk (investigator present)", () => {
+	it("builtinDir points at the bundled agents dir on disk (investigator present)", () => {
 		const loadCtx = dispatchLoadContext(tmpDir);
 		assert.equal(loadCtx.cwd, tmpDir);
 		assert.ok(loadCtx.builtinDir, "builtinDir must be set");
@@ -139,9 +139,10 @@ output:
 
 	// Dispatch-past-compile regression: a bundled spec's RELATIVE output-schema
 	// ref must compile to an ABSOLUTE path that exists on disk. Both investigator
-	// and quality-analyzer declare `schemas/<x>.schema.json`, whose file lives in
-	// pi-workflows/schemas/ (the parent of agents/, the package-root sibling
-	// convention). Without parse's sibling probe the ref survived as a bare name
+	// and quality-analyzer declare `schemas/<x>.schema.json`, whose file sits
+	// spec-adjacent in the bundled agents dir's own `schemas/` subdir (the
+	// pi-context samples catalog ships specs and output schemas side by side).
+	// Without parse's existence-gated probe the ref survived as a bare name
 	// and buildPhantomTool's readFileSync(process.cwd()) threw ENOENT at dispatch.
 	// Asserting the compiled schema is an existing absolute path pins that class
 	// without invoking a live LLM — it guarantees buildPhantomTool's read succeeds.

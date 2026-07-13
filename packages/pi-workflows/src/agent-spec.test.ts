@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, it } from "node:test";
 import { writeBootstrapPointer } from "@davidorex/pi-context/context-dir";
 import { createAgentLoader, parseAgentYaml } from "./agent-spec.js";
+import { bundledDir } from "./bundled-dirs.js";
 import { compileAgentSpec } from "./step-shared.js";
 import { createTemplateEnv } from "./template.js";
 
@@ -280,7 +281,7 @@ describe("compileAgentSpec", () => {
 });
 
 describe("verifier agent spec", () => {
-	const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
+	const builtinDir = bundledDir("agents");
 
 	it("parses verifier.agent.yaml correctly", () => {
 		const specPath = path.join(builtinDir, "verifier.agent.yaml");
@@ -303,18 +304,15 @@ describe("verifier agent spec", () => {
 	it("output schema path resolves to a valid file", () => {
 		const specPath = path.join(builtinDir, "verifier.agent.yaml");
 		const spec = parseAgentYaml(specPath);
-		const schemaPath = path.resolve(
-			path.dirname(specPath),
-			"..",
-			"schemas",
-			spec.outputSchema!.replace("schemas/", ""),
-		);
+		// Bundled specs sit beside their output schemas (`<agents-dir>/schemas/`),
+		// so the relative ref resolves spec-adjacent.
+		const schemaPath = path.resolve(path.dirname(specPath), spec.outputSchema!);
 		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
 	});
 });
 
 describe("task-worker agent spec", () => {
-	const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
+	const builtinDir = bundledDir("agents");
 
 	it("parses task-worker.agent.yaml correctly", () => {
 		const specPath = path.join(builtinDir, "task-worker.agent.yaml");
@@ -340,18 +338,15 @@ describe("task-worker agent spec", () => {
 	it("output schema path resolves to a valid file", () => {
 		const specPath = path.join(builtinDir, "task-worker.agent.yaml");
 		const spec = parseAgentYaml(specPath);
-		const schemaPath = path.resolve(
-			path.dirname(specPath),
-			"..",
-			"schemas",
-			spec.outputSchema!.replace("schemas/", ""),
-		);
+		// Bundled specs sit beside their output schemas (`<agents-dir>/schemas/`),
+		// so the relative ref resolves spec-adjacent.
+		const schemaPath = path.resolve(path.dirname(specPath), spec.outputSchema!);
 		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
 	});
 });
 
 describe("task-verifier agent spec", () => {
-	const builtinDir = path.resolve(import.meta.dirname, "..", "agents");
+	const builtinDir = bundledDir("agents");
 
 	it("parses task-verifier.agent.yaml correctly", () => {
 		const specPath = path.join(builtinDir, "task-verifier.agent.yaml");
@@ -377,12 +372,9 @@ describe("task-verifier agent spec", () => {
 	it("output schema path resolves to a valid file", () => {
 		const specPath = path.join(builtinDir, "task-verifier.agent.yaml");
 		const spec = parseAgentYaml(specPath);
-		const schemaPath = path.resolve(
-			path.dirname(specPath),
-			"..",
-			"schemas",
-			spec.outputSchema!.replace("schemas/", ""),
-		);
+		// Bundled specs sit beside their output schemas (`<agents-dir>/schemas/`),
+		// so the relative ref resolves spec-adjacent.
+		const schemaPath = path.resolve(path.dirname(specPath), spec.outputSchema!);
 		assert.ok(fs.existsSync(schemaPath), `Schema file not found at ${schemaPath}`);
 	});
 });

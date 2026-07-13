@@ -2,8 +2,9 @@ import assert from "node:assert";
 import path from "node:path";
 import { describe, it } from "node:test";
 import { validateFromFile } from "@davidorex/pi-context/schema-validator";
+import { bundledDir } from "./bundled-dirs.js";
 
-const schemaPath = path.resolve(import.meta.dirname, "..", "schemas", "verifier-output.schema.json");
+const schemaPath = path.join(bundledDir("schemas"), "verifier-output.schema.json");
 
 function validVerifierOutput() {
 	return {
@@ -175,7 +176,7 @@ describe("verifier-output schema validation", () => {
 });
 
 describe("plan-breakdown schema validation", () => {
-	const planSchemaPath = path.resolve(import.meta.dirname, "..", "schemas", "plan-breakdown.schema.json");
+	const planSchemaPath = path.join(bundledDir("schemas"), "plan-breakdown.schema.json");
 
 	it("validates a valid plan breakdown", () => {
 		const data = {
@@ -205,7 +206,7 @@ describe("plan-breakdown schema validation", () => {
 });
 
 describe("execution-results schema validation", () => {
-	const execSchemaPath = path.resolve(import.meta.dirname, "..", "schemas", "execution-results.schema.json");
+	const execSchemaPath = path.join(bundledDir("schemas"), "execution-results.schema.json");
 
 	it("validates a valid execution result", () => {
 		const data = {

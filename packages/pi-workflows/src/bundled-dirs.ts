@@ -1,13 +1,23 @@
 /**
- * Resolved paths into this package's bundled defaults directories.
+ * Resolved paths into the bundled defaults directories.
  *
- * Pi loads pi-workflows from `dist/`; the bundled `agents/`, `workflows/`, and
- * `schemas/` directories sit one level above the runtime JS (i.e. at the
- * package root). Every consumer that previously hand-built
- * `path.resolve(import.meta.dirname, "..", "<subdir>")` now routes through
- * `bundledDir(name)` so the relative-path arithmetic exists once. Module-scoped
+ * Pi loads pi-workflows from `dist/`; the bundled `workflows/` directory sits
+ * one level above the runtime JS (i.e. at this package's root). The canonical
+ * bundled AGENT specs and their adjacent output schemas live in the pi-context
+ * package's samples catalog (`samples/agents/` + `samples/agents/schemas/`) —
+ * the same catalog the install ceremony materializes `installed_agents[]`
+ * from — so `bundledDir("agents")` / `bundledDir("schemas")` resolve into the
+ * installed pi-context package rather than this one. Every consumer routes
+ * through `bundledDir(name)` so the path arithmetic exists once. Module-scoped
  * — never re-export from the package barrel, since the value is meaningful
  * only when computed against this file's own location.
+ *
+ * The pi-context package root is resolved via `createRequire(import.meta.url)`
+ * + `require.resolve("@davidorex/pi-context/package.json")` (the subpath is in
+ * pi-context's exports map). Module resolution — not relative path arithmetic
+ * across package dirs — is what stays correct under the monorepo workspace
+ * symlink layout, a hoisted published install, and a nested (version-conflict)
+ * published install alike.
  *
  * The "templates" branch was removed on purpose: agent-prompt templates now
  * live entirely in the pi-jit-agents package. There is exactly one shared
@@ -17,6 +27,7 @@
  * Consumers needing the bundled template root import `bundledTemplateDir`
  * from `@davidorex/pi-jit-agents/template` instead of asking this helper.
  */
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -30,6 +41,15 @@ import { fileURLToPath } from "node:url";
 // load, not just inside a function.
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
+// createRequire (not a bare `require`) for the same dual-load-path reason as
+// above: this is an ESM module, and the CJS-interop path has no ambient
+// require either. require.resolve follows the workspace symlink to the real
+// package dir, so the resolved root is correct in every install layout.
+const requireFromHere = createRequire(import.meta.url);
+const PI_CONTEXT_ROOT = path.dirname(requireFromHere.resolve("@davidorex/pi-context/package.json"));
+
 export function bundledDir(subdir: "agents" | "workflows" | "schemas"): string {
-	return path.join(PACKAGE_ROOT, subdir);
+	if (subdir === "workflows") return path.join(PACKAGE_ROOT, "workflows");
+	if (subdir === "agents") return path.join(PI_CONTEXT_ROOT, "samples", "agents");
+	return path.join(PI_CONTEXT_ROOT, "samples", "agents", "schemas");
 }

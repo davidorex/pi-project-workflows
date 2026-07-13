@@ -11,14 +11,36 @@
 #
 # Detection (python3 tokenizer, not a regex, so option VALUES are not mistaken for
 # pathspecs):
-#   - split the command on shell separators (&& || ; | newline)
-#   - in each segment, locate a `git [global-opts] commit` head
+#   - walk the command line by line, tracking heredoc bodies: lines inside a
+#     heredoc (from a `<<DELIM` marker to its terminator line) are DATA, never
+#     classified as command segments
+#   - split each non-body line on shell separators (&& || ; |)
+#   - shlex-split each segment, then strip redirection grammar from the token
+#     stream (strip_redirections below) — shlex.split is a POSIX word splitter
+#     with no redirection concept, so `2>&1`, `>out`, a bare `>` and its target,
+#     and heredoc markers all survive as ordinary words that the positional rule
+#     would otherwise misclassify as pathspecs
+#   - in each cleaned segment, locate a `git [global-opts] commit` head
 #   - walk the post-`commit` tokens: skip options; skip the separate value of a
 #     value-taking option (-m/-F/-C/-c/-t/--author/--date/--message/--file/etc.);
 #     a bare `--` with anything after it => pathspec => BLOCK; any surviving
 #     positional token => pathspec => BLOCK.
 # Anything unparseable falls through to exit 0 (fail-open: this is a workflow guard,
-# not a security boundary — see the create-hooks security note).
+# not a security boundary — see the create-hooks security note). Accepted residual
+# of that posture: a genuine pathspec whose filename lexes like a redirect (a file
+# literally named `2>&1`) is invisible to the guard — under-block, not over-block.
+#
+# REUSABLE RECIPE — shell-grammar-aware command classification for Bash guards.
+# Any PreToolUse(Bash) hook that classifies commands by token inspection should
+# reuse this pipeline rather than hand-rolling another parser (the planned
+# Bash-chokepoint hook included): (1) line loop with heredoc-body exclusion,
+# (2) segment split on control operators, (3) shlex.split, (4) strip_redirections,
+# then (5) the hook's domain-specific token classification. Steps 1-4 are kept as
+# self-contained, lift-able code below (strip_redirections + the classify() loop)
+# with no coupling to the git-commit rule. Prior art for why: FGAP-120
+# (quote-blindness, block-pi-context-glue.sh) and FGAP-147 (redirect/heredoc-
+# blindness, this hook) are one class — shell-command classification by
+# token/pattern inspection without shell-grammar awareness.
 # Exit 2 => block, stderr fed back to the agent.
 
 input=$(cat)
@@ -48,9 +70,60 @@ VALUE_OPTS = {
 # (e.g. -am => -a -m <value>, -mfoo => -m with inline value "foo").
 VALUE_SHORT = set("mFCct")
 
-def segments(s):
-    # split on && || ; | and newlines, keeping it simple and shell-agnostic enough
-    return re.split(r"&&|\|\||;|\||\n", s)
+# ---- reusable shell-grammar tokenization (steps 1-4 of the header recipe) ----
+
+# Redirection operator at the start of a token: optional fd digits, then one of
+# >> > <<< <<- << <  (longest alternatives first so <<< wins over << over <).
+REDIR_OP = re.compile(r"^[0-9]*(>>|>|<<<|<<-|<<|<)")
+
+def strip_redirections(tokens):
+    """Drop redirection grammar from a shlex token list.
+
+    Returns (clean_tokens, heredoc_delims):
+      - self-contained redirect tokens dropped: 2>&1, >&2, 2>/dev/null,
+        >out.txt, >>log, <<<word
+      - bare operator tokens (>, >>, <, 2>, >&, <<<) dropped together with
+        their following target/word token
+      - &>word dropped; bare &> / &>> dropped with their target token
+      - heredoc marker (<<DELIM / << DELIM / <<-DELIM): the delimiter is
+        recorded (shlex already stripped its quotes) and classification of the
+        segment STOPS at the marker — no token after it is emitted; further
+        heredoc delimiters on the same segment are still collected so their
+        body lines can be excluded too
+    """
+    out = []
+    delims = []
+    classifying = True
+    i = 0
+    n = len(tokens)
+    while i < n:
+        t = tokens[i]
+        if t.startswith("&>"):
+            i += 2 if t in ("&>", "&>>") else 1
+            continue
+        m = REDIR_OP.match(t)
+        if m:
+            op = m.group(1)
+            rest = t[m.end():]
+            if op in ("<<", "<<-"):
+                d = rest if rest else (tokens[i + 1] if i + 1 < n else "")
+                delims.append(d.strip("\x27\x22"))
+                classifying = False
+                i += 1 if rest else 2
+                continue
+            if rest and rest != "&":
+                i += 1      # self-contained: 2>&1, >&2, >out.txt, <<<word
+            else:
+                i += 2      # bare operator: drop it and its target token
+            continue
+        if classifying:
+            out.append(t)
+        i += 1
+    return out, delims
+
+def segments(line):
+    # split one non-heredoc-body line on control operators && || ; |
+    return re.split(r"&&|\|\||;|\|", line)
 
 def has_pathspec(tokens):
     # tokens are the args AFTER the "commit" subcommand
@@ -84,32 +157,44 @@ def has_pathspec(tokens):
         return True
     return False
 
-for seg in segments(cmd):
-    try:
-        toks = shlex.split(seg)
-    except ValueError:
-        continue
-    # find a `git ... commit` head, tolerating global opts like `git -c x=y commit`
-    for gi, tok in enumerate(toks):
-        base = tok.rsplit("/", 1)[-1]
-        if base != "git":
+def classify(cmd):
+    # line loop with heredoc-body exclusion: body lines between a heredoc
+    # marker and its terminator are data, never command segments (the delimiter
+    # queue is FIFO — bash consumes heredoc bodies in marker order)
+    pending = []
+    for line in cmd.split("\n"):
+        if pending:
+            if line.strip() == pending[0]:
+                pending.pop(0)
             continue
-        # walk forward from git to the first non-option token = the subcommand
-        j = gi + 1
-        while j < len(toks) and toks[j].startswith("-"):
-            # a git global value-opt (-c/-C/--exec-path/--git-dir/--work-tree...)
-            if toks[j] in ("-c", "-C", "--exec-path", "--git-dir",
-                           "--work-tree", "--namespace") and "=" not in toks[j]:
-                j += 2
-            else:
-                j += 1
-        if j < len(toks) and toks[j] == "commit":
-            if has_pathspec(toks[j+1:]):
-                print("BLOCK")
-                sys.exit(0)
-        break  # only inspect the first git head per segment
+        for seg in segments(line):
+            try:
+                toks = shlex.split(seg)
+            except ValueError:
+                continue
+            toks, delims = strip_redirections(toks)
+            pending.extend(delims)
+            # find a `git ... commit` head, tolerating global opts like `git -c x=y commit`
+            for gi, tok in enumerate(toks):
+                base = tok.rsplit("/", 1)[-1]
+                if base != "git":
+                    continue
+                # walk forward from git to the first non-option token = the subcommand
+                j = gi + 1
+                while j < len(toks) and toks[j].startswith("-"):
+                    # a git global value-opt (-c/-C/--exec-path/--git-dir/--work-tree...)
+                    if toks[j] in ("-c", "-C", "--exec-path", "--git-dir",
+                                   "--work-tree", "--namespace") and "=" not in toks[j]:
+                        j += 2
+                    else:
+                        j += 1
+                if j < len(toks) and toks[j] == "commit":
+                    if has_pathspec(toks[j+1:]):
+                        return True
+                break  # only inspect the first git head per segment
+    return False
 
-print("OK")
+print("BLOCK" if classify(cmd) else "OK")
 ' 2>/dev/null)
 
 if [ "$verdict" = "BLOCK" ]; then

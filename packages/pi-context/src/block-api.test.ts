@@ -2175,7 +2175,7 @@ describe("upsertItemInBlock", () => {
 			(err: unknown) => err instanceof ValidationError,
 		);
 
-		// File untouched: dryRun validation rejects identically to the write but writes nothing.
+		// File untouched: dryRun runs the same whole-file schema validation the write applies, writing nothing.
 		assert.strictEqual(fs.readFileSync(filePath, "utf-8"), before);
 	});
 

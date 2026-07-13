@@ -1926,20 +1926,23 @@ test("CLI --show-schema on a block whose schema is absent exits 3", async () => 
 });
 
 // ── append-block-item --dry-run ───────────────────────────────────────────────
+// The op declares its own `dryRun` param (a preview riding the live path —
+// stamped prospective-file validation + the covered-checks birth-relations
+// gate, persistence withheld), so the CLI parses `--dryRun` / `--dry-run` into
+// params like every other declared dryRun — the former client-side
+// prospective-file replica in main() is gone.
 
-test("parseOpArgs: --dryRun and --dry-run set parsed.dryRun and never enter params", () => {
+test("parseOpArgs: --dryRun and --dry-run resolve to append-block-item's declared dryRun param", () => {
 	const op = resolveOp("append-block-item");
 	assert.ok(op);
 	const camel = parseOpArgs(op, ["--block", "tasks", "--dryRun", "--arrayKey", "tasks", "--item", "{}"]);
-	assert.equal(camel.dryRun, true);
-	assert.equal("dryRun" in camel.params, false);
+	assert.equal(camel.params.dryRun, true);
 	const kebab = parseOpArgs(op, ["--block", "tasks", "--dry-run", "--arrayKey", "tasks", "--item", "{}"]);
-	assert.equal(kebab.dryRun, true);
-	assert.equal("dryRun" in kebab.params, false);
+	assert.equal(kebab.params.dryRun, true);
 	assert.equal("dry-run" in kebab.params, false);
 });
 
-test("CLI append-block-item --dry-run with a valid item PASSes and writes nothing", async () => {
+test("CLI append-block-item --dry-run with a valid item previews would-append and writes nothing", async () => {
 	const cwd = seedTasksSubstrate();
 	try {
 		const before = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as {
@@ -1956,7 +1959,7 @@ test("CLI append-block-item --dry-run with a valid item PASSes and writes nothin
 			cwd,
 		]);
 		assert.equal(code, 0);
-		assert.match(out, /\[dry-run\] PASS/);
+		assert.match(out, /would append item 'TASK-2' to tasks\.tasks/);
 		const after = JSON.parse(readFileSync(path.join(cwd, ".project", "tasks.json"), "utf8")) as { tasks: unknown[] };
 		assert.equal(after.tasks.length, before.tasks.length);
 	} finally {
@@ -2080,7 +2083,7 @@ test("CLI append-block-item --dry-run --autoId names the prospective id", async 
 			cwd,
 		]);
 		assert.equal(code, 0);
-		assert.match(out, /\[dry-run\] PASS — would append TASK-002/);
+		assert.match(out, /would append item 'TASK-002' to tasks\.tasks/);
 		const after = JSON.parse(readFileSync(path.join(sub, "tasks.json"), "utf8")) as { tasks: unknown[] };
 		assert.equal(after.tasks.length, 1);
 	} finally {
@@ -2111,16 +2114,13 @@ test("CLI an unknown flag is a usage error → exit 2", async () => {
 	}
 });
 
-// ── follow-up: --dryRun is op-scoped to append-block-item ────────────────────
-// The global `--dry-run` swallow used to fire for EVERY op that declared no `dryRun`
-// param, but the main() honor branch only acts for append-block-item. So a no-dryRun
-// MUTATION op (update-block-item, remove-block-item, …) swallowed the flag and then
-// ran the REAL op — a silent write. The swallow is now gated on the op being
-// append-block-item; for every other no-dryRun op the token is an unknown flag (exit 2);
-// for ops that DECLARE dryRun (upsert-block-item, update, relation ops) the token still
-// flows to their own dryRun param.
+// ── follow-up: --dryRun reaches only ops that DECLARE it ─────────────────────
+// A no-dryRun MUTATION op (update-block-item, remove-block-item, …) must never
+// silently swallow the flag and then run the REAL op — the token is an unknown
+// flag (exit 2). Ops that DECLARE dryRun (append-block-item, upsert-block-item,
+// update, relation ops) route the token to their own dryRun param.
 
-test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (the swallow is append-scoped)", () => {
+test("parseOpArgs: --dryRun on a no-dryRun mutation op is an unknown flag (no silent swallow)", () => {
 	const op = resolveOp("update-block-item");
 	assert.ok(op);
 	assert.throws(

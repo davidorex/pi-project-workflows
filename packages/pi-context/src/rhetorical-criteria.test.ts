@@ -243,3 +243,182 @@ describe("validateRhetoricalCriteriaForItems", () => {
 		);
 	});
 });
+
+/**
+ * A synthetic (novel — not one of the shipped catalog fields) item subschema
+ * whose `criteria` property is a budgeted bare-string array: the budget sits on
+ * the array's own `items` subschema, so each STRING element is the budgeted
+ * value. Pins that enforcement is schema-driven — keyed off
+ * `items.x-prompt-budget` on a `type: "string"` items subschema — not hardcoded
+ * to any known field name.
+ */
+const itemSchemaWithArrayElementBudget = {
+	type: "object",
+	properties: {
+		id: { type: "string" },
+		criteria: {
+			type: "array",
+			items: { type: "string", "x-prompt-budget": { tokens: 10, words: 5 } },
+		},
+	},
+};
+
+describe("validateRhetoricalCriteriaForItems — budgeted bare-string arrays", () => {
+	it("passes conforming bare-string-array elements", () => {
+		assert.doesNotThrow(() =>
+			validateRhetoricalCriteriaForItems(
+				itemSchemaWithArrayElementBudget,
+				{},
+				[{ arrayKey: "items", item: { id: "X-1", criteria: ["short clear text", "second terse element"] } }],
+				"label",
+				unusedResolver,
+			),
+		);
+	});
+
+	it("throws on an over-cap element, naming the array field", () => {
+		assert.throws(
+			() =>
+				validateRhetoricalCriteriaForItems(
+					itemSchemaWithArrayElementBudget,
+					{},
+					[{ arrayKey: "items", item: { id: "X-1", criteria: ["ok here", "one two three four five six seven"] } }],
+					"label",
+					unusedResolver,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual(err.field, "criteria");
+				assert.ok(err.message.includes("7 words"));
+				assert.ok(err.message.includes("cap of 5"));
+				return true;
+			},
+		);
+	});
+
+	it("throws on a DEFAULT_PROHIBITED_PATTERNS match in an element, naming the array field", () => {
+		assert.throws(
+			() =>
+				validateRhetoricalCriteriaForItems(
+					itemSchemaWithArrayElementBudget,
+					{},
+					[{ arrayKey: "items", item: { id: "X-1", criteria: ["this flag no longer applies"] } }],
+					"label",
+					unusedResolver,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual(err.field, "criteria");
+				assert.ok(err.message.toLowerCase().includes("no longer"));
+				return true;
+			},
+		);
+	});
+
+	it("skips non-string elements inside a budgeted bare-string array (element type is AJV's job)", () => {
+		assert.doesNotThrow(() =>
+			validateRhetoricalCriteriaForItems(
+				itemSchemaWithArrayElementBudget,
+				{},
+				[
+					{
+						arrayKey: "items",
+						item: { id: "X-1", criteria: [42, null, { note: "no longer relevant" }] as unknown as string[] },
+					},
+				],
+				"label",
+				unusedResolver,
+			),
+		);
+	});
+
+	it("does not check an un-budgeted bare-string array's elements", () => {
+		// `tags` items carry no x-prompt-budget, so their content is not
+		// register-checked; the array falls through to the object-element path,
+		// whose resolver may return null (skipped defensively).
+		const schema = {
+			type: "object",
+			properties: {
+				id: { type: "string" },
+				tags: { type: "array", items: { type: "string" } },
+			},
+		};
+		assert.doesNotThrow(() =>
+			validateRhetoricalCriteriaForItems(
+				schema,
+				{},
+				[{ arrayKey: "items", item: { id: "X-1", tags: ["no longer used", "one two three four five six seven"] } }],
+				"label",
+				() => null,
+			),
+		);
+	});
+
+	it("enforces a NESTED bare-string array reached through the resolver (object array carrying a bare-string-array property)", () => {
+		// The layer-plans shape: a top-level object array (`phases`) whose element
+		// subschema — returned by the injected resolver — itself carries a budgeted
+		// bare-string array (`exit_criteria`). The element check must fire at that
+		// nested depth via the recursive walk.
+		const nestedElementSchema = {
+			type: "object",
+			properties: {
+				name: { type: "string" },
+				exit_criteria: {
+					type: "array",
+					items: { type: "string", "x-prompt-budget": { words: 3 } },
+				},
+			},
+		};
+		const topSchema = {
+			type: "object",
+			properties: {
+				id: { type: "string" },
+				phases: { type: "array", items: { type: "object" } },
+			},
+		};
+		const resolver = (_parent: Record<string, unknown>, _root: Record<string, unknown>, key: string) =>
+			key === "phases" ? nestedElementSchema : null;
+		assert.throws(
+			() =>
+				validateRhetoricalCriteriaForItems(
+					topSchema,
+					{},
+					[
+						{
+							arrayKey: "items",
+							item: { id: "X-1", phases: [{ name: "p1", exit_criteria: ["one two three four"] }] },
+						},
+					],
+					"label",
+					resolver,
+				),
+			(err: unknown) => {
+				assert.ok(err instanceof RhetoricalValidationError);
+				assert.strictEqual(err.field, "exit_criteria");
+				assert.ok(err.message.includes("4 words"));
+				assert.ok(err.message.includes("cap of 3"));
+				return true;
+			},
+		);
+	});
+
+	it("diff-scoping: a violating element on an item NOT threaded in changedItems never blocks", () => {
+		// A pre-existing item holding an over-cap + prohibited-pattern element sits
+		// untouched in the block; only the clean item the write actually created is
+		// threaded as changedItems — the write must pass.
+		const preExistingViolator = {
+			id: "X-0",
+			criteria: ["this criterion is no longer valid", "one two three four five six seven eight"],
+		};
+		void preExistingViolator; // present in the block file, never threaded
+		assert.doesNotThrow(() =>
+			validateRhetoricalCriteriaForItems(
+				itemSchemaWithArrayElementBudget,
+				{},
+				[{ arrayKey: "items", item: { id: "X-1", criteria: ["clean terse element"] } }],
+				"label",
+				unusedResolver,
+			),
+		);
+	});
+});

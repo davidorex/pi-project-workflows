@@ -64,6 +64,14 @@ expect "commit -m with >> append"       0 'git commit -m "x" >> /tmp/log'
 # heredoc BODY lines are not independent segments: prose mentioning a
 # pathspec-shaped commit inside a non-git heredoc must not block
 expect "heredoc body prose non-git"     0 $'cat > /tmp/x <<\'EOF\'\ngit commit foo.txt was blocked here\nEOF'
+# terminator matching mirrors bash: a `<<` heredoc terminator must sit at
+# column 0 — an INDENTED terminator does not end the body, so everything after
+# it (including a pathspec-shaped commit line) is unexecuted heredoc data and
+# the guard fails open on the malformed command (bash would never run it)
+expect "indented << terminator = body"  0 $'git commit -F - <<EOF\nmsg body\n   EOF\ngit commit foo.txt'
+# `<<-` strips leading tabs from the terminator: the tab-indented EOF DOES end
+# the body, and a true-positive pathspec commit after it must still block
+expect "<<- tab terminator then block"  2 $'cat <<-EOF\n\tprose body\n\tEOF\ngit commit foo.txt'
 
 echo "---"
 echo "pass=$pass fail=$fail"

@@ -13,7 +13,8 @@
 # pathspecs):
 #   - walk the command line by line, tracking heredoc bodies: lines inside a
 #     heredoc (from a `<<DELIM` marker to its terminator line) are DATA, never
-#     classified as command segments
+#     classified as command segments; terminator matching mirrors bash — exact
+#     column-0 match for `<<`, tab-stripped match for `<<-`
 #   - split each non-body line on shell separators (&& || ; |)
 #   - shlex-split each segment, then strip redirection grammar from the token
 #     stream (strip_redirections below) — shlex.split is a POSIX word splitter
@@ -35,9 +36,12 @@
 # reuse this pipeline rather than hand-rolling another parser (the planned
 # Bash-chokepoint hook included): (1) line loop with heredoc-body exclusion,
 # (2) segment split on control operators, (3) shlex.split, (4) strip_redirections,
-# then (5) the hook's domain-specific token classification. Steps 1-4 are kept as
-# self-contained, lift-able code below (strip_redirections + the classify() loop)
-# with no coupling to the git-commit rule. Prior art for why: FGAP-120
+# then (5) the hook's domain-specific token classification. Steps 1-4 are the
+# self-contained, lift-able classify_segments(cmd, callback) function below
+# (with its helpers segments + strip_redirections), which has no coupling to the
+# git-commit rule; step 5 is supplied as the per-segment callback — here
+# is_pathspec_commit. A future guard reuses steps 1-4 verbatim and writes only
+# its own callback. Prior art for why: FGAP-120
 # (quote-blindness, block-pi-context-glue.sh) and FGAP-147 (redirect/heredoc-
 # blindness, this hook) are one class — shell-command classification by
 # token/pattern inspection without shell-grammar awareness.
@@ -86,10 +90,12 @@ def strip_redirections(tokens):
         their following target/word token
       - &>word dropped; bare &> / &>> dropped with their target token
       - heredoc marker (<<DELIM / << DELIM / <<-DELIM): the delimiter is
-        recorded (shlex already stripped its quotes) and classification of the
-        segment STOPS at the marker — no token after it is emitted; further
-        heredoc delimiters on the same segment are still collected so their
-        body lines can be excluded too
+        recorded as a (delimiter, is_dash) pair — is_dash True for `<<-`,
+        whose terminator bash matches tab-stripped, vs column-0-exact for
+        `<<` (shlex already stripped any quoting on the delimiter) — and
+        classification of the segment STOPS at the marker: no token after it
+        is emitted; further heredoc delimiters on the same segment are still
+        collected so their body lines can be excluded too
     """
     out = []
     delims = []
@@ -107,7 +113,7 @@ def strip_redirections(tokens):
             rest = t[m.end():]
             if op in ("<<", "<<-"):
                 d = rest if rest else (tokens[i + 1] if i + 1 < n else "")
-                delims.append(d.strip("\x27\x22"))
+                delims.append((d.strip("\x27\x22"), op == "<<-"))
                 classifying = False
                 i += 1 if rest else 2
                 continue
@@ -157,14 +163,25 @@ def has_pathspec(tokens):
         return True
     return False
 
-def classify(cmd):
-    # line loop with heredoc-body exclusion: body lines between a heredoc
-    # marker and its terminator are data, never command segments (the delimiter
-    # queue is FIFO — bash consumes heredoc bodies in marker order)
-    pending = []
+def classify_segments(cmd, classify_segment):
+    """Steps 1-4 of the header recipe, decoupled from any domain rule.
+
+    Walks cmd line by line with heredoc-body exclusion — body lines between a
+    heredoc marker and its terminator are data, never command segments (the
+    delimiter queue is FIFO: bash consumes heredoc bodies in marker order; a
+    `<<` terminator must match at column 0 exactly, a `<<-` terminator matches
+    after stripping leading tabs) — splits each command line on control
+    operators, shlex-splits each segment, strips redirection grammar, then
+    hands each cleaned token list to classify_segment (step 5, the domain
+    rule of the calling guard). Returns True as soon as the callback does,
+    else False.
+    """
+    pending = []  # FIFO of (delimiter, is_dash) pairs
     for line in cmd.split("\n"):
         if pending:
-            if line.strip() == pending[0]:
+            delim, is_dash = pending[0]
+            terminator = line.lstrip("\t") if is_dash else line
+            if terminator == delim:
                 pending.pop(0)
             continue
         for seg in segments(line):
@@ -174,27 +191,33 @@ def classify(cmd):
                 continue
             toks, delims = strip_redirections(toks)
             pending.extend(delims)
-            # find a `git ... commit` head, tolerating global opts like `git -c x=y commit`
-            for gi, tok in enumerate(toks):
-                base = tok.rsplit("/", 1)[-1]
-                if base != "git":
-                    continue
-                # walk forward from git to the first non-option token = the subcommand
-                j = gi + 1
-                while j < len(toks) and toks[j].startswith("-"):
-                    # a git global value-opt (-c/-C/--exec-path/--git-dir/--work-tree...)
-                    if toks[j] in ("-c", "-C", "--exec-path", "--git-dir",
-                                   "--work-tree", "--namespace") and "=" not in toks[j]:
-                        j += 2
-                    else:
-                        j += 1
-                if j < len(toks) and toks[j] == "commit":
-                    if has_pathspec(toks[j+1:]):
-                        return True
-                break  # only inspect the first git head per segment
+            if classify_segment(toks):
+                return True
     return False
 
-print("BLOCK" if classify(cmd) else "OK")
+# ---- domain rule (step 5): pathspec-carrying `git commit` in a segment ----
+
+def is_pathspec_commit(toks):
+    # find a `git ... commit` head, tolerating global opts like `git -c x=y commit`
+    for gi, tok in enumerate(toks):
+        base = tok.rsplit("/", 1)[-1]
+        if base != "git":
+            continue
+        # walk forward from git to the first non-option token = the subcommand
+        j = gi + 1
+        while j < len(toks) and toks[j].startswith("-"):
+            # a git global value-opt (-c/-C/--exec-path/--git-dir/--work-tree...)
+            if toks[j] in ("-c", "-C", "--exec-path", "--git-dir",
+                           "--work-tree", "--namespace") and "=" not in toks[j]:
+                j += 2
+            else:
+                j += 1
+        if j < len(toks) and toks[j] == "commit" and has_pathspec(toks[j+1:]):
+            return True
+        return False  # only inspect the first git head per segment
+    return False
+
+print("BLOCK" if classify_segments(cmd, is_pathspec_commit) else "OK")
 ' 2>/dev/null)
 
 if [ "$verdict" = "BLOCK" ]; then

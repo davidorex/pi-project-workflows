@@ -45,6 +45,23 @@
 # (quote-blindness, block-pi-context-glue.sh) and FGAP-147 (redirect/heredoc-
 # blindness, this hook) are one class — shell-command classification by
 # token/pattern inspection without shell-grammar awareness.
+#
+# REJECTED COMPOSITION (FGAP-149 evaluation, TASK-138): the glue guard's whole-command
+# quote-collapse (perl -0777 slurp strip, replacing quoted spans with Q) was prototyped
+# HERE, ahead of this walk, and rejected. It fixes the FGAP-149 false positive (a
+# commit-shaped line inside a multi-line quoted string stops classifying) and keeps this
+# harness green, but it desynchronizes the heredoc-body FIFO this walk depends on, in two
+# probed shapes: (1) a QUOTED heredoc delimiter — `<<'EOF'` collapses to `<<Q`, the EOF
+# terminator never matches, every later line becomes body, and a true-positive pathspec
+# commit AFTER the heredoc under-blocks (the un-collapsed walk blocks it: strip_redirections
+# strips the delimiter's quotes and the terminator pops correctly); (2) an apostrophe in a
+# heredoc BODY pairs spuriously with a later genuine quote, and the collapsed span swallows
+# the terminator plus a trailing true positive. Both shapes are this guard's core legitimate
+# traffic (`git commit -F - <<'EOF'` forensic messages with prose apostrophes), and both
+# degrade FAIL-OPEN — the opposite of the collapse's fail-closed degradation in the glue
+# guard, whose regex heuristics have no heredoc concept. A quote-collapse for this guard
+# must therefore run INSIDE the walk, after heredoc-body exclusion (quote-state lexing
+# across lines, FGAP-149's filed resolution shape), not before it.
 # Exit 2 => block, stderr fed back to the agent.
 
 input=$(cat)

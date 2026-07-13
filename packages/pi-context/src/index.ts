@@ -1167,6 +1167,78 @@ export function registerCatalogMigrationChainIfKnown(
 	return { registered };
 }
 
+/**
+ * Seed the substrate's migrations.json with the catalog's BLOCK-SCHEMA
+ * migration chains — the block-schema sibling of
+ * `seedCatalogConfigMigrationDecls` (which stays config-only), called
+ * immediately after it at the same ceremony entry seams, so a substrate's
+ * migration history is complete from birth AND an already-installed substrate
+ * self-heals on its next ceremony.
+ *
+ * For each name in the substrate config's `installed_schemas`, resolves the
+ * version transition the CATALOG implies for that kind — fromVersion = the
+ * catalog STARTER's top-level `schema_version` (`samples/blocks/<data_path>`;
+ * an unstamped starter has nothing to bridge and is skipped), toVersion = the
+ * catalog SCHEMA's `version` — and delegates to
+ * `registerCatalogMigrationChainIfKnown`, the existing from/to-scoped
+ * chain-registration engine, unchanged: authored decls are copied VERBATIM,
+ * deduped on `(schemaName, fromVersion)`, and an unknown chain is refused
+ * (never fabricated). Versions are read from the CATALOG files, not the
+ * installed dest files — on a truly fresh install the dest files may not
+ * exist yet when the seam runs.
+ *
+ * Tolerant by design (the ceremony-seam contract): an absent or unreadable
+ * config.json, an unknown catalog id, or an unreadable catalog file seeds
+ * nothing for that entry and never throws — each seam's own config handling
+ * reports those conditions. Reads `installed_schemas` from the raw
+ * config.json bytes (not the migration-aware loadConfig) because the seam
+ * runs BEFORE the ceremony's first config read, possibly against a
+ * version-lagging legacy config. Never creates the substrate dir or
+ * migrations.json when there is nothing to register. Idempotent: a re-run
+ * appends nothing. Returns the decls THIS call appended.
+ */
+export function seedCatalogBlockSchemaMigrationDecls(
+	destRoot: string,
+): Array<{ schema: string; from: string; to: string }> {
+	let installedSchemas: string[] = [];
+	try {
+		const raw = JSON.parse(fs.readFileSync(path.join(destRoot, "config.json"), "utf-8")) as {
+			installed_schemas?: unknown;
+		};
+		if (Array.isArray(raw.installed_schemas)) {
+			installedSchemas = raw.installed_schemas.filter((n): n is string => typeof n === "string");
+		}
+	} catch {
+		return []; // no readable config → nothing resolvable to seed
+	}
+	if (installedSchemas.length === 0) return [];
+	const { samplesRoot, byId } = resolveCatalog();
+	const seeded: Array<{ schema: string; from: string; to: string }> = [];
+	for (const name of installedSchemas) {
+		const kind = byId.get(name);
+		if (!kind) continue; // not a catalog kind — nothing the catalog can bridge
+		let fromVersion: string;
+		let toVersion: string;
+		try {
+			const starter = JSON.parse(fs.readFileSync(path.join(samplesRoot, "blocks", kind.data_path), "utf-8")) as {
+				schema_version?: unknown;
+			};
+			if (typeof starter.schema_version !== "string") continue; // unstamped starter — nothing to bridge
+			fromVersion = starter.schema_version;
+			const schema = JSON.parse(fs.readFileSync(path.join(samplesRoot, kind.schema_path), "utf-8")) as {
+				version?: unknown;
+			};
+			if (typeof schema.version !== "string") continue; // unversioned catalog schema — no transition
+			toVersion = schema.version;
+		} catch {
+			continue; // unreadable catalog file for this kind — seed the resolvable siblings
+		}
+		const result = registerCatalogMigrationChainIfKnown(destRoot, samplesRoot, name, fromVersion, toVersion);
+		if (result.registered) seeded.push(...result.registered);
+	}
+	return seeded;
+}
+
 function resyncSchema(
 	destRoot: string,
 	samplesRoot: string,
@@ -1496,6 +1568,10 @@ export function installContext(cwd: string, options: { overwrite?: boolean } = {
 	// — so a blocked-resync rollback restores to the seeded state, preserving the
 	// seed.
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Same seam, block-schema kinds: seed the catalog chains implied by each
+	// installed schema's starter+schema version pair (idempotent), so a fresh
+	// install's migrations.json is complete from birth.
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	// Ceremony-entry identity establishment — before any write that
 	// stamps identity (the --update resync path's writeBlockForDir).
 	const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
@@ -1772,9 +1848,12 @@ export interface CheckStatusReport {
  * file, classifies the drift, and RETURNS the report. Writes NOTHING anywhere —
  * no config write, no file copy, no mkdir; only reads. One designed exception:
  * like every ceremony entry point it seeds the catalog's `config` migration
- * chain into `migrations.json` (idempotent) before its first config read — the
- * heal semantic, consistent with idempotent re-init healing — so a
- * version-lagging legacy substrate is diagnosable instead of throwing.
+ * chain AND the block-schema migration chains implied by each installed
+ * schema's catalog starter+schema version pair into `migrations.json`
+ * (idempotent) before its first config read — the heal semantic, consistent
+ * with idempotent re-init healing — so a version-lagging legacy substrate is
+ * diagnosable instead of throwing and a substrate missing a catalog-implied
+ * block-schema chain self-heals on the ceremony.
  *
  * For each `config.installed_schemas` entry:
  *   - baseline      = config.installed_from?.assets?.[name]?.content_hash
@@ -1808,9 +1887,12 @@ export function checkStatus(cwd: string): CheckStatusReport {
 	if (destRoot === null) {
 		return { perAsset, summary: emptySummary() };
 	}
-	// Ceremony seed (idempotent) before the config read below — the one
-	// sanctioned write in this otherwise pure-read detector (see docstring).
+	// Ceremony seeds (idempotent) before the config read below — the only
+	// sanctioned writes in this otherwise pure-read detector (see docstring):
+	// the config chain, then the block-schema chains implied by each installed
+	// schema's catalog starter+schema version pair.
 	seedCatalogConfigMigrationDecls(destRoot);
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	const config = loadConfig(cwd);
 	if (!config) {
 		return { perAsset, summary: emptySummary() };
@@ -2173,6 +2255,9 @@ export function updateContext(cwd: string, { dryRun = false }: { dryRun?: boolea
 	// read below — every ceremony entry point seeds before its first config read,
 	// so a version-lagging legacy substrate heals on update instead of throwing.
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Same seam, block-schema kinds (idempotent) — an already-installed
+	// substrate missing a catalog-implied chain self-heals here.
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	// Ceremony-entry identity establishment — before any write that
 	// stamps identity (the version-bump resync's writeBlockForDir), so a
 	// pre-identity substrate heals here instead of refusing at the stamping
@@ -2726,6 +2811,8 @@ export function resolveConflict(
 	// entry point seeds the catalog's `config` migration chain before its first
 	// config read (here reached via stampBaselineFromBody's loadConfig).
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Same seam, block-schema kinds (idempotent).
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	const { samplesRoot, byId } = resolveCatalog();
 	const kind = byId.get(name);
 	if (!kind) {
@@ -2846,6 +2933,7 @@ export function reconcileContext(
 		return result;
 	}
 	seedCatalogConfigMigrationDecls(destRoot);
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	if (!dryRun) {
 		const establishedId = establishSubstrateIdentityAtEntry(cwd, destRoot);
 		if (establishedId) result.substrateIdEstablished = establishedId;
@@ -3068,6 +3156,8 @@ export function resolveBlocked(
 	// config read (here reached via stampBaselineFromBody's loadConfig on the
 	// pass path).
 	seedCatalogConfigMigrationDecls(destRoot);
+	// Same seam, block-schema kinds (idempotent).
+	seedCatalogBlockSchemaMigrationDecls(destRoot);
 	// Ceremony-entry identity establishment — before the commit's
 	// writeBlockForDir stamping write, so a pre-identity substrate's resolution
 	// heals identity instead of refusing mid-commit.
@@ -3608,6 +3698,8 @@ export function switchToExisting(cwd: string, targetDir: string, writerIdentity:
 	// config read, so the first read on the now-active substrate (reconcile's
 	// below, or any later one) cannot throw on a version-lagging legacy config.
 	seedCatalogConfigMigrationDecls(resolveContextDir(cwd));
+	// Same seam, block-schema kinds (idempotent).
+	seedCatalogBlockSchemaMigrationDecls(resolveContextDir(cwd));
 	// Register the now-active substrate's identity if the target carried a
 	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
 	// does not raise a false substrate_id_unregistered after the flip.
@@ -3647,6 +3739,8 @@ export function switchToPrevious(cwd: string, writerIdentity: string): { from: s
 	// switchToExisting: the first config read on the now-active substrate must
 	// not throw on a version-lagging legacy config.
 	seedCatalogConfigMigrationDecls(resolveContextDir(cwd));
+	// Same seam, block-schema kinds (idempotent).
+	seedCatalogBlockSchemaMigrationDecls(resolveContextDir(cwd));
 	// Register the now-active substrate's identity if flipping back landed on a
 	// config-bearing-but-unregistered substrate_id, so the SoT-drift invariant
 	// does not raise a false substrate_id_unregistered after the flip. Mirrors

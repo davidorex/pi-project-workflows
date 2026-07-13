@@ -24,6 +24,7 @@ import {
 	renderCheckStatus,
 	resolveBlocked,
 	resolveConflict,
+	seedCatalogBlockSchemaMigrationDecls,
 	updateContext,
 	validateBlockItemsAgainstCatalog,
 } from "./index.js";
@@ -437,6 +438,127 @@ describe("ceremony legacy-heal seeding — update / check-status / resolve famil
 		tmpRoot = makeLegacyProject(["tasks"]);
 		assert.throws(() => resolveBlocked(tmpRoot, "tasks"), /no pending-blocked entry/);
 		assertConfigDeclSeeded(tmpRoot);
+	});
+});
+
+// The block-schema sibling of the ceremony config seeding: every ceremony
+// entry point also seeds the catalog's block-schema migration chains implied
+// by each installed schema's starter+schema version pair (fromVersion = the
+// catalog starter's schema_version, toVersion = the catalog schema's version,
+// registered via the from/to-scoped chain engine), so a fresh install's
+// migrations.json is complete from birth and an already-installed substrate
+// self-heals on its next ceremony. Today only the session-notes starter bakes
+// a schema_version stamp; the other starters register nothing.
+describe("ceremony block-schema migration-chain seeding", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	it("fresh install seeds the stamped starter's catalog chain and the installed block reads with no manual migration step", () => {
+		tmpRoot = makeProject(["session-notes"], ["session-notes"]);
+		const result = installContext(tmpRoot);
+		assert.equal(result.error, undefined, "install must complete");
+		const substrateDir = path.join(tmpRoot, ".project");
+		const migrations = loadMigrationsFileForDir(substrateDir);
+		assert.ok(
+			migrations?.migrations.some(
+				(m) => m.schemaName === "session-notes" && m.fromVersion === "1.0.0" && m.toVersion === "1.1.0",
+			),
+			"install must seed the catalog's session-notes 1.0.0 -> 1.1.0 decl",
+		);
+		// The load-bearing acceptance: the installed starter asserts
+		// schema_version 1.0.0 against the installed 1.1.0 schema — the read must
+		// walk the seeded chain instead of throwing a MigrationRegistry mismatch.
+		assert.doesNotThrow(
+			() => readBlockForDir(substrateDir, "session-notes"),
+			"the installed block must read/validate through the seeded chain",
+		);
+	});
+
+	it("checkStatus self-heals an already-installed substrate missing the chain", () => {
+		tmpRoot = makeProject(["session-notes"], ["session-notes"]);
+		const substrateDir = path.join(tmpRoot, ".project");
+		// Model a substrate installed BEFORE block-schema seeding existed: schema
+		// + starter present on disk, no migrations.json chain for session-notes.
+		fs.copyFileSync(
+			path.join(SAMPLES_DIR, "schemas", "session-notes.schema.json"),
+			path.join(substrateDir, "schemas", "session-notes.schema.json"),
+		);
+		fs.copyFileSync(
+			path.join(SAMPLES_DIR, "blocks", "session-notes.json"),
+			path.join(substrateDir, "session-notes.json"),
+		);
+		assert.throws(
+			() => readBlockForDir(substrateDir, "session-notes"),
+			/MigrationRegistry/,
+			"precondition: without the chain the read refuses on the version mismatch",
+		);
+		checkStatus(tmpRoot);
+		const migrations = loadMigrationsFileForDir(substrateDir);
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "session-notes" && m.fromVersion === "1.0.0"),
+			"the ceremony must seed the missing session-notes decl",
+		);
+		assert.doesNotThrow(
+			() => readBlockForDir(substrateDir, "session-notes"),
+			"the ceremony heal must make the block readable",
+		);
+	});
+
+	it("re-running ceremonies appends nothing — migrations.json byte-identical", () => {
+		tmpRoot = makeProject(["session-notes"], ["session-notes"]);
+		installContext(tmpRoot);
+		const migPath = path.join(tmpRoot, ".project", "migrations.json");
+		const before = fs.readFileSync(migPath);
+		installContext(tmpRoot);
+		checkStatus(tmpRoot);
+		assert.ok(
+			fs.readFileSync(migPath).equals(before),
+			"a second install + a checkStatus must leave migrations.json byte-identical",
+		);
+	});
+
+	it("an unstamped starter seeds no block-schema decl — a fresh tasks install carries only the config chain", () => {
+		tmpRoot = makeProject(["tasks"], ["tasks"]);
+		installContext(tmpRoot);
+		const migrations = loadMigrationsFileForDir(path.join(tmpRoot, ".project"));
+		assert.ok(migrations, "the config ceremony seed still writes migrations.json");
+		assert.ok(
+			migrations.migrations.every((m) => m.schemaName === "config"),
+			"no decl may be fabricated for a starter that carries no schema_version stamp",
+		);
+	});
+
+	it("config-seed regression: the config chain is seeded unchanged alongside the block-schema seed", () => {
+		tmpRoot = makeProject(["session-notes"], ["session-notes"]);
+		installContext(tmpRoot);
+		const migrations = loadMigrationsFileForDir(path.join(tmpRoot, ".project"));
+		assert.ok(
+			migrations?.migrations.some((m) => m.schemaName === "config" && m.fromVersion === "1.0.0"),
+			"the config chain's first decl must still be seeded",
+		);
+	});
+
+	it("direct seed on a dir with no config.json returns [] and materializes nothing", () => {
+		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "pi-context-blockseed-ghost-"));
+		const ghost = path.join(tmpRoot, ".ghost");
+		const appended = seedCatalogBlockSchemaMigrationDecls(ghost);
+		assert.deepEqual(appended, [], "no readable config → nothing to seed");
+		assert.ok(!fs.existsSync(ghost), "the seed must not create the dir");
+		assert.ok(!fs.existsSync(path.join(ghost, "migrations.json")), "no migrations.json may be materialized");
+	});
+
+	it("direct seed is precise + idempotent: first call appends the session-notes chain, second call appends nothing", () => {
+		tmpRoot = makeProject(["session-notes", "tasks"], []);
+		const substrateDir = path.join(tmpRoot, ".project");
+		const first = seedCatalogBlockSchemaMigrationDecls(substrateDir);
+		assert.deepEqual(
+			first,
+			[{ schema: "session-notes", from: "1.0.0", to: "1.1.0" }],
+			"only the stamped starter's chain is registered — nothing for the unstamped tasks starter",
+		);
+		const second = seedCatalogBlockSchemaMigrationDecls(substrateDir);
+		assert.deepEqual(second, [], "a re-run appends nothing");
 	});
 });
 

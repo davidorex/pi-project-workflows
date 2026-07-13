@@ -1,0 +1,15 @@
+{
+  "description": "Implement FGAP-139's class-correct general fix (the fork in its proposed_resolution is resolved by the gap-explore-surfaces-class convention it cites: general, not per-field): extend the write-time rhetorical-criteria mechanism to reach arrays of budgeted primitive strings -- read x-prompt-budget off an array property's own items schema when that items schema is a bare string, and run the word-cap and prohibited-pattern checks against each string element directly, without requiring an object wrapper. Covers the declared instances (decisions consequences, tasks acceptance_criteria, requirements acceptance_criteria, layer-plans exit_criteria) and any sibling bare-string-array budget declaration as one class. Diff-scoped grandfathering unchanged: only written/changed items are checked.",
+  "acceptance_criteria": [
+    "A write creating an item whose bare-string-array field (e.g. acceptance_criteria) carries an over-budget or prohibited-pattern element is refused, with a unit pin per check kind (word cap, prohibited pattern)",
+    "A conforming bare-string-array element passes; existing named-property enforcement unchanged (regression)",
+    "The fix is schema-driven (reads x-prompt-budget off items schemas of type string), not hardcoded to the four known fields -- a synthetic schema fixture with a novel bare-string-array budget enforces",
+    "Diff-scoping preserved: untouched pre-existing items never block an unrelated write, with a regression pin",
+    "build, check, and full test suite exit 0; docs-surface-sync applied to any surface describing the enforcement's coverage"
+  ],
+  "files": [
+    "packages/pi-context/src/rhetorical-criteria.ts",
+    "packages/pi-context/src/rhetorical-criteria.test.ts"
+  ],
+  "status": "completed"
+}

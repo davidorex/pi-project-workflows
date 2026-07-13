@@ -1,0 +1,25 @@
+{
+  "title": "Birth-relations --dryRun preview is orientation-only while the live run endpoint-gates the counter-endpoint -- a preview accepts an edge the live filing rejects",
+  "status": "identified",
+  "priority": "P3",
+  "package": "pi-context",
+  "canonical_vocabulary": "exact dry-run outcome preview",
+  "description": "append-block-item / upsert-block-item --dryRun previews a filing's birth relations through the orientation/registration checks only (documented at the preview: endpoint resolution stays out because the new item is unwritten). The live run routes each birth edge through the gated appendRelationByRef, which now enforces full write-time reference integrity: the counter-endpoint (the OTHER, already-existing item the edge names) must resolve, and the prospective edge set must stay acyclic. A --dryRun preview therefore reports would-file for a filing whose birth edge names a dangling counter-endpoint or closes a cycle -- outcomes the live run rejects. The new-item endpoint itself is legitimately un-checkable at preview (unwritten by definition, and the live run appends birth edges after the item write so it resolves active); the divergence is confined to the counter-endpoint's existence and the cycle check, both computable read-only at preview time against the existing substrate. Class: exact dry-run outcome preview -- the same preview-vs-live divergence class FGAP-066 (closed) fixed for update's catalog-ahead arm by computing the precise outcome read-only under --dryRun.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "reference": "the filing ops' dryRun birth-relations branch runs the role-mapping + orientation-ambiguity guard over the entries, registry-only, with endpoint resolution deliberately out (the item is unwritten); the live branch appends the item then routes each birth edge through the gated appendRelationByRef"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "reference": "assertEdgesValidForWrite: the live gate the preview does not model -- counter-endpoint resolution (dangling/unregistered reject) and the prospective-cycle check"
+    },
+    {
+      "file": "analysis/2026-07-13-ground-126.md",
+      "reference": "the grounding for the write-time parity change whose implementer surfaced this preview/live divergence as an out-of-scope observation at delivery"
+    }
+  ],
+  "impact": "An operator previewing a filing with birth relations can be told it would file when the live run will refuse it -- the preview is optimistic exactly for the broken-edge cases the write gate exists to catch, sending the operator into a live failure the preview claimed away.",
+  "proposed_resolution": "Under --dryRun, additionally check each birth-relation entry's counter-endpoint read-only against the existing substrate (resolve it with the same resolver the live gate uses; report a would-reject for dangling/unregistered) and run the prospective-cycle check treating the new item's endpoint as resolving-by-construction -- mirroring the fixed preview pattern the update op's catalog-ahead arm uses (compute the precise outcome read-only, write nothing). The new-item endpoint itself stays exempt from existence checking at preview.",
+  "related_features": []
+}

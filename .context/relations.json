@@ -11800,5 +11800,57 @@
       "refname": "derive-decisions-from-facts"
     },
     "relation_type": "item_governed_by_convention"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "87f9c9c30defcf397918dae474f5f7d3",
+      "refname": "VER-107"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "79919941d47096388454ef7df4bd26f5",
+      "refname": "TASK-126"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "1ff5b15b48bae90fd20f2afc67cc594a",
+      "refname": "VER-108"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "69af7c5c7fb70faed52abf7d17685648",
+      "refname": "TASK-127"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "796eff0d597c0318c8e151c39fb3a34c",
+      "refname": "VER-109"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "7cd935f5802e674dd8ca5e756267a27c",
+      "refname": "TASK-130"
+    },
+    "relation_type": "verification_verifies_item"
+  },
+  {
+    "parent": {
+      "kind": "item",
+      "oid": "c10a9635e4dda77b7f08ca3f268c3e40",
+      "refname": "FGAP-148"
+    },
+    "child": {
+      "kind": "item",
+      "oid": "fe43a56e6fdf9937d58f9dd14ce73c6e",
+      "refname": "FGAP-066"
+    },
+    "relation_type": "gap_relates_to_gap"
   }
 ]

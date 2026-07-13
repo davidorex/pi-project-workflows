@@ -2986,7 +2986,7 @@
     },
     {
       "title": "Write-time edge guard accepts an edge with a non-existent (dangling) or unregistered-alias endpoint, or one closing a cycle: only relation_type registration and present-endpoint source/target kind are rejected at write, while endpoint-existence and cycle remain validate-only — so a write-accepted edge is not always validate-clean",
-      "status": "identified",
+      "status": "closed",
       "package": "pi-context",
       "canonical_vocabulary": "write-time / validate-time edge-guard parity",
       "description": "The write-time edge gate validateEdgeAgainstRegistry (packages/pi-context/src/context-sdk.ts:1568-1601), invoked by appendRelationByRef (1666) and appendRelationsByRef via assertEdgeValidForWrite (1629-1636), checks only (a) relation_type registration (1577-1583) and (b) presence-gated source/target-kind membership (1586-1599) — the kind check is conditioned on the endpoint resolving to a loc. A non-existent endpoint resolves to no loc (resolver status dangling), so the kind check is skipped and the edge is accepted and persisted; the helper never checks endpoint existence. The same resolution-gating skips an <alias>:<id> endpoint whose alias is unregistered (status unregistered). Cycle is not checked at write at all (the appendRelationsByRef JSDoc, 1788-1790, names endpoint resolution / cycle checks deferred to validateContext). validateContext's endpoint loop catches these only post-hoc: edge_endpoint_dangling (2204/2221), edge_endpoint_unregistered (2196/2213), and edge_cycle_detected merged from validateRelations (2279). This is the endpoint-existence residual of FGAP-090/TASK-062, which achieved write-validate parity on the registration + kind axes but left endpoint-existence and cycle validate-only. General class: the write-time edge guard rejects a strict subset of what validateContext rejects; full parity requires it to additionally reject dangling endpoints, unregistered-alias endpoints, and cycles, so a write-accepted edge is always validate-clean.",
@@ -3041,9 +3041,11 @@
       "created_by": "human/davidryan@gmail.com",
       "created_at": "2026-06-14T07:17:10.372Z",
       "oid": "2abc39fcc28a17f70e2a23ca0ac9bb41",
-      "content_hash": "c78372e82107db774c495d7da50cdf6937b846f73c42a7e293dee9ed72798e02",
+      "content_hash": "c592eaf2ed1dfb40ff27b4cadc2ec8f9b8148739edc7757c654678d75ee113fa",
       "priority": "P2",
-      "content_parent": "2524c771f55e7426dd50874f490bcb27c373f1de10b4d80c328d98cfda14070d"
+      "content_parent": "c78372e82107db774c495d7da50cdf6937b846f73c42a7e293dee9ed72798e02",
+      "closed_by": "TASK-126 (VER-107): the write-time edge guard reaches full validate parity per DEC-0024 -- dangling and unregistered-alias endpoints and prospective cycles reject unconditionally at write (single, batch, and dryRun in lockstep; no opt-out parameter), foreign sentinels untouched, the dangling-accept test fixture rewritten to file real endpoints. Merged to main.",
+      "closed_at": "2026-07-13"
     },
     {
       "title": "packaged catalog relation_types is a strict subset of the live config — catalog↔config vocabulary drift with no parity forcing-function",
@@ -4615,7 +4617,7 @@
     },
     {
       "title": "x-rhetorical-criteria enforcement cannot reach arrays of budgeted primitive strings",
-      "status": "identified",
+      "status": "closed",
       "priority": "P3",
       "package": "pi-context",
       "description": "When a schema declares x-prompt-budget directly on an array propertys own items schema (a bare-string array, e.g. {type: array, items: {type: string, x-prompt-budget: {...}}}) rather than on a named string property of an object, the write-time rhetorical-criteria mechanism (FGAP-043/TASK-121) never checks it. collectWordCaps in rhetorical-criteria.ts only reads x-prompt-budget off named object properties; the recursive walkNestedArrays helper (added to fix nested-object-array coverage) explicitly skips non-object array elements before any per-element check runs, so a bare budgeted string is structurally invisible to the mechanism. This is a distinct code path from the nested-array-of-objects gap TASK-121 already fixed twice: those fixes cover an array whose items are objects with their own budgeted properties; this gap is an array whose items are themselves the budgeted value.",
@@ -4647,11 +4649,14 @@
       "created_at": "2026-07-11T00:00:00.000Z",
       "id": "FGAP-139",
       "oid": "d60874eca4563066112c1e9aa823f91e",
-      "content_hash": "22a8c4e5bde70124dc987ecb66978970ddac7e99915f760e110a06dd9fed499b"
+      "content_hash": "aaef56604f53d5da0808304d66e97c2d53cb753c9970b9e88c9e385fd5f09efb",
+      "closed_by": "TASK-130 (VER-109): the write-time rhetorical-criteria mechanism reaches budgeted bare-string-array elements -- a sibling collector reads the items-schema budget and the nested-array walk checks each string element (word cap + prohibited patterns) at any depth, schema-driven so the four catalog instances and any future sibling declaration enforce identically; diff-scoped grandfathering unchanged. Merged to main.",
+      "closed_at": "2026-07-13",
+      "content_parent": "22a8c4e5bde70124dc987ecb66978970ddac7e99915f760e110a06dd9fed499b"
     },
     {
       "title": "Fresh install never seeds block-schema migration declarations from the catalog for any schema",
-      "status": "identified",
+      "status": "closed",
       "priority": "P2",
       "package": "pi-context",
       "description": "installContext (packages/pi-context/src/index.ts) copies a catalog schema and its starter block-data file verbatim on fresh install with zero migration bookkeeping (correct in isolation: nothing pre-existed to migrate). context-check-status seeds only config-schema migration declarations (seedCatalogConfigMigrationDecls filters catalog migrations to schemaName===\"config\"), never block-schema ones. No install/update/status path ever seeds a fresh substrates migrations.json with the block-schema migration declarations the catalog already carries for every schema whose version has been bumped past 1.0.0. This is general across all 18 catalog block schemas, not specific to any one of them.",
@@ -4679,7 +4684,10 @@
       "created_at": "2026-07-11T00:00:00.000Z",
       "id": "FGAP-140",
       "oid": "2ec648d26ac5719e4868a8533ba8494e",
-      "content_hash": "2d7f11f6daabcb55a6a9b3bf53fb54c4d9ec2e3618851dd274336985c2a096e7"
+      "content_hash": "d4360a0ed9a1ea98d595343a6304c8666b62e3c3e67683fc2c46d48c4a71da5f",
+      "closed_by": "TASK-127 (VER-108) per DEC-0025: every ceremony entry seeds catalog block-schema migration chains beside the config seed via per-installed-schema reuse of the from/to-scoped chain-registration engine -- a fresh install carries the session-notes bridge from birth, already-installed substrates self-heal on their next ceremony, unstamped starters register nothing. Merged to main.",
+      "closed_at": "2026-07-13",
+      "content_parent": "2d7f11f6daabcb55a6a9b3bf53fb54c4d9ec2e3618851dd274336985c2a096e7"
     },
     {
       "title": "Update-time schema-version-advancing write paths never register a migration declaration",
@@ -4929,6 +4937,36 @@
       "created_at": "2026-07-12T13:23:57.311Z",
       "oid": "49c3bc668d3b72f2364bf69c6681afb0",
       "content_hash": "44f4fcdbcfa825aa8dd6b7e023982bfc9f7d01b8abec023e8365dd2e2d2f0169"
+    },
+    {
+      "title": "Birth-relations --dryRun preview is orientation-only while the live run endpoint-gates the counter-endpoint -- a preview accepts an edge the live filing rejects",
+      "status": "identified",
+      "priority": "P3",
+      "package": "pi-context",
+      "canonical_vocabulary": "exact dry-run outcome preview",
+      "description": "append-block-item / upsert-block-item --dryRun previews a filing's birth relations through the orientation/registration checks only (documented at the preview: endpoint resolution stays out because the new item is unwritten). The live run routes each birth edge through the gated appendRelationByRef, which now enforces full write-time reference integrity: the counter-endpoint (the OTHER, already-existing item the edge names) must resolve, and the prospective edge set must stay acyclic. A --dryRun preview therefore reports would-file for a filing whose birth edge names a dangling counter-endpoint or closes a cycle -- outcomes the live run rejects. The new-item endpoint itself is legitimately un-checkable at preview (unwritten by definition, and the live run appends birth edges after the item write so it resolves active); the divergence is confined to the counter-endpoint's existence and the cycle check, both computable read-only at preview time against the existing substrate. Class: exact dry-run outcome preview -- the same preview-vs-live divergence class FGAP-066 (closed) fixed for update's catalog-ahead arm by computing the precise outcome read-only under --dryRun.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "reference": "the filing ops' dryRun birth-relations branch runs the role-mapping + orientation-ambiguity guard over the entries, registry-only, with endpoint resolution deliberately out (the item is unwritten); the live branch appends the item then routes each birth edge through the gated appendRelationByRef"
+        },
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "reference": "assertEdgesValidForWrite: the live gate the preview does not model -- counter-endpoint resolution (dangling/unregistered reject) and the prospective-cycle check"
+        },
+        {
+          "file": "analysis/2026-07-13-ground-126.md",
+          "reference": "the grounding for the write-time parity change whose implementer surfaced this preview/live divergence as an out-of-scope observation at delivery"
+        }
+      ],
+      "impact": "An operator previewing a filing with birth relations can be told it would file when the live run will refuse it -- the preview is optimistic exactly for the broken-edge cases the write gate exists to catch, sending the operator into a live failure the preview claimed away.",
+      "proposed_resolution": "Under --dryRun, additionally check each birth-relation entry's counter-endpoint read-only against the existing substrate (resolve it with the same resolver the live gate uses; report a would-reject for dangling/unregistered) and run the prospective-cycle check treating the new item's endpoint as resolving-by-construction -- mirroring the fixed preview pattern the update op's catalog-ahead arm uses (compute the precise outcome read-only, write nothing). The new-item endpoint itself stays exempt from existence checking at preview.",
+      "related_features": [],
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-07-13",
+      "id": "FGAP-148",
+      "oid": "c10a9635e4dda77b7f08ca3f268c3e40",
+      "content_hash": "0c7e0cc10c95b33bd5810ceea6fde564cf25eea2c9f565606680be96cde577e3"
     }
   ]
 }

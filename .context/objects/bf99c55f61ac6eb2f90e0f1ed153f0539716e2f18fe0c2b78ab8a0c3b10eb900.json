@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main. Orchestrator's independent fresh-ceremony runtime demo (init, accept-all, install against built dist in scratch): install lands 36 assets, migrations.json carries the session-notes 1.0.0-to-1.1.0 identity decl, and readBlockForDir(session-notes) succeeds with no MigrationRegistry error -- the gap's reproduction inverted. The adversarial audit passed every probe with zero findings: DEC-0025 conformance exact (implementation matches the filed decision text; the reused chain-registration engine and the config-only seed byte-unchanged versus base; exactly the 8 named ceremony seams), malformed/legacy-config tolerance across 6 fixtures without a throw, all-18-catalog-entry path-join verification, byte-identical idempotent re-runs, no ghost-dir materialization, its own checkStatus self-heal reproduction (precondition read throws the version mismatch, checkStatus seeds, the block reads), docs accuracy across the changed op strings/READMEs/skill narrative, and a double-run pi-workflows flake check with zero failures both runs.",
+  "criteria_results": [
+    {
+      "criterion": "The install-time-vs-status-time mechanism choice is filed as a decision before implementation; the implementation matches it",
+      "status": "passed"
+    },
+    {
+      "criterion": "A fresh /context install against the current catalog yields context-validate clean for session-notes with no manual write-schema-migration step, verified by a real fresh-install runtime demo",
+      "status": "passed"
+    },
+    {
+      "criterion": "The seeding covers every freshly-installed schema with a catalog migration chain, not session-notes alone -- the general class, with a unit pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "Existing seedCatalogConfigMigrationDecls and registerCatalogMigrationChainIfKnown behavior unchanged (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0; docs-surface-sync applied",
+      "status": "passed"
+    }
+  ]
+}

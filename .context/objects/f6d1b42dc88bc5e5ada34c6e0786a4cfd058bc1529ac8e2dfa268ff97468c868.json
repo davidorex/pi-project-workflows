@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main under the pinned toolchain (pi-context 1317/1317). The adversarial audit independently re-ran the runtime demo against built dist: dangling reject (relations.json never created), cycle reject (closing edge refused, disk edge preserved), batch intra-cycle all-or-nothing, dryRun parity (identical throw, nothing written), foreign-sentinel accept (registered+populated foreign endpoint appends and persists), cycle_allowed relation_type accepted via unit pin (the packaged conception carries no such type to demo against). It verified byte-level parity of the prospective-cycle inputs with validateContext's own construction, found no skip-path parity hole, and independently confirmed the unregistered resolver status is unreachable through the porcelain (unknown-alias selectors collapse to structured endpoints that classify dangling), so the per-class pins cover the reachable classes with the unreachability recorded in the pin's comment. Its one finding -- the generated SKILL artifact lagging the changed op strings -- was fixed by the post-merge regen commit, deterministically re-checked (second regen run leaves a byte-clean tree).",
+  "criteria_results": [
+    {
+      "criterion": "appendRelationByRef / appendRelationsByRef reject at write an edge with a dangling same-substrate endpoint, an unregistered-alias endpoint, or one closing a cycle -- each matching validateContext's verdict, with a unit pin per rejection class",
+      "status": "passed"
+    },
+    {
+      "criterion": "No force/allow/skip validity opt-out parameter is added to any write op",
+      "status": "passed"
+    },
+    {
+      "criterion": "A registered-alias foreign endpoint still appends and validates clean -- cross-substrate edge formation unaffected, with a regression pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "--dryRun previews report the same rejection the live write would produce for each of the three classes",
+      "status": "passed"
+    },
+    {
+      "criterion": "structured-endpoints test rewritten to file real endpoint items before the append; the suite passes without the dangling-accept assertion",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0; docs-surface-sync applied to any changed op description or README statement about edge-write behavior",
+      "status": "passed"
+    }
+  ]
+}

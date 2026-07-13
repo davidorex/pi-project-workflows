@@ -1,0 +1,27 @@
+{
+  "title": "Fresh install never seeds block-schema migration declarations from the catalog for any schema",
+  "status": "closed",
+  "priority": "P2",
+  "package": "pi-context",
+  "description": "installContext (packages/pi-context/src/index.ts) copies a catalog schema and its starter block-data file verbatim on fresh install with zero migration bookkeeping (correct in isolation: nothing pre-existed to migrate). context-check-status seeds only config-schema migration declarations (seedCatalogConfigMigrationDecls filters catalog migrations to schemaName===\"config\"), never block-schema ones. No install/update/status path ever seeds a fresh substrates migrations.json with the block-schema migration declarations the catalog already carries for every schema whose version has been bumped past 1.0.0. This is general across all 18 catalog block schemas, not specific to any one of them.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "reference": "installContext fresh-install branch: fs.copyFileSync(sourceFile, destFile) for both schema and starter block-data file, no migration registered, no migration-seeding call anywhere in the fresh-install path"
+    },
+    {
+      "file": "packages/pi-context/src/migrations-store.ts",
+      "reference": "seedCatalogConfigMigrationDecls filters catalog.migrations to schemaName===\"config\" only; the only write side-effect context-check-status has, and it never touches any block-schema migration entry"
+    },
+    {
+      "file": "packages/pi-context/samples/blocks/session-notes.json",
+      "reference": "the sole one of 18 catalog starter block files that bakes in an explicit schema_version (\"1.0.0\"); the other 17 starters carry no schema_version field at all, so validateBlockWithMigrationForDir's version-mismatch branch never triggers for them regardless of the same missing seeding"
+    },
+    {
+      "file": "packages/pi-context/samples/migrations.json",
+      "reference": "already carries ready-made kind:identity migration declarations for all 18 of TASK-121's 2026-07-11 version bumps (e.g. tasks 1.0.1->1.1.0, decisions 1.0.1->1.1.0), sitting unused by any fresh-install or status path"
+    }
+  ],
+  "impact": "Any project running /context install fresh against pi-context's current catalog gets context-validate errors for session-notes today (schema=1.1.0, starter data schema_version=1.0.0, no migration chain in the fresh project's migrations.json to bridge them) with no self-heal path (update sees the schema already at catalog version and registers nothing; check-status seeds config migrations only). The same missing-seeding defect is latent for the other 17 schemas and will manifest identically the moment any future catalog starter bakes in a version stamp, or any future schema bump changes a starter's effective version relationship.",
+  "proposed_resolution": "Requires determination: installContext's fresh-install path should seed the fresh project's migrations.json with the catalog's own migration declarations for every schema being freshly installed (so a substrate's migration history is complete from birth, matching whatever version the catalog schema+starter combination implies) -- versus check-status's seeding mechanism being generalized from config-only to all schema kinds. Either closes the general gap; which is the class-correct fix (install-time seeding vs. status-time self-heal) is an implementation-design choice for the investigating/implementing pass."
+}

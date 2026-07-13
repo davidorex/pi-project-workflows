@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "method": "command",
+  "evidence": "Build/check/test zero-fail on the branch and re-verified on merged main. Orchestrator's independent runtime demo against built dist: a conforming append lands; an update-path write introducing a prohibited-pattern acceptance_criteria element is refused with RhetoricalValidationError naming the array field; an on-disk grandfathered violator never blocks an unrelated clean append. The adversarial audit passed with real refused writes against the shipped decisions and requirements schemas (prohibited elements in consequences and acceptance_criteria each refused; clean control appended), verified branch ordering (bare-string branch first, continue -- no double/zero check), empty/whitespace elements safe, nestedArrayKey depth reached, pattern statelessness, and docs accuracy. Its one finding -- a vacuous diff-scoping unit pin -- was fixed as a write-path pin with a control leg proving the enforcement is live on the same schema; the fresh re-audit of the fix passed with zero findings and confirmed no sibling pin shares the vacuity shape.",
+  "criteria_results": [
+    {
+      "criterion": "A write creating an item whose bare-string-array field carries an over-budget or prohibited-pattern element is refused, with a unit pin per check kind",
+      "status": "passed"
+    },
+    {
+      "criterion": "A conforming bare-string-array element passes; existing named-property enforcement unchanged (regression)",
+      "status": "passed"
+    },
+    {
+      "criterion": "The fix is schema-driven, not hardcoded to the four known fields -- a synthetic novel bare-string-array budget enforces",
+      "status": "passed"
+    },
+    {
+      "criterion": "Diff-scoping preserved: untouched pre-existing items never block an unrelated write, with a regression pin",
+      "status": "passed"
+    },
+    {
+      "criterion": "build, check, and full test suite exit 0; docs-surface-sync applied",
+      "status": "passed"
+    }
+  ]
+}

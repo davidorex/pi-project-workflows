@@ -1938,7 +1938,8 @@ function assertProspectiveAcyclicForWrite(
  * The write-time edge gate — full parity with validateContext's edge surface,
  * shared by BOTH porcelain callers (`appendRelationByRef` routes a one-edge
  * batch through it; `appendRelationsByRef` routes the whole resolved batch), so
- * the two callers and their dryRun previews reject identically. A no-op when no
+ * both callers judge each edge through the same gate with the same rejection
+ * texts. A no-op when no
  * config is present (pre-bootstrap substrate — no registry to validate
  * against, matching validateContext's `if (config)` gate). Per edge, in order:
  *  1. the shared `validateEdgeAgainstRegistry` check (relation_type

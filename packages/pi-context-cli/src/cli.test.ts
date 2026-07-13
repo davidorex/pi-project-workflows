@@ -1926,8 +1926,8 @@ test("CLI --show-schema on a block whose schema is absent exits 3", async () => 
 });
 
 // ── append-block-item --dry-run ───────────────────────────────────────────────
-// The op declares its own `dryRun` param (an exact-outcome preview riding the
-// live path: stamped prospective-file validation + the full birth-relations
+// The op declares its own `dryRun` param (a preview riding the live path —
+// stamped prospective-file validation + the covered-checks birth-relations
 // gate, persistence withheld), so the CLI parses `--dryRun` / `--dry-run` into
 // params like every other declared dryRun — the former client-side
 // prospective-file replica in main() is gone.

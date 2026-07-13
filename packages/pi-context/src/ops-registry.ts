@@ -725,8 +725,10 @@ export const ops: OpDefinition[] = [
 			"surface: the relation_type must be registered, endpoint kinds must match its declared source/target kinds, BOTH " +
 			"endpoints must already resolve — an edge to a not-yet-filed item is rejected (file the item first, or file the " +
 			"edge atomically as birth relations on append-block-item); registered foreign endpoints and lens bins pass — and " +
-			"an edge that would land a relation cycle is rejected (cycle_allowed relation_types exempt). --dryRun previews " +
-			"reject identically. Creates relations.json if absent.",
+			"an edge that would land a relation cycle is rejected (cycle_allowed relation_types exempt). --dryRun runs this " +
+			"same edge gate (registration, endpoint kinds/resolution, cycles) with the live rejection texts; the write " +
+			"pipeline's delta-scoped invariant gate runs only on the live write, so a live write can still be refused where " +
+			"the preview reported would-append. Creates relations.json if absent.",
 		promptSnippet:
 			"Create a relation/edge between two items (raw --parent/--child, or role-typed --primary/--counter mapped via role_direction)",
 		examples: [
@@ -958,8 +960,10 @@ export const ops: OpDefinition[] = [
 			"(when config.json is present), mirroring context-validate's edge surface: every relation_type must be registered, " +
 			"endpoint kinds must match, every endpoint must already resolve — an edge to a not-yet-filed item rejects the " +
 			"batch (file the item first, or file the edge atomically as birth relations on append-block-item) — and a relation " +
-			"cycle rejects the batch, intra-batch cycles included (cycle_allowed relation_types exempt); all-or-nothing, " +
-			"--dryRun rejects identically. Creates relations.json if absent.",
+			"cycle rejects the batch, intra-batch cycles included (cycle_allowed relation_types exempt); all-or-nothing. " +
+			"--dryRun runs this same batch edge gate with the live rejection texts; the write pipeline's delta-scoped " +
+			"invariant gate runs only on the live write, so a live write can still be refused where the preview reported " +
+			"would-append. Creates relations.json if absent.",
 		promptSnippet: "Create many relations/edges between items in one write (raw or role-typed per edge)",
 		examples: [
 			`pi-context append-relations --edges '[{"parent":"FEAT-008","child":"TASK-042","relation_type":"feature_decomposed_into_task"}]' --writer '{"kind":"human","user":"you@example.com"}' --json`,

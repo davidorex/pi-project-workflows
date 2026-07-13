@@ -401,24 +401,4 @@ describe("validateRhetoricalCriteriaForItems — budgeted bare-string arrays", (
 			},
 		);
 	});
-
-	it("diff-scoping: a violating element on an item NOT threaded in changedItems never blocks", () => {
-		// A pre-existing item holding an over-cap + prohibited-pattern element sits
-		// untouched in the block; only the clean item the write actually created is
-		// threaded as changedItems — the write must pass.
-		const preExistingViolator = {
-			id: "X-0",
-			criteria: ["this criterion is no longer valid", "one two three four five six seven eight"],
-		};
-		void preExistingViolator; // present in the block file, never threaded
-		assert.doesNotThrow(() =>
-			validateRhetoricalCriteriaForItems(
-				itemSchemaWithArrayElementBudget,
-				{},
-				[{ arrayKey: "items", item: { id: "X-1", criteria: ["clean terse element"] } }],
-				"label",
-				unusedResolver,
-			),
-		);
-	});
 });

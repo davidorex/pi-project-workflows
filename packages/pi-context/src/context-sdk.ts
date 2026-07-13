@@ -366,8 +366,33 @@ export interface CurrentState {
 	 * when ≥1 member exists and every member buckets to complete, else its
 	 * `incomplete_status`. `status` is a config-declared string (the stock rollup
 	 * emits `reached` / `planned`); `phaseCount` is the member count.
+	 * `stored_status` is present ONLY when the item's stored status string
+	 * differs from the derived primary (the same raw-string inequality the
+	 * derived-status invariant class tests) — derived stays primary, the
+	 * stored value rides alongside so drift is visible in every read; a
+	 * converged item carries no `stored_status` field at all.
 	 */
-	milestones: { id: string; status: string; phaseCount: number }[];
+	milestones: { id: string; status: string; phaseCount: number; stored_status?: string }[];
+	/**
+	 * Always-on drift head: for each divergent rollup item COVERED BY a
+	 * config-declared `derived-status` invariant (config.invariants, keyed by
+	 * inv.block), one entry classified exactly as `evaluateConfigInvariants`'
+	 * derived-status branch classifies the same state (same severity default,
+	 * message template + {id}/{block}/{stored}/{derived} substitution, block,
+	 * `${id}.${inv.id}` field, code=inv.id) — computed from this derivation's
+	 * own working set, no second validate pass. Entry ORDER also matches that
+	 * branch exactly (declared derived-status invariants outer in
+	 * config.invariants order, divergent items inner), so the head is
+	 * order-identical — not merely set-equal — to validateContext's
+	 * derived-status issues. A divergent item whose kind has
+	 * NO declared derived-status invariant surfaces `stored_status` on its
+	 * milestones entry but contributes no head entry (no code to classify
+	 * under). ABSENT when there is nothing to report — a converged substrate's
+	 * result shape is byte-identical to the pre-drift-surfacing shape. Drift
+	 * surfacing flags authored-judgment lag for review; it never asserts the
+	 * authored bucket is wrong.
+	 */
+	driftWarnings?: ContextValidationIssue[];
 }
 
 /**
@@ -839,8 +864,9 @@ export function currentState(cwd: string): CurrentState {
 	// orientation, rather than a guessed direction) — consulted by the
 	// rollup-aware completeness check below, the blocking partition, and the
 	// milestones rollup. Hoisted above isCompleted so all three read ONE map.
+	const config = loadConfig(cwd);
 	const roleDirection = new Map<string, "as_parent" | "as_child">();
-	for (const rt of loadConfig(cwd)?.relation_types ?? []) {
+	for (const rt of config?.relation_types ?? []) {
 		if (rt.role_direction !== undefined) roleDirection.set(rt.canonical_id, rt.role_direction);
 	}
 
@@ -1020,6 +1046,18 @@ export function currentState(cwd: string): CurrentState {
 	// every member id resolves to a known item bucketing to complete; else
 	// `incomplete_status` (covering no-members + any-incomplete). Every comparison
 	// routes through bucket() — no raw status literal.
+	// Always-on drift surfacing (currency-by-construction, always-on facet):
+	// classified under the declared derived-status invariants read off the
+	// ALREADY-LOADED config — no second file load and no validateContext re-run.
+	// Divergences are COLLECTED (not classified) during the single rollups walk
+	// below, keyed by block kind in item-encounter order, then classified into
+	// head entries AFTERWARD in evaluateConfigInvariants' exact nesting —
+	// declared derived-status invariants OUTER (config.invariants order),
+	// divergent items INNER — so the head array is order-identical to
+	// validateContext's derived-status issues, not merely set-equal, while
+	// still requiring no second derivation pass.
+	const driftDivergences = new Map<string, { id: string; stored: string; derived: string }[]>();
+
 	const milestones: CurrentState["milestones"] = [];
 	for (const entry of sd.rollups) {
 		const dir = roleDirection.get(entry.membership_relation) ?? "as_child";
@@ -1033,14 +1071,56 @@ export function currentState(cwd: string): CurrentState {
 			// gate satisfaction consults — so the reported milestone status and the
 			// gates it releases cannot diverge within this read (currency-by-construction).
 			const reached = isCompleted(loc.id);
-			milestones.push({
-				id: loc.id,
-				status: reached ? entry.complete_status : entry.incomplete_status,
-				phaseCount,
-			});
+			const derived = reached ? entry.complete_status : entry.incomplete_status;
+			const milestone: CurrentState["milestones"][number] = { id: loc.id, status: derived, phaseCount };
+			// Stored-vs-derived divergence: the SAME raw-string inequality the
+			// derived-status invariant class tests. On divergence the stored value
+			// rides alongside unconditionally (not gated on invariant declarations);
+			// a head entry is emitted only under a declared derived-status
+			// invariant, classified byte-identically to evaluateConfigInvariants'
+			// derived-status branch for the same state. Drift surfacing flags
+			// authored-judgment lag for review; it never asserts the authored
+			// bucket is wrong.
+			const stored = String(loc.item.status);
+			if (stored !== derived) {
+				milestone.stored_status = stored;
+				const record = { id: loc.id, stored, derived };
+				const list = driftDivergences.get(entry.kind);
+				if (list === undefined) driftDivergences.set(entry.kind, [record]);
+				else list.push(record);
+			}
+			milestones.push(milestone);
 		}
 	}
 	milestones.sort((a, b) => a.id.localeCompare(b.id));
+
+	// Head emission — nesting mirrors evaluateConfigInvariants' derived-status
+	// branch exactly (invariants outer / items inner), and each entry is
+	// classified byte-identically (same severity default, message template +
+	// {id}/{block}/{stored}/{derived} substitution, block, `${id}.${inv.id}`
+	// field, code=inv.id) for the same state. An invariant naming a block with
+	// no rollups entry never fires here (only rollup kinds were collected),
+	// matching the invariant engine's inert-declaration behavior.
+	const driftWarnings: ContextValidationIssue[] = [];
+	for (const inv of config?.invariants ?? []) {
+		if (inv.class !== "derived-status") continue;
+		for (const d of driftDivergences.get(inv.block) ?? []) {
+			driftWarnings.push({
+				severity: inv.severity ?? "warning",
+				message: (
+					inv.message ??
+					`Item '{id}' (block '{block}') stored status '{stored}' diverges from its derived rollup status '{derived}' (derived-status '${inv.id}')`
+				)
+					.replaceAll("{id}", d.id)
+					.replaceAll("{block}", inv.block)
+					.replaceAll("{stored}", d.stored)
+					.replaceAll("{derived}", d.derived),
+				block: inv.block,
+				field: `${d.id}.${inv.id}`,
+				code: inv.id,
+			});
+		}
+	}
 
 	// ── focus: single derived string ───────────────────────────────────────────
 	let focus: string;
@@ -1064,7 +1144,16 @@ export function currentState(cwd: string): CurrentState {
 		}
 	}
 
-	return { focus, inFlight, nextActions: cappedNextActions, blocked, milestones };
+	// The head is ATTACHED only when non-empty so a converged substrate's
+	// result shape stays byte-identical to the pre-drift-surfacing shape.
+	return {
+		focus,
+		inFlight,
+		nextActions: cappedNextActions,
+		blocked,
+		milestones,
+		...(driftWarnings.length > 0 ? { driftWarnings } : {}),
+	};
 }
 
 // ── Predicate Filter ────────────────────────────────────────────────────────

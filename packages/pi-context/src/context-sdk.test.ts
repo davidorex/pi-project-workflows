@@ -420,6 +420,23 @@ const CANONICAL_INVARIANTS = [
 ];
 
 /**
+ * The shipped derived-status invariant declaration, copied byte-for-byte from
+ * samples/conception.json (invariants[] entry id "milestone-status-converges").
+ * NOT part of CANONICAL_INVARIANTS (the test default carries only the two
+ * requires-edge invariants), so fixtures that need a declared derived-status
+ * invariant — the driftWarnings head classifies ONLY under a declaration —
+ * pass a custom invariants array appending this.
+ */
+const MILESTONE_STATUS_CONVERGES = {
+	id: "milestone-status-converges",
+	class: "derived-status" as const,
+	block: "milestone",
+	severity: "warning" as const,
+	message:
+		"Milestone '{id}' stored status '{stored}' diverges from its derived phase-rollup status '{derived}' — milestone status is derived, never authored; converge via the sanctioned repair path, not a status write",
+};
+
+/**
  * The stock `state_derivation` registry — the config-declared registry added
  * so `currentState` no longer hardcodes stock kinds — the exact values
  * the packaged catalog ships, mirroring currentState's pre-rewire hardcoded
@@ -2917,7 +2934,12 @@ describe("currentState", () => {
 		// verdict — no split-brain within one currentState payload.
 		const tmpDir = makeTmpDir("cs-rollup-gate");
 		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
-		const projectDir = setup(tmpDir);
+		// Custom invariants: the default CANONICAL_INVARIANTS carries no
+		// derived-status declaration, and the driftWarnings head emits an entry
+		// only under one — append the shipped milestone-status-converges.
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [...CANONICAL_INVARIANTS, MILESTONE_STATUS_CONVERGES]);
 		fs.writeFileSync(
 			path.join(projectDir, "tasks.json"),
 			JSON.stringify({ tasks: [{ id: "TASK-G", description: "gated on milestone", status: "planned" }] }),
@@ -2946,9 +2968,22 @@ describe("currentState", () => {
 		);
 		assert.deepStrictEqual(
 			state.milestones,
-			[{ id: "MILE-001", status: "reached", phaseCount: 1 }],
-			"milestones[] must report the same rollup verdict the gate consulted",
+			[{ id: "MILE-001", status: "reached", phaseCount: 1, stored_status: "planned" }],
+			"milestones[] must report the same rollup verdict the gate consulted, with the lagging stored value alongside",
 		);
+		// Always-on drift head: the lagging stored status rides the same read as a
+		// classified warning — derived stays primary, the entry byte-matches the
+		// derived-status invariant's classification of this state.
+		assert.deepStrictEqual(state.driftWarnings, [
+			{
+				severity: "warning",
+				message:
+					"Milestone 'MILE-001' stored status 'planned' diverges from its derived phase-rollup status 'reached' — milestone status is derived, never authored; converge via the sanctioned repair path, not a status write",
+				block: "milestone",
+				field: "MILE-001.milestone-status-converges",
+				code: "milestone-status-converges",
+			},
+		]);
 	});
 
 	it("rollup-kind gate: held while members are incomplete even when stored status claims complete; zero members never complete", (t) => {
@@ -3042,6 +3077,216 @@ describe("currentState", () => {
 			"a cyclic rollup derives not-complete and holds the gate",
 		);
 		assert.deepStrictEqual(state.milestones.map((m) => m.status).sort(), ["planned", "planned"]);
+	});
+
+	/** Divergence fixture shared by the drift-surfacing pins: milestone stored
+	 * status LAGS at 'planned' while its single member phase is completed, so the
+	 * rollup derives 'reached'. `invariants` selects whether a derived-status
+	 * declaration is in scope for the driftWarnings head. */
+	function setupDriftFixture(tmpDir: string, invariants: unknown[]): string {
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, invariants);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "done", intent: "i", status: "completed" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: "planned" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" }]),
+		);
+		return projectDir;
+	}
+
+	it("drift head under a declared derived-status invariant classifies exactly as validateContext for the same state", (t) => {
+		const tmpDir = makeTmpDir("cs-drift-classify");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		setupDriftFixture(tmpDir, [...CANONICAL_INVARIANTS, MILESTONE_STATUS_CONVERGES]);
+
+		const state = currentState(tmpDir);
+		const validation = validateContext(tmpDir);
+		const validateDriftIssues = validation.issues.filter((i) => i.code === MILESTONE_STATUS_CONVERGES.id);
+		// The classification proof: both surfaces evaluated the SAME substrate,
+		// and the head entries equal validateContext's derived-status issues
+		// field-for-field (severity, substituted message, block, field, code).
+		assert.strictEqual(validateDriftIssues.length, 1, "validateContext must flag the divergence");
+		assert.deepStrictEqual(state.driftWarnings, validateDriftIssues);
+	});
+
+	it("drift head with TWO derived-status invariants x TWO divergent milestones matches validateContext's exact ORDER (invariants outer, items inner)", (t) => {
+		// Order-hardening for the classification pin above: with a single
+		// invariant x single item, ANY nesting produces the same one-element
+		// array. Two invariants on the same block x two divergent items is the
+		// case where an items-OUTER nesting yields a set-equal but
+		// order-divergent head (M1/A, M1/B, M2/A, M2/B) — only
+		// evaluateConfigInvariants' invariants-OUTER / items-INNER nesting
+		// (A/M1, A/M2, B/M1, B/M2) survives the full-array deepStrictEqual.
+		const tmpDir = makeTmpDir("cs-drift-classify-multi");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const SECOND_CONVERGES = {
+			id: "milestone-status-converges-audit",
+			class: "derived-status" as const,
+			block: "milestone",
+			severity: "warning" as const,
+			message: "Audit trail: '{id}' stored '{stored}' vs derived '{derived}' on block '{block}'",
+		};
+		const projectDir = setupDriftFixture(tmpDir, [
+			...CANONICAL_INVARIANTS,
+			MILESTONE_STATUS_CONVERGES,
+			SECOND_CONVERGES,
+		]);
+		// Second divergent milestone alongside the fixture's first: its own
+		// completed member phase derives 'reached' while stored lags at 'planned'.
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({
+				phases: [
+					{ id: "PHASE-1", name: "done", intent: "i", status: "completed" },
+					{ id: "PHASE-2", name: "also done", intent: "i", status: "completed" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "m", status: "planned" },
+					{ id: "MILE-002", name: "n", status: "planned" },
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([
+				{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" },
+				{ parent: "PHASE-2", child: "MILE-002", relation_type: "phase_positioned_in_milestone" },
+			]),
+		);
+
+		const state = currentState(tmpDir);
+		const validation = validateContext(tmpDir);
+		const validateDriftIssues = validation.issues.filter(
+			(i) => i.code === MILESTONE_STATUS_CONVERGES.id || i.code === SECOND_CONVERGES.id,
+		);
+		assert.strictEqual(validateDriftIssues.length, 4, "2 invariants x 2 divergent milestones = 4 classified issues");
+		// Pin validateContext's own nesting first, so the head comparison below
+		// cannot pass against an accidentally reordered validate baseline.
+		assert.deepStrictEqual(
+			validateDriftIssues.map((i) => i.field),
+			[
+				"MILE-001.milestone-status-converges",
+				"MILE-002.milestone-status-converges",
+				"MILE-001.milestone-status-converges-audit",
+				"MILE-002.milestone-status-converges-audit",
+			],
+			"validateContext emits invariants-outer / items-inner",
+		);
+		// The order-sensitive proof: element-for-element equality IN ORDER — the
+		// case the prior items-outer head nesting produced set-equal but
+		// order-divergent output for.
+		assert.deepStrictEqual(state.driftWarnings, validateDriftIssues);
+	});
+
+	it("drift with NO declared derived-status invariant: stored_status still rides the entry, head stays absent", (t) => {
+		const tmpDir = makeTmpDir("cs-drift-undeclared");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		// Default CANONICAL_INVARIANTS: the two requires-edge declarations only —
+		// the divergence has no invariant code to classify under.
+		setupDriftFixture(tmpDir, CANONICAL_INVARIANTS);
+
+		const state = currentState(tmpDir);
+		// stored_status is unconditional on divergence (not gated on declarations)…
+		assert.deepStrictEqual(state.milestones, [
+			{ id: "MILE-001", status: "reached", phaseCount: 1, stored_status: "planned" },
+		]);
+		// …but the classified head requires a declaration: absent entirely.
+		assert.ok(!("driftWarnings" in state), "no declared derived-status invariant ⇒ no head");
+	});
+
+	it("converged rollup: no stored_status field anywhere, no driftWarnings head, prior result shape unchanged", (t) => {
+		const tmpDir = makeTmpDir("cs-drift-converged");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = setupDriftFixture(tmpDir, [...CANONICAL_INVARIANTS, MILESTONE_STATUS_CONVERGES]);
+		// Converge the stored value to the derivation ('reached').
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({ milestones: [{ id: "MILE-001", name: "m", status: "reached" }] }),
+		);
+
+		const state = currentState(tmpDir);
+		// The entry carries NO stored_status key at all (not an undefined-valued one).
+		assert.deepStrictEqual(state.milestones, [{ id: "MILE-001", status: "reached", phaseCount: 1 }]);
+		assert.ok(!("stored_status" in state.milestones[0]));
+		// The head is absent and the result's key set is byte-identical to the
+		// pre-drift-surfacing shape.
+		assert.deepStrictEqual(Object.keys(state), ["focus", "inFlight", "nextActions", "blocked", "milestones"]);
+	});
+
+	it("stored-AHEAD divergence (stored 'reached', derived 'planned') surfaces both values + classified head entries", (t) => {
+		// The cs-rollup-held shape: one milestone stored ahead of an incomplete
+		// member, one member-less milestone stored ahead of the >=1-member rule.
+		const tmpDir = makeTmpDir("cs-drift-ahead");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		writeConfig(projectDir, REL_TYPES, [...CANONICAL_INVARIANTS, MILESTONE_STATUS_CONVERGES]);
+		fs.writeFileSync(
+			path.join(projectDir, "phase.json"),
+			JSON.stringify({ phases: [{ id: "PHASE-1", name: "wip", intent: "i", status: "in-progress" }] }),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "milestone.json"),
+			JSON.stringify({
+				milestones: [
+					{ id: "MILE-001", name: "m", status: "reached" }, // stored value lies AHEAD
+					{ id: "MILE-002", name: "empty", status: "reached" }, // zero members
+				],
+			}),
+		);
+		fs.writeFileSync(
+			path.join(projectDir, "relations.json"),
+			JSON.stringify([{ parent: "PHASE-1", child: "MILE-001", relation_type: "phase_positioned_in_milestone" }]),
+		);
+
+		const state = currentState(tmpDir);
+		// Derived stays primary in BOTH directions; the stored value rides alongside.
+		assert.deepStrictEqual(state.milestones, [
+			{ id: "MILE-001", status: "planned", phaseCount: 1, stored_status: "reached" },
+			{ id: "MILE-002", status: "planned", phaseCount: 0, stored_status: "reached" },
+		]);
+		assert.deepStrictEqual(
+			state.driftWarnings?.map((w) => w.field),
+			["MILE-001.milestone-status-converges", "MILE-002.milestone-status-converges"],
+		);
+		for (const w of state.driftWarnings ?? []) {
+			assert.strictEqual(w.severity, "warning");
+			assert.strictEqual(w.code, "milestone-status-converges");
+			assert.ok(w.message.includes("stored status 'reached'"));
+			assert.ok(w.message.includes("derived phase-rollup status 'planned'"));
+		}
+	});
+
+	it("state-derivation not configured: the early-return shape is unchanged (no driftWarnings key)", (t) => {
+		const tmpDir = makeTmpDir("cs-drift-nosd");
+		t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+		const projectDir = path.join(tmpDir, ".project");
+		fs.mkdirSync(projectDir, { recursive: true });
+		// stateDerivation: null omits the registry — the not-configured signal —
+		// even with a derived-status invariant declared.
+		writeConfig(projectDir, REL_TYPES, [...CANONICAL_INVARIANTS, MILESTONE_STATUS_CONVERGES], undefined, null);
+
+		const state = currentState(tmpDir);
+		assert.deepStrictEqual(state, {
+			focus: "state-derivation not configured",
+			inFlight: [],
+			nextActions: [],
+			blocked: [],
+			milestones: [],
+		});
 	});
 
 	it("task_gated_by_item: a dangling gate target (unknown id) is treated as satisfied (non-blocking)", (t) => {
@@ -3558,7 +3803,11 @@ describe("currentState", () => {
 		);
 		assert.ok(state.nextActions.every((a) => a.reason !== "unblocked planned task"));
 		// rollup over epic via issue_in_epic: member ISS-D ("open") not complete → incomplete_status.
-		assert.deepStrictEqual(state.milestones, [{ id: "EPIC-1", status: "open", phaseCount: 1 }]);
+		// EPIC-1's stored "planned" diverges from the derived "open", so the stored
+		// value rides alongside (drift surfacing is unconditional on divergence).
+		assert.deepStrictEqual(state.milestones, [
+			{ id: "EPIC-1", status: "open", phaseCount: 1, stored_status: "planned" },
+		]);
 
 		// focus-fallback uses the CUSTOM focus_fallback.kind prefix ("epic: "), not the
 		// stock "phase: ": demote ISS-A out of in_progress so nothing is in-flight, and
@@ -3700,9 +3949,11 @@ describe("currentState", () => {
 			]),
 		);
 		const state = currentState(tmpDir);
+		// Both stored values ("planned") diverge from the custom derived strings, so
+		// each entry carries stored_status alongside the derived primary.
 		assert.deepStrictEqual(state.milestones, [
-			{ id: "MILE-A", status: "SHIPPED", phaseCount: 1 },
-			{ id: "MILE-B", status: "PENDING", phaseCount: 1 },
+			{ id: "MILE-A", status: "SHIPPED", phaseCount: 1, stored_status: "planned" },
+			{ id: "MILE-B", status: "PENDING", phaseCount: 1, stored_status: "planned" },
 		]);
 	});
 });

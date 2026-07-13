@@ -74,6 +74,11 @@ function scaffoldSubstrate(tmpDir: string): void {
 			"name: wo-e2e-file-writer",
 			"role: action",
 			"description: E2E probe worker — writes one fixed artifact file via its granted write tool",
+			// Operator-environment pin: the project's documented cost-control pin
+			// (openrouter/anthropic/claude-haiku-4.5) is provider-403-blocked on the
+			// authoring machine. If your pi auth lacks this model, dispatch throws a
+			// legible "produced no assistant output" — swap the pin to any
+			// tool-capable model available to your pi auth.
 			"model: openrouter/z-ai/glm-5.2",
 			"tools: [read, write, bash]",
 			"input:",

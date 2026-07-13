@@ -4465,13 +4465,14 @@ describe("write-time invariant gate (delta-scoped)", () => {
 		);
 	});
 
-	// ── birth-relations --dryRun preview parity with the live filing gate (the
-	// exact-dry-run-outcome-preview class): beyond the orientation guard, the
-	// preview resolves each entry's counter-endpoint with the SAME resolver the
-	// live gate uses and runs the prospective-cycle check read-only, treating
-	// the NEW item's endpoint as resolving-by-construction — so a preview
-	// refusal is byte-identical to the live run's refusal on the same inputs,
-	// and a preview would-file is a filing the live run accepts. ──
+	// ── birth-relations --dryRun preview coverage against the live filing gate:
+	// beyond the orientation guard, the preview resolves each entry's
+	// counter-endpoint with the SAME resolver the live gate uses and runs the
+	// prospective-cycle check read-only, treating the NEW item's endpoint as
+	// resolving-by-construction — a refusal from those covered checks is
+	// byte-identical to the live run's refusal on the same inputs, while a
+	// would-file can still be refused live by checks needing the written item
+	// or the post-write delta (the write-time invariant gate among them). ──
 
 	/** Run `fn`, asserting it throws, and return the thrown message. */
 	function previewCaptureThrow(fn: () => unknown): string {

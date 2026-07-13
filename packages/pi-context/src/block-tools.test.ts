@@ -194,10 +194,12 @@ describe("append-block-item", () => {
 		);
 	});
 
-	// ── append-block-item --dryRun (exact dry-run outcome preview): the preview
-	// rides the LIVE append path (id-uniqueness, stamping, whole-file schema
-	// validation) with the persistence legs withheld — so it accepts/rejects
-	// identically to the live run and writes nothing either way. ──
+	// ── append-block-item --dryRun: the preview rides the LIVE append path
+	// (id-uniqueness, stamping, whole-file schema validation) with the
+	// persistence legs withheld — a refusal from those covered checks carries
+	// the live run's error text, checks needing the written item or the
+	// post-write delta (the write-time invariant gate among them) do not run
+	// under preview, and it writes nothing either way. ──
 
 	it("dryRun previews a valid append as would-append and writes nothing", (t) => {
 		const tmpDir = makeTmpDir();

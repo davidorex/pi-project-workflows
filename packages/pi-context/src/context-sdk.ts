@@ -1989,8 +1989,8 @@ function assertEdgeRegistryAndEndpointsValid(
 
 /**
  * READ-ONLY preview twin of the write-time edge gate, for a filing op's birth
- * relations under `--dryRun` — the exact-dry-run-outcome-preview pattern
- * (compute the precise outcome read-only, write nothing). The live filing
+ * relations under `--dryRun` — replays the gate's covered checks read-only,
+ * writing nothing. The live filing
  * appends the item, then routes each birth edge one-at-a-time through the
  * gated `appendRelationByRef` (earlier birth edges already on disk when a
  * later one is judged). This preview replays that sequence WITHOUT any write:

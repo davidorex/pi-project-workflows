@@ -653,8 +653,8 @@ export const ops: OpDefinition[] = [
 				// id-uniqueness, stamping, and whole-file validation judge the exact
 				// prospective — then the birth entries run the full read-only gate
 				// twin (orientation + counter-endpoint resolution + prospective
-				// cycles, new-item endpoint exempt). A refusal here is the SAME
-				// refusal the live run produces; nothing is written either way.
+				// cycles, new-item endpoint exempt). A refusal from a covered check
+				// carries that check's live rejection text; nothing is written either way.
 				appendToBlock(cwd, params.block, params.arrayKey, params.item, ctx, { dryRun: true });
 				assertBirthRelationsValidForPreview(cwd, String(params.item.id ?? ""), relations);
 				const wouldId = params.item?.id ? ` '${params.item.id}'` : "";

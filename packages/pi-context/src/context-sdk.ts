@@ -2011,8 +2011,10 @@ function assertEdgeRegistryAndEndpointsValid(
  *     set (cycle detection is graph-keyed on endpoint refnames and needs no
  *     resolution), so a birth edge that would close a cycle throws the live
  *     rejection text.
- * Thrown messages reuse the live gate's exact templates, so a preview refusal
- * is byte-identical to the live run's refusal on the same inputs. A no-op
+ * Thrown messages reuse the live gate's exact templates — a refusal from a
+ * covered check carries that check's live rejection text; where the live run
+ * refuses at the kind check the preview self-skips (step 1), the preview may
+ * refuse via a different covered check, or report would-file. A no-op
  * when no config is present (pre-bootstrap substrate), matching the live gate.
  */
 export function assertBirthEdgesValidForPreview(cwd: string, edges: Edge[], newItemRefname: string): void {

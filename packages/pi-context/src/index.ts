@@ -982,13 +982,47 @@ function simulateResyncOutcome(
 }
 
 /**
+ * The validation basis a `validate-block-items` run resolves against.
+ * `"catalog"` (the default) is the catalog-forward update-preview;
+ * `"installed"` is the read-path-faithful diagnostic (installed schema +
+ * project migration registry — the same resolution the canonical read gate
+ * uses).
+ */
+export type ValidateBlockItemsBasis = "catalog" | "installed";
+
+/**
+ * The `resolution` disclosure a validate-block-items result envelope always
+ * carries, naming the basis the verdict was computed against:
+ * `"catalog-forward-preview"` for the catalog basis, `"installed-read-path"`
+ * for the installed basis. Present on EVERY result so a `valid:true` can never
+ * present as a generic (basis-less) block-validity verdict.
+ */
+export type ValidateBlockItemsResolution = "catalog-forward-preview" | "installed-read-path";
+
+/** Result envelope shared by both validate-block-items bases. */
+export interface ValidateBlockItemsResult {
+	block: string;
+	from?: string;
+	to?: string;
+	valid: boolean;
+	failures: BlockValidationFailure[];
+	resolution: ValidateBlockItemsResolution;
+}
+
+/**
  * Validate ONE installed block's items against the CATALOG schema version,
  * read-only — surfacing which item/field/constraint actually failed instead of
- * discarding the AJV error. The standalone diagnostic underneath the
+ * discarding the AJV error. The catalog-basis diagnostic underneath the
  * `validate-block-items` op: it answers "would these items pass the catalog
  * schema (after the shipped forward-migration, when the block lags the catalog
  * version)?" WITHOUT writing anything — no schema overwrite, no block re-write, no
- * migration registration.
+ * migration registration. Its verdict is a catalog-forward UPDATE-PREVIEW, not a
+ * readability check: it resolves against the catalog schema body plus a fresh
+ * registry self-seeded from the catalog chain, so it can report `valid:true` on
+ * a block the canonical read path (installed schema + project registry) throws
+ * on. The result envelope's `resolution: "catalog-forward-preview"` disclosure
+ * names that basis on every call; `validateBlockItemsAgainstInstalled` is the
+ * read-path-faithful sibling.
  *
  * Resolution mirrors the catalog-ahead resync path so the diagnostic predicts the
  * same pass/fail `resyncSchema` would reach:
@@ -1006,14 +1040,12 @@ function simulateResyncOutcome(
  *     mapped against the (migrated) data; any other throw → a single synthetic
  *     `{instancePath:"", keyword:"error", message:String(err)}` failure.
  *
- * Returns `{ block, from?, to?, valid, failures }`: `from`/`to` are the block's
- * declared version and the catalog version (each undefined when unreadable).
+ * Returns `{ block, from?, to?, valid, failures, resolution }`: `from`/`to` are
+ * the block's declared version and the catalog version (each undefined when
+ * unreadable); `resolution` is always `"catalog-forward-preview"`.
  * NEVER writes.
  */
-export function validateBlockItemsAgainstCatalog(
-	cwd: string,
-	blockName: string,
-): { block: string; from?: string; to?: string; valid: boolean; failures: BlockValidationFailure[] } {
+export function validateBlockItemsAgainstCatalog(cwd: string, blockName: string): ValidateBlockItemsResult {
 	const destRoot = tryResolveContextDir(cwd);
 	if (destRoot === null) {
 		throw new Error(
@@ -1041,6 +1073,7 @@ export function validateBlockItemsAgainstCatalog(
 			to: catalogVersion,
 			valid: false,
 			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+			resolution: "catalog-forward-preview",
 		};
 	}
 
@@ -1064,14 +1097,150 @@ export function validateBlockItemsAgainstCatalog(
 			}
 		}
 		validate(catalogSchema, toValidate, blockName);
-		return { block: blockName, from: fromVersion, to: catalogVersion, valid: true, failures: [] };
+		return {
+			block: blockName,
+			from: fromVersion,
+			to: catalogVersion,
+			valid: true,
+			failures: [],
+			resolution: "catalog-forward-preview",
+		};
 	} catch (err) {
 		const failures =
 			err instanceof ValidationError
 				? mapValidationFailures(err.errors, blockData)
 				: [{ instancePath: "", keyword: "error", message: String(err) }];
-		return { block: blockName, from: fromVersion, to: catalogVersion, valid: false, failures };
+		return {
+			block: blockName,
+			from: fromVersion,
+			to: catalogVersion,
+			valid: false,
+			failures,
+			resolution: "catalog-forward-preview",
+		};
 	}
+}
+
+/**
+ * Validate ONE installed block against the INSTALLED schema + the PROJECT
+ * migration registry — the read-path-faithful sibling of
+ * `validateBlockItemsAgainstCatalog` (the installed basis of the
+ * `validate-block-items` op). It answers "does this block read?": the
+ * resolution is the SAME `validateBlockWithMigrationForDir` walk the canonical
+ * read gate performs (block-api's readBlockForDir → schema-validator), with the
+ * project registry loaded from the substrate's on-disk migrations.json, so the
+ * diagnostic and the read gate cannot disagree — mirrored to the gate's exact
+ * firing condition (an installed schema file exists AND the block envelope
+ * declares a string `schema_version`; otherwise the read path validates
+ * nothing and the block reads as-is → `valid:true`).
+ *
+ * NON-THROWING where the read path throws: a MigrationRegistry version-mismatch
+ * with no project chain, an invalid-JSON block body, or a schema-validation
+ * failure each return `valid:false` with the failure detail (per-item AJV
+ * failures mapped like the catalog basis; a non-AJV throw becomes a single
+ * synthetic `{instancePath:"", keyword:"error", message}` failure). Caller
+ * errors still throw: a missing bootstrap pointer, or a missing installed
+ * block file (field-named, matching the catalog basis).
+ *
+ * Returns `{ block, from?, to?, valid, failures, resolution }`: `from` is the
+ * block's declared envelope `schema_version`, `to` the INSTALLED schema's
+ * declared `version` (each undefined when absent); `resolution` is always
+ * `"installed-read-path"`. Read-only — never writes, never warms anything but
+ * the same project-registry cache the read path itself uses.
+ */
+export function validateBlockItemsAgainstInstalled(cwd: string, blockName: string): ValidateBlockItemsResult {
+	const destRoot = tryResolveContextDir(cwd);
+	if (destRoot === null) {
+		throw new Error(
+			"No .pi-context.json bootstrap pointer found. Run /context init <substrate-dir> first to bootstrap the substrate.",
+		);
+	}
+	const blockFile = installedBlockDestPath(destRoot, blockName);
+	if (!fs.existsSync(blockFile)) {
+		throw new Error(`block: installed block file not found for '${blockName}' at ${blockFile}`);
+	}
+	const schemaFile = installedSchemaDestPath(destRoot, blockName);
+	const schemaExists = fs.existsSync(schemaFile);
+	const installedVersion = schemaExists ? readDeclaredVersion(schemaFile) : undefined;
+
+	let blockData: unknown;
+	try {
+		blockData = JSON.parse(fs.readFileSync(blockFile, "utf-8"));
+	} catch (err) {
+		// The read path throws Invalid-JSON here; the diagnostic degrades to invalid.
+		return {
+			block: blockName,
+			to: installedVersion,
+			valid: false,
+			failures: [{ instancePath: "", keyword: "error", message: String(err) }],
+			resolution: "installed-read-path",
+		};
+	}
+
+	const blockVersion =
+		blockData && typeof blockData === "object" && "schema_version" in (blockData as Record<string, unknown>)
+			? ((blockData as Record<string, unknown>).schema_version as unknown)
+			: undefined;
+	const fromVersion = typeof blockVersion === "string" ? blockVersion : undefined;
+
+	// Mirror the read gate's firing condition exactly (block-api readBlockForDir):
+	// validation runs only when an installed schema exists AND the envelope
+	// declares a string schema_version. Otherwise the read path validates
+	// nothing — the block reads as-is, so the faithful verdict is valid:true.
+	if (!schemaExists || fromVersion === undefined) {
+		return {
+			block: blockName,
+			from: fromVersion,
+			to: installedVersion,
+			valid: true,
+			failures: [],
+			resolution: "installed-read-path",
+		};
+	}
+
+	try {
+		const registry = getProjectMigrationRegistryForDir(destRoot);
+		validateBlockWithMigrationForDir(destRoot, blockName, blockData, registry);
+		return {
+			block: blockName,
+			from: fromVersion,
+			to: installedVersion,
+			valid: true,
+			failures: [],
+			resolution: "installed-read-path",
+		};
+	} catch (err) {
+		const failures =
+			err instanceof ValidationError
+				? mapValidationFailures(err.errors, blockData)
+				: [{ instancePath: "", keyword: "error", message: String(err) }];
+		return {
+			block: blockName,
+			from: fromVersion,
+			to: installedVersion,
+			valid: false,
+			failures,
+			resolution: "installed-read-path",
+		};
+	}
+}
+
+/**
+ * Basis dispatcher for the `validate-block-items` op: routes
+ * `"catalog"` (the default — behavior byte-unchanged from the pre-basis op,
+ * plus the always-on `resolution` disclosure) to
+ * `validateBlockItemsAgainstCatalog` and `"installed"` to
+ * `validateBlockItemsAgainstInstalled`. An unrecognized basis throws
+ * field-named rather than silently defaulting.
+ */
+export function validateBlockItems(
+	cwd: string,
+	blockName: string,
+	basis: ValidateBlockItemsBasis = "catalog",
+): ValidateBlockItemsResult {
+	if (basis === "installed") return validateBlockItemsAgainstInstalled(cwd, blockName);
+	if (basis === "catalog") return validateBlockItemsAgainstCatalog(cwd, blockName);
+	throw new Error(`basis: '${String(basis)}' is not a valid basis ('catalog' | 'installed')`);
 }
 
 /**

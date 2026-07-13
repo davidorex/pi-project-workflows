@@ -1170,6 +1170,41 @@ test("CLI validate-block-items --json: the per-item failure list is parseable", 
 		const f = env.output.failures.find((x: { instancePath: string }) => x.instancePath === "/tasks/0/status");
 		assert.ok(f, "the failing status field is reported");
 		assert.equal(f.itemId, "TASK-001", "the failing item id is resolved");
+		assert.equal(
+			env.output.resolution,
+			"catalog-forward-preview",
+			"the parameterless default discloses the catalog-forward-preview resolution",
+		);
+	} finally {
+		rmSync(cwd, { recursive: true, force: true });
+	}
+});
+
+test("CLI validate-block-items --basis installed: the basis threads through and the resolution is disclosed", async () => {
+	const cwd = makeBlockedTasksSubstrate();
+	try {
+		const { code, out } = await captureMainStdout([
+			"validate-block-items",
+			"--block",
+			"tasks",
+			"--basis",
+			"installed",
+			"--json",
+			"--cwd",
+			cwd,
+		]);
+		assert.equal(code, 0, "a read-only diagnostic exits 0 even when items are invalid");
+		const env = JSON.parse(out);
+		assert.equal(env.ok, true);
+		assert.equal(env.op, "validate-block-items");
+		assert.equal(env.output.resolution, "installed-read-path", "the installed basis discloses its resolution");
+		// The fixture's installed schema is at 1.0.0 with a matching envelope, so
+		// the installed basis validates against the INSTALLED schema directly and
+		// the bad status enum fails per-item — like the catalog path does.
+		assert.equal(env.output.valid, false, "the bad-item block is invalid against the installed schema");
+		const f = env.output.failures.find((x: { instancePath: string }) => x.instancePath === "/tasks/0/status");
+		assert.ok(f, "the failing status field is reported per-item under basis=installed");
+		assert.equal(f.itemId, "TASK-001", "the failing item id is resolved");
 	} finally {
 		rmSync(cwd, { recursive: true, force: true });
 	}

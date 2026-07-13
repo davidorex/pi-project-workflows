@@ -110,6 +110,8 @@ Item-level reads complement whole-block `read-block` (which is all-or-nothing an
 - Handoff presence — whether handoff.json exists
 - Recent git commits
 - Current phase detection
+
+`context-current-state` (the `currentState` derivation) is the companion "where are we + what's next" read — focus, in-flight items, ranked next actions, blocked items, and milestone rollups, all derived from the config-declared `state_derivation` registry. Its milestone rollups surface drift always-on within the same read: each `milestones[]` entry reports the DERIVED rollup status as primary, and when the item's stored status string differs it carries `stored_status` alongside; a `driftWarnings` head rides the payload with one entry per divergent item covered by a config-declared `derived-status` invariant, classified exactly as `context-validate` classifies the same state (severity, message, block, field, code) but computed from the derivation's own working set — no separate validate run is required to see the divergence. A converged substrate carries no `stored_status` fields and no head. Drift surfacing flags authored-judgment lag for review; it never asserts the authored bucket is wrong.
 </context_status>
 
 <context_add_work>

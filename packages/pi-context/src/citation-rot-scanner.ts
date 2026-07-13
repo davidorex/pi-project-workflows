@@ -67,6 +67,10 @@
  *     instances of message assignment through Object.assign; matching every
  *     Object.assign call would require receiver analysis with no current
  *     governance benefit. Pinned as excluded by a scanner test.
+ *   - Compound append `this.message += <expr>` inside an extends-bearing
+ *     class — zero-instance idiom at audit time; the assignment arm matches
+ *     the EqualsToken operator only, so compound-assignment operators fall
+ *     outside it deliberately rather than silently.
  *   - Message reassignment on a non-`this` receiver (`err.message = ...`) —
  *     zero shipped instances; a bare `.message` property write on an
  *     arbitrary receiver is not reliably an operator-facing error surface

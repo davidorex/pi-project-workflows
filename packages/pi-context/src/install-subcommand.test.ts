@@ -26,8 +26,11 @@ import {
 	resolveConflict,
 	seedCatalogBlockSchemaMigrationDecls,
 	updateContext,
+	validateBlockItems,
 	validateBlockItemsAgainstCatalog,
+	validateBlockItemsAgainstInstalled,
 } from "./index.js";
+import { invalidateMigrationRegistryForDir } from "./migration-registry-loader.js";
 import { loadMigrationsFileForDir, seedCatalogConfigMigrationDecls } from "./migrations-store.js";
 import { getObject } from "./object-store.js";
 import { type OpDefinition, ops } from "./ops-registry.js";
@@ -2824,6 +2827,165 @@ describe("validateBlockItemsAgainstCatalog + blocked-diagnostic mapper (TASK-048
 		assert.ok(
 			envelope.failures.every((f) => f.itemId === undefined),
 			"an envelope-level failure resolves no itemId",
+		);
+	});
+});
+
+// ── validate-block-items basis parameter + resolution disclosure. The op's
+// catalog-forward default previously reported valid:true on blocks the
+// canonical read path throws on (the fresh-install false-green: installed
+// schema at the catalog version, block envelope schema_version lagging,
+// project migrations.json without the bridging hop). These tests pin (1) the
+// reproduction flip — basis=installed reports valid:false with the
+// MigrationRegistry-shaped detail while basis=catalog / the parameterless default
+// stay valid:true, each disclosing its resolution; (2) the healthy-block case
+// where both bases agree valid:true under distinct resolution values; (3) the
+// default result's byte shape — the prior envelope plus the always-on
+// `resolution` field. ─────────────────────────────────────────────────────────
+describe("validate-block-items basis + resolution disclosure", () => {
+	afterEach(() => {
+		if (tmpRoot) fs.rmSync(tmpRoot, { recursive: true, force: true });
+	});
+
+	// Fresh-install-shaped lag: installed `tasks` schema at the CATALOG version
+	// (plain install), block envelope schema_version pinned to the older 1.0.0,
+	// and NO project migration chain. The install ceremony now auto-seeds the
+	// block-schema chains into migrations.json, so the lag is constructed
+	// explicitly by removing the seeded decls (and dropping the cached registry —
+	// the direct fs removal bypasses the store's invalidating write funnel).
+	function makeFreshInstallLagFixture(items: Array<Record<string, unknown>>): string {
+		const dir = makeProject(["tasks"], []);
+		installContext(dir);
+		fs.rmSync(path.join(dir, ".project", "migrations.json"), { force: true });
+		invalidateMigrationRegistryForDir(path.join(dir, ".project"));
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: "1.0.0", tasks: items }, null, 2),
+		);
+		return dir;
+	}
+
+	// A healthy fixture: installed schema at the catalog version, block envelope
+	// matching it, catalog-conformant item, seeded chains left intact.
+	function makeHealthyFixture(): string {
+		const dir = makeProject(["tasks"], []);
+		installContext(dir);
+		fs.writeFileSync(
+			path.join(dir, ".project", "tasks.json"),
+			JSON.stringify(
+				{ schema_version: "1.1.0", tasks: [{ id: "TASK-001", description: "x", status: "planned" }] },
+				null,
+				2,
+			),
+		);
+		return dir;
+	}
+
+	it("reproduction pin: basis=installed flips the false-green (valid:false, MigrationRegistry detail) while basis=catalog and the parameterless default stay valid:true, resolution disclosed on all", () => {
+		tmpRoot = makeFreshInstallLagFixture([{ id: "TASK-001", description: "x", status: "planned" }]);
+
+		const installed = validateBlockItemsAgainstInstalled(tmpRoot, "tasks");
+		assert.equal(installed.valid, false, "basis=installed reports the read-throwing block invalid");
+		assert.equal(installed.resolution, "installed-read-path");
+		assert.equal(installed.from, "1.0.0", "from is the block's declared envelope version");
+		assert.equal(installed.to, "1.1.0", "to is the INSTALLED schema's version");
+		assert.ok(
+			installed.failures.some((f) => /MigrationRegistry: no migrations registered for schema 'tasks'/.test(f.message)),
+			"the failure detail carries the MigrationRegistry-shaped reason the read path throws",
+		);
+
+		// Read-path agreement: the same block file throws through the canonical read.
+		assert.throws(
+			() => readBlock(tmpRoot, "tasks"),
+			/MigrationRegistry/,
+			"the canonical read throws on the same block",
+		);
+
+		const catalog = validateBlockItemsAgainstCatalog(tmpRoot, "tasks");
+		assert.equal(catalog.valid, true, "basis=catalog still previews valid (catalog chain migrates in memory)");
+		assert.equal(catalog.resolution, "catalog-forward-preview");
+
+		const dflt = validateBlockItems(tmpRoot, "tasks");
+		assert.deepEqual(dflt, catalog, "the parameterless default IS the catalog basis");
+		assert.deepEqual(
+			validateBlockItems(tmpRoot, "tasks", "installed"),
+			installed,
+			"the dispatcher's installed basis IS validateBlockItemsAgainstInstalled",
+		);
+	});
+
+	it("healthy block: both bases valid:true with distinct resolution disclosures", () => {
+		tmpRoot = makeHealthyFixture();
+		const cat = validateBlockItems(tmpRoot, "tasks");
+		const inst = validateBlockItems(tmpRoot, "tasks", "installed");
+		assert.equal(cat.valid, true);
+		assert.equal(inst.valid, true);
+		assert.equal(cat.resolution, "catalog-forward-preview");
+		assert.equal(inst.resolution, "installed-read-path");
+		assert.notEqual(cat.resolution, inst.resolution, "the two bases disclose different resolutions");
+	});
+
+	it("default byte-shape regression: the parameterless result is the prior envelope plus the always-on resolution field", () => {
+		tmpRoot = makeHealthyFixture();
+		const r = validateBlockItems(tmpRoot, "tasks");
+		assert.deepEqual(
+			r,
+			{
+				block: "tasks",
+				from: "1.1.0",
+				to: "1.1.0",
+				valid: true,
+				failures: [],
+				resolution: "catalog-forward-preview",
+			},
+			"the default result carries exactly the prior fields plus resolution",
+		);
+		assert.deepEqual(
+			Object.keys(r),
+			["block", "from", "to", "valid", "failures", "resolution"],
+			"key order: the prior shape with resolution appended",
+		);
+	});
+
+	it("read-gate fidelity: basis=installed is valid:true exactly when the read gate does not fire (versionless envelope / no installed schema)", () => {
+		// Versionless envelope with an installed schema: the read gate requires a
+		// string schema_version, so no validation runs and the block reads as-is —
+		// the faithful verdict is valid:true even though the item would fail the
+		// installed schema.
+		tmpRoot = makeProject(["tasks"], []);
+		installContext(tmpRoot);
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({ tasks: [{ id: "TASK-001", description: "x", status: "not-a-valid-status" }] }, null, 2),
+		);
+		const versionless = validateBlockItemsAgainstInstalled(tmpRoot, "tasks");
+		assert.equal(versionless.valid, true, "no envelope schema_version → the read gate does not fire → valid");
+		assert.equal(versionless.from, undefined);
+		assert.doesNotThrow(() => readBlock(tmpRoot, "tasks"), "the canonical read agrees: it does not throw");
+		fs.rmSync(tmpRoot, { recursive: true, force: true });
+
+		// No installed schema at all: the gate cannot fire; the block reads as-is.
+		tmpRoot = makeProject([], []);
+		fs.writeFileSync(
+			path.join(tmpRoot, ".project", "tasks.json"),
+			JSON.stringify({ schema_version: "1.0.0", tasks: [] }, null, 2),
+		);
+		const schemaless = validateBlockItemsAgainstInstalled(tmpRoot, "tasks");
+		assert.equal(schemaless.valid, true, "no installed schema → the read gate does not fire → valid");
+		assert.equal(schemaless.to, undefined, "no installed schema version to report");
+	});
+
+	it("an unrecognized basis throws field-named; a missing installed block file throws field-named under basis=installed", () => {
+		tmpRoot = makeHealthyFixture();
+		assert.throws(
+			() => validateBlockItems(tmpRoot, "tasks", "bogus" as never),
+			/basis:/,
+			"an unknown basis throws a field-named Error rather than silently defaulting",
+		);
+		assert.throws(
+			() => validateBlockItemsAgainstInstalled(tmpRoot, "decisions"),
+			/block: installed block file not found/,
+			"a missing installed block file throws field-named (matching the catalog basis)",
 		);
 	});
 });

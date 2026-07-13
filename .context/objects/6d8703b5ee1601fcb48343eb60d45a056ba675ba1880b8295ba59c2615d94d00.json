@@ -1,0 +1,37 @@
+{
+  "title": "Item-grain diff-scoping makes write-time content-gate extensions retroactive — engine status transitions refuse on grandfathered text",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "change-scoped validation (value-grain diff)",
+  "description": "The write-time rhetorical gate's diff-scoping is ITEM-grain: every update primitive threads the WHOLE merged item into validateRhetoricalCriteriaForItems (updateItemInTypedFile block-api.ts:1537,1547-1549; upsert :1658-1660; nested :1849-1851), and the check path (checkFieldsAgainstSchema rhetorical-criteria.ts:231-286; walkNestedArrays :317-369) receives no update-key set and performs no compare-against-prior — so a status-only mutation re-asserts every budgeted field and bare-string-array element of the item against the gate's CURRENT rule set. The rule set grows with no grandfather baseline (budgeted scalars, then nested-object descent, then bare-string-array elements; DEFAULT_PROHIBITED_PATTERNS is an extensible list), so each enforcement extension retroactively converts filed-valid text into a blocker on all subsequent item-touching engine writes. The blockage concentrates on the one write every item must eventually receive — its closure transition — and on deterministic engine loops. Triggering instance: complete-task on TASK-131 refused because its acceptance_criteria, filed before the bare-string-array extension landed, carry a prior-state-narration token. Affected surfaces (full caller sweep): complete-task (context-sdk.ts:3443; the closure atom is non-atomic under refusal — the verification edge appends at :3435 before the flip), update-block-item, upsert, nested update, promote-item's supersede flip (promote-item.ts:276-283), rename-canonical-id (:118), workflow block-update steps (step-block.ts:234,:275 — block artifact failures are workflow-fatal), context-reconcile's staleness sweep (index.ts:3225 — a live converge run wedges mid-sweep with earlier writes applied), and the converge-on-write hook (index.ts:3320-3334 — the catch-all swallows the error, so convergence silently fails permanently for an affected rollup item; latent while the milestone schema declares no budgets). Appends, removes, whole-block writes, and relation writes are unaffected; append-of-new-violator is correctly refused (the gate's purpose working at the causal write). Minimal reproduction and controls: analysis/2026-07-13-status-flip-rhetorical-grandfather-gap.md.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "1537, 1547-1549, 1658-1660, 1849-1851",
+      "reference": "all three update primitives thread the whole merged/replacement item as the changed unit; the prior on-disk item is in hand at each site (prior :1536, priorForIdentity :1629, priorNested :1831)"
+    },
+    {
+      "file": "packages/pi-context/src/rhetorical-criteria.ts",
+      "lines": "231-286, 317-369, 65-90",
+      "reference": "the check path tests every budgeted field and bare-string-array element of each threaded item; no update-key set, no compare-against-prior; the prohibited-pattern list is extensible"
+    },
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "3435-3443",
+      "reference": "complete-task appends the verification edge before the status flip, so a gate refusal leaves the closure atom half-applied"
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "3225, 3292, 3320-3334",
+      "reference": "reconcile's staleness sweep and derived-status deltas wedge mid-run on an affected item; the converge-on-write hook swallows the error into silent permanent divergence"
+    },
+    {
+      "file": "analysis/2026-07-13-status-flip-rhetorical-grandfather-gap.md",
+      "reference": "root cause, full affected-surface sweep, minimal scratch-substrate reproduction with verbatim error, controls (new-violator append refused; amend-plus-flip in one write succeeds), class characterization, prior-art table, disposition options"
+    }
+  ],
+  "impact": "Every future enforcement extension (a new prohibited pattern, a newly budgeted field, a tightened cap) re-creates the wedge over a new stratum of filed-valid content: task/gap/feature closure refuses until requirement text — which carries user filing-authority — is amended as a side effect of closing; deterministic engine loops (reconcile, converge, promote, rename, workflow block steps) abort mid-run or silently fail to converge. The closure-blocked symptom was hit live during the wave-3 closure cascade.",
+  "proposed_resolution": "Value-grain diff-scoping: thread the PRIOR on-disk item alongside the merged item in each changedItems entry (already in hand at all three threading sites) and skip any field or bare-string-array element whose value deep-equals the prior — enforcement then fires on exactly the text the write authors, the gate's stated purpose. Status flips, engine loops, and carried-forward upsert fields pass over grandfathered text; editing a violating field still trips the gate; appends have no prior so current behavior is preserved. Complementary, not substitutable: FGAP-074/TASK-044's content cleanup empties the current violator stock; this fix stops every future stratum from wedging. Weaker dispositions evaluated and set aside in the investigation: key-grain scoping (upsert has no key set), an engine-write exempt-list (a parallel semi-gated path), a rule-set version baseline (duplicates what value comparison gets for free), and permanent text-amendment-first (breaks engine loops and couples closure to user-authority prose edits).",
+  "related_features": []
+}

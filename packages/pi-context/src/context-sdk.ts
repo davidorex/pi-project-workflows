@@ -1957,16 +1957,33 @@ function assertEdgesValidForWrite(cwd: string, edges: Edge[]): void {
 	const validator = buildWriteTimeEdgeValidator(cwd);
 	if (!validator) return;
 	for (const edge of edges) {
-		const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
-		if (edgeErrors.length > 0) {
-			throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
-		}
-		const statusErrors = endpointStatusErrorsForWrite(edge, validator.resolve);
-		if (statusErrors.length > 0) {
-			throw new Error(`Edge rejected at write time (unresolved endpoint): ${statusErrors.join("; ")}`);
-		}
+		assertEdgeRegistryAndEndpointsValid(edge, validator);
 	}
 	assertProspectiveAcyclicForWrite(cwd, validator, edges);
+}
+
+/**
+ * The shared per-edge leg of the write-time gate and its `--dryRun` preview
+ * twin: the registry check (relation_type registration + presence-gated
+ * source/target endpoint kinds), then the endpoint-status check.
+ * `exemptRefname` is the preview's new-item exemption (see
+ * `endpointStatusErrorsForWrite`); the live gate passes none. Both callers
+ * throw through this one function, so the two refusal prefixes exist in
+ * exactly one place and a check added here reaches live and preview together.
+ */
+function assertEdgeRegistryAndEndpointsValid(
+	edge: Edge,
+	validator: { config: ConfigBlock; resolve: (ref: RawEndpoint) => ResolvedRef },
+	exemptRefname?: string,
+): void {
+	const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
+	if (edgeErrors.length > 0) {
+		throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
+	}
+	const statusErrors = endpointStatusErrorsForWrite(edge, validator.resolve, exemptRefname);
+	if (statusErrors.length > 0) {
+		throw new Error(`Edge rejected at write time (unresolved endpoint): ${statusErrors.join("; ")}`);
+	}
 }
 
 /**
@@ -2002,14 +2019,7 @@ export function assertBirthEdgesValidForPreview(cwd: string, edges: Edge[], newI
 	if (!validator) return;
 	const accepted: Edge[] = [];
 	for (const edge of edges) {
-		const edgeErrors = validateEdgeAgainstRegistry(edge, validator.config, validator.resolve);
-		if (edgeErrors.length > 0) {
-			throw new Error(`Edge rejected at write time (invalid relation_type / endpoint kind): ${edgeErrors.join("; ")}`);
-		}
-		const statusErrors = endpointStatusErrorsForWrite(edge, validator.resolve, newItemRefname);
-		if (statusErrors.length > 0) {
-			throw new Error(`Edge rejected at write time (unresolved endpoint): ${statusErrors.join("; ")}`);
-		}
+		assertEdgeRegistryAndEndpointsValid(edge, validator, newItemRefname);
 		accepted.push(edge);
 		assertProspectiveAcyclicForWrite(cwd, validator, accepted);
 	}

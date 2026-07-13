@@ -3177,7 +3177,11 @@ function blockItemIdForInstancePath(cwd: string, blockName: string, instancePath
 export interface ValidationIssueNarrowing {
 	/** Return only issues of this severity. */
 	severity?: "error" | "warning";
-	/** Return only issues whose `block` field equals this block name. */
+	/**
+	 * Return only issues whose `block` field equals this block name. An axis for
+	 * validators whose issues carry a `block` field (context-validate); the
+	 * relation/roadmap validator ops declare no such axis and reject it.
+	 */
 	block?: string;
 	/** Return only issues carrying this diagnostic code. */
 	code?: string;

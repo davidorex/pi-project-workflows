@@ -303,8 +303,9 @@ export interface OpDefinition<P = any> {
 	 * surfaces (registerAll's Pi-tool wrapper + the CLI) thread this into the
 	 * refusal so it names the op's own narrowing parameters — mirroring the
 	 * `{read}` channel's overCapDirective. Declare it ONLY on ops that expose
-	 * narrowing parameters (e.g. the validators' severity/block/code +
-	 * offset/limit); unset keeps the mechanism-less refusal text.
+	 * narrowing parameters (e.g. the validators' severity/code — plus block on
+	 * context-validate — with offset/limit); unset keeps the mechanism-less
+	 * refusal text.
 	 */
 	overCapDirective?: JsonOverCapDirective;
 	authGated?: boolean;
@@ -464,20 +465,23 @@ const BIRTH_RELATION_ENTRY = Type.Object({
 });
 
 /**
- * Shared narrowing parameter set for the validator ops (context-validate /
- * context-validate-relations / context-roadmap-validate). All optional and
+ * Shared narrowing parameter set for the validator ops. All optional and
  * additive: an unparameterized call returns the exact prior result shape.
  * Narrowing is applied AFTER the full evaluation — it bounds only the returned
  * issues[] slice; the result's `status` always reflects the FULL evaluation.
+ * The `block` axis exists ONLY where issues carry a `block` field: this
+ * blockless set is what context-validate-relations / context-roadmap-validate
+ * declare (their issues never carry `block`, so a `--block` there is a
+ * parameter error, never a silently-empty match); context-validate extends it
+ * with `block` below.
  */
-const VALIDATION_NARROWING_PARAMS = {
+const BLOCKLESS_VALIDATION_NARROWING_PARAMS = {
 	severity: Type.Optional(
 		Type.Union([Type.Literal("error"), Type.Literal("warning")], {
 			description:
 				"Return only issues of this severity (issue families without a severity field classify by the same code→severity mapping their status computation uses)",
 		}),
 	),
-	block: Type.Optional(Type.String({ description: "Return only issues whose block field equals this block name" })),
 	code: Type.Optional(Type.String({ description: "Return only issues carrying this diagnostic code" })),
 	offset: Type.Optional(
 		Type.Integer({ minimum: 0, description: "Slice start within the filtered issue list (default 0)" }),
@@ -485,16 +489,51 @@ const VALIDATION_NARROWING_PARAMS = {
 	limit: Type.Optional(Type.Integer({ minimum: 1, description: "Slice size within the filtered issue list" })),
 };
 
+/** The full narrowing set for context-validate, whose issues carry a `block` field. */
+const VALIDATION_NARROWING_PARAMS = {
+	severity: BLOCKLESS_VALIDATION_NARROWING_PARAMS.severity,
+	block: Type.Optional(Type.String({ description: "Return only issues whose block field equals this block name" })),
+	code: BLOCKLESS_VALIDATION_NARROWING_PARAMS.code,
+	offset: BLOCKLESS_VALIDATION_NARROWING_PARAMS.offset,
+	limit: BLOCKLESS_VALIDATION_NARROWING_PARAMS.limit,
+};
+
 /**
  * The status-is-whole-verdict sentence every validator op's description
  * carries — a filtered read must never hide the substrate's true verdict.
+ * `axes` names the op's own filter axes ("severity / block / code" for
+ * context-validate; "severity / code" for the relation/roadmap validators).
  */
-const VALIDATION_NARROWING_SENTENCE =
-	" Optional narrowing (severity / block / code filter, offset+limit pagination) bounds ONLY the returned issues[] slice and adds a `slice` head (totalIssues / matching / returned / offset / hasMore); the result's `status` ALWAYS reflects the FULL evaluation — a filtered or paginated read never hides the substrate's true verdict. Unparameterized calls return the exact prior shape.";
+function validationNarrowingSentence(axes: string): string {
+	return ` Optional narrowing (${axes} filter, offset+limit pagination) bounds ONLY the returned issues[] slice and adds a \`slice\` head (totalIssues / matching / returned / offset / hasMore); the result's \`status\` ALWAYS reflects the FULL evaluation — a filtered or paginated read never hides the substrate's true verdict. Unparameterized calls return the exact prior shape.`;
+}
 
-/** Shared over-cap boundary directive for the validator ops. */
-function validationOverCapDirective(opName: string): JsonOverCapDirective {
-	return { tool: opName, hint: "narrow with severity/block/code or offset+limit" };
+/**
+ * Shared over-cap boundary directive for the validator ops. `axes` names the
+ * op's own filter axes so the refusal never suggests a parameter the op
+ * rejects ("severity/block/code" for context-validate; "severity/code" for
+ * the relation/roadmap validators).
+ */
+function validationOverCapDirective(opName: string, axes: string): JsonOverCapDirective {
+	return { tool: opName, hint: `narrow with ${axes} or offset+limit` };
+}
+
+/**
+ * Refuse a `block` narrowing parameter on the validators whose issues carry no
+ * `block` field (context-validate-relations / context-roadmap-validate). Their
+ * parameter schemas no longer declare the axis — the reflecting CLI already
+ * rejects `--block` as an unknown flag at parse time — but the op layer itself
+ * performs NO schema validation on params (registerAll passes them straight
+ * into run(), and TypeBox Type.Object does not set additionalProperties:false),
+ * so a caller reaching run() directly or through a permissive tool dispatch
+ * would otherwise get a silently-always-empty filter instead of an error.
+ */
+function rejectBlockNarrowing(opName: string, params: { block?: unknown }): void {
+	if (params.block !== undefined) {
+		throw new Error(
+			`${opName}: unknown parameter 'block' — this op's issues carry no block field; narrow with severity/code or offset+limit`,
+		);
+	}
 }
 
 export const ops: OpDefinition[] = [
@@ -1333,7 +1372,7 @@ export const ops: OpDefinition[] = [
 		label: "Context Validate",
 		description:
 			"Validate cross-block referential integrity — check that IDs referenced across blocks exist." +
-			VALIDATION_NARROWING_SENTENCE,
+			validationNarrowingSentence("severity / block / code"),
 		promptSnippet:
 			"Validate cross-block referential integrity — optionally narrow the returned issues by severity/block/code or offset+limit (status always reflects the full evaluation)",
 		examples: [
@@ -1342,7 +1381,7 @@ export const ops: OpDefinition[] = [
 			`pi-context context-validate --offset 0 --limit 50 --json`,
 		],
 		parameters: Type.Object(VALIDATION_NARROWING_PARAMS),
-		overCapDirective: validationOverCapDirective("context-validate"),
+		overCapDirective: validationOverCapDirective("context-validate", "severity/block/code"),
 		surface: "use",
 		run(cwd: string, params: ValidationIssueNarrowing): OpResult {
 			return { json: narrowValidationResult(validateContext(cwd), params, (i) => i.severity) };
@@ -2346,7 +2385,7 @@ export const ops: OpDefinition[] = [
 		label: "Context Validate Relations",
 		description:
 			"Validate substrate relations.json edges against config-declared lenses + hierarchy + relation_types and the cross-block id index. Returns SubstrateValidationResult with status (clean/warnings/invalid) and per-issue diagnostics." +
-			VALIDATION_NARROWING_SENTENCE,
+			validationNarrowingSentence("severity / code"),
 		promptSnippet:
 			"Validate substrate relations against config + items — optionally narrow the returned issues by severity/code or offset+limit (status always reflects the full evaluation)",
 		examples: [
@@ -2354,10 +2393,11 @@ export const ops: OpDefinition[] = [
 			`pi-context context-validate-relations --code edge_cycle_detected --json`,
 			`pi-context context-validate-relations --offset 0 --limit 50 --json`,
 		],
-		parameters: Type.Object(VALIDATION_NARROWING_PARAMS),
-		overCapDirective: validationOverCapDirective("context-validate-relations"),
+		parameters: Type.Object(BLOCKLESS_VALIDATION_NARROWING_PARAMS),
+		overCapDirective: validationOverCapDirective("context-validate-relations", "severity/code"),
 		surface: "use",
 		run(cwd: string, params: ValidationIssueNarrowing): OpResult {
+			rejectBlockNarrowing("context-validate-relations", params);
 			return { json: narrowValidationResult(validateContextRelations(cwd), params, relationIssueSeverity) };
 		},
 	},
@@ -2546,7 +2586,7 @@ export const ops: OpDefinition[] = [
 		label: "Context: validate roadmap",
 		description:
 			"Validate the derived roadmap over the milestone_precedes_milestone edges. Error codes: roadmap_precedes_endpoint_missing (a precedes-edge endpoint that is not a milestone-block item), roadmap_milestone_cycle (a cycle in the precedes graph), roadmap_milestone_missing (a phase_positioned_in_milestone edge whose child is not a known milestone). Warning: roadmap_status_unknown_value (a member phase whose task-progress rollup buckets unknown with tasks present — a task-progress / data-quality warning, NOT a completeness check). Info: roadmap_milestone_isolated (a milestone with zero precedes edges while others are ordered) — info never affects status (invalid iff any error-code issue, warnings iff any warning-code issue, else clean) and matches no severity filter. Display strings flow through config.display_strings (pi-context divergence)." +
-			VALIDATION_NARROWING_SENTENCE,
+			validationNarrowingSentence("severity / code"),
 		promptSnippet:
 			"Validate the derived milestone roadmap — optionally narrow the returned issues by severity/code or offset+limit (status always reflects the full evaluation)",
 		examples: [
@@ -2554,10 +2594,11 @@ export const ops: OpDefinition[] = [
 			`pi-context context-roadmap-validate --severity error --json`,
 			`pi-context context-roadmap-validate --offset 0 --limit 50 --json`,
 		],
-		parameters: Type.Object(VALIDATION_NARROWING_PARAMS),
-		overCapDirective: validationOverCapDirective("context-roadmap-validate"),
+		parameters: Type.Object(BLOCKLESS_VALIDATION_NARROWING_PARAMS),
+		overCapDirective: validationOverCapDirective("context-roadmap-validate", "severity/code"),
 		surface: "use",
 		run(cwd: string, params: ValidationIssueNarrowing): OpResult {
+			rejectBlockNarrowing("context-roadmap-validate", params);
 			return { json: narrowValidationResult(validateRoadmap(cwd), params, roadmapIssueSeverity) };
 		},
 	},

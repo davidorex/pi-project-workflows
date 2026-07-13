@@ -12,7 +12,12 @@
  *     50KB boundary — is retrievable IN FULL through bounded offset/limit
  *     slices (the previously-unreachable case);
  *   - the boundary refusal names the concrete narrowing parameters for ops
- *     declaring them; ops without a directive keep the mechanism-less text.
+ *     declaring them; ops without a directive keep the mechanism-less text;
+ *   - the `block` axis exists only where issues carry a `block` field:
+ *     context-validate declares it; context-validate-relations and
+ *     context-roadmap-validate declare a blockless parameter set, and their
+ *     run() throws a field-named error on a `block` smuggled past the schema
+ *     (the op layer performs no schema validation on params).
  */
 
 import assert from "node:assert/strict";
@@ -387,6 +392,67 @@ describe("context-roadmap-validate op narrowing", () => {
 		const paged = runJson(op, cwd, { offset: 0, limit: 10 });
 		assert.deepEqual(paged.issues, full.issues);
 		assert.equal(paged.status, "clean");
+	});
+});
+
+// ── block axis: declared only on context-validate; rejected elsewhere ────────
+
+describe("the block narrowing axis exists only where issues carry a block field", () => {
+	const BLOCKLESS_OPS = ["context-validate-relations", "context-roadmap-validate"] as const;
+
+	function schemaProps(op: OpDefinition): Record<string, unknown> {
+		const schema = op.parameters as unknown as { properties?: Record<string, unknown> };
+		assert.ok(schema.properties, `op '${op.name}' declares an object parameter schema`);
+		return schema.properties;
+	}
+
+	it("context-validate declares block; the relation/roadmap validators do not (schema pin)", () => {
+		assert.ok("block" in schemaProps(opByName("context-validate")));
+		for (const name of BLOCKLESS_OPS) {
+			const props = schemaProps(opByName(name));
+			assert.equal("block" in props, false, `op '${name}' must not declare a block parameter`);
+			assert.deepEqual(Object.keys(props).sort(), ["code", "limit", "offset", "severity"]);
+		}
+	});
+
+	it("run() refuses a block param smuggled past the schema with a field-named throw", (t) => {
+		// The op layer performs no schema validation on params (registerAll passes
+		// them straight into run(); Type.Object does not set
+		// additionalProperties:false), so without this gate a smuggled `block`
+		// would silently filter to an always-empty slice.
+		const cwd = makeTmpDir("block-reject");
+		t.after(() => fs.rmSync(cwd, { recursive: true, force: true }));
+		writeConfig(cwd, [DEP_REL]);
+		writeRelations(cwd, []);
+		for (const name of BLOCKLESS_OPS) {
+			const op = opByName(name);
+			assert.throws(
+				() => op.run(cwd, { block: "tasks" } as never),
+				new RegExp(`${name}: unknown parameter 'block'`),
+				`op '${name}' must reject a block param by name`,
+			);
+		}
+	});
+
+	it("the blockless validators' over-cap directives name only their own axes", () => {
+		for (const name of BLOCKLESS_OPS) {
+			const directive = opByName(name).overCapDirective;
+			assert.ok(directive);
+			assert.equal(directive.hint, "narrow with severity/code or offset+limit");
+		}
+		assert.equal(
+			opByName("context-validate").overCapDirective?.hint,
+			"narrow with severity/block/code or offset+limit",
+		);
+	});
+
+	it("the blockless validators' descriptions name only their own axes", () => {
+		for (const name of BLOCKLESS_OPS) {
+			const description = opByName(name).description;
+			assert.match(description, /Optional narrowing \(severity \/ code filter/);
+			assert.doesNotMatch(description, /severity \/ block \/ code/);
+		}
+		assert.match(opByName("context-validate").description, /Optional narrowing \(severity \/ block \/ code filter/);
 	});
 });
 

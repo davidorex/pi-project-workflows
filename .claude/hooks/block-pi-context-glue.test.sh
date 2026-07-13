@@ -145,6 +145,33 @@ run_case 0 "PASS  '; echo ' inside quoted value" \
 run_case 0 "PASS  non-pi-context git commit -m mentioning 'pi-context … |'" \
 	"git commit -m \"guard: pi-context output must not be piped | glue discipline\""
 
+# --- MULTI-LINE matrix: quoted spans crossing a newline (line-scoped perl -pe never collapsed
+# --- them; slurp mode -0777 must — the live-bite false positive and its payload-side sibling) ---
+
+# (a) Multi-line DOUBLE-quoted commit-message CLI mention + ancillary exit-capture glue, NO op.
+# The reduced live-bite reproduction: the -m "…" spans two lines, mentions the CLI by name, and the
+# build pipeline carries `; echo "BUILD:$?"`. No pi-context op anywhere => must pass.
+run_case 0 "PASS  multi-line double-quoted commit message mentioning the CLI + exit-capture glue, no op" \
+	$'npm run build > /tmp/b.log 2>&1; echo "BUILD:$?"; git commit -m "line one about pi-context samples\nline two; echo done"'
+
+# (b) Multi-line SINGLE-quoted --item payload on a REAL op: interior | > $? crossing a newline are
+# DATA, not glue. Line-scoping leaked the un-collapsed interior into the pipe branch.
+run_case 0 "PASS  multi-line single-quoted --item payload with interior | > \$? on a real op" \
+	$'pi-context append-block-item --block framework-gaps --arrayKey gaps --item \'{"description":"pipe | and > redirect and $? here\nsecond payload line"}\' --json'
+
+# (c) Genuine multi-line TRUE POSITIVE: a real op whose multi-line quoted payload is followed by an
+# actual unquoted `| grep` — after the slurp collapse the op and its pipe sit on ONE skeleton line,
+# so the pipe branch must block (proves slurp does not swallow real glue; line-scoping under-blocked
+# this shape because the pipe landed on a fragment line with no `pi-context ` anchor).
+run_case 2 "BLOCK real op with multi-line quoted payload actually piped to grep" \
+	$'pi-context append-block-item --block framework-gaps --arrayKey gaps --item \'{"description":"line1\nline2"}\' --json | grep x'
+
+# (d) FAIL-CLOSED degradation: an UNTERMINATED quote finds no close in the whole record, is left
+# visible, and its interior `|` (data-intent) still trips the pipe branch => over-block (exit 2),
+# never under-block. Pins the degradation contract under slurp.
+run_case 2 "BLOCK fail-closed: unterminated quote leaves interior | visible (over-block)" \
+	$'pi-context read-block --block tasks --json --note \'unterminated | data\nsecond line of payload'
+
 echo
 echo "SUMMARY: $pass passed, $fail failed, $((pass + fail)) total"
 [ "$fail" -eq 0 ]

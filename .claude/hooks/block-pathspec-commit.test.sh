@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Test harness for block-pathspec-commit.sh — feeds Bash tool_input.command
 # payloads and asserts the guard's exit code. 0 = allowed, 2 = blocked.
+# HOOK_PATH env override points the harness at a development COPY of the guard
+# (the guard-development rule: never iterate against the live hook).
 set -u
 
-HOOK="$(cd "$(dirname "$0")" && pwd)/block-pathspec-commit.sh"
+HOOK="${HOOK_PATH:-$(cd "$(dirname "$0")" && pwd)/block-pathspec-commit.sh}"
 pass=0
 fail=0
 
@@ -48,6 +50,28 @@ expect "git add path"                   0 'git add file.txt'
 expect "commit -m then chained status"  0 'git commit -m "x" && git status'
 expect "commit with -S sign"            0 'git commit -S -m "signed"'
 expect "no command"                     0 'ls -la'
+
+# --- must ALLOW (exit 0): redirection / heredoc grammar is not a pathspec ---
+# (analysis/2026-07-12-pathspec-hook-false-positive-gap.md — shlex.split emits
+# redirect operators, glued redirects, and heredoc markers as ordinary words,
+# which the positional rule then classified as pathspecs)
+expect "commit -F file with 2>&1"       0 'git commit -F /tmp/msg.txt 2>&1'
+expect "commit -m with > file"          0 'git commit -m "x" > /tmp/out'
+expect "commit -F - heredoc message"    0 $'git commit -F - <<\'EOF\'\nfeat: subject line\n\nbody paragraph\nEOF'
+expect "commit -F - with < file"        0 'git commit -F - < /tmp/msg'
+expect "commit -m with 2>file glued"    0 'git commit -m "x" 2>/tmp/err'
+expect "commit -m with >> append"       0 'git commit -m "x" >> /tmp/log'
+# heredoc BODY lines are not independent segments: prose mentioning a
+# pathspec-shaped commit inside a non-git heredoc must not block
+expect "heredoc body prose non-git"     0 $'cat > /tmp/x <<\'EOF\'\ngit commit foo.txt was blocked here\nEOF'
+# terminator matching mirrors bash: a `<<` heredoc terminator must sit at
+# column 0 — an INDENTED terminator does not end the body, so everything after
+# it (including a pathspec-shaped commit line) is unexecuted heredoc data and
+# the guard fails open on the malformed command (bash would never run it)
+expect "indented << terminator = body"  0 $'git commit -F - <<EOF\nmsg body\n   EOF\ngit commit foo.txt'
+# `<<-` strips leading tabs from the terminator: the tab-indented EOF DOES end
+# the body, and a true-positive pathspec commit after it must still block
+expect "<<- tab terminator then block"  2 $'cat <<-EOF\n\tprose body\n\tEOF\ngit commit foo.txt'
 
 echo "---"
 echo "pass=$pass fail=$fail"

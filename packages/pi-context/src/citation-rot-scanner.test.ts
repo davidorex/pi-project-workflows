@@ -189,6 +189,159 @@ describe("citation-rot-scanner — AST error-message surface (FGAP-133)", () => 
 	});
 });
 
+describe("citation-rot-scanner — error-message construction-form arms (super / this.message / static-text shapes)", () => {
+	it("flags a citation in an Error subclass's super(...) string-literal message, with correct line", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			[
+				`export class FakeNotFoundError extends Error {`,
+				`  constructor() {`,
+				`    super("no pointer found; see FGAP-998 for the policy");`,
+				`    this.name = "FakeNotFoundError";`,
+				`  }`,
+				`}`,
+			].join("\n"),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].surface, "ast-error-message");
+		assert.strictEqual(hits[0].matched, "FGAP-998");
+		assert.strictEqual(hits[0].line, 3);
+	});
+
+	it("does NOT flag a super(...) message without a citation", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			`export class FakeError extends Error { constructor() { super("plain message, no tracker id"); } }`,
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 0, `expected 0 hits; got: ${JSON.stringify(hits)}`);
+	});
+
+	it("does NOT flag super(...) inside a class WITHOUT an extends clause (heritage requirement pin)", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		// Grammar-invalid TS (super call in a base class) the parser still
+		// represents as AST — the heritage walk must skip it rather than treat
+		// unreachable code as an operator surface.
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			`export class NotDerived { constructor() { super("per FGAP-998"); } }`,
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 0, `heritage-free super() must not be flagged; got: ${JSON.stringify(hits)}`);
+	});
+
+	it("flags a citation in the STATIC text of a substitution-carrying template in super(...)", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		// The live Error-subclass idiom in real sources builds messages via
+		// template literals WITH substitutions; the static spans around the
+		// substitution must be scanned.
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			[
+				`export class FakePointerError extends Error {`,
+				`  constructor(p: string) {`,
+				"    super(`no pointer at ${p}; hard-throw per DEC-9998, no fallback`);",
+				`  }`,
+				`}`,
+			].join("\n"),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].surface, "ast-error-message");
+		assert.strictEqual(hits[0].matched, "DEC-9998");
+		assert.strictEqual(hits[0].line, 3);
+	});
+
+	it("flags a citation in a +-concatenated string chain passed to an Error constructor", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			`function f() { throw new SomeError("first part. " + "second part closes FGAP-997."); }`,
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].surface, "ast-error-message");
+		assert.strictEqual(hits[0].matched, "FGAP-997");
+	});
+
+	it("flags a citation in a this.message assignment inside an extends-bearing class", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			[
+				`export class FakeAssignError extends Error {`,
+				`  constructor() {`,
+				`    super();`,
+				`    this.message = "rebuilt message citing TASK-996";`,
+				`  }`,
+				`}`,
+			].join("\n"),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 1, `expected 1 hit; got: ${JSON.stringify(hits)}`);
+		assert.strictEqual(hits[0].surface, "ast-error-message");
+		assert.strictEqual(hits[0].matched, "TASK-996");
+		assert.strictEqual(hits[0].line, 4);
+	});
+
+	it("does NOT flag a message-field assignment in a class WITHOUT an extends clause", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		// A plain data class carrying a `message` field is not an
+		// operator-facing error surface; the heritage requirement keeps it out.
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			[
+				`export class Completion {`,
+				`  message = "";`,
+				`  fill() { this.message = "record body mentioning TASK-996"; }`,
+				`}`,
+			].join("\n"),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(hits.length, 0, `heritage-free this.message must not be flagged; got: ${JSON.stringify(hits)}`);
+	});
+
+	it("does NOT flag Object.assign(this, { message: ... }) — deliberate-exclusion pin per the module header audit", () => {
+		const dir = mkScratch();
+		const pkgDir = path.join(dir, "fake-pkg");
+		fs.mkdirSync(pkgDir, { recursive: true });
+		fs.writeFileSync(
+			path.join(pkgDir, "src.ts"),
+			[
+				`export class FakeAssignedError extends Error {`,
+				`  constructor() {`,
+				`    super();`,
+				`    Object.assign(this, { message: "citing FGAP-995" });`,
+				`  }`,
+				`}`,
+			].join("\n"),
+		);
+		const hits = scanForCitationRot({ projectRoot: dir, packageDirs: [pkgDir] });
+		assert.strictEqual(
+			hits.length,
+			0,
+			`Object.assign message form is a documented deliberate exclusion; got: ${JSON.stringify(hits)}`,
+		);
+	});
+});
+
 describe("citation-rot-scanner — JSON surface", () => {
 	it("does NOT flag item-level id under samples/blocks/", () => {
 		const dir = mkScratch();

@@ -1,133 +1,90 @@
-# Session dangling-work audit — d3030496-e4e1-4bfa-8df1-1df86bac518a
+# Session dangling-work audit — d3030496-e4e1-4bfa-8df1-1df86bac518a (re-audit at 2624d2c7)
 
-**Coverage:** all 259 user-channel text messages read verbatim in full (directives separated from embedded task-notifications/command noise); the 3 compaction boundaries located (2026-07-10T04:51Z, 2026-07-11T07:02Z, 2026-07-11T15:53Z) and the record on both sides of each sampled; the assistant record sampled structurally (the 15-item disposition ledger at 2026-07-11T14:38Z, the end-of-session window 21:40–22:15Z, the mandate-p03 exchange 11:03–11:12Z Jul 10, ExitPlanMode plans); the session's own three-pass untied-threads audit and 8 hedge-shard reports used only as thread maps, every load-bearing claim re-verified freshly against substrate (pi-context CLI reads), git at HEAD `4e3619b3`, and the filesystem on 2026-07-12. Not exhaustively read: the ~18k-message assistant/sidechain interior outside those slices.
+**Coverage:** this REPLACES the 2026-07-12 report (closure-checked then at `4e3619b3`); the session has since CONTINUED — record now spans 2026-07-09T22:37Z → 2026-07-14T00:42Z (32,371 messages). All user-channel non-sidechain text messages read verbatim in full across the whole span (259 pre-22:15Z Jul 11 re-read; 90 new after it), including the 3rd/4th compaction boundaries (2026-07-13T05:28Z summary; session tail = /doctor cleanup ending 2026-07-14T00:42Z). The prior report used only as a thread map — every load-bearing claim re-verified freshly against the substrate (bare `pi-context` ops: filter-block-items / read-block-item / find-references / context-status / context-validate), git at HEAD `2624d2c7` (pinned; confirmed == origin/main, tree clean), the filesystem, greps of current source, the committed analyses, and the session scratchpad, on 2026-07-14. Not exhaustively read: the ~30k-message assistant/sidechain interior outside the structural slices (wave dispatch/audit notifications, the /doctor exchange, ExitPlanMode plans); npm gates NOT run (subagent constraint) — no finding below rests on an unexecuted runtime claim. Timestamps UTC; add 8h for local.
 
-Session span: 2026-07-09T22:37Z → 2026-07-11T22:15Z (2026-07-10 06:37 → 2026-07-12 06:15 +08). All timestamps below UTC; add 8h for local.
+**Headline:** the prior report's engineering backlog is almost entirely closed — the 2026-07-12→13 waves implemented A1–A5 and B1–B4 (TASK-126–138, all `completed`; FGAP-139/140/143/144/145/146/147/148/151 + FGAP-093 all `closed`, verified by live reads). What now dangles is concentrated at the END of the new span: owed feature-status flips, four investigated-but-unfiled gap payloads sitting in ephemeral tmp, decision-status lags, an unfiled planning-vocabulary carrier class, and the recurring html-views staleness.
 
 ---
 
-## Group A — open engineering backlog (confirmed still open in substrate; tracked, not silently dropped)
+## Group W — new-span danglers (2026-07-11T22:15Z → 2026-07-14T00:42Z)
 
-### A1 — TASK-090: FEAT-011 always-on drift surfacing, implementation discarded and never redone
-- **Evidence:** user, d3030496 2026-07-11T04:29:59Z: "i don't want fucking anything from this branch." and 04:30:27Z: "delete task-090-drift-surfacing". Earlier scope: FEAT-011 acceptance criterion 7 ("currentState surfaces drift always-on…").
-- **Current state:** TASK-090 `planned` (read live); FEAT-011 `in-progress`; branch deleted; no drift-surfacing code in `context-sdk.ts` currentState path filed as done.
-- **Verdict:** still-open (open backlog by the user's own kill/discard decision — not a silent drop).
-- **Dispatch:** implement TASK-090 per its filed text (files field names `packages/pi-context/src/context-sdk.ts` + tests) via canonical pipeline; done = FEAT-011 criterion 7 met + verification + complete-task.
-
-### A2 — TASK-119: agents-tier seeding per the user's verbatim copy-agents directive
-- **Evidence:** user, 2026-07-11T00:07:23Z: "i want it to copy agents. not providing agents that can be edited and changed in the project wanting to use agents is nearly the definition of terrible ux". Session-end assistant status (22:12:05Z) named "agents-tier seeding" FEAT-014's one remaining open acceptance criterion.
-- **Current state:** TASK-119 `planned` (its description carries the directive verbatim); FGAP-127 `closed`; FEAT-014 `in-progress`.
+### W1 — FEAT-011 + FEAT-014 stored buckets lag their evaluated-complete state; flips never landed
+- **Evidence:** user operational policy, d3030496 2026-07-12T23:39:46Z: "My operational goal is: substrate is and remains current; new substrate filings meet rhetorical and truth-state requirements; and that valid project compliant implementations close gaps issues tasks phases and milestones." Fresh criterion-by-criterion evaluation (scratchpad `wave3/feat-evaluation.md`, agent return 2026-07-13T09:25:09Z): "FEAT-011 | in-progress | **complete** | 9/9 MET" and "FEAT-014 | in-progress | **complete** | 6/6 MET"; "Stored bucket `in-progress` lags; honest bucket is `complete`."
+- **Current state:** `pi-context filter-block-items --block features --field id --op in --value '["FEAT-011","FEAT-014"]'` → both `status: in-progress`. `pi-context context-validate` emits 22 `task-completed-feature-complete` warnings including every FEAT-011 task (TASK-084–091, 090, 137) and FEAT-014 task (TASK-103/118/119/123/124/136). The flip was blocked live during the wave-3 closure cascade by the rhetorical-grandfather gate — that blockage was investigated and filed as FGAP-152 (`identified`, P2; commit `6a622d15`), whose own investigation records the working control: "amend-plus-flip in one write succeeds". No later user statement retires the features.
 - **Verdict:** still-open.
-- **Dispatch:** implement TASK-119 (files: `packages/pi-context/src/context.ts`, `samples/conception.json` per its files field); done = install ceremony materializes editable agent spec files; FEAT-014's last criterion met.
+- **Dispatch:** flip both features to `complete` via `update-block-item` (amend-plus-flip in one write where the gate refuses a bare flip, or land FGAP-152's value-grain fix first); surface the evaluation's three judgment flags to the user at the same time (FEAT-011 criterion 2's best-effort converge caveat; FEAT-014 criterion 4's policy-as-task/gap-records form; criterion 2's `completed-pending-commit`-as-pass reading). Done = features read `complete`; the 22 warnings clear; flags answered.
 
-### A3 — FGAP-139: rhetorical-criteria enforcement blind to bare-string-array budgets
-- **Evidence:** filed this session after the TASK-121 rollout; user's program frame, 2026-07-10T23:45:18Z: "the end result of all of this will be that the substrate has been exactingly audited, validated, and corrected".
-- **Current state:** FGAP-139 `identified` P3, no implementing task (no FGAP-143+/TASK-126+ exist).
-- **Verdict:** still-open (legitimately filed backlog, unprioritized).
-- **Dispatch:** fix `collectWordCaps`/`walkNestedArrays` in `packages/pi-context/src/rhetorical-criteria.ts` to reach `x-prompt-budget` on array-of-string items schemas; done = the four named shipped fields enforced + gap closed.
+### W2 — four investigated gap candidates, verdict "file-new", never filed; payloads in ephemeral tmp
+- **Evidence:** agent return 2026-07-13T09:30:17Z: "Complete. Nothing was filed; payloads only. **Report:** `analysis/2026-07-13-wave3-residual-filings.md`". The committed report (HEAD `2624d2c7`) verdicts all four **file-new**: (1) dryRun preview-optimism residual set (3 instances; FGAP-148's own description anticipates them "tracked as their own filing" — a filing that does not yet exist); (2) op-layer silent unknown-param acceptance ("`dryrun` for `dryRun` on any mutation op runs the LIVE write the caller meant to preview"); (3) glue-guard shell-grammar under-block R1+R2; (4) prompt-field spec-dialect divergence (inline-task specs hard-throw as workflow steps; object `inline` silently dropped by both parsers). User frame for the disposition program, 2026-07-12T11:14:00Z: "We are literally cleaning all up the deferred and abandoned yet raised known work." The user's 2026-07-13T09:32:17Z "That's an insane mismanagement of judgment and cost." addressed the spend, not the verdicts; no later statement retires the filings.
+- **Current state:** fresh sweeps (`filter-block-items --block framework-gaps --field title --op matches` on `preview|dry-run|dryRun` and `param|prompt|dialect|glue|boundary|unknown`) find no covering item; highest gap id is FGAP-152 (the status-flip gap, different content). The four payload JSONs exist ONLY at `/private/tmp/claude-501/-Users-david-Projects-workflowsPiExtension/d3030496-e4e1-4bfa-8df1-1df86bac518a/scratchpad/filings/` — volatile tmp, lost on reboot/cleanup.
+- **Verdict:** still-open (evaporation risk: the committed analysis preserves the substance, but the ready payloads are ephemeral).
+- **Dispatch:** file the four gaps via `append-block-item` with birth `--relations` per the payloads (report §1–4 names the relate-to sets: FGAP-066/148 lineage; FGAP-144 context; FGAP-120/151/147/149/089 family; FGAP-129 class), under the user's filing grant; `context-validate` after. Done = four new FGAPs read back matching the payload content.
 
-### A4 — FGAP-140: fresh install never seeds block-schema migration declarations
-- **Evidence:** user, 2026-07-11T11:44:40Z: "but this is a gap, no? the underlying gap is general — installContext/checkStatus never seed block-schema migration declarations from the catalog for any schema on a fresh install…"; and 12:47:50Z: "i don't want register i want fucking fixed. canonical pipeline." (that directive's live-defect slice became FGAP-141/TASK-122, fixed and closed; the install-time general gap was filed separately).
-- **Current state:** FGAP-140 `identified` P2, no implementing task. FGAP-141 `closed` (update-time registration fixed, verified).
-- **Verdict:** still-open — the user's "fixed, not registered" pressure was satisfied only for the update-time half; the install-time seeding half is tracked but unbuilt.
-- **Dispatch:** seed catalog block-schema migration chains at install (`installContext`) and/or check-status; done = fresh-install `context-validate` clean for session-notes without manual `write-schema-migration`; FGAP-140 closed.
+### W3 — DEC-0024 / DEC-0025 / DEC-0026 still `open` though their deciding work is completed and closed
+- **Evidence:** the decisions' gaps and tasks closed this span: TASK-126 (DEC-0024/FGAP-093), TASK-127 (DEC-0025/FGAP-140), TASK-132 (DEC-0026/FGAP-145) — all `completed` (live read); commit `987f2e4d` "substrate: close TASK-126/127/130 -- FGAP-093, FGAP-140, FGAP-139".
+- **Current state:** `filter-block-items --block decisions --field status --op eq --value '"open"'` → exactly DEC-0024, DEC-0025, DEC-0026; the block's other 23 decisions are `enacted` (context-status byStatus). All three gaps read `closed`.
+- **Verdict:** still-open (status lag; same currency class as W1 — a bare flip may hit the FGAP-152 gate).
+- **Dispatch:** `update-block-item` each to `enacted`; done = decisions byStatus shows `open: 0`, validate clean.
 
-### A5 — FGAP-093: fork derived into DEC-0024, but the decision is unimplemented and untasked
-- **Evidence:** user program frame 2026-07-11T07:35:06Z: "the agent could have determined a canonically valid resolution at that moment and didnt. i want to accelerate valid substrate correcting."
-- **Current state:** DEC-0024 filed 2026-07-11T15:01Z (status `open`), decides "Reject unconditionally — add NO opt-out flag" and requires extending the write-time edge guard + rewriting `structured-endpoints.test.ts:288-310`; FGAP-093 still `identified` P2; no implementation task exists; code unchanged.
-- **Verdict:** still-open (same task-asymmetry the session itself flagged for FGAP-125 and then fixed there — not fixed here).
-- **Dispatch:** file + implement the task enacting DEC-0024 in `packages/pi-context/src/context-sdk.ts` (validateEdgeAgainstRegistry) + test fixture rewrite; done = dangling/unregistered/cycle endpoints throw at write, FGAP-093 closed.
+### W4 — planning-cycle vocabulary survives on carriers the closed de-jargon program never reached: shipped schema descriptions + test-file comments
+- **Evidence:** user standard, 2026-07-10T01:05:21Z: "…all code in the repo similarly has all opaque jargon removed and comment semantics in code-valid plain english"; and 2026-07-12T11:14:00Z: "It should be clear that 'scope observations' are meaningless and non-thing in this project." FGAP-146 (closed by TASK-129, "converged at zero") filed its facet-1 scope as "~150 comment/JSDoc sites across 23 **non-test** source files" — comments only, non-test only.
+- **Current state (fresh greps at HEAD):** (a) SHIPPED SCHEMA DESCRIPTIONS — all 18 `packages/pi-context/samples/schemas/*.json` carry the `oid` description "…(content-addressed substrate identity, Cycle 3)… pre-Cycle-3 items validate…"; `packages/pi-context/schemas/relations.schema.json` lines 6/13/17/28 carry "Cycle 5", "Cycle 8"×3; `packages/pi-context/schemas/config.schema.json:23` carries "Cycle 3 / Cycle 4"; the same string is EMITTED by `scripts/migration/wire-active-substrate.ts:92` and `scripts/migration/lib/land-identity-fields.ts:94` (string literals, not comments — the generated-output carrier, same shape as the closed B4 finding). These descriptions install into every fresh substrate and surface via read-schema/--show-schema. (b) TEST-FILE COMMENTS — `packages/pi-context/src/resolve-ref.test.ts:2` ("Cycle 8 / Phase F2"), `promote-item.test.ts:2,411` ("Cycle 9 / G2", "Cycle 9.1 P6"), `samples-catalog.test.ts:206` ("Cycle 9.2"), `context-sdk.test.ts` (3 hits), `scripts/migration/lib/migrate-content-addressed.test.ts:2` ("Cycle 10 / Phase H1") — 12 pi-context test files matched the family grep in total. Sweep of framework-gaps (`jargon|vocabulary|Cycle|planning`) finds no item covering either carrier; FGAP-136/146 are closed at their filed scopes.
+- **Verdict:** partial — the program's filed scopes converged at zero (honestly disclosed in FGAP-146's closed_by); the user-stated class ("all code in the repo") retains these two enumerated carriers, unfiled.
+- **Dispatch:** per Experience-Gap Handling + gap-explore-surfaces-class: agent investigation (root cause/shape/repro/prior-art = FGAP-136→146 lineage; note the schema-description carrier is also INSTALLED state — catalog resync/migration implications), then file at class level and implement. Done = shipped schemas/scripts emit plain-English identity descriptions; test-comment sites rewritten; gap filed and closed.
 
----
+### W5 — CLAUDE.md still names a "hard iteration cap" with no number defined anywhere — flagged by the committed determination, unresolved by the landed fix
+- **Evidence:** the committed determination (`analysis/2026-07-13-loop-runaway-policy-determination.md`, §1: "the 'hard iteration cap' is named in CLAUDE.md but **no number exists anywhere** … so the cap was unenforceable"; §4.3 same). Its §3 prescribed a THREE-audit cap; the user REJECTED that mechanism, 2026-07-13T10:29:03Z: "three audit crap would be inane. the only way is that iterate to zero means of the fucking success criteria." — and directed the four-rule criteria anchor (10:57:52Z "Implement these in our policies: …"), which landed as `41902654` (commit message: "The user rejected a numeric audit-count cap; the criteria anchor is the mechanism").
+- **Current state:** CLAUDE.md's autonomous-loop paragraph (post-`41902654`) still reads "it is bounded by a hard iteration cap, on hitting which the orchestrator STOPS and escalates per `mandate-008`" — no value on any binding surface (CLAUDE.md, `.claude/mandates.jsonl`, conventions block).
+- **Verdict:** still-open — flag for the user: the clause is unenforceable as written; whether to define a value, re-anchor it (e.g. to repeated criteria-falsification), or delete it is a genuine scope/value call, since the numeric-cap mechanism was verbally rejected.
 
-## Group B — dropped threads (surfaced in the record, captured nowhere)
-
-### B1 — context-validate "refused for size" friction never filed as an experience gap
-- **Evidence:** user, 2026-07-11T12:44:07Z: "\"I never actually got a successful context-validate read (it was refused for size)\" and so you punted and moved on?". The session's own audit (punch item 6b) marked it "Candidate filing"; the 14:38:11Z disposition ledger omitted it entirely.
-- **Current state:** fresh title search of framework-gaps (`read cap|size cap|refused|50KB|read-size`, and divergence terms) finds no filing covering it; FGAP-117 (field projection) is adjacent class but does not name the validate-result-over-cap friction. Reproduced live during this audit: a filtered framework-gaps read returned "READ REFUSED — … 69268 bytes, over the 50KB read cap."
-- **Verdict:** still-open. Project CLAUDE.md is binding: "Friction hit while driving the CLI is an experience gap — file it … never route around it."
-- **Dispatch:** agent investigation (root cause/shape/repro/prior-art per Experience-Gap Handling) then file; done = FGAP filed with the repro observed above.
-
-### B2 — validate-block-items vs read-path registry-resolution divergence never filed
-- **Evidence:** session observation quoted in the audit's punch item 6c ("apparently validates against a more lenient/different registry resolution than the actual read path"); same disposition-ledger omission as B1.
-- **Current state:** no framework-gaps filing matches (`validate-block-items|read path|registry resolution` → no rows).
-- **Verdict:** still-open.
-- **Dispatch:** agent investigation: can `validate-block-items` pass where the real read path throws? done = divergence characterized + filed (or disproven with evidence).
-
-### B3 — new tracker-ID comment citations landed after the de-jargon rewrite, inside the gate's blind window
-- **Evidence:** user, 2026-07-10T01:05:21Z: "…all code in the repo similarly has all opaque jargon removed and comment semantics in code-valid plain english." The de-jargon rollout (FGAP-136, TASK-108–115) completed 07-10; the delta-scoped gate (TASK-125) landed 07-11T22:00Z.
-- **Current state:** commit `75b8775f` (2026-07-11, TASK-121) introduced fresh `FGAP-043` citations into comments: `packages/pi-context/src/block-api.ts:1047,1227,1908,2100` and `packages/pi-context/src/rhetorical-criteria.ts:3`. The gate is staged-delta-scoped, so these already-committed instances will never be flagged.
-- **Verdict:** still-open (small, fully enumerated).
-- **Dispatch:** rewrite those 5 comment sites to plain English per the FGAP-136 standard (the FGAP-043 meaning is already tabled in the closed gap + `analysis/2026-07-10-fgap-136-*` tables); done = grep of non-test `packages/*/src` comments finds no tracker-ID citations outside the deliberately-excluded illustrative examples.
-
-### B4 — generated commit messages still emit archived-substrate jargon ("FEAT-006")
-- **Evidence:** same user standard as B3 ("all opaque jargon removed").
-- **Current state:** `packages/pi-agent-dispatch/src/work-order-loop.ts:320` builds runtime commit messages as `feat(work-order-…): completion under FEAT-006 loop (…)` — FEAT-006 here is the *archived* predecessor substrate's work-order feature (line unchanged since 2026-05-28, commit `494357ac`), and the live FEAT-006 is an unrelated pi-context update feature. TASK-118/123/124 edited this same file this session without touching it; FGAP-136's closure scoped itself to comments, so this generated-output instance fell between FGAP-136 (comments) and citation-rot-scanner (tool descriptions/errors/docs).
-- **Verdict:** partial — the jargon class is closed for comments and gated for diffs; this runtime-output instance survives ungated.
-- **Dispatch:** replace the ID with plain English (or the work-order's own title) in the generated message; done = generated commit messages carry no internal tracker IDs.
+### W6 — session-filed gaps FGAP-149 / FGAP-150 / FGAP-152 are open with no implementing task
+- **Evidence:** FGAP-152 filed 2026-07-13T09:16:18Z with full investigation (`analysis/2026-07-13-status-flip-rhetorical-grandfather-gap.md`, commit `6a622d15`); FGAP-149's sibling-evaluation commit `480eff4b`: "pre-walk quote-collapse REJECTED for the commit guard; behavior unchanged, divergence documented"; FGAP-150 filed during wave-3.
+- **Current state:** all three `identified` (live read; 149 P3, 150 P3, 152 P2). `find-references --id FGAP-152` shows gap-relates edges + session edge, NO task edge; FGAP-149's only task edge is completed TASK-138, whose commit-guard leg was the documented rejection (context-validate flags it: "Completed task 'TASK-138' addresses a gap that is not closed"); FGAP-152's proposed_resolution (value-grain diff-scoping) is fully specified and its blockage is load-bearing for W1/W3.
+- **Verdict:** still-open (tracked, honestly filed — the task-asymmetry is the dangling part; FGAP-152 is the highest-leverage of the three).
+- **Dispatch:** file + implement FGAP-152's task first (value-grain diff in `block-api.ts` threading sites :1537/:1658/:1849 per the gap's filed text); FGAP-149 per its proposed_resolution (quote-span tracking in the commit guard's line loop — NOT the rejected pre-walk collapse); FGAP-150 at P3 leisure.
 
 ---
 
-## Group C — housekeeping danglers (standing-instruction / hygiene)
+## Group C/D — carried forward from the prior report
 
-### C1 — html-views/substrate-overview.html stale against the standing regen instruction
-- **Evidence:** project CLAUDE.md (binding standing instruction): "Re-run after any active-substrate `*.json` change to refresh the rendered view."
-- **Current state:** last regenerated in `2d3dda8e` (2026-07-11 22:39 +08); ~130 `.context/*` file-changes landed in commits after it (hedge shards, TASK-123/124 filings, all end-of-session closures).
-- **Verdict:** still-open (minor, mechanical).
-- **Dispatch:** `npx tsx scripts/orchestrator/build-html-views.ts`; done = regenerated + committed.
+### C1 — html-views/substrate-overview.html stale against the standing regen instruction (recurred)
+- **Evidence:** project CLAUDE.md (binding): "Re-run after any active-substrate `*.json` change to refresh the rendered view."
+- **Current state:** last regenerated in `e32b164a` (wave-2 closure); 8 substrate commits follow it (`git log e32b164a..HEAD -- .context/`: 095374ab, 30aae4fe, fd26eec4, 97e4ce14, 6f5e98fb, 7c00918b, 6a622d15, 41902654) — the entire wave-3 closure cascade, FGAP-152, and the policy conventions change are unrendered.
+- **Verdict:** still-open (mechanical, chronic — regenerated twice since the prior report and stale again; consider wiring the regen into the substrate-commit path).
+- **Dispatch:** `npx tsx scripts/orchestrator/build-html-views.ts`; commit.
 
-### C2 — stale merged-empty branch `feat/context-currency-precommit-gate`
-- **Evidence:** session housekeeping intent, disposition ledger item 8 (14:38:11Z): "5 worktree branches + empty TASK-091 branch — Delete now — all merged/empty, zero data loss." (assistant text; the named six were deleted).
-- **Current state:** `feat/context-currency-precommit-gate` still exists, tip `c792b9fc` 2026-07-07 (predates this session), `git log main..` empty — fully merged, zero unique commits.
-- **Verdict:** still-open (minor; the branch predates the session and was outside the six named, so this is fresh observation, not a session drop per se).
-- **Dispatch:** `git branch -d feat/context-currency-precommit-gate`.
-
-### C3 — the two triage dashboards were never regenerated after the hedge queue moved
-- **Evidence:** user, 2026-07-11T02:05:25Z: "let's now create an artifact the organizes the operation focused candidates — issues, gaps, phases, tasks, milestones, roadmaps — so that I can see and think about which we tackle first in terms of cleaning up context". Assistant disposition (14:38:11Z, item 12): "Will regenerate once the hedge queue below moves."
-- **Current state:** artifacts "Substrate Hedge Audit" and "Operational Backlog" last updated 2026-07-11 (pre-shard snapshots, ~01:54Z/02:19Z per the in-session audit); the hedge queue has since been fully disposed (shards + closures), so both snapshots misrepresent current state; their source HTML lived in the now-gone session scratchpad.
-- **Verdict:** still-open, user decision — the triage they served is largely done; regenerate only if they remain a standing view.
-- **Dispatch (if wanted):** re-run `scripts/scan-substrate-hedges.ts` + rebuild both pages from current substrate; republish to the same artifact URLs.
+### D1 — the `analysis/2026-07-11-workflows-audit/` corpus: committed, consumption explicitly sequenced next
+- **Evidence:** user, 2026-07-11T21:46:46Z: "note: i have cp'd a dir of analyses to analysis/ dir"; 2026-07-11T22:14:00Z: "commit the dir and its files then push"; and the NEW sequencing statement, 2026-07-13T01:21:52Z: "we'll approach the audit corpus after we're finished with all the session-audit elements."
+- **Current state:** dir present at HEAD (25 files: INDEX.md, atoms, intent-signals batches 0–5, validated subdirs…); no consumption work exists. The prior report's session-audit elements are now closed except W1–W6/C1 above.
+- **Verdict:** still-open — the user's own trigger ("after … all the session-audit elements") is nearly satisfied; approaching the corpus is the declared next arc once this report's still-opens clear.
 
 ---
 
-## Group D — open at session end, awaiting the user
+## Resolved-since — prior-report atoms verified closed at 2624d2c7 (thread map re-checked by content, not id)
 
-### D1 — the user-supplied `analysis/2026-07-11-workflows-audit/` corpus is committed but undirected
-- **Evidence:** user, 2026-07-11T21:46:46Z: "note: i have cp'd a dir of analyses to analysis/ dir; you will see them as new files in the git status" and 22:14:00Z: "commit the dir and its files then push". Assistant's final status (22:13:49Z): "remains untracked and untouched, awaiting direction" (then committed+pushed per the directive).
-- **Current state:** committed as `4e3619b3` (25 files: session-accounting, project-carryforward, known-broken, intent-signals, atoms, validated subdirs), pushed. No directive exists about consuming its content.
-- **Verdict:** still-open (no work was dropped — the thread simply ends at "committed"; what to do with the corpus is the user's next call).
+- **A1 TASK-090** (drift surfacing; user 2026-07-11T04:30:27Z "delete task-090-drift-surfacing" had killed the first attempt) — reimplemented via canonical pipeline, merged `b5fadc5c`, task `completed`, FEAT-011 criterion 7 evaluated MET (feat-evaluation §criterion 7, code at `context-sdk.ts:1076-1094`).
+- **A2 TASK-119** (user verbatim "i want it to copy agents…" carried in the task description, verified) — `completed`; merge `290ae133` "install ceremony materializes editable agent specs"; FEAT-014 criterion 4 evaluated MET.
+- **A3 FGAP-139** (string-array budgets) — `closed` via TASK-130 (`completed`), commit `987f2e4d`.
+- **A4 FGAP-140** (install-time migration seeding; user 2026-07-11T11:44:40Z "but this is a gap, no?") — `closed` via TASK-127 + DEC-0025 (decision status lag → W3).
+- **A5 FGAP-093 / DEC-0024** — `closed` via TASK-126 (write-time edge guard extension per the decision; decision status lag → W3).
+- **B1 context-validate size-refusal friction** (user 2026-07-11T12:44:07Z "…and so you punted and moved on?") — filed as FGAP-144, `closed` via TASK-131 (json over-cap directive + validator narrowing axis, merges `da4c3c61`/`a8229f1d`). Note: filtered READS still refuse over 50KB by design (hit live during this audit); the read-projection class stays open as FGAP-117 (`identified`, P2, pre-existing).
+- **B2 validate-vs-read registry divergence** — filed as FGAP-145, `closed` via TASK-132 + DEC-0026 (basis parameter + always-on resolution disclosure, `e169c045`).
+- **B3 five tracker-ID comment sites** — TASK-128 `completed`; fresh grep: zero `FGAP-043` in `block-api.ts` / `rhetorical-criteria.ts`.
+- **B4 generated commit-message "FEAT-006" jargon** — fresh grep: zero `FEAT-006` in `work-order-loop.ts` (TASK-128/129 span).
+- **C2 stale branch `feat/context-currency-precommit-gate`** — `git branch -a` shows only `main`; all session worktree branches also gone.
+- **C3 triage dashboards** — Artifact list: "Substrate Hedge Audit" and "Operational Backlog" both updated 2026-07-13 (the dashboards-rebuild teammate).
+- **S1 mandate-p03** — stands as the two-stop "Ask Gate" (read live from `.claude/mandates.jsonl:3`); the memory-tier inconsistency the prior report flagged is gone (MEMORY.md's plans-and-options entry now teaches "the two legitimate stops"); the user subsequently granted mandates-file edits (p04, `41902654`) without reopening p03. Treated as user-confirmed by conduct.
+- **W-a "commit that analysis audit"** (2026-07-11T22:37:27Z) — prior report committed (in-tree, git-tracked).
+- **W-b disposition program** ("For 'Policy-determined — the process prescribes the disposition' execute the dispositions", 2026-07-12T09:52:12Z; "Execute on all for which their are no decisions standing in the way…", 2026-07-12T23:43:45Z) — executed across waves 2/3: TASK-126–138 all `completed` with per-criterion verifications (VER block: 116 passed, 0 failed).
+- **W-c non-tracker planning-vocabulary residue** (user 2026-07-12T11:15:27Z: the "Phase H / Cycle 8/9.1 / F2 resolver" exclusion "is not warranted") — FGAP-146 filed and `closed` via TASK-129 at its filed scope (non-test comments + scripts, three shards, "converged at zero", `3bc2a4a2`); the surviving carriers outside that scope are W4.
+- **W-d loop-economics policy** (user 2026-07-13T10:09:23Z "task one agent to exactly determine that…"; 10:57:52Z "Implement these in our policies: [four rules]") — determination written and committed (`2624d2c7`); the four rules landed on every binding surface in `41902654` (CLAUDE.md pipeline steps 3/4/5 + autonomous-loop paragraph + Completion Sequence 6, mandate-p04, conventions `docs-surface-sync` rule 6 — diff verified). Residual: W5.
+- **W-e weight/benefit evaluation of substrate text edits** (user 2026-07-13T09:25:35Z) — absorbed into the loop-runaway determination (its §1 quantifies the spend: ~7.5M cache-create + ~536k output across 19 subagents; per-round 321k–530k) and the W-d policy change. No separate deliverable owed.
+- **W-f "why do we have dirty git state"** (2026-07-13T11:03:10Z) — tree clean at HEAD, `main` == `origin/main` (fresh `git status -sb`).
+- **W-g /doctor cleanup** (2026-07-13T11:06Z → 2026-07-14T00:42Z, the session's terminal thread) — completed: user answered the AskUserQuestion; final assistant message details the applied `~/.claude/settings.json` changes (18 skillOverrides off, 4 plugins disabled; backup at `/tmp/settings-backup.qIkuHh`); out-of-repo, no project residue.
 
----
+**Filing-accuracy axis (secondary), sampled:** TASK-119's description carries the user's directive verbatim and so marked; FGAP-146's closed_by honestly discloses its non-test scope; commit `41902654`'s message accurately records the user's rejection of the numeric cap; the feat-evaluation explicitly separates its MET verdicts from the user-judgment flags. No paraphrase-as-quote or attribution scope-creep found in the sampled filings.
 
-## Superseded — for user confirmation, not restoration
-
-### S1 — mandate-p03 was directed removed; it survives narrowed to a two-stop "Ask Gate"
-- **Evidence:** user, 2026-07-10T10:58:35Z: "…to remove those elements as well as this: mandate-p03 (\"Every ask in a final message must be one of the three legitimate stops — a pending provenance grant, a genuine scope/value judgment, or a HELD action\"…". Then 11:07:23Z: "why do we still have mandate p03"; after the assistant's structural explanation (provenance-grant leg removed, two stops retained), user 11:08:31Z: "we should not fucking have such fragilities in titles…" and 11:09:49Z: "commit these three files then get back to what the fuck we were focusing on."
-- **Current state:** `.claude/mandates.jsonl` carries `mandate-p03` titled "Ask Gate" with a two-stop rule (provenance-grant leg gone); global `~/.claude/mandates.jsonl` verified untouched (mandate-001–009, mtime Dec 2025). Committed at the user's direction.
-- **Verdict:** superseded — the later "commit these three files" reads as acceptance of the narrowed p03 rather than deletion; flagged here so the user can confirm that reading rather than the audit restoring the deletion intent. (Note: `~/.claude/.../memory/feedback_plans_and_options.md` still teaches the old three-stop rule including the provenance-grant leg — out-of-repo, inconsistent with the current p03.)
-
----
-
-## Resolved-since — threads that surfaced and were verified closed against current state
-
-- **R1 TASK-093** ("let's finish task 093", 2026-07-09T22:45:52Z) — `completed`; `.claude/mandates.jsonl` exists; hook registrations tracked.
-- **R2 Mandate-injection portability** (surfaced 07-09T23:01Z as "deliberately not acted on"; audit item 7) — resolved by `38fa81f4`: tracked `.claude/settings.json` now carries the `UserPromptSubmit` mandates-injection hook (verified in file). The companion stop-on-ambiguity item was filed into FEAT-013's motivation (FEAT-013 `in-progress`, tracked).
-- **R3 De-jargon program** (user 07-10T01:05Z) — FGAP-136 `closed`; TASK-108–115 all `completed` (TASK-114's STORY-010 miss and TASK-111's branch recovery were rerun per the user's 02:29Z "under what policy is task 114 not re-running to completion"); residual new instances are B3/B4 above.
-- **R4 Pre-commit jargon gate** (user 07-09T23:56:58Z: "a pre-commit hook that flags the use of such harness jargon in any code comment") — TASK-125/FGAP-142 built, merged, `closed`; `.husky/pre-commit` runs `check-comment-citations.ts` (verified in file).
-- **R5 FGAP-138 / revision-moved** (user 07-10T04:30:24Z "this is all llm invented over-complication"; 05:00:08Z "remove it: … FEAT-011 … still names revision-moved") — TASK-117 `completed`, FGAP-138 `closed` (mechanism deleted, not repaired); FEAT-011's acceptance criteria verified free of revision-moved (modified 07-10T05:00:25Z).
-- **R6 FGAP-126 correction + implementation** (user 07-10T12:30:20Z "correct fgap-126's proposed_resolution to one resolution"; 23:10:25Z "file the implementation task") — corrected, TASK-118 filed and `completed`, FGAP-126 `closed`.
-- **R7 FEAT-014 gap set** (fable's standing recommendation; user 07-10T23:14:30Z "which of the other gaps the feature assembles need the same verification") — FGAP-125 → TASK-123, FGAP-128 → TASK-124, both `completed`, both gaps `closed`, merged `909e5655`, substrate-closed `008036fd`. FEAT-014 honestly `in-progress` on A2 only.
-- **R8 Gap-audit invocation template** (user 07-10T23:17:45Z "we need a prepared invocation … on disk simply so that it is pass verbatim"; 07-11T05:12:49Z best-of-breed rewrite directive; 05:19:03Z "commit it") — `analysis/2026-07-11-gap-fork-provenance-audit-brief-template.md` exists, committed, used by all shards.
-- **R9 Hedge scanner + its corrections** (user 07-11T00:48:49Z script directive; 01:29:32Z "drop weighting, output plain candidate list including hedging language"; 01:41:21Z "the script should ignore closed"; 01:51:07Z "exclude those clearly terminal") — TASK-120 `completed`; current `scripts/scan-substrate-hedges.ts` verified: verbatim match excerpts, TERMINAL_STATUSES exclusion, no scoring weights.
-- **R10 The substrate-wide hedge-audit program** (user 07-10T23:45:18Z end-state statement; 07-11T15:04:11Z "we close this session when the entire list is validly canonically correctly disposed of") — the ~90-candidate queue was disposed via 8 committed shard reports (conventions 10, framework-gaps 20, phase 2, research 6, tasks 9, verification 25, features 5, session-notes 4 = 81) plus the 9 individually-audited items (FGAP-043/085/093/100/124/125/126/127 + TASK-090 scan-check); 2 corrections landed (FEAT-014; one framework-gaps item, `861b4398`); the write-time rhetorical-criteria gate (TASK-121) now enforces the class at write. Items filed after the scan were not in the queue by construction.
-- **R11 TASK-091 recovery** — CHANGELOG entry re-landed (verified present in `packages/pi-context/CHANGELOG.md`), sweep independently verified, closed via VER-100 (`9fa8077c`), empty branch deleted.
-- **R12 Schema-versioning design-intent question** (user 07-11T12:34:56Z "i suspect we've have partially implemented / unfinished elements thrown around with no clear overarching understanding of intended end state") — archaeology re-dispatched after the drop, answered ("accreted over ~10 weeks… only the innermost primitive was pre-planned"), de-ephemeralized to `analysis/2026-07-11-schema-versioning-design-intent-archaeology.md` (`13a38f99`).
-- **R13 FGAP-141 / "i don't want register i want fucking fixed"** (07-11T12:47:50Z) — TASK-122 `completed`, FGAP-141 `closed`, docs synced (`ad5fd025`); the three user-authorized gated schema writes (research resolve-conflict, session-notes write-schema, framework-gaps identity migration) all reflected in current samples/schemas.
-- **R14 pi-mono exemplar policy** (user 07-11T00:12:47Z "a golden north star…"; 00:30:52Z "put those in a conventions block") — conventions item `pi-mono-is-exemplar` verified live, 4 numbered principles, severity error.
-- **R15 Dashboard scroll bug** (user 07-11T02:18:38Z) — fixed and republished same session ("fix-scroll"); staleness is C3, a separate matter.
-- **R16 Final commit+push** (user 07-11T22:14:00Z "commit the dir and its files then push") — done; `main` == `origin/main` at `4e3619b3` (fresh `git status -sb`).
-
-**Pre-existing tracked backlog touched by the session, unchanged and honest (no atoms):** TASK-041 (`planned`, covers the 17 decision-derivation validate warnings), FGAP-085 (`identified` P3, audited this session as grounded), FGAP-117/FGAP-123 (read-surface projection class). Release state: v0.33.0 tag is 141 commits behind HEAD; all session surface sits in CHANGELOG `[Unreleased]` — correct under the standing release HOLD, not a dangler.
+**Pre-existing tracked backlog, unchanged and honest (no atoms):** TASK-041 `planned` (its scope = the 17 `decision-shows-derivation` warnings context-validate still emits); TASK-095–101 `planned` (harness-hardening decomposition); FGAP-085/089/102/117/123 `identified`; TASK-064/065/075 completed-task-vs-open-gap warnings (pre-session); release HOLD standing — session surface sits in CHANGELOG `[Unreleased]`, correct under the hold.
 
 ---
 
@@ -135,9 +92,9 @@ Session span: 2026-07-09T22:37Z → 2026-07-11T22:15Z (2026-07-10 06:37 → 2026
 
 | verdict | count | atoms |
 |---|---|---|
-| still-open | 12 | A1 A2 A3 A4 A5 B1 B2 B3 C1 C2 C3 D1 |
-| partial | 1 | B4 |
-| superseded (user to confirm) | 1 | S1 |
-| resolved-since | 16 | R1–R16 |
+| still-open | 7 | W1 W2 W3 W5 W6 C1 D1 |
+| partial | 1 | W4 |
+| superseded | 0 | — |
+| resolved-since | 21 | A1–A5, B1–B4, C2, C3, S1, W-a–W-g |
 
-Highest-value dispatches, in rough order: A4/A5 (decided-or-general gaps with no task — the exact asymmetry the session itself fixed for FGAP-125), B1/B2 (binding-convention violations: unfiled experience gaps), A2 (user-verbatim UX directive), B3/B4 (enumerated jargon stragglers), A1/A3 (tracked backlog), C1/C2 (mechanical), C3/D1/S1 (user decisions).
+Dispatch order by leverage: **W6/FGAP-152 first** (its fix unblocks W1+W3's status flips cleanly), then **W1+W3** (currency — or amend-plus-flip now without waiting), **W2** (file the four payloads before tmp evaporates), **W4** (investigate + file the carrier class), **C1** (mechanical), **W5** (user call on the cap clause), **D1** (the user's declared next arc once the above clear).

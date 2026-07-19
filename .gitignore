@@ -28,3 +28,5 @@ packages/*/.workflows/
 tmp/
 # Compiled agent contexts + agent-written dispatch outputs (mirrors pi-jit-agents compileAgent output)
 compiled-contexts/
+# Session-audit outputs
+projects/

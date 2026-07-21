@@ -1,0 +1,71 @@
+{
+  "project": "workflowsPiExtension",
+  "repo_path": "/Users/david/Projects/workflowsPiExtension",
+  "pinned_sha": "258aeac08108fe9074a0234f6caaf1d86a13a8fe",
+  "active_work": true,
+  "packages": [
+    "pi-agent-dispatch",
+    "pi-behavior-monitors",
+    "pi-context",
+    "pi-context-cli",
+    "pi-jit-agents",
+    "pi-project-workflows",
+    "pi-workflows"
+  ],
+  "substrate": {
+    "path": ".context",
+    "stores": [
+      "config.json",
+      "context-contracts.json",
+      "conventions.json",
+      "decisions.json",
+      "features.json",
+      "framework-gaps.json",
+      "issues.json",
+      "layer-plans.json",
+      "migrations.json",
+      "milestone.json",
+      "phase.json",
+      "rationale.json",
+      "relations.json",
+      "requirements.json",
+      "research.json",
+      "session-notes.json",
+      "spec-reviews.json",
+      "story.json",
+      "tasks.json",
+      "verification.json",
+      "work-orders.json"
+    ],
+    "id_stability": "reused",
+    "prior_substrate": ".project",
+    "notes": ".context is a fresh REBUILD, not a migration: it reuses FGAP-/TASK-/FEAT-/DEC-/issue- ids for entirely unrelated content vs the frozen .project. Verify by CONTENT, never by id-equality. .project is frozen but referenceable."
+  },
+  "id_collision_hazards": [
+    "FGAP-",
+    "TASK-",
+    "FEAT-",
+    "DEC-",
+    "issue-",
+    "PHASE-",
+    "STORY-",
+    "PLAN-PHASE-"
+  ],
+  "commands": {
+    "build": "npm run build",
+    "test": "npm test",
+    "check": "npm run check"
+  },
+  "anchor_corpus": {
+    "command": "uv run /Users/david/.claude/skills/session-dangling-audit/extract_user_statements.py --project workflowsPiExtension --out /tmp/audit-scratch/david_statements_workflows.jsonl",
+    "path": "/tmp/audit-scratch/david_statements_workflows.jsonl"
+  },
+  "streams": [
+    "known-broken-current",
+    "dropped-known-broken",
+    "dropped-work",
+    "dropped-intent",
+    "session-accounting",
+    "intent-spec"
+  ]
+}

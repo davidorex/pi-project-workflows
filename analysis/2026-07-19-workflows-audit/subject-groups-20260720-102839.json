@@ -1,0 +1,4355 @@
+{
+  "generated_at": "2026-07-20T10:28:39+08:00",
+  "audit": "/Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-19-workflows-audit",
+  "atoms": 278,
+  "distinct_subjects": 193,
+  "clusters_multi": 30,
+  "singletons": 163,
+  "clusters": [
+    {
+      "size": 29,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-12",
+          "verdict": "unreflected",
+          "statement": "FGAP-148's closure text commits the three dryRun preview-optimism residuals to \"their own filing\"; no such filing exists at 2624d2c7 [held, "
+        },
+        {
+          "atom": "dropped-intent/DI-13",
+          "verdict": "superseded",
+          "statement": "Four-rule directive rule 4's \"hard-capped\" loop bound stands unnumbered at 2624d2c7 — the same no-number cap the committed determination jud"
+        },
+        {
+          "atom": "dropped-intent/DI-14",
+          "verdict": "unreflected",
+          "statement": "\"Implement these in our policies\" landed on CLAUDE.md/mandate-p04; the substrate carries no conventions or decision item for the criteria-an"
+        },
+        {
+          "atom": "dropped-intent/DI-15",
+          "verdict": "unreflected",
+          "statement": "The rebuked recurring re-step into the long-known dispatch stricture (named background 'mailbox' spawns strand their reports) has no carrier"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-16",
+          "verdict": "still-open",
+          "statement": "four gap candidates carrying explicit file-new verdicts (dryRun preview-optimism residual set; op-layer silent unknown-param acceptance wher"
+        },
+        {
+          "atom": "dropped-work/DW-21",
+          "verdict": "still-open",
+          "statement": "FEAT-011 and FEAT-014 completion flips owed: their last engineering legs (TASK-136/TASK-137) completed in-window, but both features still re"
+        },
+        {
+          "atom": "dropped-work/DW-22",
+          "verdict": "still-open",
+          "statement": "DEC-0024, DEC-0025, DEC-0026 still read open at 2624d2c7 though their deciding tasks (TASK-126/127/132) completed and their gaps (FGAP-093/1"
+        },
+        {
+          "atom": "dropped-work/DW-23",
+          "verdict": "still-open",
+          "statement": "Four wave-3 residual gap candidates were investigated to verdict file-new with drafted payloads, but none is filed at 2624d2c7 — the payload"
+        },
+        {
+          "atom": "dropped-work/DW-26",
+          "verdict": "still-open",
+          "statement": "Planning-cycle vocabulary survives at 2624d2c7 on two carrier classes the closed de-jargon program (FGAP-136/146, non-test comments only) ne"
+        },
+        {
+          "atom": "dropped-work/DW-27",
+          "verdict": "resolved-since",
+          "statement": "CLAUDE.md's autonomous-loop paragraph still binds the loop to 'a hard iteration cap' with no value defined on any surface at 2624d2c7 — the "
+        },
+        {
+          "atom": "dropped-work/DW-28",
+          "verdict": "still-open",
+          "statement": "html-views/substrate-overview.html is stale at 2624d2c7 against the standing regen instruction: eight substrate commits — the whole wave-3 c"
+        },
+        {
+          "atom": "intent-spec/IN-129",
+          "verdict": null,
+          "statement": "The operational goal, stated as a tripartite steady state: substrate is and remains current; new substrate filings meet rhetorical and truth"
+        },
+        {
+          "atom": "intent-spec/IN-130",
+          "verdict": null,
+          "statement": "“Scope observations” are meaningless and a non-thing in this project — the work is cleaning up all the deferred and abandoned yet raised kno"
+        },
+        {
+          "atom": "intent-spec/IN-131",
+          "verdict": null,
+          "statement": "Iterate-to-zero means zero in terms of the SUCCESS CRITERIA — the task's acceptance_criteria are the contract and the terminating condition;"
+        },
+        {
+          "atom": "intent-spec/IN-135",
+          "verdict": null,
+          "statement": "An incompletely-enacted disposed decision is an LLM enactment failure, not a “user call” — escalating it as an open question relitigates a f"
+        },
+        {
+          "atom": "known-broken-current/KB-08",
+          "verdict": "resolved-since",
+          "statement": "Work-order pi-only auth-gated tools have no non-interactive invocation path (FGAP-126)"
+        },
+        {
+          "atom": "known-broken-current/KB-11",
+          "verdict": "resolved-since",
+          "statement": "Work-order engine does not consume `context_blocks` / `output_contract` (FGAP-125)"
+        },
+        {
+          "atom": "known-broken-current/KB-12",
+          "verdict": "resolved-since",
+          "statement": "No work-order retry policy (FGAP-128)"
+        },
+        {
+          "atom": "known-broken-current/KB-20",
+          "verdict": "still-open",
+          "statement": "dryRun preview-optimism residual set: three verified instances where `--dryRun` reports would-write for a write the live run refuses (new-it"
+        },
+        {
+          "atom": "known-broken-current/KB-25",
+          "verdict": "partial",
+          "statement": "The user-rejected iteration-cap/findings-count termination mechanism survives on binding surfaces at HEAD after the 2026-07-13 criteria-anch"
+        },
+        {
+          "atom": "known-broken-current/KB-27",
+          "verdict": "still-open",
+          "statement": "FEAT-011 and FEAT-014 remain stored `in-progress` although every member task under them is completed (their wave-2/3 gaps FGAP-125/126/128 r"
+        },
+        {
+          "atom": "known-broken-current/KB-28",
+          "verdict": "still-open",
+          "statement": "DEC-0024, DEC-0025 and DEC-0026 still read status `open` although the gaps they decide (FGAP-093, FGAP-140, FGAP-145) are closed and their i"
+        },
+        {
+          "atom": "known-broken-current/KB-29",
+          "verdict": "still-open",
+          "statement": "html-views/substrate-overview.html has not been regenerated since wave-2 closure commit e32b164a although 8 later commits touch .context, ag"
+        },
+        {
+          "atom": "known-broken-current/KB-30",
+          "verdict": "still-open",
+          "statement": "Planning-cycle vocabulary (Cycle-N phrasing) still ships in the packaged catalog schema descriptions installed into every consuming substrat"
+        },
+        {
+          "atom": "session-accounting/SA-24",
+          "verdict": "not-filed",
+          "statement": "On 2026-07-14 the user ruled the surviving hard-iteration-cap clause an enactment failure of the directed 41902654 change -- owed work with "
+        },
+        {
+          "atom": "session-accounting/SA-25",
+          "verdict": "not-filed",
+          "statement": "At the 2026-07-13 pause the orchestrator reported four filing payloads drafted (all verdicts file-new after prior-art search: dryRun preview"
+        },
+        {
+          "atom": "session-accounting/SA-26",
+          "verdict": "not-filed",
+          "statement": "The 2026-07-13 re-evaluation found FEAT-011 9/9 and FEAT-014 6/6 criteria MET and the orchestrator stated both stored buckets lag and should"
+        },
+        {
+          "atom": "session-accounting/SA-27",
+          "verdict": "not-filed",
+          "statement": "The paused finish-out named 'HTML regen' among its steps; the report commit landed (2624d2c7) and push completed, but the last html-views re"
+        },
+        {
+          "atom": "session-accounting/SA-34",
+          "verdict": "filed-incomplete",
+          "statement": "The 2026-07-19 consolidated five-session audit surfaced an eight-item open set (plus one partial) to the user, of which only item 8 received"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-known-broken/DKB-16"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-known-broken/DKB-16"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-135"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-135"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-intent/DI-14"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-58"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "dropped-work/DW-22"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "dropped-work/DW-22"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-129"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-120"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-144"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/analysis/session-audit/d3030496-dangling.md:0"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-129"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-120"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-137"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0024"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-140"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-127"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-132"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-126"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-093"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0024"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-135"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-066"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-129"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-120"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity scripts/migration/lib/land-identity-fields.ts:4"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-136"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity scripts/migration/wire-active-substrate.ts:4"
+        },
+        {
+          "between": [
+            "dropped-work/DW-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "entity",
+          "cause": "shared entity CLAUDE.md:2"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-12",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-20",
+            "session-accounting/SA-25"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-148"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-24"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-101"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-101"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0002"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0003"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0009"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0005"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0007"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0010"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0008"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0004"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0006"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/analysis/session-audit/d3030496-dangling.md:1"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0025"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0024"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/analysis/session-audit/d3030496-dangling.md:1"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "session-accounting/SA-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-090"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "session-accounting/SA-27"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-143"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0026"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-30",
+            "session-accounting/SA-34"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/analysis/session-audit/d3030496-dangling.md:1"
+        },
+        {
+          "between": [
+            "session-accounting/SA-24",
+            "session-accounting/SA-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-101"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "session-accounting/SA-25"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-intent/DI-14"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-work/DW-27"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "intent-spec/IN-130"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "dropped-work/DW-22"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "intent-spec/IN-129"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 0.75"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "session-accounting/SA-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "intent-spec/IN-129"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 0.75"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "known-broken-current/KB-20"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "intent-spec/IN-130"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-27",
+            "intent-spec/IN-131"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-27",
+            "known-broken-current/KB-25"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-131",
+            "known-broken-current/KB-25"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-131",
+            "session-accounting/SA-24"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-135",
+            "known-broken-current/KB-25"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-135",
+            "session-accounting/SA-24"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-11"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-24"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "session-accounting/SA-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-intent/DI-13"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-15-workflows-audit/streams/dropped-intent.jsonl:12-12/13-13"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-intent/DI-13"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-15-workflows-audit/streams/dropped-intent.jsonl:12-12/13-13"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-12",
+            "dropped-intent/DI-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-15-workflows-audit/streams/dropped-intent.jsonl:12-12/15-15"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-intent/DI-14"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence d3030496-e4e1-4bfa-8df1-1df86bac518a@2026-07-13T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-intent/DI-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-15-workflows-audit/streams/dropped-intent.jsonl:13-13/15-15"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-intent/DI-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-15-workflows-audit/streams/dropped-intent.jsonl:13-13/15-15"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-work/DW-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/analysis/2026-07-13-loop-runaway-policy-determination.md:51-51/51-51"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence d3030496-e4e1-4bfa-8df1-1df86bac518a@2026-07-12T1…"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:2-2/3-3"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:2-2/4-4"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:2-2/7-7"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:2-2/6-6"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "dropped-work/DW-22"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence d3030496-e4e1-4bfa-8df1-1df86bac518a@2026-07-12T2…"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:215-215/215-215"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:215-215/215-215"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/decisions.json:747-747/747-788"
+        },
+        {
+          "between": [
+            "dropped-work/DW-27",
+            "known-broken-current/KB-25"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence d3030496-e4e1-4bfa-8df1-1df86bac518a@2026-07-13T1…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-11"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence ac1621b3-a1ff-49c8-93dd-7095ccd4bf1e@2026-07-07T0…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-11"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/293-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence ac1621b3-a1ff-49c8-93dd-7095ccd4bf1e@2026-07-06T2…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence ac1621b3-a1ff-49c8-93dd-7095ccd4bf1e@2026-07-07T0…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/293-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-08",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence ac1621b3-a1ff-49c8-93dd-7095ccd4bf1e@2026-07-07T0…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/293-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-12",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-12",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:293-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-24"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence 91ae2c7b-41a8-405b-85d6-2b6be852010a@2026-07-14T0…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-24"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence 91ae2c7b-41a8-405b-85d6-2b6be852010a@2026-07-14T0…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-25",
+            "session-accounting/SA-24"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/tasks.json:2078-2078/2078-2078"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:3-3/4-4"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:2-2/4-4"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:3-3/7-7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:2-2/7-7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:3-3/6-6"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:2-2/5-5"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:215-215/215-215"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "session-accounting/SA-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/features.json:294-294/294-294"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:4-4/7-7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:4-4/7-7"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:4-4/6-6"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:4-4/5-5"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/decisions.json:747-788/788-796"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/decisions.json:796-819/788-796"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/decisions.json:796-819/819-827"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-28",
+            "session-accounting/SA-34"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/decisions.json:827-850/819-827"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/91ae2c7b-41a8-405b-85d6-2b6be852010a-dangling.jsonl:7-7/6-6"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/d3030496-e4e1-4bfa-8df1-1df86bac518a-dangling.jsonl:7-7/5-5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-work/DW-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .claude/mandates.jsonl"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "dropped-intent/DI-15"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/conventions.json"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-14",
+            "dropped-work/DW-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/conventions.json"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-15",
+            "dropped-work/DW-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/conventions.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "known-broken-current/KB-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/features.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-21",
+            "session-accounting/SA-26"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/features.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/relations.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-23",
+            "session-accounting/SA-25"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path analysis/2026-07-13-wave3-residual-filings.md"
+        },
+        {
+          "between": [
+            "dropped-work/DW-26",
+            "known-broken-current/KB-30"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-context/samples/schemas"
+        },
+        {
+          "between": [
+            "dropped-work/DW-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path html-views/substrate-overview.html"
+        },
+        {
+          "between": [
+            "dropped-work/DW-28",
+            "known-broken-current/KB-29"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path scripts/orchestrator/build-html-views.ts"
+        },
+        {
+          "between": [
+            "dropped-work/DW-28",
+            "session-accounting/SA-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path html-views/substrate-overview.html"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-27",
+            "session-accounting/SA-26"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/features.json"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-29",
+            "session-accounting/SA-27"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path html-views/substrate-overview.html"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-13",
+            "dropped-work/DW-27"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.52, shared terms 2624d2c7,anchor,autonomous-loop,binds,cap"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "dropped-work/DW-23"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.52, shared terms 089,147,148,149,151"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-16",
+            "session-accounting/SA-25"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.52, shared terms 147,149,151,2026-07-13-wave3-residual-filings.md,acceptance"
+        },
+        {
+          "between": [
+            "dropped-work/DW-22",
+            "known-broken-current/KB-28"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.48, shared terms closed,completed,dec-0024,dec-0025,dec-0026"
+        },
+        {
+          "between": [
+            "dropped-work/DW-28",
+            "session-accounting/SA-27"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.49, shared terms 2624d2c7,after,cascade,closure,conventions"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-11",
+            "known-broken-current/KB-12"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.47, shared terms declared,dispatch,engine,semantics,work-order"
+        }
+      ]
+    },
+    {
+      "size": 9,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-16",
+          "verdict": "unreflected",
+          "statement": "Session-audit atom statements attribute assistant-composed phrasing to the user; the user's 2026-07-19 correction of DA-01 produced no fix o"
+        },
+        {
+          "atom": "dropped-intent/DI-17",
+          "verdict": "unreflected",
+          "statement": "The 2026-07-18 legibility objection to the CLAUDE.md line-100 autonomous-loop paragraph has no landed change and no tracked carrier at 258ae"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-15",
+          "verdict": "still-open",
+          "statement": "CLAUDE.md line 100 autonomous-loop paragraph user-flagged and assistant-confirmed as not clear and not easy to follow; no clarity change lan"
+        },
+        {
+          "atom": "dropped-work/DW-30",
+          "verdict": "still-open",
+          "statement": "CLAUDE.md line 100's Autonomous-loop authorization paragraph stands at 258aeac0 as a single ~200-word run-on line the user challenged as unr"
+        },
+        {
+          "atom": "intent-spec/IN-136",
+          "verdict": null,
+          "statement": "Nothing may be presented as the user's language that does not come from him — an item attributed to him that he does not recognize as his ow"
+        },
+        {
+          "atom": "intent-spec/IN-138",
+          "verdict": null,
+          "statement": "Canonical policy prose is itself subject to the rhetorical register policies — governing text must be clear and easy to follow; jargon-dense"
+        },
+        {
+          "atom": "known-broken-current/KB-26",
+          "verdict": "still-open",
+          "statement": "CLAUDE.md line 100's Autonomous-loop authorization paragraph — which the user challenged anyone to defend as clear and easy to follow — rema"
+        },
+        {
+          "atom": "session-accounting/SA-32",
+          "verdict": "not-filed",
+          "statement": "On 2026-07-18 the user challenged the readability of CLAUDE.md line 100's autonomous-loop authorization paragraph and the assistant ratified"
+        },
+        {
+          "atom": "session-accounting/SA-33",
+          "verdict": "filed-inaccurate",
+          "statement": "On 2026-07-19 the user disavowed the language of atom DA-01 in the in-repo session-audit report as not his, and the assistant confirmed on t"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-intent/DI-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-work/DW-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-work/DW-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "dropped-work/DW-30"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "entity",
+          "cause": "shared entity /Users/david/Projects/workflowsPiExtension/CLAUDE.md:5"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-intent/DI-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-work/DW-30"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "intent-spec/IN-136"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "session-accounting/SA-33"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-work/DW-30"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "intent-spec/IN-138"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "dropped-work/DW-30"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "intent-spec/IN-138"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "intent-spec/IN-138"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-136",
+            "session-accounting/SA-33"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-138",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "intent-spec/IN-138",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-26",
+            "session-accounting/SA-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-32",
+            "session-accounting/SA-33"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-intent/DI-17"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "dropped-work/DW-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "intent-spec/IN-136"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-19T0…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/projects/session-audit/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "session-accounting/SA-33"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-19T0…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-16",
+            "session-accounting/SA-33"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/projects/session-audit/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-known-broken/DKB-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-work/DW-30"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "dropped-work/DW-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "intent-spec/IN-138"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-17",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "dropped-work/DW-30"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "dropped-work/DW-30"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "intent-spec/IN-138"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "intent-spec/IN-138"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.session-audits/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "intent-spec/IN-136",
+            "session-accounting/SA-33"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-19T0…"
+        },
+        {
+          "between": [
+            "intent-spec/IN-136",
+            "session-accounting/SA-33"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-19T0…"
+        },
+        {
+          "between": [
+            "intent-spec/IN-138",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "intent-spec/IN-138",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-26",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-26",
+            "session-accounting/SA-32"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence c41e910c-26bf-4ec5-b3b2-c8fd63a63819@2026-07-18T1…"
+        },
+        {
+          "between": [
+            "session-accounting/SA-32",
+            "session-accounting/SA-33"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/projects/session-audit/c41e910c-26bf-4ec5-b3b2-c8fd63a63819-dangling.jsonl:2-2/2-2"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "dropped-work/DW-30"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path Users/david/Projects/workflowsPiExtension/CLAUDE.md"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path Users/david/Projects/workflowsPiExtension/CLAUDE.md"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path Users/david/Projects/workflowsPiExtension/CLAUDE.md"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-15",
+            "session-accounting/SA-32"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.45, shared terms 100,82500702,atom,audit,autonomous-loop"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "known-broken-current/KB-26"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.47, shared terms 100,200-word,82500702,assistant,authorization"
+        },
+        {
+          "between": [
+            "dropped-work/DW-30",
+            "session-accounting/SA-32"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.59, shared terms 100,200-word,2026-07-18,258aeac0,82500702"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-26",
+            "session-accounting/SA-32"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.63, shared terms 100,200-word,82500702,assistant,authorization"
+        }
+      ]
+    },
+    {
+      "size": 8,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-18",
+          "verdict": "unreflected",
+          "statement": "Frozen-enacted dispatch-seam decision family DEC-0001/0002/0003 (bare-model-id resolution against the session provider, thinking-seam enforc"
+        },
+        {
+          "atom": "dropped-intent/DI-19",
+          "verdict": "unreflected",
+          "statement": "FEAT-001 agent-layer unification arc (pi-workflows and pi-behavior-monitors consume pi-jit-agents' canonical agent layer) froze as planned T"
+        },
+        {
+          "atom": "dropped-intent/DI-20",
+          "verdict": "superseded",
+          "statement": "TASK-095/FGAP-180 orchestrator-CLI elevation (the 39 dual-surface wrapper scripts to a published single-binary package for downstream consum"
+        },
+        {
+          "atom": "dropped-work/DW-01",
+          "verdict": "still-open",
+          "statement": "FEAT-001 arc umbrella: converge duplicated agent infrastructure to pi-jit-agents [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-02",
+          "verdict": "still-open",
+          "statement": "Centralize parseModelSpec in pi-jit-agents; remove the three copies [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-03",
+          "verdict": "still-open",
+          "statement": "Resolve model-pin policy (DEC-0001 bare-id resolution) and apply at pi-jit-agents; converge consumer sites [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-08",
+          "verdict": "still-open",
+          "statement": "Land the FEAT-001 plan-phase governance (PLAN-PHASE-003/004/005) [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-09",
+          "verdict": "still-open",
+          "statement": "Elevate scripts/orchestrator/ to a published CLI package (TASK-095 / FGAP-180) [still-needed]"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-080"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-081"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity packages/pi-behavior-monitors/index.ts:58"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity packages/pi-workflows/src/step-monitor.ts:18"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-19"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0003"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-01"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-02"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-087"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-085"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-08"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-178"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-169"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-180"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-082"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-095"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-work/DW-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-180"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-work/DW-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-095"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-20",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-115"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-20",
+            "dropped-work/DW-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-180"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-20",
+            "dropped-work/DW-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-095"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-08"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-work/DW-03",
+            "dropped-work/DW-08"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0001"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-intent/DI-20"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/session-notes.json:141-141/141-141"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-02"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-agent-dispatch/src/call-agent-tool.ts"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-02"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-workflows/src/step-monitor.ts"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-workflows/src/step-monitor.ts"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-18",
+            "dropped-work/DW-08"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path DEC-0001/0002/0003"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-work/DW-01"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-behavior-monitors"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-19",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-behavior-monitors"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-20",
+            "dropped-work/DW-09"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path scripts/orchestrator"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-02"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-jit-agents"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-behavior-monitors"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-jit-agents"
+        },
+        {
+          "between": [
+            "dropped-work/DW-01",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-agent-dispatch"
+        },
+        {
+          "between": [
+            "dropped-work/DW-02",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-workflows/src/step-monitor.ts"
+        },
+        {
+          "between": [
+            "dropped-work/DW-02",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-jit-agents"
+        },
+        {
+          "between": [
+            "dropped-work/DW-02",
+            "dropped-work/DW-03"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path pi-workflows/src/step-monitor.ts"
+        }
+      ]
+    },
+    {
+      "size": 5,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-05",
+          "verdict": "unreflected",
+          "statement": "DEC-0034 conventions-schema relational facets mostly not added [mostly — `title` added; relational/lens/lifecycle facets not]"
+        },
+        {
+          "atom": "dropped-intent/DI-06",
+          "verdict": "superseded",
+          "statement": "DEC-0033 `status_buckets` enum→bucket normalization map absent [partial — report marks it partially-superseded by `state_derivation`; cause-"
+        },
+        {
+          "atom": "dropped-work/DW-31",
+          "verdict": "still-open",
+          "statement": "PLAN-PHASE-006 'Retroactive issue migration' stands pending in the frozen .project and the 89-open-issue corpus it governs was never migrate"
+        },
+        {
+          "atom": "dropped-work/DW-32",
+          "verdict": "still-open",
+          "statement": "PLAN-PHASE-007 'Framework gap closure' stands pending and the frozen .project open framework-gap corpus — 114 non-terminal gaps including P0"
+        },
+        {
+          "atom": "dropped-work/DW-33",
+          "verdict": "still-open",
+          "statement": "Two vocabulary-settlement decisions stand open in the frozen .project decisions store with no .context counterpart and no enactment: DEC-003"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-05",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0034"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-06",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0033"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-002"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-049"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "entity",
+          "cause": "shared entity PHASE-5"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-042"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-049"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-042"
+        },
+        {
+          "between": [
+            "dropped-work/DW-32",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-049"
+        },
+        {
+          "between": [
+            "dropped-work/DW-32",
+            "dropped-work/DW-33"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-042"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-33"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-32",
+            "dropped-work/DW-33"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.project/plan-phase.json:115-132/133-150"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-05",
+            "dropped-work/DW-33"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/schemas/conventions.schema.json"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-06",
+            "dropped-work/DW-33"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .context/config.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-31",
+            "dropped-work/DW-32"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.58, shared terms 2026-07-11,against,audit,block,code"
+        }
+      ]
+    },
+    {
+      "size": 5,
+      "members": [
+        {
+          "atom": "session-accounting/SA-01",
+          "verdict": "closed-since",
+          "statement": "TASK-091 reads `planned` while its deliverable is live on main"
+        },
+        {
+          "atom": "session-accounting/SA-02",
+          "verdict": "closed-since",
+          "statement": "TASK-091 CHANGELOG entry lost in orphaned commit `d06bf3d3`"
+        },
+        {
+          "atom": "session-accounting/SA-03",
+          "verdict": "closed-since",
+          "statement": "Stale empty branch `task-091-derived-state-convention` never deleted"
+        },
+        {
+          "atom": "session-accounting/SA-16",
+          "verdict": "not-filed",
+          "statement": "No session-note exists for this ~14k-message session"
+        },
+        {
+          "atom": "session-accounting/SA-17",
+          "verdict": "filed-incomplete",
+          "statement": "Session's own thread inventory lives only in `analysis/*.md`, never crossed into `.context`"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-02"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-16"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-16"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-03",
+            "session-accounting/SA-16"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-03",
+            "session-accounting/SA-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-16",
+            "session-accounting/SA-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-091"
+        },
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-02"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-01",
+            "session-accounting/SA-03"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-03"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-16"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-02",
+            "session-accounting/SA-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-03",
+            "session-accounting/SA-16"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-03",
+            "session-accounting/SA-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-16",
+            "session-accounting/SA-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 4,
+      "members": [
+        {
+          "atom": "dropped-known-broken/DKB-11",
+          "verdict": "partial",
+          "statement": "pi-workflows P1/P2 gap+issue cluster dropped wholesale"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-13",
+          "verdict": "partial",
+          "statement": "pi-jit-agents capability-gap tail dropped"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-14",
+          "verdict": "partial",
+          "statement": "pi-agent-dispatch capability-gap tail dropped"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-17",
+          "verdict": "still-open",
+          "statement": "seven residual open items of the audited packages sit in the frozen .project stores but appear in none of the 2026-07-11 report's dropped li"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-known-broken/DKB-11",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-142"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-11",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-099"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-11",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-145"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-11",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-102"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-13",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-154"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-14",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-160"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-14",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-158"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-11",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path pi-workflows/src"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-13",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path pi-jit-agents/src"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-14",
+            "dropped-known-broken/DKB-17"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path pi-agent-dispatch/src"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-13",
+            "dropped-known-broken/DKB-14"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.81, shared terms against,before,capability-gap,code-confirm,context"
+        }
+      ]
+    },
+    {
+      "size": 4,
+      "members": [
+        {
+          "atom": "known-broken-current/KB-02",
+          "verdict": "still-open",
+          "statement": "layer-plans schema nests id-bearing arrays instead of top-level entities + edges (issue-002)"
+        },
+        {
+          "atom": "known-broken-current/KB-14",
+          "verdict": "still-open",
+          "statement": "No convention governs substrate bootstrap-state provisioning + identity reconciliation (FGAP-052)"
+        },
+        {
+          "atom": "known-broken-current/KB-15",
+          "verdict": "still-open",
+          "statement": "Active `.context` is the pi-context dev substrate, not a clean baseline for the operation-framework port (issue-010)"
+        },
+        {
+          "atom": "known-broken-current/KB-17",
+          "verdict": "still-open",
+          "statement": "workflows `ctrl+j` / `ctrl+h` chord shadows pi built-ins (issue-011)"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-002"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-011"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-010"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-002"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-011"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-010"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-002"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-011"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "entity",
+          "cause": "shared entity issue-010"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-14"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:42-42/47-47"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-14"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:43-43/47-47"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:43-43/48-48"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-14",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:47-47/48-48"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-14",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:47-47/49-49"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/known-broken-current-june.md:48-48/49-49"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/workflowsPiExtension/.context/issues.json:141-146/151-151"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-15"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path issues.js"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-02",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path issues.js"
+        },
+        {
+          "between": [
+            "known-broken-current/KB-15",
+            "known-broken-current/KB-17"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path issues.js"
+        }
+      ]
+    },
+    {
+      "size": 4,
+      "members": [
+        {
+          "atom": "session-accounting/SA-19",
+          "verdict": "not-filed",
+          "statement": "`created_at` systematically date-floored across every in-window item"
+        },
+        {
+          "atom": "session-accounting/SA-20",
+          "verdict": "not-filed",
+          "statement": "Verification records use inconsistent/absent `timestamp` fields"
+        },
+        {
+          "atom": "session-accounting/SA-21",
+          "verdict": "filed-inaccurate",
+          "statement": "TASK-117 folds an assistant-originated analogy into a \"User's explicit call:\" sentence"
+        },
+        {
+          "atom": "session-accounting/SA-22",
+          "verdict": null,
+          "statement": "TASK-107 acceptance criteria unreconciled with a later user preference"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-19",
+            "session-accounting/SA-22"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-107"
+        },
+        {
+          "between": [
+            "session-accounting/SA-19",
+            "session-accounting/SA-21"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/session-accounting-substrate-backward.md:36-36/39-39"
+        },
+        {
+          "between": [
+            "session-accounting/SA-20",
+            "session-accounting/SA-22"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/session-accounting-substrate-backward.md:45-45/42-42"
+        },
+        {
+          "between": [
+            "session-accounting/SA-21",
+            "session-accounting/SA-22"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/session-accounting-substrate-backward.md:39-39/42-42"
+        }
+      ]
+    },
+    {
+      "size": 3,
+      "members": [
+        {
+          "atom": "dropped-work/DW-15",
+          "verdict": "still-open",
+          "statement": "In-session jit-agent persona (FEAT-002) [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-16",
+          "verdict": "partial",
+          "statement": "Context plugin: portable installable third-party context models (FEAT-003) [still-needed]"
+        },
+        {
+          "atom": "dropped-work/DW-17",
+          "verdict": "still-open",
+          "statement": "JIT skills: schema-shaped, macro-rendered, composable-on-demand guidance (FEAT-007) [still-needed]"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-work/DW-15",
+            "dropped-work/DW-16"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-15",
+            "dropped-work/DW-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-16",
+            "dropped-work/DW-17"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-15",
+            "dropped-work/DW-16"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.48, shared terms absent,build,context,features.json,still-needed"
+        }
+      ]
+    },
+    {
+      "size": 3,
+      "members": [
+        {
+          "atom": "intent-spec/IN-02",
+          "verdict": null,
+          "statement": "Outcome-agnostic foundation framework, not a coding-agent framework"
+        },
+        {
+          "atom": "intent-spec/IN-66",
+          "verdict": null,
+          "statement": "Separate the framework from development artifacts"
+        },
+        {
+          "atom": "intent-spec/IN-73",
+          "verdict": null,
+          "statement": "Framework purity: don't bend the framework to .project; protect user customization"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-02",
+            "intent-spec/IN-66"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.71, shared terms framework"
+        },
+        {
+          "between": [
+            "intent-spec/IN-02",
+            "intent-spec/IN-73"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.72, shared terms framework"
+        },
+        {
+          "between": [
+            "intent-spec/IN-66",
+            "intent-spec/IN-73"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.51, shared terms framework"
+        }
+      ]
+    },
+    {
+      "size": 3,
+      "members": [
+        {
+          "atom": "intent-spec/IN-27",
+          "verdict": null,
+          "statement": "Explore / scope before filing"
+        },
+        {
+          "atom": "intent-spec/IN-32",
+          "verdict": null,
+          "statement": "No scope fragmentation / no sidecar"
+        },
+        {
+          "atom": "intent-spec/IN-33",
+          "verdict": null,
+          "statement": "Strict scope discipline; no unrequested reduction or overreach"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-27",
+            "intent-spec/IN-32"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.63, shared terms scope"
+        },
+        {
+          "between": [
+            "intent-spec/IN-27",
+            "intent-spec/IN-33"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.63, shared terms scope"
+        },
+        {
+          "between": [
+            "intent-spec/IN-32",
+            "intent-spec/IN-33"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 1.00, shared terms scope"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-02",
+          "verdict": "unreflected",
+          "statement": "`.project/rationale.json` (8 RAT items) emptied with no substrate home in `.context`"
+        },
+        {
+          "atom": "dropped-intent/DI-03",
+          "verdict": "unreflected",
+          "statement": "16 code-invariant conventions dropped from substrate; conventions block swapped wholesale for process rules"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-02",
+            "dropped-intent/DI-03"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0040"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-02",
+            "dropped-intent/DI-03"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-intent/DI-10",
+          "verdict": "superseded",
+          "statement": "DEC-0011 \"ships no seed\" superseded by catalog-install model"
+        },
+        {
+          "atom": "dropped-intent/DI-11",
+          "verdict": "reflected",
+          "statement": "DEC-0047 human-ratification-of-capability-mutation registry empty/absent (deferred vs superseded) [borderline deferred-implementation, cause"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0014"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0047"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0018"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0011"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "entity",
+          "cause": "shared entity DEC-0037"
+        },
+        {
+          "between": [
+            "dropped-intent/DI-10",
+            "dropped-intent/DI-11"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-known-broken/DKB-05",
+          "verdict": "resolved-since",
+          "statement": "monitor classify calls emit no debug/trace output; misfires uninspectable [report notes: sampled, not exhaustively code-traced]"
+        },
+        {
+          "atom": "dropped-known-broken/DKB-06",
+          "verdict": "partial",
+          "statement": "no execution-trace debugger capturing input→template→LLM→parse→result chain [report notes: sampled; `pi-workflows` trace hits limited to tem"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-known-broken/DKB-05",
+            "dropped-known-broken/DKB-06"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-05",
+            "dropped-known-broken/DKB-06"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path pi-behavior-monitors/index.ts"
+        },
+        {
+          "between": [
+            "dropped-known-broken/DKB-05",
+            "dropped-known-broken/DKB-06"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.46, shared terms add,calls,classify,input,monitor"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-known-broken/DKB-10",
+          "verdict": "still-open",
+          "statement": "parallel agent steps share one working tree; no worktree isolation option"
+        },
+        {
+          "atom": "dropped-work/DW-11",
+          "verdict": "still-open",
+          "statement": "Add worktree isolation for parallel steps (PHASE-002) [still-needed]"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-known-broken/DKB-10",
+            "dropped-work/DW-11"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.71, shared terms add,isolation,parallel,steps,worktree"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-work/DW-20",
+          "verdict": "still-open",
+          "statement": "FGAP-152 (P2, filed 2026-07-13 with full investigation): item-grain diff-scoping makes the write-time rhetorical gate retroactive, blocking "
+        },
+        {
+          "atom": "known-broken-current/KB-23",
+          "verdict": "still-open",
+          "statement": "Item-grain diff-scoping makes every write-time rhetorical-gate extension retroactive: a status-only mutation re-asserts the whole item again"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity step-block.ts:11"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-131"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity context-sdk.ts:172"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity promote-item.ts:13"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity block-api.ts:76"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity index.ts:166"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity rhetorical-criteria.ts:11"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "entity",
+          "cause": "shared entity index.ts:161"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-context/src/block-api.ts"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-context/src/rhetorical-criteria.ts"
+        },
+        {
+          "between": [
+            "dropped-work/DW-20",
+            "known-broken-current/KB-23"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.58, shared terms 1537,1658,1849,against,block-api.ts"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-work/DW-24",
+          "verdict": "still-open",
+          "statement": "FGAP-149 (commit-guard over-block on multi-line quoted commit-shaped prose, filed in-window) stands open at 2624d2c7 on its own filed resolu"
+        },
+        {
+          "atom": "known-broken-current/KB-18",
+          "verdict": "still-open",
+          "statement": "Commit guard over-blocks commit-shaped prose inside multi-line quoted strings; the sibling quote-collapse fix was evaluated and REJECTED for"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-147"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-149"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-151"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-138"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path .claude/hooks/block-pathspec-commit.sh"
+        },
+        {
+          "between": [
+            "dropped-work/DW-24",
+            "known-broken-current/KB-18"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.58, shared terms commit-shaped,copy-first,evaluated,exclusion,fgap-149"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-work/DW-25",
+          "verdict": "still-open",
+          "statement": "FGAP-150 (duplicate-kind state_derivation.rollups entries are schema-expressible and make currentState diverge set-level from the invariant "
+        },
+        {
+          "atom": "known-broken-current/KB-22",
+          "verdict": "still-open",
+          "statement": "Duplicate-kind state_derivation.rollups entries are schema-expressible and load without complaint, making currentState diverge set-level (8-"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-work/DW-25",
+            "known-broken-current/KB-22"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-150"
+        },
+        {
+          "between": [
+            "dropped-work/DW-25",
+            "known-broken-current/KB-22"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-25",
+            "known-broken-current/KB-22"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-context/schemas/config.schema.json"
+        },
+        {
+          "between": [
+            "dropped-work/DW-25",
+            "known-broken-current/KB-22"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path packages/pi-context/src/context-sdk.ts"
+        },
+        {
+          "between": [
+            "dropped-work/DW-25",
+            "known-broken-current/KB-22"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.80, shared terms amend,config,config-shape,currentstate,diverge"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "dropped-work/DW-29",
+          "verdict": "still-open",
+          "statement": "The projects/pi-project-workflows/2026-07-11-workflows-audit/ corpus (user-supplied, committed in-window) has zero consumption work at 2624d"
+        },
+        {
+          "atom": "session-accounting/SA-28",
+          "verdict": null,
+          "statement": "On 2026-07-13 the user sequenced the projects/pi-project-workflows/2026-07-11-workflows-audit/ corpus as the next work after the session-aud"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "dropped-work/DW-29",
+            "session-accounting/SA-28"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "dropped-work/DW-29",
+            "session-accounting/SA-28"
+          ],
+          "layer": "ref",
+          "cause": "same statement evidence d3030496-e4e1-4bfa-8df1-1df86bac518a@2026-07-13T0…"
+        },
+        {
+          "between": [
+            "dropped-work/DW-29",
+            "session-accounting/SA-28"
+          ],
+          "layer": "scope",
+          "cause": "shared scope path projects/pi-project-workflows/2026-07-11-workflows-audit"
+        },
+        {
+          "between": [
+            "dropped-work/DW-29",
+            "session-accounting/SA-28"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.46, shared terms 2026-07-11-workflows-audit,2624d2c7,after,corpus,elements"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-01",
+          "verdict": null,
+          "statement": "Developer-independence (axe-handle philosophy)"
+        },
+        {
+          "atom": "intent-spec/IN-04",
+          "verdict": null,
+          "statement": "pi-mono philosophy is the gold-standard north star"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-01",
+            "intent-spec/IN-04"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 1.00, shared terms philosophy"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-25",
+          "verdict": null,
+          "statement": "Iterate-to-zero, bounded by validated success criteria"
+        },
+        {
+          "atom": "intent-spec/IN-97",
+          "verdict": null,
+          "statement": "Loop until zero violations, not fail-on-first-violation"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-25",
+            "intent-spec/IN-97"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 0.52"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-34",
+          "verdict": null,
+          "statement": "Start from zero to protect intent from LLM substitution"
+        },
+        {
+          "atom": "intent-spec/IN-96",
+          "verdict": null,
+          "statement": "Mechanically constrain orchestrator deviation (on-disk verbatim briefs)"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-34",
+            "intent-spec/IN-96"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence 2026-07-10T23:17:45-45/45-45"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-48",
+          "verdict": null,
+          "statement": "Zero backward compatibility"
+        },
+        {
+          "atom": "intent-spec/IN-75",
+          "verdict": null,
+          "statement": "Zero non-harnessed LLM possibilities"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-48",
+            "intent-spec/IN-75"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.73, shared terms zero"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-50",
+          "verdict": null,
+          "statement": "Non-blocking does not mean handwave-able"
+        },
+        {
+          "atom": "intent-spec/IN-55",
+          "verdict": null,
+          "statement": "The agent does not self-judge risk"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-50",
+            "intent-spec/IN-55"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.73, shared terms does"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-105",
+          "verdict": null,
+          "statement": "Assertions must be code-founded, never invented"
+        },
+        {
+          "atom": "intent-spec/IN-125",
+          "verdict": null,
+          "statement": "Inductive reasoning from facts; don't hunt for invented phrases"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-105",
+            "intent-spec/IN-125"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.69, shared terms invented"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "intent-spec/IN-108",
+          "verdict": null,
+          "statement": "Get working code out; enact/fix, don't file or register"
+        },
+        {
+          "atom": "known-broken-current/KB-05",
+          "verdict": "resolved-since",
+          "statement": "Fresh install never seeds block-schema migration declarations from the catalog (FGAP-140)"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "intent-spec/IN-108",
+            "known-broken-current/KB-05"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "session-accounting/SA-04",
+          "verdict": "closed-since",
+          "statement": "Hedge-audit program ~87 of 90 candidates never run"
+        },
+        {
+          "atom": "session-accounting/SA-05",
+          "verdict": "not-filed",
+          "statement": "No substrate work-item tracks the hedge-audit backlog"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-04",
+            "session-accounting/SA-05"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-120"
+        },
+        {
+          "between": [
+            "session-accounting/SA-04",
+            "session-accounting/SA-05"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "session-accounting/SA-06",
+          "verdict": "closed-since",
+          "statement": "Schema-versioning design-intent question still unanswered"
+        },
+        {
+          "atom": "session-accounting/SA-07",
+          "verdict": "filed-incomplete",
+          "statement": "Six-concept version-mechanism code map lost in a subagent sidechain"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-06",
+            "session-accounting/SA-07"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "session-accounting/SA-08",
+          "verdict": "closed-since",
+          "statement": "FGAP-125 template-corrected but carries no implementation task"
+        },
+        {
+          "atom": "session-accounting/SA-09",
+          "verdict": "closed-since",
+          "statement": "FGAP-128 filed `identified` with no owning task"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-126"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-125"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-128"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-119"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity FGAP-127"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "entity",
+          "cause": "shared entity TASK-118"
+        },
+        {
+          "between": [
+            "session-accounting/SA-08",
+            "session-accounting/SA-09"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        }
+      ]
+    },
+    {
+      "size": 2,
+      "members": [
+        {
+          "atom": "session-accounting/SA-10",
+          "verdict": "closed-since",
+          "statement": "FGAP-139 filed but not decomposed"
+        },
+        {
+          "atom": "session-accounting/SA-11",
+          "verdict": "closed-since",
+          "statement": "FGAP-140 filed but not decomposed"
+        }
+      ],
+      "edges": [
+        {
+          "between": [
+            "session-accounting/SA-10",
+            "session-accounting/SA-11"
+          ],
+          "layer": "quote",
+          "cause": "quote shingle jaccard 1.00"
+        },
+        {
+          "between": [
+            "session-accounting/SA-10",
+            "session-accounting/SA-11"
+          ],
+          "layer": "ref",
+          "cause": "overlapping file evidence /Users/david/Projects/harness-monitor-training/projects/pi-project-workflows/2026-07-11-workflows-audit/session-accounting-substrate-backward.md:51-51/52-52"
+        },
+        {
+          "between": [
+            "session-accounting/SA-10",
+            "session-accounting/SA-11"
+          ],
+          "layer": "tfidf",
+          "cause": "cosine 0.61, shared terms but,decompose,decomposed,filed,implementation"
+        }
+      ]
+    }
+  ]
+}

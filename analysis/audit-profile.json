@@ -57,7 +57,7 @@
     "check": "npm run check"
   },
   "anchor_corpus": {
-    "command": "uv run /Users/david/.claude/skills/session-dangling-audit/extract_user_statements.py --project workflowsPiExtension --out /tmp/audit-scratch/david_statements_workflows.jsonl",
+    "command": "uv run /Users/david/.claude/skills/audit-core/extract_user_statements.py --project workflowsPiExtension --out /tmp/audit-scratch/david_statements_workflows.jsonl",
     "path": "/tmp/audit-scratch/david_statements_workflows.jsonl"
   },
   "streams": [

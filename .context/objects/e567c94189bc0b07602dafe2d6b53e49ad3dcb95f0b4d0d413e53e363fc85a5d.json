@@ -1,0 +1,37 @@
+{
+  "title": "The op run() boundary enforces no input contract, so an undeclared param is silently accepted",
+  "status": "identified",
+  "priority": "P1",
+  "package": "pi-context",
+  "canonical_vocabulary": "input-contract enforcement at the operation boundary",
+  "description": "The op layer performs no schema validation on incoming params. `registerAll` passes the params object straight into `op.run(ctx.cwd, params as never, dctx)` (ops-registry.ts:3111), and the TypeBox `Type.Object` param schemas do not set `additionalProperties: false`, so an undeclared or misspelled key is accepted and ignored rather than refused. `rejectBlockNarrowing` (ops-registry.ts:560-566) is the layer's only param guard, hand-called on one param at two read-only ops — `context-validate-relations` (:2476) and `context-roadmap-validate` (:2677). No mutation op carries a param check.\nThe `dryRun` contract is exact-key: the wrapper tests `(params as {dryRun?: unknown}).dryRun === true` (ops-registry.ts:3037). A caller passing `dryrun` performs the live write it intended to preview, returning a live-write result string and no error.\nUnknown-key rejection exists only at the CLI parse layer, which throws `unknown flag` before an op is reached (pi-context-cli/src/cli.ts:332) and covers the CLI surface alone. The unguarded surfaces are the in-pi tool dispatch — all 57 ops registered through `registerAll(pi)` (pi-context/src/index.ts:4202) — and programmatic callers reaching `run()` through `./ops`, a public export subpath of `@davidorex/pi-context`.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "550-559",
+      "reference": "In-code statement of the gap: the op layer itself performs no schema validation on params, `registerAll` passes them straight into `run()`, and TypeBox `Type.Object` does not set `additionalProperties: false`, so a caller reaching `run()` directly or through a permissive tool dispatch gets a silently-always-empty filter instead of an error."
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "560-566, 2476, 2677, 3111",
+      "reference": "`rejectBlockNarrowing` is the sole param guard and is called at exactly two sites, both read-only validators. `registerAll` at :3111 invokes `await op.run(ctx.cwd, params as never, dctx)` with no interposed check."
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "3037",
+      "reference": "`const isDryRun = (params as { dryRun?: unknown }).dryRun === true` — exact-key with no normalization. Calling `append-block-item` through `run()` with `dryrun: true` appends the item: the op returns the live-write string `Appended item …` and the item is present in the block, where `dryRun: true` returns `would append item …` and leaves the block unchanged."
+    },
+    {
+      "file": "packages/pi-context-cli/src/cli.ts",
+      "lines": "332",
+      "reference": "`throw new UsageError(\\`unknown flag: ${tok}\\`)` — parse-time rejection. Invoking the same op via the CLI with `--dryrun` exits 2 `unknown flag: --dryrun`, establishing that the protection is at the parser, not at the op."
+    },
+    {
+      "file": "packages/pi-context/src/index.ts",
+      "lines": "4202",
+      "reference": "`registerAll(pi)` registers all 57 ops as pi tools, so model-supplied params reach `run()` unchecked. `./ops` is a declared export subpath in packages/pi-context/package.json, resolving to dist/ops-registry.js, so external consumers reach the same unguarded boundary."
+    }
+  ],
+  "impact": "A misspelled optional param changes semantics with no signal. On any mutation op `dryrun` for `dryRun` executes the write the caller meant to preview; a mistyped filter param yields unfiltered results that read as filtered. The primary caller is in-pi LLM tool dispatch, where a hallucinated or misspelled key is an ordinary failure mode rather than an edge case, and the public `./ops` subpath extends the same exposure to external consumers. The CLI's parse-time rejection does not reduce this: it protects the one surface that is not the primary caller.",
+  "proposed_resolution": "Enforce the declared param contract once at the op boundary rather than per op. Either set `additionalProperties: false` on the op param schemas, or validate params against the op's declared schema inside `registerAll` before `op.run` is called, so an undeclared key produces a refusal naming the unknown parameter and its op. The refusal must reach every caller of the boundary, not only the CLI. Retire `rejectBlockNarrowing`'s hand-rolled role once the general check subsumes it."
+}

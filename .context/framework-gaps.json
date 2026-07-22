@@ -5117,6 +5117,159 @@
       "created_at": "2026-07-13T09:16:18.158Z",
       "oid": "a5e3b907eb2734abe5237d7cbde98f9a",
       "content_hash": "6d8703b5ee1601fcb48343eb60d45a056ba675ba1880b8295ba59c2615d94d00"
+    },
+    {
+      "title": "dryRun preview reports would-write for writes the live run refuses",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-context",
+      "canonical_vocabulary": "exact dry-run outcome preview",
+      "description": "`--dryRun` on the substrate write path reports a would-write outcome for writes the live run refuses: the preview executes a covered subset of the live gate set, so preview success does not entail live success. Three sites, one class.\n(a) Relation endpoint-kind validation is location-gated. `validateEdgeAgainstRegistry` applies `source_kinds`/`target_kinds` checks only when the endpoint resolves to a `loc` (context-sdk.ts:1819, :1824). A not-yet-written item has no loc, so a birth edge naming it skips the kind check at preview and is rejected at write.\n(b) The write-pipeline delta-scoped invariant gate is live-only. The `CONVERGE_AFTER_OPS` wrapper sets `pre = isDryRun ? null : invariantSnapshot(cwd)` and returns from `finish` before the delta comparison under dryRun (ops-registry.ts:3037-3041), so the error-severity invariant refusal never runs in preview. This spans all 12 ops in `CONVERGE_AFTER_OPS`, pure edge ops included, and is the widest of the three: its fix locus is the wrapper, not a preview gate.\n(c) The upsert arm previews a narrower gate than the append arm. Upsert's dryRun branch returns before `writeTypedFile` (block-api.ts:1657), while the diff-scoped rhetorical-criteria enforcement (:1054-1075) and the envelope `schema_version` stamp (:1023-1047) sit above `writeTypedFile`'s own dry-run boundary (:1083). The same item against a schema declaring `x-rhetorical-criteria` is refused by `append --dryRun` and accepted by `upsert --dryRun`.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/context-sdk.ts",
+          "lines": "1797-1830",
+          "reference": "`validateEdgeAgainstRegistry`: the kind checks at :1819 and :1824 are gated on `parentLoc &&` and `childLoc &&`. An endpoint carrying no `loc` — which includes an item being created by the same write — is skipped for the kind check. Filing a task as the target of a relation whose `target_kinds` is `[issues]` returns exit 0 `would append` under `--dryRun` and exit 1 `target kind 'tasks' not in target_kinds [issues]` live."
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "2922-2935, 3033-3059",
+          "reference": "`CONVERGE_AFTER_OPS` lists 12 mutation ops (append-block-item, upsert-block-item, update-block-item, remove-block-item, write-block, complete-task, append-relation, append-relations, remove-relation, replace-relation, rename-canonical-id, promote-item). The wrapper at :3037-3041 reads `const isDryRun = (params as {dryRun?: unknown}).dryRun === true`, sets `const pre = isDryRun ? null : invariantSnapshot(cwd)`, and `finish` opens `if (isDryRun) return settled`, so the delta-scoped error-severity refusal at :3048-3055 is unreachable in preview. `append-relation --dryRun` for a passed verification against a non-completed task returns exit 0 `would append relation`; the identical live call is refused for the `verification-passed-task-complete` invariant."
+        },
+        {
+          "file": "packages/pi-context/src/block-api.ts",
+          "lines": "1644-1657",
+          "reference": "The upsert dryRun branch runs `validateFromFile` on the stamped prospective and returns before `writeTypedFile` at :1658. The envelope `schema_version` stamp (:1023-1047) and the diff-scoped rhetorical-criteria enforcement (:1054-1075) sit above `writeTypedFile`'s own dry-run boundary at :1083, so the append preview runs them and the upsert preview does not. A 900-word `description` against the `tasks` schema `x-prompt-budget.words: 800` is refused by `append --dryRun`, accepted by `upsert --dryRun`, and refused by live `upsert`."
+        }
+      ],
+      "impact": "An operator or agent using `--dryRun` to establish whether a write is safe receives a false affirmative and proceeds into a write that fails. Where the preview is the pre-commit check, a green preview followed by a live refusal surfaces the failure at the point of write rather than at the point of check. Site (b) additionally means no error-severity invariant violation is visible in preview at all, on any of the 12 mutation ops. Sites (b) and (c) carry in-surface text disclosing the divergence, which bounds discoverability but not behaviour.",
+      "proposed_resolution": "Run the live gate set in preview, per site. (a) Resolve the prospective item's kind from the pending write rather than from a stored `loc`, so kind checks apply to endpoints the same write creates. (b) Take the `pre` snapshot unconditionally and evaluate `finish` against the in-memory prospective post-state instead of returning early, so the delta-scoped invariant comparison runs under dryRun across all 12 ops; this is one change at the wrapper. (c) Hoist the envelope stamp and the diff-scoped rhetorical-criteria enforcement above the upsert arm's dry-run return, or route the upsert preview through the same `writeTypedFile` dry-run boundary the append arm already uses. If (b) is split out on fix-locus grounds, its acceptance shape is the wrapper's, and (a) and (c) remain per-site.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-07-20T09:41:48+0800",
+      "id": "FGAP-153",
+      "oid": "f97e4646f19ccb9ac91ec525b967e5cd",
+      "content_hash": "120496c3482ea157ce02eaa8e8fdb2250db2bf7d549b7b846bde12a56f804062"
+    },
+    {
+      "title": "The op run() boundary enforces no input contract, so an undeclared param is silently accepted",
+      "status": "identified",
+      "priority": "P1",
+      "package": "pi-context",
+      "canonical_vocabulary": "input-contract enforcement at the operation boundary",
+      "description": "The op layer performs no schema validation on incoming params. `registerAll` passes the params object straight into `op.run(ctx.cwd, params as never, dctx)` (ops-registry.ts:3111), and the TypeBox `Type.Object` param schemas do not set `additionalProperties: false`, so an undeclared or misspelled key is accepted and ignored rather than refused. `rejectBlockNarrowing` (ops-registry.ts:560-566) is the layer's only param guard, hand-called on one param at two read-only ops — `context-validate-relations` (:2476) and `context-roadmap-validate` (:2677). No mutation op carries a param check.\nThe `dryRun` contract is exact-key: the wrapper tests `(params as {dryRun?: unknown}).dryRun === true` (ops-registry.ts:3037). A caller passing `dryrun` performs the live write it intended to preview, returning a live-write result string and no error.\nUnknown-key rejection exists only at the CLI parse layer, which throws `unknown flag` before an op is reached (pi-context-cli/src/cli.ts:332) and covers the CLI surface alone. The unguarded surfaces are the in-pi tool dispatch — all 57 ops registered through `registerAll(pi)` (pi-context/src/index.ts:4202) — and programmatic callers reaching `run()` through `./ops`, a public export subpath of `@davidorex/pi-context`.",
+      "evidence": [
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "550-559",
+          "reference": "In-code statement of the gap: the op layer itself performs no schema validation on params, `registerAll` passes them straight into `run()`, and TypeBox `Type.Object` does not set `additionalProperties: false`, so a caller reaching `run()` directly or through a permissive tool dispatch gets a silently-always-empty filter instead of an error."
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "560-566, 2476, 2677, 3111",
+          "reference": "`rejectBlockNarrowing` is the sole param guard and is called at exactly two sites, both read-only validators. `registerAll` at :3111 invokes `await op.run(ctx.cwd, params as never, dctx)` with no interposed check."
+        },
+        {
+          "file": "packages/pi-context/src/ops-registry.ts",
+          "lines": "3037",
+          "reference": "`const isDryRun = (params as { dryRun?: unknown }).dryRun === true` — exact-key with no normalization. Calling `append-block-item` through `run()` with `dryrun: true` appends the item: the op returns the live-write string `Appended item …` and the item is present in the block, where `dryRun: true` returns `would append item …` and leaves the block unchanged."
+        },
+        {
+          "file": "packages/pi-context-cli/src/cli.ts",
+          "lines": "332",
+          "reference": "`throw new UsageError(\\`unknown flag: ${tok}\\`)` — parse-time rejection. Invoking the same op via the CLI with `--dryrun` exits 2 `unknown flag: --dryrun`, establishing that the protection is at the parser, not at the op."
+        },
+        {
+          "file": "packages/pi-context/src/index.ts",
+          "lines": "4202",
+          "reference": "`registerAll(pi)` registers all 57 ops as pi tools, so model-supplied params reach `run()` unchecked. `./ops` is a declared export subpath in packages/pi-context/package.json, resolving to dist/ops-registry.js, so external consumers reach the same unguarded boundary."
+        }
+      ],
+      "impact": "A misspelled optional param changes semantics with no signal. On any mutation op `dryrun` for `dryRun` executes the write the caller meant to preview; a mistyped filter param yields unfiltered results that read as filtered. The primary caller is in-pi LLM tool dispatch, where a hallucinated or misspelled key is an ordinary failure mode rather than an edge case, and the public `./ops` subpath extends the same exposure to external consumers. The CLI's parse-time rejection does not reduce this: it protects the one surface that is not the primary caller.",
+      "proposed_resolution": "Enforce the declared param contract once at the op boundary rather than per op. Either set `additionalProperties: false` on the op param schemas, or validate params against the op's declared schema inside `registerAll` before `op.run` is called, so an undeclared key produces a refusal naming the unknown parameter and its op. The refusal must reach every caller of the boundary, not only the CLI. Retire `rejectBlockNarrowing`'s hand-rolled role once the general check subsumes it.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-07-20T09:41:48+0800",
+      "id": "FGAP-154",
+      "oid": "948f0b788888bec4db3aa47cb0fb5064",
+      "content_hash": "e567c94189bc0b07602dafe2d6b53e49ad3dcb95f0b4d0d413e53e363fc85a5d"
+    },
+    {
+      "title": "The glue guard classifies by physical line and a narrow boundary class, and fails open on shell grammar",
+      "status": "identified",
+      "priority": "P3",
+      "package": ".claude/hooks (Claude Code enforcement harness; not a published package)",
+      "canonical_vocabulary": "shell-grammar-aware command classification",
+      "description": "The pi-context glue guard classifies shell commands by token inspection over physical lines, with no shell-grammar awareness. It fails open — admits the command — whenever the logical command differs from its physical lines, or whenever the command boundary is not a member of its recognizer's boundary class.\nThe recognizer (block-pi-context-glue.sh:42) matches `(^|[;&|]| )pi-context `: the boundary class carries a literal space but not tab, `(`, or backtick. All four detection branches are `grep -Eq` and therefore line-oriented — the pipe/`2>/dev/null` branch (:50), the loop branch (:55), the stdout-to-file branch (:66), and the echo-narration branch (:71) — so each requires the anchor and the offending metacharacter on one physical line.\nBoth dimensions are class-level rather than specific token pairs. Line-orientation is defeated by a line-continuation backslash placed before the metacharacter, including a split between the op name and its arguments, and applies to the stdout-to-file branch as well as the pipe branch. The boundary class is defeated by `$(…)`, backtick substitution, `(…)` subshell, `<(…)` process substitution, a leading tab, and `;` followed by a tab. Separately, the quote-strip at :39 collapses a quoted payload to `Q` before the recognizer runs, so `eval` of a quoted command hides the op from recognition — a fail-open contrary to the fail-closed intent stated at :30-31.",
+      "evidence": [
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "lines": "42",
+          "reference": "Recognizer `grep -Eq 'pi-context-cli/dist/bin\\.js|(^|[;&|]| )pi-context '`. The alternation's boundary class is `(^|[;&|]| )` — space only among whitespace, and no `(` or backtick — so a command reached through substitution, subshell, process substitution, or after a tab is not recognized as a pi-context invocation at all, and no branch runs."
+        },
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "lines": "50, 55, 66, 71",
+          "reference": "The four detection branches are each `grep -Eq`, which matches within a single line. A logical command spanning physical lines via a trailing backslash presents the anchor on one line and the metacharacter on the next, so no branch matches. Observed exit 0 (admit) where the discipline requires exit 2: pipe after a continuation; continuation split between op name and arguments; stdout redirection after a continuation."
+        },
+        {
+          "file": ".claude/hooks/block-pi-context-glue.sh",
+          "lines": "39",
+          "reference": "The `perl -0777` quote-strip replaces quoted spans with `Q` across the whole record before classification. `eval $(printf %s \"pi-context read-block | jq .\")` therefore reaches the recognizer with the op text removed, and is admitted — the strip is fail-open here, against the fail-closed intent recorded at :30-31."
+        }
+      ],
+      "impact": "The guard is the enforcement mechanism for the pi-context direct-drive discipline in Claude Code sessions. Each fail-open admits precisely the glue the discipline forbids — piping, post-processing, redirection, stderr suppression — with no refusal to surface it, so a session can route around the discipline without the friction that would otherwise register as a gap. Severity is bounded by the enforcement posture: the guard targets a lazy cooperative agent rather than an adversary, and continuation-split or substitution-wrapped invocations are uncommon emissions.",
+      "proposed_resolution": "Normalize input to logical commands before classification: join line continuations, then split on shell command separators, and apply the branch patterns to each logical command rather than to physical lines. Widen the recognizer's boundary class to the full set of command-start contexts — tab and other whitespace, `(`, backtick, `$(`, `<(` — so substitution- and subshell-wrapped invocations are recognized. Re-derive the quote-strip's direction so that stripping a quoted span cannot remove the op from the recognizer's view; a payload that cannot be classified after stripping fails closed. Develop and test against a copy of the guard, never the live guard.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-07-20T09:41:48+0800",
+      "id": "FGAP-155",
+      "oid": "520fdc63a61c88b1750474edded470f1",
+      "content_hash": "67b7effa227e448b7ffab33957e0ac26534e373d452da25c8dc3e4c21af1db8e"
+    },
+    {
+      "title": "The two agent-spec parsers assign different meanings to the task prompt field",
+      "status": "identified",
+      "priority": "P2",
+      "package": "pi-jit-agents + pi-workflows",
+      "canonical_vocabulary": "spec dialect convergence across dispatch surfaces",
+      "description": "The two agent-spec parsers resolve the task prompt field differently, so one `.agent.yaml` does not dispatch equivalently on both surfaces.\nInline task string: `pi-workflows/src/agent-spec.ts:125` conflates it into the template slot (`taskTemplate: task.template ?? task.inline`), and `compileAgentSpec` renders `taskTemplate` through `renderTemplateFile` → `env.render(name)` (step-shared.ts:212-215; template.ts:94-100), so the inline text is resolved as a template file name and compilation throws `template not found: <the inline text>`. `pi-jit-agents/src/agent-spec.ts:256-259` keeps `taskPrompt` and `taskPromptTemplate` as distinct fields and renders the inline string as a string.\nObject dialect `task: { inline: … }`: dropped by both parsers. Each `resolvePromptField` (pi-workflows :41, pi-jit-agents :26) handles only the `template` key and falls through to `{}` for any other, so the declared prompt is absent from the compiled dispatch with no error and the step proceeds on serialized input plus output instructions.\nThe conflation is task-side only. `pi-workflows/src/agent-spec.ts:124` carries `systemPrompt: system.inline` and renders it correctly as a string (step-shared.ts:206-208), so within one file the system prompt resolves while the task prompt throws.\nA second trap sits on the same field: the string arm selects template-vs-inline by a path heuristic (`.md`/`.txt` suffix, or a `/`), so an inline prompt whose text happens to satisfy the heuristic is resolved as a file path.",
+      "evidence": [
+        {
+          "file": "packages/pi-workflows/src/agent-spec.ts",
+          "lines": "124-125",
+          "reference": "`systemPrompt: system.inline` beside `taskTemplate: task.template ?? task.inline` — the system arm preserves the inline string, the task arm merges it into the template slot. This asymmetry is the mechanism by which one file's system prompt renders and its task prompt throws."
+        },
+        {
+          "file": "packages/pi-workflows/src/step-shared.ts",
+          "lines": "206-215",
+          "reference": "`systemPrompt` is rendered as a string at :206-208, while `if (agentSpec.taskTemplate) renderTemplateFile(...)` at :212-215 routes the task slot through `env.render(templateName, context)` (template.ts:94-100), which treats its argument as a template name. Inline task text therefore reaches Nunjucks as a filename."
+        },
+        {
+          "file": "packages/pi-jit-agents/src/agent-spec.ts",
+          "lines": "256-259",
+          "reference": "Four distinct fields — `systemPrompt`, `systemPromptTemplate`, `taskPrompt`, `taskPromptTemplate` — with no conflation. The same spec text that throws on the workflows surface compiles here with `taskPrompt` set to the inline string."
+        },
+        {
+          "file": "packages/pi-workflows/src/agent-spec.ts",
+          "lines": "41",
+          "reference": "`resolvePromptField` handles the `template` key on an object and returns `{}` for any other key, so `{ inline: … }` yields no prompt. The counterpart at pi-jit-agents/src/agent-spec.ts:26 behaves identically, making the object dialect a silent drop on both surfaces rather than a divergence."
+        },
+        {
+          "file": "packages/pi-workflows/src/integration.test.ts",
+          "lines": "539-543",
+          "reference": "The test authors the object dialect (`task:` / `inline: \"Respond with a JSON object…\"`). Its assertions at :594-603 check only `result.status === \"completed\"`, `step.status === \"completed\"`, and `typeof step.output === \"object\"` — none asserts the task prompt reached the agent — so under `RUN_INTEGRATION=1` it passes with the declared prompt discarded. The enclosing describe is skipped absent `RUN_INTEGRATION=1` and `pi` on PATH, so this stands as an authoring precedent for the dropped dialect rather than a currently-running false pass."
+        },
+        {
+          "file": "packages/pi-agent-dispatch/src/work-order-loop.integration.test.ts",
+          "lines": "89-91",
+          "reference": "An in-tree comment navigating the trap by hand — noting that a plain-string task prompt is the inline form because `resolvePromptField` treats an object only as the `{template}` form, and that the text must avoid `/` and a trailing `.md`/`.txt` to stay inline rather than be read as a template path. The divergence and the path heuristic are being routed around at authoring time."
+        }
+      ],
+      "impact": "A spec author cannot write one `.agent.yaml` that means the same thing on both dispatch surfaces. The inline-string form compiles on jit dispatch and hard-throws as a workflow step, so a spec is bound to the surface it was written against. The object form dispatches an under-briefed agent silently on both surfaces: the prompt is absent, no error is raised, and the failure surfaces only as degraded agent output at a distance from its cause. The path heuristic adds a third outcome on the same field, where inline text is read as a filename on content alone.",
+      "proposed_resolution": "Converge the prompt-field contract on a single shared implementation consumed by both parsers, replacing the two independent `resolvePromptField` functions. The contract keeps the inline and template slots distinct on the task side, as pi-jit-agents already does, so inline text is never routed to the template renderer; handles the object `{ inline: … }` key explicitly; and refuses an unrecognized prompt-field dialect rather than falling through to `{}`, so a dropped prompt is an error at parse rather than a silent absence at dispatch. Decide the path-heuristic's disposition as part of the same contract — an explicit slot removes the need to infer template-vs-inline from the text.",
+      "created_by": "human:davidryan@gmail.com",
+      "created_at": "2026-07-20T09:41:48+0800",
+      "id": "FGAP-156",
+      "oid": "5ab130d2d7145bc4826b180eb0793fa7",
+      "content_hash": "fa9cefede388cc9ef3a6eeea0785e63b3d2ebdaff03295c097f8f8f1dce99049"
     }
   ]
 }

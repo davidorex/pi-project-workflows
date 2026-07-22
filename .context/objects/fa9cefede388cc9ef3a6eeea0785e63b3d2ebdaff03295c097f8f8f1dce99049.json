@@ -1,0 +1,42 @@
+{
+  "title": "The two agent-spec parsers assign different meanings to the task prompt field",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-jit-agents + pi-workflows",
+  "canonical_vocabulary": "spec dialect convergence across dispatch surfaces",
+  "description": "The two agent-spec parsers resolve the task prompt field differently, so one `.agent.yaml` does not dispatch equivalently on both surfaces.\nInline task string: `pi-workflows/src/agent-spec.ts:125` conflates it into the template slot (`taskTemplate: task.template ?? task.inline`), and `compileAgentSpec` renders `taskTemplate` through `renderTemplateFile` → `env.render(name)` (step-shared.ts:212-215; template.ts:94-100), so the inline text is resolved as a template file name and compilation throws `template not found: <the inline text>`. `pi-jit-agents/src/agent-spec.ts:256-259` keeps `taskPrompt` and `taskPromptTemplate` as distinct fields and renders the inline string as a string.\nObject dialect `task: { inline: … }`: dropped by both parsers. Each `resolvePromptField` (pi-workflows :41, pi-jit-agents :26) handles only the `template` key and falls through to `{}` for any other, so the declared prompt is absent from the compiled dispatch with no error and the step proceeds on serialized input plus output instructions.\nThe conflation is task-side only. `pi-workflows/src/agent-spec.ts:124` carries `systemPrompt: system.inline` and renders it correctly as a string (step-shared.ts:206-208), so within one file the system prompt resolves while the task prompt throws.\nA second trap sits on the same field: the string arm selects template-vs-inline by a path heuristic (`.md`/`.txt` suffix, or a `/`), so an inline prompt whose text happens to satisfy the heuristic is resolved as a file path.",
+  "evidence": [
+    {
+      "file": "packages/pi-workflows/src/agent-spec.ts",
+      "lines": "124-125",
+      "reference": "`systemPrompt: system.inline` beside `taskTemplate: task.template ?? task.inline` — the system arm preserves the inline string, the task arm merges it into the template slot. This asymmetry is the mechanism by which one file's system prompt renders and its task prompt throws."
+    },
+    {
+      "file": "packages/pi-workflows/src/step-shared.ts",
+      "lines": "206-215",
+      "reference": "`systemPrompt` is rendered as a string at :206-208, while `if (agentSpec.taskTemplate) renderTemplateFile(...)` at :212-215 routes the task slot through `env.render(templateName, context)` (template.ts:94-100), which treats its argument as a template name. Inline task text therefore reaches Nunjucks as a filename."
+    },
+    {
+      "file": "packages/pi-jit-agents/src/agent-spec.ts",
+      "lines": "256-259",
+      "reference": "Four distinct fields — `systemPrompt`, `systemPromptTemplate`, `taskPrompt`, `taskPromptTemplate` — with no conflation. The same spec text that throws on the workflows surface compiles here with `taskPrompt` set to the inline string."
+    },
+    {
+      "file": "packages/pi-workflows/src/agent-spec.ts",
+      "lines": "41",
+      "reference": "`resolvePromptField` handles the `template` key on an object and returns `{}` for any other key, so `{ inline: … }` yields no prompt. The counterpart at pi-jit-agents/src/agent-spec.ts:26 behaves identically, making the object dialect a silent drop on both surfaces rather than a divergence."
+    },
+    {
+      "file": "packages/pi-workflows/src/integration.test.ts",
+      "lines": "539-543",
+      "reference": "The test authors the object dialect (`task:` / `inline: \"Respond with a JSON object…\"`). Its assertions at :594-603 check only `result.status === \"completed\"`, `step.status === \"completed\"`, and `typeof step.output === \"object\"` — none asserts the task prompt reached the agent — so under `RUN_INTEGRATION=1` it passes with the declared prompt discarded. The enclosing describe is skipped absent `RUN_INTEGRATION=1` and `pi` on PATH, so this stands as an authoring precedent for the dropped dialect rather than a currently-running false pass."
+    },
+    {
+      "file": "packages/pi-agent-dispatch/src/work-order-loop.integration.test.ts",
+      "lines": "89-91",
+      "reference": "An in-tree comment navigating the trap by hand — noting that a plain-string task prompt is the inline form because `resolvePromptField` treats an object only as the `{template}` form, and that the text must avoid `/` and a trailing `.md`/`.txt` to stay inline rather than be read as a template path. The divergence and the path heuristic are being routed around at authoring time."
+    }
+  ],
+  "impact": "A spec author cannot write one `.agent.yaml` that means the same thing on both dispatch surfaces. The inline-string form compiles on jit dispatch and hard-throws as a workflow step, so a spec is bound to the surface it was written against. The object form dispatches an under-briefed agent silently on both surfaces: the prompt is absent, no error is raised, and the failure surfaces only as degraded agent output at a distance from its cause. The path heuristic adds a third outcome on the same field, where inline text is read as a filename on content alone.",
+  "proposed_resolution": "Converge the prompt-field contract on a single shared implementation consumed by both parsers, replacing the two independent `resolvePromptField` functions. The contract keeps the inline and template slots distinct on the task side, as pi-jit-agents already does, so inline text is never routed to the template renderer; handles the object `{ inline: … }` key explicitly; and refuses an unrecognized prompt-field dialect rather than falling through to `{}`, so a dropped prompt is an error at parse rather than a silent absence at dispatch. Decide the path-heuristic's disposition as part of the same contract — an explicit slot removes the need to infer template-vs-inline from the text."
+}

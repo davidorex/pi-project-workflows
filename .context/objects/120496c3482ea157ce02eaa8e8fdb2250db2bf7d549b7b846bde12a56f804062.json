@@ -1,0 +1,27 @@
+{
+  "title": "dryRun preview reports would-write for writes the live run refuses",
+  "status": "identified",
+  "priority": "P2",
+  "package": "pi-context",
+  "canonical_vocabulary": "exact dry-run outcome preview",
+  "description": "`--dryRun` on the substrate write path reports a would-write outcome for writes the live run refuses: the preview executes a covered subset of the live gate set, so preview success does not entail live success. Three sites, one class.\n(a) Relation endpoint-kind validation is location-gated. `validateEdgeAgainstRegistry` applies `source_kinds`/`target_kinds` checks only when the endpoint resolves to a `loc` (context-sdk.ts:1819, :1824). A not-yet-written item has no loc, so a birth edge naming it skips the kind check at preview and is rejected at write.\n(b) The write-pipeline delta-scoped invariant gate is live-only. The `CONVERGE_AFTER_OPS` wrapper sets `pre = isDryRun ? null : invariantSnapshot(cwd)` and returns from `finish` before the delta comparison under dryRun (ops-registry.ts:3037-3041), so the error-severity invariant refusal never runs in preview. This spans all 12 ops in `CONVERGE_AFTER_OPS`, pure edge ops included, and is the widest of the three: its fix locus is the wrapper, not a preview gate.\n(c) The upsert arm previews a narrower gate than the append arm. Upsert's dryRun branch returns before `writeTypedFile` (block-api.ts:1657), while the diff-scoped rhetorical-criteria enforcement (:1054-1075) and the envelope `schema_version` stamp (:1023-1047) sit above `writeTypedFile`'s own dry-run boundary (:1083). The same item against a schema declaring `x-rhetorical-criteria` is refused by `append --dryRun` and accepted by `upsert --dryRun`.",
+  "evidence": [
+    {
+      "file": "packages/pi-context/src/context-sdk.ts",
+      "lines": "1797-1830",
+      "reference": "`validateEdgeAgainstRegistry`: the kind checks at :1819 and :1824 are gated on `parentLoc &&` and `childLoc &&`. An endpoint carrying no `loc` — which includes an item being created by the same write — is skipped for the kind check. Filing a task as the target of a relation whose `target_kinds` is `[issues]` returns exit 0 `would append` under `--dryRun` and exit 1 `target kind 'tasks' not in target_kinds [issues]` live."
+    },
+    {
+      "file": "packages/pi-context/src/ops-registry.ts",
+      "lines": "2922-2935, 3033-3059",
+      "reference": "`CONVERGE_AFTER_OPS` lists 12 mutation ops (append-block-item, upsert-block-item, update-block-item, remove-block-item, write-block, complete-task, append-relation, append-relations, remove-relation, replace-relation, rename-canonical-id, promote-item). The wrapper at :3037-3041 reads `const isDryRun = (params as {dryRun?: unknown}).dryRun === true`, sets `const pre = isDryRun ? null : invariantSnapshot(cwd)`, and `finish` opens `if (isDryRun) return settled`, so the delta-scoped error-severity refusal at :3048-3055 is unreachable in preview. `append-relation --dryRun` for a passed verification against a non-completed task returns exit 0 `would append relation`; the identical live call is refused for the `verification-passed-task-complete` invariant."
+    },
+    {
+      "file": "packages/pi-context/src/block-api.ts",
+      "lines": "1644-1657",
+      "reference": "The upsert dryRun branch runs `validateFromFile` on the stamped prospective and returns before `writeTypedFile` at :1658. The envelope `schema_version` stamp (:1023-1047) and the diff-scoped rhetorical-criteria enforcement (:1054-1075) sit above `writeTypedFile`'s own dry-run boundary at :1083, so the append preview runs them and the upsert preview does not. A 900-word `description` against the `tasks` schema `x-prompt-budget.words: 800` is refused by `append --dryRun`, accepted by `upsert --dryRun`, and refused by live `upsert`."
+    }
+  ],
+  "impact": "An operator or agent using `--dryRun` to establish whether a write is safe receives a false affirmative and proceeds into a write that fails. Where the preview is the pre-commit check, a green preview followed by a live refusal surfaces the failure at the point of write rather than at the point of check. Site (b) additionally means no error-severity invariant violation is visible in preview at all, on any of the 12 mutation ops. Sites (b) and (c) carry in-surface text disclosing the divergence, which bounds discoverability but not behaviour.",
+  "proposed_resolution": "Run the live gate set in preview, per site. (a) Resolve the prospective item's kind from the pending write rather than from a stored `loc`, so kind checks apply to endpoints the same write creates. (b) Take the `pre` snapshot unconditionally and evaluate `finish` against the in-memory prospective post-state instead of returning early, so the delta-scoped invariant comparison runs under dryRun across all 12 ops; this is one change at the wrapper. (c) Hoist the envelope stamp and the diff-scoped rhetorical-criteria enforcement above the upsert arm's dry-run return, or route the upsert preview through the same `writeTypedFile` dry-run boundary the append arm already uses. If (b) is split out on fix-locus grounds, its acceptance shape is the wrapper's, and (a) and (c) remain per-site."
+}

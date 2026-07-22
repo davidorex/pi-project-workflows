@@ -81,10 +81,10 @@ signing (the approval names exact inputs; it does not carry over to changed inpu
 - R4: DKB-02, DKB-03, SA-20 → issues; DKB-15≡SA-32 (one filing, gated on the reserved
   line-100 ruling).
 - R5: SA-07 → research (reconstruction of the lost analysis file is out of run scope).
-- R6: DW-02, DW-05, DW-08, KB-30, SA-27 → tasks with parent + convention edges;
-  SA-18 half-b.
-- R1: DW-01 (FEAT-001), KB-02 (issue-002), KB-04 (FGAP-065), KB-15 (issue-010), KB-16
-  (FGAP-102), KB-17 (issue-011) → relate/update the named item.
+- R6: KB-30, SA-27 → tasks with parent + convention edges; SA-18 half-b.
+- R1: KB-02 (issue-002), KB-04 (FGAP-065), KB-15 (issue-010), KB-16 (FGAP-102), KB-17
+  (issue-011) → relate/update the named item. Every R1/R6 target was content-verified
+  against its filed title, not id-matched — which is what caught the DW family below.
 - R0 disposed: KB-20 (already-converged as FGAP-153, user 2026-07-20), SA-15
   (declined-by-user, 2026-07-10, delta contradicted by the record), SA-17
   (superseded-by-later-statement, 2026-07-15), SA-33 (no-substrate-home).
@@ -96,7 +96,16 @@ signing (the approval names exact inputs; it does not carry over to changed inpu
   research genuinely undiscriminated); DW-12 (parent-less in the live substrate — its
   prose parents PHASE-001/003 are frozen-ledger ids; caught by the tool's
   target-not-found existence check on the first verification run and corrected in the
-  table from a wrong live-parent claim to residue).
+  table from a wrong live-parent claim to residue); and DW-01/DW-02/DW-05/DW-08 (the
+  FEAT-001 id-collision: the corpus means the frozen ledger's agent-layer unification
+  arc, but the live substrate's FEAT-001 is the unrelated clone feature — an existence
+  check passes on the wrong item; caught 2026-07-22 by fetching the cited id's filed
+  title to gloss the review page, i.e. by content-verification, the exact discipline
+  the audit profile's id_collision_hazards note mandates. All four follow the user's
+  DI-19 execute-or-retire ruling). The two frozen-id defect instances (DW-12,
+  DW-01/02/05/08) are one class: corpus prose citing frozen-ledger ids that either
+  dangle or collide in the live substrate — every cited id must be content-verified,
+  never id-matched.
 
 ## 6. Temporal-pass citations folded into the facts (no-atemporal-record-reading policy)
 

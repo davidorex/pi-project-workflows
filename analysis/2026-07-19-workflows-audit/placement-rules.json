@@ -1,0 +1,115 @@
+{
+	"version": 1,
+	"corpus": "substrate-deltas-20260721-171029.jsonl",
+	"corpus_sha256": "7231fcef6e5ccc507969a8731f265b20d8947002c5fb1c6a56a7d541277bc1e8",
+	"config_sha256": "2ef775c1e142fb759321b45e9d8ae381ebd9e12692503442bb4a4c105fd173df",
+	"schemas_sha256": "57b02241d64436b74f722d7c95b392e71d8cef386f886930dcf9e98f8c0a2e8e",
+	"fingerprint_method": "sha256 of .context/config.json bytes; sha256 of `cat .context/schemas/*.json` (shell glob order); byte fingerprints only, no semantic read",
+	"ratified_by": null,
+	"ratified_at": null,
+	"derivation_record": "placement-derivation.md",
+	"rules": [
+		{
+			"id": "R0",
+			"priority": 0,
+			"if": "atom has an entry in atom_facts with disposition set",
+			"then": "no filing; record the disposition and its citation in the run ledger",
+			"because": "a later user statement already disposed the atom; the record is authority (no-atemporal-record-reading policy, 2026-07-22)"
+		},
+		{
+			"id": "R1",
+			"priority": 1,
+			"if": "atom_facts.cited_id names an existing substrate item (prefix map: FGAP->framework-gaps, TASK->tasks, FEAT->features, DEC->decisions, VER->verification, R->research, issue->issues, PHASE->phase)",
+			"then_block": "the cited id's kind",
+			"mode": "relate-or-update the named item; never append a sibling",
+			"because": "prior-art precondition: the substrate already tracks the ground; item counts only grow, unguarded filing is where duplicates accumulate (CLAUDE.md explore-before-file)"
+		},
+		{
+			"id": "R2",
+			"priority": 2,
+			"if": "atom_facts.content_kind = instance-of:<kind>",
+			"then_block": "<kind>",
+			"mode": "append",
+			"because": "the record's content IS an instance of an installed kind; the kind's own description names the content (rationale: 'the deeper reasoning behind decisions'; session-notes: 'per-session handoff records: focus, discoveries, questions, decisions made, current status, and next steps')"
+		},
+		{
+			"id": "R3",
+			"priority": 3,
+			"if": "atom_facts.defect_kind = capability-absent",
+			"then_block": "framework-gaps",
+			"mode": "append",
+			"because": "framework-gaps description: 'pieces that must exist natively ... what the framework cannot yet express at all, not bugs in expressible functionality'"
+		},
+		{
+			"id": "R4",
+			"priority": 4,
+			"if": "atom_facts.defect_kind = bug-in-expressible AND evidence carries a file:line location",
+			"then_block": "issues",
+			"mode": "append",
+			"because": "issues description: 'Known bugs, missing capabilities, design debt, and open work items ... code location, package scope'"
+		},
+		{
+			"id": "R5",
+			"priority": 5,
+			"if": "atom_facts.content_kind = investigation-findings",
+			"then_block": "research",
+			"mode": "append",
+			"because": "research description: 'what was investigated, how, what was found, what grounds the findings'"
+		},
+		{
+			"id": "R6",
+			"priority": 6,
+			"if": "atom_facts.parent_artifact names an existing FGAP/FEAT/issue/PHASE item",
+			"then_block": "tasks",
+			"mode": "append with birth relations: task_addresses_* -> parent_artifact, plus item_governed_by_convention or item_acknowledges_missing_convention (installed invariant task-articulates-convention is ERROR severity; a bare task is refused)",
+			"because": "tasks description: 'The operational layer between gaps/requirements and code changes'; observed convention: this substrate's tasks are born citing a forcing parent (21 task titles name FGAP-/FEAT-/issue- ids)"
+		},
+		{
+			"id": "R6b",
+			"priority": 7,
+			"if": "atom_facts.split = true (the atom carries two facts landing on two kinds)",
+			"then": "two filings, one per half, each placed by re-running R2-R6 on its half; cross-linked by relation",
+			"because": "neither contract is satisfiable by one item; splitting before placement is the mechanical resolution (instance: SA-18 regen-mechanism gap + regen work task)"
+		},
+		{
+			"id": "R7",
+			"priority": 8,
+			"if": "no prior rule fires, or a required fact line is absent, or a cited/parent id does not resolve",
+			"then": "exception-queue row with reason code (unmapped | missing-fact | target-not-found | no-substrate-home); run continues",
+			"because": "never default, never guess, never stop the batch for one row; unplaceable records are data, not crashes"
+		}
+	],
+	"atom_facts": [
+		{ "atom": "DI-02", "content_kind": "instance-of:rationale", "because": "the content IS the 8 emptied RAT items (title+narrative already carried); temporal pass 2026-07-22: the 2026-04-16 'folds into decisions.json' clause was assistant-authored framing quoted back in an elaboration request, never a user directive; no later user fold-statement; rationale kind installed, live, 0 items" },
+		{ "atom": "DI-04", "defect_kind": "capability-absent", "because": "recognitions/substrate-conflicts kinds not built; the gap item's content is exactly the missing-native-piece class" },
+		{ "atom": "DI-08", "defect_kind": "capability-absent", "because": "no substrate home exists for project-identity content; framework-gaps is the meta-carrier for a missing home" },
+		{ "atom": "DKB-02", "defect_kind": "bug-in-expressible", "because": "resolvePromptField misclassifies; location pi-workflows/src/agent-spec.ts:25" },
+		{ "atom": "DKB-03", "defect_kind": "bug-in-expressible", "because": "parseModelSpec anthropic-default defect at :1181; expressible functionality runs wrong" },
+		{ "atom": "DKB-06", "defect_kind": "capability-absent", "because": "no execution-trace mechanism exists anywhere (input->template->LLM->parse->result); not a file:line bug in running code" },
+		{ "atom": "DKB-08", "defect_kind": "capability-absent", "because": "LoopSpec cannot express until/untilBudgetRemaining termination; config-expressibility gap (types.ts:56 evidence seed)" },
+		{ "atom": "DKB-10", "defect_kind": "capability-absent", "because": "no worktree-isolation option on step-parallel (step-parallel.ts:84,141); missing native capability; anchor roadmap entry was research-derived, not a user statement" },
+		{ "atom": "DKB-15", "defect_kind": "bug-in-expressible", "dedup_with": "SA-32", "gated": "line-100 ruling reserved by user (c41e910c 2026-07-19 01:17/01:18 +08); file once with SA-32 only under disposition", "because": "CLAUDE.md:100 legibility defect; design-debt with location" },
+		{ "atom": "DW-01", "cited_id": "FEAT-001", "because": "the item IS the FEAT-001 arc umbrella; relate/update, never a sibling; temporal pass: latest dispositive user statement is the 2026-05-26 09:55 +08 re-scope ('re-scope TASK-080 (FEAT-001) to consume jit-agents' whole agent layer'), not a retirement" },
+		{ "atom": "DW-02", "parent_artifact": "FEAT-001", "because": "centralize-parseModelSpec execution work under the user-driven FEAT-001 arc" },
+		{ "atom": "DW-05", "parent_artifact": "FEAT-001", "because": "consumer-cascade execution under FEAT-001; depends on DW-02/03/04" },
+		{ "atom": "DW-08", "parent_artifact": "FEAT-001", "because": "execute the three pending plan-phases under FEAT-001; PLAN-PHASE-003/004/005 named in prose are frozen-ledger ids (id-reuse hazard), the live parent is the arc" },
+		{ "atom": "DW-12", "parent_artifact": "PHASE-001", "because": "enforce agent input schema contracts + guards, execution work positioned in PHASE-001/003; user thread anchor 2026-04-04 'actual working not performative theater' adopted same day and executed since" },
+		{ "atom": "DW-29", "split": false, "residue": "parent-less multi-item arc: birth-edge invariant forbids a bare task; equally defensible as features umbrella, framework-gaps scope-holder, or research; no clause discriminates. Temporal pass: user's 2026-07-13 09:21 +08 sequencing ('audit corpus after the session-audit elements') stands, no re-sequencing statement", "because": "R7 by design; reaches the user" },
+		{ "atom": "KB-02", "cited_id": "issue-002", "because": "statement names issue-002; relate/update it" },
+		{ "atom": "KB-04", "cited_id": "FGAP-065", "because": "statement names FGAP-065 (block_kind materialization); relate/update it" },
+		{ "atom": "KB-15", "cited_id": "issue-010", "because": "statement names issue-010 (clean-baseline substrate); record itself flags lower confidence (project-state, not code defect)" },
+		{ "atom": "KB-16", "cited_id": "FGAP-102", "because": "statement names FGAP-102 (conception.json drift); record flags agent-probe anchoring, not user-established" },
+		{ "atom": "KB-17", "cited_id": "issue-011", "because": "statement names issue-011 (ctrl+j/ctrl+h chord shadowing); record flags provenance (not David-established)" },
+		{ "atom": "KB-20", "disposition": "already-converged", "because": "filed as FGAP-153 under the user's 2026-07-20 09:41 +08 directive 'file all four, exactly adhering to writing conventions as given'; delta emitted 2026-07-21 predates nothing - it postdates the filing and is stale" },
+		{ "atom": "KB-30", "parent_artifact": "FGAP-136", "because": "extend the filed de-jargon program within its filed scope (cf. TASK-108..115 pattern)" },
+		{ "atom": "SA-07", "content_kind": "investigation-findings", "out_of_run_scope": "the acceptance targets reconstructing a lost analysis/ file - reconstruction work, not a substrate write this run performs; the research filing carries the tracking", "because": "six-concept version-mechanism code map = what-was-investigated/found" },
+		{ "atom": "SA-15", "disposition": "declined-by-user", "because": "d3030496 2026-07-10 11:10 +08 verbatim 'this is purely you, not a gap: this is your failure' - the 'worth filing if you want' clause was the assistant's hedge; delta's 'user ordered it considered for filing' is contradicted by the record; exception reason contradicted-by-record" },
+		{ "atom": "SA-16", "content_kind": "instance-of:session-notes", "because": "the content IS the missing per-session handoff record; required fields focus/current_status/next_steps must be assembled from the session record (content work, not placement ambiguity)" },
+		{ "atom": "SA-17", "disposition": "superseded-by-later-statement", "because": "c41e910c 2026-07-15 11:44 +08 verbatim 'i do not want the changes in .context/framework-gaps.json and the four .context/objects/*.json' - the inventory does not cross into .context; reinforced 2026-07-19" },
+		{ "atom": "SA-18", "split": true, "half_a": { "defect_kind": "capability-absent", "because": "no dashboard-regen mechanism exists (R3 -> framework-gaps)" }, "half_b": { "parent_artifact": "half_a's new gap", "because": "regenerate the stale dashboards (R6 -> tasks, parented on the regen-mechanism gap)" } },
+		{ "atom": "SA-20", "defect_kind": "bug-in-expressible", "because": "VER records carry inconsistent/absent timestamp fields; design-debt with location (verification store); backfill work is downstream of the issue" },
+		{ "atom": "SA-27", "parent_artifact": "SA-18.half_a's new gap", "because": "regenerate substrate-overview.html; recurrence of the SA-18 staleness class; task born on the regen-mechanism gap" },
+		{ "atom": "SA-32", "defect_kind": "bug-in-expressible", "dedup_with": "DKB-15", "gated": "same line-100 defect and same reserved ruling as DKB-15; one filing for the pair, only under disposition", "because": "CLAUDE.md:100 clarity defect, location present" },
+		{ "atom": "SA-33", "disposition": "no-substrate-home", "because": "correction half targets DA-01 in a gitignored report; skill-attribution-rule half belongs to the session-dangling-audit skill's own tracking (dot-claude); user verbatim c41e910c 2026-07-19 08:03 +08 'DA-01 is not language that comes from me.' pins the defect; exception reason no-substrate-home" }
+	]
+}

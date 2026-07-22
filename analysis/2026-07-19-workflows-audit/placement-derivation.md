@@ -88,6 +88,10 @@ signing (the approval names exact inputs; it does not carry over to changed inpu
 - R0 disposed: KB-20 (already-converged as FGAP-153, user 2026-07-20), SA-15
   (declined-by-user, 2026-07-10, delta contradicted by the record), SA-17
   (superseded-by-later-statement, 2026-07-15), SA-33 (no-substrate-home).
+  The table additionally carries R0 rows for KB-19/KB-21/KB-24 — already-converged
+  as FGAP-155/154/156 under the same 2026-07-20 directive; their corpus rows carry a
+  non-null block (so they sit outside the 31 null-block set) but the dispositions
+  must override the stale corpus labels, so atom_facts totals 34 rows.
 - R7 residue reaching the user: DW-29 (parent-less arc — features vs framework-gaps vs
   research genuinely undiscriminated).
 

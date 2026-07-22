@@ -81,7 +81,7 @@ signing (the approval names exact inputs; it does not carry over to changed inpu
 - R4: DKB-02, DKB-03, SA-20 → issues; DKB-15≡SA-32 (one filing, gated on the reserved
   line-100 ruling).
 - R5: SA-07 → research (reconstruction of the lost analysis file is out of run scope).
-- R6: DW-02, DW-05, DW-08, DW-12, KB-30, SA-27 → tasks with parent + convention edges;
+- R6: DW-02, DW-05, DW-08, KB-30, SA-27 → tasks with parent + convention edges;
   SA-18 half-b.
 - R1: DW-01 (FEAT-001), KB-02 (issue-002), KB-04 (FGAP-065), KB-15 (issue-010), KB-16
   (FGAP-102), KB-17 (issue-011) → relate/update the named item.
@@ -93,7 +93,10 @@ signing (the approval names exact inputs; it does not carry over to changed inpu
   non-null block (so they sit outside the 31 null-block set) but the dispositions
   must override the stale corpus labels, so atom_facts totals 34 rows.
 - R7 residue reaching the user: DW-29 (parent-less arc — features vs framework-gaps vs
-  research genuinely undiscriminated).
+  research genuinely undiscriminated); DW-12 (parent-less in the live substrate — its
+  prose parents PHASE-001/003 are frozen-ledger ids; caught by the tool's
+  target-not-found existence check on the first verification run and corrected in the
+  table from a wrong live-parent claim to residue).
 
 ## 6. Temporal-pass citations folded into the facts (no-atemporal-record-reading policy)
 

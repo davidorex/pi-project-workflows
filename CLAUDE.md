@@ -38,10 +38,11 @@ npm run check              # biome + tsc --noEmit (also runs as husky pre-commit
 npm run format             # biome format
 npm run skills             # regen SKILL.md from built extensions (run after build)
 npm run promote:cli        # install/refresh the operator pi-context binary (see below)
+npm run promote:all        # refresh ALL globally installed @davidorex packed copies from the working tree
 npm run release:patch|minor|major   # lockstep bump + commit + tag
 ```
 
-The operator `pi-context` CLI you dogfood with IS this working tree's code, installed by `npm run promote:cli` (`scripts/promote-cli.mjs`) as a publish-free packed COPY into the global npm prefix — NOT an `npm link` into the repo (which a `npm run build`'s `rm -rf dist` would clobber) and NOT the published registry release (stale). After editing/building pi-context, re-run `npm run promote:cli` to refresh the operator; a `release:*` run promotes automatically as its final step. Details: `packages/pi-context-cli/README.md`.
+The operator `pi-context` CLI you dogfood with IS this working tree's code, installed by `npm run promote:cli` (`scripts/promote-cli.mjs`) as a publish-free packed COPY into the global npm prefix — NOT an `npm link` into the repo (which a `npm run build`'s `rm -rf dist` would clobber) and NOT the published registry release (stale). After editing/building any package, `npm run promote:all` refreshes ALL the globally installed packed copies so every running surface stays current with the working tree (automatic on any commit touching `packages/` via the `.husky/post-commit` hook); `promote:cli` remains the CLI-only subset, and a `release:*` run promotes automatically as its final step. Details: `packages/pi-context-cli/README.md`.
 
 Derive context state at any time. `contextState('.')` reads the currently-active substrate (whichever `.pi-context.json` points at). To inspect a different substrate, switch to it first (see switch command above), then run:
 ```bash
@@ -110,7 +111,7 @@ Explore is a read-only search/trace agent — dispatch it ONLY for read/trace/en
 Work is not complete until the runtime can load it. Pi loads from `dist/`, not source. Every code change follows the full sequence:
 
 1. **Edit** source files
-2. **Build**: `npm run build`
+2. **Build**: `npm run build`, then `npm run promote:all` to refresh the global packed copies (automatic on any commit touching `packages/` via the post-commit hook; `promote:cli` remains the CLI-only subset and `release:*` still promotes)
 3. **Check**: `npm run check` (biome + tsc)
 4. **Test**: `npm test` — full output inspection, no pipe-to-tail (pipe masks exit code)
 5. **Runtime demonstration**: exercise the actual feature path end-to-end via real invocation (tsx eval against block-api / pi -p tool dispatch / direct CLI invocation against real substrate). NOT a mocked unit assertion. Tests-pass alone is insufficient.

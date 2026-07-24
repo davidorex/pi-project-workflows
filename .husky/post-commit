@@ -1,0 +1,10 @@
+# Refresh the globally installed @davidorex packed copies whenever a commit
+# touches packages/ — keeps the locally running pi's global install current
+# with the working tree (see scripts/promote-extensions.mjs). Commits that
+# touch no packages/ path skip silently. post-commit cannot fail the commit;
+# skip exits 0 by construction.
+if git diff-tree --no-commit-id --name-only -r HEAD | grep -q '^packages/'; then
+	npm run promote:all &&
+		echo "post-commit: refreshed the global @davidorex packed copies (promote:all)."
+fi
+exit 0

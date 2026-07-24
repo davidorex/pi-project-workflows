@@ -1390,12 +1390,18 @@ async function classifyViaAgent(
 	const prompt = compiled.taskTemplate;
 	if (!prompt) throw new Error(`Agent ${agentName}: compiled task template is empty`);
 
-	// Resolve model from agent spec
-	const modelSpec = compiled.model;
-	if (!modelSpec) throw new Error(`Agent ${agentName}: no model specified`);
-	const { provider, modelId } = parseModelSpec(modelSpec);
-	const model = ctx.modelRegistry.find(provider, modelId);
-	if (!model) throw new Error(`Model ${modelSpec} not found`);
+	// Resolve model: agent-spec pin wins; otherwise inherit the session's current model
+	let modelSpec = compiled.model;
+	let model: Model<Api> | undefined;
+	if (modelSpec) {
+		const { provider, modelId } = parseModelSpec(modelSpec);
+		model = ctx.modelRegistry.find(provider, modelId);
+		if (!model) throw new Error(`Model ${modelSpec} not found`);
+	} else {
+		model = ctx.model;
+		if (!model) throw new Error(`Agent ${agentName}: no model specified and no session model available`);
+		modelSpec = `${model.provider}/${model.id}`;
+	}
 
 	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
 	if (!auth.ok) throw new Error(auth.error);

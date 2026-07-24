@@ -4,7 +4,7 @@ What the user wants the monorepo to **be and do** (source-labeled to his own sta
 
 **Method / labels.** Every intent below carries `WHY:` — the user-statement source(s), each `SESSION_ID@TS` copied verbatim from the surfaced batch entries (source: user-statement). Every status carries `IS:` — a `source: file` observation (path, or a substrate item id) from opening the product. `status` ∈ met / partial / unmet. Consolidation merged same-intent surfaced items and kept **all** their refs. 486 surfaced items (all source: user-statement) consolidated to 92 distinct product intents.
 
-**Counts.** 92 distinct product intents (statuses line-grounded 2026-07-24, replacing the first pass in which 26 of 92 were mis-graded from status-flags/adjacent files) — **51 met / 32 partial / 8 unmet / 1 unresolved**.
+**Counts.** 92 distinct product intents (statuses line-grounded 2026-07-24, replacing the first pass in which 26 of 92 were mis-graded from status-flags/adjacent files) — **51 met / 32 partial / 9 unmet**.
 
 ---
 
@@ -400,7 +400,7 @@ IS: **met** (line-grounded 2026-07-24) — packages/pi-context/src/ops-registry.
 
 ### PI-92 — Legacy/demo workflows are development artifacts, not product targets; framework is the only target
 WHY: b62c055d-...@2026-05-24T01:04:41.686Z; b62c055d-...@2026-05-25T22:01:44.806Z; 1e859452-...@2026-04-04T09:29:07.195Z; 1c8b1a5d-...@2026-04-08T21:45:55.876Z; 1c8b1a5d-...@2026-04-08T22:41:08.778Z; 1c8b1a5d-...@2026-04-09T11:26:59.440Z
-IS: **unresolved** (line-grounded 2026-07-24) — docs/monorepo-extraction-plan.md:105, 189-192; packages/pi-workflows/README.md:1-24 MISSING: The intent is a project-stance/framing claim ('legacy/demo workflows are development artifacts, not product targets; framework is the only target') that no code line implements or refutes — it is a negative/exclusionary assertion about product targeting. The structural evidence is consistent with it (the former demo/ dir was folded into the framework package as bundled resources; the package src is framework machinery — spec/executor/steps/sdk/schemas; bundled workflows are auto-discovered starter content), but NO repo file affirmatively designates the bundled/legacy workflows as non-targets. Resolving whether the project embodies this stance would require the WHY user-statement transcripts (sessions b62c055d / 1e859452 / 1c8b1a5d) I did not read; a code-only verdict cannot ground 'not product targets' with a quoted line. — Framing/stance intent with no implementing code line — structural evidence (demo→bundled extraction, framework-only package) is consistent but the strict rule forbids a met verdict without a proving quote.
+IS: **unmet** (line-grounded 2026-07-24) — `packages/pi-workflows/package.json` `files` array includes `workflows/`, and `packages/pi-workflows/workflows/` holds 15 shipped .workflow.yaml (execute-task, do-gap, self-implement, etc.). The demo/starter workflows are published inside the product package, not excluded — the stance that they are dev scaffolding and not product is NOT enforced.
 
 ---
 

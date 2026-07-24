@@ -49,16 +49,19 @@ Each monitor is a set of files sharing a name prefix:
 ├── fragility.patterns.json      # Known patterns (JSON array, grows automatically)
 ├── fragility.instructions.json  # User corrections (JSON array, optional)
 ├── fragility/
-│   └── classify.md              # Nunjucks template for classification prompt (optional)
+│   └── classify.md              # Nunjucks classify template, referenced by the classifier agent spec
 ```
 
 The instructions file is optional. If omitted, the extension defaults the path to
 `${name}.instructions.json` and treats a missing file as an empty array.
 
-The classify template is optional. When `classify.promptTemplate` is set in the monitor
-definition, the template is resolved through a three-tier search: `.pi/monitors/` (project),
-`~/.pi/agent/monitors/` (user), then the package `examples/` directory. A user overrides a
-bundled template by placing a file at the same relative path in `.pi/monitors/`.
+The classify prompt is not declared in the monitor definition. `classify.agent` names an
+`.agent.yaml` spec — resolved from `.pi/agents/` (project), `~/.pi/agent/agents/` (user),
+then the package `agents/` directory — and that spec's `prompt.task.template` names the
+Nunjucks classify template (e.g. `fragility/classify.md`). Templates are resolved through
+a three-tier search: `.pi/monitors/` (project), `~/.pi/agent/monitors/` (user), then the
+package `examples/` directory. A user overrides a bundled template by placing a file at
+the same relative path in `.pi/monitors/`.
 </file_structure>
 
 <monitor_definition>
@@ -75,11 +78,9 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "filter": { "agent_type": ["audit-fixer"] }
   },
   "classify": {
-    "model": "claude-sonnet-4-20250514",
+    "agent": "my-monitor-classifier",
     "context": ["tool_results", "assistant_text"],
-    "excludes": ["other-monitor"],
-    "promptTemplate": "my-monitor/classify.md",
-    "prompt": "Inline fallback if template not found. {tool_results} {assistant_text} {patterns} {instructions}\n\nReply CLEAN, FLAG:<desc>, or NEW:<pattern>|<desc>."
+    "excludes": ["other-monitor"]
   },
   "patterns": {
     "path": "my-monitor.patterns.json",
@@ -92,7 +93,7 @@ A `.monitor.json` file conforms to `schemas/monitor.schema.json`:
     "on_flag": {
       "steer": "Fix the issue.",
       "write": {
-        "path": "<substrate-dir>/issues.json",
+        "block": "issues",
         "merge": "append",
         "array_field": "issues",
         "template": {
@@ -146,22 +147,23 @@ Non-main scopes can still write findings to JSON files.
 
 | Field | Default | Description |
 |-------|---------|-------------|
-| `classify.model` | `claude-sonnet-4-20250514` | Model for classification. Plain model ID uses `anthropic` provider. Use `provider/model` for other providers. |
-| `classify.context` | `["tool_results", "assistant_text"]` | Context collector names. Any string accepted — unknown collectors produce empty string. |
+| `classify.agent` | (required) | Name of an `.agent.yaml` spec that runs the classification. A `model:` pinned in the agent spec wins; when the spec omits `model`, classification runs on the session's currently selected model. |
+| `classify.context` | (required) | Context collector names. Any string accepted — unknown collectors produce empty string. |
 | `classify.excludes` | `[]` | Monitor names — skip activation if any of these already steered this turn. |
-| `classify.promptTemplate` | — | Path to `.md` Nunjucks template file. Searched in `.pi/monitors/`, `~/.pi/agent/monitors/`, then package `examples/`. Takes precedence over `prompt`. |
-| `classify.prompt` | — | Inline classification prompt with `{placeholder}` substitution. Used when `promptTemplate` is absent. One of `promptTemplate` or `prompt` is required. |
+
+The classification prompt is not a monitor-definition field: the referenced agent spec's
+`prompt.task.template` names the Nunjucks classify template (see the prompt templates
+section below).
 
 **Actions block** — per verdict (`on_flag`, `on_new`, `on_clean`):
 
 | Field | Description |
 |-------|-------------|
 | `steer` | Message to inject into conversation. `null` = no steering. Only effective for `scope.target: "main"`. |
-| `write.path` | JSON file to write findings to. Relative paths resolve from `process.cwd()`, not from the monitor directory. |
+| `write.block` | Block name in the active substrate to write findings to (e.g. `"issues"`). block-api derives the path `<substrate-dir>/<block>.json` and the schema `<substrate-dir>/schemas/<block>.schema.json`. |
 | `write.merge` | `append` (add to array) or `upsert` (update by matching `id` field). |
 | `write.array_field` | Which field in target JSON holds the array (e.g. `"issues"`, `"findings"`). |
 | `write.template` | Template mapping with `{finding_id}`, `{description}`, `{severity}`, `{monitor_name}`, `{timestamp}`. |
-| `write.schema` | Optional schema path for documentation. Not enforced at runtime. |
 | `learn_pattern` | If true, add new pattern to patterns file on `new` verdict. |
 
 `on_clean` can be configured with a `write` action to log clean verdicts. Setting it to
@@ -230,28 +232,22 @@ non-empty. An empty array or missing file produces no rules block in the prompt.
 </instructions_file>
 
 <prompt_templates>
-Monitors support two prompt rendering modes:
+The classification prompt is a Nunjucks `.md` template owned by the classifier agent spec:
+`classify.agent` names an `.agent.yaml`, and that spec's `prompt.task.template` names the
+template file (e.g. `fragility/classify.md`). The monitor definition itself carries no
+prompt or template field. Full Nunjucks syntax is available: conditionals (`{% if %}`),
+loops (`{% for %}`), includes (`{% include %}`), filters.
 
-**Inline prompts** (`classify.prompt`) — simple `{placeholder}` string replacement. Good for
-single-paragraph classifiers. All context collectors and built-in placeholders are available
-as `{name}`.
-
-**Nunjucks templates** (`classify.promptTemplate`) — `.md` files with full Nunjucks syntax:
-conditionals (`{% if %}`), loops (`{% for %}`), template inheritance, filters. Used when
-the classify prompt needs conditional sections (e.g., iteration-aware acknowledgment).
-
-Template variables use `{{ name }}` syntax. All context collectors and built-in placeholders
-are available: `{{ patterns }}`, `{{ instructions }}`, `{{ iteration }}`, plus any collectors
-listed in `classify.context`.
-
-When both `promptTemplate` and `prompt` are set, the template is tried first. If the template
-file is not found or fails to render, the inline prompt is used as fallback.
+Template variables use `{{ name }}` syntax. Available: `{{ patterns }}`, `{{ instructions }}`,
+`{{ iteration }}`, plus any collectors listed in `classify.context`. `tool_call` monitors
+additionally receive `{{ tool_call_context }}` (the pending tool name + arguments).
 
 **Iteration-aware acknowledgment pattern** — templates should include this block to support
-monitor-agent dialogue (the agent acknowledging a steer and stating a plan):
+monitor-agent dialogue (the agent acknowledging a steer and stating a plan). The bundled
+templates pull it in as a shared partial via
+`{% if iteration > 0 %}{% include "_shared/iteration-grace.md" %}{% endif %}`; its content:
 
 ```markdown
-{% if iteration > 0 %}
 NOTE: You have steered {{ iteration }} time(s) already this session.
 The agent's latest response is below. If the agent explicitly acknowledged
 the issue and stated a concrete plan to address it (not just "noted" but
@@ -260,7 +256,6 @@ Re-flag only if the agent ignored or deflected the steer.
 
 Agent response:
 {{ assistant_text }}
-{% endif %}
 ```
 
 This requires `assistant_text` in the `classify.context` array. When the classifier sees
@@ -271,20 +266,34 @@ a fresh turn without re-flagging.
 1. `.pi/monitors/<template-path>` — project-level override
 2. `~/.pi/agent/monitors/<template-path>` — user-level
 3. Package `examples/<template-path>` — builtin
+(Agent template directories `.pi/templates/` and `~/.pi/agent/templates/` are appended to
+the search path for shared macros.)
 
-All four bundled monitors ship with Nunjucks templates in `examples/<name>/classify.md`.
+**Agent spec search order** (first match wins):
+1. `.pi/agents/<name>.agent.yaml` — project-level
+2. `~/.pi/agent/agents/<name>.agent.yaml` — user-level
+3. Package `agents/<name>.agent.yaml` — builtin
+
+All five bundled monitors ship with Nunjucks templates in `examples/<name>/classify.md`,
+referenced by their classifier agent specs in `agents/<name>-classifier.agent.yaml`.
 </prompt_templates>
 
 <verdict_format>
-The classification LLM must respond with one of:
+The classifier agent spec declares `output.format: json` with `output.schema` pointing at
+`schemas/verdict.schema.json`, and the classify call forces a structured verdict (phantom
+verdict tool). The classification LLM responds with a JSON object:
 
-- `CLEAN` — no issue detected. Resets consecutive steer counter to 0.
-- `FLAG:<description>` — known pattern matched. Triggers `on_flag` action.
-- `NEW:<pattern>|<description>` — novel issue. The text before `|` becomes the learned pattern description; the text after `|` becomes the finding description. If no `|` is present, the full text after `NEW:` is used for both. Triggers `on_new` action.
+- `{"verdict": "CLEAN"}` — no issue detected. Resets consecutive steer counter to 0.
+- `{"verdict": "FLAG", "description": "..."}` — known pattern matched. Triggers `on_flag` action.
+- `{"verdict": "NEW", "description": "...", "newPattern": "..."}` — novel issue. `newPattern` becomes the learned pattern description; `description` becomes the finding description. Triggers `on_new` action.
 
-Any response that does not start with `CLEAN`, `FLAG:`, or `NEW:` is treated as `CLEAN`.
+An optional `"severity"` field (`info`/`warning`/`critical`) is accepted on FLAG/NEW verdicts.
 
-Classification calls use `maxTokens: 150`.
+Agent specs that declare no output schema fall back to legacy free-text parsing:
+`CLEAN`, `FLAG:<description>`, or `NEW:<pattern>|<description>` (no `|` → the full text
+is used for both). A response matching neither form yields an error verdict — no action fires.
+
+Classification calls use `maxTokens: 1024`.
 </verdict_format>
 
 <runtime_behavior>
@@ -320,10 +329,12 @@ if the side-channel LLM call errors, the tool is allowed to proceed. The pending
 context (name + arguments) is available as `{{ tool_call_context }}` in classify templates.
 Dedup is not applied to tool_call monitors since each tool call is a distinct event.
 
-**Write action**: Relative `write.path` values resolve from `process.cwd()`, not from the
-monitor directory. Parent directories are created automatically. If the target file doesn't
-exist or is unparseable, a fresh object is created. The `upsert` merge strategy matches on
-the `id` field of array entries.
+**Write action**: `write.block` names a block in the active substrate; the write goes
+through block-api (append or upsert), which derives the target path, validates the entry
+against the block's schema, and stamps author fields with `monitor/<name>` when the
+destination schema declares them. The `upsert` merge strategy matches on the `id` field of
+array entries. A failed write (schema mismatch, missing block) is logged and does not crash
+the host turn.
 </runtime_behavior>
 
 <commands>
@@ -355,28 +366,28 @@ third discovery tier. Each has a
 Nunjucks classify template in `examples/<name>/classify.md` with iteration-aware
 acknowledgment support:
 
-**fragility** (`message_end`, `when: has_tool_results`)
+**fragility** (`agent_end`, `when: has_tool_results`)
 Watches for unaddressed fragilities after tool use — errors, warnings, or broken state the
 agent noticed but chose not to fix. Steers with "Fix the issue you left behind." Writes
-findings to `<substrate-dir>/issues.json` under `category: "fragility"`. Excludes: none. Ceiling: 5.
+findings to the `issues` block under `category: "fragility"`. Excludes: none. Ceiling: 5.
 12 bundled patterns across categories: avoidance (dismiss-preexisting, not-my-change,
 blame-environment, workaround-over-root-cause, elaborate-workaround-for-fixable),
 error-handling (empty-catch, happy-path-only, early-return-on-unexpected,
 undocumented-delegation, silent-fallback), deferral (todo-instead-of-fix,
 prose-without-action).
 
-**hedge** (`turn_end`, `when: always`)
+**hedge** (`agent_end`, `when: always`)
 Detects when the assistant deviates from what the user actually said — substituting
 questions, projecting intent, or deflecting instead of answering. Steers with "Address
-what the user actually said." Does not write to files (steer-only). Excludes: `["fragility"]`
-(skips if fragility already steered this turn). Ceiling: 3.
+what the user actually said." Does not write to files (steer-only). Excludes: none.
+Ceiling: 3.
 8 bundled patterns across categories: substitution (rephrase-question, reinterpret-words),
 projection (assume-intent, attribute-position), augmentation (add-questions),
 deflection (ask-permission, qualify-yesno, counter-question).
 
 **work-quality** (`command`, `when: always`)
 On-demand work quality analysis invoked via `/work-quality`. Analyzes user request, tool
-calls, and assistant response for quality issues. Writes findings to `<substrate-dir>/issues.json`
+calls, and assistant response for quality issues. Writes findings to the `issues` block
 under `category: "work-quality"`. Ceiling: 3.
 11 bundled patterns across categories: methodology (trial-and-error, symptom-fix,
 double-edit, edit-without-read, insanity-retry, no-plan), verification (no-verify),
@@ -441,19 +452,23 @@ Write descriptions that a classifier LLM can match against the collected context
 3-8 seed patterns. Set `learn: true` so the monitor grows its pattern library from `NEW:`
 verdicts at runtime.
 
-**Step 5: Write the classify template.** Use a Nunjucks `.md` file for anything beyond
-trivial classification. The template must:
+**Step 5: Write the classify template.** A Nunjucks `.md` file. The template must:
 - Present the collected context to the classifier
 - List the patterns to check against
-- Include the verdict format instructions (CLEAN/FLAG/NEW)
+- Include the JSON verdict format instructions (CLEAN/FLAG/NEW)
 - Include the iteration-aware acknowledgment block if `assistant_text` is collected
 
-**Step 6: Write the monitor definition.** Wire everything together in the `.monitor.json`.
+**Step 6: Write the classifier agent spec.** An `.agent.yaml` in `.pi/agents/` whose name
+matches `classify.agent`. It declares `output.format: json`, `output.schema:
+../schemas/verdict.schema.json` (relative schema paths resolve against the package `agents/`
+directory), and `prompt.task.template` pointing at the classify template.
 
-**Step 7: Create empty instructions file.** Write `[]` so the user can add calibration
+**Step 7: Write the monitor definition.** Wire everything together in the `.monitor.json`.
+
+**Step 8: Create empty instructions file.** Write `[]` so the user can add calibration
 rules via `/monitors <name> rules add <text>`.
 
-**Step 8: Activate.** After creating the files, tell the user to run `/reload 3` to
+**Step 9: Activate.** After creating the files, tell the user to run `/reload 3` to
 reload extensions and activate the new monitor without restarting the session.
 
 ### Example: response-mandates monitor
@@ -473,10 +488,9 @@ that present lazy deferral options."
   "when": "always",
   "scope": { "target": "main" },
   "classify": {
-    "model": "claude-sonnet-4-20250514",
+    "agent": "response-mandates-classifier",
     "context": ["assistant_text", "user_text"],
-    "excludes": ["fragility"],
-    "promptTemplate": "response-mandates/classify.md"
+    "excludes": ["fragility"]
   },
   "patterns": { "path": "response-mandates.patterns.json", "learn": true },
   "instructions": { "path": "response-mandates.instructions.json" },
@@ -490,7 +504,21 @@ that present lazy deferral options."
 }
 ```
 
-2. `.pi/monitors/response-mandates/classify.md`:
+2. `.pi/agents/response-mandates-classifier.agent.yaml`:
+
+```yaml
+name: response-mandates-classifier
+role: sensor
+description: Classifies responses against communication mandates
+output:
+  format: json
+  schema: ../schemas/verdict.schema.json
+prompt:
+  task:
+    template: response-mandates/classify.md
+```
+
+3. `.pi/monitors/response-mandates/classify.md`:
 
 ```markdown
 The user said:
@@ -525,12 +553,13 @@ Agent response:
 {{ assistant_text }}
 {% endif %}
 
-Reply CLEAN if the response follows all mandates.
-Reply FLAG:<description> if a known pattern was matched.
-Reply NEW:<pattern>|<description> if a violation not covered by existing patterns was detected.
+Respond with a JSON object:
+- {"verdict": "CLEAN"} if the response follows all mandates.
+- {"verdict": "FLAG", "description": "one sentence describing the violation"} if a known pattern was matched.
+- {"verdict": "NEW", "description": "one sentence describing the violation", "newPattern": "pattern description"} if a violation not covered by existing patterns was detected.
 ```
 
-3. `.pi/monitors/response-mandates.patterns.json`:
+4. `.pi/monitors/response-mandates.patterns.json`:
 
 ```json
 [
@@ -543,7 +572,7 @@ Reply NEW:<pattern>|<description> if a violation not covered by existing pattern
 ]
 ```
 
-4. `.pi/monitors/response-mandates.instructions.json`:
+5. `.pi/monitors/response-mandates.instructions.json`:
 
 ```json
 []
@@ -562,14 +591,12 @@ Each pattern needs `id`, `description`, `severity`, and `source: "user"`.
 to add calibration rules. Rules fine-tune the classifier without changing patterns.
 Example: "responses that end with 'let me know' are not questions."
 
-**Changing the classify prompt** — Edit the Nunjucks template file or the inline prompt.
-For template-based monitors, edit the `.md` file. For inline monitors, edit the `prompt`
-field in the `.monitor.json`.
-
-**Upgrading inline to template** — When a monitor needs conditionals (iteration-aware
-acknowledgment, optional context sections), create a `<name>/classify.md` template file
-in `.pi/monitors/` and add `"promptTemplate": "<name>/classify.md"` to the classify block.
-The inline `prompt` remains as fallback.
+**Changing the classify prompt** — Edit the Nunjucks `.md` template named by the classifier
+agent spec's `prompt.task.template`. To customize a bundled monitor's prompt, place an
+override template at the same relative path in `.pi/monitors/` (e.g.
+`.pi/monitors/fragility/classify.md`) — it shadows the bundled one via the template search
+order. To change the classifier itself (output schema, template path, model pin), override
+the `.agent.yaml` in `.pi/agents/`.
 
 **Adjusting sensitivity** — Lower the `ceiling` to escalate sooner if the monitor is
 over-firing. Raise it to give the agent more chances. Set `escalate: "dismiss"` to
@@ -582,11 +609,11 @@ After any file changes, tell the user to run `/reload 3` to pick up the changes.
 - Monitor `.monitor.json` validates against `schemas/monitor.schema.json`
 - Patterns `.patterns.json` validates against `schemas/monitor-pattern.schema.json`
 - Patterns array is non-empty (empty patterns = monitor does nothing)
-- Classification prompt (template or inline) includes `{{ patterns }}` / `{patterns}` and verdict format instructions (CLEAN/FLAG/NEW)
-- If using `promptTemplate`, the `.md` file exists at the declared path relative to one of the template search directories
-- If using templates, `assistant_text` is in `classify.context` for iteration-aware acknowledgment
+- `classify.agent` resolves to an `.agent.yaml` in the agent search path, and that spec's `prompt.task.template` file exists in one of the template search directories
+- Classify template includes `{{ patterns }}` and the JSON verdict format instructions (CLEAN/FLAG/NEW)
+- `assistant_text` is in `classify.context` when the template uses iteration-aware acknowledgment
 - Actions specify `steer` for `scope.target: "main"` monitors, `write` for findings output
-- `write.path` is set relative to project cwd, not monitor directory
+- `write.block` names a block in the active substrate whose schema accepts the templated entry
 - `excludes` lists monitors that should not double-steer in the same turn
 - Instructions file exists (even if empty `[]`) to enable `/monitors <name> rules add <text>` calibration
 - After creating or modifying monitor files, remind user to run `/reload 3`

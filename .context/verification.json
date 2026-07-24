@@ -3618,6 +3618,36 @@
       "date": "2026-07-13",
       "oid": "5fadfc161e1fc6384de14d4553c84a40",
       "content_hash": "d6ba86ddf9eda7919bd16ef25ce7eb9dcbabf65afebded4c73996f90bfb6d811"
+    },
+    {
+      "status": "passed",
+      "method": "command",
+      "evidence": "Deterministic gate: npm run build, npm run check, npm test all exit 0 (209 pass). Runtime demonstration on built dist via pi -p --mode json -e <tree>/packages/pi-behavior-monitors/dist/index.js: inherit arm - session model deepseek/deepseek-v4-flash, no yaml pin, hedge trace session_start recorded model deepseek/deepseek-v4-flash with full classify round-trip (steer delivered); pin arm - scratch cwd .pi/agents yaml pinning deepseek/deepseek-v4-pro under the same session model, trace recorded deepseek/deepseek-v4-pro. Fresh adversarial probe confirmed dist carries the inherit branch, the old bare error string has exactly one (suffixed) occurrence, no call site requires a yaml model, and both README/CHANGELOG surfaces are current. Orchestrator independently re-read both trace files.",
+      "criteria_results": [
+        {
+          "criterion": "inherit arm uses session model (trace evidence)",
+          "status": "passed"
+        },
+        {
+          "criterion": "yaml pin overrides session model (trace evidence)",
+          "status": "passed"
+        },
+        {
+          "criterion": "five bundled yamls carry no model line or routing comment",
+          "status": "passed"
+        },
+        {
+          "criterion": "build/check/test exit 0",
+          "status": "passed"
+        },
+        {
+          "criterion": "README + CHANGELOG surfaces current",
+          "status": "passed"
+        }
+      ],
+      "id": "VER-120",
+      "oid": "4761de460b21cc2243ecd2889dc8dc0b",
+      "content_hash": "51217771137fce1b3c43e24a6b55c918996919bfff61d4db158fcae9fb0bb895"
     }
   ],
   "schema_version": "1.1.0"

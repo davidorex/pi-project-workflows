@@ -2815,6 +2815,29 @@
       "oid": "8a08002013c2b3f1001c4339a04f2d60",
       "content_hash": "960e0363d7c69665be7c93b1cad1c0573cbacbd99535ea970fa753eb8dd3be30",
       "content_parent": "5eab9bec2476487b760de61c780637336c13674e80e1fa55129d286ff0f6787d"
+    },
+    {
+      "description": "Monitor classify agents inherit the pi session's currently selected model when the classify agent spec omits model; the spec's model field acts as an override. classifyViaAgent (packages/pi-behavior-monitors/index.ts ~1393-1404) resolves a yaml pin via parseModelSpec + registry as before, else uses ctx.model directly and derives the provider/id spec string for trace + synthetic-compiled fields; error only when both are absent. The five bundled classifier agent yamls drop their openrouter/anthropic/claude-sonnet-4.6 pin and its routing comment. User-directed 2026-07-24.",
+      "status": "completed",
+      "files": [
+        "packages/pi-behavior-monitors/index.ts",
+        "packages/pi-behavior-monitors/agents/hedge-classifier.agent.yaml",
+        "packages/pi-behavior-monitors/agents/commit-hygiene-classifier.agent.yaml",
+        "packages/pi-behavior-monitors/agents/fragility-classifier.agent.yaml",
+        "packages/pi-behavior-monitors/agents/unauthorized-action-classifier.agent.yaml",
+        "packages/pi-behavior-monitors/agents/work-quality-classifier.agent.yaml"
+      ],
+      "acceptance_criteria": [
+        "With no model line in the classify agent yaml, the classify dispatch uses the session's current model: real pi -p run with --model deepseek/deepseek-v4-flash and this tree's built extension produced hedge trace session_start model deepseek/deepseek-v4-flash with a completed classify round-trip",
+        "A model line in a project-tier agent yaml overrides the session model: same run shape from a scratch cwd pinning deepseek/deepseek-v4-pro produced trace session_start model deepseek/deepseek-v4-pro",
+        "All five bundled classifier yamls carry no model line and no orphaned routing comment",
+        "npm run build, npm run check, npm test all exit 0 (209 tests pass)",
+        "Package README states inherit-by-default with pin-to-override at the classify step; package CHANGELOG [Unreleased] carries the entry; no stale model claim remains on either README"
+      ],
+      "id": "TASK-139",
+      "oid": "fe2b0e06577893b286afceae8dd5d6a8",
+      "content_hash": "703ff8d65dfd6e12e6160d2cc67b23f3ad73f024c377c4f0950fe27400be3faf",
+      "content_parent": "da056262f76778b6c5a3370c9eb7cfc8eabcac557ed8fc56bed6fa48ecee3338"
     }
   ],
   "schema_version": "1.1.0"

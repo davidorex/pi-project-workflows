@@ -53,7 +53,7 @@ Create a `.monitor.json` file in `.pi/monitors/` conforming to `schemas/monitor.
 1. A monitor fires on a configured event (e.g., after each assistant message)
 2. It checks scope (main context, subagent, workflow) and activation conditions
 3. It collects relevant conversation context (tool results, assistant text, etc.)
-4. A side-channel LLM call classifies the context against the JSON pattern library
+4. A side-channel LLM call classifies the context against the JSON pattern library. The classify agent runs on the pi session's current model by default; a `model:` line in the classify agent's `.agent.yaml` pins a different one.
 5. Based on the verdict, the monitor executes actions:
    - **steer**: inject a correction message into the conversation (main scope only)
    - **write**: append structured findings to a JSON file (any scope)

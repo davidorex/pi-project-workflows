@@ -4,6 +4,9 @@ All notable changes to `@davidorex/pi-behavior-monitors` are documented here, pe
 
 ## [Unreleased]
 
+### Changed
+- Monitor classify agents inherit the pi session's currently selected model when the agent spec omits `model`; the spec's `model:` field now acts as an override rather than a requirement. The five bundled classifier agent specs no longer pin a model.
+
 ## [0.33.0] - 2026-07-08
 
 ## [0.32.0] - 2026-07-05

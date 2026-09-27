@@ -5270,6 +5270,52 @@
       "id": "FGAP-156",
       "oid": "5ab130d2d7145bc4826b180eb0793fa7",
       "content_hash": "fa9cefede388cc9ef3a6eeea0785e63b3d2ebdaff03295c097f8f8f1dce99049"
+    },
+    {
+      "title": "Global promote paths never check which checkout is the source — a linked git worktree promotes its unmerged code as the operator's global pi",
+      "status": "identified",
+      "priority": "P2",
+      "package": "monorepo scripts (promote-cli, promote-extensions, release, .husky/post-commit)",
+      "canonical_vocabulary": "promotion source gating",
+      "description": "Every path that writes the real global npm prefix derives its source tree from the script's own location (REPO_ROOT = the checkout the script runs in) and validates only the TARGET prefix (refuses a target resolving into REPO_ROOT; requires lib/node_modules). None checks whether the SOURCE checkout is the primary checkout or a linked git worktree. So `npm run promote:all` / `promote:cli` run inside any linked worktree packs and installs that worktree's code as the globally installed @davidorex set. The same holds for the automatic path: `core.hooksPath` is an absolute path into the primary checkout's `.husky/_`, so a commit in a linked worktree runs the primary checkout's `.husky/post-commit`, whose `npm run promote:all` resolves against the worktree's cwd — a worktree commit touching packages/ would promote the worktree's unmerged branch globally (derived from the code; not runtime-demonstrated). `release:*` step 5 reaches the same install via `npm run promote:cli`. The class is all real-global-mutating entry points; the throwaway-prefix arms (`--prefix`, `--prefix=`, `PROMOTE_PREFIX`) write no global state and are not part of the gap.",
+      "evidence": [
+        {
+          "file": "scripts/promote-extensions.mjs",
+          "lines": "64-68",
+          "reference": "REPO_ROOT resolved from the script's own path — the source is whatever checkout the script runs in"
+        },
+        {
+          "file": "scripts/promote-extensions.mjs",
+          "lines": "150-155, 203-204, 229",
+          "reference": "real-global arm (`npm prefix -g`) chosen when no override; containment refuses only a TARGET under REPO_ROOT; no source-checkout check anywhere"
+        },
+        {
+          "file": "scripts/promote-cli.mjs",
+          "lines": "79-83, 188, 235-236, 275",
+          "reference": "same shape: REPO_ROOT from script path, real-global arm, target-only containment"
+        },
+        {
+          "file": ".husky/post-commit",
+          "lines": "6-8",
+          "reference": "`npm run promote:all` on any commit touching packages/, run in the committing checkout's cwd; `git config core.hooksPath` = absolute path into the primary checkout's .husky/_, so linked worktrees run this hook"
+        },
+        {
+          "file": "scripts/release.mjs",
+          "lines": "263",
+          "reference": "release step 5 runs `npm run promote:cli` in the running checkout"
+        },
+        {
+          "file": "analysis/2026-09-27-codex-change-envelope-worktree-review.md",
+          "reference": "§4-§5: review establishing that main has no source-checkout gating and the substrate tracks none"
+        }
+      ],
+      "impact": "The operator's global pi / pi-context can silently become an unmerged feature branch's code whenever promote runs from, or a packages/-touching commit is made in, a linked worktree (including Claude Code `.claude/worktrees/*` agent worktrees). Dogfooded substrate reads/writes then run code that is not the integration branch's, and the next primary-checkout promote silently flips it back — the operator's behavior depends on which checkout last promoted.",
+      "proposed_resolution": "Both promote scripts refuse the REAL-GLOBAL arm when the source checkout is a linked git worktree (detected via `git rev-parse --git-dir` differing from `--git-common-dir`), with a message naming the source checkout and the throwaway-prefix alternative; the `--prefix` / `--prefix=` / `PROMOTE_PREFIX` arms stay allowed from any checkout. `.husky/post-commit` skips its auto-promote in a linked worktree (exit 0, one-line notice) rather than failing. `release.mjs` inherits the refusal through promote:cli. Test coverage runs each script from a linked-worktree fixture and asserts refusal on the real-global arm and success on a throwaway prefix.",
+      "created_by": "human/davidryan@gmail.com",
+      "created_at": "2026-09-27",
+      "id": "FGAP-157",
+      "oid": "0a6f674b51a7e0d6b6e3e889391a5550",
+      "content_hash": "d315709d7f6156bc3eb5f8ef490d475200f9cb540e15ac8744b0ea87bef5f409"
     }
   ]
 }
